@@ -1,0 +1,311 @@
+<Window x:Class="StudioX.Desktop.MainWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:local="clr-namespace:StudioX.Desktop" xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework" xmlns:editor="http://icsharpcode.net/sharpdevelop/avalonedit"
+ Title="MCU StudioX" Icon="Assets/StudioX.ico" Style="{StaticResource {x:Type Window}}" Width="1460" Height="920" MinWidth="1100" MinHeight="720" WindowStyle="None" ResizeMode="CanResize" WindowStartupLocation="CenterScreen" StateChanged="Window_StateChanged" Activated="Window_Activated" Deactivated="Window_Deactivated" PreviewKeyDown="Window_PreviewKeyDown">
+ <shell:WindowChrome.WindowChrome><shell:WindowChrome CaptionHeight="38" ResizeBorderThickness="6" GlassFrameThickness="0" UseAeroCaptionButtons="False"/></shell:WindowChrome.WindowChrome>
+ <Window.InputBindings><KeyBinding Key="S" Modifiers="Control" Command="ApplicationCommands.Save"/><KeyBinding Key="O" Modifiers="Control" Command="ApplicationCommands.Open"/><KeyBinding Key="N" Modifiers="Control" Command="ApplicationCommands.New"/></Window.InputBindings>
+ <Window.CommandBindings><CommandBinding Command="ApplicationCommands.Save" Executed="Save_Click"/><CommandBinding Command="ApplicationCommands.Open" Executed="OpenProject_Click"/><CommandBinding Command="ApplicationCommands.New" Executed="NewProject_Click"/></Window.CommandBindings>
+ <Border BorderBrush="{DynamicResource Border}" BorderThickness="1"><Grid x:Name="WindowRoot" ClipToBounds="True">
+  <Grid x:Name="BackgroundLayer" IsHitTestVisible="False" Visibility="Collapsed"><Grid x:Name="MediaLayer"><Image x:Name="BackgroundImage" Stretch="UniformToFill"/><MediaElement x:Name="BackgroundVideo" LoadedBehavior="Manual" UnloadedBehavior="Manual" Volume="0" IsMuted="True" Stretch="UniformToFill" MediaEnded="BackgroundVideo_MediaEnded" MediaOpened="BackgroundVideo_MediaOpened" MediaFailed="BackgroundVideo_MediaFailed"/></Grid><Border x:Name="BackgroundDim" Background="Black"/></Grid>
+  <Grid><Grid.RowDefinitions><RowDefinition Height="38"/><RowDefinition Height="30"/><RowDefinition Height="39"/><RowDefinition Height="Auto"/><RowDefinition/><RowDefinition Height="26"/></Grid.RowDefinitions>
+   <Border Background="{DynamicResource ChromeSurface}" BorderBrush="{DynamicResource Border}" BorderThickness="0,0,0,1"><Grid><Grid.ColumnDefinitions><ColumnDefinition Width="46"/><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+    <Image Source="{StaticResource StudioXMark}" Width="28" Height="28" Stretch="Uniform" AutomationProperties.Name="MCU StudioX 标识"/>
+    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" ClipToBounds="True"><TextBlock Text="MCU StudioX" FontWeight="SemiBold"/><TextBlock Text=" / " Foreground="{DynamicResource Muted}" Margin="10,0"/><TextBlock x:Name="WindowProjectTitle" Text="欢迎" Foreground="{DynamicResource Muted}" MaxWidth="320" TextTrimming="CharacterEllipsis" ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}"/><Border Background="{DynamicResource Panel}" CornerRadius="3" Margin="14,0,0,0" Padding="6,2"><TextBlock Text="PREVIEW" FontSize="9" Foreground="{DynamicResource Muted}"/></Border></StackPanel>
+    <StackPanel Grid.Column="2" Orientation="Horizontal" shell:WindowChrome.IsHitTestVisibleInChrome="True">
+      <Button x:Name="GitHubIdentityButton" Style="{StaticResource LabeledToolButton}" Height="30" Margin="0,4,10,4" Click="GitHubWorkspace_Click" ToolTip="未登录 GitHub · 点击打开协作页登录" AutomationProperties.Name="未登录 GitHub">
+       <StackPanel Orientation="Horizontal">
+        <Grid x:Name="GitHubAvatarContainer" Width="22" Height="22" Margin="0,0,7,0" Visibility="Collapsed">
+         <Ellipse Fill="{DynamicResource Accent}"/>
+         <TextBlock x:Name="GitHubAvatarInitial" Text="G" Foreground="White" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+         <Ellipse x:Name="GitHubAvatarImage" Visibility="Collapsed"><Ellipse.Fill><ImageBrush x:Name="GitHubAvatarBrush" Stretch="UniformToFill"/></Ellipse.Fill></Ellipse>
+        </Grid>
+        <TextBlock x:Name="GitHubIdentityName" Text="未登录 GitHub" MaxWidth="135" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+       </StackPanel>
+      </Button>
+      <Button Style="{StaticResource ToolButton}" ToolTip="最小化" Click="Minimize_Click" Width="44" Height="36"><local:Icon Kind="minus" /></Button><Button Style="{StaticResource ToolButton}" ToolTip="最大化 / 还原" Click="Maximize_Click" Width="44" Height="36"><local:Icon Kind="maximize" /></Button><Button Style="{StaticResource ToolButton}" ToolTip="关闭" Click="Close_Click" Width="44" Height="36"><local:Icon Kind="close" /></Button>
+    </StackPanel>
+   </Grid></Border>
+   <Border Grid.Row="1" Background="{DynamicResource ChromeSurface}"><Menu Margin="5,0">
+    <MenuItem Header="文件(_F)"><MenuItem Header="新建工程…" InputGestureText="Ctrl+N" Click="NewProject_Click"/><MenuItem Header="打开工程…" InputGestureText="Ctrl+O" Click="OpenProject_Click"/><MenuItem Header="导入 CubeMX CMake 工程…" Click="ImportCubeMx_Click"/><MenuItem Header="保存" InputGestureText="Ctrl+S" Click="Save_Click"/><MenuItem Header="全部保存" InputGestureText="Ctrl+Shift+S" Click="SaveAll_Click"/><MenuItem x:Name="CloseProjectMenu" Header="关闭工程" InputGestureText="Ctrl+Shift+W" IsEnabled="False" Click="CloseProject_Click"/><MenuItem Header="关闭当前标签" InputGestureText="Ctrl+W" Click="CloseDocument_Click"/><Separator/><MenuItem Header="导入器件包…" Click="ImportPack_Click"/><Separator/><MenuItem Header="退出" Click="Close_Click"/></MenuItem>
+    <MenuItem Header="编辑(_E)"><MenuItem Header="撤销" Command="ApplicationCommands.Undo"/><MenuItem Header="重做" Command="ApplicationCommands.Redo"/><Separator/><MenuItem Header="剪切" Command="ApplicationCommands.Cut"/><MenuItem Header="复制" Command="ApplicationCommands.Copy"/><MenuItem Header="粘贴" Command="ApplicationCommands.Paste"/><Separator/><MenuItem Header="代码提示" InputGestureText="Ctrl+Space" Click="CompleteCode_Click"/><MenuItem Header="参数提示" InputGestureText="Ctrl+Shift+Space" Click="ParameterInfo_Click"/><Separator/><MenuItem Header="切换行注释" InputGestureText="Ctrl+/" Command="local:SourceCommands.ToggleComment" CommandTarget="{Binding ElementName=SourceEditor}"/></MenuItem>
+    <MenuItem Header="视图(_V)"><MenuItem Header="欢迎页" Click="Welcome_Click"/><MenuItem Header="编辑器字号"><MenuItem Header="放大" Click="ZoomIn_Click"/><MenuItem Header="缩小" Click="ZoomOut_Click"/><MenuItem Header="恢复默认字号" Click="ZoomReset_Click"/></MenuItem><MenuItem Header="工程窗口" InputGestureText="Alt+1" Click="ToggleProject_Click"/><MenuItem Header="底部工具窗口" InputGestureText="Alt+4" Click="ToggleBottom_Click"/><Separator/><MenuItem Header="外观与背景…" InputGestureText="Ctrl+Alt+S" Click="Appearance_Click"/></MenuItem>
+    <MenuItem Header="构建(_B)"><MenuItem x:Name="BuildMenu" IsEnabled="False" Header="编译工程" InputGestureText="F7" Click="Build_Click"/><MenuItem Header="停止构建" Click="Cancel_Click"/><Separator/><MenuItem x:Name="DownloadMenu" Header="下载固件" IsEnabled="False" Click="Download_Click"/><MenuItem x:Name="DownloadSettingsMenu" Header="下载设置…" IsEnabled="False" Click="DownloadSettings_Click"/><MenuItem x:Name="Ag32LogicMenu" Header="AG32 逻辑模式…" Visibility="Collapsed" Click="Ag32Logic_Click"/><MenuItem x:Name="BuildLogicButton" Header="AG32 逻辑构建指引…" Visibility="Collapsed" Click="BuildLogic_Click"/><MenuItem x:Name="DownloadLogicButton" Header="AG32 逻辑下载指引…" Visibility="Collapsed" Click="DownloadLogic_Click"/></MenuItem>
+    <MenuItem x:Name="DebugTopMenu" Header="调试(_D)">
+     <MenuItem x:Name="DebugStartMenu" Header="启动 / 结束调试" InputGestureText="Ctrl+F5" Click="DebugStart_Click"/>
+     <MenuItem Header="打开 F407 离线调试示例" Click="DebugExample_Click"/>
+     <Separator/>
+     <MenuItem x:Name="DebugContinueMenu" Header="运行" InputGestureText="F5" Click="DebugContinue_Click" IsEnabled="False"/>
+     <MenuItem x:Name="DebugPauseMenu" Header="暂停" Click="DebugPause_Click" IsEnabled="False"/>
+     <MenuItem x:Name="DebugIntoMenu" Header="单步进入" InputGestureText="F11" Click="DebugInto_Click" IsEnabled="False"/>
+     <MenuItem x:Name="DebugOverMenu" Header="逐过程" InputGestureText="F10" Click="DebugOver_Click" IsEnabled="False"/>
+     <MenuItem x:Name="DebugOutMenu" Header="跳出函数" InputGestureText="Ctrl+F11" Click="DebugOut_Click" IsEnabled="False"/>
+     <Separator/>
+     <MenuItem Header="设置 / 删除断点" InputGestureText="F9" Click="DebugBreakpoint_Click"/>
+     <MenuItem Header="启用 / 禁用当前断点" InputGestureText="Ctrl+F9" Click="DebugEnableBreakpoint_Click"/>
+     <MenuItem Header="条件 / 日志 / 临时断点…" InputGestureText="Shift+F9" Click="DebugBreakpointSettings_Click"/>
+     <MenuItem x:Name="DebugRunToMenu" Header="运行到光标" InputGestureText="Ctrl+F10" Click="DebugRunToCursor_Click" IsEnabled="False"/>
+     <MenuItem x:Name="ShowDebugMenu" Header="调试窗口" Click="ShowDebug_Click" IsEnabled="False"/>
+    </MenuItem>
+    <MenuItem Header="工具(_T)"><MenuItem Header="工程终端" InputGestureText="Ctrl+`" Click="ProjectTerminal_Click"/><MenuItem Header="Git 图谱" Click="GitGraph_Click"/><MenuItem Header="GitHub 协作" Click="GitHubWorkspace_Click"/><MenuItem Header="器件与模板" Click="DevicesAndTemplates_Click"/><MenuItem Header="串口终端" Click="Serial_Click"/><MenuItem Header="串口绘图" Click="SerialPlot_Click"/><MenuItem Header="波形演示" Click="Lab_Click"/><MenuItem Header="插件与工具集" Click="Extensions_Click"/><MenuItem Header="检查内置工具链" Click="VerifyTools_Click"/></MenuItem>
+    <MenuItem Header="帮助(_H)"><MenuItem Header="快速开始" Click="Welcome_Click"/><MenuItem Header="关于 MCU StudioX" Click="About_Click"/></MenuItem>
+   </Menu></Border>
+   <Border x:Name="MainToolbar" Grid.Row="2" Background="{DynamicResource ChromeSurface}" BorderBrush="{DynamicResource Border}" BorderThickness="0,0,0,1"><DockPanel Margin="8,3">
+    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+     <Button Style="{StaticResource LabeledToolButton}" ToolTip="外观与背景 (Ctrl+Alt+S)" Click="Appearance_Click" AutomationProperties.Name="外观与背景"><StackPanel Orientation="Horizontal"><local:Icon Kind="settings" Margin="0,0,6,0"/><TextBlock Text="外观" VerticalAlignment="Center"/></StackPanel></Button>
+    </StackPanel>
+    <StackPanel Orientation="Horizontal">
+     <Button Style="{StaticResource LabeledToolButton}" ToolTip="新建工程 (Ctrl+N)" Click="NewProject_Click" AutomationProperties.Name="新建工程"><StackPanel Orientation="Horizontal"><local:Icon Kind="plus" Margin="0,0,6,0"/><TextBlock Text="新建" VerticalAlignment="Center"/></StackPanel></Button>
+     <Button Style="{StaticResource LabeledToolButton}" ToolTip="打开工程 (Ctrl+O)" Click="OpenProject_Click" AutomationProperties.Name="打开工程"><StackPanel Orientation="Horizontal"><local:Icon Kind="folder" Margin="0,0,6,0"/><TextBlock Text="打开" VerticalAlignment="Center"/></StackPanel></Button>
+     <Button Style="{StaticResource LabeledToolButton}" ToolTip="保存 (Ctrl+S)" Click="Save_Click" AutomationProperties.Name="保存"><StackPanel Orientation="Horizontal"><local:Icon Kind="save" Margin="0,0,6,0"/><TextBlock Text="保存" VerticalAlignment="Center"/></StackPanel></Button>
+     <Border Width="1" Background="{DynamicResource Border}" Margin="10,5"/>
+     <Border Background="{DynamicResource Background}" CornerRadius="4" Padding="12,5" MinWidth="135" MaxWidth="200" Margin="0,0,8,0" ToolTip="{Binding Text, ElementName=BuildConfiguration}"><TextBlock x:Name="BuildConfiguration" Text="无构建目标" TextTrimming="CharacterEllipsis" Foreground="{DynamicResource Muted}"/></Border>
+     <Button x:Name="BuildButton" IsEnabled="False" Style="{StaticResource LabeledToolButton}" ToolTip="编译固件 (F7)" Click="Build_Click" AutomationProperties.Name="编译"><StackPanel Orientation="Horizontal"><local:Icon Kind="build" Foreground="{DynamicResource RunColor}" Margin="0,0,6,0"/><TextBlock Text="编译" VerticalAlignment="Center"/></StackPanel></Button>
+     <TextBlock x:Name="DownloadProbeLabel" Text="烧录器" VerticalAlignment="Center" Foreground="{DynamicResource Muted}" Margin="10,0,7,0"/>
+     <ComboBox x:Name="DownloadProbePicker" Width="174" Height="28" MinHeight="28" Padding="8,3" VerticalAlignment="Center" IsEnabled="False" DisplayMemberPath="DisplayName" SelectedValuePath="Id" SelectionChanged="DownloadProbe_Changed" AutomationProperties.Name="烧录器选择"/>
+     <Button x:Name="DownloadSettingsButton" Style="{StaticResource ToolButton}" Width="28" IsEnabled="False" ToolTip="下载设置：速度与序列号" Click="DownloadSettings_Click" AutomationProperties.Name="下载设置"><local:Icon Kind="settings" Width="14" Height="14"/></Button>
+     <Button x:Name="DownloadButton" Style="{StaticResource LabeledToolButton}" IsEnabled="False" ToolTip="编译并下载固件" Click="Download_Click" AutomationProperties.Name="下载"><StackPanel Orientation="Horizontal"><local:Icon Kind="download" Foreground="{DynamicResource Accent}" Margin="0,0,6,0"/><TextBlock Text="下载" VerticalAlignment="Center"/></StackPanel></Button>
+     <Button x:Name="DebugStartButton" Style="{StaticResource LabeledToolButton}" ToolTip="启动 / 结束调试 (Ctrl+F5) · 实机模式先核对板上固件，不自动下载" Click="DebugStart_Click" AutomationProperties.Name="调试"><StackPanel Orientation="Horizontal"><local:Icon Kind="debug" Margin="0,0,6,0"/><TextBlock Text="调试" VerticalAlignment="Center"/></StackPanel></Button>
+     <Button Style="{StaticResource LabeledToolButton}" ToolTip="停止当前操作" Click="Cancel_Click" x:Name="CancelButton" IsEnabled="False" AutomationProperties.Name="停止"><StackPanel Orientation="Horizontal"><local:Icon Kind="stop" Margin="0,0,6,0"/><TextBlock Text="停止" VerticalAlignment="Center"/></StackPanel></Button>
+    </StackPanel>
+   </DockPanel></Border>
+   <Border x:Name="DebugToolbar" Grid.Row="3" Visibility="Collapsed" Background="{DynamicResource ChromeSurface}" BorderBrush="{DynamicResource Border}" BorderThickness="0,0,0,1">
+    <DockPanel Margin="8,3">
+     <Border DockPanel.Dock="Right" Background="{DynamicResource Panel}" CornerRadius="3" Padding="9,4" Margin="8,0"><TextBlock x:Name="DebugModeBadge" Text="未连接调试目标" Foreground="{DynamicResource DebugChanged}" VerticalAlignment="Center"/></Border>
+     <WrapPanel>
+      <Button x:Name="DebugContinueButton" Style="{StaticResource LabeledToolButton}" Click="DebugContinue_Click" ToolTip="运行 (F5)"><StackPanel Orientation="Horizontal"><local:Icon Kind="play" Foreground="{DynamicResource RunColor}" Margin="0,0,6,0"/><TextBlock Text="运行"/></StackPanel></Button>
+      <Button x:Name="DebugPauseButton" Style="{StaticResource LabeledToolButton}" Click="DebugPause_Click" ToolTip="暂停"><StackPanel Orientation="Horizontal"><local:Icon Kind="pause" Foreground="{DynamicResource DebugChanged}" Margin="0,0,6,0"/><TextBlock Text="暂停"/></StackPanel></Button>
+      <Button x:Name="DebugOverButton" Style="{StaticResource LabeledToolButton}" Click="DebugOver_Click" ToolTip="逐过程 (F10)"><StackPanel Orientation="Horizontal"><local:Icon Kind="step-over" Foreground="{DynamicResource Accent}" Margin="0,0,6,0"/><TextBlock Text="逐过程"/></StackPanel></Button>
+      <Button x:Name="DebugIntoButton" Style="{StaticResource LabeledToolButton}" Click="DebugInto_Click" ToolTip="单步进入 (F11)"><StackPanel Orientation="Horizontal"><local:Icon Kind="step-into" Foreground="{DynamicResource Accent}" Margin="0,0,6,0"/><TextBlock Text="进入"/></StackPanel></Button>
+      <Button x:Name="DebugOutButton" Style="{StaticResource LabeledToolButton}" Click="DebugOut_Click" ToolTip="跳出函数 (Ctrl+F11)"><StackPanel Orientation="Horizontal"><local:Icon Kind="step-out" Foreground="{DynamicResource Accent}" Margin="0,0,6,0"/><TextBlock Text="跳出"/></StackPanel></Button>
+      <Button x:Name="DebugResetButton" Style="{StaticResource LabeledToolButton}" Click="DebugReset_Click" ToolTip="复位并暂停目标"><StackPanel Orientation="Horizontal"><local:Icon Kind="restart" Margin="0,0,6,0"/><TextBlock Text="复位"/></StackPanel></Button>
+      <Button x:Name="DebugRefreshButton" Style="{StaticResource LabeledToolButton}" Click="DebugRefresh_Click" ToolTip="刷新寄存器与变量"><TextBlock Text="刷新"/></Button>
+      <Button x:Name="DebugStopButton" Style="{StaticResource LabeledToolButton}" Click="DebugStop_Click" ToolTip="结束调试 (Ctrl+F5)"><StackPanel Orientation="Horizontal"><local:Icon Kind="stop" Foreground="#F25964" Margin="0,0,6,0"/><TextBlock Text="结束"/></StackPanel></Button>
+      <TextBlock x:Name="DebugStateText" Text="未启动调试" Margin="14,0,0,0" Foreground="{DynamicResource Muted}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="280"/>
+     </WrapPanel>
+    </DockPanel>
+   </Border>
+   <Grid Grid.Row="4"><Grid.ColumnDefinitions><ColumnDefinition Width="44"/><ColumnDefinition x:Name="ProjectColumn" Width="230" MinWidth="0"/><ColumnDefinition x:Name="ProjectSplitterColumn" Width="4"/><ColumnDefinition/><ColumnDefinition Width="32"/></Grid.ColumnDefinitions>
+     <Border Background="{DynamicResource ChromeSurface}" BorderBrush="{DynamicResource Border}" BorderThickness="0,0,1,0"><DockPanel><StackPanel DockPanel.Dock="Bottom"><Button Style="{StaticResource RailButton}" ToolTip="工程终端 (Ctrl+`)" Click="ProjectTerminal_Click" AutomationProperties.Name="工程终端"><local:Icon Kind="terminal" /></Button><Button Style="{StaticResource RailButton}" ToolTip="构建日志" AutomationProperties.Name="构建日志" Click="ShowBuildLog_Click"><local:Icon Kind="build-log" /></Button><Button Style="{StaticResource RailButton}" ToolTip="外观与背景" Click="Appearance_Click"><local:Icon Kind="settings" /></Button></StackPanel><StackPanel><Button Style="{StaticResource RailButton}" ToolTip="工程 (Alt+1)" Click="ToggleProject_Click"><local:Icon Kind="folder" /></Button><Button Style="{StaticResource RailButton}" ToolTip="Git 图谱" AutomationProperties.Name="Git 图谱" Click="GitGraph_Click"><local:Icon Kind="git-branch" /></Button><Button Style="{StaticResource RailButton}" ToolTip="器件与模板" AutomationProperties.Name="器件与模板" Click="DevicesAndTemplates_Click"><local:Icon Kind="chip" /></Button><Button Style="{StaticResource RailButton}" ToolTip="串口终端" AutomationProperties.Name="串口终端" Click="Serial_Click"><local:Icon Kind="serial" /></Button><Button Style="{StaticResource RailButton}" ToolTip="串口绘图" AutomationProperties.Name="串口绘图" Click="SerialPlot_Click"><local:Icon Kind="wave" /></Button><Button Style="{StaticResource RailButton}" ToolTip="扩展" Click="Extensions_Click"><local:Icon Kind="plug" /></Button></StackPanel></DockPanel></Border>
+    <Border Grid.Column="1" x:Name="ProjectPanel" Background="{DynamicResource ToolSurface}"><TabControl x:Name="LeftToolTabs"><TabItem Header="工程"><Grid><Grid.RowDefinitions><RowDefinition Height="34"/><RowDefinition/><RowDefinition Height="Auto"/></Grid.RowDefinitions><DockPanel Margin="12,0,5,0"><Button Style="{StaticResource ToolButton}" ToolTip="隐藏工程窗口" Click="ToggleProject_Click" DockPanel.Dock="Right"><local:Icon Kind="minus" /></Button><Button x:Name="CloseProjectButton" Style="{StaticResource ToolButton}" ToolTip="关闭工程 (Ctrl+Shift+W)" AutomationProperties.Name="关闭工程" Click="CloseProject_Click" IsEnabled="False" DockPanel.Dock="Right"><local:Icon Kind="close"/></Button><TextBlock Text="工程" FontWeight="SemiBold" VerticalAlignment="Center"/></DockPanel>
+     <Grid Grid.Row="1"><StackPanel x:Name="EmptyProject" Margin="18,24,18,0"><local:Icon Kind="folder" Width="30" Height="30" HorizontalAlignment="Left" Margin="0,0,0,14"/><TextBlock Text="尚未打开工程" Margin="0,0,0,8"/><TextBlock Text="创建一个工程，或从本地打开已有工程。" TextWrapping="Wrap" Foreground="{DynamicResource Muted}" LineHeight="22"/><Button Style="{StaticResource LinkButton}" Content="新建工程…" Click="NewProject_Click" Margin="0,14,0,0"/><Button Style="{StaticResource LinkButton}" Content="打开工程…" Click="OpenProject_Click"/><Button Style="{StaticResource LinkButton}" Content="导入 CubeMX 工程…" Click="ImportCubeMx_Click"/></StackPanel><TreeView x:Name="ProjectTree" Visibility="Collapsed" Margin="6" MouseDoubleClick="ProjectTree_DoubleClick" KeyDown="ProjectTree_KeyDown"/></Grid>
+     <StackPanel Grid.Row="2"><local:BuildMemoryView x:Name="BuildMemory"/><Border BorderBrush="{DynamicResource Border}" BorderThickness="0,1,0,0" Padding="12,10"><StackPanel><TextBlock x:Name="ProjectLabel" Text="工作区" FontSize="11" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis"/><TextBlock x:Name="DeviceLabel" Text="器件未选择" FontSize="11" Margin="0,5,0,0" Foreground="{DynamicResource Muted}"/><TextBlock x:Name="ToolsetLabel" Text="" FontSize="11" Margin="0,4,0,0" Foreground="{DynamicResource Muted}" TextWrapping="Wrap"/></StackPanel></Border></StackPanel>
+    </Grid></TabItem><TabItem x:Name="RegistersTab" Header="寄存器" Visibility="Collapsed"><Grid><Grid.RowDefinitions><RowDefinition Height="56"/><RowDefinition/></Grid.RowDefinitions>
+     <StackPanel Margin="9,5"><TextBlock x:Name="RegisterTitle" Text="目标寄存器" FontWeight="SemiBold"/><TextBlock x:Name="RegisterHint" Text="暂停后读取 · 模拟数据" FontSize="11" Foreground="{DynamicResource Muted}" Margin="0,5,0,0"/></StackPanel>
+     <DataGrid x:Name="RegisterGrid" Grid.Row="1" Style="{StaticResource DebugGrid}"><DataGrid.Columns><DataGridTextColumn Header="寄存器" Binding="{Binding Name}" Width="75"/><DataGridTextColumn Header="值" Binding="{Binding Value}" Width="*"/></DataGrid.Columns></DataGrid>
+    </Grid></TabItem></TabControl></Border>
+    <GridSplitter Grid.Column="2" HorizontalAlignment="Stretch" Background="{DynamicResource Background}" ResizeDirection="Columns" ResizeBehavior="PreviousAndNext"/>
+    <Grid Grid.Column="3"><Grid.RowDefinitions><RowDefinition/><RowDefinition Height="4"/><RowDefinition x:Name="BottomRow" Height="150" MinHeight="0"/></Grid.RowDefinitions>
+     <TabControl x:Name="WorkspaceTabs" Style="{StaticResource WorkspaceTabControl}">
+      <TabItem Header="欢迎" x:Name="WelcomeTab"><Border Background="{DynamicResource EditorSurface}"><ScrollViewer VerticalScrollBarVisibility="Auto"><Grid Margin="44,30,44,18" MaxWidth="1180">
+       <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+       <Grid Margin="0,0,0,34"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="120"/></Grid.ColumnDefinitions><StackPanel><TextBlock Text="MCU StudioX" FontSize="40" FontWeight="SemiBold"/><TextBlock Text="嵌入式开发，从这里开始。" Foreground="{DynamicResource Muted}" FontSize="15" Margin="0,10,0,24"/><StackPanel Orientation="Horizontal"><Button Style="{StaticResource PrimaryButton}" Click="NewProject_Click" Margin="0,0,12,0"><StackPanel Orientation="Horizontal"><local:Icon Kind="plus" Foreground="White" Width="16" Height="16" Margin="0,0,8,0"/><TextBlock Text="新建工程" Foreground="White"/></StackPanel></Button><Button Content="打开工程…" Click="OpenProject_Click" Padding="18,10"/><Button Style="{StaticResource LinkButton}" Content="导入器件包" Click="ImportPack_Click" Margin="18,0,0,0"/></StackPanel></StackPanel>
+        <Image Grid.Column="1" Source="{StaticResource StudioXAppIcon}" Width="72" Height="72" HorizontalAlignment="Right"
+               VerticalAlignment="Top" Margin="0,8,0,0" Stretch="Uniform" AutomationProperties.Name="MCU StudioX 标识"/>
+       </Grid>
+       <Grid Grid.Row="1"><Grid.ColumnDefinitions><ColumnDefinition Width="1.15*"/><ColumnDefinition Width="40"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+        <StackPanel><TextBlock Text="最近的工程" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,18"/><StackPanel x:Name="RecentEmpty" Margin="0,8,20,0"><TextBlock Text="你的下一个项目，从这里开始" Margin="0,0,0,9"/><TextBlock Text="打开过的工程会保留在这里，&#x0a;下次可以直接继续。" Foreground="{DynamicResource Muted}" LineHeight="23"/><Button Content="浏览本地工程" Style="{StaticResource LinkButton}" Click="OpenProject_Click" Margin="0,16,0,0"/></StackPanel><ItemsControl x:Name="RecentProjects"><ItemsControl.ItemTemplate><DataTemplate><Button Style="{StaticResource WelcomeAction}" Click="RecentProject_Click" Tag="{Binding Directory}"><StackPanel><TextBlock Text="{Binding Name}"/><TextBlock Text="{Binding Directory}" FontSize="11" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" Margin="0,6,0,0"/></StackPanel></Button></DataTemplate></ItemsControl.ItemTemplate></ItemsControl></StackPanel>
+        <Border Grid.Column="1" Width="1" Background="{DynamicResource Border}" HorizontalAlignment="Center"/>
+        <StackPanel Grid.Column="2"><TextBlock Text="开始使用" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,10"/>
+         <Button Style="{StaticResource WelcomeAction}" Click="DevicesAndTemplates_Click"><Grid><Grid.ColumnDefinitions><ColumnDefinition Width="34"/><ColumnDefinition/><ColumnDefinition Width="18"/></Grid.ColumnDefinitions><local:Icon Kind="package" Foreground="{DynamicResource Accent}" VerticalAlignment="Top" Margin="0,1,0,0"/><StackPanel Grid.Column="1"><TextBlock Text="器件与模板"/><TextBlock Text="查看工程配置，或选择器件创建工程" Foreground="{DynamicResource Muted}" FontSize="12" Margin="0,5,0,0"/></StackPanel><local:Icon Kind="chevron" Grid.Column="2" Width="12" Height="12"/></Grid></Button>
+         <Button Style="{StaticResource WelcomeAction}" Click="ImportCubeMx_Click"><Grid><Grid.ColumnDefinitions><ColumnDefinition Width="34"/><ColumnDefinition/><ColumnDefinition Width="18"/></Grid.ColumnDefinitions><local:Icon Kind="folder" Foreground="{DynamicResource Accent}" VerticalAlignment="Top" Margin="0,1,0,0"/><StackPanel Grid.Column="1"><TextBlock Text="导入 CubeMX CMake 工程"/><TextBlock Text="沿用已有源码和配置，使用内置工具链继续开发" Foreground="{DynamicResource Muted}" FontSize="12" Margin="0,5,0,0" TextWrapping="Wrap"/></StackPanel><local:Icon Kind="chevron" Grid.Column="2" Width="12" Height="12"/></Grid></Button>
+         <Button Style="{StaticResource WelcomeAction}" Click="GitHubWorkspace_Click"><Grid><Grid.ColumnDefinitions><ColumnDefinition Width="34"/><ColumnDefinition/><ColumnDefinition Width="18"/></Grid.ColumnDefinitions><local:Icon Kind="git-branch" Foreground="{DynamicResource Accent}" VerticalAlignment="Top" Margin="0,1,0,0"/><StackPanel Grid.Column="1"><TextBlock Text="GitHub 协作"/><TextBlock Text="登录、克隆、同步分支与审阅 Pull Request" Foreground="{DynamicResource Muted}" FontSize="12" Margin="0,5,0,0" TextWrapping="Wrap"/></StackPanel><local:Icon Kind="chevron" Grid.Column="2" Width="12" Height="12"/></Grid></Button>
+         <Button Style="{StaticResource WelcomeAction}" Click="Appearance_Click"><Grid><Grid.ColumnDefinitions><ColumnDefinition Width="34"/><ColumnDefinition/><ColumnDefinition Width="18"/></Grid.ColumnDefinitions><local:Icon Kind="image" Foreground="{DynamicResource Accent}" VerticalAlignment="Top" Margin="0,1,0,0"/><StackPanel Grid.Column="1"><TextBlock Text="让工作台属于你"/><TextBlock Text="深浅主题、背景图片与动态视频" Foreground="{DynamicResource Muted}" FontSize="12" Margin="0,5,0,0"/></StackPanel><local:Icon Kind="chevron" Grid.Column="2" Width="12" Height="12"/></Grid></Button>
+         <Button Style="{StaticResource WelcomeAction}" Click="Serial_Click"><Grid><Grid.ColumnDefinitions><ColumnDefinition Width="34"/><ColumnDefinition/><ColumnDefinition Width="18"/></Grid.ColumnDefinitions><local:Icon Kind="serial" Foreground="{DynamicResource Accent}" VerticalAlignment="Top" Margin="0,1,0,0"/><StackPanel Grid.Column="1"><TextBlock Text="串口终端"/><TextBlock Text="收发串口数据、彩色文本与 HEX" Foreground="{DynamicResource Muted}" FontSize="12" Margin="0,5,0,0"/></StackPanel><local:Icon Kind="chevron" Grid.Column="2" Width="12" Height="12"/></Grid></Button>
+         <Button Style="{StaticResource WelcomeAction}" Click="SerialPlot_Click"><Grid><Grid.ColumnDefinitions><ColumnDefinition Width="34"/><ColumnDefinition/><ColumnDefinition Width="18"/></Grid.ColumnDefinitions><local:Icon Kind="wave" Foreground="{DynamicResource Accent}" VerticalAlignment="Top" Margin="0,1,0,0"/><StackPanel Grid.Column="1"><TextBlock Text="串口绘图"/><TextBlock Text="多通道实时曲线、可配置分隔符与时间 / 数值缩放" Foreground="{DynamicResource Muted}" FontSize="12" Margin="0,5,0,0"/></StackPanel><local:Icon Kind="chevron" Grid.Column="2" Width="12" Height="12"/></Grid></Button>
+         <Button Style="{StaticResource WelcomeAction}" Click="Extensions_Click"><Grid><Grid.ColumnDefinitions><ColumnDefinition Width="34"/><ColumnDefinition/><ColumnDefinition Width="18"/></Grid.ColumnDefinitions><local:Icon Kind="plug" Foreground="{DynamicResource Accent}" VerticalAlignment="Top" Margin="0,1,0,0"/><StackPanel Grid.Column="1"><TextBlock Text="扩展工作台"/><TextBlock Text="管理数据解码插件与内置工具" Foreground="{DynamicResource Muted}" FontSize="12" Margin="0,5,0,0"/></StackPanel><local:Icon Kind="chevron" Grid.Column="2" Width="12" Height="12"/></Grid></Button>
+        </StackPanel>
+       </Grid>
+       <Border Grid.Row="2" BorderBrush="{DynamicResource Border}" BorderThickness="0,1,0,0" Padding="0,16,0,0" Margin="0,24,0,0"><DockPanel><TextBlock DockPanel.Dock="Right" Text="{x:Static local:ProductInfo.PreviewVersion}" FontSize="11" Foreground="{DynamicResource Muted}"/><TextBlock Text="面向 ARM 与 RISC-V    ·    C / C++    ·    .mcupack 器件包" FontSize="11" Foreground="{DynamicResource Muted}"/></DockPanel></Border>
+      </Grid></ScrollViewer></Border></TabItem>
+      <TabItem x:Name="EditorPlaceholder" Visibility="Collapsed">
+       <Grid x:Name="EditorSurface" Background="{DynamicResource EditorSurface}"><Grid.RowDefinitions><RowDefinition Height="30"/><RowDefinition/><RowDefinition Height="25"/></Grid.RowDefinitions>
+        <Border BorderBrush="{DynamicResource Border}" BorderThickness="0,0,0,1" Padding="14,0,4,0"><DockPanel><Button DockPanel.Dock="Right" x:Name="OutlineToggle" Content="文件结构" Padding="9,2" Margin="0" ToolTip="显示 / 隐藏当前文件的函数与变量" Click="ToggleOutline_Click"/><StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Margin="0,0,10,0">
+         <Button Style="{StaticResource LabeledToolButton}" Height="26" Command="local:SourceCommands.Undo" CommandTarget="{Binding ElementName=SourceEditor}" ToolTip="撤销 (Ctrl+Z)" AutomationProperties.Name="撤销"><StackPanel Orientation="Horizontal"><local:Icon Kind="undo" Margin="0,0,5,0"/><TextBlock Text="撤销" VerticalAlignment="Center"/></StackPanel></Button>
+         <Button Style="{StaticResource LabeledToolButton}" Height="26" Command="local:SourceCommands.Redo" CommandTarget="{Binding ElementName=SourceEditor}" ToolTip="重做 (Ctrl+Y / Ctrl+Shift+Z)" AutomationProperties.Name="重做"><StackPanel Orientation="Horizontal"><local:Icon Kind="redo" Margin="0,0,5,0"/><TextBlock Text="重做" VerticalAlignment="Center"/></StackPanel></Button>
+        </StackPanel><TextBlock x:Name="EditorBreadcrumb" FontSize="11" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/></DockPanel></Border>
+        <Grid Grid.Row="1">
+         <Grid.ColumnDefinitions><ColumnDefinition Width="*" MinWidth="140"/><ColumnDefinition x:Name="OutlineSplitterColumn" Width="4"/><ColumnDefinition x:Name="OutlineColumn" Width="270" MinWidth="0" MaxWidth="480"/></Grid.ColumnDefinitions>
+         <editor:TextEditor x:Name="SourceEditor" Background="Transparent" Foreground="{DynamicResource Text}" BorderThickness="0" ShowLineNumbers="True" FontFamily="Cascadia Mono, Consolas" FontSize="14" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" IsReadOnly="True" Padding="12,14,12,14" TextChanged="SourceEditor_TextChanged" TextOptions.TextFormattingMode="Display" TextOptions.TextRenderingMode="ClearType"/>
+         <GridSplitter Grid.Column="1" x:Name="OutlineSplitter" HorizontalAlignment="Stretch" ResizeDirection="Columns" ResizeBehavior="PreviousAndNext" Background="{DynamicResource Border}"/>
+         <Border Grid.Column="2" x:Name="OutlinePanel" Background="{DynamicResource ToolSurface}" BorderBrush="{DynamicResource Border}" BorderThickness="1,0,0,0" ClipToBounds="True">
+          <Grid><Grid.RowDefinitions><RowDefinition Height="34"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+           <DockPanel Margin="10,0,3,0"><Button DockPanel.Dock="Right" Style="{StaticResource ToolButton}" ToolTip="收起文件结构" AutomationProperties.Name="收起文件结构" Click="ToggleOutline_Click"><local:Icon Kind="minus"/></Button><TextBlock Text="文件结构" FontWeight="SemiBold" VerticalAlignment="Center"/></DockPanel>
+           <TextBlock Grid.Row="1" x:Name="OutlineFileName" Foreground="{DynamicResource Muted}" FontSize="11" Margin="10,0,10,7" TextTrimming="CharacterEllipsis"/>
+           <Grid Grid.Row="2" Margin="8,0,8,8">
+            <TextBox x:Name="OutlineSearch" Margin="0" Padding="6,4" ToolTip="筛选函数、全局变量和类型；展开函数查看局部变量" AutomationProperties.Name="搜索函数或全局变量" TextChanged="OutlineSearch_TextChanged"/>
+            <TextBlock Text="搜索函数 / 全局变量…" Foreground="{DynamicResource Muted}" Margin="7,0" VerticalAlignment="Center" IsHitTestVisible="False"><TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><DataTrigger Binding="{Binding Text, ElementName=OutlineSearch}" Value=""><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock>
+           </Grid>
+           <TreeView Grid.Row="3" x:Name="OutlineTree" Background="Transparent" BorderThickness="0" Padding="3,0" AutomationProperties.Name="当前文件函数与变量" ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.VerticalScrollBarVisibility="Auto" VirtualizingStackPanel.IsVirtualizing="True" VirtualizingStackPanel.VirtualizationMode="Recycling" PreviewMouseLeftButtonUp="OutlineTree_MouseUp" PreviewKeyDown="OutlineTree_KeyDown">
+            <TreeView.Resources>
+             <Style TargetType="TreeViewItem">
+              <Setter Property="Foreground" Value="{DynamicResource Text}"/><Setter Property="Background" Value="Transparent"/><Setter Property="Padding" Value="2,3"/>
+              <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="TreeViewItem">
+               <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="17"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                <ToggleButton x:Name="Expander" IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}}" Focusable="False" Width="17" Height="22" VerticalAlignment="Center"><ToggleButton.Template><ControlTemplate TargetType="ToggleButton"><Border Background="Transparent"><Path x:Name="Arrow" Data="M 0,0 L 4,4 L 0,8" Stroke="{DynamicResource Muted}" StrokeThickness="1.3" HorizontalAlignment="Center" VerticalAlignment="Center" RenderTransformOrigin="0.5,0.5"/></Border><ControlTemplate.Triggers><Trigger Property="IsChecked" Value="True"><Setter TargetName="Arrow" Property="RenderTransform"><Setter.Value><RotateTransform Angle="90"/></Setter.Value></Setter></Trigger></ControlTemplate.Triggers></ControlTemplate></ToggleButton.Template></ToggleButton>
+                <Border Grid.Column="1" x:Name="Row" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}" CornerRadius="2"><ContentPresenter x:Name="PART_Header" ContentSource="Header" HorizontalAlignment="Left"/></Border>
+                <ItemsPresenter Grid.Row="1" Grid.Column="1" x:Name="Children"/>
+               </Grid>
+               <ControlTemplate.Triggers><Trigger Property="IsExpanded" Value="False"><Setter TargetName="Children" Property="Visibility" Value="Collapsed"/></Trigger><Trigger Property="HasItems" Value="False"><Setter TargetName="Expander" Property="Visibility" Value="Hidden"/></Trigger><Trigger SourceName="Row" Property="IsMouseOver" Value="True"><Setter TargetName="Row" Property="Background" Value="{DynamicResource HoverSurface}"/></Trigger><Trigger Property="IsSelected" Value="True"><Setter TargetName="Row" Property="Background" Value="{DynamicResource Panel}"/></Trigger><Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.55"/></Trigger></ControlTemplate.Triggers>
+              </ControlTemplate></Setter.Value></Setter>
+             </Style>
+            </TreeView.Resources>
+           </TreeView>
+           <TextBlock Grid.Row="4" x:Name="OutlineStatus" Text="打开 C/C++ 文件查看结构" Foreground="{DynamicResource Muted}" FontSize="11" Margin="10,8" TextWrapping="Wrap"/>
+          </Grid>
+         </Border>
+        </Grid>
+        <Border Grid.Row="2" BorderBrush="{DynamicResource Border}" BorderThickness="0,1,0,0" Padding="14,3"><DockPanel><TextBlock x:Name="EditorPosition" DockPanel.Dock="Right" Foreground="{DynamicResource Muted}" FontSize="11"/><TextBlock x:Name="EditorLanguage" Foreground="{DynamicResource Muted}" FontSize="11"/></DockPanel></Border>
+       </Grid>
+      </TabItem>
+      <TabItem Header="器件与模板" x:Name="PackagesTab" Visibility="Collapsed">
+       <Border Background="{DynamicResource EditorSurface}">
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+         <Grid Margin="32,28" MaxWidth="1080" HorizontalAlignment="Stretch">
+         <WrapPanel x:Name="ProjectDetailsPanel" Visibility="Collapsed">
+         <StackPanel Width="580" Margin="0,0,20,20">
+          <DockPanel>
+           <Border DockPanel.Dock="Right" VerticalAlignment="Center" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="3" Padding="10,4"><TextBlock Text="器件信息只读" Foreground="{DynamicResource Muted}"/></Border>
+           <TextBlock Text="当前工程 · 器件与模板" FontSize="23" FontWeight="SemiBold"/>
+          </DockPanel>
+          <TextBlock Text="查看工程的创建来源与器件包信息，实际配置以工程代码为准。" Foreground="{DynamicResource Muted}" TextWrapping="Wrap" Margin="0,8,0,20"/>
+          <TextBlock x:Name="CurrentProjectName" FontSize="17" FontWeight="SemiBold" TextWrapping="Wrap"/>
+          <Border BorderBrush="{DynamicResource Border}" BorderThickness="0,1,0,0" Margin="0,18,0,0"/>
+          <TextBlock Text="器件厂商" Style="{StaticResource SectionLabel}"/>
+          <StackPanel Orientation="Horizontal">
+           <Border x:Name="CurrentProjectVendorLogoFrame" Background="White" CornerRadius="2" Padding="4" Width="56" Height="30" Margin="0,0,12,0"><Grid><Image x:Name="CurrentProjectVendorLogo" Stretch="Uniform"/><TextBlock x:Name="CurrentProjectVendorMonogram" Foreground="#222222" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed"/></Grid></Border>
+           <TextBlock x:Name="CurrentProjectVendor" VerticalAlignment="Center" FontSize="14"/>
+          </StackPanel>
+          <TextBlock Text="芯片型号（创建记录）" Style="{StaticResource SectionLabel}"/>
+          <TextBlock x:Name="CurrentProjectDeviceId" FontSize="17" FontWeight="SemiBold" TextWrapping="Wrap"/>
+          <TextBlock Text="{Binding DeviceName, StringFormat='器件包标注（静态信息）：{0}'}" Foreground="{DynamicResource Muted}" TextWrapping="Wrap" Margin="0,4,0,0"/>
+          <TextBlock Text="创建来源 / 起始模板" Style="{StaticResource SectionLabel}"/>
+          <TextBlock Text="{Binding TemplateName}" FontSize="16" TextWrapping="Wrap"/>
+          <TextBlock x:Name="CurrentProjectTemplateId" Foreground="{DynamicResource Muted}" Margin="0,4,0,0"/>
+          <TextBlock x:Name="CurrentProjectDescriptionHeading" Text="模板默认配置（创建时）" Style="{StaticResource SectionLabel}"/>
+          <TextBlock x:Name="TemplateDefaultsNote" Text="晶振与系统时钟可能已被修改，以下默认值不代表工程当前运行参数。" Foreground="{DynamicResource Muted}" TextWrapping="Wrap" Margin="0,0,0,8"/>
+          <TextBlock Text="{Binding TemplateDescription}" Foreground="{DynamicResource Muted}" TextWrapping="Wrap"/>
+          <TextBlock Text="器件包" Style="{StaticResource SectionLabel}"/>
+          <TextBlock Text="{Binding PackName}" TextWrapping="Wrap"/>
+          <TextBlock x:Name="CurrentProjectPackVersion" Foreground="{DynamicResource Muted}" Margin="0,4,0,0"/>
+          <TextBlock Text="编译工具集" Style="{StaticResource SectionLabel}"/>
+          <TextBlock x:Name="CurrentProjectToolset" TextWrapping="Wrap"/>
+          <TextBlock Text="{Binding Notice}" Foreground="{DynamicResource Muted}" TextWrapping="Wrap" Margin="0,18,0,0"/>
+         </StackPanel>
+         <Border Width="420" VerticalAlignment="Top" Background="{DynamicResource Panel}" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="6" Padding="24" Margin="0,0,0,20">
+          <StackPanel>
+           <TextBlock Text="编译参数" FontSize="21" FontWeight="SemiBold"/>
+           <TextBlock Text="按工程保存，下次编译生效。未指定的参数沿用工程配置。" TextWrapping="Wrap" Foreground="{DynamicResource Muted}" Margin="0,8,0,4"/>
+           <StackPanel x:Name="BuildSettingsEditor" IsEnabled="False">
+            <TextBlock Text="编译器优化等级" Style="{StaticResource SectionLabel}"/>
+            <ComboBox x:Name="BuildOptimizationPicker" DisplayMemberPath="Label" SelectedValuePath="Value" MinHeight="36" SelectionChanged="BuildSettings_SelectionChanged"/>
+            <TextBlock x:Name="BuildDebugInfoLabel" Text="调试信息" Style="{StaticResource SectionLabel}"/>
+            <ComboBox x:Name="BuildDebugInfoPicker" DisplayMemberPath="Label" SelectedValuePath="Value" MinHeight="36" SelectionChanged="BuildSettings_SelectionChanged"/>
+            <StackPanel x:Name="StcCodeRomPanel" Visibility="Collapsed">
+             <TextBlock Text="程序 Flash 容量上限（字节）" Style="{StaticResource SectionLabel}"/>
+             <TextBox x:Name="StcCodeRomSizeBox" MinHeight="36" TextChanged="StcCodeRomSize_TextChanged" AutomationProperties.Name="STC 程序 Flash 容量上限"/>
+             <TextBlock x:Name="StcCodeRomLimitText" Foreground="{DynamicResource Muted}" TextWrapping="Wrap" Margin="0,6,0,0"/>
+            </StackPanel>
+            <TextBlock x:Name="BuildSettingsHelp" Text="源码调试建议 -Og 与 -g3；较高优化可能使变量或源码行无法直接观察。" TextWrapping="Wrap" Foreground="{DynamicResource Muted}" Margin="0,12,0,16"/>
+            <Border Background="{DynamicResource EditorSurface}" CornerRadius="3" Padding="12"><TextBlock x:Name="BuildSettingsSummary" Text="沿用工程默认" FontFamily="Consolas" TextWrapping="Wrap"/></Border>
+            <WrapPanel Margin="0,18,0,0">
+             <Button x:Name="SaveBuildSettingsButton" Content="保存参数" Click="SaveBuildSettings_Click" IsEnabled="False"/>
+             <Button Content="恢复工程默认" Click="ResetBuildSettings_Click" Margin="8,0,0,0"/>
+            </WrapPanel>
+           </StackPanel>
+           <TextBlock x:Name="BuildSettingsStatus" Text="正在读取编译参数…" TextWrapping="Wrap" Foreground="{DynamicResource Muted}" Margin="0,14,0,0"/>
+           <Border x:Name="StcIspPanel" BorderBrush="{DynamicResource Border}" BorderThickness="0,1,0,0" Margin="0,20,0,0" Visibility="Collapsed">
+            <StackPanel Margin="0,18,0,0">
+             <TextBlock Text="STC 串口下载与时钟" FontSize="18" FontWeight="SemiBold"/>
+             <TextBlock Text="时钟在下一次成功烧录时写入芯片；保存工程设置不会改变当前芯片。" Foreground="{DynamicResource Muted}" TextWrapping="Wrap" Margin="0,6,0,4"/>
+             <TextBlock Text="时钟来源" Style="{StaticResource SectionLabel}"/>
+             <ComboBox x:Name="StcClockModePicker" DisplayMemberPath="Label" SelectedValuePath="Value" MinHeight="36" SelectionChanged="StcClockMode_Changed" AutomationProperties.Name="STC 时钟来源"/>
+             <TextBlock x:Name="StcClockFrequencyLabel" Text="目标频率（MHz）" Style="{StaticResource SectionLabel}"/>
+             <TextBox x:Name="StcClockFrequencyBox" MinHeight="36" TextChanged="StcClockFrequency_Changed" AutomationProperties.Name="STC 时钟频率 MHz"/>
+             <TextBlock x:Name="StcClockHelp" Foreground="{DynamicResource Muted}" TextWrapping="Wrap" Margin="0,6,0,2"/>
+             <TextBlock Text="下载串口" Style="{StaticResource SectionLabel}"/>
+             <ComboBox x:Name="StcPortPicker" IsEditable="True" MinHeight="36" SelectionChanged="StcIspSelection_Changed" LostKeyboardFocus="StcIspSelection_Changed" AutomationProperties.Name="STC 下载串口"/>
+             <Button Content="刷新串口" HorizontalAlignment="Left" Margin="0,7,0,0" Click="RefreshStcPorts_Click"/>
+             <TextBlock Text="传输波特率" Style="{StaticResource SectionLabel}"/>
+             <ComboBox x:Name="StcBaudPicker" MinHeight="36" SelectionChanged="StcIspSelection_Changed" AutomationProperties.Name="STC 传输波特率"/>
+             <TextBlock x:Name="StcToolStatus" Foreground="{DynamicResource Muted}" TextWrapping="Wrap" Margin="0,16,0,6"/>
+             <WrapPanel>
+              <Button x:Name="SaveStcIspSettingsButton" Content="保存时钟与下载设置" Click="SaveStcIspSettings_Click"/>
+              <Button Content="选择 stcgal 工具…" Click="ChooseStcgal_Click" Margin="8,0,0,0"/>
+             </WrapPanel>
+             <TextBlock x:Name="StcIspStatus" Foreground="{DynamicResource Muted}" TextWrapping="Wrap" Margin="0,10,0,0"/>
+            </StackPanel>
+           </Border>
+          </StackPanel>
+         </Border>
+         </WrapPanel>
+         <StackPanel x:Name="NewProjectPanel" Width="580" HorizontalAlignment="Left">
+          <TextBlock Text="新建工程" FontSize="23" FontWeight="SemiBold"/>
+          <TextBlock Text="选择器件厂商，再选择器件包、芯片型号与起始模板。" Foreground="{DynamicResource Muted}" Margin="0,8,0,20"/>
+          <Button Content="导入 .mcupack…" HorizontalAlignment="Left" Click="ImportPack_Click"/>
+          <Grid>
+           <Grid.ColumnDefinitions><ColumnDefinition Width="200"/><ColumnDefinition Width="16"/><ColumnDefinition/></Grid.ColumnDefinitions>
+           <StackPanel>
+            <TextBlock Text="器件厂商" Style="{StaticResource SectionLabel}"/>
+            <Grid>
+             <ComboBox x:Name="VendorPicker" MaxDropDownHeight="300" MinHeight="40" SelectedValuePath="Id" TextSearch.TextPath="DisplayName" ToolTip="{Binding SelectedItem.Description, RelativeSource={RelativeSource Self}}" SelectionChanged="VendorPicker_SelectionChanged">
+              <ComboBox.ItemTemplate>
+               <DataTemplate>
+                <StackPanel Orientation="Horizontal" ToolTip="{Binding Description}" AutomationProperties.Name="{Binding Description}">
+                 <Border Width="48" Height="24" Background="White" CornerRadius="2" Padding="3" Margin="0,0,8,0">
+                  <Grid><Image Source="{Binding Logo}" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality"/><TextBlock Text="{Binding Monogram}" Foreground="#222222" FontSize="10" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"><TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><DataTrigger Binding="{Binding Logo}" Value="{x:Null}"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock></Grid>
+                 </Border>
+                 <TextBlock Text="{Binding DisplayName}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="104"/>
+                </StackPanel>
+               </DataTemplate>
+              </ComboBox.ItemTemplate>
+             </ComboBox>
+             <TextBlock Text="请选择器件厂商…" IsHitTestVisible="False" Margin="10,0,30,0" VerticalAlignment="Center" Foreground="{DynamicResource Muted}">
+              <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><DataTrigger Binding="{Binding SelectedIndex, ElementName=VendorPicker}" Value="-1"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></TextBlock.Style>
+             </TextBlock>
+            </Grid>
+           </StackPanel>
+           <StackPanel Grid.Column="2">
+            <TextBlock Text="器件包" Style="{StaticResource SectionLabel}"/>
+            <ComboBox x:Name="PackPicker" MaxDropDownHeight="300" MinHeight="40" IsEnabled="False" SelectionChanged="PackPicker_SelectionChanged">
+             <ComboBox.ItemTemplate><DataTemplate><StackPanel Orientation="Horizontal"><TextBlock Text="{Binding Manifest.DisplayName}"/><TextBlock Text="{Binding Manifest.Version, StringFormat='  v{0}'}" Foreground="{DynamicResource Muted}"/></StackPanel></DataTemplate></ComboBox.ItemTemplate>
+            </ComboBox>
+           </StackPanel>
+          </Grid>
+          <TextBlock Text="芯片型号" Style="{StaticResource SectionLabel}"/>
+          <TextBlock x:Name="DeviceSearchHint" Text="搜索型号，例如 F103C8；封装和温度后缀可省略。" Foreground="{DynamicResource Muted}" FontSize="12" Margin="0,0,0,5"/>
+          <TextBox x:Name="DeviceSearch" ToolTip="搜索型号，例如 F103C8；封装和温度后缀可省略。" IsEnabled="False" TextChanged="DeviceSearch_TextChanged" Margin="0,0,0,6"/>
+          <ComboBox x:Name="DevicePicker" DisplayMemberPath="DisplayName" MaxDropDownHeight="300" IsEnabled="False" SelectionChanged="DevicePicker_SelectionChanged"/>
+          <TextBlock x:Name="SelectedDeviceCapability" Text="可创建和编译工程；下载与调试待实板验证，暂未启用。" Foreground="{DynamicResource Muted}" TextWrapping="Wrap" Margin="0,7,0,0" Visibility="Collapsed"/>
+          <TextBlock Text="起始模板" Style="{StaticResource SectionLabel}"/>
+          <ComboBox x:Name="TemplatePicker" DisplayMemberPath="DisplayName" IsEnabled="False" SelectionChanged="TemplatePicker_SelectionChanged"/>
+          <TextBlock Text="{Binding SelectedItem.Description, ElementName=TemplatePicker}" TextWrapping="Wrap" Foreground="{DynamicResource Muted}" Margin="0,8,0,0"/>
+          <Border x:Name="Ag32LogicModePanel" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="4" Padding="12" Margin="0,18,0,0" Visibility="Collapsed">
+           <StackPanel>
+            <CheckBox x:Name="Ag32LogicModeCheckBox" Content="启用 AG32 逻辑/Verilog 特殊模式" FontWeight="SemiBold" AutomationProperties.Name="启用 AG32 逻辑 Verilog 特殊模式"/>
+            <TextBlock Text="AG32VF303CCT6 · 2K 逻辑单元 · AGRV2KL48 / LQFP48" Foreground="{DynamicResource Muted}" Margin="22,7,0,0"/>
+            <TextBlock Text="需要 Quartus II Full 与 Supra（Supra 通常随 AgRV SDK 提供）。先用 AgRV SDK 的 Prepare LOGIC 从 .ve 生成顶层和工程，再由 Quartus II 编译成 .vo、Supra 转换为逻辑 .bin。逻辑下载需对应厂商工具与烧录器，且与 MCU 固件分开。" TextWrapping="Wrap" Foreground="{DynamicResource Muted}" Margin="22,7,0,0" LineHeight="20"/>
+           </StackPanel>
+          </Border>
+          <TextBlock Text="工程名称" Style="{StaticResource SectionLabel}"/>
+          <TextBox x:Name="ProjectName" Text="my_firmware"/>
+          <TextBlock Text="创建后自动初始化 Git 仓库；编译产物不纳入版本管理。" Foreground="{DynamicResource Muted}" Margin="0,12,0,0" TextWrapping="Wrap"/><Button x:Name="CreateProjectButton" Content="选择位置并创建工程…" Style="{StaticResource PrimaryButton}" IsEnabled="False" HorizontalAlignment="Left" Margin="0,24,0,0" Click="CreateProject_Click"/>
+          <TextBlock x:Name="PackageStatus" Text="尚未安装器件包。请导入 StudioX 格式 1 的 .mcupack。" Foreground="{DynamicResource Muted}" TextWrapping="Wrap" Margin="0,18,0,0"/>
+         </StackPanel>
+         </Grid>
+        </ScrollViewer>
+       </Border>
+      </TabItem>
+      <TabItem Header="Git 图谱" x:Name="GitGraphTab" Visibility="Collapsed"><local:GitGraphView x:Name="GitGraph"/></TabItem>
+      <TabItem Header="GitHub 协作" x:Name="GitHubWorkspaceTab" Visibility="Collapsed"><local:GitHubWorkspaceView x:Name="GitHubWorkspace"/></TabItem>
+      <TabItem Header="串口绘图" x:Name="SerialPlotTab" Visibility="Collapsed"><local:SerialPlotView x:Name="SerialPlotView"/></TabItem>
+      <TabItem Header="串口终端" x:Name="SerialTab" Visibility="Collapsed"><local:SerialTerminalView x:Name="SerialView"/></TabItem>
+      <TabItem Header="波形演示" x:Name="LabTab" Visibility="Collapsed"><Grid Background="{DynamicResource EditorSurface}"><Grid Margin="22"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition/></Grid.RowDefinitions><StackPanel><TextBlock Text="数据观察" FontSize="22" FontWeight="SemiBold"/><TextBlock Text="模拟传感器 · 温度与数字状态，真实串口将在后续接入" Foreground="{DynamicResource Muted}" Margin="0,8,0,18"/></StackPanel><StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,18"><Button x:Name="SimulationButton" Content="连接模拟设备" Click="Simulation_Click" Margin="0,0,10,0"/><Button x:Name="RecordButton" Content="开始记录" Click="Record_Click" IsEnabled="False"/><TextBlock x:Name="FrameStatus" Text="未连接" Foreground="{DynamicResource Muted}" VerticalAlignment="Center" Margin="16,0,0,0"/></StackPanel><local:SignalPlot Grid.Row="2" x:Name="Plot"/></Grid></Grid></TabItem>
+      <TabItem Header="插件与工具集" x:Name="ExtensionsTab" Visibility="Collapsed"><Border Background="{DynamicResource EditorSurface}"><ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel Margin="32,28" MaxWidth="760"><TextBlock Text="插件与工具集" FontSize="23" FontWeight="SemiBold"/><TextBlock Text="管理工作台的开发组件与数据解码扩展。" Foreground="{DynamicResource Muted}" Margin="0,8,0,16"/><TextBlock Text="内置工具" Style="{StaticResource SectionLabel}"/><Button Content="检查内置工具链" Click="VerifyTools_Click" HorizontalAlignment="Left" Margin="0,0,0,12"/><TextBox x:Name="ToolInventory" IsReadOnly="True" MinHeight="80" TextWrapping="Wrap"/><TextBlock Text="工程按器件包自动选择工具集。F7 编译；支持下载的器件包可选择 ST-Link、CMSIS-DAP 或 J-Link。已收录的 STM32F1/F4 型号可选择 ST-Link 或 DAP-Link，通过 OpenOCD 调试。AG32VF303 新版包支持官方 AGM BLASTER；也可选择 F407 离线示例预览操作。" TextWrapping="Wrap" Foreground="{DynamicResource Muted}" Margin="0,12,0,0"/><TextBlock Text="数据解码插件" Style="{StaticResource SectionLabel}"/><ComboBox x:Name="PluginPicker"/><StackPanel Orientation="Horizontal" Margin="0,14,0,12"><TextBox x:Name="PluginInput" Text="24.5,1" Width="190" Margin="0,0,12,0"/><Button Content="运行解码器" Click="Decode_Click"/></StackPanel><TextBox x:Name="PluginOutput" IsReadOnly="True" MinHeight="140" TextWrapping="Wrap"/><TextBlock Text="仅运行你信任的插件。插件具有当前用户权限。" Foreground="{DynamicResource Muted}" FontSize="12" Margin="0,16,0,0"/></StackPanel></ScrollViewer></Border></TabItem>
+     </TabControl>
+     <GridSplitter Grid.Row="1" HorizontalAlignment="Stretch" Background="{DynamicResource Background}" ResizeDirection="Rows" ResizeBehavior="PreviousAndNext"/>
+     <Grid Grid.Row="2" x:Name="BottomPanel" Background="{DynamicResource ToolSurface}"><TabControl x:Name="BottomTabs"><TabItem Header="构建"><TextBox x:Name="BuildLog" Text="构建输出将在这里显示。" Background="Transparent" BorderThickness="0" IsReadOnly="True" FontFamily="Cascadia Mono, Consolas, Microsoft YaHei UI" FontSize="12" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Padding="14,10"/></TabItem><TabItem Header="设备输出"><TextBox x:Name="DeviceLog" Text="尚未连接设备。" Background="Transparent" BorderThickness="0" IsReadOnly="True" FontFamily="Consolas" FontSize="12" VerticalScrollBarVisibility="Auto" Padding="14,10"/></TabItem><TabItem x:Name="DebugTab" Header="调试" Visibility="Collapsed"><local:DebugToolsView x:Name="DebugTools"/></TabItem><TabItem x:Name="ProjectTerminalTab" Header="终端" GotFocus="ProjectTerminalTab_GotFocus"><local:ProjectTerminalView x:Name="ProjectTerminal"/></TabItem></TabControl><Button Style="{StaticResource ToolButton}" ToolTip="隐藏工具窗口 (Alt+4)" Click="ToggleBottom_Click" HorizontalAlignment="Right" VerticalAlignment="Top"><local:Icon Kind="minus" /></Button></Grid>
+    </Grid>
+    <Border Grid.Column="4" Background="{DynamicResource ChromeSurface}" BorderBrush="{DynamicResource Border}" BorderThickness="1,0,0,0"><StackPanel><Button Style="{StaticResource RightRailButton}" ToolTip="欢迎页" Click="Welcome_Click"><local:Icon Kind="home" /></Button><Button Style="{StaticResource RightRailButton}" ToolTip="外观与背景" Click="Appearance_Click"><local:Icon Kind="image" /></Button></StackPanel></Border>
+   </Grid>
+   <Border Grid.Row="5" Background="{DynamicResource ChromeSurface}" BorderBrush="{DynamicResource Border}" BorderThickness="0,1,0,0"><DockPanel Margin="12,0"><StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center"><TextBlock Text="C / C++" FontSize="11" Foreground="{DynamicResource Muted}" Margin="16,0"/><TextBlock Text="UTF-8" FontSize="11" Foreground="{DynamicResource Muted}" Margin="12,0"/><TextBlock Text="{x:Static local:ProductInfo.DisplayName}" FontSize="11" Foreground="{DynamicResource Muted}" Margin="12,0"/></StackPanel><TextBlock x:Name="Status" Text="就绪" VerticalAlignment="Center" Foreground="{DynamicResource Muted}" FontSize="11" TextTrimming="CharacterEllipsis"/></DockPanel></Border>
+  </Grid>
+ </Grid></Border>
+</Window>

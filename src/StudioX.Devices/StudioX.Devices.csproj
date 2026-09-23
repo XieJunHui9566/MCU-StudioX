@@ -1,0 +1,4 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup><ProjectReference Include="../StudioX.Foundation/StudioX.Foundation.csproj" /></ItemGroup>
+  <ItemGroup><PackageReference Include="System.IO.Ports" /></ItemGroup>
+</Project>

@@ -1,0 +1,18 @@
+# MounRiver WCH OpenOCD target. No automatic unlock or option-byte changes.
+wlink_set_address 0x00000000
+set _CHIPNAME wch_riscv
+sdi newtap $_CHIPNAME cpu -irlen 5 -expected-id 0x00001
+set _TARGETNAME $_CHIPNAME.cpu
+target create $_TARGETNAME.0 wch_riscv -chain-position $_TARGETNAME
+$_TARGETNAME.0 configure -work-area-phys 0x20000000 -work-area-size 4096 -work-area-backup 1
+flash bank $_CHIPNAME.flash wch_riscv 0x00000000 0 0 0 $_TARGETNAME.0
+
+proc studiox_check_target {} {
+    # SDK DBGMCU_GetCHIPID: revision is in bits 7:4; preserve the part/package bits.
+    set id [expr {[lindex [read_memory 0x1ffff704 32 1] 0] & 0xffffff0f}]
+    if {@CHIP_MISMATCH@} { error "Target mismatch: expected @DEVICE_ID@" }
+    set protection [expr {[lindex [read_memory 0x1ffff800 16 1] 0] & 0xff}]
+    if {$protection != 0xa5} { error "Read protection enabled: refusing to unlock or erase" }
+    @MEMORY_GUARD@
+    echo "STUDIOX_TARGET_OK @DEVICE_ID@ ROM=@FLASH_KIB@KiB RAM=@RAM_KIB@KiB"
+}

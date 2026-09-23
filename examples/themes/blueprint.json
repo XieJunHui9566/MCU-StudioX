@@ -1,0 +1,9 @@
+{
+  "formatVersion": 1,
+  "id": "example.blueprint",
+  "displayName": "Blueprint / 蓝图",
+  "colors": {
+    "Background": "#0B172B", "Surface": "#10213A", "Panel": "#193151", "Border": "#31516F",
+    "Text": "#EEF5FF", "Muted": "#A1BDD8", "Accent": "#83C7FF", "OnAccent": "#10213A"
+  }
+}

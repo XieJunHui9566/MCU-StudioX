@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>WinExe</OutputType><TargetFramework>net10.0-windows</TargetFramework><UseWPF>true</UseWPF><AssemblyName>MCU StudioX</AssemblyName></PropertyGroup>
+  <PropertyGroup><ApplicationIcon>Assets/StudioX.ico</ApplicationIcon></PropertyGroup>
+  <ItemGroup><Resource Include="Assets/StudioX.ico" /></ItemGroup>
+  <PropertyGroup><StudioXRuntimeAssetsDirectory Condition="'$(StudioXRuntimeAssetsDirectory)' == ''">$(MSBuildThisFileDirectory)../../artifacts/tool-runtime</StudioXRuntimeAssetsDirectory></PropertyGroup>
+  <ItemGroup><ProjectReference Include="../StudioX.Application/StudioX.Application.csproj" /></ItemGroup>
+  <ItemGroup><ProjectReference Include="../StudioX.PluginHost/StudioX.PluginHost.csproj" ReferenceOutputAssembly="false" /></ItemGroup>
+  <ItemGroup><Content Include="../../examples/protocols/*.js" Link="examples/protocols/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" /></ItemGroup>
+  <ItemGroup><Content Include="../../licenses/Jint-*.txt" Link="licenses/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" /></ItemGroup>
+  <Target Name="CopyDevelopmentPluginHost" AfterTargets="Build" Condition="'$(RuntimeIdentifier)' == ''">
+    <ItemGroup><ScriptHostFiles Include="../StudioX.PluginHost/bin/$(Configuration)/net10.0/*" /></ItemGroup>
+    <Copy SourceFiles="@(ScriptHostFiles)" DestinationFolder="$(OutDir)runtime/plugin-host" SkipUnchangedFiles="true" />
+  </Target>
+  <ItemGroup><PackageReference Include="AvalonEdit" /></ItemGroup>
+  <ItemGroup><Content Include="../../artifacts/git-runtime/git/**/*" Link="runtime/git/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" /></ItemGroup>
+  <ItemGroup><Content Include="../../licenses/Git-for-Windows-NOTICE.md" Link="licenses/Git-for-Windows-NOTICE.md" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" /></ItemGroup>
+  <ItemGroup><Content Include="../../licenses/AvalonEdit-MIT.txt" Link="licenses/AvalonEdit-MIT.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" /></ItemGroup>
+  <ItemGroup><Content Include="../../licenses/System.IO.Ports-*.txt" Link="licenses/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" /></ItemGroup>
+  <ItemGroup><Content Include="../../artifacts/language-runtime/clangd/**/*" Link="runtime/languages/clangd/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" /></ItemGroup>
+  <ItemGroup><Content Include="../../artifacts/language-runtime/sysroots/**/*" Link="runtime/languages/sysroots/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" /></ItemGroup>
+  <ItemGroup><Content Include="$(StudioXRuntimeAssetsDirectory)/toolsets/**/*" Link="runtime/toolsets/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" /></ItemGroup>
+  <ItemGroup><Content Include="$(StudioXRuntimeAssetsDirectory)/stc-isp-portable-3.14.7/**/*" Link="runtime/stc-isp/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" /></ItemGroup>
+  <ItemGroup><Content Include="$(StudioXRuntimeAssetsDirectory)/THIRD-PARTY-NOTICES.txt" Link="runtime/THIRD-PARTY-NOTICES.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" Condition="Exists('$(StudioXRuntimeAssetsDirectory)/THIRD-PARTY-NOTICES.txt')" /></ItemGroup>
+</Project>

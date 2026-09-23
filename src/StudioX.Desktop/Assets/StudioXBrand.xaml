@@ -1,0 +1,52 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <!-- SX 折带：哑黑与暖金为主体，分层青蓝轮廓形成火光。 -->
+  <DrawingGroup x:Key="StudioXSXRibbon">
+    <GeometryDrawing Brush="Transparent" Geometry="M0,0 H64 V64 H0 Z"/>
+    <DrawingGroup Opacity="0.23">
+      <DrawingGroup.Transform><TranslateTransform X="2.7" Y="2.5"/></DrawingGroup.Transform>
+      <GeometryDrawing Geometry="M35,53 L58,13"><GeometryDrawing.Pen><Pen Brush="#1458BE" Thickness="13" StartLineCap="Flat" EndLineCap="Flat"/></GeometryDrawing.Pen></GeometryDrawing>
+      <GeometryDrawing Geometry="M40.5,13.5 L58.5,50.5"><GeometryDrawing.Pen><Pen Brush="#1458BE" Thickness="14" StartLineCap="Flat" EndLineCap="Flat"/></GeometryDrawing.Pen></GeometryDrawing>
+      <DrawingGroup>
+        <DrawingGroup.Transform><MatrixTransform Matrix="0.68,0,0,0.92,-0.8,2.6"/></DrawingGroup.Transform>
+        <GeometryDrawing Brush="#1458BE" Geometry="M10,18 Q10,15 12.5,12.5 L16,9.5 Q17.5,8 20,8 H53 V18 H21 Q19,18 19,20 V22 Q19,23 20,23.5 L46.5,38 38.6,43.3 14.2,29.3 Q10,27 10,23 Z"><GeometryDrawing.Pen><Pen Brush="#1458BE" Thickness="7" LineJoin="Miter"/></GeometryDrawing.Pen></GeometryDrawing>
+        <GeometryDrawing Brush="#1458BE" Geometry="M54,46 Q54,49 51.5,51.5 L48.5,54 Q47,55 44.5,55 H11 V46 H43 Q45,46 45,44 V42 Q45,41 44,40.5 L17.5,26 25.4,20.7 49.8,34.7 Q54,37 54,41 Z"><GeometryDrawing.Pen><Pen Brush="#1458BE" Thickness="7"/></GeometryDrawing.Pen></GeometryDrawing>
+      </DrawingGroup>
+    </DrawingGroup>
+    <DrawingGroup Opacity="0.42">
+      <DrawingGroup.Transform><TranslateTransform X="2.5" Y="2.3"/></DrawingGroup.Transform>
+      <GeometryDrawing Geometry="M35,53 L58,13"><GeometryDrawing.Pen><Pen Brush="#158AE2" Thickness="10.5" StartLineCap="Flat" EndLineCap="Flat"/></GeometryDrawing.Pen></GeometryDrawing>
+      <GeometryDrawing Geometry="M40.5,13.5 L58.5,50.5"><GeometryDrawing.Pen><Pen Brush="#158AE2" Thickness="11.5" StartLineCap="Flat" EndLineCap="Flat"/></GeometryDrawing.Pen></GeometryDrawing>
+      <DrawingGroup>
+        <DrawingGroup.Transform><MatrixTransform Matrix="0.68,0,0,0.92,-0.8,2.6"/></DrawingGroup.Transform>
+        <GeometryDrawing Brush="#158AE2" Geometry="M10,18 Q10,15 12.5,12.5 L16,9.5 Q17.5,8 20,8 H53 V18 H21 Q19,18 19,20 V22 Q19,23 20,23.5 L46.5,38 38.6,43.3 14.2,29.3 Q10,27 10,23 Z"><GeometryDrawing.Pen><Pen Brush="#158AE2" Thickness="5" LineJoin="Miter"/></GeometryDrawing.Pen></GeometryDrawing>
+        <GeometryDrawing Brush="#158AE2" Geometry="M54,46 Q54,49 51.5,51.5 L48.5,54 Q47,55 44.5,55 H11 V46 H43 Q45,46 45,44 V42 Q45,41 44,40.5 L17.5,26 25.4,20.7 49.8,34.7 Q54,37 54,41 Z"><GeometryDrawing.Pen><Pen Brush="#158AE2" Thickness="5"/></GeometryDrawing.Pen></GeometryDrawing>
+      </DrawingGroup>
+    </DrawingGroup>
+    <DrawingGroup Opacity="0.72">
+      <DrawingGroup.Transform><TranslateTransform X="2.2" Y="1.9"/></DrawingGroup.Transform>
+      <GeometryDrawing Geometry="M35,53 L58,13"><GeometryDrawing.Pen><Pen Brush="#6BDCF4" Thickness="8.2" StartLineCap="Flat" EndLineCap="Flat"/></GeometryDrawing.Pen></GeometryDrawing>
+      <GeometryDrawing Geometry="M40.5,13.5 L58.5,50.5"><GeometryDrawing.Pen><Pen Brush="#6BDCF4" Thickness="9.2" StartLineCap="Flat" EndLineCap="Flat"/></GeometryDrawing.Pen></GeometryDrawing>
+      <DrawingGroup>
+        <DrawingGroup.Transform><MatrixTransform Matrix="0.68,0,0,0.92,-0.8,2.6"/></DrawingGroup.Transform>
+        <GeometryDrawing Brush="#6BDCF4" Geometry="M10,18 Q10,15 12.5,12.5 L16,9.5 Q17.5,8 20,8 H53 V18 H21 Q19,18 19,20 V22 Q19,23 20,23.5 L46.5,38 38.6,43.3 14.2,29.3 Q10,27 10,23 Z"><GeometryDrawing.Pen><Pen Brush="#6BDCF4" Thickness="2.5" LineJoin="Miter"/></GeometryDrawing.Pen></GeometryDrawing>
+        <GeometryDrawing Brush="#6BDCF4" Geometry="M54,46 Q54,49 51.5,51.5 L48.5,54 Q47,55 44.5,55 H11 V46 H43 Q45,46 45,44 V42 Q45,41 44,40.5 L17.5,26 25.4,20.7 49.8,34.7 Q54,37 54,41 Z"><GeometryDrawing.Pen><Pen Brush="#6BDCF4" Thickness="2.5"/></GeometryDrawing.Pen></GeometryDrawing>
+      </DrawingGroup>
+    </DrawingGroup>
+    <GeometryDrawing Geometry="M35,53 L58,13"><GeometryDrawing.Pen><Pen Brush="#BA965C" Thickness="7.5" StartLineCap="Flat" EndLineCap="Flat"/></GeometryDrawing.Pen></GeometryDrawing>
+    <GeometryDrawing Geometry="M40.5,13.5 L58.5,50.5"><GeometryDrawing.Pen><Pen Brush="#BA965C" Thickness="9" StartLineCap="Flat" EndLineCap="Flat"/></GeometryDrawing.Pen></GeometryDrawing>
+    <GeometryDrawing Geometry="M40.5,13.5 L58.5,50.5"><GeometryDrawing.Pen><Pen Brush="#192028" Thickness="6.5" StartLineCap="Flat" EndLineCap="Flat"/></GeometryDrawing.Pen></GeometryDrawing>
+    <DrawingGroup>
+      <DrawingGroup.Transform><MatrixTransform Matrix="0.68,0,0,0.92,-0.8,2.6"/></DrawingGroup.Transform>
+      <GeometryDrawing Brush="#BA965C" Geometry="M10,18 Q10,15 12.5,12.5 L16,9.5 Q17.5,8 20,8 H53 V18 H21 Q19,18 19,20 V22 Q19,23 20,23.5 L46.5,38 38.6,43.3 14.2,29.3 Q10,27 10,23 Z"><GeometryDrawing.Pen><Pen Brush="#BA965C" Thickness="3" LineJoin="Miter"/></GeometryDrawing.Pen></GeometryDrawing>
+      <GeometryDrawing Brush="#192028" Geometry="M10,18 Q10,15 12.5,12.5 L16,9.5 Q17.5,8 20,8 H53 V18 H21 Q19,18 19,20 V22 Q19,23 20,23.5 L46.5,38 38.6,43.3 14.2,29.3 Q10,27 10,23 Z"/>
+      <GeometryDrawing Brush="#BA965C" Geometry="M54,46 Q54,49 51.5,51.5 L48.5,54 Q47,55 44.5,55 H11 V46 H43 Q45,46 45,44 V42 Q45,41 44,40.5 L17.5,26 25.4,20.7 49.8,34.7 Q54,37 54,41 Z"/>
+    </DrawingGroup>
+  </DrawingGroup>
+  <DrawingImage x:Key="StudioXMark">
+    <DrawingImage.Drawing><StaticResource ResourceKey="StudioXSXRibbon"/></DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="StudioXAppIcon">
+    <DrawingImage.Drawing><StaticResource ResourceKey="StudioXSXRibbon"/></DrawingImage.Drawing>
+  </DrawingImage>
+</ResourceDictionary>

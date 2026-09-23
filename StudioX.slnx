@@ -1,0 +1,15 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/StudioX.Foundation/StudioX.Foundation.csproj" />
+    <Project Path="src/StudioX.Packages/StudioX.Packages.csproj" />
+    <Project Path="src/StudioX.Engine/StudioX.Engine.csproj" />
+    <Project Path="src/StudioX.Devices/StudioX.Devices.csproj" />
+    <Project Path="src/StudioX.Extensions.Abstractions/StudioX.Extensions.Abstractions.csproj" />
+    <Project Path="src/StudioX.Extensions/StudioX.Extensions.csproj" />
+    <Project Path="src/StudioX.PluginHost/StudioX.PluginHost.csproj" />
+    <Project Path="src/StudioX.Application/StudioX.Application.csproj" />
+    <Project Path="src/StudioX.Desktop/StudioX.Desktop.csproj" />
+    <Project Path="src/StudioX.Cli/StudioX.Cli.csproj" />
+  </Folder>
+  <Folder Name="/examples/"><Project Path="examples/StudioX.SampleDecoder/StudioX.SampleDecoder.csproj" /></Folder>
+</Solution>

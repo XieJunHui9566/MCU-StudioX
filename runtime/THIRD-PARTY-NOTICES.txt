@@ -1,0 +1,29 @@
+MCU StudioX bundled development tools
+
+AG32: AGM AgRV GCC 11.1.0 and AGM OpenOCD package 1.0.0
+Arm: Arm GNU Toolchain 15.2.Rel1, GCC 15.2.1
+Generic RISC-V: xPack GNU RISC-V Embedded GCC 15.2.0
+WCH RISC-V: MounRiver WCH GCC12 12.2.0 v1.4, WCH OpenOCD 0.11.0+dev snapshot 2026-08-25
+Generic OpenOCD: xPack OpenOCD 0.12.0-7 (binary version recorded in provenance.json)
+Build system: CMake 4.4.0, Ninja 1.10.2
+
+Each toolset retains its distribution files, headers, runtime libraries,
+scripts and embedded notices. Additional license texts are under licenses/.
+The SHA-256 inventory covers the entire included tree, not only executables.
+
+Upstream information:
+https://gcc.gnu.org/
+https://www.mounriver.com/
+https://github.com/openwch/ch32v307
+https://developer.arm.com/downloads/-/arm-gnu-toolchain-downloads
+https://github.com/xpack-dev-tools/riscv-none-elf-gcc-xpack
+https://github.com/xpack-dev-tools/openocd-xpack
+https://openocd.org/
+https://cmake.org/
+https://github.com/ninja-build/ninja/tree/v1.10.2
+
+This is a local development bundle assembled from the machine's existing
+tool distributions. The modified AGM binaries identify themselves separately.
+For a public release, retain the corresponding vendors' source distribution
+and redistribution materials; these local binaries are not a source offer.
+MCU StudioX does not claim authorship of third-party components.

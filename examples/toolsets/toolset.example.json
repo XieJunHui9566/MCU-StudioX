@@ -1,0 +1,10 @@
+{
+  "formatVersion": 1,
+  "id": "vendor.riscv", "version": "1.0.0", "host": "win-x64", "compilerId": "vendor-riscv-gcc",
+  "executables": {
+    "gcc": "gcc/bin/riscv64-unknown-elf-gcc.exe", "gxx": "gcc/bin/riscv64-unknown-elf-g++.exe",
+    "objcopy": "gcc/bin/riscv64-unknown-elf-objcopy.exe", "size": "gcc/bin/riscv64-unknown-elf-size.exe",
+    "cmake": "cmake/bin/cmake.exe", "ninja": "ninja/ninja.exe", "openocd": "openocd/bin/openocd.exe"
+  },
+  "sha256": {}
+}

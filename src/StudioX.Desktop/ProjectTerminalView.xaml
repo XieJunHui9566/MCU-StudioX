@@ -1,0 +1,23 @@
+<UserControl x:Class="StudioX.Desktop.ProjectTerminalView" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:editor="http://icsharpcode.net/sharpdevelop/avalonedit">
+ <Grid Background="{DynamicResource EditorSurface}" Margin="0,2,0,0">
+  <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+  <DockPanel Margin="8,4">
+   <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
+    <Button Content="启动" x:Name="StartButton" Click="Start_Click" Padding="9,3" Margin="3,0"/>
+    <Button Content="中断" x:Name="InterruptButton" Click="Interrupt_Click" ToolTip="发送 Ctrl+C，中断当前命令" Padding="9,3" Margin="3,0"/>
+    <Button Content="结束" Click="Stop_Click" ToolTip="结束终端及其子进程" Padding="9,3" Margin="3,0"/>
+    <Button Content="清空历史" Click="Clear_Click" Padding="9,3" Margin="3,0"/>
+    <CheckBox x:Name="FollowCheck" Content="跟随输出" IsChecked="True" VerticalAlignment="Center" Margin="8,0"/>
+   </StackPanel>
+   <TextBlock x:Name="ProjectPath" Text="尚未打开工程" TextTrimming="CharacterEllipsis" Foreground="{DynamicResource Muted}" VerticalAlignment="Center" Margin="2,0,8,0"/>
+  </DockPanel>
+  <editor:TextEditor Grid.Row="1" x:Name="OutputEditor" IsReadOnly="True" FontFamily="Cascadia Mono, Consolas, Microsoft YaHei UI" FontSize="13" Background="Transparent" Foreground="{DynamicResource Text}" BorderThickness="0" Padding="10,4" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" AutomationProperties.Name="工程终端输出"/>
+  <DockPanel Grid.Row="2" Margin="8,4">
+   <Button DockPanel.Dock="Right" Content="输入 ↵" Click="Send_Click" Padding="12,4" Margin="8,0,0,0"/>
+   <CheckBox DockPanel.Dock="Right" Content="私密输入" x:Name="PrivateCheck" Checked="Private_Changed" Unchecked="Private_Changed" VerticalAlignment="Center" Margin="8,0" ToolTip="在程序询问密码时使用：遮挡输入框且不记录历史；终端回显由正在运行的程序决定。"/>
+   <TextBlock Text="&gt;" VerticalAlignment="Center" Foreground="{DynamicResource Accent}" Margin="2,0,8,0"/>
+   <Grid><TextBox x:Name="CommandInput" FontFamily="Cascadia Mono, Consolas, Microsoft YaHei UI" Padding="7,4" AutomationProperties.Name="工程终端命令" ToolTip="输入命令或交互回答后按 Enter；上下键浏览本次会话历史。" PreviewKeyDown="Command_KeyDown"/><PasswordBox x:Name="SecretInput" Padding="7,4" Visibility="Collapsed" PreviewKeyDown="Command_KeyDown" AutomationProperties.Name="终端私密输入"/></Grid>
+  </DockPanel>
+  <TextBlock Grid.Row="3" x:Name="TerminalStatus" Text="命令在当前工程目录运行 · git status / git add / git commit / git pull" Foreground="{DynamicResource Muted}" FontSize="11" TextTrimming="CharacterEllipsis" Margin="10,0,8,4"/>
+ </Grid>
+</UserControl>

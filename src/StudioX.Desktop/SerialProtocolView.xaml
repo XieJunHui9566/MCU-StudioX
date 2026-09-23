@@ -1,0 +1,52 @@
+<UserControl x:Class="StudioX.Desktop.SerialProtocolView" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+ <Grid Margin="0,8,0,0" Background="Transparent">
+  <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+  <WrapPanel Margin="0,0,0,6">
+   <TextBlock Text="解析器" VerticalAlignment="Center" Margin="0,0,6,0"/>
+   <ComboBox x:Name="DecoderPicker" Width="142" DisplayMemberPath="Label" SelectedValuePath="Value" SelectionChanged="Decoder_Changed" AutomationProperties.Name="协议解析器" Margin="0,0,8,0"/>
+   <ComboBox x:Name="RolePicker" Width="192" DisplayMemberPath="Label" SelectedValuePath="Value" ToolTip="指定电脑角色；只监听总线时选被动监听，部分请求和响应无法区分。" AutomationProperties.Name="Modbus 主从角色" Margin="0,0,8,0"/>
+   <TextBlock Text="空闲收尾" VerticalAlignment="Center" Margin="0,0,5,0"/><TextBox x:Name="IdleInput" Text="100" Width="48" Padding="4" Background="{DynamicResource EditorSurface}" AutomationProperties.Name="协议空闲收尾毫秒"/>
+   <TextBlock Text="ms" VerticalAlignment="Center" Margin="4,0,8,0"/>
+   <Button x:Name="ApplyButton" Content="应用 / 重载" Click="Apply_Click" Padding="8,4" Margin="0,0,8,0"/>
+   <Button Content="加载脚本…" Click="LoadScript_Click" Padding="8,4" Margin="0,0,8,0"/>
+   <Button Content="保存脚本示例…" Click="SaveExample_Click" Padding="8,4" Margin="0,0,8,0"/>
+   <Button Content="离线示例" Click="Demo_Click" Padding="8,4" ToolTip="断开串口后可用；仅向解析器输入示例，不发送到设备。"/>
+  </WrapPanel>
+  <WrapPanel Grid.Row="1" Margin="0,0,0,6">
+   <ComboBox x:Name="DirectionPicker" Width="80" SelectionChanged="Filter_Changed" AutomationProperties.Name="协议方向筛选" Margin="0,0,8,0"><ComboBoxItem Content="全部" IsSelected="True"/><ComboBoxItem Content="RX"/><ComboBoxItem Content="TX"/></ComboBox>
+   <TextBox x:Name="SearchInput" Width="164" Padding="5,3" Background="{DynamicResource EditorSurface}" TextChanged="Search_Changed" ToolTip="搜索站号、功能码、摘要或 HEX" AutomationProperties.Name="协议帧搜索" Margin="0,0,10,0"/>
+   <CheckBox x:Name="ErrorsOnly" Content="仅异常" Click="Filter_Click" VerticalAlignment="Center" Margin="0,0,10,0"/>
+   <CheckBox x:Name="FollowCheck" Content="跟随新帧" IsChecked="True" VerticalAlignment="Center" Margin="0,0,10,0"/>
+   <Button Content="清空解析" Click="Clear_Click" Padding="8,3" Margin="0,0,8,0"/><Button Content="导出解析…" Click="Export_Click" Padding="8,3"/>
+   <TextBlock x:Name="ScriptLabel" Foreground="{DynamicResource Muted}" VerticalAlignment="Center" Margin="12,0,0,0" MaxWidth="260" TextTrimming="CharacterEllipsis"/>
+  </WrapPanel>
+  <Grid Grid.Row="2">
+   <Grid.ColumnDefinitions><ColumnDefinition Width="3*" MinWidth="320"/><ColumnDefinition Width="5"/><ColumnDefinition Width="2*" MinWidth="220"/></Grid.ColumnDefinitions>
+   <DataGrid x:Name="FrameGrid" Style="{StaticResource DebugGrid}" Background="{DynamicResource EditorSurface}" SelectionChanged="Frame_Changed" SelectionMode="Single" AutomationProperties.Name="协议帧列表">
+    <DataGrid.Resources><Style TargetType="TextBlock"><Setter Property="TextTrimming" Value="CharacterEllipsis"/></Style></DataGrid.Resources>
+    <DataGrid.RowStyle><Style TargetType="DataGridRow"><Setter Property="Background" Value="Transparent"/><Setter Property="Foreground" Value="#F09C99"/><Style.Triggers>
+     <DataTrigger Binding="{Binding Status}" Value="CRC 正确"><Setter Property="Foreground" Value="#75CFAB"/></DataTrigger>
+     <DataTrigger Binding="{Binding Status}" Value="已解析"><Setter Property="Foreground" Value="#75CFAB"/></DataTrigger>
+     <DataTrigger Binding="{Binding Status}" Value="异常响应"><Setter Property="Foreground" Value="#F3BA6C"/></DataTrigger>
+     <Trigger Property="IsSelected" Value="True"><Setter Property="Background" Value="{DynamicResource Panel}"/></Trigger>
+    </Style.Triggers></Style></DataGrid.RowStyle>
+    <DataGrid.Columns>
+     <DataGridTextColumn Header="#" Binding="{Binding Sequence}" Width="42"/>
+     <DataGridTextColumn Header="宿主时间" Binding="{Binding LocalTime}" Width="98"/>
+     <DataGridTextColumn Header="方向" Binding="{Binding Direction}" Width="44"/>
+     <DataGridTextColumn Header="站号" Binding="{Binding Address}" Width="46"/>
+     <DataGridTextColumn Header="功能" Binding="{Binding Function}" Width="48"/>
+     <DataGridTextColumn Header="校验 / 状态" Binding="{Binding Status}" Width="135"/>
+     <DataGridTextColumn Header="摘要" Binding="{Binding Summary}" Width="*" MinWidth="150"/>
+    </DataGrid.Columns>
+   </DataGrid>
+   <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch" Background="{DynamicResource Border}"/>
+   <Border Grid.Column="2" Background="{DynamicResource EditorSurface}" BorderBrush="{DynamicResource Border}" BorderThickness="1" Padding="10">
+    <DockPanel><TextBlock DockPanel.Dock="Top" Text="报文详情" Foreground="{DynamicResource Accent}" Margin="0,0,0,8"/>
+     <TextBox x:Name="DetailText" Text="选择一帧查看字段、原始字节和校验结果。" IsReadOnly="True" TextWrapping="Wrap" AcceptsReturn="True" Background="Transparent" BorderThickness="0" Padding="0" VerticalScrollBarVisibility="Auto" FontFamily="Cascadia Mono, Consolas" FontSize="12" AutomationProperties.Name="协议报文详情"/>
+    </DockPanel>
+   </Border>
+  </Grid>
+  <TextBlock Grid.Row="3" x:Name="StatusText" Text="选择解析器后点击应用。解析只观察数据，不会自动发送或应答。" Foreground="{DynamicResource Muted}" Margin="0,6,0,0" TextTrimming="CharacterEllipsis"/>
+ </Grid>
+</UserControl>

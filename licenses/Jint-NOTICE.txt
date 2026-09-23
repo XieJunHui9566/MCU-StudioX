@@ -1,0 +1,14 @@
+MCU StudioX serial protocol scripting runtime
+
+Jint 4.16.3 — BSD-2-Clause
+https://github.com/sebastienros/jint
+NuGet source commit: ad07ed5cbc98376a4c48e6e63f6b119e193b09e5
+License: Jint-BSD-2-Clause.txt
+
+Acornima 1.7.0 — BSD-3-Clause (Jint dependency)
+https://github.com/adams85/acornima
+NuGet source commit: 401bd62d8aeb9f7cbe7b6147937a87e0c71747a8
+License: Jint-Acornima-BSD-3-Clause.txt
+
+The runtime executes JavaScript inside the isolated StudioX.PluginHost process.
+These packages are obtained through NuGet and redistributed with their notices.

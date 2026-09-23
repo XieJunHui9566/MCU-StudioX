@@ -1,0 +1,92 @@
+{
+  "GD32C10x": {
+    "archive": "GD32C10x_Firmware_Library-27bffbe6b94e.zip",
+    "commit": "27bffbe6b94e0250a6dbab8af48f8ca39066131e",
+    "sha256": "0c7de810d1de5edee42db6f469f1a37b0623a7653304bbcd977d6349ede8d7e0",
+    "url": "https://github.com/GigaDevice-GD32-MCU/GD32C10x_Firmware_Library/tree/27bffbe6b94e0250a6dbab8af48f8ca39066131e"
+  },
+  "GD32E10x": {
+    "archive": "GD32E10x_Firmware_Library-f5d94ecaa410.zip",
+    "commit": "f5d94ecaa41043fcd56bb4480721d950cc175d3d",
+    "sha256": "b758421592328b14a93a3116a3c3bf2ed4e708679325672d3a4452e072ed40fb",
+    "url": "https://github.com/GigaDevice-GD32-MCU/GD32E10x_Firmware_Library/tree/f5d94ecaa41043fcd56bb4480721d950cc175d3d"
+  },
+  "GD32E23x": {
+    "archive": "GD32E23x_Firmware_Library-5b0872e3097f.zip",
+    "commit": "5b0872e3097fcc3917f5da50ad56d565893771a0",
+    "sha256": "5c2308d14e3d4e9914d1dca203da443b26298d7c7e515581e3356f212a6aecee",
+    "url": "https://github.com/GigaDevice-GD32-MCU/GD32E23x_Firmware_Library/tree/5b0872e3097fcc3917f5da50ad56d565893771a0"
+  },
+  "GD32E50x": {
+    "archive": "GD32E50x_Firmware_Library-1.7.0.7z",
+    "sha256": "4add3f2a8a1e89f067107751bdac7fe40b2a4d193e7dba6c920e0310749fd10b",
+    "innerSha256": "c96cb707effeb4afe57ea5f10de69ee9a9be1bee3f0e81bdae731d4f1c7eba83",
+    "url": "https://www.gd32mcu.com/download/down/document_id/282/path_type/1",
+    "releaseVersion": "1.7.0",
+    "addonArchive": "GD32E50x_AddOn-1.9.0.7z",
+    "addonSha256": "bbfbc3651f0ddcd234b9ade3395df521458fc831b1187e2bd0391eeb92bc504f",
+    "dfpPackSha256": "34d0b1f191dc9dadf4a2e4ef7a7f1643125c909ea3142ed2ad1e77cd289c06a4",
+    "addonUrl": "https://www.gd32mcu.com/download/down/document_id/260/path_type/1",
+    "dfpVersion": "1.9.0",
+    "cmsisGccFile": "cmsis_gcc-5.2.0.h",
+    "cmsisGccSha256": "04c82786760c2347f064e5c091c10422609497ac0f57297e7b2eca06bf3a062f",
+    "cmsisGccUrl": "https://raw.githubusercontent.com/ARM-software/CMSIS_5/5.2.0/CMSIS/Core/Include/cmsis_gcc.h",
+    "cmsisMpuFile": "mpu_armv8-5.2.0.h",
+    "cmsisMpuSha256": "45795f9e43224a6814104ce0daee66005bc2b1a1fccba874ef95f744165a3504",
+    "cmsisMpuUrl": "https://raw.githubusercontent.com/ARM-software/CMSIS_5/5.2.0/CMSIS/Core/Include/mpu_armv8.h"
+  },
+  "GD32F10x": {
+    "archive": "GD32F10x_Firmware_Library-23a80f963683.zip",
+    "commit": "23a80f96368336b4d47014da33cd9b7ba550165e",
+    "sha256": "8dbccb351c7ae092c1047e4a006be672733965950eb306b3b67a44628ef80c6a",
+    "url": "https://github.com/GigaDevice-GD32-MCU/GD32F10x_Firmware_Library/tree/23a80f96368336b4d47014da33cd9b7ba550165e"
+  },
+  "GD32F1x0": {
+    "archive": "GD32F1x0_Firmware_Library-5aa55a96aef2.zip",
+    "commit": "5aa55a96aef2420309461466c48723a29f366ed0",
+    "sha256": "7cd459fcf63a748727e1c551a95d5d2925249909309a85a1eab737c4370b406d",
+    "url": "https://github.com/GigaDevice-GD32-MCU/GD32F1x0_Firmware_Library/tree/5aa55a96aef2420309461466c48723a29f366ed0"
+  },
+  "GD32F20x": {
+    "archive": "GD32F20x_Firmware_Library-8af0037e4de7.zip",
+    "commit": "8af0037e4de77b063716aaf77088f31764fea78d",
+    "sha256": "d9e649b2b4f43944243389f162b6635d853d0ebf672044a4dc90119eb31a5d4a",
+    "url": "https://github.com/GigaDevice-GD32-MCU/GD32F20x_Firmware_Library/tree/8af0037e4de77b063716aaf77088f31764fea78d"
+  },
+  "GD32F30x": {
+    "archive": "GD32F30x_Firmware_Library-c66ff9a5b43e.zip",
+    "commit": "c66ff9a5b43e1a93e1dff0b21d934f10ace90e0a",
+    "sha256": "def9f0c2eb655afcd887db99608ed2ca9b9524ef87978505f0c98ade0198088f",
+    "url": "https://github.com/GigaDevice-GD32-MCU/GD32F30x_Firmware_Library/tree/c66ff9a5b43e1a93e1dff0b21d934f10ace90e0a"
+  },
+  "GD32F3x0": {
+    "archive": "GD32F3x0_Firmware_Library-bff30ad10ebd.zip",
+    "commit": "bff30ad10ebd2ef41752b25b79360ec9fd634a80",
+    "sha256": "0a55a31b4baf9f771d76f7e3daffc0b5ca40091d8d76b9a4ed66f59d2fc40ab9",
+    "url": "https://github.com/GigaDevice-GD32-MCU/GD32F3x0_Firmware_Library/tree/bff30ad10ebd2ef41752b25b79360ec9fd634a80"
+  },
+  "GD32F403": {
+    "archive": "GD32F403_Firmware_Library-7278afc66034.zip",
+    "commit": "7278afc660348780832276e6e5c6ddb65e75ad77",
+    "sha256": "0ca88f07129017bb6001957414938e1bd5c8c3ab48c93c6a7f378aab224e0d69",
+    "url": "https://github.com/GigaDevice-GD32-MCU/GD32F403_Firmware_Library/tree/7278afc660348780832276e6e5c6ddb65e75ad77"
+  },
+  "GD32F4xx": {
+    "archive": "GD32F4xx_Firmware_Library-10d02f4c8a7e.zip",
+    "commit": "10d02f4c8a7e1d79da8b2a9ad67b534f187ec936",
+    "sha256": "66d510ab8ea2ce468ed6f0170373d7e854d95c8fc0a9ef11a076dbbdbfc12355",
+    "url": "https://github.com/GigaDevice-GD32-MCU/GD32F4xx_Firmware_Library/tree/10d02f4c8a7e1d79da8b2a9ad67b534f187ec936"
+  },
+  "GD32L23x": {
+    "archive": "GD32L23x_Firmware_Library-88070a413213.zip",
+    "commit": "88070a413213265b5e4fc6162f25f754fb912e96",
+    "sha256": "143bb979cee6e4149af2cea841b4381e9a07abe2d87c7683d8cc5469b24c993e",
+    "url": "https://github.com/GigaDevice-GD32-MCU/GD32L23x_Firmware_Library/tree/88070a413213265b5e4fc6162f25f754fb912e96"
+  },
+  "GD32VF103": {
+    "archive": "GD32VF103_Firmware_Library-908b7f3bb429.zip",
+    "commit": "908b7f3bb4292f5cf1a676fe12667467273a5b31",
+    "sha256": "6dbc69c31f6bb04b4f9611b28820081ff9d637e4def232b45f1e5a14b0d34e2f",
+    "url": "https://github.com/GigaDevice-GD32-MCU/GD32VF103_Firmware_Library/tree/908b7f3bb4292f5cf1a676fe12667467273a5b31"
+  }
+}

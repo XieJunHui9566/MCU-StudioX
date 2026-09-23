@@ -1,0 +1,33 @@
+<UserControl x:Class="StudioX.Desktop.DebugToolsView" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+ <Grid Background="{DynamicResource ToolSurface}">
+  <Grid.ColumnDefinitions><ColumnDefinition Width="0.85*" MinWidth="180"/><ColumnDefinition Width="4"/><ColumnDefinition Width="1.6*" MinWidth="300"/></Grid.ColumnDefinitions>
+  <Grid><Grid.RowDefinitions><RowDefinition Height="30"/><RowDefinition/></Grid.RowDefinitions>
+   <DockPanel Margin="10,0"><TextBlock Text="调用栈" VerticalAlignment="Center" FontWeight="SemiBold"/><TextBlock Text="双击定位 / 切换栈帧" Foreground="{DynamicResource Muted}" FontSize="11" HorizontalAlignment="Right" VerticalAlignment="Center"/></DockPanel>
+   <DataGrid x:Name="Frames" Grid.Row="1" Style="{StaticResource DebugGrid}" MouseDoubleClick="Frame_DoubleClick">
+    <DataGrid.Columns><DataGridTextColumn Header="#" Binding="{Binding Level}" Width="32"/><DataGridTextColumn Header="函数" Binding="{Binding Function}" Width="*"/><DataGridTextColumn Header="行" Binding="{Binding Line}" Width="40"/><DataGridTextColumn Header="地址" Binding="{Binding Address}" Width="100"/></DataGrid.Columns>
+   </DataGrid>
+  </Grid>
+  <GridSplitter Grid.Column="1" HorizontalAlignment="Stretch" ResizeDirection="Columns" Background="{DynamicResource Border}"/>
+  <TabControl Grid.Column="2" x:Name="DetailTabs">
+   <TabItem Header="变量观察"><Grid><Grid.RowDefinitions><RowDefinition Height="34"/><RowDefinition/></Grid.RowDefinitions>
+    <DockPanel Margin="5,2"><Button Content="添加" Padding="10,3" Click="AddWatch_Click" DockPanel.Dock="Right"/><Button Content="移除" Padding="10,3" Click="RemoveWatch_Click" DockPanel.Dock="Right" Margin="4,0"/><TextBox x:Name="WatchExpression" Text="app_counter" Padding="6,3" ToolTip="变量名、成员、固定下标或 $寄存器名" KeyDown="Watch_KeyDown"/></DockPanel>
+    <DataGrid x:Name="Watches" Grid.Row="1" Style="{StaticResource DebugGrid}"><DataGrid.Columns><DataGridTextColumn Header="表达式" Binding="{Binding Name}" Width="180"/><DataGridTextColumn Header="值" Binding="{Binding Value}" Width="*"/></DataGrid.Columns></DataGrid>
+   </Grid></TabItem>
+   <TabItem Header="局部变量"><DataGrid x:Name="Locals" Style="{StaticResource DebugGrid}"><DataGrid.Columns><DataGridTextColumn Header="名称" Binding="{Binding Name}" Width="*"/><DataGridTextColumn Header="类型" Binding="{Binding Type}" Width="120"/><DataGridTextColumn Header="值" Binding="{Binding Value}" Width="*"/></DataGrid.Columns></DataGrid></TabItem>
+   <TabItem Header="断点"><Grid><Grid.RowDefinitions><RowDefinition Height="32"/><RowDefinition/></Grid.RowDefinitions>
+    <StackPanel Orientation="Horizontal" Margin="5,2"><Button x:Name="EditBreakpoint" Content="条件 / 设置…" Padding="10,3" Click="EditBreakpoint_Click" Margin="0,0,5,0"/><Button x:Name="EnableBreakpoint" Content="启用 / 禁用" Padding="10,3" Click="EnableBreakpoint_Click"/><Button x:Name="DeleteBreakpoint" Content="删除" Padding="10,3" Margin="5,0" Click="DeleteBreakpoint_Click"/></StackPanel>
+    <DataGrid x:Name="Breakpoints" Grid.Row="1" Style="{StaticResource DebugGrid}" MouseDoubleClick="Breakpoint_DoubleClick">
+     <DataGrid.RowStyle><Style TargetType="DataGridRow"><Setter Property="Background" Value="Transparent"/><Setter Property="Foreground" Value="{DynamicResource Text}"/><Setter Property="ToolTip" Value="{Binding Details}"/><Style.Triggers><Trigger Property="IsSelected" Value="True"><Setter Property="Background" Value="{DynamicResource Panel}"/></Trigger></Style.Triggers></Style></DataGrid.RowStyle>
+     <DataGrid.Columns><DataGridCheckBoxColumn Header="启用" Binding="{Binding Enabled}" Width="40"/><DataGridTextColumn Header="类型" Binding="{Binding Kind}" Width="55"/><DataGridTextColumn Header="文件" Binding="{Binding File}" Width="*" MinWidth="70"/><DataGridTextColumn Header="行" Binding="{Binding Line}" Width="35"/><DataGridTextColumn Header="条件 / 规则" Binding="{Binding Rule}" Width="1.6*" MinWidth="115"/><DataGridTextColumn Header="到达" Binding="{Binding HitCount}" Width="45"/><DataGridTextColumn Header="状态" Binding="{Binding Status}" Width="*" MinWidth="90"/></DataGrid.Columns>
+    </DataGrid>
+   </Grid></TabItem>
+   <TabItem Header="内存"><Grid><Grid.RowDefinitions><RowDefinition Height="34"/><RowDefinition Height="24"/><RowDefinition/></Grid.RowDefinitions>
+    <DockPanel Margin="5,2"><Button x:Name="ReadMemory" Content="读取 64 字节" DockPanel.Dock="Right" Padding="10,3" Click="ReadMemory_Click"/><TextBox x:Name="MemoryAddress" Text="0x20000000" Padding="6,3" ToolTip="十六进制地址"/></DockPanel>
+    <TextBlock Grid.Row="1" Text="内存只读 · 每次读取 64 字节" Foreground="{DynamicResource Muted}" FontSize="11" Margin="9,3"/>
+    <TextBox x:Name="Memory" Grid.Row="2" IsReadOnly="True" Text="暂停后读取内存。" FontFamily="Consolas" FontSize="12" Background="Transparent" BorderThickness="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"/>
+   </Grid></TabItem>
+   <TabItem Header="断点日志"><Grid><Grid.RowDefinitions><RowDefinition Height="30"/><RowDefinition/></Grid.RowDefinitions><DockPanel Margin="7,2"><Button Content="清空" DockPanel.Dock="Right" Padding="10,2" Click="ClearBreakpointLog_Click"/><TextBlock x:Name="BreakpointLogHint" Text="日志断点输出" Foreground="{DynamicResource Muted}" VerticalAlignment="Center"/></DockPanel><TextBox x:Name="BreakpointOutput" Grid.Row="1" IsReadOnly="True" Background="Transparent" BorderThickness="0" FontFamily="Consolas" FontSize="12" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"/></Grid></TabItem>
+   <TabItem Header="调试输出"><TextBox x:Name="Output" IsReadOnly="True" Background="Transparent" BorderThickness="0" FontFamily="Consolas" FontSize="11" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"/></TabItem>
+  </TabControl>
+ </Grid>
+</UserControl>

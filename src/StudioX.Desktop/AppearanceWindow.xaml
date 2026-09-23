@@ -1,0 +1,38 @@
+<Window x:Class="StudioX.Desktop.AppearanceWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:local="clr-namespace:StudioX.Desktop"
+ Title="设置 · 外观与背景" Style="{StaticResource {x:Type Window}}" Width="840" Height="780" MinWidth="760" MinHeight="650" WindowStartupLocation="CenterOwner" ResizeMode="CanResize" ShowInTaskbar="False">
+ <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="186"/><ColumnDefinition/></Grid.ColumnDefinitions><Grid.RowDefinitions><RowDefinition/><RowDefinition Height="64"/></Grid.RowDefinitions>
+  <Border Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Border}" BorderThickness="0,0,1,0"><StackPanel Margin="16,24"><TextBlock Text="设置" FontSize="19" FontWeight="SemiBold" Margin="8,0,0,28"/><Border Background="{DynamicResource Panel}" CornerRadius="4" Padding="10"><StackPanel Orientation="Horizontal"><local:Icon Kind="image" Width="16" Height="16" Foreground="{DynamicResource Accent}" Margin="0,0,9,0"/><TextBlock Text="外观与背景"/></StackPanel></Border><TextBlock Text="工作台个性化" Foreground="{DynamicResource Muted}" FontSize="11" Margin="10,12,0,0"/></StackPanel></Border>
+  <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto"><StackPanel Margin="28,24,28,16">
+   <TextBlock Text="外观与背景" FontSize="23" FontWeight="SemiBold"/><TextBlock Text="选择界面主题，为工作台添加自己的背景。" Foreground="{DynamicResource Muted}" Margin="0,8,0,22"/>
+   <Grid><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><StackPanel><TextBlock Text="界面主题" Margin="0,0,0,8"/><ComboBox x:Name="ThemePicker" Width="230" HorizontalAlignment="Left" DisplayMemberPath="DisplayName" SelectionChanged="Settings_Changed"/></StackPanel><Button Grid.Column="1" Content="导入配色…" VerticalAlignment="Bottom" Click="ImportTheme_Click"/></Grid>
+   <Border Height="1" Background="{DynamicResource Border}" Margin="0,24,0,20"/>
+   <TextBlock Text="代码字体" FontWeight="SemiBold" Margin="0,0,0,12"/>
+   <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="230"/><ColumnDefinition/><ColumnDefinition Width="40"/></Grid.ColumnDefinitions>
+    <ComboBox x:Name="FontPicker" SelectionChanged="Settings_Changed"/>
+    <Slider x:Name="FontSizeSlider" Grid.Column="1" Minimum="10" Maximum="28" Value="14" TickFrequency="1" IsSnapToTickEnabled="True" Margin="14,0,8,0" VerticalAlignment="Center" ValueChanged="Settings_Changed"/>
+    <TextBlock Grid.Column="2" Text="{Binding Value, ElementName=FontSizeSlider, StringFormat={}{0:0} px}" VerticalAlignment="Center" Foreground="{DynamicResource Muted}"/>
+   </Grid>
+   <CheckBox x:Name="GlowCheck" Content="代码文字柔光（深色主题）" Margin="0,14,0,6" Checked="Settings_Changed" Unchecked="Settings_Changed"/>
+   <Grid Margin="0,4,0,8" IsEnabled="{Binding IsChecked, ElementName=GlowCheck}"><Grid.ColumnDefinitions><ColumnDefinition Width="72"/><ColumnDefinition/><ColumnDefinition Width="46"/></Grid.ColumnDefinitions>
+    <TextBlock Text="柔光强度" VerticalAlignment="Center" FontSize="12"/>
+    <Slider x:Name="GlowStrengthSlider" Grid.Column="1" Minimum="0" Maximum="100" Value="80" TickFrequency="5" IsSnapToTickEnabled="True" Margin="0,0,12,0" VerticalAlignment="Center" ValueChanged="Settings_Changed"/>
+    <TextBlock Grid.Column="2" Text="{Binding Value, ElementName=GlowStrengthSlider, StringFormat={}{0:0}%}" Foreground="{DynamicResource Muted}" VerticalAlignment="Center" HorizontalAlignment="Right"/>
+   </Grid>
+   <TextBlock Text="轻微同色柔光贴近字边；强度调整亮度，保持字形清晰。" Foreground="{DynamicResource Muted}" FontSize="11" TextWrapping="Wrap"/>
+   <Border Height="1" Background="{DynamicResource Border}" Margin="0,24,0,20"/>
+   <TextBlock Text="工作台背景" FontWeight="SemiBold"/><TextBlock Text="背景覆盖编辑区和工具窗口，控件与文字保持独立。" Foreground="{DynamicResource Muted}" FontSize="12" Margin="0,7,0,16"/>
+   <StackPanel Orientation="Horizontal"><Button Click="ChooseImage_Click" Margin="0,0,8,0"><StackPanel Orientation="Horizontal"><local:Icon Kind="image" Width="16" Height="16" Margin="0,0,8,0"/><TextBlock Text="选择图片…"/></StackPanel></Button><Button Click="ChooseVideo_Click" Margin="0,0,8,0"><StackPanel Orientation="Horizontal"><local:Icon Kind="video" Width="16" Height="16" Margin="0,0,8,0"/><TextBlock Text="选择视频…"/></StackPanel></Button><Button Content="清除" Click="Clear_Click"/></StackPanel>
+   <Border Background="{DynamicResource Surface}" CornerRadius="4" Padding="12,10" Margin="0,12,0,18"><StackPanel><TextBlock x:Name="MediaName" Text="未设置背景" TextTrimming="CharacterEllipsis"/><TextBlock x:Name="MediaDescription" Text="支持本地图片与视频。" Foreground="{DynamicResource Muted}" FontSize="11" Margin="0,5,0,0" TextWrapping="Wrap"/></StackPanel></Border>
+   <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="88"/><ColumnDefinition/><ColumnDefinition Width="54"/></Grid.ColumnDefinitions><Grid.RowDefinitions><RowDefinition Height="38"/><RowDefinition Height="38"/><RowDefinition Height="38"/><RowDefinition Height="42"/></Grid.RowDefinitions>
+    <TextBlock Text="背景不透明度" VerticalAlignment="Center" FontSize="12"/><Slider Grid.Column="1" x:Name="OpacitySlider" Minimum="0" Maximum="100" Value="65" VerticalAlignment="Center" ValueChanged="Settings_Changed"/><TextBlock Grid.Column="2" Text="{Binding Value, ElementName=OpacitySlider, StringFormat={}{0:0}%}" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="{DynamicResource Muted}"/>
+    <TextBlock Grid.Row="1" Text="暗色遮罩" VerticalAlignment="Center" FontSize="12"/><Slider Grid.Row="1" Grid.Column="1" x:Name="DimSlider" Minimum="0" Maximum="90" Value="15" VerticalAlignment="Center" ValueChanged="Settings_Changed"/><TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding Value, ElementName=DimSlider, StringFormat={}{0:0}%}" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="{DynamicResource Muted}"/>
+    <TextBlock Grid.Row="2" Text="背景模糊" VerticalAlignment="Center" FontSize="12"/><Slider Grid.Row="2" Grid.Column="1" x:Name="BlurSlider" Minimum="0" Maximum="20" Value="0" VerticalAlignment="Center" ValueChanged="Settings_Changed"/><TextBlock Grid.Row="2" Grid.Column="2" Text="{Binding Value, ElementName=BlurSlider, StringFormat={}{0:0} px}" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="{DynamicResource Muted}"/>
+    <TextBlock Grid.Row="3" Text="缩放方式" VerticalAlignment="Center" FontSize="12"/><ComboBox Grid.Row="3" Grid.Column="1" x:Name="FitPicker" VerticalAlignment="Center" SelectionChanged="Settings_Changed"><ComboBoxItem Content="填满工作台（居中裁剪）"/><ComboBoxItem Content="完整显示（保持比例）"/></ComboBox>
+   </Grid>
+   <CheckBox x:Name="PauseCheck" Content="窗口失去焦点时暂停视频" Margin="0,16,0,10" Checked="Settings_Changed" Unchecked="Settings_Changed"/>
+   <TextBlock Text="视频默认静音循环，最小化时自动暂停。建议使用 H.264 MP4；&#x0a;其他视频格式取决于系统解码器。图片上限 50 MiB，视频上限 512 MiB。" Foreground="{DynamicResource Muted}" FontSize="11" LineHeight="19"/>
+   <TextBlock x:Name="ErrorText" Foreground="#F08080" TextWrapping="Wrap" Margin="0,12,0,0"/>
+  </StackPanel></ScrollViewer>
+  <Border Grid.Row="1" Grid.ColumnSpan="2" Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Border}" BorderThickness="0,1,0,0"><DockPanel Margin="20,14"><StackPanel DockPanel.Dock="Right" Orientation="Horizontal"><Button x:Name="ApplyButton" Content="应用" Click="Apply_Click" MinWidth="78" Margin="0,0,10,0"/><Button x:Name="SaveButton" Content="保存并关闭" Style="{StaticResource PrimaryButton}" Click="Save_Click" Padding="14,7" Margin="0,0,10,0"/><Button Content="取消" Click="Cancel_Click" MinWidth="72" IsCancel="True"/></StackPanel><TextBlock Text="修改即时预览" Foreground="{DynamicResource Muted}" FontSize="11" VerticalAlignment="Center"/></DockPanel></Border>
+ </Grid>
+</Window>

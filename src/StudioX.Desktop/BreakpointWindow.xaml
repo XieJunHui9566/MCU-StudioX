@@ -1,0 +1,21 @@
+<Window x:Class="StudioX.Desktop.BreakpointWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+ Title="断点设置" Width="610" SizeToContent="Height" ResizeMode="NoResize" WindowStartupLocation="CenterOwner" ShowInTaskbar="False" Style="{StaticResource {x:Type Window}}">
+ <StackPanel Margin="24">
+  <TextBlock Text="断点设置" FontSize="22" FontWeight="SemiBold"/>
+  <TextBlock x:Name="LocationLabel" Foreground="{DynamicResource Muted}" Margin="0,8,0,20" TextTrimming="CharacterEllipsis"/>
+  <TextBlock Text="条件表达式（留空表示无条件）" Margin="0,0,0,7"/>
+  <TextBox x:Name="ConditionInput" FontFamily="Consolas" MaxLength="256" ToolTip="例如 app_counter &gt;= 3 或 (app_input &amp; 1) == 0"/>
+  <TextBlock Text="例如 app_counter &gt;= 3 &amp;&amp; (app_input &amp; 1) == 1" Foreground="{DynamicResource Muted}" FontSize="11" Margin="0,6,0,16"/>
+  <Grid><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="120"/></Grid.ColumnDefinitions>
+   <StackPanel><TextBlock Text="跳过前 N 次到达"/><TextBlock Text="0 表示不跳过；跳过次数用完后，再判断条件。" Foreground="{DynamicResource Muted}" FontSize="11" Margin="0,5,8,0"/></StackPanel>
+   <TextBox x:Name="IgnoreInput" Grid.Column="1" Text="0" VerticalAlignment="Center" MaxLength="7"/>
+  </Grid>
+  <CheckBox x:Name="TemporaryInput" Content="临时断点：条件满足并触发后，自动删除" Margin="0,18,0,14"/>
+  <CheckBox x:Name="LogEnabledInput" Content="日志断点：输出消息后继续运行" Checked="LogEnabled_Changed" Unchecked="LogEnabled_Changed"/>
+  <TextBox x:Name="LogInput" Margin="0,9,0,0" MaxLength="1000" FontFamily="Consolas" IsEnabled="False" Text="count={app_counter}, output={app_output}"/>
+  <TextBlock Text="用 {表达式} 插入值，{{ 和 }} 输出花括号。单步时仍会暂停。" Foreground="{DynamicResource Muted}" FontSize="11" Margin="0,6,0,0"/>
+  <Border Background="{DynamicResource Panel}" Padding="12" CornerRadius="4" Margin="0,20,0,0"><TextBlock Text="设置可组合使用。条件和日志只接受只读整数表达式；不执行赋值或函数调用。修改设置会重新计数。实机表达式由 GDB 按 C 类型求值。" TextWrapping="Wrap" Foreground="{DynamicResource Muted}" LineHeight="20"/></Border>
+  <TextBlock x:Name="ErrorLabel" Foreground="#E87979" TextWrapping="Wrap" Margin="0,10,0,0"/>
+  <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0"><Button Content="取消" IsCancel="True" MinWidth="76" Margin="0,0,10,0"/><Button Content="保存断点" IsDefault="True" MinWidth="120" Style="{StaticResource PrimaryButton}" Click="Accept_Click"/></StackPanel>
+ </StackPanel>
+</Window>

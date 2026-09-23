@@ -1,0 +1,48 @@
+<UserControl x:Class="StudioX.Desktop.SerialPlotView" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:local="clr-namespace:StudioX.Desktop">
+ <ScrollViewer x:Name="PageScroll" Margin="12,8" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+ <Grid Background="Transparent" MinHeight="550" Height="{Binding ViewportHeight, ElementName=PageScroll}">
+  <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*" MinHeight="120"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+  <DockPanel Margin="0,0,0,6"><TextBlock x:Name="ConnectionLabel" DockPanel.Dock="Right" Text="未连接" VerticalAlignment="Center" Foreground="{DynamicResource Muted}"/><StackPanel Orientation="Horizontal"><local:Icon Kind="wave" Foreground="{DynamicResource Accent}" Width="20" Height="20" Margin="0,0,8,0"/><TextBlock Text="串口绘图" FontSize="18" FontWeight="SemiBold"/></StackPanel></DockPanel>
+  <Expander Grid.Row="1" Header="连接与数据格式" Foreground="{DynamicResource Text}" IsExpanded="True" Margin="0,0,0,6">
+   <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" MaxHeight="175"><StackPanel Margin="0,6,0,4">
+    <WrapPanel x:Name="Parameters">
+     <StackPanel Width="100" Margin="0,0,8,6"><TextBlock Text="端口" Foreground="{DynamicResource Muted}"/><ComboBox x:Name="PortPicker" AutomationProperties.Name="绘图串口端口"/></StackPanel>
+     <Button Content="刷新" Click="Refresh_Click" VerticalAlignment="Bottom" Margin="0,0,10,6" Padding="7,6"/>
+     <StackPanel Width="98" Margin="0,0,8,6"><TextBlock Text="波特率" Foreground="{DynamicResource Muted}"/><TextBox x:Name="BaudInput" Text="115200" AutomationProperties.Name="绘图波特率"/></StackPanel>
+     <StackPanel Width="64" Margin="0,0,8,6"><TextBlock Text="数据位" Foreground="{DynamicResource Muted}"/><ComboBox x:Name="BitsPicker"/></StackPanel>
+     <StackPanel Width="90" Margin="0,0,8,6"><TextBlock Text="校验位" Foreground="{DynamicResource Muted}"/><ComboBox x:Name="ParityPicker" DisplayMemberPath="Label" SelectedValuePath="Value"/></StackPanel>
+     <StackPanel Width="75" Margin="0,0,8,6"><TextBlock Text="停止位" Foreground="{DynamicResource Muted}"/><ComboBox x:Name="StopPicker" DisplayMemberPath="Label" SelectedValuePath="Value"/></StackPanel>
+     <StackPanel Width="140" Margin="0,0,8,6"><TextBlock Text="流控" Foreground="{DynamicResource Muted}"/><ComboBox x:Name="FlowPicker" DisplayMemberPath="Label" SelectedValuePath="Value"/></StackPanel>
+     <CheckBox x:Name="DtrCheck" Content="DTR" VerticalAlignment="Bottom" Margin="0,0,10,14" ToolTip="部分开发板将 DTR 接到 RESET / BOOT；默认不拉高。"/>
+     <CheckBox x:Name="RtsCheck" Content="RTS" VerticalAlignment="Bottom" Margin="0,0,8,14" ToolTip="硬件流控时 RTS 由驱动接管。"/>
+    </WrapPanel>
+    <WrapPanel x:Name="FormatParameters">
+     <StackPanel Width="108" Margin="0,0,10,5"><TextBlock Text="通道分隔符" Foreground="{DynamicResource Muted}"/><TextBox x:Name="FieldInput" Text="," MaxLength="32" AutomationProperties.Name="通道分隔符" ToolTip="可输入逗号、分号、竖线、空格、多字符，或 \t 制表符。"/></StackPanel>
+     <StackPanel Width="108" Margin="0,0,10,5"><TextBlock Text="每组结束符" Foreground="{DynamicResource Muted}"/><TextBox x:Name="RecordInput" Text="\n" MaxLength="32" AutomationProperties.Name="每组结束符" ToolTip="例如 \n、\r\n、分号或自定义多字符。"/></StackPanel>
+     <StackPanel Width="126" Margin="0,0,10,5"><TextBlock Text="采样周期 (ms)" Foreground="{DynamicResource Muted}"/><TextBox x:Name="IntervalInput" Text="0" AutomationProperties.Name="绘图采样周期" ToolTip="0：电脑接收时间；大于 0：按每组固定周期计算，需与固件实际采样周期一致。"/></StackPanel>
+     <TextBlock Text="每组 1–16 个数值，首组确定通道数。&#x0a;支持负数、小数、科学计数；修改参数后重新连接。" VerticalAlignment="Center" Foreground="{DynamicResource Muted}" FontSize="11" Margin="0,0,0,5"/>
+    </WrapPanel>
+   </StackPanel></ScrollViewer>
+  </Expander>
+  <WrapPanel Grid.Row="2" Margin="0,0,0,6">
+   <Button x:Name="ConnectButton" Content="开始采集" Click="Connect_Click" Background="{DynamicResource Accent}" Foreground="{DynamicResource OnAccent}" Margin="0,0,8,4" Padding="10,5"/>
+   <Button x:Name="DemoButton" Content="演示曲线" Click="Demo_Click" Margin="0,0,8,4" Padding="8,5" ToolTip="不连接硬件，生成明确标记的三通道演示数据。"/>
+   <Button x:Name="PauseButton" Content="暂停显示" Click="Pause_Click" Margin="0,0,8,4" Padding="8,5" ToolTip="只冻结图表，后台仍然接收；最多保留最近 20000 组。"/>
+   <Button Content="清空" Click="Clear_Click" Margin="0,0,8,4" Padding="8,5"/>
+   <Button Content="导出 CSV…" Click="Export_Click" Margin="0,0,12,4" Padding="8,5" ToolTip="导出当前显示快照；含时间、通道值和断段编号。"/>
+   <CheckBox x:Name="FollowCheck" Content="跟随最新" IsChecked="True" Click="ViewOption_Click" VerticalAlignment="Center" Margin="0,0,12,4"/>
+   <CheckBox x:Name="AutoYCheck" Content="自动值域" IsChecked="True" Click="ViewOption_Click" VerticalAlignment="Center" Margin="0,0,12,4"/>
+   <Button Content="复位视图" Click="Reset_Click" Margin="0,0,8,4" Padding="8,5"/>
+   <Button Content="时间＋" Click="TimeIn_Click" Margin="0,0,4,4" Padding="7,5" ToolTip="放大时间轴"/><Button Content="时间－" Click="TimeOut_Click" Margin="0,0,8,4" Padding="7,5"/>
+   <Button Content="数值＋" Click="ValueIn_Click" Margin="0,0,4,4" Padding="7,5" ToolTip="放大数值轴"/><Button Content="数值－" Click="ValueOut_Click" Margin="0,0,0,4" Padding="7,5"/>
+  </WrapPanel>
+  <Border Grid.Row="3" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="3"><local:SerialPlotChart x:Name="Chart" AutomationProperties.Name="串口实时曲线，横轴时间，纵轴数值"/></Border>
+  <ScrollViewer Grid.Row="4" MaxHeight="70" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="0,6,0,4"><WrapPanel x:Name="Legend"/></ScrollViewer>
+  <StackPanel Grid.Row="5">
+   <TextBlock Text="Ctrl＋滚轮：图内 / 时间轴缩放时间，左侧数值轴缩放值域（Ctrl＋Shift 也可） · 拖动平移 · 双击复位" Foreground="{DynamicResource Muted}" FontSize="11" TextWrapping="Wrap"/>
+   <TextBlock x:Name="Statistics" Text="RX 0 B · 0 组" Foreground="{DynamicResource Muted}" FontSize="11" Margin="0,4,0,0" TextTrimming="CharacterEllipsis"/>
+   <TextBlock x:Name="Notice" Text="默认：4095,1024\n；接收数字文本，不解析 ANSI 控制码。" Foreground="{DynamicResource Muted}" FontSize="11" Margin="0,4,0,0" TextTrimming="CharacterEllipsis"/>
+  </StackPanel>
+ </Grid>
+ </ScrollViewer>
+</UserControl>

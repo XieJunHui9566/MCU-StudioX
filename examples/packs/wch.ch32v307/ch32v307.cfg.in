@@ -1,0 +1,21 @@
+# Target setup follows MounRiver's wch-riscv.cfg; driver and speed are supplied by StudioX.
+wlink_set_address 0x00000000
+set _CHIPNAME wch_riscv
+sdi newtap $_CHIPNAME cpu -irlen 5 -expected-id 0x00001
+set _TARGETNAME $_CHIPNAME.cpu
+target create $_TARGETNAME.0 wch_riscv -chain-position $_TARGETNAME
+$_TARGETNAME.0 configure -work-area-phys 0x20000000 -work-area-size 10000 -work-area-backup 1
+flash bank $_CHIPNAME.flash wch_riscv 0x00000000 0 0 0 $_TARGETNAME.0
+
+proc studiox_check_target {} {
+    # WCH SDK DBGMCU_GetCHIPID: bits 7:4 identify the revision, other bits identify the part.
+    set id [expr {[lindex [read_memory 0x1ffff704 32 1] 0] & 0xffffff0f}]
+    if {$id != @CHIP_ID@} { error "Target mismatch: expected @DEVICE_ID@" }
+    set protection [expr {[lindex [read_memory 0x1ffff800 16 1] 0] & 0xff}]
+    if {$protection != 0xa5} { error "Read protection enabled: refusing to unlock or erase" }
+    set user [lindex [read_memory 0x1ffff802 16 1] 0]
+    if {((($user >> 8) ^ $user) & 0xff) != 0xff} { error "Invalid option-byte complement" }
+    set mode [expr {($user >> 5) & 7}]
+    if {$mode != 4 && $mode != 5} { error "Memory split mismatch: project requires 256 KiB Flash / 64 KiB RAM; option bytes unchanged" }
+    echo "STUDIOX_TARGET_OK @DEVICE_ID@ ROM=256KiB RAM=64KiB"
+}

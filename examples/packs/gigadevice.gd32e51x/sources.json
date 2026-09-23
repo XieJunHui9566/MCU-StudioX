@@ -1,0 +1,27 @@
+{
+  "sdk": {
+    "archive": "GD32E51x_Firmware_Library-6ac63da8.zip",
+    "commit": "6ac63da8a719a4968799ef13fa525a8030f32a81",
+    "sha256": "d65b40b910fb3a124c471929ae4b6e4c491541c2e684be3c9a13efcbe5af1528",
+    "url": "https://github.com/GigaDevice-GD32-MCU/GD32E51x_Firmware_Library/tree/6ac63da8a719a4968799ef13fa525a8030f32a81"
+  },
+  "addon": {
+    "archive": "GD32E51x_AddOn-1.5.0.7z",
+    "sha256": "aa119e4fbc88dbe4ee590984c0b87c02a20afd0bf17f563a87387fd524b53848",
+    "innerSha256": "e4ea6fa2949c9fa61968fec3379d0e5e862f87faae0704b1766af86a2f639795",
+    "packSha256": "8323d924133181a68a8896757dd8a94daf0522dae9486f22050f90c0cb50c55f",
+    "pdscSha256": "79c25ab67e551b79ad2cb66d2c446c48caed98206a325e14d49ccef16dbe76b2",
+    "url": "https://www.gd32mcu.com/download/down/document_id/605/path_type/1",
+    "version": "1.5.0"
+  },
+  "cmsisGcc": {
+    "file": "cmsis_gcc-5.2.0.h",
+    "sha256": "04c82786760c2347f064e5c091c10422609497ac0f57297e7b2eca06bf3a062f",
+    "url": "https://raw.githubusercontent.com/ARM-software/CMSIS_5/5.2.0/CMSIS/Core/Include/cmsis_gcc.h"
+  },
+  "cmsisMpu": {
+    "file": "mpu_armv8-5.2.0.h",
+    "sha256": "45795f9e43224a6814104ce0daee66005bc2b1a1fccba874ef95f744165a3504",
+    "url": "https://raw.githubusercontent.com/ARM-software/CMSIS_5/5.2.0/CMSIS/Core/Include/mpu_armv8.h"
+  }
+}

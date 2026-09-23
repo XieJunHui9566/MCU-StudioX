@@ -1,0 +1,12 @@
+{
+  "series": "STM32F1",
+  "cube": "STM32CubeF1 1.8.7 (local ST Cube repository)",
+  "hal": "STM32F1 HAL 1.1.10",
+  "spl": "ST SPL 3.6.2 source files as distributed in Keil STM32F1xx_DFP 2.4.1 (DFP release notes label the library update 3.6.0)",
+  "sources": [
+    {"url": "https://www.keil.com/pack/Keil.STM32F1xx_DFP.2.4.1.pack", "sha256": "807ea15da5b172b916bbc47b2b87f1e621240ad208d38e82a417a2ef8191e9d1"},
+    {"url": "https://github.com/STMicroelectronics/STM32CubeF1/tree/v1.8.7", "role": "HAL/CMSIS upstream; local installed Cube distribution used"}
+  ],
+  "freertos": "FreeRTOS 10.3.1 from local STM32CubeF4 1.28.3, GCC ARM_CM3, heap_4",
+  "derivations": "Original vendor SDK sources. StudioX board/linker/debug/application templates; generated SPL include shim; HAL configuration and TIM2 timebase derived from ST templates. See sdkFilesSha256 for exact packaged inputs."
+}

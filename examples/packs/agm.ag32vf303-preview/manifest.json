@@ -1,0 +1,49 @@
+{
+  "formatVersion": 1,
+  "id": "studiox.preview.ag32vf303",
+  "version": "0.1.1",
+  "displayName": "AG32VF303 · 官方烧录器 / 调试预览",
+  "vendor": "AGM",
+  "devices": [
+    {
+      "id": "AG32VF303CCT6",
+      "displayName": "AG32VF303CCT6 · RISC-V · LQFP48",
+      "architecture": "riscv",
+      "flashOrigin": 2147483648,
+      "flashBytes": 262144,
+      "ramOrigin": 536870912,
+      "ramBytes": 131072,
+      "toolsetId": "agm.agrv",
+      "toolsetVersion": "1.0.0",
+      "compilerId": "agrv-gcc-11.1.0",
+      "cpuFlags": ["-march=rv32imafc", "-mabi=ilp32f", "-mcmodel=medlow"],
+      "defines": ["FLASH_BOOT", "NDEBUG"],
+      "includeDirectories": ["sdk/include", "sdk/startup"],
+      "sources": ["sdk/startup/crt.S", "sdk/startup/syscalls.c", "sdk/src/interrupt.c"],
+      "linkerScript": "linker/ag32vf303.ld",
+      "compileOptions": ["-Os", "-g3", "-ffunction-sections", "-fdata-sections", "-fno-common", "-mstrict-align", "-fsingle-precision-constant"],
+      "linkOptions": ["-static", "-nostartfiles", "--specs=nosys.specs", "-Wl,--gc-sections"],
+      "openOcd": {
+        "targetScript": "debug/ag32vf303.cfg",
+        "applicationFlashBytes": 159744,
+        "probes": [
+          { "id": "agm-blaster", "displayName": "AGM BLASTER（官方）", "interfaceScript": "interface/cmsis-dap.cfg", "transport": "swd", "defaultSpeedKhz": 1000 }
+        ]
+      },
+      "templates": [
+        {
+          "id": "editor-demo",
+          "displayName": "编辑器演示 · 注释、函数与数据结构",
+          "description": "用于测试工程创建、中文注释、代码编辑、保存和重新打开。数据在内存中生成，不假设开发板引脚。",
+          "entryFile": "templates/editor-demo/main.c"
+        },
+        {
+          "id": "minimal",
+          "displayName": "最小裸机工程 · main.c",
+          "description": "内部时钟和内存心跳计数，作为自己的应用入口。不配置 LED 或串口引脚。",
+          "entryFile": "templates/minimal/main.c"
+        }
+      ]
+    }
+  ]
+}

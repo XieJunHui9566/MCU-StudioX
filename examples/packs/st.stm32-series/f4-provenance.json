@@ -1,0 +1,14 @@
+{
+  "series": "STM32F4",
+  "cube": "STM32CubeF4 1.28.3 (local ST Cube repository)",
+  "hal": "STM32F4 HAL 1.8.5",
+  "spl": "STM32F4xx DSP Standard Peripheral Library 1.8.0",
+  "sources": [
+    {"url": "https://sourceforge.net/projects/micro-os-plus/files/Vendor%20Archives/STM32/STM32F4xx_DSP_StdPeriph_Lib_V1.8.0.zip/download", "sha256": "6c215f9847c2d7229ea6eeeb545ad27437fcc0d8c0d5a0e5d792c4aba08cbbb0", "role": "micro-OS-plus vendor archive maintained by ilg-ul; ST direct download unavailable. This is a pinned distributor copy, not an ST-published checksum."},
+    {"url": "https://www.keil.com/pack/Keil.STM32F4xx_DFP.pdsc", "sha256": "ec02212e78841a217c4e60ea8be110867f3a99080624fc68747b98697447f5a7", "version": "3.1.1", "role": "device catalog"},
+    {"url": "https://www.st.com/en/embedded-software/stsw-stm32065.html", "role": "original ST SPL product"},
+    {"url": "https://github.com/STMicroelectronics/STM32CubeF4/tree/v1.28.3", "role": "HAL/CMSIS upstream; local installed Cube distribution used"}
+  ],
+  "freertos": "FreeRTOS 10.3.1 from STM32CubeF4 1.28.3, GCC ARM_CM4F, heap_4",
+  "derivations": "Original vendor SDK sources. StudioX board/linker/debug/application templates; HAL configuration and TIM5 timebase derived from ST TIM6 template. See sdkFilesSha256 for exact packaged inputs."
+}

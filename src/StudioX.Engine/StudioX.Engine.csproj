@@ -1,0 +1,4 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup><ProjectReference Include="../StudioX.Packages/StudioX.Packages.csproj" /></ItemGroup>
+  <ItemGroup><EmbeddedResource Include="Resources/stm32-download.json" /><EmbeddedResource Include="Resources/studiox-stcgal-guard.py" /></ItemGroup>
+</Project>

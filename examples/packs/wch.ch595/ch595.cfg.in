@@ -1,0 +1,21 @@
+# CH595 target setup follows the installed MounRiver WCH OpenOCD target layout.
+# The IDE supplies the interface, transport and adapter speed.
+wlink_set_address 0x00000000
+set _CHIPNAME wch_riscv
+sdi newtap $_CHIPNAME cpu -irlen 5 -expected-id 0x00001
+set _TARGETNAME $_CHIPNAME.cpu
+target create $_TARGETNAME.0 wch_riscv -chain-position $_TARGETNAME
+$_TARGETNAME.0 configure -work-area-phys 0x20000000 -work-area-size 10000 -work-area-backup 1
+flash bank $_CHIPNAME.flash wch_riscv 0x00000000 0 0 0 $_TARGETNAME.0
+
+proc studiox_check_target {} {
+    # CH595SFR.h: R8_CHIP_ID (0x40001041) = 0x97 for CH595.
+    set chip [lindex [read_memory 0x40001041 8 1] 0]
+    if {$chip != 0x97} { error "Target mismatch: expected CH595 for @DEVICE_ID@" }
+
+    # CH595SFR.h: R8_CHIP_STATUS bit 0 reports read protection.
+    # Refuse to unlock, alter option bytes or erase when protection is present.
+    set status [lindex [read_memory 0x40001809 8 1] 0]
+    if {($status & 0x01) != 0} { error "CH595 read protection enabled: refusing to unlock or erase" }
+    echo "STUDIOX_TARGET_OK @DEVICE_ID@ ROM=240KiB RAM=32KiB"
+}

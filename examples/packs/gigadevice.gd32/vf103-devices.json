@@ -1,0 +1,16 @@
+[
+  {"id":"GD32VF103T4U6","flashKib":16,"ramKib":6,"package":"QFN36"},
+  {"id":"GD32VF103T6U6","flashKib":32,"ramKib":10,"package":"QFN36"},
+  {"id":"GD32VF103T8U6","flashKib":64,"ramKib":20,"package":"QFN36"},
+  {"id":"GD32VF103TBU6","flashKib":128,"ramKib":32,"package":"QFN36"},
+  {"id":"GD32VF103C4T6","flashKib":16,"ramKib":6,"package":"LQFP48"},
+  {"id":"GD32VF103C6T6","flashKib":32,"ramKib":10,"package":"LQFP48"},
+  {"id":"GD32VF103C8T6","flashKib":64,"ramKib":20,"package":"LQFP48"},
+  {"id":"GD32VF103CBT6","flashKib":128,"ramKib":32,"package":"LQFP48"},
+  {"id":"GD32VF103R4T6","flashKib":16,"ramKib":6,"package":"LQFP64"},
+  {"id":"GD32VF103R6T6","flashKib":32,"ramKib":10,"package":"LQFP64"},
+  {"id":"GD32VF103R8T6","flashKib":64,"ramKib":20,"package":"LQFP64"},
+  {"id":"GD32VF103RBT6","flashKib":128,"ramKib":32,"package":"LQFP64"},
+  {"id":"GD32VF103V8T6","flashKib":64,"ramKib":20,"package":"LQFP100"},
+  {"id":"GD32VF103VBT6","flashKib":128,"ramKib":32,"package":"LQFP100"}
+]

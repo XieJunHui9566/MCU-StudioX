@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType></PropertyGroup>
+  <ItemGroup><PackageReference Include="Jint" /></ItemGroup>
+  <ItemGroup><ProjectReference Include="../StudioX.Extensions/StudioX.Extensions.csproj" /></ItemGroup>
+</Project>

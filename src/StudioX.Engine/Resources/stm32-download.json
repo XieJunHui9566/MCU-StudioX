@@ -1,0 +1,2295 @@
+{
+  "sources": [
+    {
+      "file": "studiox.stm32f100-0.1.1.mcupack",
+      "sha256": "51d1339bf3832c3305531c60546b57d9571ce4d0ffcfafd8ce21fc8afea8ddaa"
+    },
+    {
+      "file": "studiox.stm32f101-0.1.1.mcupack",
+      "sha256": "99679b9e4e64534d02d38d2916bb250e0e0b654be25dd921e5506955ef1fa8b0"
+    },
+    {
+      "file": "studiox.stm32f102-0.1.1.mcupack",
+      "sha256": "edba01a310fd1ee23f20ed37e7d9a3a514060aca11fda3addfd2603967f3a52b"
+    },
+    {
+      "file": "studiox.stm32f103-0.1.1.mcupack",
+      "sha256": "808f9ed5724425b1c1191964a5954a45fa166b9d50a12065a0196b5fcf731521"
+    },
+    {
+      "file": "studiox.stm32f105-0.1.1.mcupack",
+      "sha256": "600d27ec116c3fa67a21bdef4bee03b4a85af3769b631a37db392602dc6c9df6"
+    },
+    {
+      "file": "studiox.stm32f107-0.1.1.mcupack",
+      "sha256": "807108fd202fc95cdeeb8ca8db197f5b4048044eb05d36e65c1ac6fcb3953191"
+    },
+    {
+      "file": "studiox.stm32f401-0.1.1.mcupack",
+      "sha256": "bab685194ab534cdf11a642037be5d5233c0456d45d32a71b7990be058f0dd5f"
+    },
+    {
+      "file": "studiox.stm32f405-0.1.1.mcupack",
+      "sha256": "d3c190e863efccf20ff9ea82ffa7a662ee9dc85e9f10b5b752220bbd877350d8"
+    },
+    {
+      "file": "studiox.stm32f407-0.1.1.mcupack",
+      "sha256": "61ed67eb870fd0e355a22bb7bf4d149f7ce9ccc27bdc6f614eb8567fbfae2615"
+    },
+    {
+      "file": "studiox.stm32f410-0.1.1.mcupack",
+      "sha256": "753cb7517cbe8d30f3eb92eb7767f0d28892726d02bc3ed57d4f2e2899f376ee"
+    },
+    {
+      "file": "studiox.stm32f411-0.1.1.mcupack",
+      "sha256": "11a5d41715fe6e768a401c73511259bdd3c06f7e910c76b1b75204b15bc30b3d"
+    },
+    {
+      "file": "studiox.stm32f412-0.1.1.mcupack",
+      "sha256": "ff5258d750b3df68681e93829d4b8001ccaf8582155f85699d779a4803bd28e7"
+    },
+    {
+      "file": "studiox.stm32f413-0.1.1.mcupack",
+      "sha256": "e9da50e5b6eb74be005a9505f53d619ab4c620798de52b1b1db7dbebc171d39d"
+    },
+    {
+      "file": "studiox.stm32f415-0.1.1.mcupack",
+      "sha256": "b8408e835385fd07b833c4083c06704f21405582b981533c65fa67f6eafae6e7"
+    },
+    {
+      "file": "studiox.stm32f417-0.1.1.mcupack",
+      "sha256": "ae1b3c049fa329bdfbf4dfdacbd97c226504e25b5d560c6e70ab4cd70c2c2ff0"
+    },
+    {
+      "file": "studiox.stm32f423-0.1.1.mcupack",
+      "sha256": "f1499ad2d6882f4464107a95f7df30757f4f074f762acd568a6b10b575418ed0"
+    },
+    {
+      "file": "studiox.stm32f427-0.1.1.mcupack",
+      "sha256": "b5b0affa8fda28cf356e2cedef9f838766efa5e57941bf5a92f462580f106f0d"
+    },
+    {
+      "file": "studiox.stm32f429-0.1.1.mcupack",
+      "sha256": "ab5cd7987fb0c970086527fba501ba3a148cad7c4a3ad9add3f7a17209caf0ed"
+    },
+    {
+      "file": "studiox.stm32f437-0.1.1.mcupack",
+      "sha256": "ba75bd8974647d8441531a85d998e982cdb2187128ad43789f37328eaa212eb7"
+    },
+    {
+      "file": "studiox.stm32f439-0.1.1.mcupack",
+      "sha256": "283b754c5e57fe0ce98107615d0a766ebd354b7c9c5555c9844d49d7105ca820"
+    },
+    {
+      "file": "studiox.stm32f446-0.1.1.mcupack",
+      "sha256": "9e9658e5294a9638cd1ab10ea2b6f0a1fdd341c9885a435febd642f2b0f84b1d"
+    },
+    {
+      "file": "studiox.stm32f469-0.1.1.mcupack",
+      "sha256": "0228c37c5dc69c7408c10fcab08440cf8921ec53843c73662917d8292efb125d"
+    },
+    {
+      "file": "studiox.stm32f479-0.1.1.mcupack",
+      "sha256": "a3599b7175a54090862b6d8886831e9c5c469a13f66a7c91adab6aeb2695d3fb"
+    }
+  ],
+  "formatVersion": 1,
+  "devices": [
+    {
+      "id": "STM32F100C4",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 16384,
+      "ramOrigin": 536870912,
+      "ramBytes": 4096,
+      "targetScript": "# STM32F100C4：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x420 || $kb != 16} {\n        error \"Expected STM32F100C4 (device ID 0x420, 16 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F100C6",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 32768,
+      "ramOrigin": 536870912,
+      "ramBytes": 4096,
+      "targetScript": "# STM32F100C6：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x420 || $kb != 32} {\n        error \"Expected STM32F100C6 (device ID 0x420, 32 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F100C8",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 65536,
+      "ramOrigin": 536870912,
+      "ramBytes": 8192,
+      "targetScript": "# STM32F100C8：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x420 || $kb != 64} {\n        error \"Expected STM32F100C8 (device ID 0x420, 64 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F100CB",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 131072,
+      "ramOrigin": 536870912,
+      "ramBytes": 8192,
+      "targetScript": "# STM32F100CB：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x420 || $kb != 128} {\n        error \"Expected STM32F100CB (device ID 0x420, 128 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F100R4",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 16384,
+      "ramOrigin": 536870912,
+      "ramBytes": 4096,
+      "targetScript": "# STM32F100R4：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x420 || $kb != 16} {\n        error \"Expected STM32F100R4 (device ID 0x420, 16 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F100R6",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 32768,
+      "ramOrigin": 536870912,
+      "ramBytes": 4096,
+      "targetScript": "# STM32F100R6：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x420 || $kb != 32} {\n        error \"Expected STM32F100R6 (device ID 0x420, 32 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F100R8",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 65536,
+      "ramOrigin": 536870912,
+      "ramBytes": 8192,
+      "targetScript": "# STM32F100R8：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x420 || $kb != 64} {\n        error \"Expected STM32F100R8 (device ID 0x420, 64 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F100RB",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 131072,
+      "ramOrigin": 536870912,
+      "ramBytes": 8192,
+      "targetScript": "# STM32F100RB：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x420 || $kb != 128} {\n        error \"Expected STM32F100RB (device ID 0x420, 128 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F100RC",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 262144,
+      "ramOrigin": 536870912,
+      "ramBytes": 24576,
+      "targetScript": "# STM32F100RC：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x428 || $kb != 256} {\n        error \"Expected STM32F100RC (device ID 0x428, 256 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F100RD",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 393216,
+      "ramOrigin": 536870912,
+      "ramBytes": 32768,
+      "targetScript": "# STM32F100RD：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x428 || $kb != 384} {\n        error \"Expected STM32F100RD (device ID 0x428, 384 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F100RE",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 524288,
+      "ramOrigin": 536870912,
+      "ramBytes": 32768,
+      "targetScript": "# STM32F100RE：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x428 || $kb != 512} {\n        error \"Expected STM32F100RE (device ID 0x428, 512 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F100V8",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 65536,
+      "ramOrigin": 536870912,
+      "ramBytes": 8192,
+      "targetScript": "# STM32F100V8：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x420 || $kb != 64} {\n        error \"Expected STM32F100V8 (device ID 0x420, 64 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F100VB",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 131072,
+      "ramOrigin": 536870912,
+      "ramBytes": 8192,
+      "targetScript": "# STM32F100VB：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x420 || $kb != 128} {\n        error \"Expected STM32F100VB (device ID 0x420, 128 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F100VC",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 262144,
+      "ramOrigin": 536870912,
+      "ramBytes": 24576,
+      "targetScript": "# STM32F100VC：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x428 || $kb != 256} {\n        error \"Expected STM32F100VC (device ID 0x428, 256 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F100VD",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 393216,
+      "ramOrigin": 536870912,
+      "ramBytes": 32768,
+      "targetScript": "# STM32F100VD：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x428 || $kb != 384} {\n        error \"Expected STM32F100VD (device ID 0x428, 384 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F100VE",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 524288,
+      "ramOrigin": 536870912,
+      "ramBytes": 32768,
+      "targetScript": "# STM32F100VE：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x428 || $kb != 512} {\n        error \"Expected STM32F100VE (device ID 0x428, 512 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F100ZC",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 262144,
+      "ramOrigin": 536870912,
+      "ramBytes": 24576,
+      "targetScript": "# STM32F100ZC：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x428 || $kb != 256} {\n        error \"Expected STM32F100ZC (device ID 0x428, 256 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F100ZD",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 393216,
+      "ramOrigin": 536870912,
+      "ramBytes": 32768,
+      "targetScript": "# STM32F100ZD：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x428 || $kb != 384} {\n        error \"Expected STM32F100ZD (device ID 0x428, 384 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F100ZE",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 524288,
+      "ramOrigin": 536870912,
+      "ramBytes": 32768,
+      "targetScript": "# STM32F100ZE：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x428 || $kb != 512} {\n        error \"Expected STM32F100ZE (device ID 0x428, 512 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F101C4",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 16384,
+      "ramOrigin": 536870912,
+      "ramBytes": 4096,
+      "targetScript": "# STM32F101C4：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x412 || $kb != 16} {\n        error \"Expected STM32F101C4 (device ID 0x412, 16 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F101C6",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 32768,
+      "ramOrigin": 536870912,
+      "ramBytes": 6144,
+      "targetScript": "# STM32F101C6：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x412 || $kb != 32} {\n        error \"Expected STM32F101C6 (device ID 0x412, 32 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F101C8",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 65536,
+      "ramOrigin": 536870912,
+      "ramBytes": 10240,
+      "targetScript": "# STM32F101C8：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x410 || $kb != 64} {\n        error \"Expected STM32F101C8 (device ID 0x410, 64 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F101CB",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 131072,
+      "ramOrigin": 536870912,
+      "ramBytes": 16384,
+      "targetScript": "# STM32F101CB：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x410 || $kb != 128} {\n        error \"Expected STM32F101CB (device ID 0x410, 128 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F101R4",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 16384,
+      "ramOrigin": 536870912,
+      "ramBytes": 4096,
+      "targetScript": "# STM32F101R4：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x412 || $kb != 16} {\n        error \"Expected STM32F101R4 (device ID 0x412, 16 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F101R6",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 32768,
+      "ramOrigin": 536870912,
+      "ramBytes": 6144,
+      "targetScript": "# STM32F101R6：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x412 || $kb != 32} {\n        error \"Expected STM32F101R6 (device ID 0x412, 32 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F101R8",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 65536,
+      "ramOrigin": 536870912,
+      "ramBytes": 10240,
+      "targetScript": "# STM32F101R8：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x410 || $kb != 64} {\n        error \"Expected STM32F101R8 (device ID 0x410, 64 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F101RB",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 131072,
+      "ramOrigin": 536870912,
+      "ramBytes": 16384,
+      "targetScript": "# STM32F101RB：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x410 || $kb != 128} {\n        error \"Expected STM32F101RB (device ID 0x410, 128 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F101RC",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 262144,
+      "ramOrigin": 536870912,
+      "ramBytes": 32768,
+      "targetScript": "# STM32F101RC：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x414 || $kb != 256} {\n        error \"Expected STM32F101RC (device ID 0x414, 256 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F101RD",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 393216,
+      "ramOrigin": 536870912,
+      "ramBytes": 49152,
+      "targetScript": "# STM32F101RD：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x414 || $kb != 384} {\n        error \"Expected STM32F101RD (device ID 0x414, 384 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F101RE",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 524288,
+      "ramOrigin": 536870912,
+      "ramBytes": 49152,
+      "targetScript": "# STM32F101RE：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x414 || $kb != 512} {\n        error \"Expected STM32F101RE (device ID 0x414, 512 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F101RF",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 786432,
+      "ramOrigin": 536870912,
+      "ramBytes": 81920,
+      "targetScript": "# STM32F101RF：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\nflash bank $_CHIPNAME.flash1 stm32f1x 0x08080000 0 0 0 $_TARGETNAME\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x430 || $kb != 768} {\n        error \"Expected STM32F101RF (device ID 0x430, 768 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F101RG",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 1048576,
+      "ramOrigin": 536870912,
+      "ramBytes": 81920,
+      "targetScript": "# STM32F101RG：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\nflash bank $_CHIPNAME.flash1 stm32f1x 0x08080000 0 0 0 $_TARGETNAME\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x430 || $kb != 1024} {\n        error \"Expected STM32F101RG (device ID 0x430, 1024 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F101T4",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 16384,
+      "ramOrigin": 536870912,
+      "ramBytes": 4096,
+      "targetScript": "# STM32F101T4：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x412 || $kb != 16} {\n        error \"Expected STM32F101T4 (device ID 0x412, 16 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F101T6",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 32768,
+      "ramOrigin": 536870912,
+      "ramBytes": 6144,
+      "targetScript": "# STM32F101T6：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x412 || $kb != 32} {\n        error \"Expected STM32F101T6 (device ID 0x412, 32 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F101T8",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 65536,
+      "ramOrigin": 536870912,
+      "ramBytes": 10240,
+      "targetScript": "# STM32F101T8：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x410 || $kb != 64} {\n        error \"Expected STM32F101T8 (device ID 0x410, 64 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F101TB",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 131072,
+      "ramOrigin": 536870912,
+      "ramBytes": 16384,
+      "targetScript": "# STM32F101TB：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x410 || $kb != 128} {\n        error \"Expected STM32F101TB (device ID 0x410, 128 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F101V8",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 65536,
+      "ramOrigin": 536870912,
+      "ramBytes": 10240,
+      "targetScript": "# STM32F101V8：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x410 || $kb != 64} {\n        error \"Expected STM32F101V8 (device ID 0x410, 64 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F101VB",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 131072,
+      "ramOrigin": 536870912,
+      "ramBytes": 16384,
+      "targetScript": "# STM32F101VB：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x410 || $kb != 128} {\n        error \"Expected STM32F101VB (device ID 0x410, 128 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F101VC",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 262144,
+      "ramOrigin": 536870912,
+      "ramBytes": 32768,
+      "targetScript": "# STM32F101VC：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x414 || $kb != 256} {\n        error \"Expected STM32F101VC (device ID 0x414, 256 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F101VD",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 393216,
+      "ramOrigin": 536870912,
+      "ramBytes": 49152,
+      "targetScript": "# STM32F101VD：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x414 || $kb != 384} {\n        error \"Expected STM32F101VD (device ID 0x414, 384 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F101VE",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 524288,
+      "ramOrigin": 536870912,
+      "ramBytes": 49152,
+      "targetScript": "# STM32F101VE：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x414 || $kb != 512} {\n        error \"Expected STM32F101VE (device ID 0x414, 512 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F101VF",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 786432,
+      "ramOrigin": 536870912,
+      "ramBytes": 81920,
+      "targetScript": "# STM32F101VF：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\nflash bank $_CHIPNAME.flash1 stm32f1x 0x08080000 0 0 0 $_TARGETNAME\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x430 || $kb != 768} {\n        error \"Expected STM32F101VF (device ID 0x430, 768 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F101VG",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 1048576,
+      "ramOrigin": 536870912,
+      "ramBytes": 81920,
+      "targetScript": "# STM32F101VG：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\nflash bank $_CHIPNAME.flash1 stm32f1x 0x08080000 0 0 0 $_TARGETNAME\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x430 || $kb != 1024} {\n        error \"Expected STM32F101VG (device ID 0x430, 1024 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F101ZC",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 262144,
+      "ramOrigin": 536870912,
+      "ramBytes": 32768,
+      "targetScript": "# STM32F101ZC：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x414 || $kb != 256} {\n        error \"Expected STM32F101ZC (device ID 0x414, 256 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F101ZD",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 393216,
+      "ramOrigin": 536870912,
+      "ramBytes": 49152,
+      "targetScript": "# STM32F101ZD：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x414 || $kb != 384} {\n        error \"Expected STM32F101ZD (device ID 0x414, 384 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F101ZE",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 524288,
+      "ramOrigin": 536870912,
+      "ramBytes": 49152,
+      "targetScript": "# STM32F101ZE：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x414 || $kb != 512} {\n        error \"Expected STM32F101ZE (device ID 0x414, 512 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F101ZF",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 786432,
+      "ramOrigin": 536870912,
+      "ramBytes": 81920,
+      "targetScript": "# STM32F101ZF：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\nflash bank $_CHIPNAME.flash1 stm32f1x 0x08080000 0 0 0 $_TARGETNAME\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x430 || $kb != 768} {\n        error \"Expected STM32F101ZF (device ID 0x430, 768 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F101ZG",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 1048576,
+      "ramOrigin": 536870912,
+      "ramBytes": 81920,
+      "targetScript": "# STM32F101ZG：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\nflash bank $_CHIPNAME.flash1 stm32f1x 0x08080000 0 0 0 $_TARGETNAME\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x430 || $kb != 1024} {\n        error \"Expected STM32F101ZG (device ID 0x430, 1024 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F102C4",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 16384,
+      "ramOrigin": 536870912,
+      "ramBytes": 4096,
+      "targetScript": "# STM32F102C4：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x412 || $kb != 16} {\n        error \"Expected STM32F102C4 (device ID 0x412, 16 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F102C6",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 32768,
+      "ramOrigin": 536870912,
+      "ramBytes": 6144,
+      "targetScript": "# STM32F102C6：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x412 || $kb != 32} {\n        error \"Expected STM32F102C6 (device ID 0x412, 32 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F102C8",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 65536,
+      "ramOrigin": 536870912,
+      "ramBytes": 10240,
+      "targetScript": "# STM32F102C8：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x410 || $kb != 64} {\n        error \"Expected STM32F102C8 (device ID 0x410, 64 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F102CB",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 131072,
+      "ramOrigin": 536870912,
+      "ramBytes": 16384,
+      "targetScript": "# STM32F102CB：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x410 || $kb != 128} {\n        error \"Expected STM32F102CB (device ID 0x410, 128 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F102R4",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 16384,
+      "ramOrigin": 536870912,
+      "ramBytes": 4096,
+      "targetScript": "# STM32F102R4：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x412 || $kb != 16} {\n        error \"Expected STM32F102R4 (device ID 0x412, 16 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F102R6",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 32768,
+      "ramOrigin": 536870912,
+      "ramBytes": 6144,
+      "targetScript": "# STM32F102R6：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x412 || $kb != 32} {\n        error \"Expected STM32F102R6 (device ID 0x412, 32 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F102R8",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 65536,
+      "ramOrigin": 536870912,
+      "ramBytes": 10240,
+      "targetScript": "# STM32F102R8：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x410 || $kb != 64} {\n        error \"Expected STM32F102R8 (device ID 0x410, 64 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F102RB",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 131072,
+      "ramOrigin": 536870912,
+      "ramBytes": 16384,
+      "targetScript": "# STM32F102RB：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x410 || $kb != 128} {\n        error \"Expected STM32F102RB (device ID 0x410, 128 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F103C4",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 16384,
+      "ramOrigin": 536870912,
+      "ramBytes": 6144,
+      "targetScript": "# STM32F103C4：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x412 || $kb != 16} {\n        error \"Expected STM32F103C4 (device ID 0x412, 16 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F103C6",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 32768,
+      "ramOrigin": 536870912,
+      "ramBytes": 10240,
+      "targetScript": "# STM32F103C6：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x412 || $kb != 32} {\n        error \"Expected STM32F103C6 (device ID 0x412, 32 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F103C8",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 65536,
+      "ramOrigin": 536870912,
+      "ramBytes": 20480,
+      "targetScript": "# STM32F103C8：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x410 || $kb != 64} {\n        error \"Expected STM32F103C8 (device ID 0x410, 64 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F103CB",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 131072,
+      "ramOrigin": 536870912,
+      "ramBytes": 20480,
+      "targetScript": "# STM32F103CB：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x410 || $kb != 128} {\n        error \"Expected STM32F103CB (device ID 0x410, 128 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F103R4",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 16384,
+      "ramOrigin": 536870912,
+      "ramBytes": 6144,
+      "targetScript": "# STM32F103R4：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x412 || $kb != 16} {\n        error \"Expected STM32F103R4 (device ID 0x412, 16 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F103R6",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 32768,
+      "ramOrigin": 536870912,
+      "ramBytes": 10240,
+      "targetScript": "# STM32F103R6：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x412 || $kb != 32} {\n        error \"Expected STM32F103R6 (device ID 0x412, 32 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F103R8",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 65536,
+      "ramOrigin": 536870912,
+      "ramBytes": 20480,
+      "targetScript": "# STM32F103R8：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x410 || $kb != 64} {\n        error \"Expected STM32F103R8 (device ID 0x410, 64 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F103RB",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 131072,
+      "ramOrigin": 536870912,
+      "ramBytes": 20480,
+      "targetScript": "# STM32F103RB：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x410 || $kb != 128} {\n        error \"Expected STM32F103RB (device ID 0x410, 128 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F103RC",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 262144,
+      "ramOrigin": 536870912,
+      "ramBytes": 49152,
+      "targetScript": "# STM32F103RC：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x414 || $kb != 256} {\n        error \"Expected STM32F103RC (device ID 0x414, 256 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F103RD",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 393216,
+      "ramOrigin": 536870912,
+      "ramBytes": 65536,
+      "targetScript": "# STM32F103RD：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x414 || $kb != 384} {\n        error \"Expected STM32F103RD (device ID 0x414, 384 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F103RE",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 524288,
+      "ramOrigin": 536870912,
+      "ramBytes": 65536,
+      "targetScript": "# STM32F103RE：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x414 || $kb != 512} {\n        error \"Expected STM32F103RE (device ID 0x414, 512 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F103RF",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 786432,
+      "ramOrigin": 536870912,
+      "ramBytes": 98304,
+      "targetScript": "# STM32F103RF：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\nflash bank $_CHIPNAME.flash1 stm32f1x 0x08080000 0 0 0 $_TARGETNAME\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x430 || $kb != 768} {\n        error \"Expected STM32F103RF (device ID 0x430, 768 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F103RG",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 1048576,
+      "ramOrigin": 536870912,
+      "ramBytes": 98304,
+      "targetScript": "# STM32F103RG：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\nflash bank $_CHIPNAME.flash1 stm32f1x 0x08080000 0 0 0 $_TARGETNAME\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x430 || $kb != 1024} {\n        error \"Expected STM32F103RG (device ID 0x430, 1024 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F103T4",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 16384,
+      "ramOrigin": 536870912,
+      "ramBytes": 6144,
+      "targetScript": "# STM32F103T4：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x412 || $kb != 16} {\n        error \"Expected STM32F103T4 (device ID 0x412, 16 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F103T6",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 32768,
+      "ramOrigin": 536870912,
+      "ramBytes": 10240,
+      "targetScript": "# STM32F103T6：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x412 || $kb != 32} {\n        error \"Expected STM32F103T6 (device ID 0x412, 32 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F103T8",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 65536,
+      "ramOrigin": 536870912,
+      "ramBytes": 20480,
+      "targetScript": "# STM32F103T8：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x410 || $kb != 64} {\n        error \"Expected STM32F103T8 (device ID 0x410, 64 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F103TB",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 131072,
+      "ramOrigin": 536870912,
+      "ramBytes": 20480,
+      "targetScript": "# STM32F103TB：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x410 || $kb != 128} {\n        error \"Expected STM32F103TB (device ID 0x410, 128 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F103V8",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 65536,
+      "ramOrigin": 536870912,
+      "ramBytes": 20480,
+      "targetScript": "# STM32F103V8：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x410 || $kb != 64} {\n        error \"Expected STM32F103V8 (device ID 0x410, 64 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F103VB",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 131072,
+      "ramOrigin": 536870912,
+      "ramBytes": 20480,
+      "targetScript": "# STM32F103VB：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x410 || $kb != 128} {\n        error \"Expected STM32F103VB (device ID 0x410, 128 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F103VC",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 262144,
+      "ramOrigin": 536870912,
+      "ramBytes": 49152,
+      "targetScript": "# STM32F103VC：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x414 || $kb != 256} {\n        error \"Expected STM32F103VC (device ID 0x414, 256 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F103VD",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 393216,
+      "ramOrigin": 536870912,
+      "ramBytes": 65536,
+      "targetScript": "# STM32F103VD：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x414 || $kb != 384} {\n        error \"Expected STM32F103VD (device ID 0x414, 384 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F103VE",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 524288,
+      "ramOrigin": 536870912,
+      "ramBytes": 65536,
+      "targetScript": "# STM32F103VE：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x414 || $kb != 512} {\n        error \"Expected STM32F103VE (device ID 0x414, 512 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F103VF",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 786432,
+      "ramOrigin": 536870912,
+      "ramBytes": 98304,
+      "targetScript": "# STM32F103VF：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\nflash bank $_CHIPNAME.flash1 stm32f1x 0x08080000 0 0 0 $_TARGETNAME\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x430 || $kb != 768} {\n        error \"Expected STM32F103VF (device ID 0x430, 768 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F103VG",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 1048576,
+      "ramOrigin": 536870912,
+      "ramBytes": 98304,
+      "targetScript": "# STM32F103VG：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\nflash bank $_CHIPNAME.flash1 stm32f1x 0x08080000 0 0 0 $_TARGETNAME\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x430 || $kb != 1024} {\n        error \"Expected STM32F103VG (device ID 0x430, 1024 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F103ZC",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 262144,
+      "ramOrigin": 536870912,
+      "ramBytes": 49152,
+      "targetScript": "# STM32F103ZC：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x414 || $kb != 256} {\n        error \"Expected STM32F103ZC (device ID 0x414, 256 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F103ZD",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 393216,
+      "ramOrigin": 536870912,
+      "ramBytes": 65536,
+      "targetScript": "# STM32F103ZD：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x414 || $kb != 384} {\n        error \"Expected STM32F103ZD (device ID 0x414, 384 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F103ZE",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 524288,
+      "ramOrigin": 536870912,
+      "ramBytes": 65536,
+      "targetScript": "# STM32F103ZE：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x414 || $kb != 512} {\n        error \"Expected STM32F103ZE (device ID 0x414, 512 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F103ZF",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 786432,
+      "ramOrigin": 536870912,
+      "ramBytes": 98304,
+      "targetScript": "# STM32F103ZF：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\nflash bank $_CHIPNAME.flash1 stm32f1x 0x08080000 0 0 0 $_TARGETNAME\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x430 || $kb != 768} {\n        error \"Expected STM32F103ZF (device ID 0x430, 768 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F103ZG",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 1048576,
+      "ramOrigin": 536870912,
+      "ramBytes": 98304,
+      "targetScript": "# STM32F103ZG：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\nflash bank $_CHIPNAME.flash1 stm32f1x 0x08080000 0 0 0 $_TARGETNAME\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x430 || $kb != 1024} {\n        error \"Expected STM32F103ZG (device ID 0x430, 1024 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F105R8",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 65536,
+      "ramOrigin": 536870912,
+      "ramBytes": 65536,
+      "targetScript": "# STM32F105R8：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x418 || $kb != 64} {\n        error \"Expected STM32F105R8 (device ID 0x418, 64 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F105RB",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 131072,
+      "ramOrigin": 536870912,
+      "ramBytes": 65536,
+      "targetScript": "# STM32F105RB：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x418 || $kb != 128} {\n        error \"Expected STM32F105RB (device ID 0x418, 128 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F105RC",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 262144,
+      "ramOrigin": 536870912,
+      "ramBytes": 65536,
+      "targetScript": "# STM32F105RC：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x418 || $kb != 256} {\n        error \"Expected STM32F105RC (device ID 0x418, 256 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F105V8",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 65536,
+      "ramOrigin": 536870912,
+      "ramBytes": 65536,
+      "targetScript": "# STM32F105V8：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x418 || $kb != 64} {\n        error \"Expected STM32F105V8 (device ID 0x418, 64 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F105VB",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 131072,
+      "ramOrigin": 536870912,
+      "ramBytes": 65536,
+      "targetScript": "# STM32F105VB：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x418 || $kb != 128} {\n        error \"Expected STM32F105VB (device ID 0x418, 128 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F105VC",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 262144,
+      "ramOrigin": 536870912,
+      "ramBytes": 65536,
+      "targetScript": "# STM32F105VC：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x418 || $kb != 256} {\n        error \"Expected STM32F105VC (device ID 0x418, 256 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F107RB",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 131072,
+      "ramOrigin": 536870912,
+      "ramBytes": 65536,
+      "targetScript": "# STM32F107RB：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x418 || $kb != 128} {\n        error \"Expected STM32F107RB (device ID 0x418, 128 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F107RC",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 262144,
+      "ramOrigin": 536870912,
+      "ramBytes": 65536,
+      "targetScript": "# STM32F107RC：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x418 || $kb != 256} {\n        error \"Expected STM32F107RC (device ID 0x418, 256 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F107VB",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 131072,
+      "ramOrigin": 536870912,
+      "ramBytes": 65536,
+      "targetScript": "# STM32F107VB：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x418 || $kb != 128} {\n        error \"Expected STM32F107VB (device ID 0x418, 128 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F107VC",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 262144,
+      "ramOrigin": 536870912,
+      "ramBytes": 65536,
+      "targetScript": "# STM32F107VC：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f1x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1ffff7e0 16 1] 0]\n    if {$id != 0x418 || $kb != 256} {\n        error \"Expected STM32F107VC (device ID 0x418, 256 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F401CB",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 131072,
+      "ramOrigin": 536870912,
+      "ramBytes": 65536,
+      "targetScript": "# STM32F401CB：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x423 || $kb != 128} {\n        error \"Expected STM32F401CB (device ID 0x423, 128 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F401RB",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 131072,
+      "ramOrigin": 536870912,
+      "ramBytes": 65536,
+      "targetScript": "# STM32F401RB：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x423 || $kb != 128} {\n        error \"Expected STM32F401RB (device ID 0x423, 128 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F401VB",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 131072,
+      "ramOrigin": 536870912,
+      "ramBytes": 65536,
+      "targetScript": "# STM32F401VB：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x423 || $kb != 128} {\n        error \"Expected STM32F401VB (device ID 0x423, 128 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F401CC",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 262144,
+      "ramOrigin": 536870912,
+      "ramBytes": 65536,
+      "targetScript": "# STM32F401CC：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x423 || $kb != 256} {\n        error \"Expected STM32F401CC (device ID 0x423, 256 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F401RC",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 262144,
+      "ramOrigin": 536870912,
+      "ramBytes": 65536,
+      "targetScript": "# STM32F401RC：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x423 || $kb != 256} {\n        error \"Expected STM32F401RC (device ID 0x423, 256 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F401VC",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 262144,
+      "ramOrigin": 536870912,
+      "ramBytes": 65536,
+      "targetScript": "# STM32F401VC：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x423 || $kb != 256} {\n        error \"Expected STM32F401VC (device ID 0x423, 256 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F401CD",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 393216,
+      "ramOrigin": 536870912,
+      "ramBytes": 98304,
+      "targetScript": "# STM32F401CD：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x433 || $kb != 384} {\n        error \"Expected STM32F401CD (device ID 0x433, 384 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F401RD",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 393216,
+      "ramOrigin": 536870912,
+      "ramBytes": 98304,
+      "targetScript": "# STM32F401RD：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x433 || $kb != 384} {\n        error \"Expected STM32F401RD (device ID 0x433, 384 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F401VD",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 393216,
+      "ramOrigin": 536870912,
+      "ramBytes": 98304,
+      "targetScript": "# STM32F401VD：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x433 || $kb != 384} {\n        error \"Expected STM32F401VD (device ID 0x433, 384 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F401CE",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 524288,
+      "ramOrigin": 536870912,
+      "ramBytes": 98304,
+      "targetScript": "# STM32F401CE：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x433 || $kb != 512} {\n        error \"Expected STM32F401CE (device ID 0x433, 512 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F401RE",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 524288,
+      "ramOrigin": 536870912,
+      "ramBytes": 98304,
+      "targetScript": "# STM32F401RE：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x433 || $kb != 512} {\n        error \"Expected STM32F401RE (device ID 0x433, 512 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F401VE",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 524288,
+      "ramOrigin": 536870912,
+      "ramBytes": 98304,
+      "targetScript": "# STM32F401VE：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x433 || $kb != 512} {\n        error \"Expected STM32F401VE (device ID 0x433, 512 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F405RG",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 1048576,
+      "ramOrigin": 536870912,
+      "ramBytes": 131072,
+      "targetScript": "# STM32F405RG：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x413 || $kb != 1024} {\n        error \"Expected STM32F405RG (device ID 0x413, 1024 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F405VG",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 1048576,
+      "ramOrigin": 536870912,
+      "ramBytes": 131072,
+      "targetScript": "# STM32F405VG：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x413 || $kb != 1024} {\n        error \"Expected STM32F405VG (device ID 0x413, 1024 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F405ZG",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 1048576,
+      "ramOrigin": 536870912,
+      "ramBytes": 131072,
+      "targetScript": "# STM32F405ZG：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x413 || $kb != 1024} {\n        error \"Expected STM32F405ZG (device ID 0x413, 1024 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F405OG",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 1048576,
+      "ramOrigin": 536870912,
+      "ramBytes": 131072,
+      "targetScript": "# STM32F405OG：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x413 || $kb != 1024} {\n        error \"Expected STM32F405OG (device ID 0x413, 1024 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F405OE",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 524288,
+      "ramOrigin": 536870912,
+      "ramBytes": 131072,
+      "targetScript": "# STM32F405OE：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x413 || $kb != 512} {\n        error \"Expected STM32F405OE (device ID 0x413, 512 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F407VG",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 1048576,
+      "ramOrigin": 536870912,
+      "ramBytes": 131072,
+      "targetScript": "# STM32F407VG：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x413 || $kb != 1024} {\n        error \"Expected STM32F407VG (device ID 0x413, 1024 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F407IG",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 1048576,
+      "ramOrigin": 536870912,
+      "ramBytes": 131072,
+      "targetScript": "# STM32F407IG：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x413 || $kb != 1024} {\n        error \"Expected STM32F407IG (device ID 0x413, 1024 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F407ZG",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 1048576,
+      "ramOrigin": 536870912,
+      "ramBytes": 131072,
+      "targetScript": "# STM32F407ZG：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x413 || $kb != 1024} {\n        error \"Expected STM32F407ZG (device ID 0x413, 1024 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F407VE",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 524288,
+      "ramOrigin": 536870912,
+      "ramBytes": 131072,
+      "targetScript": "# STM32F407VE：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x413 || $kb != 512} {\n        error \"Expected STM32F407VE (device ID 0x413, 512 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F407ZE",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 524288,
+      "ramOrigin": 536870912,
+      "ramBytes": 131072,
+      "targetScript": "# STM32F407ZE：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x413 || $kb != 512} {\n        error \"Expected STM32F407ZE (device ID 0x413, 512 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F407IE",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 524288,
+      "ramOrigin": 536870912,
+      "ramBytes": 131072,
+      "targetScript": "# STM32F407IE：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x413 || $kb != 512} {\n        error \"Expected STM32F407IE (device ID 0x413, 512 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F410CB",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 131072,
+      "ramOrigin": 536870912,
+      "ramBytes": 32768,
+      "targetScript": "# STM32F410CB：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x458 || $kb != 128} {\n        error \"Expected STM32F410CB (device ID 0x458, 128 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F410RB",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 131072,
+      "ramOrigin": 536870912,
+      "ramBytes": 32768,
+      "targetScript": "# STM32F410RB：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x458 || $kb != 128} {\n        error \"Expected STM32F410RB (device ID 0x458, 128 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F410TB",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 131072,
+      "ramOrigin": 536870912,
+      "ramBytes": 32768,
+      "targetScript": "# STM32F410TB：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x458 || $kb != 128} {\n        error \"Expected STM32F410TB (device ID 0x458, 128 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F410C8",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 65536,
+      "ramOrigin": 536870912,
+      "ramBytes": 32768,
+      "targetScript": "# STM32F410C8：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x458 || $kb != 64} {\n        error \"Expected STM32F410C8 (device ID 0x458, 64 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F410R8",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 65536,
+      "ramOrigin": 536870912,
+      "ramBytes": 32768,
+      "targetScript": "# STM32F410R8：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x458 || $kb != 64} {\n        error \"Expected STM32F410R8 (device ID 0x458, 64 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F410T8",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 65536,
+      "ramOrigin": 536870912,
+      "ramBytes": 32768,
+      "targetScript": "# STM32F410T8：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x458 || $kb != 64} {\n        error \"Expected STM32F410T8 (device ID 0x458, 64 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F411CC",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 262144,
+      "ramOrigin": 536870912,
+      "ramBytes": 131072,
+      "targetScript": "# STM32F411CC：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x431 || $kb != 256} {\n        error \"Expected STM32F411CC (device ID 0x431, 256 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F411RC",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 262144,
+      "ramOrigin": 536870912,
+      "ramBytes": 131072,
+      "targetScript": "# STM32F411RC：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x431 || $kb != 256} {\n        error \"Expected STM32F411RC (device ID 0x431, 256 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F411VC",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 262144,
+      "ramOrigin": 536870912,
+      "ramBytes": 131072,
+      "targetScript": "# STM32F411VC：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x431 || $kb != 256} {\n        error \"Expected STM32F411VC (device ID 0x431, 256 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F411CE",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 524288,
+      "ramOrigin": 536870912,
+      "ramBytes": 131072,
+      "targetScript": "# STM32F411CE：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x431 || $kb != 512} {\n        error \"Expected STM32F411CE (device ID 0x431, 512 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F411RE",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 524288,
+      "ramOrigin": 536870912,
+      "ramBytes": 131072,
+      "targetScript": "# STM32F411RE：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x431 || $kb != 512} {\n        error \"Expected STM32F411RE (device ID 0x431, 512 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F411VE",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 524288,
+      "ramOrigin": 536870912,
+      "ramBytes": 131072,
+      "targetScript": "# STM32F411VE：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x431 || $kb != 512} {\n        error \"Expected STM32F411VE (device ID 0x431, 512 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F412CE",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 524288,
+      "ramOrigin": 536870912,
+      "ramBytes": 262144,
+      "targetScript": "# STM32F412CE：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x441 || $kb != 512} {\n        error \"Expected STM32F412CE (device ID 0x441, 512 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F412CG",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 1048576,
+      "ramOrigin": 536870912,
+      "ramBytes": 262144,
+      "targetScript": "# STM32F412CG：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x441 || $kb != 1024} {\n        error \"Expected STM32F412CG (device ID 0x441, 1024 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F412RE",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 524288,
+      "ramOrigin": 536870912,
+      "ramBytes": 262144,
+      "targetScript": "# STM32F412RE：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x441 || $kb != 512} {\n        error \"Expected STM32F412RE (device ID 0x441, 512 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F412RG",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 1048576,
+      "ramOrigin": 536870912,
+      "ramBytes": 262144,
+      "targetScript": "# STM32F412RG：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x441 || $kb != 1024} {\n        error \"Expected STM32F412RG (device ID 0x441, 1024 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F412VE",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 524288,
+      "ramOrigin": 536870912,
+      "ramBytes": 262144,
+      "targetScript": "# STM32F412VE：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x441 || $kb != 512} {\n        error \"Expected STM32F412VE (device ID 0x441, 512 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F412VG",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 1048576,
+      "ramOrigin": 536870912,
+      "ramBytes": 262144,
+      "targetScript": "# STM32F412VG：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x441 || $kb != 1024} {\n        error \"Expected STM32F412VG (device ID 0x441, 1024 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F412ZE",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 524288,
+      "ramOrigin": 536870912,
+      "ramBytes": 262144,
+      "targetScript": "# STM32F412ZE：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x441 || $kb != 512} {\n        error \"Expected STM32F412ZE (device ID 0x441, 512 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F412ZG",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 1048576,
+      "ramOrigin": 536870912,
+      "ramBytes": 262144,
+      "targetScript": "# STM32F412ZG：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x441 || $kb != 1024} {\n        error \"Expected STM32F412ZG (device ID 0x441, 1024 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F413ZH",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 1572864,
+      "ramOrigin": 536870912,
+      "ramBytes": 327680,
+      "targetScript": "# STM32F413ZH：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x463 || $kb != 1536} {\n        error \"Expected STM32F413ZH (device ID 0x463, 1536 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F413CH",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 1572864,
+      "ramOrigin": 536870912,
+      "ramBytes": 327680,
+      "targetScript": "# STM32F413CH：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x463 || $kb != 1536} {\n        error \"Expected STM32F413CH (device ID 0x463, 1536 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F413RH",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 1572864,
+      "ramOrigin": 536870912,
+      "ramBytes": 327680,
+      "targetScript": "# STM32F413RH：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x463 || $kb != 1536} {\n        error \"Expected STM32F413RH (device ID 0x463, 1536 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F413VH",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 1572864,
+      "ramOrigin": 536870912,
+      "ramBytes": 327680,
+      "targetScript": "# STM32F413VH：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x463 || $kb != 1536} {\n        error \"Expected STM32F413VH (device ID 0x463, 1536 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F413MH",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 1572864,
+      "ramOrigin": 536870912,
+      "ramBytes": 327680,
+      "targetScript": "# STM32F413MH：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x463 || $kb != 1536} {\n        error \"Expected STM32F413MH (device ID 0x463, 1536 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F413ZG",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 1048576,
+      "ramOrigin": 536870912,
+      "ramBytes": 327680,
+      "targetScript": "# STM32F413ZG：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x463 || $kb != 1024} {\n        error \"Expected STM32F413ZG (device ID 0x463, 1024 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F413CG",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 1048576,
+      "ramOrigin": 536870912,
+      "ramBytes": 327680,
+      "targetScript": "# STM32F413CG：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x463 || $kb != 1024} {\n        error \"Expected STM32F413CG (device ID 0x463, 1024 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F413RG",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 1048576,
+      "ramOrigin": 536870912,
+      "ramBytes": 327680,
+      "targetScript": "# STM32F413RG：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x463 || $kb != 1024} {\n        error \"Expected STM32F413RG (device ID 0x463, 1024 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F413VG",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 1048576,
+      "ramOrigin": 536870912,
+      "ramBytes": 327680,
+      "targetScript": "# STM32F413VG：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x463 || $kb != 1024} {\n        error \"Expected STM32F413VG (device ID 0x463, 1024 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F413MG",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 1048576,
+      "ramOrigin": 536870912,
+      "ramBytes": 327680,
+      "targetScript": "# STM32F413MG：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x463 || $kb != 1024} {\n        error \"Expected STM32F413MG (device ID 0x463, 1024 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F415RG",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 1048576,
+      "ramOrigin": 536870912,
+      "ramBytes": 131072,
+      "targetScript": "# STM32F415RG：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x413 || $kb != 1024} {\n        error \"Expected STM32F415RG (device ID 0x413, 1024 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F415VG",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 1048576,
+      "ramOrigin": 536870912,
+      "ramBytes": 131072,
+      "targetScript": "# STM32F415VG：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x413 || $kb != 1024} {\n        error \"Expected STM32F415VG (device ID 0x413, 1024 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F415ZG",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 1048576,
+      "ramOrigin": 536870912,
+      "ramBytes": 131072,
+      "targetScript": "# STM32F415ZG：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x413 || $kb != 1024} {\n        error \"Expected STM32F415ZG (device ID 0x413, 1024 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F415OG",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 1048576,
+      "ramOrigin": 536870912,
+      "ramBytes": 131072,
+      "targetScript": "# STM32F415OG：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x413 || $kb != 1024} {\n        error \"Expected STM32F415OG (device ID 0x413, 1024 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F417VG",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 1048576,
+      "ramOrigin": 536870912,
+      "ramBytes": 131072,
+      "targetScript": "# STM32F417VG：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x413 || $kb != 1024} {\n        error \"Expected STM32F417VG (device ID 0x413, 1024 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F417IG",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 1048576,
+      "ramOrigin": 536870912,
+      "ramBytes": 131072,
+      "targetScript": "# STM32F417IG：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x413 || $kb != 1024} {\n        error \"Expected STM32F417IG (device ID 0x413, 1024 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F417ZG",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 1048576,
+      "ramOrigin": 536870912,
+      "ramBytes": 131072,
+      "targetScript": "# STM32F417ZG：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x413 || $kb != 1024} {\n        error \"Expected STM32F417ZG (device ID 0x413, 1024 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F417VE",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 524288,
+      "ramOrigin": 536870912,
+      "ramBytes": 131072,
+      "targetScript": "# STM32F417VE：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x413 || $kb != 512} {\n        error \"Expected STM32F417VE (device ID 0x413, 512 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F417ZE",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 524288,
+      "ramOrigin": 536870912,
+      "ramBytes": 131072,
+      "targetScript": "# STM32F417ZE：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x413 || $kb != 512} {\n        error \"Expected STM32F417ZE (device ID 0x413, 512 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F417IE",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 524288,
+      "ramOrigin": 536870912,
+      "ramBytes": 131072,
+      "targetScript": "# STM32F417IE：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x413 || $kb != 512} {\n        error \"Expected STM32F417IE (device ID 0x413, 512 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F423ZH",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 1572864,
+      "ramOrigin": 536870912,
+      "ramBytes": 327680,
+      "targetScript": "# STM32F423ZH：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x463 || $kb != 1536} {\n        error \"Expected STM32F423ZH (device ID 0x463, 1536 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F423CH",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 1572864,
+      "ramOrigin": 536870912,
+      "ramBytes": 327680,
+      "targetScript": "# STM32F423CH：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x463 || $kb != 1536} {\n        error \"Expected STM32F423CH (device ID 0x463, 1536 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F423RH",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 1572864,
+      "ramOrigin": 536870912,
+      "ramBytes": 327680,
+      "targetScript": "# STM32F423RH：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x463 || $kb != 1536} {\n        error \"Expected STM32F423RH (device ID 0x463, 1536 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F423VH",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 1572864,
+      "ramOrigin": 536870912,
+      "ramBytes": 327680,
+      "targetScript": "# STM32F423VH：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x463 || $kb != 1536} {\n        error \"Expected STM32F423VH (device ID 0x463, 1536 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F423MH",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 1572864,
+      "ramOrigin": 536870912,
+      "ramBytes": 327680,
+      "targetScript": "# STM32F423MH：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x463 || $kb != 1536} {\n        error \"Expected STM32F423MH (device ID 0x463, 1536 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F427AG",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 1048576,
+      "ramOrigin": 536870912,
+      "ramBytes": 196608,
+      "targetScript": "# STM32F427AG：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x419 || $kb != 1024} {\n        error \"Expected STM32F427AG (device ID 0x419, 1024 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F427VG",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 1048576,
+      "ramOrigin": 536870912,
+      "ramBytes": 196608,
+      "targetScript": "# STM32F427VG：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x419 || $kb != 1024} {\n        error \"Expected STM32F427VG (device ID 0x419, 1024 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F427ZG",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 1048576,
+      "ramOrigin": 536870912,
+      "ramBytes": 196608,
+      "targetScript": "# STM32F427ZG：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x419 || $kb != 1024} {\n        error \"Expected STM32F427ZG (device ID 0x419, 1024 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F427IG",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 1048576,
+      "ramOrigin": 536870912,
+      "ramBytes": 196608,
+      "targetScript": "# STM32F427IG：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x419 || $kb != 1024} {\n        error \"Expected STM32F427IG (device ID 0x419, 1024 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F427AI",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 2097152,
+      "ramOrigin": 536870912,
+      "ramBytes": 196608,
+      "targetScript": "# STM32F427AI：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x419 || $kb != 2048} {\n        error \"Expected STM32F427AI (device ID 0x419, 2048 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F427VI",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 2097152,
+      "ramOrigin": 536870912,
+      "ramBytes": 196608,
+      "targetScript": "# STM32F427VI：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x419 || $kb != 2048} {\n        error \"Expected STM32F427VI (device ID 0x419, 2048 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F427ZI",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 2097152,
+      "ramOrigin": 536870912,
+      "ramBytes": 196608,
+      "targetScript": "# STM32F427ZI：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x419 || $kb != 2048} {\n        error \"Expected STM32F427ZI (device ID 0x419, 2048 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F427II",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 2097152,
+      "ramOrigin": 536870912,
+      "ramBytes": 196608,
+      "targetScript": "# STM32F427II：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x419 || $kb != 2048} {\n        error \"Expected STM32F427II (device ID 0x419, 2048 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F429AG",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 1048576,
+      "ramOrigin": 536870912,
+      "ramBytes": 196608,
+      "targetScript": "# STM32F429AG：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x419 || $kb != 1024} {\n        error \"Expected STM32F429AG (device ID 0x419, 1024 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F429VG",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 1048576,
+      "ramOrigin": 536870912,
+      "ramBytes": 196608,
+      "targetScript": "# STM32F429VG：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x419 || $kb != 1024} {\n        error \"Expected STM32F429VG (device ID 0x419, 1024 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F429ZG",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 1048576,
+      "ramOrigin": 536870912,
+      "ramBytes": 196608,
+      "targetScript": "# STM32F429ZG：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x419 || $kb != 1024} {\n        error \"Expected STM32F429ZG (device ID 0x419, 1024 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F429IG",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 1048576,
+      "ramOrigin": 536870912,
+      "ramBytes": 196608,
+      "targetScript": "# STM32F429IG：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x419 || $kb != 1024} {\n        error \"Expected STM32F429IG (device ID 0x419, 1024 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F429AI",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 2097152,
+      "ramOrigin": 536870912,
+      "ramBytes": 196608,
+      "targetScript": "# STM32F429AI：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x419 || $kb != 2048} {\n        error \"Expected STM32F429AI (device ID 0x419, 2048 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F429VI",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 2097152,
+      "ramOrigin": 536870912,
+      "ramBytes": 196608,
+      "targetScript": "# STM32F429VI：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x419 || $kb != 2048} {\n        error \"Expected STM32F429VI (device ID 0x419, 2048 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F429ZI",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 2097152,
+      "ramOrigin": 536870912,
+      "ramBytes": 196608,
+      "targetScript": "# STM32F429ZI：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x419 || $kb != 2048} {\n        error \"Expected STM32F429ZI (device ID 0x419, 2048 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F429II",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 2097152,
+      "ramOrigin": 536870912,
+      "ramBytes": 196608,
+      "targetScript": "# STM32F429II：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x419 || $kb != 2048} {\n        error \"Expected STM32F429II (device ID 0x419, 2048 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F429VE",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 524288,
+      "ramOrigin": 536870912,
+      "ramBytes": 196608,
+      "targetScript": "# STM32F429VE：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x419 || $kb != 512} {\n        error \"Expected STM32F429VE (device ID 0x419, 512 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F429ZE",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 524288,
+      "ramOrigin": 536870912,
+      "ramBytes": 196608,
+      "targetScript": "# STM32F429ZE：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x419 || $kb != 512} {\n        error \"Expected STM32F429ZE (device ID 0x419, 512 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F429IE",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 524288,
+      "ramOrigin": 536870912,
+      "ramBytes": 196608,
+      "targetScript": "# STM32F429IE：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x419 || $kb != 512} {\n        error \"Expected STM32F429IE (device ID 0x419, 512 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F429BG",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 1048576,
+      "ramOrigin": 536870912,
+      "ramBytes": 196608,
+      "targetScript": "# STM32F429BG：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x419 || $kb != 1024} {\n        error \"Expected STM32F429BG (device ID 0x419, 1024 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F429BI",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 2097152,
+      "ramOrigin": 536870912,
+      "ramBytes": 196608,
+      "targetScript": "# STM32F429BI：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x419 || $kb != 2048} {\n        error \"Expected STM32F429BI (device ID 0x419, 2048 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F429BE",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 524288,
+      "ramOrigin": 536870912,
+      "ramBytes": 196608,
+      "targetScript": "# STM32F429BE：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x419 || $kb != 512} {\n        error \"Expected STM32F429BE (device ID 0x419, 512 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F429NG",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 1048576,
+      "ramOrigin": 536870912,
+      "ramBytes": 196608,
+      "targetScript": "# STM32F429NG：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x419 || $kb != 1024} {\n        error \"Expected STM32F429NG (device ID 0x419, 1024 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F429NI",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 2097152,
+      "ramOrigin": 536870912,
+      "ramBytes": 196608,
+      "targetScript": "# STM32F429NI：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x419 || $kb != 2048} {\n        error \"Expected STM32F429NI (device ID 0x419, 2048 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F429NE",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 524288,
+      "ramOrigin": 536870912,
+      "ramBytes": 196608,
+      "targetScript": "# STM32F429NE：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x419 || $kb != 512} {\n        error \"Expected STM32F429NE (device ID 0x419, 512 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F437VG",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 1048576,
+      "ramOrigin": 536870912,
+      "ramBytes": 196608,
+      "targetScript": "# STM32F437VG：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x419 || $kb != 1024} {\n        error \"Expected STM32F437VG (device ID 0x419, 1024 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F437ZG",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 1048576,
+      "ramOrigin": 536870912,
+      "ramBytes": 196608,
+      "targetScript": "# STM32F437ZG：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x419 || $kb != 1024} {\n        error \"Expected STM32F437ZG (device ID 0x419, 1024 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F437IG",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 1048576,
+      "ramOrigin": 536870912,
+      "ramBytes": 196608,
+      "targetScript": "# STM32F437IG：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x419 || $kb != 1024} {\n        error \"Expected STM32F437IG (device ID 0x419, 1024 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F437AI",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 2097152,
+      "ramOrigin": 536870912,
+      "ramBytes": 196608,
+      "targetScript": "# STM32F437AI：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x419 || $kb != 2048} {\n        error \"Expected STM32F437AI (device ID 0x419, 2048 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F437VI",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 2097152,
+      "ramOrigin": 536870912,
+      "ramBytes": 196608,
+      "targetScript": "# STM32F437VI：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x419 || $kb != 2048} {\n        error \"Expected STM32F437VI (device ID 0x419, 2048 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F437ZI",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 2097152,
+      "ramOrigin": 536870912,
+      "ramBytes": 196608,
+      "targetScript": "# STM32F437ZI：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x419 || $kb != 2048} {\n        error \"Expected STM32F437ZI (device ID 0x419, 2048 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F437II",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 2097152,
+      "ramOrigin": 536870912,
+      "ramBytes": 196608,
+      "targetScript": "# STM32F437II：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x419 || $kb != 2048} {\n        error \"Expected STM32F437II (device ID 0x419, 2048 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F439VG",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 1048576,
+      "ramOrigin": 536870912,
+      "ramBytes": 196608,
+      "targetScript": "# STM32F439VG：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x419 || $kb != 1024} {\n        error \"Expected STM32F439VG (device ID 0x419, 1024 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F439VI",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 2097152,
+      "ramOrigin": 536870912,
+      "ramBytes": 196608,
+      "targetScript": "# STM32F439VI：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x419 || $kb != 2048} {\n        error \"Expected STM32F439VI (device ID 0x419, 2048 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F439ZG",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 1048576,
+      "ramOrigin": 536870912,
+      "ramBytes": 196608,
+      "targetScript": "# STM32F439ZG：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x419 || $kb != 1024} {\n        error \"Expected STM32F439ZG (device ID 0x419, 1024 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F439ZI",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 2097152,
+      "ramOrigin": 536870912,
+      "ramBytes": 196608,
+      "targetScript": "# STM32F439ZI：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x419 || $kb != 2048} {\n        error \"Expected STM32F439ZI (device ID 0x419, 2048 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F439IG",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 1048576,
+      "ramOrigin": 536870912,
+      "ramBytes": 196608,
+      "targetScript": "# STM32F439IG：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x419 || $kb != 1024} {\n        error \"Expected STM32F439IG (device ID 0x419, 1024 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F439II",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 2097152,
+      "ramOrigin": 536870912,
+      "ramBytes": 196608,
+      "targetScript": "# STM32F439II：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x419 || $kb != 2048} {\n        error \"Expected STM32F439II (device ID 0x419, 2048 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F439BG",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 1048576,
+      "ramOrigin": 536870912,
+      "ramBytes": 196608,
+      "targetScript": "# STM32F439BG：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x419 || $kb != 1024} {\n        error \"Expected STM32F439BG (device ID 0x419, 1024 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F439BI",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 2097152,
+      "ramOrigin": 536870912,
+      "ramBytes": 196608,
+      "targetScript": "# STM32F439BI：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x419 || $kb != 2048} {\n        error \"Expected STM32F439BI (device ID 0x419, 2048 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F439NG",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 1048576,
+      "ramOrigin": 536870912,
+      "ramBytes": 196608,
+      "targetScript": "# STM32F439NG：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x419 || $kb != 1024} {\n        error \"Expected STM32F439NG (device ID 0x419, 1024 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F439NI",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 2097152,
+      "ramOrigin": 536870912,
+      "ramBytes": 196608,
+      "targetScript": "# STM32F439NI：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x419 || $kb != 2048} {\n        error \"Expected STM32F439NI (device ID 0x419, 2048 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F439AI",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 2097152,
+      "ramOrigin": 536870912,
+      "ramBytes": 196608,
+      "targetScript": "# STM32F439AI：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x419 || $kb != 2048} {\n        error \"Expected STM32F439AI (device ID 0x419, 2048 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F446MC",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 262144,
+      "ramOrigin": 536870912,
+      "ramBytes": 131072,
+      "targetScript": "# STM32F446MC：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x421 || $kb != 256} {\n        error \"Expected STM32F446MC (device ID 0x421, 256 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F446RC",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 262144,
+      "ramOrigin": 536870912,
+      "ramBytes": 131072,
+      "targetScript": "# STM32F446RC：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x421 || $kb != 256} {\n        error \"Expected STM32F446RC (device ID 0x421, 256 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F446VC",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 262144,
+      "ramOrigin": 536870912,
+      "ramBytes": 131072,
+      "targetScript": "# STM32F446VC：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x421 || $kb != 256} {\n        error \"Expected STM32F446VC (device ID 0x421, 256 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F446ZC",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 262144,
+      "ramOrigin": 536870912,
+      "ramBytes": 131072,
+      "targetScript": "# STM32F446ZC：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x421 || $kb != 256} {\n        error \"Expected STM32F446ZC (device ID 0x421, 256 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F446ME",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 524288,
+      "ramOrigin": 536870912,
+      "ramBytes": 131072,
+      "targetScript": "# STM32F446ME：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x421 || $kb != 512} {\n        error \"Expected STM32F446ME (device ID 0x421, 512 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F446RE",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 524288,
+      "ramOrigin": 536870912,
+      "ramBytes": 131072,
+      "targetScript": "# STM32F446RE：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x421 || $kb != 512} {\n        error \"Expected STM32F446RE (device ID 0x421, 512 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F446VE",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 524288,
+      "ramOrigin": 536870912,
+      "ramBytes": 131072,
+      "targetScript": "# STM32F446VE：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x421 || $kb != 512} {\n        error \"Expected STM32F446VE (device ID 0x421, 512 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F446ZE",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 524288,
+      "ramOrigin": 536870912,
+      "ramBytes": 131072,
+      "targetScript": "# STM32F446ZE：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x421 || $kb != 512} {\n        error \"Expected STM32F446ZE (device ID 0x421, 512 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F469AE",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 524288,
+      "ramOrigin": 536870912,
+      "ramBytes": 327680,
+      "targetScript": "# STM32F469AE：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x434 || $kb != 512} {\n        error \"Expected STM32F469AE (device ID 0x434, 512 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F469AG",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 1048576,
+      "ramOrigin": 536870912,
+      "ramBytes": 327680,
+      "targetScript": "# STM32F469AG：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x434 || $kb != 1024} {\n        error \"Expected STM32F469AG (device ID 0x434, 1024 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F469AI",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 2097152,
+      "ramOrigin": 536870912,
+      "ramBytes": 327680,
+      "targetScript": "# STM32F469AI：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x434 || $kb != 2048} {\n        error \"Expected STM32F469AI (device ID 0x434, 2048 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F469IE",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 524288,
+      "ramOrigin": 536870912,
+      "ramBytes": 327680,
+      "targetScript": "# STM32F469IE：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x434 || $kb != 512} {\n        error \"Expected STM32F469IE (device ID 0x434, 512 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F469IG",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 1048576,
+      "ramOrigin": 536870912,
+      "ramBytes": 327680,
+      "targetScript": "# STM32F469IG：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x434 || $kb != 1024} {\n        error \"Expected STM32F469IG (device ID 0x434, 1024 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F469II",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 2097152,
+      "ramOrigin": 536870912,
+      "ramBytes": 327680,
+      "targetScript": "# STM32F469II：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x434 || $kb != 2048} {\n        error \"Expected STM32F469II (device ID 0x434, 2048 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F469BE",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 524288,
+      "ramOrigin": 536870912,
+      "ramBytes": 327680,
+      "targetScript": "# STM32F469BE：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x434 || $kb != 512} {\n        error \"Expected STM32F469BE (device ID 0x434, 512 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F469BG",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 1048576,
+      "ramOrigin": 536870912,
+      "ramBytes": 327680,
+      "targetScript": "# STM32F469BG：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x434 || $kb != 1024} {\n        error \"Expected STM32F469BG (device ID 0x434, 1024 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F469BI",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 2097152,
+      "ramOrigin": 536870912,
+      "ramBytes": 327680,
+      "targetScript": "# STM32F469BI：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x434 || $kb != 2048} {\n        error \"Expected STM32F469BI (device ID 0x434, 2048 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F469NE",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 524288,
+      "ramOrigin": 536870912,
+      "ramBytes": 327680,
+      "targetScript": "# STM32F469NE：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x434 || $kb != 512} {\n        error \"Expected STM32F469NE (device ID 0x434, 512 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F469NG",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 1048576,
+      "ramOrigin": 536870912,
+      "ramBytes": 327680,
+      "targetScript": "# STM32F469NG：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x434 || $kb != 1024} {\n        error \"Expected STM32F469NG (device ID 0x434, 1024 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F469NI",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 2097152,
+      "ramOrigin": 536870912,
+      "ramBytes": 327680,
+      "targetScript": "# STM32F469NI：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x434 || $kb != 2048} {\n        error \"Expected STM32F469NI (device ID 0x434, 2048 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F469VE",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 524288,
+      "ramOrigin": 536870912,
+      "ramBytes": 327680,
+      "targetScript": "# STM32F469VE：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x434 || $kb != 512} {\n        error \"Expected STM32F469VE (device ID 0x434, 512 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F469VG",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 1048576,
+      "ramOrigin": 536870912,
+      "ramBytes": 327680,
+      "targetScript": "# STM32F469VG：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x434 || $kb != 1024} {\n        error \"Expected STM32F469VG (device ID 0x434, 1024 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F469VI",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 2097152,
+      "ramOrigin": 536870912,
+      "ramBytes": 327680,
+      "targetScript": "# STM32F469VI：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x434 || $kb != 2048} {\n        error \"Expected STM32F469VI (device ID 0x434, 2048 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F469ZE",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 524288,
+      "ramOrigin": 536870912,
+      "ramBytes": 327680,
+      "targetScript": "# STM32F469ZE：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x434 || $kb != 512} {\n        error \"Expected STM32F469ZE (device ID 0x434, 512 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F469ZG",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 1048576,
+      "ramOrigin": 536870912,
+      "ramBytes": 327680,
+      "targetScript": "# STM32F469ZG：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x434 || $kb != 1024} {\n        error \"Expected STM32F469ZG (device ID 0x434, 1024 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F469ZI",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 2097152,
+      "ramOrigin": 536870912,
+      "ramBytes": 327680,
+      "targetScript": "# STM32F469ZI：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x434 || $kb != 2048} {\n        error \"Expected STM32F469ZI (device ID 0x434, 2048 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F479AG",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 1048576,
+      "ramOrigin": 536870912,
+      "ramBytes": 327680,
+      "targetScript": "# STM32F479AG：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x434 || $kb != 1024} {\n        error \"Expected STM32F479AG (device ID 0x434, 1024 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F479AI",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 2097152,
+      "ramOrigin": 536870912,
+      "ramBytes": 327680,
+      "targetScript": "# STM32F479AI：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x434 || $kb != 2048} {\n        error \"Expected STM32F479AI (device ID 0x434, 2048 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F479IG",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 1048576,
+      "ramOrigin": 536870912,
+      "ramBytes": 327680,
+      "targetScript": "# STM32F479IG：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x434 || $kb != 1024} {\n        error \"Expected STM32F479IG (device ID 0x434, 1024 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F479II",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 2097152,
+      "ramOrigin": 536870912,
+      "ramBytes": 327680,
+      "targetScript": "# STM32F479II：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x434 || $kb != 2048} {\n        error \"Expected STM32F479II (device ID 0x434, 2048 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F479BG",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 1048576,
+      "ramOrigin": 536870912,
+      "ramBytes": 327680,
+      "targetScript": "# STM32F479BG：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x434 || $kb != 1024} {\n        error \"Expected STM32F479BG (device ID 0x434, 1024 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F479BI",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 2097152,
+      "ramOrigin": 536870912,
+      "ramBytes": 327680,
+      "targetScript": "# STM32F479BI：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x434 || $kb != 2048} {\n        error \"Expected STM32F479BI (device ID 0x434, 2048 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F479NG",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 1048576,
+      "ramOrigin": 536870912,
+      "ramBytes": 327680,
+      "targetScript": "# STM32F479NG：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x434 || $kb != 1024} {\n        error \"Expected STM32F479NG (device ID 0x434, 1024 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F479NI",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 2097152,
+      "ramOrigin": 536870912,
+      "ramBytes": 327680,
+      "targetScript": "# STM32F479NI：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x434 || $kb != 2048} {\n        error \"Expected STM32F479NI (device ID 0x434, 2048 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F479VG",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 1048576,
+      "ramOrigin": 536870912,
+      "ramBytes": 327680,
+      "targetScript": "# STM32F479VG：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x434 || $kb != 1024} {\n        error \"Expected STM32F479VG (device ID 0x434, 1024 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F479VI",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 2097152,
+      "ramOrigin": 536870912,
+      "ramBytes": 327680,
+      "targetScript": "# STM32F479VI：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x434 || $kb != 2048} {\n        error \"Expected STM32F479VI (device ID 0x434, 2048 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F479ZG",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 1048576,
+      "ramOrigin": 536870912,
+      "ramBytes": 327680,
+      "targetScript": "# STM32F479ZG：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x434 || $kb != 1024} {\n        error \"Expected STM32F479ZG (device ID 0x434, 1024 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    },
+    {
+      "id": "STM32F479ZI",
+      "architecture": "arm",
+      "flashOrigin": 134217728,
+      "flashBytes": 2097152,
+      "ramOrigin": 536870912,
+      "ramBytes": 327680,
+      "targetScript": "# STM32F479ZI：先检查硅片组与标称 Flash 容量，再允许下载。\nsource [find target/stm32f4x.cfg]\n$_TARGETNAME configure -event reset-init {}\n$_TARGETNAME configure -event reset-start {}\nproc studiox_check_target {} {\n    set id [expr {[lindex [read_memory 0xe0042000 32 1] 0] & 0xfff}]\n    set kb [lindex [read_memory 0x1fff7a22 16 1] 0]\n    if {$id != 0x434 || $kb != 2048} {\n        error \"Expected STM32F479ZI (device ID 0x434, 2048 KiB Flash); got ID $id, $kb KiB\"\n    }\n}\n"
+    }
+  ]
+}

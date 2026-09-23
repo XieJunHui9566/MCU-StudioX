@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="../StudioX.Engine/StudioX.Engine.csproj" />
+    <ProjectReference Include="../StudioX.Devices/StudioX.Devices.csproj" />
+    <ProjectReference Include="../StudioX.Extensions/StudioX.Extensions.csproj" />
+    <InternalsVisibleTo Include="StudioX.DebugValidation" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,13 @@
+[
+  {"id":"CH32V203C6T6","archive":"C6T","sha256":"e4cad6f8d1c17396c79d3455f4d8d429c734c832de6545601ccc04d004bbd574","flashKib":32,"ramKib":10,"family":"v20x","define":"CH32V20x_D6","chipIds":["0x20330500"]},
+  {"id":"CH32V203C8T6","archive":"C8T","sha256":"c447487825fff5654fbcc4fb76688daa6b2d895d6bc4cb55ab8818b87f68f88a","flashKib":64,"ramKib":20,"family":"v20x","define":"CH32V20x_D6","chipIds":["0x20310500"]},
+  {"id":"CH32V203C8U6","archive":"C8U","sha256":"df7c218d0be1f1f9e5495b7e5d314f8e10708e96fd9c12248245b87ac1899655","flashKib":64,"ramKib":20,"family":"v20x","define":"CH32V20x_D6","chipIds":["0x20300500"]},
+  {"id":"CH32V203F6P6","archive":"F6P","sha256":"2113d63752cc3df28ae7ad0a46396d973df06495c3e6d38494cc796e54d18689","flashKib":32,"ramKib":10,"family":"v20x","define":"CH32V20x_D6","chipIds":["0x20370500","0x20390500"]},
+  {"id":"CH32V203F8P6","archive":"F8P","sha256":"0f2bcb9aee031c69034952f535ce747e2659ef0a62f50cbacddffd20ba413f71","flashKib":64,"ramKib":20,"family":"v20x","define":"CH32V20x_D6","chipIds":["0x203a0500"]},
+  {"id":"CH32V203F8U6","archive":"F8U","sha256":"751e05f307ec8ef9d531716d4fba0d6fb1a3de371c011bbcfdc1eeba0f943e46","flashKib":64,"ramKib":20,"family":"v20x","define":"CH32V20x_D6","chipIds":["0x203d0500"]},
+  {"id":"CH32V203G6U6","archive":"G6U","sha256":"d009cc98aa84afb119cfe3d6479f9dc868c634ed7bcdedd73804035a62fab9fb","flashKib":32,"ramKib":10,"family":"v20x","define":"CH32V20x_D6","chipIds":["0x20360500"]},
+  {"id":"CH32V203G8R6","archive":"G8R","sha256":"4e380dba9f8b77f2975d420d40b77be556fc50033e280b30d20c4f81e6ae35f6","flashKib":64,"ramKib":20,"family":"v20x","define":"CH32V20x_D6","chipIds":["0x203b0500"]},
+  {"id":"CH32V203K8T6","archive":"K8T","sha256":"7b719d0fc8f2d01f4929d8183fdfbe5eb6e77e8beb56ecd50bd451448132a90e","flashKib":64,"ramKib":20,"family":"v20x","define":"CH32V20x_D6","chipIds":["0x20320500"]},
+  {"id":"CH32V203RBT6","archive":"RBT","sha256":"5045737fa2f571e3d1371d8c5781e71a1ba7d71baee12836dbb93648ed3a0996","flashKib":160,"ramKib":32,"family":"v20x","define":"CH32V20x_D8","chipIds":["0x2034050c"]},
+  {"id":"CH32V203CCT6","archive":"CCT","sha256":"7140edb0794a91d7b620a27cd6160f5fd69242bba2ac61964c0d995a2a1b16d5","flashKib":256,"ramKib":32,"family":"v205","define":"CH32V205","chipIds":["0x20540500"]}
+]

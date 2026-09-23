@@ -1,0 +1,16 @@
+<Window x:Class="StudioX.Desktop.DownloadWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+ Title="下载设置" Width="480" SizeToContent="Height" ResizeMode="NoResize" WindowStartupLocation="CenterOwner" ShowInTaskbar="False" Style="{StaticResource {x:Type Window}}">
+ <StackPanel Margin="24">
+  <TextBlock Text="下载设置" FontSize="22" FontWeight="SemiBold" Margin="0,0,0,8"/>
+  <TextBlock x:Name="TargetLabel" TextWrapping="Wrap" Foreground="{DynamicResource Muted}" Margin="0,0,0,20"/>
+  <TextBlock Text="烧录器" Margin="0,0,0,7"/><ComboBox x:Name="ProbePicker" DisplayMemberPath="DisplayName" SelectedValuePath="Id" SelectionChanged="Probe_Changed"/>
+  <TextBlock x:Name="SpeedLabel" Text="调试接口速度（kHz）" Margin="0,16,0,7"/><TextBox x:Name="SpeedInput"/>
+  <TextBlock Text="烧录器序列号（可选，多台连接时指定）" Margin="0,16,0,7"/><TextBox x:Name="SerialInput"/>
+  <TextBlock Text="设置按工程保存。点击工具栏“下载”后，自动保存、编译、写入 Flash、校验并复位运行。" TextWrapping="Wrap" Foreground="{DynamicResource Muted}" Margin="0,18,0,0"/>
+  <TextBlock x:Name="ErrorLabel" Foreground="#E87979" TextWrapping="Wrap" Margin="0,10,0,0"/>
+  <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
+   <Button Content="取消" IsCancel="True" MinWidth="76" Margin="0,0,10,0"/>
+   <Button Content="保存设置" IsDefault="True" MinWidth="120" Style="{StaticResource PrimaryButton}" Click="Accept_Click"/>
+  </StackPanel>
+ </StackPanel>
+</Window>
