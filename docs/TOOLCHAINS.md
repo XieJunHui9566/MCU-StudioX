@@ -46,7 +46,7 @@ AG32 可选的 Verilog 逻辑模式另需用户安装 **Quartus II Full 与 AGM 
 STC 8 位资源也单独追加，不覆盖已有工具集：
 
 ```powershell
-.\tools\Prepare-SdccToolRuntime.ps1 -SdccDirectory '<本机 SDCC 目录>'
+.\tools\Prepare-SdccToolRuntime.ps1 -SdccDirectory '<本机 SDCC 安装目录>'
 ```
 
 输出为 `artifacts/tool-runtime/toolsets/stc.sdcc/1.0.0`。脚本先核对 SDCC 4.5.0 #15242、CMake 4.4.0、Ninja 1.10.2 及所需程序，再复制 SDCC 的 `bin/doc/include/lib` 和原始许可证，复用 `arm.gnu/1.0.0` 中的 CMake/Ninja，最后生成来源记录和逐文件 SHA-256 清单。SDCC 的 `non-free` 目录是与 STC 无关的 Microchip PIC 资料，不进入此工具集。既有输出目录不会被覆盖。该工具集仅用于构建，不提供 STC 下载或调试。

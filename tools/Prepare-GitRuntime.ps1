@@ -1,4 +1,4 @@
-param([string]$SevenZip = 'C:\Program Files\7-Zip\7z.exe')
+param([string]$SevenZip)
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $version = '2.55.0.5'
@@ -12,7 +12,16 @@ if (Test-Path -LiteralPath (Join-Path $destination 'studiox-provenance.json')) {
         Write-Output $destination; return
     }
 } elseif (Test-Path -LiteralPath $destination) { throw 'Inspect incomplete Git staging directory before retrying.' }
-if (!(Test-Path -LiteralPath $SevenZip)) { throw 'Provide a 7-Zip executable with -SevenZip.' }
+if ([string]::IsNullOrWhiteSpace($SevenZip)) {
+    $defaultSevenZip = if ($env:ProgramFiles) { Join-Path $env:ProgramFiles '7-Zip/7z.exe' } else { $null }
+    if ($defaultSevenZip -and (Test-Path -LiteralPath $defaultSevenZip -PathType Leaf)) {
+        $SevenZip = $defaultSevenZip
+    } else {
+        $sevenZipCommand = Get-Command 7z.exe -CommandType Application -ErrorAction SilentlyContinue
+        if ($sevenZipCommand) { $SevenZip = $sevenZipCommand.Source }
+    }
+}
+if (!$SevenZip -or !(Test-Path -LiteralPath $SevenZip -PathType Leaf)) { throw 'Provide a 7-Zip executable with -SevenZip.' }
 $downloads = Join-Path $projectRoot '.artifacts/downloads'
 New-Item -ItemType Directory -Path $downloads -Force | Out-Null
 $archive = Join-Path $downloads "PortableGit-$version-64-bit.7z.exe"
