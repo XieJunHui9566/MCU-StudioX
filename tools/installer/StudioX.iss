@@ -56,13 +56,15 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 [Files]
 ; 只写入 IDE 发行目录；不包含用户的 AppData、背景图、工程或已安装器件包仓库。
 Source: "{#PayloadDirectory}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+; 快捷方式使用随版本变更的独立图标路径，避免 Explorer 复用旧 EXE 路径的图标缓存。
+Source: "..\..\src\StudioX.Desktop\Assets\StudioX.ico"; DestDir: "{app}\icons"; DestName: "StudioX-{#AppVersion}.ico"; Flags: ignoreversion
 
 [Icons]
-Name: "{group}\MCU StudioX"; Filename: "{app}\MCU StudioX.exe"; WorkingDir: "{app}"; AppUserModelID: "MCUStudioX.Desktop"
+Name: "{group}\MCU StudioX"; Filename: "{app}\MCU StudioX.exe"; WorkingDir: "{app}"; IconFilename: "{app}\icons\StudioX-{#AppVersion}.ico"; AppUserModelID: "MCUStudioX.Desktop"
 Name: "{group}\器件包"; Filename: "{app}\device-packs"
 Name: "{group}\使用与升级说明"; Filename: "{app}\使用说明.txt"
 Name: "{group}\卸载 MCU StudioX"; Filename: "{uninstallexe}"
-Name: "{autodesktop}\MCU StudioX"; Filename: "{app}\MCU StudioX.exe"; WorkingDir: "{app}"; Tasks: desktopicon; AppUserModelID: "MCUStudioX.Desktop"
+Name: "{autodesktop}\MCU StudioX"; Filename: "{app}\MCU StudioX.exe"; WorkingDir: "{app}"; IconFilename: "{app}\icons\StudioX-{#AppVersion}.ico"; Tasks: desktopicon; AppUserModelID: "MCUStudioX.Desktop"
 
 [Run]
 Filename: "{app}\MCU StudioX.exe"; Description: "{cm:LaunchProgram,MCU StudioX}"; Flags: nowait postinstall skipifsilent

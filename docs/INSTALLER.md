@@ -1,6 +1,6 @@
 # Windows 安装与升级
 
-版本从 `Directory.Build.props` 读取；独立 IDE 当前版本为 **0.2.1**，可覆盖升级首版 0.1.0，与旧 VS Code 插件的 0.17 分开。关于窗口、欢迎页、状态栏、EXE 文件版本和安装器版本保持一致。
+版本从 `Directory.Build.props` 读取；独立 IDE 当前版本为 **0.2.2**，可覆盖升级首版 0.1.0，与旧 VS Code 插件的 0.17 分开。关于窗口、欢迎页、状态栏、EXE 文件版本和安装器版本保持一致。
 
 ## 构建
 
@@ -30,7 +30,7 @@
 
 用户数据保存在 `%LOCALAPPDATA%\MCUStudioX`，包括主题、背景配置、编辑器设置、最近工程和已导入器件包。安装器不访问这些文件；卸载仅删除其自身记录的程序文件，没有递归清空安装目录的规则。工程仍位于用户选择的位置。
 
-随附 `.mcupack` 按厂商位于安装目录的 `device-packs/` 下；另在发行输出目录保存一份，便于单独发送或更新。0.2.1 安装包收录 STM32、AGM、WCH、Puya、GigaDevice、STC 和 Raspberry Pi 的当前包，具体清单及 SHA-256 见 `device-packs/index.json`。器件包版本独立于 IDE 版本；各型号的实板验收范围见对应文档。
+随附 `.mcupack` 按厂商位于安装目录的 `device-packs/` 下；另在发行输出目录保存一份，便于单独发送或更新。0.2.2 安装包收录 STM32、AGM、WCH、Puya、GigaDevice、STC 和 Raspberry Pi 的当前包，具体清单及 SHA-256 见 `device-packs/index.json`。器件包版本独立于 IDE 版本；各型号的实板验收范围见对应文档。
 
 ## 验证
 
@@ -40,6 +40,6 @@
 
 目前未配置产品代码签名证书，成品安装包为未签名文件；SHA-256 可检查传输完整性，不能代替发布者数字签名。
 
-现有 `runtime/THIRD-PARTY-NOTICES.txt` 明确记录：工具链来自本地既有发行副本，公开发行前还需要归档供应商的对应源码及再分发材料，尤其 AGM 修改版 GCC/OpenOCD。安装包保留现有许可证和来源记录，但制作安装器不等于补齐这些材料，也没有生成或冒充供应商源码承诺。正式对外分发前需补齐对应材料。
+现有 `runtime/THIRD-PARTY-NOTICES.txt` 明确记录：工具链来自本地既有发行副本，仍需归档供应商的对应源码及再分发材料，尤其 AGM 修改版 GCC/OpenOCD。安装包保留现有许可证和来源记录，但制作安装器或在 README 中放置外部网盘链接都不等于补齐这些材料，也没有生成或冒充供应商源码承诺。
 
 安装器参考：[Inno Setup 官方下载](https://jrsoftware.org/isdl.php)、[升级时保留 AppId](https://jrsoftware.org/isfaq.php)、[AppMutex](https://jrsoftware.org/ishelp/topic_setup_appmutex.htm)。
