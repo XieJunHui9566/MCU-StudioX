@@ -46,6 +46,8 @@ public partial class App : System.Windows.Application
         if (smoke || anyPreview) { window.ShowActivated = false; window.ShowInTaskbar = false; window.WindowStartupLocation = WindowStartupLocation.Manual; window.Left = -20000; }
         window.Show();
         await window.InitializeAsync();
+        if (!smoke && !anyPreview && !showDebugDemo && !showBreakpointsDemo)
+            window.StartAutomaticPackSync();
         if (anyPreview)
         {
             var directory = Path.GetFullPath(e.Args[1]); Directory.CreateDirectory(directory);

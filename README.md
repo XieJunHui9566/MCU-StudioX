@@ -1,8 +1,12 @@
 # MCU StudioX
 
-MCU StudioX 是 Windows x64 单片机 IDE。当前源码版本为 **0.2.2 预览版**，使用 C#、.NET 10 和 WPF 构建。
+MCU StudioX 是 Windows x64 单片机 IDE。当前源码版本为 **0.2.3 预览版**，使用 C#、.NET 10 和 WPF 构建。
 
 IDE 提供 C/C++ 编辑与代码提示、CMake 工程构建、器件包导入、固件下载与调试界面、串口工具，以及 Git 图谱和 GitHub 协作。器件能力取决于具体 `.mcupack`、工具链和硬件；尚未通过实板验证的型号不应视为已完成下载或调试适配。经过许可审查的部分器件包见 [MCU-StudioX-MCUPacks](https://github.com/XieJunHui9566/MCU-StudioX-MCUPacks)。
+
+## 在线器件包同步
+
+0.2.3 源码新增启动后后台检查公开器件包仓库，下载、校验并自动导入缺少的最新版本。「文件 → 从 GitHub 同步器件包」也可手动重试；离线时本地包仍可使用。新建工程列表保留可选的旧版本，已有工程不会因同步改变。公开仓库目前只有经过再分发检查的部分包。实现与校验边界见[在线器件包说明](docs/REMOTE_PACKS.md)和[0.2.3 发行说明](docs/RELEASE-0.2.3.md)。下方网盘分享的 0.2.2 安装包早于此功能。
 
 ## 安装包
 

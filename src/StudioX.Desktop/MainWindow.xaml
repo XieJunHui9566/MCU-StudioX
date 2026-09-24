@@ -24,7 +24,7 @@
     </StackPanel>
    </Grid></Border>
    <Border Grid.Row="1" Background="{DynamicResource ChromeSurface}"><Menu Margin="5,0">
-    <MenuItem Header="文件(_F)"><MenuItem Header="新建工程…" InputGestureText="Ctrl+N" Click="NewProject_Click"/><MenuItem Header="打开工程…" InputGestureText="Ctrl+O" Click="OpenProject_Click"/><MenuItem Header="导入 CubeMX CMake 工程…" Click="ImportCubeMx_Click"/><MenuItem Header="保存" InputGestureText="Ctrl+S" Click="Save_Click"/><MenuItem Header="全部保存" InputGestureText="Ctrl+Shift+S" Click="SaveAll_Click"/><MenuItem x:Name="CloseProjectMenu" Header="关闭工程" InputGestureText="Ctrl+Shift+W" IsEnabled="False" Click="CloseProject_Click"/><MenuItem Header="关闭当前标签" InputGestureText="Ctrl+W" Click="CloseDocument_Click"/><Separator/><MenuItem Header="导入器件包…" Click="ImportPack_Click"/><Separator/><MenuItem Header="退出" Click="Close_Click"/></MenuItem>
+    <MenuItem Header="文件(_F)"><MenuItem Header="新建工程…" InputGestureText="Ctrl+N" Click="NewProject_Click"/><MenuItem Header="打开工程…" InputGestureText="Ctrl+O" Click="OpenProject_Click"/><MenuItem Header="导入 CubeMX CMake 工程…" Click="ImportCubeMx_Click"/><MenuItem Header="保存" InputGestureText="Ctrl+S" Click="Save_Click"/><MenuItem Header="全部保存" InputGestureText="Ctrl+Shift+S" Click="SaveAll_Click"/><MenuItem x:Name="CloseProjectMenu" Header="关闭工程" InputGestureText="Ctrl+Shift+W" IsEnabled="False" Click="CloseProject_Click"/><MenuItem Header="关闭当前标签" InputGestureText="Ctrl+W" Click="CloseDocument_Click"/><Separator/><MenuItem Header="导入器件包…" Click="ImportPack_Click"/><MenuItem x:Name="SyncPacksMenu" Header="从 GitHub 同步器件包…" Click="SyncPacks_Click"/><Separator/><MenuItem Header="退出" Click="Close_Click"/></MenuItem>
     <MenuItem Header="编辑(_E)"><MenuItem Header="撤销" Command="ApplicationCommands.Undo"/><MenuItem Header="重做" Command="ApplicationCommands.Redo"/><Separator/><MenuItem Header="剪切" Command="ApplicationCommands.Cut"/><MenuItem Header="复制" Command="ApplicationCommands.Copy"/><MenuItem Header="粘贴" Command="ApplicationCommands.Paste"/><Separator/><MenuItem Header="代码提示" InputGestureText="Ctrl+Space" Click="CompleteCode_Click"/><MenuItem Header="参数提示" InputGestureText="Ctrl+Shift+Space" Click="ParameterInfo_Click"/><Separator/><MenuItem Header="切换行注释" InputGestureText="Ctrl+/" Command="local:SourceCommands.ToggleComment" CommandTarget="{Binding ElementName=SourceEditor}"/></MenuItem>
     <MenuItem Header="视图(_V)"><MenuItem Header="欢迎页" Click="Welcome_Click"/><MenuItem Header="编辑器字号"><MenuItem Header="放大" Click="ZoomIn_Click"/><MenuItem Header="缩小" Click="ZoomOut_Click"/><MenuItem Header="恢复默认字号" Click="ZoomReset_Click"/></MenuItem><MenuItem Header="工程窗口" InputGestureText="Alt+1" Click="ToggleProject_Click"/><MenuItem Header="底部工具窗口" InputGestureText="Alt+4" Click="ToggleBottom_Click"/><Separator/><MenuItem Header="外观与背景…" InputGestureText="Ctrl+Alt+S" Click="Appearance_Click"/></MenuItem>
     <MenuItem Header="构建(_B)"><MenuItem x:Name="BuildMenu" IsEnabled="False" Header="编译工程" InputGestureText="F7" Click="Build_Click"/><MenuItem Header="停止构建" Click="Cancel_Click"/><Separator/><MenuItem x:Name="DownloadMenu" Header="下载固件" IsEnabled="False" Click="Download_Click"/><MenuItem x:Name="DownloadSettingsMenu" Header="下载设置…" IsEnabled="False" Click="DownloadSettings_Click"/><MenuItem x:Name="Ag32LogicMenu" Header="AG32 逻辑模式…" Visibility="Collapsed" Click="Ag32Logic_Click"/><MenuItem x:Name="BuildLogicButton" Header="AG32 逻辑构建指引…" Visibility="Collapsed" Click="BuildLogic_Click"/><MenuItem x:Name="DownloadLogicButton" Header="AG32 逻辑下载指引…" Visibility="Collapsed" Click="DownloadLogic_Click"/></MenuItem>
@@ -159,7 +159,19 @@
        <Border Background="{DynamicResource EditorSurface}">
         <ScrollViewer VerticalScrollBarVisibility="Auto">
          <Grid Margin="32,28" MaxWidth="1080" HorizontalAlignment="Stretch">
-         <WrapPanel x:Name="ProjectDetailsPanel" Visibility="Collapsed">
+         <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+         <Border Grid.Row="0" Background="{DynamicResource Panel}" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="6" Padding="14,12" Margin="0,0,0,22">
+          <StackPanel>
+           <WrapPanel VerticalAlignment="Center">
+            <TextBlock Text="在线器件包" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,16,0"/>
+            <Button x:Name="PackSyncButton" Content="从 GitHub 同步" Click="SyncPacks_Click" AutomationProperties.Name="从 GitHub 同步器件包" Margin="0,0,8,0"/>
+            <Button x:Name="PackSyncCancelButton" Content="取消同步" Click="CancelPackSync_Click" IsEnabled="False" AutomationProperties.Name="取消器件包同步"/>
+           </WrapPanel>
+           <TextBlock x:Name="PackSyncStatus" Text="启动后自动检查公开器件包仓库；也可随时手动同步。" TextWrapping="Wrap" Foreground="{DynamicResource Muted}" Margin="0,9,0,0"/>
+           <ProgressBar x:Name="PackSyncProgressBar" Height="4" Visibility="Collapsed" Margin="0,9,0,0"/>
+          </StackPanel>
+         </Border>
+         <WrapPanel x:Name="ProjectDetailsPanel" Grid.Row="1" Visibility="Collapsed">
          <StackPanel Width="580" Margin="0,0,20,20">
           <DockPanel>
            <Border DockPanel.Dock="Right" VerticalAlignment="Center" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="3" Padding="10,4"><TextBlock Text="器件信息只读" Foreground="{DynamicResource Muted}"/></Border>
@@ -236,7 +248,7 @@
           </StackPanel>
          </Border>
          </WrapPanel>
-         <StackPanel x:Name="NewProjectPanel" Width="580" HorizontalAlignment="Left">
+         <StackPanel x:Name="NewProjectPanel" Grid.Row="1" Width="580" HorizontalAlignment="Left">
           <TextBlock Text="新建工程" FontSize="23" FontWeight="SemiBold"/>
           <TextBlock Text="选择器件厂商，再选择器件包、芯片型号与起始模板。" Foreground="{DynamicResource Muted}" Margin="0,8,0,20"/>
           <Button Content="导入 .mcupack…" HorizontalAlignment="Left" Click="ImportPack_Click"/>

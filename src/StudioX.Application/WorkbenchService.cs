@@ -21,6 +21,7 @@ public sealed class WorkbenchService : IAsyncDisposable
         Projects = new ProjectService(Git.InitializeAsync);
         Terminal = new Terminal.ProjectTerminalService(Git);
         Packs = new PackRepository(Path.Combine(DataDirectory, "packs"));
+        RemotePacks = new GitHubPackSyncService(Packs);
         Toolsets = new ToolsetCatalog(Path.Combine(RuntimeDirectory, "toolsets"));
         ToolInventory = new ToolInventoryService(Toolsets);
         Builds = new BuildService(Toolsets);
@@ -41,6 +42,7 @@ public sealed class WorkbenchService : IAsyncDisposable
     public string RuntimeDirectory { get; }
     public string DataDirectory { get; }
     public PackRepository Packs { get; }
+    public GitHubPackSyncService RemotePacks { get; }
     public ToolsetCatalog Toolsets { get; }
     public ToolInventoryService ToolInventory { get; }
     public GitRepositoryService Git { get; }
@@ -73,5 +75,5 @@ public sealed class WorkbenchService : IAsyncDisposable
         ? Directory.EnumerateFiles(Path.Combine(RuntimeDirectory, "plugins"), "plugin.json", SearchOption.AllDirectories) : [];
     public static Task<string> ReadMainAsync(string project, CancellationToken token = default) => File.ReadAllTextAsync(Path.Combine(project, "src", "main.c"), token);
     public static Task SaveMainAsync(string project, string text, CancellationToken token = default) => File.WriteAllTextAsync(Path.Combine(project, "src", "main.c"), text, token);
-    public async ValueTask DisposeAsync() { GitHubPullRequests.Dispose(); GitHubProfiles.Dispose(); await Terminal.DisposeAsync(); await SerialPlot.DisposeAsync(); await Serial.DisposeAsync(); await Debugger.DisposeAsync(); await Intelligence.DisposeAsync(); await Devices.DisposeAsync(); }
+    public async ValueTask DisposeAsync() { RemotePacks.Dispose(); GitHubPullRequests.Dispose(); GitHubProfiles.Dispose(); await Terminal.DisposeAsync(); await SerialPlot.DisposeAsync(); await Serial.DisposeAsync(); await Debugger.DisposeAsync(); await Intelligence.DisposeAsync(); await Devices.DisposeAsync(); }
 }

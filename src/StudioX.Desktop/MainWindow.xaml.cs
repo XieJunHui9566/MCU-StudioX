@@ -106,7 +106,7 @@ public partial class MainWindow : Window
         if (dialog.ShowDialog(this) == true) await RunAsync(async token => ApplyTheme(await services.Themes.ImportAsync(dialog.FileName, token)));
     }
 
-    private async Task RefreshPacksAsync(CancellationToken token)
+    private async Task RefreshPacksAsync(CancellationToken token, bool preserveSelection = false)
     {
         if (!bundledPacksChecked)
         {
@@ -126,16 +126,40 @@ public partial class MainWindow : Window
                 Log("读取随附器件包失败，可手动导入：" + ex.Message);
             }
         }
-        installedPacks = (await services.Packs.ListCatalogAsync(token))
-            .GroupBy(p => p.Manifest.Id, StringComparer.Ordinal)
-            .Select(g => g.MaxBy(p => p.Manifest.Version, Comparer<string>.Create(ComparePackVersions))!)
-            .OrderBy(p => p.Manifest.DisplayName, StringComparer.OrdinalIgnoreCase).ToArray();
+        var catalog = await services.Packs.ListCatalogAsync(token);
+        // 目录读取期间允许用户继续选择；在实际重建列表前采集最新选择。
+        var vendorId = preserveSelection ? (VendorPicker.SelectedItem as ManufacturerOption)?.Id : null;
+        var packId = preserveSelection ? (PackPicker.SelectedItem as InstalledPack)?.Manifest.Id : null;
+        var packVersion = preserveSelection ? (PackPicker.SelectedItem as InstalledPack)?.Manifest.Version : null;
+        var deviceId = preserveSelection ? (DevicePicker.SelectedItem as DeviceDefinition)?.Id : null;
+        var templateId = preserveSelection ? (TemplatePicker.SelectedItem as ProjectTemplate)?.Id : null;
+        var search = preserveSelection ? DeviceSearch.Text : "";
+        // 在线包可能与本地包有不同模板；两个版本都可选，旧工程与旧模板不因同步而消失。
+        installedPacks = catalog
+            .OrderBy(p => p.Manifest.DisplayName, StringComparer.OrdinalIgnoreCase)
+            .ThenByDescending(p => p.Manifest.Version, Comparer<string>.Create(ComparePackVersions)).ToArray();
         VendorPicker.SelectedIndex = -1;
         VendorPicker.ItemsSource = installedPacks.Select(PackManufacturer)
             .Distinct(StringComparer.OrdinalIgnoreCase).Order(StringComparer.OrdinalIgnoreCase)
             .Select(ManufacturerOption.FromId).ToArray();
         VendorPicker.IsEnabled = installedPacks.Length > 0;
         FilterPacks();
+        if (preserveSelection && vendorId is not null)
+        {
+            VendorPicker.SelectedItem = VendorPicker.Items.Cast<ManufacturerOption>()
+                .FirstOrDefault(vendor => vendor.Id == vendorId);
+            if (packId is not null)
+            {
+                PackPicker.SelectedItem = PackPicker.Items.Cast<InstalledPack>()
+                    .FirstOrDefault(pack => pack.Manifest.Id == packId && pack.Manifest.Version == packVersion)
+                    ?? PackPicker.Items.Cast<InstalledPack>().FirstOrDefault(pack => pack.Manifest.Id == packId);
+                DeviceSearch.Text = search;
+                DevicePicker.SelectedItem = DevicePicker.Items.Cast<DeviceDefinition>()
+                    .FirstOrDefault(device => device.Id == deviceId);
+                TemplatePicker.SelectedItem = TemplatePicker.Items.Cast<ProjectTemplate>()
+                    .FirstOrDefault(template => template.Id == templateId);
+            }
+        }
     }
     private static string PackManufacturer(InstalledPack pack)
     {
@@ -191,15 +215,15 @@ public partial class MainWindow : Window
     {
         var pack = await services.Packs.ImportAsync(archive, token);
         await RefreshPacksAsync(token);
-        var current = installedPacks.Single(p => p.Manifest.Id == pack.Manifest.Id);
+        var current = installedPacks.Single(p => p.Manifest.Id == pack.Manifest.Id && p.Manifest.Version == pack.Manifest.Version);
         SelectPack(current);
-        PackageStatus.Text = $"已导入 {pack.Manifest.DisplayName} {pack.Manifest.Version}。新建工程使用版本 {current.Manifest.Version}，请选择芯片和模板。";
+        PackageStatus.Text = $"已导入 {pack.Manifest.DisplayName} {pack.Manifest.Version}。请选择芯片和模板。";
         return current;
     }
     private async void ImportPack_Click(object sender, RoutedEventArgs e)
     {
         if (projectDirectory is not null) await ShowProjectDetailsAsync();
-        else { SetProjectDetailsMode(null); ShowDocument(PackagesTab); await RunAsync(RefreshPacksAsync); }
+        else { SetProjectDetailsMode(null); ShowDocument(PackagesTab); await RunAsync(token => RefreshPacksAsync(token)); }
         var dialog = new OpenFileDialog { Filter = "StudioX 芯片包|*.mcupack" };
         if (dialog.ShowDialog(this) != true) return;
         await RunAsync(async token =>
@@ -541,6 +565,7 @@ public partial class MainWindow : Window
         e.Cancel = true;
         if (closing) return;
         closing = true; IsEnabled = false;
+        packSyncCancellation?.Cancel();
         CancelOutline();
         CloseCodeAssistance();
         if (!GitGraph.IsMutating) operationCancellation?.Cancel();
@@ -548,6 +573,7 @@ public partial class MainWindow : Window
         try
         {
             await pendingOperation;
+            await StopPackSyncAsync();
             await pendingZoomSave;
             breakpointSaveTimer.Stop(); await PersistBreakpointLinesAsync();
             await services.Debugger.StopAsync(); await debugNavigationTask;
