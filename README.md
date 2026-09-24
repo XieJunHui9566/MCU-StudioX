@@ -8,6 +8,22 @@ IDE 提供 C/C++ 编辑与代码提示、CMake 工程构建、器件包导入、
 
 项目维护者分享的 Windows x64 **0.2.2 安装包压缩文件**：[百度网盘下载 0.2.2.zip](https://pan.baidu.com/s/1f_TDn-r8pw0ZpTL9uipnIg?pwd=h9ff)，提取码：`h9ff`。网盘压缩包未在本仓库托管，其内容和散列值尚未由本仓库核验。安装与第三方材料状态见[安装与分发说明](docs/INSTALLER.md)，此次图标修复见[0.2.2 发行说明](docs/RELEASE-0.2.2.md)。
 
+## 实际运行界面
+
+以下截图直接取自 Windows 上运行的 MCU StudioX 0.2.2。STC 工程在 IDE 内重新编译成功；Git 图谱使用演示仓库。截图展示界面操作，不代表其他器件均已通过实板下载或调试验收。
+
+**STC IAP15F2K61S2：编辑 LCD1602/UART 测试程序并通过 SDCC 编译。** 左侧显示编译后的 RAM 和 Flash 占用，底部状态栏显示退出代码 0。
+
+![STC 工程的源码编辑和编译结果](docs/screenshots/stc-editor-build.jpg)
+
+**STC 工程设置：** 器件信息、优化级别、程序 Flash 容量上限，以及串口下载与时钟配置入口。
+
+![STC 工程的编译和时钟配置页面](docs/screenshots/stc-project-settings.jpg)
+
+**Git 图谱：** 演示仓库中的主线、功能分支、提交记录与文件差异。
+
+![演示仓库中的树状 Git 分支图谱](docs/screenshots/git-graph-branches.jpg)
+
 ## 从源码构建
 
 需要 Windows 10/11 x64 和 `global.json` 指定的 .NET 10 SDK。进入本仓库目录后运行：
