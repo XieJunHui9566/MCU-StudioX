@@ -6,6 +6,9 @@ using StudioX.Foundation;
 using StudioX.Packages;
 
 public sealed record StcIspToolStatus(bool Available, string? ProgrammerExecutable, string? PythonExecutable, string Message);
+public sealed record StcIspPreview(string ProjectRoot, string ExpectedModel, uint ExpectedCodeBytes,
+    string Port, string SourceImage, string ImageSha256, int ImageBytes, int DataBytes,
+    int HighestAddress, StcIspSettings Settings, StcIspToolStatus Tool);
 public sealed record StcIspPreparation(string ProjectRoot, string ExpectedModel, uint ExpectedCodeBytes, string Port, string SourceImage, string Image,
     string ImageSha256, int DataBytes, int HighestAddress, string PythonExecutable, string GuardScript, string LogPath,
     StcIspSettings Settings);
@@ -25,6 +28,7 @@ public sealed class StcIspService(ToolsetCatalog catalog, string runtimeDirector
     private readonly string data = Path.GetFullPath(dataDirectory);
     private const string ToolSettingsName = "stc-isp-tool.json";
     private sealed record ToolSettings(string ProgrammerExecutable);
+    private sealed record PreviewInputs(StcIspPreview Preview, byte[] Image);
 
     public Task<StcIspSettings> LoadSettingsAsync(string root, CancellationToken token = default) => StcIspSettings.ReadAsync(root, token);
 
@@ -114,11 +118,34 @@ public sealed class StcIspService(ToolsetCatalog catalog, string runtimeDirector
         }
     }
 
-    /// <summary>离线核对型号、构建凭据、固件边界并创建只读快照；不会访问 COM 口。</summary>
+    /// <summary>只读预检型号、构建凭据、HEX 与工具；不创建下载快照，也不访问 COM 口。</summary>
+    public async Task<StcIspPreview> PreviewAsync(string root, StcIspSettings settings,
+        CancellationToken token = default) =>
+        (await PreviewCoreAsync(root, settings, token).ConfigureAwait(false)).Preview;
+
+    /// <summary>离线核对型号、构建凭据、固件边界并创建下载快照；不会访问 COM 口。</summary>
     public Task<StcIspPreparation> PrepareAsync(string root, StcIspSettings settings, CancellationToken token = default)
         => Task.Run(() => PrepareCoreAsync(root, settings, token), token);
 
     private async Task<StcIspPreparation> PrepareCoreAsync(string directory, StcIspSettings settings, CancellationToken token)
+    {
+        var inputs = await PreviewCoreAsync(directory, settings, token).ConfigureAwait(false);
+        var preview = inputs.Preview;
+        var root = preview.ProjectRoot;
+        var session = PathBoundary.Resolve(root, ".build/stc-isp-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(session);
+        var image = Path.Combine(session, "firmware.hex");
+        await File.WriteAllBytesAsync(image, inputs.Image, token);
+        var script = Path.Combine(session, "studiox-stcgal-guard.py");
+        await using (var resource = typeof(StcIspService).Assembly.GetManifestResourceStream("StudioX.Engine.Resources.studiox-stcgal-guard.py")
+            ?? throw new StudioXException("STC_ISP_TOOL", "STC ISP 型号防护脚本缺失。"))
+        await using (var destination = File.Create(script)) await resource.CopyToAsync(destination, token);
+        return new(root, preview.ExpectedModel, preview.ExpectedCodeBytes, preview.Port, preview.SourceImage, image,
+            preview.ImageSha256, preview.DataBytes, preview.HighestAddress,
+            preview.Tool.PythonExecutable!, script, Path.Combine(session, "stcgal.log"), settings);
+    }
+
+    private async Task<PreviewInputs> PreviewCoreAsync(string directory, StcIspSettings settings, CancellationToken token)
     {
         var root = Path.GetFullPath(directory);
         var (project, device) = await ReadProjectDeviceAsync(root, token);
@@ -152,16 +179,8 @@ public sealed class StcIspService(ToolsetCatalog catalog, string runtimeDirector
         var hex = StcIntelHex.Validate(bytes, checked((uint)Math.Min(limit.MaximumBytes, selectedLimit)));
         var tool = await GetToolStatusAsync(token);
         if (!tool.Available || tool.PythonExecutable is null) throw new StudioXException("STC_ISP_TOOL", tool.Message);
-        var session = PathBoundary.Resolve(root, ".build/stc-isp-" + Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(session);
-        var image = Path.Combine(session, "firmware.hex");
-        await File.WriteAllBytesAsync(image, bytes, token);
-        var script = Path.Combine(session, "studiox-stcgal-guard.py");
-        await using (var resource = typeof(StcIspService).Assembly.GetManifestResourceStream("StudioX.Engine.Resources.studiox-stcgal-guard.py")
-            ?? throw new StudioXException("STC_ISP_TOOL", "STC ISP 型号防护脚本缺失。"))
-        await using (var destination = File.Create(script)) await resource.CopyToAsync(destination, token);
-        return new(root, device.Id, device.FlashBytes, settings.Port.ToUpperInvariant(), sourceImage, image, hash, hex.DataBytes, hex.HighestAddress,
-            tool.PythonExecutable, script, Path.Combine(session, "stcgal.log"), settings);
+        return new(new(root, device.Id, device.FlashBytes, settings.Port.ToUpperInvariant(), sourceImage,
+            hash, bytes.Length, hex.DataBytes, hex.HighestAddress, settings, tool), bytes);
     }
 
     /// <summary>便捷入口；调用方须在启动前就固件、目标和全片擦除取得用户确认。</summary>

@@ -17,8 +17,8 @@ public partial class MainWindow
         DevicePicker.SelectedItem = DevicePicker.Items.Cast<DeviceDefinition>().Single();
         TemplatePicker.SelectedIndex = 0;
         if (TemplatePicker.Items.Count != 3 || !CreateProjectButton.IsEnabled ||
-            string.IsNullOrWhiteSpace(ManufacturerOption.FromId(pack.Manifest.Vendor).Monogram))
-            throw new InvalidOperationException("RP2350 C 模板、厂商标识或创建入口缺失。");
+            ManufacturerOption.FromId(pack.Manifest.Vendor).Logo is null)
+            throw new InvalidOperationException("RP2350 C 模板、厂商图标或创建入口缺失。");
         foreach (var theme in new[] { ThemeService.Dark, ThemeService.Light })
         {
             ApplyTheme(theme);
@@ -37,6 +37,6 @@ public partial class MainWindow
         UpdateLayout();
         await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
         Render(this, Path.Combine(directory, "rp2350-c-editor.png"));
-        await File.WriteAllTextAsync(Path.Combine(directory, "result.txt"), "PASS: Raspberry Pi monogram, 3 C templates, new project, language service and CMSIS-DAP download/debug configuration. No hardware access.\n");
+        await File.WriteAllTextAsync(Path.Combine(directory, "result.txt"), "PASS: Raspberry Pi logo, 3 C templates, new project, language service and CMSIS-DAP download/debug configuration. No hardware access.\n");
     }
 }

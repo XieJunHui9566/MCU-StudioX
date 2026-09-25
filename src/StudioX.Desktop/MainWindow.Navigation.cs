@@ -9,10 +9,13 @@ public partial class MainWindow
 {
     private double savedProjectWidth = 230;
     private double savedBottomHeight = 150;
+    private Task recentPruneTask = Task.CompletedTask;
+    private bool recentInitialized;
     private void ShowDocument(TabItem tab)
     {
         tab.Visibility = Visibility.Visible; WorkspaceTabs.SelectedItem = tab;
         if (tab.Tag is EditorDocumentSession session) ActivateEditor(session);
+        if (ReferenceEquals(tab, WelcomeTab)) QueueRecentPrune();
     }
     private void Welcome_Click(object sender, RoutedEventArgs e) => ShowDocument(WelcomeTab);
     private async void NewProject_Click(object sender, RoutedEventArgs e) => await RunAsync(token => BeginNewProjectAsync(token));
@@ -62,12 +65,47 @@ public partial class MainWindow
     private async Task RefreshRecentAsync(CancellationToken token)
     {
         var recent = await services.RecentProjects.LoadAsync(token);
+        ShowRecentProjects(recent);
+        recentInitialized = true;
+    }
+    private void ShowRecentProjects(IReadOnlyList<RecentProject> recent)
+    {
         RecentProjects.ItemsSource = recent;
         RecentEmpty.Visibility = recent.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
     }
+    private void QueueRecentPrune()
+    {
+        if (!recentInitialized || closing || !recentPruneTask.IsCompleted) return;
+        recentPruneTask = PruneRecentAsync();
+    }
+    private async Task PruneRecentAsync()
+    {
+        try
+        {
+            await services.RecentProjects.PruneMissingLocalAsync();
+            if (!closing) ShowRecentProjects(await services.RecentProjects.LoadAsync());
+        }
+        catch (Exception ex) { if (!closing) Log("最近工程检查失败：" + ex.Message); }
+    }
     private async void RecentProject_Click(object sender, RoutedEventArgs e)
     {
-        if (sender is Button { Tag: string directory }) await RunAsync(token => OpenProjectAsync(directory, token));
+        if (sender is not Button { Tag: string directory }) return;
+        await RunAsync(async token =>
+        {
+            if (await RemoveMissingRecentAsync(directory, token)) return;
+            try { await OpenProjectAsync(directory, token); }
+            catch (Exception ex) when (ex is FileNotFoundException or DirectoryNotFoundException)
+            {
+                if (!await RemoveMissingRecentAsync(directory, token)) throw;
+            }
+        });
+    }
+    private async Task<bool> RemoveMissingRecentAsync(string directory, CancellationToken token)
+    {
+        if (!await services.RecentProjects.RemoveIfMissingLocalAsync(directory, token)) return false;
+        await RefreshRecentAsync(token);
+        Status.Text = "该工程已删除，已从最近工程移除。";
+        return true;
     }
     private void Minimize_Click(object sender, RoutedEventArgs e) => SystemCommands.MinimizeWindow(this);
     private void Maximize_Click(object sender, RoutedEventArgs e) { if (WindowState == WindowState.Maximized) SystemCommands.RestoreWindow(this); else SystemCommands.MaximizeWindow(this); }

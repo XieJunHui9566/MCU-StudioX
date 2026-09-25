@@ -5,6 +5,8 @@ using StudioX.Engine;
 using StudioX.Extensions;
 using StudioX.Packages;
 using StudioX.Application.CodeIntelligence;
+using StudioX.Application.Mcp;
+using StudioX.Application.Skills;
 
 public sealed class WorkbenchService : IAsyncDisposable
 {
@@ -34,6 +36,13 @@ public sealed class WorkbenchService : IAsyncDisposable
         Appearance = new AppearanceService(DataDirectory);
         RecentProjects = new RecentProjectService(DataDirectory);
         EditorSettings = new EditorSettingsService(DataDirectory);
+        AiSettings = new AiSettingsService(DataDirectory);
+        AiSkills = new AiSkillService(DataDirectory, RuntimeDirectory);
+        AiConversations = new AiConversationStore(DataDirectory);
+        AiCredentials = new AiCredentialStore();
+        WebCredentials = new WebCredentialStore();
+        WebResearch = new WebResearchService(apiKeyProvider: () => WebCredentials.GetApiKey() ?? Environment.GetEnvironmentVariable("TAVILY_API_KEY"));
+        AiChat = new AiChatClient(AiCredentials);
         Intelligence = new CodeIntelligenceService(RuntimeDirectory, DataDirectory);
         Serial = new Serial.SerialTerminalService(Devices, DataDirectory, scriptHostExecutable: Path.Combine(RuntimeDirectory, "plugin-host", "StudioX.PluginHost.exe"));
         SerialPlot = new SerialPlot.SerialPlotService(Devices, DataDirectory);
@@ -68,6 +77,15 @@ public sealed class WorkbenchService : IAsyncDisposable
     public RecentProjectService RecentProjects { get; }
     public ProjectFileService Files { get; } = new();
     public EditorSettingsService EditorSettings { get; }
+    public AiSettingsService AiSettings { get; }
+    public AiSkillService AiSkills { get; }
+    public AiConversationStore AiConversations { get; }
+    public AiCredentialStore AiCredentials { get; }
+    public WebCredentialStore WebCredentials { get; }
+    public WebResearchService WebResearch { get; }
+    public AiChatClient AiChat { get; }
+    public AiAgentService CreateAiAgent(AiSettings settings, StudioXMcpSession mcpSession) =>
+        new(AiChat, settings, mcpSession);
     public CodeIntelligenceService Intelligence { get; }
     public CMakeAssistanceService CMake { get; } = new();
     public PluginClient Plugins { get; }
@@ -75,5 +93,5 @@ public sealed class WorkbenchService : IAsyncDisposable
         ? Directory.EnumerateFiles(Path.Combine(RuntimeDirectory, "plugins"), "plugin.json", SearchOption.AllDirectories) : [];
     public static Task<string> ReadMainAsync(string project, CancellationToken token = default) => File.ReadAllTextAsync(Path.Combine(project, "src", "main.c"), token);
     public static Task SaveMainAsync(string project, string text, CancellationToken token = default) => File.WriteAllTextAsync(Path.Combine(project, "src", "main.c"), text, token);
-    public async ValueTask DisposeAsync() { RemotePacks.Dispose(); GitHubPullRequests.Dispose(); GitHubProfiles.Dispose(); await Terminal.DisposeAsync(); await SerialPlot.DisposeAsync(); await Serial.DisposeAsync(); await Debugger.DisposeAsync(); await Intelligence.DisposeAsync(); await Devices.DisposeAsync(); }
+    public async ValueTask DisposeAsync() { AiChat.Dispose(); RemotePacks.Dispose(); GitHubPullRequests.Dispose(); GitHubProfiles.Dispose(); await Terminal.DisposeAsync(); await SerialPlot.DisposeAsync(); await Serial.DisposeAsync(); await Debugger.DisposeAsync(); await Intelligence.DisposeAsync(); await Devices.DisposeAsync(); }
 }

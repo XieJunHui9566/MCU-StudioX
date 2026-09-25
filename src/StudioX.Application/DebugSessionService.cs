@@ -163,10 +163,17 @@ public sealed partial class DebugSessionService(string dataDirectory) : IAsyncDi
         }
         finally { gate.Release(); }
     }
-    public async Task<string> ReadMemoryAsync(uint address, CancellationToken token = default)
+    public Task<string> ReadMemoryAsync(uint address, CancellationToken token = default) =>
+        ReadMemoryAsync(address, 64, token);
+
+    public async Task<string> ReadMemoryAsync(uint address, int byteCount, CancellationToken token = default)
     {
+        if (byteCount is < 1 or > 256)
+            throw new ArgumentOutOfRangeException(nameof(byteCount), "单次内存读取必须为 1–256 字节。");
+        if ((ulong)address + (uint)byteCount > (ulong)uint.MaxValue + 1)
+            throw new ArgumentOutOfRangeException(nameof(address), "读取范围超出 32 位地址空间。");
         await gate.WaitAsync(token);
-        try { RequireStopped(); return await adapter!.ReadMemoryAsync(address, 64, token); }
+        try { RequireStopped(); return await adapter!.ReadMemoryAsync(address, byteCount, token); }
         finally { gate.Release(); }
     }
     public async Task ToggleBreakpointAsync(string file, int line, CancellationToken token = default)

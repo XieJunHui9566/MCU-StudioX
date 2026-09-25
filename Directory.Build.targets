@@ -1,0 +1,10 @@
+<Project>
+  <!-- NuGet 附带的 Skia 原生调试符号约 85 MiB，运行和崩溃日志均不依赖它。 -->
+  <Target Name="StudioXRemoveUnusedSkiaNativeSymbols" AfterTargets="CopyFilesToOutputDirectory;Publish"
+          Condition="'$(RuntimeIdentifier)' == 'win-x64'">
+    <Delete Files="$(TargetDir)libSkiaSharp.pdb"
+            Condition="Exists('$(TargetDir)libSkiaSharp.pdb')" />
+    <Delete Files="$(PublishDir)libSkiaSharp.pdb"
+            Condition="'$(PublishDir)' != '' and Exists('$(PublishDir)libSkiaSharp.pdb')" />
+  </Target>
+</Project>

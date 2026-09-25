@@ -6,8 +6,9 @@
   <ItemGroup><ProjectReference Include="../StudioX.Application/StudioX.Application.csproj" /></ItemGroup>
   <ItemGroup><ProjectReference Include="../StudioX.PluginHost/StudioX.PluginHost.csproj" ReferenceOutputAssembly="false" /></ItemGroup>
   <ItemGroup><Content Include="../../examples/protocols/*.js" Link="examples/protocols/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" /></ItemGroup>
+  <ItemGroup><Content Include="../../examples/skills/**/*" Link="runtime/skills/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" /></ItemGroup>
   <ItemGroup><Content Include="../../licenses/Jint-*.txt" Link="licenses/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" /></ItemGroup>
-  <Target Name="CopyDevelopmentPluginHost" AfterTargets="Build" Condition="'$(RuntimeIdentifier)' == ''">
+  <Target Name="CopyDevelopmentPluginHost" AfterTargets="Build" Condition="'$(Configuration)' == 'Debug'">
     <ItemGroup><ScriptHostFiles Include="../StudioX.PluginHost/bin/$(Configuration)/net10.0/*" /></ItemGroup>
     <Copy SourceFiles="@(ScriptHostFiles)" DestinationFolder="$(OutDir)runtime/plugin-host" SkipUnchangedFiles="true" />
   </Target>
@@ -16,6 +17,8 @@
   <ItemGroup><Content Include="../../licenses/Git-for-Windows-NOTICE.md" Link="licenses/Git-for-Windows-NOTICE.md" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" /></ItemGroup>
   <ItemGroup><Content Include="../../licenses/AvalonEdit-MIT.txt" Link="licenses/AvalonEdit-MIT.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" /></ItemGroup>
   <ItemGroup><Content Include="../../licenses/System.IO.Ports-*.txt" Link="licenses/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" /></ItemGroup>
+  <ItemGroup><Content Include="../../licenses/PdfPig-*.txt;../../licenses/PDFtoImage-*.txt;../../licenses/PDFium-*.txt;../../licenses/Skia-*.txt;../../licenses/SkiaSharp-*.txt" Link="licenses/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" /></ItemGroup>
+  <ItemGroup><Content Include="../../licenses/PDF-Dependencies-NOTICE.md" Link="licenses/PDF-Dependencies-NOTICE.md" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" /></ItemGroup>
   <ItemGroup><Content Include="../../artifacts/language-runtime/clangd/**/*" Link="runtime/languages/clangd/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" /></ItemGroup>
   <ItemGroup><Content Include="../../artifacts/language-runtime/sysroots/**/*" Link="runtime/languages/sysroots/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" /></ItemGroup>
   <ItemGroup><Content Include="$(StudioXRuntimeAssetsDirectory)/toolsets/**/*" Link="runtime/toolsets/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" /></ItemGroup>

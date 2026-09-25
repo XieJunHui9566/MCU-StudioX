@@ -214,7 +214,12 @@ public partial class MainWindow
 
     private void ToggleOutline_Click(object sender, RoutedEventArgs e)
     {
-        var hide = OutlinePanel.Visibility == Visibility.Visible;
+        SetOutlineVisible(OutlinePanel.Visibility != Visibility.Visible);
+    }
+
+    private void SetOutlineVisible(bool visible)
+    {
+        var hide = !visible;
         if (hide) savedOutlineWidth = Math.Max(190, OutlineColumn.ActualWidth);
         OutlineColumn.Width = new GridLength(hide ? 0 : savedOutlineWidth);
         OutlineSplitterColumn.Width = new GridLength(hide ? 0 : 4);

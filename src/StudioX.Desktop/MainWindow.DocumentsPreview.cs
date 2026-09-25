@@ -109,7 +109,38 @@ public partial class MainWindow
             foreach (var session in editorDocuments.ToArray()) await CloseWorkspaceTabAsync(session.Tab);
             Check(editorDocuments.Count == 0 && activeEditor is null && WorkspaceTabs.SelectedItem == WelcomeTab, "关闭最后文件后未回到欢迎页。");
             await CloseWorkspaceTabAsync(WelcomeTab); Check(WelcomeTab.Visibility == Visibility.Collapsed, "欢迎页不能关闭。"); ShowDocument(WelcomeTab);
-            await File.WriteAllTextAsync(Path.Combine(directory, "result.txt"), "PASS: multi-file buffers/undo/dirty labels, caret/selection/scroll, duplicate paths and basenames, active/background X close, cancel/discard/save/conflict, bulk-close cancellation, save-all, switch during save, keyboard cycling, utility tabs, overflow and dark/light rendering. Only fixture copies were written.\n");
+
+            // 模拟同一轮 Agent 的多个成功写入事件，逐次检查编辑区，而非等到整轮回答完成。
+            const string aiPath = "src/ai_live_preview.c";
+            var aiFile = Path.Combine(fixture, "src/ai_live_preview.c");
+            await File.WriteAllTextAsync(aiFile, "int ai_value = 1;\n");
+            OnAiToolCompletedForEditor(new(AiAgentProgressKind.ToolCallCompleted, 1,
+                Text: aiPath, ToolName: "project_create_file"));
+            await aiEditorSyncTask;
+            var aiEditor = activeEditor ?? throw new InvalidOperationException("AI 新建文件未打开编辑器。");
+            Check(aiEditor.Source.RelativePath == aiPath && aiEditor.Buffer.Text == "int ai_value = 1;\n" && !aiEditor.IsDirty,
+                "AI 新建文件没有立即在编辑区打开。");
+            await File.WriteAllTextAsync(aiFile, "int ai_value = 2;\n");
+            OnAiToolCompletedForEditor(new(AiAgentProgressKind.ToolCallCompleted, 1,
+                Text: aiPath, ToolName: "project_edit_file"));
+            await aiEditorSyncTask;
+            Check(ReferenceEquals(activeEditor, aiEditor) && aiEditor.Buffer.Text == "int ai_value = 2;\n" && !aiEditor.IsDirty,
+                "AI 第一轮修改没有立即替换当前编辑区内容。");
+            await File.WriteAllTextAsync(aiFile, "int ai_value = 3;\n");
+            OnAiToolCompletedForEditor(new(AiAgentProgressKind.ToolCallCompleted, 2,
+                Text: aiPath, ToolName: "project_edit_file"));
+            await aiEditorSyncTask;
+            Check(aiEditor.Buffer.Text == "int ai_value = 3;\n" && !aiEditor.IsDirty,
+                "AI 后续轮次修改没有继续刷新已打开文件。");
+            aiEditor.Buffer.Insert(0, "// unsaved\n");
+            await File.WriteAllTextAsync(aiFile, "int ai_value = 4;\n");
+            OnAiToolCompletedForEditor(new(AiAgentProgressKind.ToolCallCompleted, 3,
+                Text: aiPath, ToolName: "project_edit_file"));
+            await aiEditorSyncTask;
+            Check(aiEditor.IsDirty && aiEditor.Buffer.Text.StartsWith("// unsaved\nint ai_value = 3;", StringComparison.Ordinal),
+                "AI 写入覆盖了编辑器未保存的用户修改。");
+
+            await File.WriteAllTextAsync(Path.Combine(directory, "result.txt"), "PASS: multi-file buffers/undo/dirty labels, caret/selection/scroll, duplicate paths and basenames, active/background X close, cancel/discard/save/conflict, bulk-close cancellation, save-all, switch during save, keyboard cycling, utility tabs, overflow, dark/light rendering, and immediate AI create/edit refresh across tool rounds with dirty-buffer preservation. Only fixture copies were written.\n");
         }
         finally { ClearEditorDocuments(); ShowDocument(WelcomeTab); }
     }

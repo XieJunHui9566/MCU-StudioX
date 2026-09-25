@@ -88,9 +88,33 @@ catch (OperationCanceledException) { Pass("PASS: catalog cancellation"); }
 try { await PackRepository.VerifyAsync(selection, cancelled.Token); throw new InvalidOperationException("Cancellation ignored."); }
 catch (OperationCanceledException) { Pass("PASS: verification cancellation"); }
 
-// 不存在的工程路径仍须显示在历史记录中，避免启动时探测断开的磁盘/网络共享。
+// 首次读取只访问记录文件；随后在后台清理确认已删除的本地工程。
 var isolatedHistory = new RecentProjectService(Path.Combine(output, "user-data"));
-await isolatedHistory.RememberAsync("missing", Path.Combine(output, "missing-project"));
-if ((await isolatedHistory.LoadAsync()).Single().Name != "missing") throw new InvalidOperationException("Recent list depends on project availability.");
-Pass("PASS: recent list is independent of project availability");
+var missingProject = Path.Combine(output, "missing-project");
+var unknownNetworkProject = @"\\studiox-unavailable\share\missing-project";
+await isolatedHistory.RememberAsync("valid", validProject);
+await isolatedHistory.RememberAsync("missing", missingProject);
+await isolatedHistory.RememberAsync("network", unknownNetworkProject);
+if ((await isolatedHistory.LoadAsync()).Count != 3) throw new InvalidOperationException("Recent list probed projects during the initial read.");
+Pass("PASS: initial recent read is independent of project availability");
+var pruned = await isolatedHistory.PruneMissingLocalAsync();
+if (pruned.Count != 2 || !pruned.Any(project => project.Name == "valid") || !pruned.Any(project => project.Name == "network") ||
+    (await isolatedHistory.LoadAsync()).Any(project => project.Name == "missing"))
+    throw new InvalidOperationException("Missing local project was not pruned and persisted, or valid/unknown project was removed.");
+Pass("PASS: missing local project pruned while valid and unknown network projects remain");
+Directory.Delete(validProject, recursive: true);
+if (!await isolatedHistory.RemoveIfMissingLocalAsync(validProject) ||
+    (await isolatedHistory.LoadAsync()).Any(project => project.Name == "valid"))
+    throw new InvalidOperationException("Deleted recent project remained after click-time validation.");
+if (!await isolatedHistory.RemoveIfMissingLocalAsync(validProject))
+    throw new InvalidOperationException("A concurrently removed missing project was not recognized as missing.");
+Pass("PASS: deleted local project removed on click-time validation");
+if (!await isolatedHistory.RemoveAsync(unknownNetworkProject) || (await isolatedHistory.LoadAsync()).Count != 0)
+    throw new InvalidOperationException("Explicit removal did not persist.");
+Pass("PASS: explicit recent project removal persists");
+await Task.WhenAll(Enumerable.Range(0, 4).Select(index =>
+    isolatedHistory.RememberAsync("parallel-" + index, Path.Combine(output, "parallel-" + index))));
+if ((await isolatedHistory.LoadAsync()).Count != 4)
+    throw new InvalidOperationException("Concurrent recent writes lost an entry.");
+Pass("PASS: concurrent recent writes preserve all entries");
 await File.WriteAllLinesAsync(Path.Combine(output, "result.txt"), results);

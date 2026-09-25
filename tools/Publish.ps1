@@ -30,6 +30,8 @@ if ($LASTEXITCODE -ne 0) { throw 'Desktop publish failed.' }
 $runtime = Join-Path $output 'runtime'
 & dotnet publish (Join-Path $projectRoot 'src/StudioX.PluginHost/StudioX.PluginHost.csproj') -c Release -r win-x64 --self-contained true -o (Join-Path $runtime 'plugin-host') "-p:Version=$ReleaseVersion" -p:DebugType=None -p:DebugSymbols=false --nologo
 if ($LASTEXITCODE -ne 0) { throw 'Plugin host publish failed.' }
+& dotnet publish (Join-Path $projectRoot 'src/StudioX.Cli/StudioX.Cli.csproj') -c Release -r win-x64 --self-contained true -o (Join-Path $runtime 'mcp-host') "-p:Version=$ReleaseVersion" -p:DebugType=None -p:DebugSymbols=false --nologo
+if ($LASTEXITCODE -ne 0) { throw 'MCP host publish failed.' }
 & dotnet build (Join-Path $projectRoot 'examples/StudioX.SampleDecoder/StudioX.SampleDecoder.csproj') -c Release --nologo
 if ($LASTEXITCODE -ne 0) { throw 'Sample plugin build failed.' }
 $plugin = Join-Path $runtime 'plugins/studiox.sensor-csv'

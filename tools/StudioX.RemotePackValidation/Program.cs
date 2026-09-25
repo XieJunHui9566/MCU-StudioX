@@ -25,6 +25,16 @@ var repository = new PackRepository(Path.Combine(output, "installed"));
 using (var client = new HttpClient(handler))
 using (var sync = new GitHubPackSyncService(repository, client))
 {
+    var check = await sync.CheckForUpdatesAsync();
+    Require(check.CommitSha == commit && check.UpToDate == 0 && check.Updates.Count == 1,
+        "check finds one missing latest pack");
+    Require(check.Updates[0] is { Id: packId, Version: "2.0.0", InstalledVersion: null } &&
+            check.Updates[0].Path == latest.Path, "check reports latest pack identity without a local version");
+    RequireMetadataOnlyRequests(handler.Requests, commit);
+    Require((await repository.ListCatalogAsync()).Count == 0, "check does not import a pack");
+    handler.Requests.Clear();
+    Console.WriteLine("PASS: manual check reports available pack without downloading");
+
     var result = await sync.SyncAsync();
     Require(result.Imported == 1 && result.Skipped == 0 && result.Failures.Count == 0, "first sync imports latest pack");
     Require((await repository.ListCatalogAsync()).Single().Manifest.Version == "2.0.0", "latest version installed");
@@ -32,10 +42,35 @@ using (var sync = new GitHubPackSyncService(repository, client))
     Console.WriteLine("PASS: latest version imported from commit-pinned URL");
 
     handler.Requests.Clear();
+    check = await sync.CheckForUpdatesAsync();
+    Require(check.CommitSha == commit && check.UpToDate == 1 && check.Updates.Count == 0,
+        "check reports installed latest version as up to date");
+    RequireMetadataOnlyRequests(handler.Requests, commit);
+    Require((await repository.ListCatalogAsync()).Single().Manifest.Version == "2.0.0",
+        "up-to-date check leaves installed pack unchanged");
+    handler.Requests.Clear();
+    Console.WriteLine("PASS: manual check reports up-to-date pack without downloading");
+
     result = await sync.SyncAsync();
     Require(result.Imported == 0 && result.Skipped == 1 && result.Failures.Count == 0, "second sync skips installed version");
     Require(!handler.Requests.Any(uri => uri.AbsolutePath.EndsWith(".mcupack", StringComparison.Ordinal)), "second sync avoids archive download");
     Console.WriteLine("PASS: repeat sync is incremental");
+}
+
+var outdatedRepository = new PackRepository(Path.Combine(output, "outdated-installed"));
+await outdatedRepository.ImportAsync(first.Archive);
+var outdatedHandler = new ScriptedHandler(commit, index, new Dictionary<string, byte[]>());
+using (var client = new HttpClient(outdatedHandler))
+using (var sync = new GitHubPackSyncService(outdatedRepository, client))
+{
+    var check = await sync.CheckForUpdatesAsync();
+    Require(check.UpToDate == 0 && check.Updates.Count == 1 &&
+            check.Updates[0] is { Id: packId, Version: "2.0.0", InstalledVersion: "1.0.0" },
+        "check compares latest published version with installed older version");
+    RequireMetadataOnlyRequests(outdatedHandler.Requests, commit);
+    Require((await outdatedRepository.ListCatalogAsync()).Single().Manifest.Version == "1.0.0",
+        "outdated check does not import newer pack");
+    Console.WriteLine("PASS: manual check identifies update without importing it");
 }
 
 var wrongHash = latest with { Sha256 = new string('0', 64) };
@@ -110,6 +145,14 @@ static byte[] MakeIndex(params Fixture[] entries) => JsonSerializer.SerializeToU
 static void Require(bool condition, string message)
 {
     if (!condition) throw new InvalidOperationException("FAIL: " + message);
+}
+
+static void RequireMetadataOnlyRequests(IReadOnlyList<Uri> requests, string commit)
+{
+    Require(requests.Count == 2 &&
+            requests[0].AbsoluteUri == "https://api.github.com/repos/XieJunHui9566/MCU-StudioX-MCUPacks/commits/main" &&
+            requests[1].AbsoluteUri == $"https://raw.githubusercontent.com/XieJunHui9566/MCU-StudioX-MCUPacks/{commit}/index.json",
+        "check requests only commit and index metadata");
 }
 
 sealed record Fixture(string Path, string Id, string Version, string Sha256, long Size, string Archive, byte[] Bytes);

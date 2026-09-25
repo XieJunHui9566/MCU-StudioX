@@ -1,0 +1,33 @@
+<Window x:Class="StudioX.Desktop.AiSettingsWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+ Title="AI 接口设置" Width="500" MinWidth="460" MaxHeight="720" SizeToContent="Height" ResizeMode="NoResize" WindowStartupLocation="CenterOwner" ShowInTaskbar="False" Style="{StaticResource {x:Type Window}}">
+ <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+ <StackPanel Margin="24">
+  <TextBlock Text="AI 接口设置" FontSize="22" FontWeight="SemiBold"/>
+  <TextBlock Text="填写兼容 OpenAI 的 API 地址、模型和密钥。" Foreground="{DynamicResource Muted}" Margin="0,7,0,20"/>
+  <TextBlock Text="API 路由地址" Margin="0,0,0,7"/>
+  <TextBox x:Name="BaseUrlInput"/>
+  <TextBlock Text="模型" Margin="0,16,0,7"/>
+  <TextBox x:Name="ModelInput"/>
+  <TextBlock Text="上下文窗口 token 数（可选）" Margin="0,16,0,7"/>
+  <TextBox x:Name="ContextWindowInput"/>
+  <TextBlock Text="DeepSeek 已知模型自动读取窗口上限；其他接口可在这里填写服务商公布的数值。" Foreground="{DynamicResource Muted}" FontSize="11" TextWrapping="Wrap" Margin="0,6,0,0"/>
+  <TextBlock Text="API Key" Margin="0,16,0,7"/>
+  <PasswordBox x:Name="KeyInput" Background="{DynamicResource EditorSurface}" Foreground="{DynamicResource Text}" BorderBrush="{DynamicResource Border}"/>
+  <TextBlock x:Name="KeyState" Foreground="{DynamicResource Muted}" FontSize="11" Margin="0,7,0,0"/>
+  <Button x:Name="DeleteKeyButton" Content="删除已保存的 API Key" Click="DeleteKey_Click" HorizontalAlignment="Left" Margin="0,16,0,0"/>
+  <TextBlock Text="API Key 保存在当前 Windows 用户凭据中。" Foreground="{DynamicResource Muted}" FontSize="11" Margin="0,16,0,0"/>
+  <Separator Margin="0,20,0,16"/>
+  <TextBlock Text="联网搜索（Tavily）" FontSize="16" FontWeight="SemiBold"/>
+  <TextBlock Text="不填密钥也可使用免密钥搜索和网页读取；频繁使用可填写自己的 Tavily API Key。" Foreground="{DynamicResource Muted}" FontSize="11" TextWrapping="Wrap" Margin="0,7,0,0"/>
+  <TextBlock Text="Tavily API Key（可选）" Margin="0,14,0,7"/>
+  <PasswordBox x:Name="WebKeyInput" Background="{DynamicResource EditorSurface}" Foreground="{DynamicResource Text}" BorderBrush="{DynamicResource Border}"/>
+  <TextBlock x:Name="WebKeyState" Foreground="{DynamicResource Muted}" FontSize="11" Margin="0,7,0,0"/>
+  <Button x:Name="DeleteWebKeyButton" Content="删除 Tavily API Key" Click="DeleteWebKey_Click" HorizontalAlignment="Left" Margin="0,12,0,0"/>
+  <TextBlock x:Name="ErrorText" Foreground="#E87979" TextWrapping="Wrap" Margin="0,10,0,0"/>
+  <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+   <Button Content="取消" IsCancel="True" MinWidth="76" Margin="0,0,10,0"/>
+   <Button x:Name="SaveButton" Content="保存设置" IsDefault="True" MinWidth="100" Style="{StaticResource PrimaryButton}" Click="Save_Click"/>
+  </StackPanel>
+ </StackPanel>
+ </ScrollViewer>
+</Window>

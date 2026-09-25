@@ -1,5 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
+    <PackageReference Include="ModelContextProtocol.Core" />
+    <PackageReference Include="PdfPig" />
+    <PackageReference Include="PDFtoImage" />
     <ProjectReference Include="../StudioX.Engine/StudioX.Engine.csproj" />
     <ProjectReference Include="../StudioX.Devices/StudioX.Devices.csproj" />
     <ProjectReference Include="../StudioX.Extensions/StudioX.Extensions.csproj" />

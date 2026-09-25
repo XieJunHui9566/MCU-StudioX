@@ -16,6 +16,8 @@ public sealed record DownloadReport(bool Success, string Log, string LogPath, in
 }
 public sealed record DownloadPreparation(DownloadConfiguration Configuration, DownloadOptions Options,
     ResolvedToolset Tools, string SourceImage, string Image, string[] Arguments, string LogPath);
+public sealed record DownloadPreview(DownloadConfiguration Configuration, DownloadOptions Options,
+    string SourceImage, string Format, string Sha256, long ImageBytes);
 
 /// <summary>OpenOCD 单次下载会话；用户明确启动后才接触硬件。</summary>
 public sealed class OpenOcdService(ToolsetCatalog catalog)
@@ -61,7 +63,18 @@ public sealed class OpenOcdService(ToolsetCatalog catalog)
     public Task<DownloadPreparation> PrepareAsync(string projectDirectory, DownloadOptions options, CancellationToken token = default)
         => Task.Run(() => PrepareCoreAsync(projectDirectory, options, token), token);
 
-    private async Task<DownloadPreparation> PrepareCoreAsync(string projectDirectory, DownloadOptions options, CancellationToken token)
+    /// <summary>只读检查当前构建产物；不创建下载快照，也不访问烧录器。</summary>
+    public async Task<DownloadPreview> PreviewAsync(string projectDirectory, DownloadOptions options, CancellationToken token = default)
+    {
+        var validated = await ValidateImageAsync(projectDirectory, options, token);
+        return new(validated.Configuration, options, validated.SourceImage, validated.Format,
+            validated.Sha256, validated.Bytes.LongLength);
+    }
+
+    private sealed record ValidatedImage(DownloadConfiguration Configuration, ResolvedToolset Tools,
+        string SourceImage, string Format, string Sha256, byte[] Bytes);
+
+    private async Task<ValidatedImage> ValidateImageAsync(string projectDirectory, DownloadOptions options, CancellationToken token)
     {
         var root = Path.GetFullPath(projectDirectory);
         var project = await ProjectService.ReadAsync(root, token);
@@ -75,8 +88,10 @@ public sealed class OpenOcdService(ToolsetCatalog catalog)
         if (!File.Exists(lockPath) || await JsonStore.ReadAsync<ToolchainLock>(lockPath, token) != expected || !File.Exists(receiptPath))
             throw new StudioXException("DOWNLOAD_BUILD", "请先使用当前工具集成功编译工程。");
         var receipt = await JsonStore.ReadAsync<BuildReceipt>(receiptPath, token);
-        if (receipt.Project != project || receipt.ToolFingerprint != tools.Fingerprint || receipt.Images.Length == 0)
-            throw new StudioXException("DOWNLOAD_BUILD", "工程配置已变化，请重新编译后下载。");
+        if (receipt.Project != project || receipt.ToolFingerprint != tools.Fingerprint || receipt.Images.Length == 0 ||
+            receipt.SourceStamp is null ||
+            receipt.SourceStamp != await DebugSourceStamp.ComputeAsync(root, token))
+            throw new StudioXException("DOWNLOAD_BUILD", "源码或工程配置已变化，请重新编译后下载。");
         if (receipt.Images.Length != 1)
             throw new StudioXException("DOWNLOAD_TARGET", "工程包含多个可执行固件目标，无法自动确定下载对象；请保留一个应用固件目标后重试。");
         if (project.CubeMx is { } cube)
@@ -95,26 +110,49 @@ public sealed class OpenOcdService(ToolsetCatalog catalog)
         if (!string.Equals(Convert.ToHexString(SHA256.HashData(bytes)), source.Sha256, StringComparison.OrdinalIgnoreCase))
             throw new StudioXException("DOWNLOAD_CHANGED", "编译后的固件已被替换或修改，请重新编译后下载。");
         FirmwareImage.Validate(bytes, source.Format, device);
+        return new(configuration, tools, sourceImage, source.Format, source.Sha256, bytes);
+    }
+
+    private async Task<DownloadPreparation> PrepareCoreAsync(string projectDirectory, DownloadOptions options, CancellationToken token,
+        string? expectedDeviceId = null, string? expectedImageSha256 = null)
+    {
+        var root = Path.GetFullPath(projectDirectory);
+        var validated = await ValidateImageAsync(root, options, token);
+        if (expectedDeviceId is not null && !string.Equals(validated.Configuration.Device.Id, expectedDeviceId, StringComparison.Ordinal) ||
+            expectedImageSha256 is not null && !string.Equals(validated.Sha256, expectedImageSha256, StringComparison.OrdinalIgnoreCase))
+            throw new StudioXException("DOWNLOAD_APPROVAL_CHANGED", "审批后的芯片型号或固件哈希已变化，请重新预览并授权。");
         // 使用构建产物快照，避免用户之后修改产物影响实际写入内容。
         var session = PathBoundary.Resolve(root, ".build/download-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(session);
-        var image = Path.Combine(session, "firmware." + source.Format);
-        await File.WriteAllBytesAsync(image, bytes, token);
-        var arguments = CreateArguments(root, configuration, options, tools, image, source.Format);
-        return new(configuration, options, tools, sourceImage, image, arguments, Path.Combine(session, "openocd.log"));
+        var image = Path.Combine(session, "firmware." + validated.Format);
+        await File.WriteAllBytesAsync(image, validated.Bytes, token);
+        var arguments = CreateArguments(root, validated.Configuration, options, validated.Tools, image, validated.Format);
+        return new(validated.Configuration, options, validated.Tools, validated.SourceImage, image, arguments, Path.Combine(session, "openocd.log"));
     }
 
     public Task<DownloadReport> DownloadAsync(string projectDirectory, DownloadOptions options, IProgress<string>? output = null, CancellationToken token = default)
-        => Task.Run(() => DownloadCoreAsync(projectDirectory, options, output, token), token);
+        => Task.Run(() => DownloadCoreAsync(projectDirectory, options, output, token, null, null), token);
 
-    private async Task<DownloadReport> DownloadCoreAsync(string projectDirectory, DownloadOptions options, IProgress<string>? output, CancellationToken token)
+    /// <summary>供逐次授权的调用方使用；执行前再次核对审批中的芯片与固件散列。</summary>
+    public Task<DownloadReport> DownloadApprovedAsync(string projectDirectory, DownloadOptions options,
+        string expectedDeviceId, string expectedImageSha256, IProgress<string>? output = null, CancellationToken token = default)
+    {
+        if (string.IsNullOrWhiteSpace(expectedDeviceId) || expectedImageSha256 is null ||
+            expectedImageSha256.Length != 64 || !expectedImageSha256.All(Uri.IsHexDigit))
+            throw new StudioXException("DOWNLOAD_APPROVAL", "需要明确的芯片型号和完整固件 SHA-256。");
+        return Task.Run(() => DownloadCoreAsync(projectDirectory, options, output, token,
+            expectedDeviceId, expectedImageSha256), token);
+    }
+
+    private async Task<DownloadReport> DownloadCoreAsync(string projectDirectory, DownloadOptions options, IProgress<string>? output,
+        CancellationToken token, string? expectedDeviceId, string? expectedImageSha256)
     {
         if (!await gate.WaitAsync(0, token)) throw new StudioXException("DOWNLOAD_BUSY", "烧录器正在使用中。");
         try
         {
             var root = Path.GetFullPath(projectDirectory);
             output?.Report("准备下载：检查当前构建产物与下载范围…\n");
-            var prepared = await PrepareCoreAsync(root, options, token);
+            var prepared = await PrepareCoreAsync(root, options, token, expectedDeviceId, expectedImageSha256);
             using var ownership = ProbeLease.Acquire();
             var probe = Validate(prepared.Configuration.OpenOcd, options);
             var log = new StringBuilder();

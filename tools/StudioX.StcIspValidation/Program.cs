@@ -34,6 +34,14 @@ try { await service.PrepareAsync(project, settings); throw new Exception("未编
 catch (StudioXException ex) when (ex.Code == "STC_ISP_BUILD") { }
 var build = await new BuildService(catalog).BuildAsync(project);
 Check(build.Success, "SDCC 实际编译：" + build.Log);
+var existingSnapshots = Directory.EnumerateDirectories(Path.Combine(project, ".build"), "stc-isp-*").Count();
+var preview = await service.PreviewAsync(project, settings);
+Check(preview.ExpectedModel == device.Id && preview.Port == "COM5" &&
+    preview.Settings == settings && preview.ImageSha256.Length == 64 &&
+    preview.DataBytes > 0 && preview.Tool.Available &&
+    Directory.EnumerateDirectories(Path.Combine(project, ".build"), "stc-isp-*").Count() == existingSnapshots,
+    "STC ISP 只读预检返回准确目标、HEX、端口与时钟且不创建快照");
+await McpChecks.RunAsync(project, Path.GetFullPath(args[0]), output, Check);
 var prepared = await service.PrepareAsync(project, settings);
 Check(prepared.ExpectedModel == "IAP15F2K61S2" && prepared.ExpectedCodeBytes == 62464 && prepared.DataBytes > 0 &&
     prepared.HighestAddress < 62457 && prepared.Port == "COM5" &&

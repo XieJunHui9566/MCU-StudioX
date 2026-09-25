@@ -5,6 +5,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using StudioX.Application;
+using StudioX.Application.Mcp;
 
 public partial class MainWindow
 {
@@ -71,6 +72,8 @@ public partial class MainWindow
     public async Task RenderPreviewAsync(string directory)
     {
         ShowDocument(WelcomeTab);
+        // 预览等待后台记录清理完成，确保截图反映欢迎页的最终状态。
+        await recentPruneTask;
         foreach (var theme in new[] { ThemeService.Dark, ThemeService.Light })
         {
             ApplyTheme(theme); UpdateLayout();
@@ -83,7 +86,93 @@ public partial class MainWindow
         settings.Show(); settings.UpdateLayout();
         await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
         Render(settings, Path.Combine(directory, "appearance.png")); settings.Close();
-        await File.WriteAllTextAsync(Path.Combine(directory, "result.txt"), "Rendered welcome (dark/light) and appearance settings. No device/build actions.\n");
+        AiSidebarColumn.Width = new GridLength(400);
+        AiSidebarSplitterColumn.Width = new GridLength(5);
+        AiSidebar.Visibility = AiSidebarSplitter.Visibility = Visibility.Visible;
+        AiTranscript.Visibility = AiStatus.Visibility = AiPromptPanel.Visibility = Visibility.Visible;
+        AiUnconfiguredHint.Visibility = Visibility.Collapsed;
+        AiHistoryButton.IsEnabled = AiNewConversationButton.IsEnabled = true;
+        aiConversationPickerUpdating = true;
+        AiConversationPicker.ItemsSource = new[]
+        {
+            new AiConversation(Guid.NewGuid().ToString("N"), "检查工程启动代码", DateTimeOffset.UtcNow, DateTimeOffset.UtcNow, []),
+            new AiConversation(Guid.NewGuid().ToString("N"), "定位编译错误", DateTimeOffset.UtcNow.AddDays(-1), DateTimeOffset.UtcNow.AddDays(-1), []),
+            new AiConversation(Guid.NewGuid().ToString("N"), "核对串口数据", DateTimeOffset.UtcNow.AddDays(-2), DateTimeOffset.UtcNow.AddDays(-2), [])
+        };
+        AiConversationPicker.SelectedIndex = 0;
+        aiConversationPickerUpdating = false;
+        AiConversationHeading.Text = "检查工程启动代码";
+        AiConversationHeading.Visibility = Visibility.Visible;
+        AiHistoryCount.Text = "3 条";
+        aiDisplaySettings = new AiSettings(ReasoningEffort: "max");
+        AiPopupModelName.Text = "deepseek-flash";
+        aiThinkingSliderUpdating = true;
+        AiThinkingSlider.Value = 3;
+        aiThinkingSliderUpdating = false;
+        UpdateAiThinkingLabel();
+        AiTranscriptItems.Children.Clear();
+        AppendAiTranscript("你", "检查一下工程启动代码，指出可能的时钟配置问题。");
+        AppendAiTranscript("AI", "我可以检查当前工程的启动文件和系统时钟设置。先读取相关源码，再指出具体位置与修改建议。\n\n当前示例仅用于界面预览。");
+        UpdateAiContextMeter(new AiSettings(ReasoningEffort: "max"), 32768, hasRequest: true,
+            cacheHitTokens: 24_576, cacheMissTokens: 8_192);
+        AiStatus.Text = "已完成。";
+        foreach (var theme in new[] { ThemeService.Dark, ThemeService.Light })
+        {
+            ApplyTheme(theme); UpdateLayout();
+            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+            Render(this, Path.Combine(directory, "ai-" + theme.Id + ".png"));
+        }
+        ApplyTheme(ThemeService.Dark);
+        AiSidebarColumn.Width = new GridLength(320);
+        UpdateLayout();
+        await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+        Render(this, Path.Combine(directory, "ai-compact.dark.png"));
+        AiHistoryPopup.IsOpen = true;
+        await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+        if (AiHistoryPopup.Child is not FrameworkElement historyPanel ||
+            historyPanel.ActualWidth <= 0 || historyPanel.ActualHeight <= 0)
+            throw new InvalidOperationException("AI 历史弹层未完成布局，无法验证选中样式。");
+        Render(historyPanel, Path.Combine(directory, "ai-history.dark.png"));
+        AiHistoryPopup.IsOpen = false;
+        StartAiActivity();
+        aiProgressBuffer?.Report(new AiAgentProgress(AiAgentProgressKind.ModelRequestStarted, 1));
+        aiProgressBuffer?.Report(new AiAgentProgress(AiAgentProgressKind.ReasoningDelta, 1,
+            "离线布局示例：这里显示接口实际返回的思考内容。"));
+        aiProgressBuffer?.Report(new AiAgentProgress(AiAgentProgressKind.ToolCallStarted, 1,
+            ToolName: "project_read_file"));
+        DrainAiActivityProgress();
+        if (aiActivityReasoning is not null) aiActivityReasoning.IsExpanded = true;
+        AiActivityTimer_Tick(null, EventArgs.Empty);
+        UpdateLayout();
+        await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+        Render(this, Path.Combine(directory, "ai-working.dark.png"));
+        FinishAiActivity();
+        var previousProject = projectDirectory;
+        using var previewApprovalCancellation = new CancellationTokenSource();
+        Task<bool>? previewApproval = null;
+        try
+        {
+            // 只渲染卡片；假工程路径不会传给 MCP，也不会执行文件或设备操作。
+            var previewProject = Path.Combine(directory, "approval-layout-only");
+            projectDirectory = previewProject;
+            StartAiActivity();
+            previewApproval = RequestAiMcpApprovalAsync(
+                new StudioXMcpApprovalRequest(previewProject, "project_edit_file",
+                    "将 src/main.c 中的 LED 闪烁间隔改为 200 ms。仅用于界面预览。",
+                    StudioXMcpPermission.FileWrite), aiProjectGeneration, previewApprovalCancellation.Token);
+            UpdateLayout();
+            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+            Render(this, Path.Combine(directory, "ai-approval.dark.png"));
+        }
+        finally
+        {
+            previewApprovalCancellation.Cancel();
+            var incorrectlyApproved = previewApproval is not null && await previewApproval;
+            FinishAiActivity();
+            projectDirectory = previousProject;
+            if (incorrectlyApproved) throw new InvalidOperationException("离线预览不得批准 MCP 操作。");
+        }
+        await File.WriteAllTextAsync(Path.Combine(directory, "result.txt"), "Rendered welcome, appearance settings, and AI sidebar. No device/build/API actions.\n");
     }
     private static void Render(FrameworkElement element, string path)
     {

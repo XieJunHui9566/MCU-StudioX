@@ -1,4 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup><OutputType>Exe</OutputType></PropertyGroup>
-  <ItemGroup><ProjectReference Include="../../src/StudioX.Engine/StudioX.Engine.csproj" /></ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/StudioX.Application/StudioX.Application.csproj" />
+    <ProjectReference Include="../../src/StudioX.Engine/StudioX.Engine.csproj" />
+  </ItemGroup>
 </Project>

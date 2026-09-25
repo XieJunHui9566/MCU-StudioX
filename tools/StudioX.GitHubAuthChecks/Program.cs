@@ -48,7 +48,7 @@ Check(environment["GCM_CREDENTIAL_STORE"] == "wincredman" && environment["GCM_IN
 var accounts = (IReadOnlyList<string>)Invoke("ParseAccounts", "alice\r\nbob\nalice\n");
 Check(accounts.SequenceEqual(["alice", "bob"]), "account list strips empty lines and duplicates");
 
-const string fakeSecret = "unit-test-credential";
+const string fakeSecret = "ghu_TEST_SECRET_MUST_NOT_APPEAR_IN_ERRORS";
 Check((string)Invoke("ParseCredential", $"username=alice\npassword={fakeSecret}\n", "alice") == fakeSecret,
     "credential parser selects matching account");
 try
@@ -70,7 +70,7 @@ catch (TargetInvocationException error) when (error.InnerException is StudioXExc
     Check(true, "account validation rejects protocol injection");
 }
 
-const string fakeProfileToken = "unit-test-profile-token";
+const string fakeProfileToken = "ghu_OFFLINE_PROFILE_SECRET";
 var avatarBytes = Convert.FromBase64String("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScLttAAAAABJRU5ErkJggg==");
 var avatarRequests = 0;
 var selectedAccounts = new List<string?>();

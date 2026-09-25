@@ -7,8 +7,19 @@ using StudioX.Engine.Debugging;
 using StudioX.Foundation;
 using StudioX.Packages;
 
-// 全部测试只调用 PrepareAsync；OpenOCD 只解析配置并执行模拟读数，绝不 init。
-if (args is not [var runtime, var output, var cubeF1, var cubeF4, var packs]) return 2;
+// 全部测试只预检或准备固件；OpenOCD 只解析配置并执行模拟读数，绝不 init。
+var nativeF407Only = args is ["--native-f407", _, _, _];
+string runtime, output, cubeF1, cubeF4, packs;
+if (nativeF407Only)
+{
+    runtime = args[1]; output = args[2]; cubeF1 = cubeF4 = "";
+    packs = Path.GetDirectoryName(args[3])!;
+}
+else if (args is [var runtimeArg, var outputArg, var cubeF1Arg, var cubeF4Arg, var packsArg])
+{
+    runtime = runtimeArg; output = outputArg; cubeF1 = cubeF1Arg; cubeF4 = cubeF4Arg; packs = packsArg;
+}
+else return 2;
 var root = Path.GetFullPath(output);
 if (Directory.Exists(root)) throw new InvalidOperationException("Use a new output directory.");
 Directory.CreateDirectory(root);
@@ -22,6 +33,17 @@ async Task Reject(Func<Task> action, string code)
 {
     try { await action(); throw new InvalidOperationException("Expected rejection: " + code); }
     catch (StudioXException ex) when (ex.Code == code) { Pass("reject " + code); }
+}
+
+if (nativeF407Only)
+{
+    var nativeRepository = new PackRepository(Path.Combine(root, "packs"));
+    var pack = await nativeRepository.ImportAsync(args[3]);
+    var project = Path.Combine(root, "native-f407");
+    await new ProjectService().CreateAsync(pack, "STM32F407ZG", "hal-freertos", "mcp_download_test", project);
+    await BuildAndPrepare(project, false);
+    await File.WriteAllLinesAsync(Path.Combine(root, "result.txt"), passed.Prepend("PASS — offline only; no hardware accessed"));
+    return 0;
 }
 
 foreach (var (source, name) in new[] { (cubeF1, "cube-f103"), (cubeF4, "cube-f407") })
@@ -39,12 +61,15 @@ foreach (var (family, device, template) in new[] { ("f103", "STM32F103C8", "spl"
     await new ProjectService().CreateAsync(pack, device, template, "download_test", project);
     await BuildAndPrepare(project, false);
 }
-var agPack = await repository.ImportAsync(Path.Combine(packs, "studiox.preview.ag32vf303-0.1.0.mcupack"));
+var agPack = await repository.ImportAsync(Path.Combine(packs, "studiox.preview.ag32vf303-0.1.1.mcupack"));
 var agRoot = Path.Combine(root, "native-ag32");
 await new ProjectService().CreateAsync(agPack, "AG32VF303CCT6", "minimal", "ag_download_test", agRoot);
-Check(await downloads.ConfigurationAsync(agRoot) is null, "Legacy AG32 preview pack must not acquire a guessed hardware profile");
-await Reject(() => downloads.PrepareAsync(agRoot, new("stlink", 2000)), "DOWNLOAD_UNSUPPORTED");
-Pass("A pack without a download profile stays unavailable; no guessed ST-Link on RISC-V");
+var agConfig = await downloads.ConfigurationAsync(agRoot) ?? throw new InvalidOperationException("Missing AG32 download configuration");
+Check(agConfig.OpenOcd.Probes.Select(p => p.Id).SequenceEqual(["agm-blaster"]) &&
+    agConfig.OpenOcd.ApplicationFlashBytes == 0x27000 && agConfig.Options.ProbeId == "agm-blaster",
+    "AG32 uses only the official probe and 156 KiB application region");
+await Reject(() => downloads.PrepareAsync(agRoot, new("stlink", 2000)), "DOWNLOAD_PROBE");
+await BuildAndPrepare(agRoot, false);
 await File.WriteAllLinesAsync(Path.Combine(root, "result.txt"), passed.Prepend("PASS — offline only; no hardware accessed"));
 return 0;
 
@@ -56,6 +81,29 @@ async Task BuildAndPrepare(string project, bool cube)
     var built = await builds.BuildAsync(project);
     await File.WriteAllTextAsync(Path.Combine(project, "validation-build.log"), built.Log);
     Check(built.Success, built.Log);
+    var snapshotsBeforePreview = Directory.EnumerateDirectories(Path.Combine(project, ".build"), "download-*").Count();
+    var preview = await downloads.PreviewAsync(project, config.Options);
+    Check(preview.Configuration.Device.Id == config.Device.Id && preview.Sha256.Length == 64 &&
+        File.Exists(preview.SourceImage) &&
+        Directory.EnumerateDirectories(Path.Combine(project, ".build"), "download-*").Count() == snapshotsBeforePreview,
+        "Read-only download preview validates current firmware without creating snapshots");
+    if (!cube)
+    {
+        var sourceFile = Path.Combine(project, "src", "main.c");
+        var originalSource = await File.ReadAllTextAsync(sourceFile);
+        try
+        {
+            await File.AppendAllTextAsync(sourceFile, "\n/* stale build preview check */\n");
+            await Reject(() => downloads.PreviewAsync(project, config.Options), "DOWNLOAD_BUILD");
+        }
+        finally { await File.WriteAllTextAsync(sourceFile, originalSource); }
+    }
+    await Reject(() => downloads.DownloadApprovedAsync(project, config.Options,
+        config.Device.Id, new string('0', 64)), "DOWNLOAD_APPROVAL_CHANGED");
+    await Reject(() => downloads.DownloadApprovedAsync(project, config.Options,
+        "WRONG_DEVICE", preview.Sha256), "DOWNLOAD_APPROVAL_CHANGED");
+    Check(Directory.EnumerateDirectories(Path.Combine(project, ".build"), "download-*").Count() == snapshotsBeforePreview,
+        "Wrong approved hash rejects before snapshot or hardware access");
     foreach (var probe in config.OpenOcd.Probes)
     {
         var options = new DownloadOptions(probe.Id, 1500, "offline-serial [literal] $value");

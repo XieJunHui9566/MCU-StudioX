@@ -6,6 +6,10 @@ using StudioX.Devices;
 using StudioX.Foundation;
 
 public sealed record SerialRecord(DateTimeOffset Time, bool Transmit, byte[] Data, bool Boundary = false, bool Offline = false);
+public sealed record SerialRawChunk(DateTimeOffset ReceivedAtUtc, long OffsetBytes, string Base64);
+public sealed record SerialRawSnapshot(long AvailableFromByteOffset, long NextReceivedByteOffset,
+    long TotalReceivedBytes, long MissingHistoryBytes, long DroppedFrames, bool Truncated,
+    IReadOnlyList<SerialRawChunk> Chunks);
 public sealed record SerialStatus(bool Connected, string Message, long Received, long Sent, long DroppedFrames,
     long DiscardedHistoryBytes, SerialPins? Pins, string[] Errors);
 public sealed record SerialPreferences(SerialSettings Connection, SerialTextMode ReceiveMode = SerialTextMode.Utf8,
@@ -139,6 +143,41 @@ public sealed class SerialTerminalService(DeviceHub hub, string dataDirectory, F
     }
     public TerminalSnapshot? ReadDisplay(long previousVersion, bool timestamps)
     { lock (sync) return terminal.Version == previousVersion ? null : terminal.Snapshot(timestamps); }
+    /// <summary>按接收字节偏移读取有界原始 RX 帧；时间戳来自主机接收时钟。</summary>
+    public SerialRawSnapshot ReadRaw(long afterReceivedBytes, int maxBytes)
+    {
+        if (afterReceivedBytes < 0 || maxBytes is < 1 or > 8192)
+            throw new ArgumentOutOfRangeException(nameof(afterReceivedBytes), "原始串口读取范围无效。");
+        lock (sync)
+        {
+            if (afterReceivedBytes > received)
+                throw new ArgumentOutOfRangeException(nameof(afterReceivedBytes), "接收偏移超过目前收到的字节数。");
+            var retained = records.Where(record => !record.Transmit && !record.Boundary)
+                .Sum(record => (long)record.Data.Length);
+            var availableFrom = received - retained;
+            var cursor = availableFrom;
+            var next = Math.Max(afterReceivedBytes, availableFrom);
+            var remaining = maxBytes;
+            var chunks = new List<SerialRawChunk>();
+            foreach (var record in records)
+            {
+                if (record.Transmit || record.Boundary) continue;
+                var start = cursor;
+                cursor += record.Data.Length;
+                if (cursor <= next) continue;
+                var skip = (int)Math.Max(0, next - start);
+                var take = Math.Min(remaining, record.Data.Length - skip);
+                if (take <= 0) break;
+                chunks.Add(new SerialRawChunk(record.Time, start + skip,
+                    Convert.ToBase64String(record.Data, skip, take)));
+                next = start + skip + take;
+                remaining -= take;
+                if (remaining == 0) break;
+            }
+            return new SerialRawSnapshot(availableFrom, next, received,
+                Math.Max(0, availableFrom - afterReceivedBytes), dropped, next < received, chunks);
+        }
+    }
     public SerialStatus Status { get { lock (sync) return new(connected, message, received, sent, dropped, discarded, pins, errors.ToArray()); } }
     public async Task SendAsync(byte[] bytes)
     {

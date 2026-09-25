@@ -10,6 +10,7 @@
     <Image Source="{StaticResource StudioXMark}" Width="28" Height="28" Stretch="Uniform" AutomationProperties.Name="MCU StudioX 标识"/>
     <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" ClipToBounds="True"><TextBlock Text="MCU StudioX" FontWeight="SemiBold"/><TextBlock Text=" / " Foreground="{DynamicResource Muted}" Margin="10,0"/><TextBlock x:Name="WindowProjectTitle" Text="欢迎" Foreground="{DynamicResource Muted}" MaxWidth="320" TextTrimming="CharacterEllipsis" ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}"/><Border Background="{DynamicResource Panel}" CornerRadius="3" Margin="14,0,0,0" Padding="6,2"><TextBlock Text="PREVIEW" FontSize="9" Foreground="{DynamicResource Muted}"/></Border></StackPanel>
     <StackPanel Grid.Column="2" Orientation="Horizontal" shell:WindowChrome.IsHitTestVisibleInChrome="True">
+      <Button x:Name="AiToggleButton" Style="{StaticResource ToolButton}" Width="34" Height="30" Margin="0,4,8,4" Click="AiAssistant_Click" ToolTip="打开右侧 AI 助手" AutomationProperties.Name="打开右侧 AI 助手"><local:Icon Kind="ai" Foreground="{DynamicResource Accent}"/></Button>
       <Button x:Name="GitHubIdentityButton" Style="{StaticResource LabeledToolButton}" Height="30" Margin="0,4,10,4" Click="GitHubWorkspace_Click" ToolTip="未登录 GitHub · 点击打开协作页登录" AutomationProperties.Name="未登录 GitHub">
        <StackPanel Orientation="Horizontal">
         <Grid x:Name="GitHubAvatarContainer" Width="22" Height="22" Margin="0,0,7,0" Visibility="Collapsed">
@@ -24,7 +25,7 @@
     </StackPanel>
    </Grid></Border>
    <Border Grid.Row="1" Background="{DynamicResource ChromeSurface}"><Menu Margin="5,0">
-    <MenuItem Header="文件(_F)"><MenuItem Header="新建工程…" InputGestureText="Ctrl+N" Click="NewProject_Click"/><MenuItem Header="打开工程…" InputGestureText="Ctrl+O" Click="OpenProject_Click"/><MenuItem Header="导入 CubeMX CMake 工程…" Click="ImportCubeMx_Click"/><MenuItem Header="保存" InputGestureText="Ctrl+S" Click="Save_Click"/><MenuItem Header="全部保存" InputGestureText="Ctrl+Shift+S" Click="SaveAll_Click"/><MenuItem x:Name="CloseProjectMenu" Header="关闭工程" InputGestureText="Ctrl+Shift+W" IsEnabled="False" Click="CloseProject_Click"/><MenuItem Header="关闭当前标签" InputGestureText="Ctrl+W" Click="CloseDocument_Click"/><Separator/><MenuItem Header="导入器件包…" Click="ImportPack_Click"/><MenuItem x:Name="SyncPacksMenu" Header="从 GitHub 同步器件包…" Click="SyncPacks_Click"/><Separator/><MenuItem Header="退出" Click="Close_Click"/></MenuItem>
+    <MenuItem Header="文件(_F)"><MenuItem Header="新建工程…" InputGestureText="Ctrl+N" Click="NewProject_Click"/><MenuItem Header="打开工程…" InputGestureText="Ctrl+O" Click="OpenProject_Click"/><MenuItem Header="导入 CubeMX CMake 工程…" Click="ImportCubeMx_Click"/><MenuItem Header="保存" InputGestureText="Ctrl+S" Click="Save_Click"/><MenuItem Header="全部保存" InputGestureText="Ctrl+Shift+S" Click="SaveAll_Click"/><MenuItem x:Name="CloseProjectMenu" Header="关闭工程" InputGestureText="Ctrl+Shift+W" IsEnabled="False" Click="CloseProject_Click"/><MenuItem Header="关闭当前标签" InputGestureText="Ctrl+W" Click="CloseDocument_Click"/><Separator/><MenuItem Header="导入器件包…" Click="ImportPack_Click"/><MenuItem x:Name="CheckPackUpdatesMenu" Header="检查 GitHub 器件包更新…" Click="CheckPackUpdates_Click"/><MenuItem x:Name="SyncPacksMenu" Header="从 GitHub 同步下载器件包…" Click="SyncPacks_Click"/><Separator/><MenuItem Header="退出" Click="Close_Click"/></MenuItem>
     <MenuItem Header="编辑(_E)"><MenuItem Header="撤销" Command="ApplicationCommands.Undo"/><MenuItem Header="重做" Command="ApplicationCommands.Redo"/><Separator/><MenuItem Header="剪切" Command="ApplicationCommands.Cut"/><MenuItem Header="复制" Command="ApplicationCommands.Copy"/><MenuItem Header="粘贴" Command="ApplicationCommands.Paste"/><Separator/><MenuItem Header="代码提示" InputGestureText="Ctrl+Space" Click="CompleteCode_Click"/><MenuItem Header="参数提示" InputGestureText="Ctrl+Shift+Space" Click="ParameterInfo_Click"/><Separator/><MenuItem Header="切换行注释" InputGestureText="Ctrl+/" Command="local:SourceCommands.ToggleComment" CommandTarget="{Binding ElementName=SourceEditor}"/></MenuItem>
     <MenuItem Header="视图(_V)"><MenuItem Header="欢迎页" Click="Welcome_Click"/><MenuItem Header="编辑器字号"><MenuItem Header="放大" Click="ZoomIn_Click"/><MenuItem Header="缩小" Click="ZoomOut_Click"/><MenuItem Header="恢复默认字号" Click="ZoomReset_Click"/></MenuItem><MenuItem Header="工程窗口" InputGestureText="Alt+1" Click="ToggleProject_Click"/><MenuItem Header="底部工具窗口" InputGestureText="Alt+4" Click="ToggleBottom_Click"/><Separator/><MenuItem Header="外观与背景…" InputGestureText="Ctrl+Alt+S" Click="Appearance_Click"/></MenuItem>
     <MenuItem Header="构建(_B)"><MenuItem x:Name="BuildMenu" IsEnabled="False" Header="编译工程" InputGestureText="F7" Click="Build_Click"/><MenuItem Header="停止构建" Click="Cancel_Click"/><Separator/><MenuItem x:Name="DownloadMenu" Header="下载固件" IsEnabled="False" Click="Download_Click"/><MenuItem x:Name="DownloadSettingsMenu" Header="下载设置…" IsEnabled="False" Click="DownloadSettings_Click"/><MenuItem x:Name="Ag32LogicMenu" Header="AG32 逻辑模式…" Visibility="Collapsed" Click="Ag32Logic_Click"/><MenuItem x:Name="BuildLogicButton" Header="AG32 逻辑构建指引…" Visibility="Collapsed" Click="BuildLogic_Click"/><MenuItem x:Name="DownloadLogicButton" Header="AG32 逻辑下载指引…" Visibility="Collapsed" Click="DownloadLogic_Click"/></MenuItem>
@@ -44,7 +45,7 @@
      <MenuItem x:Name="DebugRunToMenu" Header="运行到光标" InputGestureText="Ctrl+F10" Click="DebugRunToCursor_Click" IsEnabled="False"/>
      <MenuItem x:Name="ShowDebugMenu" Header="调试窗口" Click="ShowDebug_Click" IsEnabled="False"/>
     </MenuItem>
-    <MenuItem Header="工具(_T)"><MenuItem Header="工程终端" InputGestureText="Ctrl+`" Click="ProjectTerminal_Click"/><MenuItem Header="Git 图谱" Click="GitGraph_Click"/><MenuItem Header="GitHub 协作" Click="GitHubWorkspace_Click"/><MenuItem Header="器件与模板" Click="DevicesAndTemplates_Click"/><MenuItem Header="串口终端" Click="Serial_Click"/><MenuItem Header="串口绘图" Click="SerialPlot_Click"/><MenuItem Header="波形演示" Click="Lab_Click"/><MenuItem Header="插件与工具集" Click="Extensions_Click"/><MenuItem Header="检查内置工具链" Click="VerifyTools_Click"/></MenuItem>
+    <MenuItem Header="工具(_T)"><MenuItem Header="工程终端" InputGestureText="Ctrl+`" Click="ProjectTerminal_Click"/><MenuItem Header="AI 接口设置…" Click="AiSettingsMenu_Click"/><MenuItem Header="Git 图谱" Click="GitGraph_Click"/><MenuItem Header="GitHub 协作" Click="GitHubWorkspace_Click"/><MenuItem Header="器件与模板" Click="DevicesAndTemplates_Click"/><MenuItem Header="串口终端" Click="Serial_Click"/><MenuItem Header="串口绘图" Click="SerialPlot_Click"/><MenuItem Header="波形演示" Click="Lab_Click"/><MenuItem Header="插件与工具集" Click="Extensions_Click"/><MenuItem Header="检查内置工具链" Click="VerifyTools_Click"/></MenuItem>
     <MenuItem Header="帮助(_H)"><MenuItem Header="快速开始" Click="Welcome_Click"/><MenuItem Header="关于 MCU StudioX" Click="About_Click"/></MenuItem>
    </Menu></Border>
    <Border x:Name="MainToolbar" Grid.Row="2" Background="{DynamicResource ChromeSurface}" BorderBrush="{DynamicResource Border}" BorderThickness="0,0,0,1"><DockPanel Margin="8,3">
@@ -82,7 +83,7 @@
      </WrapPanel>
     </DockPanel>
    </Border>
-   <Grid Grid.Row="4"><Grid.ColumnDefinitions><ColumnDefinition Width="44"/><ColumnDefinition x:Name="ProjectColumn" Width="230" MinWidth="0"/><ColumnDefinition x:Name="ProjectSplitterColumn" Width="4"/><ColumnDefinition/><ColumnDefinition Width="32"/></Grid.ColumnDefinitions>
+   <Grid Grid.Row="4"><Grid.ColumnDefinitions><ColumnDefinition Width="44"/><ColumnDefinition x:Name="ProjectColumn" Width="230" MinWidth="0"/><ColumnDefinition x:Name="ProjectSplitterColumn" Width="4"/><ColumnDefinition MinWidth="200"/><ColumnDefinition x:Name="AiSidebarSplitterColumn" Width="0"/><ColumnDefinition x:Name="AiSidebarColumn" Width="0" MinWidth="0" MaxWidth="620"/><ColumnDefinition Width="32"/></Grid.ColumnDefinitions>
      <Border Background="{DynamicResource ChromeSurface}" BorderBrush="{DynamicResource Border}" BorderThickness="0,0,1,0"><DockPanel><StackPanel DockPanel.Dock="Bottom"><Button Style="{StaticResource RailButton}" ToolTip="工程终端 (Ctrl+`)" Click="ProjectTerminal_Click" AutomationProperties.Name="工程终端"><local:Icon Kind="terminal" /></Button><Button Style="{StaticResource RailButton}" ToolTip="构建日志" AutomationProperties.Name="构建日志" Click="ShowBuildLog_Click"><local:Icon Kind="build-log" /></Button><Button Style="{StaticResource RailButton}" ToolTip="外观与背景" Click="Appearance_Click"><local:Icon Kind="settings" /></Button></StackPanel><StackPanel><Button Style="{StaticResource RailButton}" ToolTip="工程 (Alt+1)" Click="ToggleProject_Click"><local:Icon Kind="folder" /></Button><Button Style="{StaticResource RailButton}" ToolTip="Git 图谱" AutomationProperties.Name="Git 图谱" Click="GitGraph_Click"><local:Icon Kind="git-branch" /></Button><Button Style="{StaticResource RailButton}" ToolTip="器件与模板" AutomationProperties.Name="器件与模板" Click="DevicesAndTemplates_Click"><local:Icon Kind="chip" /></Button><Button Style="{StaticResource RailButton}" ToolTip="串口终端" AutomationProperties.Name="串口终端" Click="Serial_Click"><local:Icon Kind="serial" /></Button><Button Style="{StaticResource RailButton}" ToolTip="串口绘图" AutomationProperties.Name="串口绘图" Click="SerialPlot_Click"><local:Icon Kind="wave" /></Button><Button Style="{StaticResource RailButton}" ToolTip="扩展" Click="Extensions_Click"><local:Icon Kind="plug" /></Button></StackPanel></DockPanel></Border>
     <Border Grid.Column="1" x:Name="ProjectPanel" Background="{DynamicResource ToolSurface}"><TabControl x:Name="LeftToolTabs"><TabItem Header="工程"><Grid><Grid.RowDefinitions><RowDefinition Height="34"/><RowDefinition/><RowDefinition Height="Auto"/></Grid.RowDefinitions><DockPanel Margin="12,0,5,0"><Button Style="{StaticResource ToolButton}" ToolTip="隐藏工程窗口" Click="ToggleProject_Click" DockPanel.Dock="Right"><local:Icon Kind="minus" /></Button><Button x:Name="CloseProjectButton" Style="{StaticResource ToolButton}" ToolTip="关闭工程 (Ctrl+Shift+W)" AutomationProperties.Name="关闭工程" Click="CloseProject_Click" IsEnabled="False" DockPanel.Dock="Right"><local:Icon Kind="close"/></Button><TextBlock Text="工程" FontWeight="SemiBold" VerticalAlignment="Center"/></DockPanel>
      <Grid Grid.Row="1"><StackPanel x:Name="EmptyProject" Margin="18,24,18,0"><local:Icon Kind="folder" Width="30" Height="30" HorizontalAlignment="Left" Margin="0,0,0,14"/><TextBlock Text="尚未打开工程" Margin="0,0,0,8"/><TextBlock Text="创建一个工程，或从本地打开已有工程。" TextWrapping="Wrap" Foreground="{DynamicResource Muted}" LineHeight="22"/><Button Style="{StaticResource LinkButton}" Content="新建工程…" Click="NewProject_Click" Margin="0,14,0,0"/><Button Style="{StaticResource LinkButton}" Content="打开工程…" Click="OpenProject_Click"/><Button Style="{StaticResource LinkButton}" Content="导入 CubeMX 工程…" Click="ImportCubeMx_Click"/></StackPanel><TreeView x:Name="ProjectTree" Visibility="Collapsed" Margin="6" MouseDoubleClick="ProjectTree_DoubleClick" KeyDown="ProjectTree_KeyDown"/></Grid>
@@ -93,7 +94,7 @@
     </Grid></TabItem></TabControl></Border>
     <GridSplitter Grid.Column="2" HorizontalAlignment="Stretch" Background="{DynamicResource Background}" ResizeDirection="Columns" ResizeBehavior="PreviousAndNext"/>
     <Grid Grid.Column="3"><Grid.RowDefinitions><RowDefinition/><RowDefinition Height="4"/><RowDefinition x:Name="BottomRow" Height="150" MinHeight="0"/></Grid.RowDefinitions>
-     <TabControl x:Name="WorkspaceTabs" Style="{StaticResource WorkspaceTabControl}">
+     <TabControl x:Name="WorkspaceTabs" Style="{StaticResource WorkspaceTabControl}" SelectionChanged="WorkspaceTabs_SkillsSelectionChanged">
       <TabItem Header="欢迎" x:Name="WelcomeTab"><Border Background="{DynamicResource EditorSurface}"><ScrollViewer VerticalScrollBarVisibility="Auto"><Grid Margin="44,30,44,18" MaxWidth="1180">
        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
        <Grid Margin="0,0,0,34"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="120"/></Grid.ColumnDefinitions><StackPanel><TextBlock Text="MCU StudioX" FontSize="40" FontWeight="SemiBold"/><TextBlock Text="嵌入式开发，从这里开始。" Foreground="{DynamicResource Muted}" FontSize="15" Margin="0,10,0,24"/><StackPanel Orientation="Horizontal"><Button Style="{StaticResource PrimaryButton}" Click="NewProject_Click" Margin="0,0,12,0"><StackPanel Orientation="Horizontal"><local:Icon Kind="plus" Foreground="White" Width="16" Height="16" Margin="0,0,8,0"/><TextBlock Text="新建工程" Foreground="White"/></StackPanel></Button><Button Content="打开工程…" Click="OpenProject_Click" Padding="18,10"/><Button Style="{StaticResource LinkButton}" Content="导入器件包" Click="ImportPack_Click" Margin="18,0,0,0"/></StackPanel></StackPanel>
@@ -164,10 +165,11 @@
           <StackPanel>
            <WrapPanel VerticalAlignment="Center">
             <TextBlock Text="在线器件包" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,16,0"/>
-            <Button x:Name="PackSyncButton" Content="从 GitHub 同步" Click="SyncPacks_Click" AutomationProperties.Name="从 GitHub 同步器件包" Margin="0,0,8,0"/>
-            <Button x:Name="PackSyncCancelButton" Content="取消同步" Click="CancelPackSync_Click" IsEnabled="False" AutomationProperties.Name="取消器件包同步"/>
+            <Button x:Name="PackCheckButton" Content="检查更新" Click="CheckPackUpdates_Click" AutomationProperties.Name="检查 GitHub 器件包更新" Margin="0,0,8,0"/>
+            <Button x:Name="PackSyncButton" Content="同步下载" Click="SyncPacks_Click" AutomationProperties.Name="从 GitHub 同步下载器件包" Margin="0,0,8,0"/>
+            <Button x:Name="PackSyncCancelButton" Content="取消" Click="CancelPackSync_Click" IsEnabled="False" AutomationProperties.Name="取消器件包网络操作"/>
            </WrapPanel>
-           <TextBlock x:Name="PackSyncStatus" Text="启动后自动检查公开器件包仓库；也可随时手动同步。" TextWrapping="Wrap" Foreground="{DynamicResource Muted}" Margin="0,9,0,0"/>
+           <TextBlock x:Name="PackSyncStatus" Text="点击“检查更新”查看可用器件包；点击“同步下载”导入新版本。仅在点击后访问 GitHub。" TextWrapping="Wrap" Foreground="{DynamicResource Muted}" Margin="0,9,0,0"/>
            <ProgressBar x:Name="PackSyncProgressBar" Height="4" Visibility="Collapsed" Margin="0,9,0,0"/>
           </StackPanel>
          </Border>
@@ -310,12 +312,123 @@
       <TabItem Header="串口绘图" x:Name="SerialPlotTab" Visibility="Collapsed"><local:SerialPlotView x:Name="SerialPlotView"/></TabItem>
       <TabItem Header="串口终端" x:Name="SerialTab" Visibility="Collapsed"><local:SerialTerminalView x:Name="SerialView"/></TabItem>
       <TabItem Header="波形演示" x:Name="LabTab" Visibility="Collapsed"><Grid Background="{DynamicResource EditorSurface}"><Grid Margin="22"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition/></Grid.RowDefinitions><StackPanel><TextBlock Text="数据观察" FontSize="22" FontWeight="SemiBold"/><TextBlock Text="模拟传感器 · 温度与数字状态，真实串口将在后续接入" Foreground="{DynamicResource Muted}" Margin="0,8,0,18"/></StackPanel><StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,18"><Button x:Name="SimulationButton" Content="连接模拟设备" Click="Simulation_Click" Margin="0,0,10,0"/><Button x:Name="RecordButton" Content="开始记录" Click="Record_Click" IsEnabled="False"/><TextBlock x:Name="FrameStatus" Text="未连接" Foreground="{DynamicResource Muted}" VerticalAlignment="Center" Margin="16,0,0,0"/></StackPanel><local:SignalPlot Grid.Row="2" x:Name="Plot"/></Grid></Grid></TabItem>
-      <TabItem Header="插件与工具集" x:Name="ExtensionsTab" Visibility="Collapsed"><Border Background="{DynamicResource EditorSurface}"><ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel Margin="32,28" MaxWidth="760"><TextBlock Text="插件与工具集" FontSize="23" FontWeight="SemiBold"/><TextBlock Text="管理工作台的开发组件与数据解码扩展。" Foreground="{DynamicResource Muted}" Margin="0,8,0,16"/><TextBlock Text="内置工具" Style="{StaticResource SectionLabel}"/><Button Content="检查内置工具链" Click="VerifyTools_Click" HorizontalAlignment="Left" Margin="0,0,0,12"/><TextBox x:Name="ToolInventory" IsReadOnly="True" MinHeight="80" TextWrapping="Wrap"/><TextBlock Text="工程按器件包自动选择工具集。F7 编译；支持下载的器件包可选择 ST-Link、CMSIS-DAP 或 J-Link。已收录的 STM32F1/F4 型号可选择 ST-Link 或 DAP-Link，通过 OpenOCD 调试。AG32VF303 新版包支持官方 AGM BLASTER；也可选择 F407 离线示例预览操作。" TextWrapping="Wrap" Foreground="{DynamicResource Muted}" Margin="0,12,0,0"/><TextBlock Text="数据解码插件" Style="{StaticResource SectionLabel}"/><ComboBox x:Name="PluginPicker"/><StackPanel Orientation="Horizontal" Margin="0,14,0,12"><TextBox x:Name="PluginInput" Text="24.5,1" Width="190" Margin="0,0,12,0"/><Button Content="运行解码器" Click="Decode_Click"/></StackPanel><TextBox x:Name="PluginOutput" IsReadOnly="True" MinHeight="140" TextWrapping="Wrap"/><TextBlock Text="仅运行你信任的插件。插件具有当前用户权限。" Foreground="{DynamicResource Muted}" FontSize="12" Margin="0,16,0,0"/></StackPanel></ScrollViewer></Border></TabItem>
+      <TabItem Header="插件与工具集" x:Name="ExtensionsTab" Visibility="Collapsed">
+       <Border Background="{DynamicResource EditorSurface}"><ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="32,28" MaxWidth="760">
+         <TextBlock Text="插件与工具集" FontSize="23" FontWeight="SemiBold"/>
+         <TextBlock Text="管理工作台的开发组件与数据解码扩展。" Foreground="{DynamicResource Muted}" Margin="0,8,0,16"/>
+         <TextBlock Text="内置工具" Style="{StaticResource SectionLabel}"/>
+         <Button Content="检查内置工具链" Click="VerifyTools_Click" HorizontalAlignment="Left" Margin="0,0,0,12"/>
+         <TextBox x:Name="ToolInventory" IsReadOnly="True" MinHeight="80" TextWrapping="Wrap"/>
+         <TextBlock Text="工程按器件包自动选择工具集。F7 编译；支持下载的器件包可选择 ST-Link、CMSIS-DAP 或 J-Link。已收录的 STM32F1/F4 型号可选择 ST-Link 或 DAP-Link，通过 OpenOCD 调试。AG32VF303 新版包支持官方 AGM BLASTER；也可选择 F407 离线示例预览操作。" TextWrapping="Wrap" Foreground="{DynamicResource Muted}" Margin="0,12,0,0"/>
+         <TextBlock Text="AI 技能" Style="{StaticResource SectionLabel}" Margin="0,22,0,8"/>
+         <TextBlock Text="用户技能可在工程中使用。工程内技能默认关闭，启用前请确认来源。技能说明不会直接获得文件或设备操作权限。" TextWrapping="Wrap" Foreground="{DynamicResource Muted}" FontSize="12"/>
+         <TextBlock x:Name="SkillsProjectText" Text="打开工程后查看技能。" TextWrapping="Wrap" Margin="0,10,0,0"/>
+         <StackPanel Orientation="Horizontal" Margin="0,9,0,10">
+          <CheckBox x:Name="ProjectSkillsEnabledToggle" Content="启用当前工程中的技能" IsEnabled="False" VerticalAlignment="Center" Checked="ProjectSkillsEnabled_Changed" Unchecked="ProjectSkillsEnabled_Changed"/>
+          <Button x:Name="SkillsRefreshButton" Content="刷新技能" Click="SkillsRefresh_Click" Margin="18,0,0,0" Padding="10,5"/>
+         </StackPanel>
+         <ItemsControl x:Name="SkillsList">
+          <ItemsControl.ItemTemplate><DataTemplate>
+           <Border BorderBrush="{DynamicResource Border}" BorderThickness="0,0,0,1" Padding="0,9">
+            <StackPanel>
+             <DockPanel LastChildFill="False"><TextBlock Text="{Binding Name}" FontWeight="SemiBold"/><TextBlock Text="{Binding ScopeLabel}" DockPanel.Dock="Right" Foreground="{DynamicResource Muted}" FontSize="11"/></DockPanel>
+             <TextBlock Text="{Binding Description}" TextWrapping="Wrap" Foreground="{DynamicResource Muted}" FontSize="12" Margin="0,4,0,0"/>
+            </StackPanel>
+           </Border>
+          </DataTemplate></ItemsControl.ItemTemplate>
+         </ItemsControl>
+         <TextBlock x:Name="SkillsEmptyHint" Text="尚未发现技能。" Foreground="{DynamicResource Muted}" Margin="0,6,0,0"/>
+         <TextBlock x:Name="SkillsDiagnosticText" Foreground="{DynamicResource Muted}" TextWrapping="Wrap" FontSize="11" Margin="0,8,0,0" Visibility="Collapsed"/>
+         <TextBlock Text="数据解码插件" Style="{StaticResource SectionLabel}"/>
+         <ComboBox x:Name="PluginPicker"/>
+         <StackPanel Orientation="Horizontal" Margin="0,14,0,12"><TextBox x:Name="PluginInput" Text="24.5,1" Width="190" Margin="0,0,12,0"/><Button Content="运行解码器" Click="Decode_Click"/></StackPanel>
+         <TextBox x:Name="PluginOutput" IsReadOnly="True" MinHeight="140" TextWrapping="Wrap"/>
+         <TextBlock Text="仅运行你信任的插件。插件具有当前用户权限。" Foreground="{DynamicResource Muted}" FontSize="12" Margin="0,16,0,0"/>
+        </StackPanel>
+       </ScrollViewer></Border>
+      </TabItem>
      </TabControl>
      <GridSplitter Grid.Row="1" HorizontalAlignment="Stretch" Background="{DynamicResource Background}" ResizeDirection="Rows" ResizeBehavior="PreviousAndNext"/>
      <Grid Grid.Row="2" x:Name="BottomPanel" Background="{DynamicResource ToolSurface}"><TabControl x:Name="BottomTabs"><TabItem Header="构建"><TextBox x:Name="BuildLog" Text="构建输出将在这里显示。" Background="Transparent" BorderThickness="0" IsReadOnly="True" FontFamily="Cascadia Mono, Consolas, Microsoft YaHei UI" FontSize="12" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Padding="14,10"/></TabItem><TabItem Header="设备输出"><TextBox x:Name="DeviceLog" Text="尚未连接设备。" Background="Transparent" BorderThickness="0" IsReadOnly="True" FontFamily="Consolas" FontSize="12" VerticalScrollBarVisibility="Auto" Padding="14,10"/></TabItem><TabItem x:Name="DebugTab" Header="调试" Visibility="Collapsed"><local:DebugToolsView x:Name="DebugTools"/></TabItem><TabItem x:Name="ProjectTerminalTab" Header="终端" GotFocus="ProjectTerminalTab_GotFocus"><local:ProjectTerminalView x:Name="ProjectTerminal"/></TabItem></TabControl><Button Style="{StaticResource ToolButton}" ToolTip="隐藏工具窗口 (Alt+4)" Click="ToggleBottom_Click" HorizontalAlignment="Right" VerticalAlignment="Top"><local:Icon Kind="minus" /></Button></Grid>
     </Grid>
-    <Border Grid.Column="4" Background="{DynamicResource ChromeSurface}" BorderBrush="{DynamicResource Border}" BorderThickness="1,0,0,0"><StackPanel><Button Style="{StaticResource RightRailButton}" ToolTip="欢迎页" Click="Welcome_Click"><local:Icon Kind="home" /></Button><Button Style="{StaticResource RightRailButton}" ToolTip="外观与背景" Click="Appearance_Click"><local:Icon Kind="image" /></Button></StackPanel></Border>
+    <Border x:Name="AiSidebar" Grid.Column="5" Visibility="Collapsed" Background="{DynamicResource ToolSurface}" BorderBrush="{DynamicResource Border}" BorderThickness="1,0,0,0">
+     <Grid Margin="12,0,12,10">
+      <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+      <DockPanel Margin="0,10,0,11">
+       <Button DockPanel.Dock="Right" Style="{StaticResource ToolButton}" ToolTip="收起 AI 助手" Click="AiClose_Click" AutomationProperties.Name="收起 AI 助手"><local:Icon Kind="close"/></Button>
+       <Button x:Name="AiNewConversationButton" DockPanel.Dock="Right" Style="{StaticResource ToolButton}" ToolTip="新对话" Click="AiNewConversation_Click" AutomationProperties.Name="新建 AI 对话"><local:Icon Kind="new-chat" Foreground="{DynamicResource Muted}"/></Button>
+       <Button x:Name="AiHistoryButton" DockPanel.Dock="Right" Style="{StaticResource ToolButton}" ToolTip="历史对话" Click="AiHistoryButton_Click" AutomationProperties.Name="查看当前工程历史对话"><local:Icon Kind="history" Foreground="{DynamicResource Muted}"/></Button>
+       <StackPanel><TextBlock Text="AI 助手" FontSize="16" FontWeight="SemiBold"/><TextBlock x:Name="AiConversationHeading" Visibility="Collapsed" Foreground="{DynamicResource Muted}" FontSize="11" MaxWidth="200" TextTrimming="CharacterEllipsis" ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}" Margin="0,3,0,0"/></StackPanel>
+      </DockPanel>
+      <Popup x:Name="AiHistoryPopup" Grid.Row="0" PlacementTarget="{Binding ElementName=AiHistoryButton}" Placement="Bottom" StaysOpen="False" AllowsTransparency="True" PopupAnimation="Fade" PreviewKeyDown="AiPopup_PreviewKeyDown">
+       <Border Width="310" MaxHeight="410" CornerRadius="12" Padding="12" Focusable="True" Background="{DynamicResource ToolSurface}" BorderBrush="{DynamicResource Border}" BorderThickness="1">
+        <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+         <DockPanel LastChildFill="False" Margin="0,0,0,9"><TextBlock Text="本工程的历史对话" FontWeight="SemiBold"/><TextBlock x:Name="AiHistoryCount" DockPanel.Dock="Right" Foreground="{DynamicResource Muted}" FontSize="11"/></DockPanel>
+         <Grid Grid.Row="1"><ListBox x:Name="AiConversationPicker" MaxHeight="310" Background="Transparent" Foreground="{DynamicResource Text}" BorderThickness="0" SelectionChanged="AiConversationPicker_SelectionChanged" AutomationProperties.Name="当前工程的历史对话">
+          <ListBox.ItemContainerStyle><Style TargetType="ListBoxItem">
+           <Setter Property="Foreground" Value="{DynamicResource Text}"/><Setter Property="Background" Value="Transparent"/><Setter Property="HorizontalContentAlignment" Value="Stretch"/><Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+           <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="ListBoxItem">
+            <Border x:Name="HistoryItemChrome" Background="{TemplateBinding Background}" BorderBrush="Transparent" BorderThickness="1" CornerRadius="8" Margin="1,2" Padding="9,7"><ContentPresenter HorizontalAlignment="Stretch" VerticalAlignment="Center"/></Border>
+            <ControlTemplate.Triggers>
+             <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="HistoryItemChrome" Property="Background" Value="#28424A59"/></Trigger>
+             <Trigger Property="IsSelected" Value="True"><Setter TargetName="HistoryItemChrome" Property="Background" Value="#3D465675"/><Setter TargetName="HistoryItemChrome" Property="BorderBrush" Value="#6B6580AA"/></Trigger>
+             <Trigger Property="IsKeyboardFocusWithin" Value="True"><Setter TargetName="HistoryItemChrome" Property="BorderBrush" Value="{DynamicResource Accent}"/></Trigger>
+            </ControlTemplate.Triggers>
+           </ControlTemplate></Setter.Value></Setter>
+          </Style></ListBox.ItemContainerStyle>
+          <ListBox.ItemTemplate><DataTemplate><StackPanel><TextBlock Text="{Binding Title}" Foreground="{DynamicResource Text}" TextTrimming="CharacterEllipsis"/><TextBlock Text="{Binding UpdatedUtc, StringFormat={}{0:yyyy-MM-dd HH:mm}}" Foreground="{DynamicResource Muted}" FontSize="10" Margin="0,3,0,0"/></StackPanel></DataTemplate></ListBox.ItemTemplate>
+         </ListBox><TextBlock x:Name="AiHistoryEmptyHint" Text="这个工程还没有历史对话。" Visibility="Collapsed" Foreground="{DynamicResource Muted}" Margin="4,16" HorizontalAlignment="Center"/></Grid>
+         <Button x:Name="AiDeleteConversationButton" Grid.Row="2" Style="{StaticResource ToolButton}" Width="Auto" Height="28" HorizontalAlignment="Right" Click="AiDeleteConversation_Click" ToolTip="删除当前选中的对话" AutomationProperties.Name="删除选中的 AI 对话" Margin="0,9,0,0"><StackPanel Orientation="Horizontal"><local:Icon Kind="trash" Width="15" Height="15" Foreground="{DynamicResource Muted}" Margin="0,0,4,0"/><TextBlock Text="删除选中对话" FontSize="11"/></StackPanel></Button>
+        </Grid>
+       </Border>
+      </Popup>
+      <Grid Grid.Row="1">
+       <ScrollViewer x:Name="AiTranscript" Visibility="Collapsed" VerticalScrollBarVisibility="Auto" Background="{DynamicResource EditorSurface}">
+        <StackPanel x:Name="AiTranscriptItems" Margin="10"/>
+       </ScrollViewer>
+       <StackPanel x:Name="AiEmptyHint" Visibility="Collapsed" IsHitTestVisible="False" HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="250">
+        <local:Icon Kind="ai" Width="26" Height="26" Foreground="{DynamicResource Accent}" HorizontalAlignment="Center"/>
+        <TextBlock Text="有什么可以一起处理？" FontSize="15" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,12,0,0"/>
+        <TextBlock Text="打开工程后，可以让我阅读代码、解释问题或提出修改。" Foreground="{DynamicResource Muted}" TextWrapping="Wrap" TextAlignment="Center" Margin="0,7,0,0"/>
+       </StackPanel>
+       <TextBlock x:Name="AiUnconfiguredHint" Text="未配置 API" Foreground="{DynamicResource Muted}" FontSize="15" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+      </Grid>
+      <TextBlock Grid.Row="2" x:Name="AiStatus" Visibility="Collapsed" Text="打开工程后可以提问。工程文本会发送到所配置的 API 服务。" Foreground="{DynamicResource Muted}" TextWrapping="Wrap" Margin="0,8,0,8" FontSize="11"/>
+      <Grid x:Name="AiPromptPanel" Grid.Row="3" Visibility="Collapsed">
+       <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+       <Border x:Name="AiSteeringBanner" Grid.Row="0" Visibility="Collapsed" Background="{DynamicResource ChromeSurface}" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="9" Padding="9,6" Margin="0,0,0,6">
+        <DockPanel LastChildFill="True">
+         <Button DockPanel.Dock="Right" Content="×" Click="AiSteeringRemove_Click" Style="{StaticResource ToolButton}" Width="24" Height="24" ToolTip="撤回尚未注入的提示" AutomationProperties.Name="撤回待注入提示"/>
+         <StackPanel><TextBlock x:Name="AiSteeringCount" Text="待注入 · 当前步骤完成后应用" Foreground="{DynamicResource Muted}" FontSize="10"/><TextBlock x:Name="AiSteeringText" TextTrimming="CharacterEllipsis" Foreground="{DynamicResource Text}" FontSize="11" Margin="0,2,6,0"/></StackPanel>
+        </DockPanel>
+       </Border>
+       <Border Grid.Row="1" Background="{DynamicResource EditorSurface}" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="13" Padding="7,6">
+        <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+         <TextBox x:Name="AiPromptInput" Grid.Row="0" MinHeight="68" MaxHeight="130" TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" Padding="4" Background="Transparent" BorderThickness="0" ToolTip="向 AI 助手提问；工程修改会逐次请求授权"/>
+         <TextBlock x:Name="AiCacheUsageText" Grid.Row="1" Text="缓存：发送后显示 API 用量" Foreground="{DynamicResource Muted}" FontSize="11" Margin="4,2,4,0" TextTrimming="CharacterEllipsis" ToolTip="发送消息后显示 API 实际返回的缓存命中和未命中 token。" AutomationProperties.Name="缓存用量"/>
+         <Grid Grid.Row="2" Margin="0,4,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+          <Button x:Name="AiModelButton" Grid.Column="1" Click="AiModelButton_Click" Background="Transparent" BorderBrush="Transparent" Padding="3,3" ToolTip="点击选择思考强度" AutomationProperties.Name="模型和思考强度"><StackPanel Orientation="Horizontal"><TextBlock x:Name="AiModelButtonText" Text="deepseek-flash · 高" MaxWidth="165" TextTrimming="CharacterEllipsis" FontSize="11" VerticalAlignment="Center"/><local:Icon Kind="chevron" Width="10" Height="10" Foreground="{DynamicResource Muted}" Margin="2,0,0,0"><local:Icon.RenderTransform><RotateTransform Angle="90" CenterX="5" CenterY="5"/></local:Icon.RenderTransform></local:Icon></StackPanel></Button>
+          <Grid x:Name="AiContextBadge" Grid.Column="2" Width="22" Height="22" Margin="4,0,5,0" VerticalAlignment="Center" ToolTip="尚无上下文用量" AutomationProperties.Name="上下文用量"><Ellipse x:Name="AiContextTrack" Width="17" Height="17" Stroke="{DynamicResource Border}" StrokeThickness="3"/><Path x:Name="AiContextArc" Stroke="{DynamicResource Accent}" StrokeThickness="3" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Visibility="Collapsed"/><Ellipse x:Name="AiContextFull" Width="17" Height="17" Stroke="{DynamicResource Accent}" StrokeThickness="3" Visibility="Collapsed"/></Grid>
+          <Button x:Name="AiCancelButton" Grid.Column="3" Content="停止" Click="AiCancel_Click" IsEnabled="False" Visibility="Collapsed" Padding="6,3" Margin="0,0,5,0"/>
+          <Button x:Name="AiSendButton" Grid.Column="4" Content="↑" Click="AiSend_Click" Width="32" Height="32" FontSize="18" FontWeight="SemiBold" Foreground="White" Background="{DynamicResource Accent}" BorderThickness="0" ToolTip="发送" AutomationProperties.Name="发送 AI 消息"><Button.Template><ControlTemplate TargetType="Button"><Border x:Name="SendCircle" Background="{TemplateBinding Background}" CornerRadius="16"><ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,-2,0,0"/></Border><ControlTemplate.Triggers><Trigger Property="IsEnabled" Value="False"><Setter TargetName="SendCircle" Property="Opacity" Value="0.4"/></Trigger></ControlTemplate.Triggers></ControlTemplate></Button.Template></Button>
+         </Grid>
+        </Grid>
+       </Border>
+       <Popup x:Name="AiModelPopup" PlacementTarget="{Binding ElementName=AiModelButton}" Placement="Top" StaysOpen="False" AllowsTransparency="True" PopupAnimation="Fade" PreviewKeyDown="AiPopup_PreviewKeyDown">
+        <Border Width="285" CornerRadius="12" Padding="14" Focusable="True" Background="{DynamicResource ToolSurface}" BorderBrush="{DynamicResource Border}" BorderThickness="1">
+         <StackPanel><TextBlock x:Name="AiPopupModelName" Text="deepseek-flash" FontSize="12" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+          <DockPanel LastChildFill="False" Margin="0,12,0,0"><TextBlock Text="思考强度" Foreground="{DynamicResource Muted}" FontSize="11"/><TextBlock x:Name="AiThinkingValue" DockPanel.Dock="Right" FontWeight="SemiBold" FontSize="11" Text="高"/></DockPanel>
+          <Slider x:Name="AiThinkingSlider" Minimum="0" Maximum="3" Value="2" TickFrequency="1" IsSnapToTickEnabled="True" ValueChanged="AiThinkingSlider_ValueChanged" Margin="0,8,0,0" ToolTip="DeepSeek 思考强度：关闭、低、高、最大" AutomationProperties.Name="思考强度"/>
+          <TextBlock x:Name="AiThinkingHint" Text="关闭     ·     低     ·     高     ·     最大" Foreground="{DynamicResource Muted}" FontSize="10" TextAlignment="Center" Margin="0,3,0,0"/>
+         </StackPanel>
+        </Border>
+       </Popup>
+      </Grid>
+     </Grid>
+    </Border>
+    <GridSplitter x:Name="AiSidebarSplitter" Grid.Column="4" Visibility="Collapsed" HorizontalAlignment="Stretch" Background="{DynamicResource Border}" ResizeDirection="Columns" ResizeBehavior="PreviousAndNext"/>
+    <Border Grid.Column="6" Background="{DynamicResource ChromeSurface}" BorderBrush="{DynamicResource Border}" BorderThickness="1,0,0,0"><StackPanel><Button Style="{StaticResource RightRailButton}" ToolTip="欢迎页" Click="Welcome_Click"><local:Icon Kind="home" /></Button><Button Style="{StaticResource RightRailButton}" ToolTip="外观与背景" Click="Appearance_Click"><local:Icon Kind="image" /></Button></StackPanel></Border>
    </Grid>
    <Border Grid.Row="5" Background="{DynamicResource ChromeSurface}" BorderBrush="{DynamicResource Border}" BorderThickness="0,1,0,0"><DockPanel Margin="12,0"><StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center"><TextBlock Text="C / C++" FontSize="11" Foreground="{DynamicResource Muted}" Margin="16,0"/><TextBlock Text="UTF-8" FontSize="11" Foreground="{DynamicResource Muted}" Margin="12,0"/><TextBlock Text="{x:Static local:ProductInfo.DisplayName}" FontSize="11" Foreground="{DynamicResource Muted}" Margin="12,0"/></StackPanel><TextBlock x:Name="Status" Text="就绪" VerticalAlignment="Center" Foreground="{DynamicResource Muted}" FontSize="11" TextTrimming="CharacterEllipsis"/></DockPanel></Border>
   </Grid>

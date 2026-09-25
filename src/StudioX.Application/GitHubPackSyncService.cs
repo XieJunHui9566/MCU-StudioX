@@ -12,6 +12,9 @@ public sealed record RemotePackSyncResult(string CommitSha, int Imported, int Sk
     IReadOnlyList<RemotePackSyncFailure> Failures);
 public sealed record RemotePackSyncProgress(int Total, int Processed, string? CurrentPath,
     string Stage, int Imported, int Skipped, int Failed);
+public sealed record RemotePackUpdate(string Id, string Version, string? InstalledVersion, string Path);
+public sealed record RemotePackCheckResult(string CommitSha, int UpToDate,
+    IReadOnlyList<RemotePackUpdate> Updates);
 
 /// <summary>从固定的公开 GitHub 仓库下载器件包；同一轮始终使用同一个提交快照。</summary>
 public sealed class GitHubPackSyncService : IDisposable
@@ -47,6 +50,31 @@ public sealed class GitHubPackSyncService : IDisposable
         syncGate.Dispose();
     }
 
+    /// <summary>只检查公开目录与本地版本，不下载或导入器件包。</summary>
+    public async Task<RemotePackCheckResult> CheckForUpdatesAsync(CancellationToken token = default)
+    {
+        await syncGate.WaitAsync(token);
+        try
+        {
+            var commit = await GetCommitAsync(token);
+            var latest = await GetLatestEntriesAsync(commit, token);
+            var installed = await GetInstalledVersionsAsync(token);
+            var updates = new List<RemotePackUpdate>();
+            var upToDate = 0;
+            foreach (var entry in latest)
+            {
+                token.ThrowIfCancellationRequested();
+                installed.TryGetValue(entry.Id, out var localVersion);
+                if (localVersion is not null && CompareVersions(localVersion, entry.Version) >= 0)
+                    upToDate++;
+                else
+                    updates.Add(new(entry.Id, entry.Version, localVersion, entry.Path));
+            }
+            return new(commit, upToDate, updates);
+        }
+        finally { syncGate.Release(); }
+    }
+
     public async Task<RemotePackSyncResult> SyncAsync(IProgress<RemotePackSyncProgress>? progress = null,
         CancellationToken cancellationToken = default)
     {
@@ -55,15 +83,8 @@ public sealed class GitHubPackSyncService : IDisposable
         {
             progress?.Report(new(0, 0, null, "读取 GitHub 器件包目录", 0, 0, 0));
             var commit = await GetCommitAsync(cancellationToken);
-            var entries = await GetIndexAsync(commit, cancellationToken);
-            var latest = entries.GroupBy(entry => entry.Id, StringComparer.OrdinalIgnoreCase)
-                .Select(group => group.MaxBy(entry => entry.Version, Comparer<string>.Create(CompareVersions))!)
-                .OrderBy(entry => entry.Id, StringComparer.OrdinalIgnoreCase).ToArray();
-            var installed = (await packs.ListCatalogAsync(cancellationToken))
-                .GroupBy(pack => pack.Manifest.Id, StringComparer.OrdinalIgnoreCase)
-                .ToDictionary(group => group.Key,
-                    group => group.MaxBy(pack => pack.Manifest.Version, Comparer<string>.Create(CompareVersions))!.Manifest.Version,
-                    StringComparer.OrdinalIgnoreCase);
+            var latest = await GetLatestEntriesAsync(commit, cancellationToken);
+            var installed = await GetInstalledVersionsAsync(cancellationToken);
 
             var imported = 0;
             var skipped = 0;
@@ -120,6 +141,21 @@ public sealed class GitHubPackSyncService : IDisposable
         }
         finally { syncGate.Release(); }
     }
+
+    private async Task<RemotePackIndexEntry[]> GetLatestEntriesAsync(string commit, CancellationToken token)
+    {
+        var entries = await GetIndexAsync(commit, token);
+        return entries.GroupBy(entry => entry.Id, StringComparer.OrdinalIgnoreCase)
+            .Select(group => group.MaxBy(entry => entry.Version, Comparer<string>.Create(CompareVersions))!)
+            .OrderBy(entry => entry.Id, StringComparer.OrdinalIgnoreCase).ToArray();
+    }
+
+    private async Task<Dictionary<string, string>> GetInstalledVersionsAsync(CancellationToken token) =>
+        (await packs.ListCatalogAsync(token))
+        .GroupBy(pack => pack.Manifest.Id, StringComparer.OrdinalIgnoreCase)
+        .ToDictionary(group => group.Key,
+            group => group.MaxBy(pack => pack.Manifest.Version, Comparer<string>.Create(CompareVersions))!.Manifest.Version,
+            StringComparer.OrdinalIgnoreCase);
 
     private async Task<string> GetCommitAsync(CancellationToken token)
     {

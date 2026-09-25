@@ -16,6 +16,8 @@ public partial class MainWindow
         token.ThrowIfCancellationRequested();
         if (!await ConfirmDocumentsAsync(decide)) { Status.Text = "已取消关闭工程。"; return false; }
         token.ThrowIfCancellationRequested();
+        await DisposeAiMcpSessionAsync();
+        token.ThrowIfCancellationRequested();
         var wasEnabled = WorkspaceTabs.IsEnabled;
         WorkspaceTabs.IsEnabled = false;
         try
@@ -35,6 +37,8 @@ public partial class MainWindow
             await services.Intelligence.StopAsync();
             ClearEditorDocuments();
             projectDirectory = null;
+            ResetAiForProjectChange();
+            RefreshSkillsForProjectChange();
             GitGraph.SetProject(null);
             GitHubWorkspace.SetProject(null);
             BuildMemory.SetMessage("打开工程并编译后显示占用。");

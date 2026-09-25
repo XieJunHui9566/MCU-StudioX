@@ -76,7 +76,7 @@ public sealed partial class CodeIntelligenceService(string runtimeDirectory, str
                 var initialization = await server.RequestAsync("initialize", new
                 {
                     processId = Environment.ProcessId, rootUri = new Uri(projectRoot + Path.DirectorySeparatorChar).AbsoluteUri,
-                    clientInfo = new { name = "MCU StudioX", version = "0.1.0" },
+                    clientInfo = new { name = "MCU StudioX", version = typeof(CodeIntelligenceService).Assembly.GetName().Version?.ToString(3) ?? "unknown" },
                     capabilities = new
                     {
                         general = new { positionEncodings = new[] { "utf-16" } },

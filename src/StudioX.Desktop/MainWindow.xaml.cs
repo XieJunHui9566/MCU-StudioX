@@ -60,6 +60,7 @@ public partial class MainWindow : Window
         GitHubWorkspace.WorkingTreeChangedAsync = ApplyGitHubWorkingTreeChangeAsync;
         GitHubWorkspace.OpenClonedRepositoryAsync = OpenClonedGitHubRepositoryAsync;
         InitializeEditor();
+        Activated += (_, _) => QueueRecentPrune();
     }
 
     public async Task InitializeAsync()
@@ -81,6 +82,7 @@ public partial class MainWindow : Window
             catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }
             catch (Exception ex) { Log("GitHub 账号状态读取失败：" + ex.Message); }
         });
+        QueueRecentPrune();
     }
 
     public void ApplyTheme(ThemeDefinition theme)
@@ -353,11 +355,14 @@ public partial class MainWindow : Window
             if (activeEditor is not null) ShowDocument(activeEditor.Tab);
             return;
         }
+        // 先确认目标仍是工程，再关闭当前文档和调试会话。
+        var project = await ProjectService.ReadAsync(directory, token);
         if (!await ConfirmDocumentsAsync()) return;
+        aiCancellation?.Cancel();
+        await DisposeAiMcpSessionAsync();
         await PersistBreakpointLinesAsync();
         await services.Debugger.StopAsync(); await debugNavigationTask;
         debugAnchors.Clear(); lastDebugSnapshot = null;
-        var project = await ProjectService.ReadAsync(directory, token);
         var mainPath = project.Kind == ProjectKind.CubeMx ? "Core/Src/main.c" : "src/main.c";
         var source = services.Files.FileExists(directory, mainPath) ? await services.Files.ReadAsync(directory, mainPath, token) : null;
         CloseCodeAssistance();
@@ -366,6 +371,8 @@ public partial class MainWindow : Window
         await services.Intelligence.StopAsync();
         ClearEditorDocuments();
         projectDirectory = directory;
+        ResetAiForProjectChange();
+        RefreshSkillsForProjectChange();
         GitGraph.SetProject(directory);
         GitHubWorkspace.SetProject(directory);
         BuildMemory.SetMessage("正在读取上次构建的占用…");
@@ -566,6 +573,7 @@ public partial class MainWindow : Window
         if (closing) return;
         closing = true; IsEnabled = false;
         packSyncCancellation?.Cancel();
+        aiCancellation?.Cancel();
         CancelOutline();
         CloseCodeAssistance();
         if (!GitGraph.IsMutating) operationCancellation?.Cancel();
@@ -582,6 +590,7 @@ public partial class MainWindow : Window
             await Task.WhenAll(hoverTask, navigationTask);
             if (!await ConfirmDocumentsAsync()) { closing = false; IsEnabled = true; QueueOutlineRefresh(); return; }
             documentAccepted = true;
+            await DisposeAiMcpSessionAsync();
             await SerialView.ShutdownAsync();
             await SerialPlotView.ShutdownAsync();
             await ProjectTerminal.ShutdownAsync();
