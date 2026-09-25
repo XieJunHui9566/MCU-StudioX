@@ -48,3 +48,8 @@ AG32 临时包支持工程创建和编译，并附带官方 AGM BLASTER 配置�
 协议解析支持 Modbus RTU 和用户脚本，示例位于 examples/protocols。
 串口绘图使用独立入口，支持自定义数据分隔符、多通道曲线、时间和值坐标缩放。
 具体操作见 docs/SERIAL_TERMINAL.md、docs/SERIAL-PROTOCOLS.md 和 docs/SERIAL-PLOT.md。
+
+9. AI 助手与 MCP
+打开工程后，点击窗口右上角的 AI 按钮展开聊天栏；从“工具 → AI 接口设置”填写模型服务地址、模型名和自己的 API Key。
+API Key 保存在当前 Windows 用户的凭据管理器中，不随安装包提供。写入文件、连接硬件及烧录等操作仍需按提示确认。
+外部客户端可启动 runtime/mcp-host/StudioX.Cli.exe 使用同一套 MCP 工具；配置和功能边界见 docs/AI_AGENT.md 与 docs/AI_MCP_EXTERNAL.md。
