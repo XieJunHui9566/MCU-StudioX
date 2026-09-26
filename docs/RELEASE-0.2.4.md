@@ -1,6 +1,6 @@
 # MCU StudioX 0.2.4 预览版
 
-本次发布 Windows x64 IDE 源码，并另行制作同版本安装包。GitHub 发布范围为源码；已有 0.2.2 网盘安装包早于当前改动。
+本次发布 Windows x64 IDE 源码及同版本安装包。GitHub 仓库提供源码，安装包通过项目维护者的[百度网盘分享](https://pan.baidu.com/s/5fh5exaJIgC6ThwSS_IdDOA)下载。
 
 ## 更新
 
