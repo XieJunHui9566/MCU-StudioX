@@ -7,6 +7,10 @@ using StudioX.Packages;
 // 不创建 OpenOCD/GDB 进程，不使用 USB 或 socket。实际 MI 文本经过生产解析器与适配器。
 // --stm32 为独立的配置矩阵：运行 OpenOCD noinit 解析和 GDB 批处理，不连接硬件。
 // --rp2350 同样只做软件检查；--rp2350-hardware 显式执行已授权板卡的备份/下载/调试/恢复。
+if (args is ["--disassembly"])
+    return await DisassemblyChecks.RunStandaloneAsync();
+if (args is ["--image-verification", var imageVerificationOutput])
+    return await ImageVerificationChecks.RunAsync(imageVerificationOutput);
 if (args is ["--stm32", var packDirectory, var stm32Runtime, var matrixOutput])
     return await Stm32TargetChecks.RunAsync(packDirectory, stm32Runtime, matrixOutput);
 if (args is ["--ag32", var agPack, var agRuntime, var agOutput])
@@ -44,6 +48,7 @@ var quoted = "E:/有 空格/firmware \"x\".elf\n";
 Check(MiRecord.Parse("~" + MiRecord.Quote(quoted)).Data.Text == quoted, "MI quoting");
 try { MiRecord.Parse("1^done,stack=[{bad=\"x\""); throw new InvalidOperationException("Expected bad MI"); } catch (FormatException) { }
 Pass("MI nested lists, duplicate frame fields, escaped strings, Unicode paths, malformed input");
+await DisassemblyChecks.RunAdapterAsync(Pass);
 
 var repository = new PackRepository(Path.Combine(root, "packs"));
 await repository.ImportAsync(packArchive);
@@ -53,6 +58,7 @@ await using var session = new DebugSessionService(Path.Combine(root, "user-data"
 var output = new List<string>(); session.Output += text => { lock (output) output.Add(text); };
 await session.OpenProjectAsync(project);
 await Reject(() => session.ExecuteAsync(DebugAction.Continue), "DEBUG_STATE");
+await Reject(() => session.ReadDisassemblyAsync(), "DEBUG_STATE");
 await session.ToggleBreakpointAsync(F407DebugExample.RelativeFile, F407DebugExample.Call);
 await session.ToggleBreakpointAsync(F407DebugExample.RelativeFile, 2);
 await session.StartOfflineAsync();
@@ -62,6 +68,7 @@ Check(session.State == DebugState.Stopped && session.IsActive, "Duplicate start 
 Check(session.Snapshot.Registers.Length == 56 && session.Snapshot.Registers.Single(r => r.Name == "pc").Value.StartsWith("0x0800", StringComparison.Ordinal), "Cortex-M4 register model");
 Check(session.Breakpoints.Single(b => b.Line == 2).Verified == false && session.Breakpoints.Single(b => b.Line == F407DebugExample.Call).Verified, "Pending/executable distinction");
 Pass("F407 offline start, main entry, core/FPU registers, pending breakpoint status");
+await DisassemblyChecks.CheckStoppedSessionAsync(session, Pass);
 await session.ToggleBreakpointAsync(F407DebugExample.RelativeFile, F407DebugExample.Entry - 1);
 var relocated = session.Breakpoints.Single(b => b.Line == F407DebugExample.Entry - 1);
 Check(relocated.Verified && relocated.BoundLocation is { } bound && bound.File == F407DebugExample.RelativeFile && bound.Line == F407DebugExample.Entry,
@@ -70,6 +77,7 @@ await session.ChangeBreakpointAsync(relocated.Id, null);
 Pass("GDB breakpoint relocation retains the requested line and exposes the actual binding line");
 await session.ExecuteAsync(DebugAction.Continue);
 await Reject(() => session.ReadMemoryAsync(0x20000000), "DEBUG_STATE");
+await Reject(() => session.ReadDisassemblyAsync(), "DEBUG_STATE");
 await Reject(() => session.ToggleBreakpointAsync(F407DebugExample.RelativeFile, 5), "DEBUG_STATE");
 await Wait(() => session.State == DebugState.Stopped);
 Check(session.Reason.Contains("命中断点", StringComparison.Ordinal) && session.Snapshot.Frames[0].Line == F407DebugExample.Call, "Run to breakpoint");
@@ -79,6 +87,7 @@ Pass("Run/hit breakpoint, running-state read guards, change detection");
 await session.ExecuteAsync(DebugAction.StepInto); await Wait(() => session.State == DebugState.Stopped);
 Check(session.Snapshot.Frames.Length == 2 && session.Snapshot.Frames[0].Function == "ComputeOutput" && session.Snapshot.Locals.Any(v => v.Name == "input"), "Step into/locals");
 await session.RefreshAsync(1); Check(session.Snapshot.SelectedFrame == 1 && session.Snapshot.Locals.Length == 0, "Select caller");
+await DisassemblyChecks.CheckCallerSelectionAsync(session, Pass);
 await session.RefreshAsync(0);
 await session.ExecuteAsync(DebugAction.StepOver); await Wait(() => session.State == DebugState.Stopped);
 Check(session.Snapshot.Locals.Single(v => v.Name == "doubled").Value == "2", "Local update");
@@ -101,6 +110,7 @@ await session.ExecuteAsync(DebugAction.Reset); await Wait(() => session.Reason.C
 Check(session.Snapshot.Watches.Single(v => v.Name == "app_counter").Value == "0", "Reset values");
 await session.ExecuteAsync(DebugAction.Continue); await session.StopAsync(); await Task.Delay(180);
 Check(session.State == DebugState.Disconnected && session.Snapshot.Registers.Length == 0, "No stale stop event");
+await Reject(() => session.ReadDisassemblyAsync(), "DEBUG_STATE");
 Pass("Disable breakpoint, pause, reset and terminate while running; late events ignored");
 var saved = session.Breakpoints.ToArray();
 await session.OpenProjectAsync(null); Check(session.Breakpoints.Count == 0, "Close clears points");

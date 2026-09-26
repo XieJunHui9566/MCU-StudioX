@@ -23,7 +23,9 @@ public partial class MainWindow
     {
         await BeginNewProjectAsync(token);
         if (projectDirectory is not null) return;
-        SelectPack(installedPacks.SingleOrDefault(p => p.Manifest.Id == packId));
+        SelectPack(installedPacks.Where(p => p.Manifest.Id == packId &&
+            (deviceId is null || p.Manifest.Devices.Any(device => device.Id == deviceId)))
+            .OrderByDescending(p => p.Manifest.Version, Comparer<string>.Create(StudioX.Packages.PackVersion.Compare)).FirstOrDefault());
         DevicePicker.SelectedItem = DevicePicker.Items.Cast<StudioX.Packages.DeviceDefinition>().SingleOrDefault(d => d.Id == deviceId);
         TemplatePicker.SelectedIndex = -1;
     });

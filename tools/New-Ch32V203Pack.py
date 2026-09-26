@@ -6,12 +6,17 @@ from pathlib import Path
 import re
 import subprocess
 import zipfile
+from WchRtosTemplates import extract_freertos, freertos_template, plain_template
+
+VERSION = "0.1.1"
+RTOS_SHA256 = "8a0b91a05ce879c63e2feec2cedfbdac577bef50f3e9e1b73b8f7e6d5efcb4c9"
 
 
 def main():
     parser = argparse.ArgumentParser(__doc__)
     parser.add_argument("--sdk", type=Path, required=True, help="CH32V203/NoneOS directory")
     parser.add_argument("--output", type=Path, required=True, help="New output directory")
+    parser.add_argument("--rtos-sdk", type=Path, help="Official CH32V203-FreeRTOS.zip; defaults to sibling FreeRTOS directory")
     args = parser.parse_args()
     repo = Path(__file__).resolve().parents[1]
     recipe = repo / "examples/packs/wch.ch32v203"
@@ -55,6 +60,9 @@ def main():
             priority = "    NVIC_PriorityGroupConfig(NVIC_PriorityGroup_1);\n" if family == "v20x" else ""
             write(f"system/{family}/system_config.c", '#include "system_config.h"\n\nvoid System_Init(void)\n{\n    /* 官方启动代码已调用 SystemInit；此处不初始化板级外设。 */\n' + priority + '    SystemCoreClockUpdate();\n    Delay_Init();\n}\n')
     write("templates/main.c", (recipe / "main.c").read_bytes())
+    write("templates/freertos/main.c", (repo / "examples/packs/wch.ch32v307/freertos-main.c").read_bytes())
+    rtos = extract_freertos(write, args.rtos_sdk or args.sdk.parent / "FreeRTOS/CH32V203-FreeRTOS.zip", RTOS_SHA256,
+                            ["startup_ch32v20x_D6.S", "startup_ch32v20x_D8.S"])
     write("interface/wch-link.cfg", (repo / "examples/packs/wch.ch32v307/wch-link.cfg").read_bytes())
     write("README.md", (recipe / "README.md").read_bytes())
     write("vendor/devices.json", (recipe / "devices.json").read_bytes())
@@ -81,8 +89,13 @@ def main():
         write(target_path, target)
         startup = "startup_ch32v205.S" if family == "v205" else "startup_ch32v20x_" + device["define"].split("_")[-1] + ".S"
         sources = sorted(p.relative_to(stage).as_posix() for p in (stage / "sdk" / family).rglob("*.c"))
-        sources += ["sdk/Startup/" + startup, f"system/{family}/system_{chip}.c", f"system/{family}/{chip}_it.c", f"system/{family}/system_config.c"]
+        sources += [f"system/{family}/system_{chip}.c", f"system/{family}/{chip}_it.c", f"system/{family}/system_config.c"]
         clock = 160 if family == "v205" else 144
+        templates = [plain_template("templates/main.c", f"模板默认：内部 HSI 8 MHz → {clock} MHz；{device['flashKib']} KiB Flash / {device['ramKib']} KiB SRAM。时钟与初始化位于 device/system；实际配置以工程代码为准。", "sdk/Startup/" + startup)]
+        # CCT6 使用 V205 内核/库；未经核实的 V20x RTOS 移植不能套用到它。
+        if family == "v20x":
+            templates.append(freertos_template("templates/freertos/main.c", startup,
+                f"内部 HSI → {clock} MHz；{device['flashKib']}/{device['ramKib']} KiB", 4096 if device["ramKib"] == 10 else 8192))
         devices.append(dict(id=device_id, displayName=device_id, architecture="riscv", flashOrigin=0, flashBytes=device["flashKib"] * 1024,
             ramOrigin=0x20000000, ramBytes=device["ramKib"] * 1024, toolsetId="wch.riscv", toolsetVersion="1.0.0", compilerId="wch-gcc-12.2.0-v1.4",
             # GCC 12 的汇编器没有 b 的默认版本；使用厂商对应 multilib 的显式扩展。
@@ -90,15 +103,15 @@ def main():
             defines=[device["define"]], includeDirectories=[f"sdk/{family}/Core", f"sdk/{family}/Peripheral/inc", f"sdk/{family}/Debug", f"system/{family}"], sources=sources,
             linkerScript=link_path, compileOptions=["-Og", "-g3", "-ffunction-sections", "-fdata-sections", "-fno-common", "-fsigned-char"],
             linkOptions=["-nostartfiles", "--specs=nano.specs", "--specs=nosys.specs", "-Wl,--gc-sections", "-Wl,--print-memory-usage"],
-            templates=[dict(id="spl", displayName="标准库 · 精简 main", entryFile="templates/main.c", description=f"模板默认：内部 HSI 8 MHz → {clock} MHz；{device['flashKib']} KiB Flash / {device['ramKib']} KiB SRAM。时钟与初始化位于 device/system；实际配置以工程代码为准。")],
+            templates=templates,
             openOcd=dict(targetScript=target_path, applicationFlashBytes=device["flashKib"] * 1024, probes=[dict(id="wch-link", displayName="WCH-Link / WCH-LinkE", interfaceScript="interface/wch-link.cfg", transport="sdi", defaultSpeedKhz=4000)])))
     write("vendor/provenance.json", json.dumps(dict(source="MounRiver Studio 2 / WCH / CH32V203 NoneOS; V20x SPL 2.4 and V205 SPL 1.2",
         upstream="https://github.com/openwch/ch32v20x", archives=archives,
         changes=["HSI / PLL default clock instead of external crystal", "explicit per-device memory and startup", "CCT RVB expanded to zba_zbb_zbc_zbs for vendor GCC12 multilib", "minimal StudioX main/system wrapper", "part/protection/split guard and page erase"],
-        license="WCH source notices retained: software and binaries for WCH-manufactured microcontrollers only."), indent=2))
-    manifest = dict(formatVersion=1, id="wch.ch32v203", version="0.1.0", displayName="CH32V203 · 标准库", vendor="WCH", devices=devices)
+        license="WCH source notices retained: software and binaries for WCH-manufactured microcontrollers only.", rtos=rtos), indent=2))
+    manifest = dict(formatVersion=1, id="wch.ch32v203", version=VERSION, displayName="CH32V203 · 标准库", vendor="WCH", devices=devices)
     write("manifest.json", json.dumps(manifest, ensure_ascii=False, indent=2))
-    archive = args.output / "wch.ch32v203-0.1.0.mcupack"
+    archive = args.output / f"wch.ch32v203-{VERSION}.mcupack"
     subprocess.run(["dotnet", str(repo / "src/StudioX.Cli/bin/Release/net10.0/StudioX.Cli.dll"), "pack", str(stage), str(archive)], check=True)
     (args.output / "index.json").write_text(json.dumps([dict(file=archive.name, id=manifest["id"], version=manifest["version"], devices=[d["id"] for d in devices], sha256=hashlib.sha256(archive.read_bytes()).hexdigest())], indent=2), encoding="utf-8")
 

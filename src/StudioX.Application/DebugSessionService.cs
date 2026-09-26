@@ -303,13 +303,17 @@ public sealed partial class DebugSessionService(string dataDirectory) : IAsyncDi
 
     public static async Task<string> CreateExampleAsync(PackRepository packs, string data, string packagedPacks, CancellationToken token = default)
     {
-        var pack = (await packs.ListCatalogAsync(token)).FirstOrDefault(p => p.Manifest.Id == "studiox.stm32f407" && p.Manifest.Version == "0.1.1");
+        async Task<InstalledPack?> FindPackAsync() => (await packs.ListCatalogAsync(token))
+            .Where(pack => pack.Manifest.Id == "studiox.stm32f407" && pack.Manifest.Devices.Any(device =>
+                device.Id == "STM32F407ZG" && device.Templates.Any(template => template.Id == "hal")))
+            .OrderByDescending(pack => pack.Manifest.Version, Comparer<string>.Create(PackVersion.Compare)).FirstOrDefault();
+        var pack = await FindPackAsync();
         if (pack is null && Directory.Exists(packagedPacks))
         {
-            var archive = Directory.EnumerateFiles(packagedPacks, "studiox.stm32f407-0.1.1.mcupack", SearchOption.AllDirectories).FirstOrDefault();
-            if (archive is not null) pack = await packs.ImportAsync(archive, token);
+            await packs.ImportBundledMissingAsync(packagedPacks, token);
+            pack = await FindPackAsync();
         }
-        if (pack is null) throw new StudioXException("DEBUG_PACK", "请先导入随软件提供的 STM32F407 0.1.1 器件包，再打开离线调试示例。");
+        if (pack is null) throw new StudioXException("DEBUG_PACK", "请先导入包含 STM32F407ZG / HAL 模板的器件包，再打开离线调试示例。");
         var directory = Path.Combine(data, "debug-examples", "F407_" + DateTime.Now.ToString("yyyyMMdd_HHmmss", System.Globalization.CultureInfo.InvariantCulture) + "_" + Guid.NewGuid().ToString("N")[..6]);
         await new ProjectService().CreateAsync(pack, "STM32F407ZG", "hal", "F407_Debug", directory, token);
         await File.WriteAllTextAsync(Path.Combine(directory, F407DebugExample.RelativeFile), F407DebugExample.Source, token);

@@ -3,7 +3,10 @@ namespace StudioX.Engine.Debugging;
 using System.Security.Cryptography;
 using StudioX.Foundation;
 
-public sealed record HardwareDebugPreparation(string ProjectDirectory, DownloadConfiguration Configuration, ResolvedToolset Tools, string Elf, string LogPath);
+public sealed record HardwareDebugPreparation(string ProjectDirectory, DownloadConfiguration Configuration, ResolvedToolset Tools, string Elf, string LogPath)
+{
+    public ulong ImageByteCount { get; init; }
+}
 
 public static class HardwareDebugPreparer
 {
@@ -24,10 +27,11 @@ public static class HardwareDebugPreparer
             var bytes = await File.ReadAllBytesAsync(PathBoundary.Resolve(root, image.SymbolsPath), token);
             if (!Convert.ToHexString(SHA256.HashData(bytes)).Equals(image.SymbolsSha256, StringComparison.OrdinalIgnoreCase))
                 throw new StudioXException("DEBUG_SYMBOLS", "ELF 已变化，请重新编译。");
-            FirmwareImage.Validate(bytes, "elf", configuration.Device);
+            var imageByteCount = FirmwareImage.Validate(bytes, "elf", configuration.Device);
             // 会话持有构建时校验过的独立符号文件；后续构建不能替换正在使用的 ELF。
             var directory = Path.GetDirectoryName(prepared.Image)!;
             var elf = Path.Combine(directory, "debug.elf"); await File.WriteAllBytesAsync(elf, bytes, token);
-            return new HardwareDebugPreparation(root, configuration, prepared.Tools, elf, Path.Combine(directory, "debug-session.log"));
+            return new HardwareDebugPreparation(root, configuration, prepared.Tools, elf, Path.Combine(directory, "debug-session.log"))
+            { ImageByteCount = imageByteCount };
         }, token);
 }

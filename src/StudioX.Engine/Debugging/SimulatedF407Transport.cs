@@ -97,6 +97,29 @@ public sealed class SimulatedF407Transport : IGdbMiTransport
             var data = Convert.ToHexString(bytes.AsSpan((int)(address - 0x20000000), count)).ToLowerInvariant();
             return "^done,memory=[{begin=" + Q(parts[1]) + ",contents=" + Q(data) + "}]";
         }
+        if (text.StartsWith("-data-disassemble ", StringComparison.Ordinal))
+        {
+            var parts = text.Split(' ');
+            if (parts is not ["-data-disassemble", "-s", var startText, "-e", var endText, "--", "2"])
+                throw new InvalidOperationException("离线反汇编只接受地址范围与 mode 2。");
+            var start = Convert.ToUInt32(startText[2..], 16);
+            var end = Convert.ToUInt32(endText[2..], 16);
+            if (start < 0x08000100 || end > 0x08000500 || end <= start || end - start > 512 || (start & 1) != 0 || (start & 7) == 6)
+                throw new InvalidOperationException("离线示例仅提供 0x08000100–0x080004FF 的模拟指令；起始地址必须落在模拟指令边界。");
+            // 这些字节只用于显示协议的确定性演示，并非 F407DebugExample 编译结果或实机 Flash。
+            var instructions = new List<string>();
+            for (var instructionAddress = start; instructionAddress < end;)
+            {
+                var wide = (instructionAddress & 7) == 4;
+                var opcodes = wide ? "40 f2 00 00" : (instructionAddress & 7) == 2 ? "01 20" : "00 bf";
+                var instruction = (wide ? "movw r0, #0" : (instructionAddress & 7) == 2 ? "movs r0, #1" : "nop") + " ; 离线模拟指令";
+                instructions.Add("{address=" + Q("0x" + instructionAddress.ToString("x8", CultureInfo.InvariantCulture)) +
+                    ",func-name=" + Q("F407OfflineDemo（模拟）") + ",offset=" + Q((instructionAddress - 0x08000100).ToString(CultureInfo.InvariantCulture)) +
+                    ",opcodes=" + Q(opcodes) + ",inst=" + Q(instruction) + "}");
+                instructionAddress += wide ? 4u : 2u;
+            }
+            return "^done,asm_insns=[" + string.Join(',', instructions) + "]";
+        }
         if (text.StartsWith("-gdb-set ", StringComparison.Ordinal)) return "^done";
         throw new InvalidOperationException("离线传输未实现该 MI 命令：" + text);
     }

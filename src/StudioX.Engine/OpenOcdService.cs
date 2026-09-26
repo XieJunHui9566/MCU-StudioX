@@ -15,7 +15,10 @@ public sealed record DownloadReport(bool Success, string Log, string LogPath, in
         (Success ? " · 已校验并复位运行" : TimedOut ? "（工具执行超时）" : " · 请查看 OpenOCD 日志");
 }
 public sealed record DownloadPreparation(DownloadConfiguration Configuration, DownloadOptions Options,
-    ResolvedToolset Tools, string SourceImage, string Image, string[] Arguments, string LogPath);
+    ResolvedToolset Tools, string SourceImage, string Image, string[] Arguments, string LogPath)
+{
+    public ulong ImageByteCount { get; init; }
+}
 public sealed record DownloadPreview(DownloadConfiguration Configuration, DownloadOptions Options,
     string SourceImage, string Format, string Sha256, long ImageBytes);
 
@@ -72,7 +75,7 @@ public sealed class OpenOcdService(ToolsetCatalog catalog)
     }
 
     private sealed record ValidatedImage(DownloadConfiguration Configuration, ResolvedToolset Tools,
-        string SourceImage, string Format, string Sha256, byte[] Bytes);
+        string SourceImage, string Format, string Sha256, byte[] Bytes, ulong ImageByteCount);
 
     private async Task<ValidatedImage> ValidateImageAsync(string projectDirectory, DownloadOptions options, CancellationToken token)
     {
@@ -109,8 +112,8 @@ public sealed class OpenOcdService(ToolsetCatalog catalog)
         var bytes = await File.ReadAllBytesAsync(sourceImage, token);
         if (!string.Equals(Convert.ToHexString(SHA256.HashData(bytes)), source.Sha256, StringComparison.OrdinalIgnoreCase))
             throw new StudioXException("DOWNLOAD_CHANGED", "编译后的固件已被替换或修改，请重新编译后下载。");
-        FirmwareImage.Validate(bytes, source.Format, device);
-        return new(configuration, tools, sourceImage, source.Format, source.Sha256, bytes);
+        var imageByteCount = FirmwareImage.Validate(bytes, source.Format, device);
+        return new(configuration, tools, sourceImage, source.Format, source.Sha256, bytes, imageByteCount);
     }
 
     private async Task<DownloadPreparation> PrepareCoreAsync(string projectDirectory, DownloadOptions options, CancellationToken token,
@@ -127,7 +130,8 @@ public sealed class OpenOcdService(ToolsetCatalog catalog)
         var image = Path.Combine(session, "firmware." + validated.Format);
         await File.WriteAllBytesAsync(image, validated.Bytes, token);
         var arguments = CreateArguments(root, validated.Configuration, options, validated.Tools, image, validated.Format);
-        return new(validated.Configuration, options, validated.Tools, validated.SourceImage, image, arguments, Path.Combine(session, "openocd.log"));
+        return new(validated.Configuration, options, validated.Tools, validated.SourceImage, image, arguments, Path.Combine(session, "openocd.log"))
+        { ImageByteCount = validated.ImageByteCount };
     }
 
     public Task<DownloadReport> DownloadAsync(string projectDirectory, DownloadOptions options, IProgress<string>? output = null, CancellationToken token = default)
@@ -164,6 +168,15 @@ public sealed class OpenOcdService(ToolsetCatalog catalog)
                     ToolsetEnvironment.Create(prepared.Tools), RemoveEnvironment: ToolsetEnvironment.AmbientVariables, Output: capture), token);
                 capture.Report($"\nexit={result.ExitCode}, timeout={result.TimedOut}, truncated={result.OutputTruncated}\n");
                 var success = result.Success && (result.StandardOutput + result.StandardError).Contains("STUDIOX_DOWNLOAD_VERIFIED", StringComparison.Ordinal);
+                if (success)
+                {
+                    try
+                    {
+                        FirmwareVerificationEvidence.Require(result.StandardOutput + "\n" + result.StandardError,
+                            prepared.ImageByteCount, prepared.LogPath, result.OutputTruncated);
+                    }
+                    catch (StudioXException ex) { capture.Report("\n" + ex + "\n"); success = false; }
+                }
                 return new(success, capture.Text, prepared.LogPath, result.ExitCode, result.TimedOut);
             }
             catch (OperationCanceledException) { capture.Report("\n下载已停止，未确认写入完成；请重新下载。\n"); throw; }

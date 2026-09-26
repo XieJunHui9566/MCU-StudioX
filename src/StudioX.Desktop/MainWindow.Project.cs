@@ -12,6 +12,7 @@ public partial class MainWindow
 
     private async Task<bool> CloseProjectAsync(CancellationToken token, Func<SourceDocument, MessageBoxResult>? decide = null)
     {
+        CancelFreeRtosRead();
         if (projectDirectory is null) return true;
         token.ThrowIfCancellationRequested();
         if (!await ConfirmDocumentsAsync(decide)) { Status.Text = "已取消关闭工程。"; return false; }

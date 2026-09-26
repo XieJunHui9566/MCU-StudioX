@@ -9,6 +9,18 @@ using StudioX.Devices;
 using StudioX.Engine;
 using StudioX.Foundation;
 
+if (args is ["--disassembly"])
+{
+    await DisassemblyMcpChecks.RunAsync();
+    return;
+}
+
+if (args is ["--rtos"])
+{
+    await FreeRtosMcpChecks.RunAsync();
+    return;
+}
+
 var root = Path.Combine(Path.GetTempPath(), "studiox-mcp-validation-" + Guid.NewGuid().ToString("N"));
 Directory.CreateDirectory(root);
 var checks = 0;

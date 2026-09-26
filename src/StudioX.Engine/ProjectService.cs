@@ -41,8 +41,9 @@ public sealed class ProjectService(Func<string, CancellationToken, Task>? initia
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 var relative = Path.GetRelativePath(pack.RootDirectory, source).Replace('\\', '/');
-                // 新模板只拷贝实际选用的 SDK，防止 HAL/SPL 资源与语言索引相互混淆。
+                // 新模板只拷贝实际选用的 SDK；链接脚本是必要构建输入，即使位于 sdk/ 也不能裁掉。
                 if (plan.Device.Templates.Single(t => t.Id == templateId).Build is not null && relative.StartsWith("sdk/", StringComparison.Ordinal) &&
+                    relative != plan.Device.LinkerScript &&
                     !plan.Device.Sources.Contains(relative, StringComparer.Ordinal) &&
                     !plan.Device.IncludeDirectories.Any(include => relative.StartsWith(include.TrimEnd('/') + "/", StringComparison.Ordinal))) continue;
                 var copy = PathBoundary.Resolve(Path.Combine(staging, "device"), relative);

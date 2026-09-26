@@ -41,6 +41,9 @@ public partial class MainWindow
             if (point is not null) _ = EditBreakpointSettingsAsync(point.File, point.Line, point);
         };
         DebugTools.Navigate += location => _ = RunAsync(token => NavigateDebugSourceAsync(location, token));
+        DebugTools.DisassemblyRequested += address => debugDisassemblyTask = ReadDebugDisassemblyAsync(address);
+        DebugTools.FreeRtosRequested += () => debugRtosTask = ReadDebugFreeRtosAsync();
+        DebugTools.FreeRtosView.CancelRequested += CancelFreeRtosRead;
         DebugTools.MemoryRequested += address => _ = RunAsync(async token =>
         {
             if (!uint.TryParse(address.Trim().Replace("0x", "", StringComparison.OrdinalIgnoreCase), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var value))
@@ -117,6 +120,8 @@ public partial class MainWindow
         DebugModeBadge.Text = debug.IsActive ? (debug.IsHardware ? "实机 · " + debug.HardwareTargetName : "离线模拟 · 未连接芯片") : "未连接调试目标";
         RegisterGrid.ItemsSource = debug.Snapshot.Registers;
         RegisterGrid.Opacity = running ? .55 : 1;
+        DebugTools.FreeRtosView.SetProject(debug.ProjectDirectory);
+        if (state != DebugState.Stopped) CancelFreeRtosRead();
         DebugTools.Refresh(debug.Snapshot, debug.Breakpoints, debug.Watches, state, debug.IsHardware);
         UpdateDebugControls(); UpdateBreakpointAnchors(); RefreshDebugMarkers();
         if (activeEditor is not null) SourceEditor.IsReadOnly = activeEditor.Source.IsReadOnly || debug.IsActive;
@@ -133,6 +138,7 @@ public partial class MainWindow
             !stc && (debug.IsActive || debug.State == DebugState.Faulted ||
              (projectDirectory is not null && supportsDownload));
         ShowDebugMenu.IsEnabled = debug.IsActive;
+        ShowFreeRtosMenu.IsEnabled = debug.IsActive;
         DebugContinueButton.IsEnabled = DebugContinueMenu.IsEnabled = stopped;
         DebugOverButton.IsEnabled = DebugOverMenu.IsEnabled = stopped;
         DebugIntoButton.IsEnabled = DebugIntoMenu.IsEnabled = stopped;
@@ -198,6 +204,7 @@ public partial class MainWindow
     });
     private async void DebugStop_Click(object sender, RoutedEventArgs e) => await RunAsync(async _ =>
     {
+        CancelFreeRtosRead();
         await services.Debugger.StopAsync();
         Status.Text = "调试已结束，烧录器已释放。";
     });
@@ -207,7 +214,11 @@ public partial class MainWindow
     private void DebugOver_Click(object sender, RoutedEventArgs e) => RunDebugAction(DebugAction.StepOver);
     private void DebugOut_Click(object sender, RoutedEventArgs e) => RunDebugAction(DebugAction.StepOut);
     private void DebugReset_Click(object sender, RoutedEventArgs e) => RunDebugAction(DebugAction.Reset);
-    private void RunDebugAction(DebugAction action) => _ = RunAsync(token => services.Debugger.ExecuteAsync(action, token));
+    private void RunDebugAction(DebugAction action)
+    {
+        CancelFreeRtosRead();
+        _ = RunAsync(token => services.Debugger.ExecuteAsync(action, token));
+    }
     private async void DebugRefresh_Click(object sender, RoutedEventArgs e) => await RunAsync(token => services.Debugger.RefreshAsync(token: token));
     private void DebugBreakpoint_Click(object sender, RoutedEventArgs e) => _ = ToggleBreakpointAsync(SourceEditor.TextArea.Caret.Line);
     private void DebugBreakpointSettings_Click(object sender, RoutedEventArgs e) => EditCurrentBreakpoint(SourceEditor.TextArea.Caret.Line);
@@ -266,6 +277,7 @@ public partial class MainWindow
         if (services.Debugger.State != DebugState.Stopped) return;
         var frame = snapshot.Frames.FirstOrDefault(f => f.Level == snapshot.SelectedFrame);
         if (frame is not null && frame.Line > 0) await NavigateDebugSourceAsync(new(frame.File, frame.Line), CancellationToken.None);
+        else if (frame is not null) DebugTools.ShowDisassembly();
         RefreshDebugMarkers();
     }
     private async Task NavigateDebugSourceAsync(SourceLocation location, CancellationToken token)
@@ -273,9 +285,9 @@ public partial class MainWindow
         var root = projectDirectory;
         if (root is null) return;
         var relative = Path.IsPathRooted(location.File) ? Path.GetRelativePath(root, location.File).Replace('\\', '/') : location.File;
-        if (relative == ".." || relative.StartsWith("../", StringComparison.Ordinal)) { Status.Text = "当前栈帧位于工程外部：" + location.File; return; }
+        if (relative == ".." || relative.StartsWith("../", StringComparison.Ordinal)) { Status.Text = "当前栈帧位于工程外部：" + location.File; if (services.Debugger.State == DebugState.Stopped) DebugTools.ShowDisassembly(); return; }
         _ = PathBoundary.Resolve(root, relative);
-        if (!services.Files.FileExists(root, relative)) { Status.Text = "调试源码不存在：" + relative; return; }
+        if (!services.Files.FileExists(root, relative)) { Status.Text = "调试源码不存在：" + relative; if (services.Debugger.State == DebugState.Stopped) DebugTools.ShowDisassembly(); return; }
         var existing = FindEditor(relative);
         if (existing is null)
         {

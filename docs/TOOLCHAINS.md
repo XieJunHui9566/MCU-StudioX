@@ -1,6 +1,6 @@
 # 内置工具链
 
-CH32V203 的 11 个型号使用现有 `wch.riscv/1.0.0`，独立包制作、CCT6 ISA 区别和验证命令见 V203 软件适配。
+CH32V203 的 11 个型号使用现有 `wch.riscv/1.0.0`，独立包制作、CCT6 ISA 区别和验证命令见 [V203 软件适配](CH32V203.md)。
 
 普通用户使用完整的 StudioX 发行目录，通过器件包选择精确工具集，不配置编译器路径。工具链属于 IDE；SDK、启动代码、寄存器定义、链接脚本与模板属于 `.mcupack`。
 
@@ -16,7 +16,7 @@ CH32V203 的 11 个型号使用现有 `wch.riscv/1.0.0`，独立包制作、CCT6
 
 前四套 GCC 工具集包含 CMake 4.4.0、Ninja 1.10.2 及匹配的 GDB、binutils、运行库、标准库、头文件、OpenOCD 脚本。STC 工具集包含 SDCC、CMake、Ninja 及 SDCC 的 MCS-51 标准头文件和库，不包含 OpenOCD。AG32 使用厂商专用版本，不能直接替换为通用 RISC-V GCC/OpenOCD。
 
-AG32 可选的 Verilog 逻辑模式另需用户安装 **Quartus II Full 与 AGM Supra**，用于 Verilog 转换和逻辑镜像生成；它们不包含在上述 `agm.agrv` MCU 工具集中。StudioX 目前提供工具位置与工程检查、构建和下载指引，实际综合及逻辑下载按厂商流程执行，见 AG32 逻辑模式。
+AG32 可选的 Verilog 逻辑模式另需用户安装 **Quartus II Full 与 AGM Supra**，用于 Verilog 转换和逻辑镜像生成；它们不包含在上述 `agm.agrv` MCU 工具集中。StudioX 目前提供工具位置与工程检查、构建和下载指引，实际综合及逻辑下载按厂商流程执行，见 [AG32 逻辑模式](AG32_LOGIC_MODE.md)。
 
 ## 开发者准备与发行
 
@@ -76,4 +76,4 @@ OpenOCD 脚本通过 `resourceDirectories.openocdScripts` 定位，带下载配�
 
 AG32 最小工程进行真实编译和产物检查；通用 Arm Cortex-M4 与 RISC-V RV32IMAC 探针检查 C/C++ 头文件、编译和库链接。通用探针采用 nosys 桩，未提供硬件系统调用，不能作为可上板固件。
 
-用户随后明确授权烧录已编译的 AG32 最小固件：通过 CMSIS-DAP v2 完成 Flash 备份、1,304 字节固件写入、全量回读及复位后的心跳验证。逻辑区和选项字节未改变。此次测试使用内置 OpenOCD 加本机厂商 `agrv2k.cfg`，不等同于桌面下载/调试功能已经完成。结果见 验证记录。
+用户随后明确授权烧录已编译的 AG32 最小固件：通过 CMSIS-DAP v2 完成 Flash 备份、1,304 字节固件写入、全量回读及复位后的心跳验证。逻辑区和选项字节未改变。此次测试使用内置 OpenOCD 加本机厂商 `agrv2k.cfg`，不等同于桌面下载/调试功能已经完成。结果见 [验证记录](TOOLCHAIN_VERIFICATION.md)。

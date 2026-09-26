@@ -22,7 +22,7 @@
 
 `sdk/` 的子目录由包决定；Engine 使用器件清单中的明确相对路径，不猜测厂商目录结构。用户入口从模板复制到 `src/main.c`，应用文件不放在 SDK 中。
 
-AG32VF303CCT6 工程若在创建时启用 Verilog 逻辑模式，还会生成独立的 `logic/user_logic.v`、`logic/pins.ve` 和 `logic/README.md`；默认工程没有 `logic/`。这部分不加入 MCU 的 CMake 目标，Quartus II / Supra 与逻辑下载流程见 AG32 Verilog 逻辑模式。
+AG32VF303CCT6 工程若在创建时启用 Verilog 逻辑模式，还会生成独立的 `logic/user_logic.v`、`logic/pins.ve` 和 `logic/README.md`；默认工程没有 `logic/`。这部分不加入 MCU 的 CMake 目标，Quartus II / Supra 与逻辑下载流程见 [AG32 Verilog 逻辑模式](AG32_LOGIC_MODE.md)。
 
 根配置只在创建工程时生成。构建服务不会重写根配置；新增文件需要显式填入相应区域，例如：
 
@@ -45,4 +45,4 @@ target_compile_definitions(firmware PRIVATE USE_UART=1)
 
 CMake 编辑提示额外索引这两个固定生成文件中的目标和函数，不执行配置脚本，也不递归展开任意 `include`。旧工程不会在启动或构建时被自动改写。
 
-分层配置迭代检查覆盖两种 AG32 模板的新建工程、根配置编辑、内部只读、生成符号提示、中文和空格路径，以及禁用编译语言的 CMake 配置图夹具。后续内置工具链迭代已补充实际 AG32 编译与授权后的最小固件下载，见 工具链验证记录。
+分层配置迭代检查覆盖两种 AG32 模板的新建工程、根配置编辑、内部只读、生成符号提示、中文和空格路径，以及禁用编译语言的 CMake 配置图夹具。后续内置工具链迭代已补充实际 AG32 编译与授权后的最小固件下载，见 [工具链验证记录](TOOLCHAIN_VERIFICATION.md)。

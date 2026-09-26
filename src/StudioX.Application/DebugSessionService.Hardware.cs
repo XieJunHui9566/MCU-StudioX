@@ -29,9 +29,9 @@ public sealed partial class DebugSessionService
             current.Trace += Trace;
             foreach (var command in plan.InitializeCommands)
             {
-                try { await current.SendAsync(command, token); }
-                catch (StudioXException ex) when (ex.Code == "GDB_COMMAND" && command.Contains("monitor verify_image ", StringComparison.Ordinal))
-                { throw ExplainImageVerificationFailure(ex, preparation.LogPath); }
+                if (command.Contains("monitor verify_image ", StringComparison.Ordinal))
+                    await VerifyImageAsync(current, command, preparation, token);
+                else await current.SendAsync(command, token);
             }
             var sources = await current.SendAsync("-file-list-exec-source-files", token);
             if (sources.Get("files")?.Values.Any() != true) throw Error("ELF 不含源码调试信息，请使用 Debug 配置重新编译。");

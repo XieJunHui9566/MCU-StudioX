@@ -7,10 +7,13 @@ from pathlib import Path
 import re
 import subprocess
 import zipfile
+from WchRtosTemplates import extract_freertos, freertos_template, plain_template
 
 
 PACK_ID = "wch.ch592"
-VERSION = "0.1.0"
+VERSION = "0.1.1"
+RTOS_COMMIT = "a46e0086f1ffb5e5502703970bff94888e67f4cb"
+RTOS_SHA256 = "ea6eab507a31902917f6e0a4700dcd83f22269a8af388699ad2d7c5a37b27eff"
 ARCHIVES = {
     "D": "9386d24b3681779c930115021d07baff2213324e5dea33951198a73637f7d836",
     "F": "2747e12c8ff52c3e6031f2cefa1f7e58f1a57d6e46e08ff5a76c6806613e5bb3",
@@ -36,6 +39,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(__doc__)
     parser.add_argument("--sdk", type=Path, required=True, help="MounRiver CH59X/NoneOS directory")
     parser.add_argument("--output", type=Path, required=True, help="New output directory")
+    parser.add_argument("--rtos-sdk", type=Path, required=True, help="Pinned CH592 official FreeRTOS source-only archive; see docs/CH592.md")
     args = parser.parse_args()
     repo = Path(__file__).resolve().parents[1]
     recipe = repo / "examples/packs/wch.ch592"
@@ -93,11 +97,21 @@ def main() -> None:
         write("vendor/CH59X-targetProcessor.json", metadata["CH59X-targetProcessor.json"])
         write("vendor/CH59X-flash.json", metadata["CH59X-flash.json"])
         write("templates/main.c", (recipe / "main.c").read_bytes())
+        write("templates/freertos/main.c", (recipe / "freertos-main.c").read_bytes())
+        rtos = extract_freertos(write, args.rtos_sdk, RTOS_SHA256, ["Startup_CH592_FreeRTOS.S"], "FreeRTOS/FreeRTOSConfig.h")
+        # 官方 RTOS 链接脚本保留统一中断入口的向量段；NoneOS 入口也使用相同内存与符号。
+        with zipfile.ZipFile(args.rtos_sdk) as rtos_archive:
+            linker = rtos_archive.read("Ld/Link.ld")
+            if b"LENGTH = 448K" not in linker or b"LENGTH = 26K" not in linker:
+                raise RuntimeError("CH592 FreeRTOS linker memory changed")
+            write("sdk/Ld/Link.ld", linker)
+        rtos.update(upstream="https://github.com/openwch/ch592", commit=RTOS_COMMIT,
+                    path="EVT/EXAM/FreeRTOS", changes=["pin-neutral two-task main", "editable project FreeRTOSConfig.h", "heap_4 only", "assert without board UART"])
         write("interface/wch-link.cfg", (recipe / "wch-link.cfg").read_bytes())
         write("README.md", (recipe / "README.md").read_bytes())
 
         sources = sorted("sdk/" + name for name in sdk_files if name.startswith("StdPeriphDriver/") and name.endswith(".c"))
-        sources += ["sdk/RVMSIS/core_riscv.c", "sdk/Startup/startup_CH592.S", "sdk/StdPeriphDriver/libISP592.a"]
+        sources += ["sdk/RVMSIS/core_riscv.c", "sdk/StdPeriphDriver/libISP592.a"]
         devices = []
         for suffix in "DFX":
             device_id = "CH592" + suffix
@@ -122,8 +136,8 @@ def main() -> None:
                 linkerScript="sdk/Ld/Link.ld",
                 compileOptions=["-Og", "-g3", "-ffunction-sections", "-fdata-sections", "-fno-common", "-fsigned-char"],
                 linkOptions=["-nostartfiles", "--specs=nano.specs", "--specs=nosys.specs", "-Wl,--gc-sections", "-Wl,--print-memory-usage"],
-                templates=[dict(id="spl", displayName="标准库 · 精简 main", entryFile="templates/main.c",
-                                description="WCH 官方 60 MHz PLL 时钟；448 KiB 应用 Flash / 26 KiB SRAM。模板不使用板级引脚。")],
+                templates=[plain_template("templates/main.c", "WCH 官方 60 MHz PLL 时钟；448 KiB 应用 Flash / 26 KiB SRAM。模板不使用板级引脚。", "sdk/Startup/startup_CH592.S"),
+                           freertos_template("templates/freertos/main.c", "Startup_CH592_FreeRTOS.S", "60 MHz PLL；448/26 KiB", 8192)],
                 openOcd=dict(targetScript=target_path, applicationFlashBytes=448 * 1024,
                              probes=[dict(id="wch-link", displayName="WCH-Link / WCH-LinkE", interfaceScript="interface/wch-link.cfg",
                                           transport="sdi", defaultSpeedKhz=4000)]),
@@ -136,6 +150,7 @@ def main() -> None:
             changes=["blank pin-neutral main", "explicit 448 KiB application Flash and 26 KiB SRAM",
                      "CH592 family ID, read-protection and debug-enable guard before download/debug"],
             license="WCH original source notices and vendor libISP592.a retained; use for WCH manufactured microcontrollers only.",
+            rtos=rtos,
         ), indent=2, ensure_ascii=False))
         manifest = dict(formatVersion=1, id=PACK_ID, version=VERSION, displayName="CH592 · 标准库", vendor="WCH", devices=devices)
         write("manifest.json", json.dumps(manifest, indent=2, ensure_ascii=False))

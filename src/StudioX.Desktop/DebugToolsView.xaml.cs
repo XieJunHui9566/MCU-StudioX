@@ -10,7 +10,10 @@ public sealed record BreakpointRow(string Id, string File, int Line, bool Enable
 public partial class DebugToolsView : UserControl
 {
     private DebugSnapshot? memorySnapshot;
-    public DebugToolsView() => InitializeComponent();
+    public DebugToolsView()
+    {
+        InitializeComponent(); RtosView.ReadRequested += RequestFreeRtos;
+    }
     public event Action<int>? FrameSelected;
     public event Action<string, bool>? WatchChanged;
     public event Action<string, bool?>? BreakpointChanged;
@@ -38,6 +41,8 @@ public partial class DebugToolsView : UserControl
         if (state != DebugState.Stopped) Memory.Text = state == DebugState.Running ? "目标运行中，暂停后重新读取。" : "暂停后读取内存。";
         else if (!ReferenceEquals(memorySnapshot, snapshot)) Memory.Text = "已暂停，输入地址后读取内存。";
         memorySnapshot = snapshot;
+        RefreshDisassembly(snapshot, state);
+        RefreshFreeRtos(snapshot, state);
     }
     public void AppendOutput(string text)
     {

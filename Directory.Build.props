@@ -6,10 +6,10 @@
     <LangVersion>14.0</LangVersion>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <Deterministic>true</Deterministic>
-    <!-- Windows 首发版只复制 win-x64 原生依赖，避免 PDF 渲染库的其他平台文件进入构建输出。 -->
+    <!-- 首发只运行于 Windows x64；默认构建只复制该平台的 PDF 原生库。 -->
     <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == '' and $([MSBuild]::IsOSPlatform('Windows'))">win-x64</RuntimeIdentifier>
     <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
-    <Version>0.2.3</Version>
+    <Version>0.2.4</Version>
     <InformationalVersion>$(Version)-preview</InformationalVersion>
   </PropertyGroup>
 </Project>

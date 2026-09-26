@@ -319,6 +319,70 @@ public sealed partial class StudioXMcpTools
         finally { mcpDebugGate.Release(); }
     }
 
+    [McpServerTool(Name = "debug_disassemble")]
+    [Description("只读读取当前工程已暂停调试目标的反汇编，返回地址、机器码字节、指令、符号和当前 PC；省略地址时从当前执行 PC 开始。单次 1–512 字节（默认 128），不连接或改写目标；离线会话返回明确标记的模拟指令。")]
+    public async Task<string> DebugDisassembleAsync(
+        [Description("可选的 32 位十六进制起始地址，例如 0x08000100；省略时使用当前执行 PC，不随所选调用栈帧改变。")]
+        string? address = null,
+        [Description("本次反汇编地址范围的字节数，范围 1–512；省略时为 128。指令宽度由 GDB 决定，结束地址为排他边界。")]
+        int byteCount = 128,
+        CancellationToken cancellationToken = default)
+    {
+        uint? parsed = null;
+        if (address is not null)
+        {
+            var text = address.Trim();
+            if (text.StartsWith("0x", StringComparison.OrdinalIgnoreCase)) text = text[2..];
+            if (string.IsNullOrEmpty(text) || !uint.TryParse(text, NumberStyles.HexNumber,
+                    CultureInfo.InvariantCulture, out var value))
+                throw new ArgumentException("请输入 32 位十六进制地址，例如 0x08000100，或省略地址使用当前 PC。", nameof(address));
+            parsed = value;
+        }
+        if (byteCount is < 1 or > 512)
+            throw new ArgumentOutOfRangeException(nameof(byteCount), "单次反汇编范围必须为 1–512 字节。");
+        if (parsed is { } start && (ulong)start + (uint)byteCount > uint.MaxValue)
+            throw new ArgumentOutOfRangeException(nameof(address), "反汇编的排他结束地址超出 32 位地址空间。");
+        await mcpDebugGate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            var debug = RequireMatchingDebugProject();
+            if (debug.State != DebugState.Stopped)
+                throw new StudioXException("DEBUG_STATE", "暂停目标后才能读取反汇编。");
+            var snapshot = debug.Snapshot;
+            var hardware = debug.IsHardware;
+            var result = await debug.ReadDisassemblyAsync(parsed, byteCount, cancellationToken).ConfigureAwait(false);
+            // IDE 可独立切换工程或继续运行，迟到结果不能当作新会话的当前指令。
+            if (!DebugProjectMatches(debug) || debug.State != DebugState.Stopped ||
+                !ReferenceEquals(snapshot, debug.Snapshot))
+                throw new StudioXException("DEBUG_SESSION_CHANGED", "读取反汇编期间调试会话已改变，请重新读取状态后再操作。");
+            return JsonSerializer.Serialize(new
+            {
+                project = Project,
+                state = debug.State.ToString(),
+                startAddress = $"0x{result.StartAddress:X8}",
+                endAddress = $"0x{result.EndAddress:X8}",
+                focusAddress = $"0x{result.FocusAddress:X8}",
+                programCounter = result.ProgramCounter is { } pc ? $"0x{pc:X8}" : null,
+                requestedByteCount = byteCount,
+                instructionCount = result.Instructions.Length,
+                instructions = result.Instructions.Select(item => new
+                {
+                    address = item.AddressText,
+                    opcodes = item.Opcodes,
+                    instruction = item.Instruction,
+                    function = item.Function,
+                    offset = item.Offset,
+                    symbol = item.Symbol,
+                    isProgramCounter = item.Address == result.ProgramCounter
+                }).ToArray(),
+                hardware,
+                simulated = !hardware,
+                evidence = hardware ? "GDB 返回的目标反汇编。" : "离线确定性模拟指令，不是工程编译结果或实机 Flash。"
+            });
+        }
+        finally { mcpDebugGate.Release(); }
+    }
+
     [McpServerTool(Name = "debug_snapshot")]
     [Description("读取当前工程最近一次暂停时的寄存器、调用栈、局部变量和观察项有界快照；运行中快照可能已经过时。")]
     public async Task<string> DebugSnapshotAsync(CancellationToken cancellationToken = default)

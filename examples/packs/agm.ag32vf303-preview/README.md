@@ -15,7 +15,7 @@
 
 创建 AG32VF303CCT6 工程时可单独启用 Verilog 逻辑模式，默认关闭。该模式面向本型号的 `AGRV2KL48` 逻辑器件；启用后才需要维护 `.ve` 引脚映射和自定义 Verilog。引脚位置须按实际 LQFP48 板卡核对，不能复制 100 脚示例的映射。
 
-**逻辑开发需用户另行准备 Quartus II Full 与 AGM Supra。** 先将 `logic/pins.ve` 同步到 AGM AgRV SDK / PlatformIO 配套工程，按本机 SDK 的 `[setup_logic]` 配置 `logic_ve`、`logic_device = AGRV2KL48`、`ip_name`、`logic_dir` 并执行 Prepare LOGIC，再将生成接口与 `user_logic.v` 对齐；StudioX 当前没有 Prepare LOGIC 任务。之后 Quartus II 编译 Verilog 并转换出 `.vo`，Supra 再生成逻辑 `.bin`，按厂商的独立逻辑下载流程写入芯片。StudioX 当前提供构建和下载指引，不自动执行这两套软件或烧录逻辑区。内置 AgRV GCC 和普通“下载固件”按钮只处理 MCU 应用。软件版本、工作步骤和验收范围见 AG32 Verilog 逻辑模式。
+**逻辑开发需用户另行准备 Quartus II Full 与 AGM Supra。** 先将 `logic/pins.ve` 同步到 AGM AgRV SDK / PlatformIO 配套工程，按本机 SDK 的 `[setup_logic]` 配置 `logic_ve`、`logic_device = AGRV2KL48`、`ip_name`、`logic_dir` 并执行 Prepare LOGIC，再将生成接口与 `user_logic.v` 对齐；StudioX 当前没有 Prepare LOGIC 任务。之后 Quartus II 编译 Verilog 并转换出 `.vo`，Supra 再生成逻辑 `.bin`，按厂商的独立逻辑下载流程写入芯片。StudioX 当前提供构建和下载指引，不自动执行这两套软件或烧录逻辑区。内置 AgRV GCC 和普通“下载固件”按钮只处理 MCU 应用。软件版本、工作步骤和验收范围见 [AG32 Verilog 逻辑模式](../../../docs/AG32_LOGIC_MODE.md)。
 
 新建工程采用分层 CMake：根 `CMakeLists.txt` 用于添加用户文件，`device/CMakeLists.txt` 管理 SDK 和芯片参数，`device/platform.cmake` 管理固定环境/产物规则。内部配置由 IDE 的工程生成器产生，在 IDE 中只读。详见 [工程分层](../../../docs/PROJECT_LAYOUT.md)。
 

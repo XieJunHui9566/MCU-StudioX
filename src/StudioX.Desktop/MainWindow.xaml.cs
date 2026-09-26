@@ -97,17 +97,6 @@ public partial class MainWindow : Window
         Plot.InvalidateVisual();
         SerialPlotView.RefreshTheme();
     }
-    private async void ToggleTheme_Click(object sender, RoutedEventArgs e) => await RunAsync(async token =>
-    {
-        var theme = currentTheme.Id == ThemeService.Dark.Id ? ThemeService.Light : ThemeService.Dark;
-        await services.Themes.SelectAsync(theme, token); ApplyTheme(theme); Status.Text = theme.DisplayName;
-    });
-    private async void ImportTheme_Click(object sender, RoutedEventArgs e)
-    {
-        var dialog = new OpenFileDialog { Filter = "StudioX JSON 主题|*.json" };
-        if (dialog.ShowDialog(this) == true) await RunAsync(async token => ApplyTheme(await services.Themes.ImportAsync(dialog.FileName, token)));
-    }
-
     private async Task RefreshPacksAsync(CancellationToken token, bool preserveSelection = false)
     {
         if (!bundledPacksChecked)
@@ -128,6 +117,9 @@ public partial class MainWindow : Window
                 Log("读取随附器件包失败，可手动导入：" + ex.Message);
             }
         }
+        var cleanup = await services.Packs.PruneSupersededAsync(token);
+        if (cleanup.Removed.Count > 0) Log($"已清理 {cleanup.Removed.Count} 个重复旧器件包，释放 {cleanup.ReclaimedBytes / 1024d / 1024:F1} MiB。");
+        foreach (var failure in cleanup.Failures) Log($"旧器件包清理失败：{failure.Id} {failure.Version}：{failure.Message}");
         var catalog = await services.Packs.ListCatalogAsync(token);
         // 目录读取期间允许用户继续选择；在实际重建列表前采集最新选择。
         var vendorId = preserveSelection ? (VendorPicker.SelectedItem as ManufacturerOption)?.Id : null;
@@ -136,10 +128,10 @@ public partial class MainWindow : Window
         var deviceId = preserveSelection ? (DevicePicker.SelectedItem as DeviceDefinition)?.Id : null;
         var templateId = preserveSelection ? (TemplatePicker.SelectedItem as ProjectTemplate)?.Id : null;
         var search = preserveSelection ? DeviceSearch.Text : "";
-        // 在线包可能与本地包有不同模板；两个版本都可选，旧工程与旧模板不因同步而消失。
+        // 冗余旧版已清理；只有新版不覆盖的旧型号或模板继续保留，不能因版本更高而丢失 SPL 等能力。
         installedPacks = catalog
             .OrderBy(p => p.Manifest.DisplayName, StringComparer.OrdinalIgnoreCase)
-            .ThenByDescending(p => p.Manifest.Version, Comparer<string>.Create(ComparePackVersions)).ToArray();
+            .ThenByDescending(p => p.Manifest.Version, Comparer<string>.Create(PackVersion.Compare)).ToArray();
         VendorPicker.SelectedIndex = -1;
         VendorPicker.ItemsSource = installedPacks.Select(PackManufacturer)
             .Distinct(StringComparer.OrdinalIgnoreCase).Order(StringComparer.OrdinalIgnoreCase)
@@ -154,7 +146,8 @@ public partial class MainWindow : Window
             {
                 PackPicker.SelectedItem = PackPicker.Items.Cast<InstalledPack>()
                     .FirstOrDefault(pack => pack.Manifest.Id == packId && pack.Manifest.Version == packVersion)
-                    ?? PackPicker.Items.Cast<InstalledPack>().FirstOrDefault(pack => pack.Manifest.Id == packId);
+                    ?? PackPicker.Items.Cast<InstalledPack>().Where(pack => pack.Manifest.Id == packId)
+                        .OrderByDescending(pack => pack.Manifest.Version, Comparer<string>.Create(PackVersion.Compare)).FirstOrDefault();
                 DeviceSearch.Text = search;
                 DevicePicker.SelectedItem = DevicePicker.Items.Cast<DeviceDefinition>()
                     .FirstOrDefault(device => device.Id == deviceId);
@@ -172,18 +165,6 @@ public partial class MainWindow : Window
         if (vendor.Equals("STC / 宏晶科技", StringComparison.OrdinalIgnoreCase))
             return "STC";
         return vendor;
-    }
-    private static int ComparePackVersions(string left, string right)
-    {
-        // Pack 格式要求三段非负整数；按数值比较，避免字符串排序错误和整数溢出。
-        var a = left.Split('.'); var b = right.Split('.');
-        for (var i = 0; i < 3; i++)
-        {
-            var result = a[i].Length.CompareTo(b[i].Length);
-            if (result == 0) result = string.CompareOrdinal(a[i], b[i]);
-            if (result != 0) return result;
-        }
-        return 0;
     }
     private void VendorPicker_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
@@ -217,9 +198,13 @@ public partial class MainWindow : Window
     {
         var pack = await services.Packs.ImportAsync(archive, token);
         await RefreshPacksAsync(token);
-        var current = installedPacks.Single(p => p.Manifest.Id == pack.Manifest.Id && p.Manifest.Version == pack.Manifest.Version);
+        var current = installedPacks.SingleOrDefault(p => p.Manifest.Id == pack.Manifest.Id && p.Manifest.Version == pack.Manifest.Version)
+            ?? installedPacks.Where(p => PackCatalogPolicy.Supersedes(p.Manifest, pack.Manifest))
+                .OrderByDescending(p => p.Manifest.Version, Comparer<string>.Create(PackVersion.Compare)).First();
         SelectPack(current);
-        PackageStatus.Text = $"已导入 {pack.Manifest.DisplayName} {pack.Manifest.Version}。请选择芯片和模板。";
+        PackageStatus.Text = current.Manifest.Version == pack.Manifest.Version
+            ? $"已导入 {current.Manifest.DisplayName} {current.Manifest.Version}。请选择芯片和模板。"
+            : $"{pack.Manifest.Version} 已被新版完整覆盖，保留 {current.Manifest.DisplayName} {current.Manifest.Version}。请选择芯片和模板。";
         return current;
     }
     private async void ImportPack_Click(object sender, RoutedEventArgs e)
@@ -361,7 +346,8 @@ public partial class MainWindow : Window
         aiCancellation?.Cancel();
         await DisposeAiMcpSessionAsync();
         await PersistBreakpointLinesAsync();
-        await services.Debugger.StopAsync(); await debugNavigationTask;
+        CancelFreeRtosRead();
+        await services.Debugger.StopAsync(); await debugNavigationTask; await debugRtosTask;
         debugAnchors.Clear(); lastDebugSnapshot = null;
         var mainPath = project.Kind == ProjectKind.CubeMx ? "Core/Src/main.c" : "src/main.c";
         var source = services.Files.FileExists(directory, mainPath) ? await services.Files.ReadAsync(directory, mainPath, token) : null;
@@ -575,6 +561,7 @@ public partial class MainWindow : Window
         packSyncCancellation?.Cancel();
         aiCancellation?.Cancel();
         CancelOutline();
+        CancelFreeRtosRead();
         CloseCodeAssistance();
         if (!GitGraph.IsMutating) operationCancellation?.Cancel();
         var documentAccepted = false;
@@ -584,7 +571,7 @@ public partial class MainWindow : Window
             await StopPackSyncAsync();
             await pendingZoomSave;
             breakpointSaveTimer.Stop(); await PersistBreakpointLinesAsync();
-            await services.Debugger.StopAsync(); await debugNavigationTask;
+            await services.Debugger.StopAsync(); await debugNavigationTask; await debugRtosTask;
             await assistTask;
             await outlineTask;
             await Task.WhenAll(hoverTask, navigationTask);

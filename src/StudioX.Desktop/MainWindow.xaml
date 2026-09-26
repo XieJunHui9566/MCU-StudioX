@@ -44,6 +44,7 @@
      <MenuItem Header="条件 / 日志 / 临时断点…" InputGestureText="Shift+F9" Click="DebugBreakpointSettings_Click"/>
      <MenuItem x:Name="DebugRunToMenu" Header="运行到光标" InputGestureText="Ctrl+F10" Click="DebugRunToCursor_Click" IsEnabled="False"/>
      <MenuItem x:Name="ShowDebugMenu" Header="调试窗口" Click="ShowDebug_Click" IsEnabled="False"/>
+     <MenuItem x:Name="ShowFreeRtosMenu" Header="FreeRTOS 状态" Click="ShowFreeRtos_Click" IsEnabled="False"/>
     </MenuItem>
     <MenuItem Header="工具(_T)"><MenuItem Header="工程终端" InputGestureText="Ctrl+`" Click="ProjectTerminal_Click"/><MenuItem Header="AI 接口设置…" Click="AiSettingsMenu_Click"/><MenuItem Header="Git 图谱" Click="GitGraph_Click"/><MenuItem Header="GitHub 协作" Click="GitHubWorkspace_Click"/><MenuItem Header="器件与模板" Click="DevicesAndTemplates_Click"/><MenuItem Header="串口终端" Click="Serial_Click"/><MenuItem Header="串口绘图" Click="SerialPlot_Click"/><MenuItem Header="波形演示" Click="Lab_Click"/><MenuItem Header="插件与工具集" Click="Extensions_Click"/><MenuItem Header="检查内置工具链" Click="VerifyTools_Click"/></MenuItem>
     <MenuItem Header="帮助(_H)"><MenuItem Header="快速开始" Click="Welcome_Click"/><MenuItem Header="关于 MCU StudioX" Click="About_Click"/></MenuItem>

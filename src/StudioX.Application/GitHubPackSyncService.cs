@@ -282,17 +282,7 @@ public sealed class GitHubPackSyncService : IDisposable
     private static Uri RawUri(string commit, string path) =>
         new($"https://raw.githubusercontent.com/{Owner}/{Repository}/{commit}/{path}");
 
-    private static int CompareVersions(string left, string right)
-    {
-        var a = left.Split('.'); var b = right.Split('.');
-        for (var i = 0; i < 3; i++)
-        {
-            var comparison = a[i].Length.CompareTo(b[i].Length);
-            if (comparison == 0) comparison = string.CompareOrdinal(a[i], b[i]);
-            if (comparison != 0) return comparison;
-        }
-        return 0;
-    }
+    private static int CompareVersions(string left, string right) => PackVersion.Compare(left, right);
 
     private sealed record RemotePackIndex(int FormatVersion, IReadOnlyList<RemotePackIndexEntry>? Packs);
     private sealed record RemotePackIndexEntry(string Path, string Id, string Version, string Sha256, long Size);

@@ -29,7 +29,7 @@ Agent 工作时输入框仍可使用：发送的新文字会显示为「待注�
 | 烧录 | `firmware_download_plan`、`firmware_download` | 只读预检当前工程唯一的已编译固件、目标型号、SHA-256 与探针；逐次授权后使用 OpenOCD 核对目标、按映像范围擦写、校验并复位运行 |
 | STC 串口 ISP | `stc_isp_plan`、`stc_isp_download` | 只读预检已编译 HEX、准确型号、COM 口、波特率、时钟设置和 SHA-256；明确接受可能整片擦除及无读回后再逐次授权下载 |
 | Git | `git_status`、`git_diff`、`git_log`、`git_stage`、`git_commit`、`git_branch`、`git_remote` | 检查本工程仓库；变更操作逐次确认，不提供强制推送或破坏性重置 |
-| 调试 | `debug_status`、`debug_wait`、`debug_log`、`debug_start_offline`、`debug_start_hardware`、`debug_control`、`debug_breakpoint_set`、`debug_breakpoint_remove`、`debug_read_memory`、`debug_snapshot` | 等待断点或状态变化、按偏移读取有界原始日志；内存每次可读 1–256 字节并用 `nextAddress` 续读；硬件附加不隐式下载或烧录 |
+| 调试 | `debug_status`、`debug_wait`、`debug_log`、`debug_start_offline`、`debug_start_hardware`、`debug_control`、`debug_breakpoint_set`、`debug_breakpoint_remove`、`debug_read_memory`、`debug_disassemble`、`debug_rtos_snapshot`、`debug_snapshot` | 等待断点或状态变化、按偏移读取有界原始日志；暂停时读取内存、反汇编及 FreeRTOS 任务/堆/同步对象，未知统计值保留为空和诊断；硬件附加不隐式下载或烧录 |
 | 串口 | `serial_list_ports`、`serial_status`、`serial_connect`、`serial_send`、`serial_read`、`serial_read_raw`、`serial_disconnect` | Agent 自有端口会话；发送逐次确认，可读终端文本及有界原始 RX 帧 |
 | 绘图 | `plot_start`、`plot_snapshot`、`plot_stop` | Agent 自有的 16 通道串口绘图采集或离线演示；快照最多 200 组样本 |
 | 器件资料 | `device_search`、`device_info`、`device_templates` | 查询已安装且通过校验的 StudioX 格式 1 包，返回型号、内存、模板、探针和来源哈希 |
@@ -51,6 +51,10 @@ DeepSeek 的提示缓存由服务端对**完全相同的历史前缀**自动命�
 文件写入、复制、编译、烧录、Git 变更及远端操作、调试控制、硬件连接、串口连接与发送、开始绘图都需要宿主对**每次调用**确认。内置 Agent 在聊天区临时显示授权卡，列出工具、工程和操作摘要；用户选择后立即移除卡片。“允许本次”只授权当前调用，外部目录的“允许本会话读取”也只作用于卡片列出的目录。拒绝、停止请求、切换工程或关闭窗口都不会执行未完成的操作。外部主机在可交互 Windows 桌面显示独立确认框，无法弹窗时拒绝。串口和绘图会话由 Agent 自己持有，不接管 IDE 现有窗口。烧录工具不自动编译、不接受模型提供的任意文件路径，审批时展示具体芯片、产物 SHA-256、探针或 COM 口；执行前再次核对。OpenOCD 不执行整片擦除或选项字节修改；STC ISP 会按芯片协议擦除原程序，可能整片擦除，而且没有原程序备份或 Flash 读回能力，因此需额外明确确认。当前不提供任意命令执行工具。
 
 每次 `project_edit_file`、`project_patch_file` 或 `project_create_file` 成功后，聊天区立即显示工具进度，代码编辑区会在该次工具调用完成时重读已打开的干净文件；新文件自动打开。若用户同时编辑了未保存的缓冲区，IDE 保留缓冲区并提示磁盘冲突，不覆盖用户内容。模型接口若返回 `reasoning_content`，聊天区逐段显示实际收到的推理文本；未提供该字段时仅显示请求、工具和耗时等实际进度。
+
+`debug_disassemble` 只读取已暂停会话。省略 `address` 时从当前执行 PC 开始，即使界面选择了上层调用栈帧；传入 32 位十六进制地址时可检查指定位置。`byteCount` 默认 128、每次为 1–512 字节，`endAddress` 是排他结束地址；指令宽度由当前 GDB 返回，不能假设每条占 4 字节。结果包含机器码、指令、符号和 PC 标记，GDB 原始错误按既有 MCP 诊断通路返回。离线结果的 `simulated=true` 与 `evidence` 明确标记其为确定性演示，不证明工程实际编译结果或硬件行为。
+
+`debug_rtos_snapshot` 读取已暂停目标的 FreeRTOS 任务、调度器、堆和队列/信号量/互斥量；可传 `objectSymbols` 补充未注册的全局句柄（例如 `["sensorQueue", "app.busMutex"]`）。工具通过符号与类型读取内核，不调用目标函数、不写内存、不切换任务上下文。`snapshot.isAvailable=false` 或字段为 `null` 时应查看 `diagnostics`，不可视作任务、堆或对象为空。自动对象发现依赖队列注册表，未注册对象须提供句柄；累计运行计数受固件计时配置影响，不直接代表毫秒或 CPU 百分比。配置建议、支持范围及离线证据见 [FreeRTOS 调试说明](DEBUGGING.md#freertos-内核状态)。
 
 ## Agent Skills
 

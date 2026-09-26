@@ -33,11 +33,13 @@ public partial class App : System.Windows.Application
         var cubeMxPreview = e.Args is ["--preview-cubemx", _, _];
         var downloadPreview = e.Args is ["--preview-download", _, _];
         var debugPreview = e.Args is ["--preview-debug", _, _];
+        var rtosPreview = e.Args is ["--preview-rtos", _, _];
+        var packCatalogPreview = e.Args is ["--preview-pack-catalog", _, _, _];
         var breakpointsPreview = e.Args is ["--preview-breakpoints", _, _];
         var importPerformancePreview = e.Args is ["--preview-import-performance", _, _];
         var stm32Preview = e.Args is ["--preview-stm32", _, _] or ["--preview-stm32", _, _, _];
         var rp2350Preview = e.Args is ["--preview-rp2350", _, _];
-        var anyPreview = preview || windowLayoutPreview || editorPreview || completionPreview || cmakePreview || documentsPreview || navigationPreview || explorerPreview || buildPreview || buildMemoryPreview || editingPreview || bracketsPreview || stm32Preview || rp2350Preview || projectPreview || cubeMxPreview || importPerformancePreview || downloadPreview || debugPreview || breakpointsPreview;
+        var anyPreview = preview || windowLayoutPreview || editorPreview || completionPreview || cmakePreview || documentsPreview || navigationPreview || explorerPreview || buildPreview || buildMemoryPreview || editingPreview || bracketsPreview || stm32Preview || rp2350Preview || projectPreview || cubeMxPreview || importPerformancePreview || downloadPreview || debugPreview || rtosPreview || packCatalogPreview || breakpointsPreview;
         var data = (showDebugDemo || showBreakpointsDemo) && e.Args.Length == 3 ? Path.GetFullPath(e.Args[2]) : smoke || anyPreview ? Path.Combine(Path.GetFullPath(e.Args[1]), "user-data") :
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MCUStudioX");
         var services = new WorkbenchService(Path.Combine(AppContext.BaseDirectory, "runtime"), data);
@@ -56,6 +58,8 @@ public partial class App : System.Windows.Application
                 else if (editingPreview) await window.RenderEditingPreviewAsync(directory, Path.GetFullPath(e.Args[2]));
                 else if (bracketsPreview) await window.RenderBracketsPreviewAsync(directory, Path.GetFullPath(e.Args[2]));
                 else if (debugPreview) await window.RenderDebugPreviewAsync(directory, Path.GetFullPath(e.Args[2]));
+                else if (rtosPreview) await window.RenderFreeRtosPreviewAsync(directory, Path.GetFullPath(e.Args[2]));
+                else if (packCatalogPreview) await window.RenderPackCatalogPreviewAsync(directory, Path.GetFullPath(e.Args[2]), Path.GetFullPath(e.Args[3]));
                 else if (breakpointsPreview) await window.RenderBreakpointsPreviewAsync(directory, Path.GetFullPath(e.Args[2]));
                 else if (downloadPreview) await window.RenderDownloadPreviewAsync(directory, Path.GetFullPath(e.Args[2]));
                 else if (cubeMxPreview) await window.RenderCubeMxPreviewAsync(directory, Path.GetFullPath(e.Args[2]));

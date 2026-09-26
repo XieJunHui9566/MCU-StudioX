@@ -67,7 +67,7 @@ $agSource = Join-Path $preparedPacks 'studiox.preview.ag32vf303-0.1.1.mcupack'
 [IO.Directory]::CreateDirectory((Join-Path $packOutput 'AGM')) | Out-Null
 Copy-Item -LiteralPath $agSource -Destination (Join-Path $packOutput 'AGM')
 $releasedPacks += @{ file=('AGM/' + [IO.Path]::GetFileName($agSource)); id='studiox.preview.ag32vf303'; version='0.1.1'; sha256=(Get-FileHash -LiteralPath $agSource -Algorithm SHA256).Hash.ToLowerInvariant(); devices=@('AG32VF303CCT6') }
-foreach ($wchPack in @('CH32V307-0.1.1','CH32V203-0.1.0-verified','CH592-0.1.0','CH595-0.1.0')) {
+foreach ($wchPack in @('CH32V307-0.1.3-verified','CH32V203-0.1.1-verified','CH592-0.1.1-verified','CH595-0.1.0')) {
   $wchIndex = Get-Content -LiteralPath (Join-Path $preparedPacks "$wchPack/index.json") -Raw | ConvertFrom-Json
   foreach ($entry in $wchIndex) {
     $source = Join-Path $preparedPacks "$wchPack/$($entry.file)"

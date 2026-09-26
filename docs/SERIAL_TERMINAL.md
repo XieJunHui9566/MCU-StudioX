@@ -38,11 +38,11 @@
 - `StudioX.Devices/SerialTransport` 使用 Microsoft `System.IO.Ports` 10.0.12，后台有限超时读取/发送；DeviceHub 保证连接唯一，首个订阅建立后开始读取，避免丢启动首包。
 - `StudioX.Application/Serial` 负责连接用例、连续解码、ANSI 状态、原始历史与导出；Desktop 仅调用服务，150 ms 合并刷新可见终端，关闭和断开释放会话。端口拔出不会自动重新发送旧命令。
 - `dotnet run --project tools/StudioX.SerialChecks`：编码、非法输入、跨包 ANSI/中文、颜色复位、CR/退格、OSC 忽略、缓存上限、首包、单一所有者、二进制发送、模式重建、原始/JSONL 导出、断开/重连、模拟掉线及控制输出偏好。
-- 已通过基础编译及 45 项后台检查。用户恢复联调后，F407 / ST-Link / COM15 的真实 IDE 界面验收已完成，详见 实机验收记录。已验证 UTF-8/GB2312/HEX 双向收发、ANSI 彩色、115200/57600 切换、定时发送、暂停、导出及关闭标签后重连；其他硬件参数组合仍按记录中的边界处理。
+- 已通过基础编译及 45 项后台检查。用户恢复联调后，F407 / ST-Link / COM15 的真实 IDE 界面验收已完成，详见 [实机验收记录](F407-SERIAL-ACCEPTANCE-20260922.md)。已验证 UTF-8/GB2312/HEX 双向收发、ANSI 彩色、115200/57600 切换、定时发送、暂停、导出及关闭标签后重连；其他硬件参数组合仍按记录中的边界处理。
 
 ## EXPLORER F407 测试准备
 
-验收时使用 `examples/F407-Serial-Terminal` 测试工程。该工程及其复制的 SDK 已按用户要求清理；需要追溯时可从清理前提交 `6e480b7` 恢复。原板固件、实际测试固件副本和验收日志的归档位置见 开发产物清理记录。
+验收时使用 `examples/F407-Serial-Terminal` 测试工程。该工程及其复制的 SDK 已按用户要求清理；需要追溯时可从清理前提交 `6e480b7` 恢复。原板固件、实际测试固件副本和验收日志的归档位置见 [开发产物清理记录](DEVELOPMENT-CLEANUP-20260922.md)。
 
 依据用户原理图 `EXPLORER_V3.5.pdf`（图内标题标 V3.4），PA9/PA10 通过 P10 跳帽连接板载 CH340；枚举发现 USB-SERIAL CH340 (COM15)。该板 RTS/DTR 接 RESET/BOOT0，而非 USART RTS/CTS；因此默认无流控、DTR/RTS 关闭，硬件流控需要另外接出相应引脚才能实测。
 
