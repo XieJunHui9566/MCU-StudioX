@@ -50,7 +50,9 @@ try:
     check("STC8G1K08-8PIN", 8192, "STC8G1K08")
     assert calls == ["program", "program"]
     try:
-        check("IAP15F2K61S2", 62464, "IAP15F2K61S2", source="external", mode="internal", trim=11059.2)
+        check(
+            "IAP15F2K61S2", 62464, "IAP15F2K61S2", source="external", mode="internal", trim=11059.2
+        )
         raise AssertionError("external-to-internal one-step trim was accepted")
     except StcProtocolException:
         assert calls == ["program", "program"]

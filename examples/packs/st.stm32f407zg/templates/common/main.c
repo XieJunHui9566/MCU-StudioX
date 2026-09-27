@@ -16,7 +16,8 @@ static void HeartbeatTask(void *argument)
 {
     (void)argument;
     TickType_t wake = xTaskGetTickCount();
-    for (;;) {
+    for (;;)
+    {
         ++app_heartbeat;
         vTaskDelayUntil(&wake, pdMS_TO_TICKS(500));
     }
@@ -26,16 +27,19 @@ static void HeartbeatTask(void *argument)
 int main(void)
 {
 #ifdef USE_HAL_DRIVER
-    if (HAL_Init() != HAL_OK) StudioX_Panic(20);
+    if (HAL_Init() != HAL_OK)
+        StudioX_Panic(20);
 #endif
     BoardClock_Init();
     app_sysclk_hz = SystemCoreClock;
 #ifdef STUDIOX_USE_FREERTOS
-    if (xTaskCreate(HeartbeatTask, "heartbeat", 256, NULL, 2, NULL) != pdPASS) StudioX_Panic(21);
+    if (xTaskCreate(HeartbeatTask, "heartbeat", 256, NULL, 2, NULL) != pdPASS)
+        StudioX_Panic(21);
     vTaskStartScheduler();
     StudioX_Panic(22);
 #else
-    for (;;) {
+    for (;;)
+    {
         ++app_heartbeat;
         Board_Delay(500);
     }

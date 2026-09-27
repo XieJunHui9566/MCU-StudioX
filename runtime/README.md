@@ -41,3 +41,11 @@ runtime/
 语言组件构建资源放在忽略提交的 `artifacts/language-runtime`。`tools/Prepare-LanguageServer.ps1` 使用 [clangd 官方发行包](https://github.com/clangd/clangd/releases/tag/22.1.6)，固定 SHA-256 `ce54f16e0b4fd76d450eeda9664420b195360b73febcfe40e661108fa57f2ce1`；保留发行包自带许可证。`tools/Prepare-Ag32LanguageHeaders.ps1 -ToolchainDirectory <已准备的 AgRV GCC 11.1.0 根目录>` 复制标准 C 头文件、保留文件内版权，并生成逐文件哈希清单，附带 [newlib 版权与许可说明](https://sourceware.org/newlib/COPYING.NEWLIB)。不复制 `c++` 标准库目录。
 
 Desktop 项目自动将以上资源复制到构建和发布输出；缺少 clangd 时发布脚本拒绝生成不完整的 IDE。语言解析参数通过 [clangd 编译命令扩展](https://clangd.llvm.org/extensions#compilation-commands) 传入进程，不生成或运行编译命令。用户工程里的自定义 `.clangd` 和环境 PATH 不用于当前配置。
+
+## Espressif 共享组件
+
+ESP32 目标共享 `runtime/toolsets/espressif.idf/5.5.4/`，ESP8266 使用 `runtime/toolsets/espressif.esp8266-rtos/3.4.0/`。各目录包含 `toolset.json`、`SOURCE.json`、`sdk/`、`python/`、`idf-tools/`、`cmake/`、`ninja/`、`git/`，以及匹配的 `xtensa/`、`riscv/` 或 `gcc/` 编译器；旧 SDK 另含 `mconf/`。SDK 不进入每个用户工程，工具入口与资源均使用受校验的相对路径。
+
+开发输出通过硬链接复用 `artifacts/tool-runtime` 的只读组件；完整发布保留原生运行布局。七个器件包位于 `device-packs/Espressif/`，由总 `index.json` 记录包及来源证据的 SHA-256。`tools/Publish.ps1` 发布前验证两套 SDK 的完整文件清单、哈希、版本与必需工具，以及七个包的路径、身份和来源哈希；缺失资源不会自动下载。准备命令见 [Espressif SDK 资源](../docs/ESPRESSIF_RUNTIME.md)。
+
+ESP 代码提示使用原生 SDK 编译数据库。Xtensa 的语言分析采用通用 32 位 C/C++ 解析，仅提供编辑辅助；目标 ABI 以 SDK 实编为准。未配置工程首先提供通用提示，并说明需要配置或编译生成 SDK 头文件与宏。SDK 与编译器的原始许可证和来源见 [Espressif 组件声明](../licenses/Espressif-NOTICE.md)。

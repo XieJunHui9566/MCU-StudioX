@@ -15,7 +15,10 @@ public sealed class WebResearchService
     {
         AllowAutoRedirect = false,
         UseCookies = false
-    }) { Timeout = Timeout.InfiniteTimeSpan };
+    })
+    {
+        Timeout = Timeout.InfiniteTimeSpan
+    };
     private const int MaximumResponseBytes = 512 * 1024;
     private const int MaximumCachedContentChars = MaximumResponseBytes;
     private const int MaximumSearchResults = 20;
@@ -38,9 +41,13 @@ public sealed class WebResearchService
     {
         var term = query?.Trim() ?? "";
         if (term.Length is < 2 or > 240 || term.Any(char.IsControl))
+        {
             throw new StudioXException("MCP_WEB_QUERY", "联网检索词需为 2–240 字符的单行文字。");
+        }
         if (maxResults is < 1 or > 10 || offset is < 0 or > 10 || offset + maxResults > MaximumSearchResults)
+        {
             throw new StudioXException("MCP_WEB_PAGE", "每页最多 10 条，偏移与条数之和不能超过 20。");
+        }
 
         CachedSearch? cached;
         lock (searchCacheGate)
@@ -66,12 +73,17 @@ public sealed class WebResearchService
             var root = response.RootElement;
             if (root.ValueKind != JsonValueKind.Object ||
                 !root.TryGetProperty("results", out var results) || results.ValueKind != JsonValueKind.Array)
+            {
                 throw new StudioXException("MCP_WEB_RESPONSE", "联网检索服务返回的结果格式无效。");
+            }
             var entries = results.EnumerateArray().Take(MaximumSearchResults)
                 .Select(item =>
                 {
                     var sourceUrl = BoundedString(item, "url", 2048);
-                    if (sourceUrl is null || !TryPublicHttpsUri(sourceUrl, out var safeUrl)) return null;
+                    if (sourceUrl is null || !TryPublicHttpsUri(sourceUrl, out var safeUrl))
+                    {
+                        return null;
+                    }
                     var displayUrl = RedactSensitiveQuery(safeUrl!);
                     return new SearchEntry(
                         BoundedString(item, "title", 240) ?? "（无标题）",
@@ -82,7 +94,10 @@ public sealed class WebResearchService
                 })
                 .Where(item => item is not null).Cast<SearchEntry>().ToArray();
             cached = new CachedSearch(term, entries, DateTimeOffset.UtcNow);
-            lock (searchCacheGate) searchCache = cached;
+            lock (searchCacheGate)
+            {
+                searchCache = cached;
+            }
         }
         var page = cached.Results.Skip(offset).Take(maxResults).ToArray();
         var nextOffset = offset + maxResults < cached.Results.Length
@@ -111,11 +126,17 @@ public sealed class WebResearchService
         int maxCharacters = 8_000, CancellationToken cancellationToken = default)
     {
         if (!TryPublicHttpsUri(url, out var safeUrl))
+        {
             throw new StudioXException("MCP_WEB_URL", "网页地址必须是公开域名的 HTTPS URL，不能包含账号、片段或非标准端口。");
+        }
         if (RedactSensitiveQuery(safeUrl!) != safeUrl!.AbsoluteUri)
+        {
             throw new StudioXException("MCP_WEB_URL", "网页地址包含可能泄漏凭据的查询参数，请改用公开链接。");
+        }
         if (offsetCharacters is < 0 or > MaximumCachedContentChars || maxCharacters is < 1 or > 12_000)
+        {
             throw new StudioXException("MCP_WEB_PAGE", "网页分段位置或长度超出允许范围。");
+        }
 
         var canonical = safeUrl!.AbsoluteUri;
         CachedExtract? cached;
@@ -137,7 +158,9 @@ public sealed class WebResearchService
             var root = response.RootElement;
             if (root.ValueKind != JsonValueKind.Object ||
                 !root.TryGetProperty("results", out var results) || results.ValueKind != JsonValueKind.Array)
+            {
                 throw new StudioXException("MCP_WEB_RESPONSE", "网页提取服务返回的结果格式无效。");
+            }
             var match = results.EnumerateArray().FirstOrDefault(item =>
                 item.ValueKind == JsonValueKind.Object &&
                 BoundedString(item, "url", 2048) is { } itemUrl &&
@@ -155,14 +178,21 @@ public sealed class WebResearchService
             }
             var content = BoundedString(match, "raw_content", MaximumResponseBytes);
             if (string.IsNullOrWhiteSpace(content))
+            {
                 throw new StudioXException("MCP_WEB_FETCH", "网页未返回可读取的正文。");
+            }
             cached = new CachedExtract(canonical, content, DateTimeOffset.UtcNow);
-            lock (extractCacheGate) extractCache = cached;
+            lock (extractCacheGate)
+            {
+                extractCache = cached;
+            }
         }
 
         var available = Math.Min(cached.Content.Length, MaximumCachedContentChars);
         if (offsetCharacters >= available)
+        {
             throw new StudioXException("MCP_WEB_PAGE", "网页分段位置已超出可读取正文范围。");
+        }
         var end = Math.Min(available, offsetCharacters + maxCharacters);
         var nextOffset = end < available ? end : (int?)null;
         return JsonSerializer.Serialize(new
@@ -191,15 +221,25 @@ public sealed class WebResearchService
         };
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         string? key;
-        try { key = apiKeyProvider(); }
+        try
+        {
+            key = apiKeyProvider();
+        }
         catch (Exception) { throw new StudioXException("MCP_WEB_CREDENTIAL", "无法读取 Tavily API Key。"); }
         if (!string.IsNullOrEmpty(key))
         {
             if (key.Length > 2560 || key.Any(ch => ch is < '!' or > '~'))
+            {
                 throw new StudioXException("MCP_WEB_CREDENTIAL", "保存的 Tavily API Key 无效，请重新设置。");
-            try { request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", key); }
+            }
+            try
+            {
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", key);
+            }
             catch (FormatException)
-            { throw new StudioXException("MCP_WEB_CREDENTIAL", "保存的 Tavily API Key 无效，请重新设置。"); }
+            {
+                throw new StudioXException("MCP_WEB_CREDENTIAL", "保存的 Tavily API Key 无效，请重新设置。");
+            }
         }
         else
         {
@@ -214,43 +254,71 @@ public sealed class WebResearchService
             using var response = await client.SendAsync(request,
                 HttpCompletionOption.ResponseHeadersRead, timeout.Token).ConfigureAwait(false);
             if (response.StatusCode == HttpStatusCode.Unauthorized)
+            {
                 throw new StudioXException("MCP_WEB_AUTH", "Tavily 未接受本次访问；请在 AI 设置中配置 Tavily API Key。");
+            }
             if (response.StatusCode == HttpStatusCode.TooManyRequests)
+            {
                 throw new StudioXException("MCP_WEB_RATE", "Tavily 请求过于频繁，请稍后重试。");
+            }
             if ((int)response.StatusCode is 432 or 433)
+            {
                 throw new StudioXException("MCP_WEB_QUOTA", "Tavily 服务额度已用完或受到账户限制。");
+            }
             if (!response.IsSuccessStatusCode || (int)response.StatusCode is >= 300 and < 400)
+            {
                 throw new StudioXException("MCP_WEB_HTTP", "Tavily 服务暂不可用（HTTP " + (int)response.StatusCode + "）。");
+            }
             if (response.Content.Headers.ContentLength is > MaximumResponseBytes)
+            {
                 throw new StudioXException("MCP_WEB_RESPONSE", "Tavily 返回内容超过读取上限。");
+            }
             await using var stream = await response.Content.ReadAsStreamAsync(timeout.Token).ConfigureAwait(false);
             using var buffer = new MemoryStream();
             var chunk = new byte[16 * 1024];
             while (true)
             {
                 var read = await stream.ReadAsync(chunk, timeout.Token).ConfigureAwait(false);
-                if (read == 0) break;
+                if (read == 0)
+                {
+                    break;
+                }
                 if (buffer.Length + read > MaximumResponseBytes)
+                {
                     throw new StudioXException("MCP_WEB_RESPONSE", "Tavily 返回内容超过读取上限。");
+                }
                 buffer.Write(chunk, 0, read);
             }
-            try { return JsonDocument.Parse(buffer.ToArray()); }
+            try
+            {
+                return JsonDocument.Parse(buffer.ToArray());
+            }
             catch (JsonException)
-            { throw new StudioXException("MCP_WEB_RESPONSE", "Tavily 返回的 JSON 无效。"); }
+            {
+                throw new StudioXException("MCP_WEB_RESPONSE", "Tavily 返回的 JSON 无效。");
+            }
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
-        { throw new StudioXException("MCP_WEB_TIMEOUT", "Tavily 联网请求超时。"); }
+        {
+            throw new StudioXException("MCP_WEB_TIMEOUT", "Tavily 联网请求超时。");
+        }
         catch (HttpRequestException)
-        { throw new StudioXException("MCP_WEB_NETWORK", "无法连接 Tavily 服务，请检查网络。"); }
+        {
+            throw new StudioXException("MCP_WEB_NETWORK", "无法连接 Tavily 服务，请检查网络。");
+        }
         catch (IOException)
-        { throw new StudioXException("MCP_WEB_NETWORK", "读取 Tavily 响应失败，请稍后重试。"); }
+        {
+            throw new StudioXException("MCP_WEB_NETWORK", "读取 Tavily 响应失败，请稍后重试。");
+        }
     }
 
     private static string? BoundedString(JsonElement item, string name, int maximum)
     {
         if (item.ValueKind != JsonValueKind.Object ||
             !item.TryGetProperty(name, out var property) || property.ValueKind != JsonValueKind.String)
+        {
             return null;
+        }
         var value = property.GetString();
         return value is { Length: > 0 } ? value[..Math.Min(value.Length, maximum)] : null;
     }
@@ -264,17 +332,23 @@ public sealed class WebResearchService
             parsed.Scheme != Uri.UriSchemeHttps || !parsed.IsDefaultPort ||
             parsed.UserInfo.Length != 0 || parsed.Fragment.Length != 0 ||
             parsed.HostNameType != UriHostNameType.Dns)
+        {
             return false;
+        }
         var host = parsed.IdnHost.TrimEnd('.').ToLowerInvariant();
         if (host.Length is < 4 or > 253 || !host.Contains('.') ||
             host.Split('.').Any(label => label.Length is < 1 or > 63 ||
                 label.StartsWith('-') || label.EndsWith('-')))
+        {
             return false;
+        }
         var last = host[(host.LastIndexOf('.') + 1)..];
         if (last is "local" or "localhost" or "localdomain" or "internal" or "lan" or "home" or
             "test" or "invalid" or "onion" or "arpa" ||
             host is "localhost.localdomain" or "metadata.google.internal")
+        {
             return false;
+        }
         uri = parsed;
         return true;
     }
@@ -282,18 +356,26 @@ public sealed class WebResearchService
     private static string RedactSensitiveQuery(Uri uri)
     {
         var query = uri.Query.TrimStart('?');
-        if (query.Length == 0) return uri.AbsoluteUri;
+        if (query.Length == 0)
+        {
+            return uri.AbsoluteUri;
+        }
         foreach (var field in query.Split('&'))
         {
             var separator = field.IndexOf('=');
             var name = separator < 0 ? field : field[..separator];
-            try { name = Uri.UnescapeDataString(name.Replace('+', ' ')); }
+            try
+            {
+                name = Uri.UnescapeDataString(name.Replace('+', ' '));
+            }
             catch (UriFormatException) { return new UriBuilder(uri) { Query = "" }.Uri.AbsoluteUri; }
             var normalized = name.Replace("_", "", StringComparison.Ordinal)
                 .Replace("-", "", StringComparison.Ordinal).ToLowerInvariant();
             if (normalized is "key" or "apikey" or "token" or "accesstoken" or "auth" or
                 "authorization" or "signature" or "sig" or "code" or "clientsecret" or "secret")
+            {
                 return new UriBuilder(uri) { Query = "" }.Uri.AbsoluteUri;
+            }
         }
         return uri.AbsoluteUri;
     }

@@ -6,10 +6,17 @@ internal static class ImageVerificationChecks
     public static async Task<int> RunAsync(string output)
     {
         var root = Path.GetFullPath(output);
-        if (Directory.Exists(root)) throw new ArgumentException("Use a new validation directory.");
+        if (Directory.Exists(root))
+        {
+            throw new ArgumentException("Use a new validation directory.");
+        }
         Directory.CreateDirectory(root);
         var results = new List<string>();
-        void Pass(string text) { results.Add(text); Console.WriteLine("PASS " + text); }
+        void Pass(string text)
+        {
+            results.Add(text);
+            Console.WriteLine("PASS " + text);
+        }
         void Accept(string text, ulong expected, string label)
         {
             DebugSessionService.RequireImageVerificationEvidence(text, expected, "fixture.log");
@@ -17,9 +24,15 @@ internal static class ImageVerificationChecks
         }
         void Reject(string text, ulong expected, string code, string label, bool truncated = false)
         {
-            try { DebugSessionService.RequireImageVerificationEvidence(text, expected, "fixture.log", truncated); }
+            try
+            {
+                DebugSessionService.RequireImageVerificationEvidence(text, expected, "fixture.log", truncated);
+            }
             catch (StudioXException ex) when (ex.Code == code && ex.Message.Contains("fixture.log", StringComparison.Ordinal))
-            { Pass(label); return; }
+            {
+                Pass(label);
+                return;
+            }
             throw new InvalidOperationException("Expected " + code + ": " + label);
         }
         Accept("verified 355780 bytes in 3.247349s (106.992 KiB/s)\n", 355780, "F407 actual console success verifies all ELF load bytes");

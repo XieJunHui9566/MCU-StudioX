@@ -1,0 +1,13 @@
+<Project
+  Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference
+      Include="../../src/StudioX.Application/StudioX.Application.csproj" />
+    <Compile
+      Include="../../src/StudioX.Desktop/ProjectTransitionCoordinator.cs"
+      Link="ProjectTransitionCoordinator.cs" />
+  </ItemGroup>
+</Project>

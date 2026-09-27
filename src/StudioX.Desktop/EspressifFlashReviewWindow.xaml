@@ -1,0 +1,63 @@
+<Window
+  x:Class="StudioX.Desktop.EspressifFlashReviewWindow"
+  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  Title="确认 ESP 固件下载"
+  Width="720"
+  Height="570"
+  MinWidth="560"
+  MinHeight="420"
+  WindowStartupLocation="CenterOwner"
+  ShowInTaskbar="False"
+  Style="{StaticResource {x:Type Window}}">
+  <Grid
+    Margin="24">
+    <Grid.RowDefinitions>
+      <RowDefinition
+        Height="Auto" />
+      <RowDefinition
+        Height="Auto" />
+      <RowDefinition
+        Height="*" />
+      <RowDefinition
+        Height="Auto" />
+    </Grid.RowDefinitions>
+    <TextBlock
+      Text="确认 ESP 固件下载"
+      FontSize="22"
+      FontWeight="SemiBold"
+      Margin="0,0,0,12" />
+    <TextBlock
+      x:Name="TargetLabel"
+      Grid.Row="1"
+      TextWrapping="Wrap"
+      Foreground="{DynamicResource Muted}"
+      Margin="0,0,0,12" />
+    <ScrollViewer
+      Grid.Row="2"
+      VerticalScrollBarVisibility="Auto">
+      <TextBox
+        x:Name="LayoutDetails"
+        IsReadOnly="True"
+        TextWrapping="Wrap"
+        BorderThickness="0"
+        Background="Transparent" />
+    </ScrollViewer>
+    <StackPanel
+      Grid.Row="3"
+      Orientation="Horizontal"
+      HorizontalAlignment="Right"
+      Margin="0,16,0,0">
+      <Button
+        Content="取消"
+        IsCancel="True"
+        MinWidth="76"
+        Margin="0,0,10,0" />
+      <Button
+        Content="写入并校验"
+        MinWidth="140"
+        Style="{StaticResource PrimaryButton}"
+        Click="Accept_Click" />
+    </StackPanel>
+  </Grid>
+</Window>

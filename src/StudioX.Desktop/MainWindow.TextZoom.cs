@@ -14,7 +14,10 @@ public partial class MainWindow
 
     internal bool HandleTextMouseWheel(DependencyObject? hit, int delta, bool control)
     {
-        if (closing || !IsEnabled) return false;
+        if (closing || !IsEnabled)
+        {
+            return false;
+        }
         return ProjectTerminal?.HandleMouseWheel(hit, delta, control) == true || SerialPlotView?.HandlePlotMouseWheel(hit, delta, control) == true || SerialView?.HandleReceiveMouseWheel(hit, delta, control) == true ||
             ApplyWheelZoom(FindZoomTarget(hit), delta, control);
     }
@@ -22,19 +25,36 @@ public partial class MainWindow
     {
         for (; element is not null; element = element is Visual ? VisualTreeHelper.GetParent(element) :
             element is FrameworkContentElement content ? content.Parent : LogicalTreeHelper.GetParent(element))
-            if (element == SourceEditor || element == BuildLog || element == DeviceLog) return (FrameworkElement)element;
+        {
+            if (element == SourceEditor || element == BuildLog || element == DeviceLog)
+            {
+                return (FrameworkElement)element;
+            }
+        }
         return null;
     }
     private bool ApplyWheelZoom(FrameworkElement? target, int delta, bool control)
     {
-        if (!control || target is null) { zoomWheelDelta = 0; zoomWheelTarget = null; return false; }
-        if (zoomWheelTarget != target) { zoomWheelDelta = 0; zoomWheelTarget = target; }
+        if (!control || target is null)
+        {
+            zoomWheelDelta = 0;
+            zoomWheelTarget = null;
+            return false;
+        }
+        if (zoomWheelTarget != target)
+        {
+            zoomWheelDelta = 0;
+            zoomWheelTarget = target;
+        }
         zoomWheelDelta += delta;
         var steps = zoomWheelDelta / Mouse.MouseWheelDeltaForOneLine;
         zoomWheelDelta %= Mouse.MouseWheelDeltaForOneLine;
         if (steps != 0)
         {
-            if (target == SourceEditor) ZoomEditor(steps);
+            if (target == SourceEditor)
+            {
+                ZoomEditor(steps);
+            }
             else if (target is TextBox log)
             {
                 log.FontSize = Math.Clamp(log.FontSize + steps, 10, 28);
@@ -49,9 +69,15 @@ public partial class MainWindow
     private void ZoomEditor(int steps)
     {
         var size = Math.Clamp(editorSettings.FontSize + steps, 10, 28);
-        if (size == editorSettings.FontSize) return;
+        if (size == editorSettings.FontSize)
+        {
+            return;
+        }
         CloseCodeAssistance();
-        var settings = editorSettings with { FontSize = size };
+        var settings = editorSettings with
+        {
+            FontSize = size
+        };
         ApplyEditorSettings(settings);
         Status.Text = $"编辑器字号：{size:0} px";
         // 串行落盘；快速滚动时旧字号不能覆盖新值。关闭窗口或打开外观设置前等待保存完成。
@@ -60,7 +86,10 @@ public partial class MainWindow
     private async Task SaveZoomAsync(Task previous, EditorSettings settings)
     {
         await previous;
-        try { await services.EditorSettings.SaveAsync(settings); }
+        try
+        {
+            await services.EditorSettings.SaveAsync(settings);
+        }
         catch (Exception ex) { Log("字号保存失败：" + ex); Status.Text = "字号已调整，保存偏好失败。"; }
     }
 }

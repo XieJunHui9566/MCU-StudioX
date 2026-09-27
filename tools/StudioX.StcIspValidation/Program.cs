@@ -7,9 +7,9 @@ using StudioX.Packages;
 // 全程只创建隔离工程、编译和准备快照；绝不调用 Download/连接 COM 口。
 // dotnet run --project tools/StudioX.StcIspValidation -c Release -- <tool-runtime> <stc.mcupack> <new-output-dir> <stcgal.exe>
 Console.OutputEncoding = Encoding.UTF8;
-if (args.Length != 4) throw new ArgumentException("需要 tool-runtime、STC 包、新输出目录与本机 stcgal.exe。");
+if (args.Length != 4) { throw new ArgumentException("需要 tool-runtime、STC 包、新输出目录与本机 stcgal.exe。"); }
 var output = Path.GetFullPath(args[2]);
-if (Directory.Exists(output) || File.Exists(output)) throw new InvalidOperationException("请选择不存在的验收输出目录。");
+if (Directory.Exists(output) || File.Exists(output)) { throw new InvalidOperationException("请选择不存在的验收输出目录。"); }
 Directory.CreateDirectory(output);
 var pack = await new PackRepository(Path.Combine(output, "repository")).ImportAsync(Path.GetFullPath(args[1]));
 var device = pack.Manifest.Devices.Single(d => d.Id == "IAP15F2K61S2");
@@ -30,7 +30,11 @@ await service.SaveProgrammerPathAsync(Path.GetFullPath(args[3]));
 Check((await service.GetToolStatusAsync()).Available, "外部 stcgal 1.10 工具识别");
 var settings = new StcIspSettings(Port: "COM5", ClockMode: StcClockMode.InternalRc, ClockFrequencyHz: 11059200);
 await service.SaveSettingsAsync(project, settings);
-try { await service.PrepareAsync(project, settings); throw new Exception("未编译固件被接受。"); }
+try
+{
+    await service.PrepareAsync(project, settings);
+    throw new Exception("未编译固件被接受。");
+}
 catch (StudioXException ex) when (ex.Code == "STC_ISP_BUILD") { }
 var build = await new BuildService(catalog).BuildAsync(project);
 Check(build.Success, "SDCC 实际编译：" + build.Log);
@@ -50,19 +54,41 @@ Check(prepared.Image != prepared.SourceImage && File.Exists(prepared.GuardScript
 await service.VerifyPreparedAsync(prepared);
 var originalSnapshot = await File.ReadAllBytesAsync(prepared.Image);
 await File.AppendAllTextAsync(prepared.Image, "\n");
-try { await service.VerifyPreparedAsync(prepared); throw new Exception("确认后修改的快照被接受。"); }
+try
+{
+    await service.VerifyPreparedAsync(prepared);
+    throw new Exception("确认后修改的快照被接受。");
+}
 catch (StudioXException ex) when (ex.Code == "STC_ISP_PREPARE") { }
 await File.WriteAllBytesAsync(prepared.Image, originalSnapshot);
 await service.VerifyPreparedAsync(prepared);
 await service.SaveSettingsAsync(project, settings with { Port = "COM6" });
-try { await service.VerifyPreparedAsync(prepared); throw new Exception("确认后改变的串口被接受。"); }
+try
+{
+    await service.VerifyPreparedAsync(prepared);
+    throw new Exception("确认后改变的串口被接受。");
+}
 catch (StudioXException ex) when (ex.Code == "STC_ISP_PREPARE") { }
 await service.SaveSettingsAsync(project, settings);
 await service.VerifyPreparedAsync(prepared);
 Check((await service.LoadSettingsAsync(project)).ClockFrequencyHz == 11059200, "工程时钟持久化精度");
-try { await service.PrepareAsync(project, settings with { ClockFrequencyHz = 12000000 }); throw new Exception("未保存频率被接受。"); }
+try
+{
+    await service.PrepareAsync(project, settings with
+    {
+        ClockFrequencyHz = 12000000
+    });
+    throw new Exception("未保存频率被接受。");
+}
 catch (StudioXException ex) when (ex.Code == "STC_ISP_BUILD") { }
-try { await service.SaveSettingsAsync(project, settings with { ClockFrequencyHz = 35000000 }); throw new Exception("超范围频率被接受。"); }
+try
+{
+    await service.SaveSettingsAsync(project, settings with
+    {
+        ClockFrequencyHz = 35000000
+    });
+    throw new Exception("超范围频率被接受。");
+}
 catch (StudioXException ex) when (ex.Code == "STC_ISP_CLOCK") { }
 var scriptTest = await new ProcessRunner().RunAsync(new(prepared.PythonExecutable,
     [Path.GetFullPath("tools/StudioX.StcIspValidation/guard_offline.py"), prepared.GuardScript, prepared.Image],
@@ -81,5 +107,8 @@ return;
 
 static void Check(bool value, string message)
 {
-    if (!value) throw new InvalidOperationException(message);
+    if (!value)
+    {
+        throw new InvalidOperationException(message);
+    }
 }

@@ -10,7 +10,10 @@ internal static class Ag32LogicProjectChecks
     public static async Task<int> RunAsync(string archive, string output)
     {
         var root = Path.GetFullPath(output);
-        if (Directory.Exists(root)) throw new InvalidOperationException("Use a new validation directory.");
+        if (Directory.Exists(root))
+        {
+            throw new InvalidOperationException("Use a new validation directory.");
+        }
         Directory.CreateDirectory(root);
         var pack = await new PackRepository(Path.Combine(root, "repository")).ImportAsync(archive);
         var service = new ProjectService();
@@ -18,7 +21,11 @@ internal static class Ag32LogicProjectChecks
         var ordinaryPath = Path.Combine(root, "普通 AG32 工程");
         var logicPath = Path.Combine(root, "AG32 逻辑 工程");
         var results = new List<string>();
-        void Pass(string message) { results.Add(message); Console.WriteLine("PASS " + message); }
+        void Pass(string message)
+        {
+            results.Add(message);
+            Console.WriteLine("PASS " + message);
+        }
 
         var ordinary = await service.CreateAsync(pack, "AG32VF303CCT6", template, "OrdinaryAG32", ordinaryPath);
         Check(ordinary.Logic is null && !Directory.Exists(Path.Combine(ordinaryPath, "logic")),
@@ -75,11 +82,26 @@ internal static class Ag32LogicProjectChecks
         finally { await File.WriteAllTextAsync(pinMapPath, pinMap); }
         Pass("Logic inspection rejects out-of-range pins and flags possible multiplexing for review");
 
-        var alienDevice = pack.Manifest.Devices.Single() with { Id = "OTHER48" };
-        var alienPack = pack with { Manifest = pack.Manifest with { Devices = [alienDevice] } };
+        var alienDevice = pack.Manifest.Devices.Single() with
+        {
+            Id = "OTHER48"
+        };
+        var alienPack = pack with
+        {
+            Manifest = pack.Manifest with
+            {
+                Devices = [alienDevice]
+            }
+        };
         Reject(() => ProjectService.Plan(alienPack, alienDevice.Id, template, "Other", enableAg32Logic: true),
             "PROJECT_LOGIC_DEVICE");
-        var alienVendor = pack with { Manifest = pack.Manifest with { Vendor = "Other" } };
+        var alienVendor = pack with
+        {
+            Manifest = pack.Manifest with
+            {
+                Vendor = "Other"
+            }
+        };
         Reject(() => ProjectService.Plan(alienVendor, "AG32VF303CCT6", template, "Other", enableAg32Logic: true),
             "PROJECT_LOGIC_DEVICE");
         Pass("Logic mode rejects other device and vendor combinations");
@@ -102,18 +124,29 @@ internal static class Ag32LogicProjectChecks
 
     private static void Check(bool value, string message)
     {
-        if (!value) throw new InvalidOperationException(message);
+        if (!value)
+        {
+            throw new InvalidOperationException(message);
+        }
     }
 
     private static void Reject(Action action, string code)
     {
-        try { action(); } catch (StudioXException ex) when (ex.Code == code) { return; }
+        try
+        {
+            action();
+        }
+        catch (StudioXException ex) when (ex.Code == code) { return; }
         throw new InvalidOperationException("Expected rejection " + code);
     }
 
     private static async Task RejectAsync(Func<Task> action, string code)
     {
-        try { await action(); } catch (StudioXException ex) when (ex.Code == code) { return; }
+        try
+        {
+            await action();
+        }
+        catch (StudioXException ex) when (ex.Code == code) { return; }
         throw new InvalidOperationException("Expected rejection " + code);
     }
 }

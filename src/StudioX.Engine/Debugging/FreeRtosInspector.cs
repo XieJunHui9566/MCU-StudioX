@@ -11,7 +11,12 @@ public sealed partial class FreeRtosInspector(GdbDebugAdapter adapter, bool? sta
     {
         var symbols = objectSymbols?.Distinct(StringComparer.Ordinal).ToArray() ?? [];
         foreach (var symbol in symbols)
-            if (!IsObjectSymbol(symbol)) throw new ArgumentException("RTOS 对象必须是全局句柄名称或点成员路径，不接受函数、下标、赋值或地址表达式。", nameof(objectSymbols));
+        {
+            if (!IsObjectSymbol(symbol))
+            {
+                throw new ArgumentException("RTOS 对象必须是全局句柄名称或点成员路径，不接受函数、下标、赋值或地址表达式。", nameof(objectSymbols));
+            }
+        }
         return await new Reader(adapter, stackGrowsDown, token).ReadAsync(symbols);
     }
 
@@ -51,7 +56,9 @@ public sealed partial class FreeRtosInspector(GdbDebugAdapter adapter, bool? sta
             }
             pointerSize = await NumberAsync("sizeof(void*)", "目标指针宽度") ?? 0;
             if (pointerSize is not (4 or 8))
+            {
                 throw new StudioXException("DEBUG_RTOS_LAYOUT", "无法确认目标指针宽度，不解析内核数据。");
+            }
             var currentLayout = await NumberAsync("sizeof(" + TaskGlobal("pxCurrentTCB") + ")", "当前任务符号布局", false);
             if (currentLayout is not null && currentLayout != pointerSize)
             {
@@ -70,7 +77,10 @@ public sealed partial class FreeRtosInspector(GdbDebugAdapter adapter, bool? sta
                 diagnostics.Add("内核任务数 " + count + " 超出单次链表安全读取范围，不能作为可信任务统计。");
                 invalidKernel = true;
             }
-            if (current is > 0 && !ValidPointer(current.Value, "当前任务")) invalidKernel = true;
+            if (current is > 0 && !ValidPointer(current.Value, "当前任务"))
+            {
+                invalidKernel = true;
+            }
             if (count == 0 && current is > 0)
             {
                 diagnostics.Add("内核报告没有任务，但当前 TCB 非空，关键内核字段相互矛盾。");
@@ -95,7 +105,10 @@ public sealed partial class FreeRtosInspector(GdbDebugAdapter adapter, bool? sta
             }
             var ticks = await NumberAsync(TaskGlobal("xTickCount"), "Tick");
             var version = await StringAsync("tskKERNEL_VERSION_NUMBER", "内核版本", false);
-            if (version is null) diagnostics.Add("内核版本宏未保留在调试信息中，版本不可用；不会根据字段布局猜测版本。");
+            if (version is null)
+            {
+                diagnostics.Add("内核版本宏未保留在调试信息中，版本不可用；不会根据字段布局猜测版本。");
+            }
             var tasks = await ReadTasksAsync(current, scheduler != 0 && scheduler is not null, count);
             var heap = await ReadHeapAsync();
             var objects = await ReadObjectsAsync(symbols);
@@ -125,12 +138,17 @@ public sealed partial class FreeRtosInspector(GdbDebugAdapter adapter, bool? sta
                 var result = await SendReadAsync("-data-evaluate-expression " + MiRecord.Quote(expression));
                 var values = result.Children.Where(x => x.Key == "value").ToArray();
                 if (values.Length != 1 || values[0].Value.Text is not { } value)
+                {
                     throw new StudioXException("GDB_PROTOCOL", "RTOS 读取响应缺少唯一的 value 字段：" + label);
+                }
                 return value;
             }
             catch (StudioXException ex) when (ex.Code == "GDB_COMMAND")
             {
-                if (report) diagnostics.Add(label + " 不可用：" + ex.Message);
+                if (report)
+                {
+                    diagnostics.Add(label + " 不可用：" + ex.Message);
+                }
                 return null;
             }
         }
@@ -147,13 +165,22 @@ public sealed partial class FreeRtosInspector(GdbDebugAdapter adapter, bool? sta
 
         private async Task<ulong?> NumberAsync(string expression, string label, bool report = true)
         {
-            if (numbers.TryGetValue(expression, out var cached)) return cached;
+            if (numbers.TryGetValue(expression, out var cached))
+            {
+                return cached;
+            }
             var value = await EvaluateAsync("(unsigned long long)(" + expression + ")", label, report);
-            if (value is null) { numbers[expression] = null; return null; }
+            if (value is null)
+            {
+                numbers[expression] = null;
+                return null;
+            }
             var text = value.Trim();
             var hex = text.StartsWith("0x", StringComparison.OrdinalIgnoreCase);
             if (!ulong.TryParse(hex ? text.AsSpan(2) : text.AsSpan(), hex ? NumberStyles.AllowHexSpecifier : NumberStyles.None, CultureInfo.InvariantCulture, out var number))
+            {
                 throw new StudioXException("GDB_PROTOCOL", "RTOS 数值格式无效（" + label + "）：" + value);
+            }
             numbers[expression] = number;
             return number;
         }
@@ -161,7 +188,10 @@ public sealed partial class FreeRtosInspector(GdbDebugAdapter adapter, bool? sta
         private async Task<string?> StringAsync(string expression, string label, bool report = true)
         {
             var value = await EvaluateAsync(expression, label, report);
-            if (value is null) return null;
+            if (value is null)
+            {
+                return null;
+            }
             var start = value.IndexOf('"');
             if (start >= 0)
             {
@@ -174,17 +204,29 @@ public sealed partial class FreeRtosInspector(GdbDebugAdapter adapter, bool? sta
                         var nul = result.IndexOf('\0');
                         return nul >= 0 ? result[..nul] : result;
                     }
-                    if (!escaped && value[i] == '\\') escaped = true;
-                    else escaped = false;
+                    if (!escaped && value[i] == '\\')
+                    {
+                        escaped = true;
+                    }
+                    else
+                    {
+                        escaped = false;
+                    }
                 }
             }
-            if (report) diagnostics.Add(label + " 没有可读取的字符串：" + value);
+            if (report)
+            {
+                diagnostics.Add(label + " 没有可读取的字符串：" + value);
+            }
             return null;
         }
 
         private bool ValidPointer(ulong value, string label)
         {
-            if (value != 0 && value % pointerSize == 0 && (pointerSize != 4 || value <= uint.MaxValue)) return true;
+            if (value != 0 && value % pointerSize == 0 && (pointerSize != 4 || value <= uint.MaxValue))
+            {
+                return true;
+            }
             diagnostics.Add(label + " 包含空、未对齐或超出目标指针宽度的地址：0x" + value.ToString("x", CultureInfo.InvariantCulture));
             return false;
         }

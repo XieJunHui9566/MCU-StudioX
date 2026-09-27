@@ -15,7 +15,7 @@ Directory.CreateDirectory(output);
 var fixture = Path.GetFullPath("tools/StudioX.RtosValidation/Fixtures/freertos-snapshot.c");
 var passed = new List<string>();
 void Pass(string message) { passed.Add(message); Console.WriteLine("PASS " + message); }
-void Check(bool condition, string message) { if (!condition) throw new InvalidOperationException(message); }
+void Check(bool condition, string message) { if (!condition) { throw new InvalidOperationException(message); } }
 var armRoot = Path.Combine(runtime, "toolsets", "arm.gnu", "1.0.0", "gcc", "bin");
 var wchRoot = Path.Combine(runtime, "toolsets", "wch.riscv", "1.0.0", "gcc", "bin");
 var armGdb = Path.Combine(armRoot, "arm-none-eabi-gdb.exe");
@@ -69,8 +69,11 @@ void CheckFixture(FreeRtosSnapshot snapshot)
     Check(new[] { sensor, receiver, suspended, retired, idle }.Select(task => task.StackHighWaterBytes)
           .SequenceEqual(new ulong?[] { 64, 96, 32, 16, 128 }), "Stack fill scanning must report bytes, rather than words or pointer distance.");
     Check(snapshot.Tasks.All(task => task.StackSizeBytes == 256), "Inclusive pxEndOfStack must yield the exact stack allocation byte size.");
-    Check(snapshot.Heap is { TotalBytes: 4096, FreeBytes: 2304, MinimumEverFreeBytes: 1024, AllocationCount: 9, FreeCount: 3,
-        LargestFreeBlockBytes: 1280, FreeBlockCount: 2 }, "Heap statistics differ from heap_4-style free list and globals in ELF.");
+    Check(snapshot.Heap is
+    {
+        TotalBytes: 4096, FreeBytes: 2304, MinimumEverFreeBytes: 1024, AllocationCount: 9, FreeCount: 3,
+        LargestFreeBlockBytes: 1280, FreeBlockCount: 2
+    }, "Heap statistics differ from heap_4-style free list and globals in ELF.");
     Check(snapshot.Objects.Count == 3, "Vacant queue registry entries must be skipped; unique registered objects must be retained.");
     var queue = snapshot.Objects.Single(item => item.Name == "Messages");
     var mutex = snapshot.Objects.Single(item => item.Name == "SPI lock");
@@ -95,7 +98,8 @@ foreach (var (name, executable, elf) in new[]
     await InitializeAsync(adapter, elf);
     var first = transport.Commands.Count;
     var snapshot = await new FreeRtosInspector(adapter, stackGrowsDown: true).ReadAsync();
-    CheckFixture(snapshot); CheckReadOnly(transport.Commands.Skip(first));
+    CheckFixture(snapshot);
+    CheckReadOnly(transport.Commands.Skip(first));
     var folder = name == "ARM" ? "arm" : "wch";
     await File.WriteAllTextAsync(Path.Combine(output, folder, "snapshot.json"), JsonSerializer.Serialize(snapshot, new JsonSerializerOptions { WriteIndented = true }));
     await File.WriteAllLinesAsync(Path.Combine(output, folder, "mi-commands.log"), transport.Commands);
@@ -113,9 +117,11 @@ async Task<FreeRtosSnapshot> FaultSnapshotAsync(Func<string, string?> fault, IRe
     var snapshot = await new FreeRtosInspector(adapter, stackGrowsDown: true).ReadAsync(handles);
     CheckReadOnly(transport.Commands.Skip(first));
     if (rejectTraversal)
+    {
         Check(transport.Commands.Skip(first).All(command => !Expression(command).Contains("->", StringComparison.Ordinal) &&
-              !command.StartsWith("-data-read-memory-bytes ", StringComparison.Ordinal)),
-            "An invalid kernel signature must not continue dereferencing task, heap or object pointers.");
+          !command.StartsWith("-data-read-memory-bytes ", StringComparison.Ordinal)),
+        "An invalid kernel signature must not continue dereferencing task, heap or object pointers.");
+    }
     Check(transport.Commands.Count - first < 2000, "Broken target links must terminate in a bounded snapshot.");
     return snapshot;
 }
@@ -174,7 +180,10 @@ var nextItemExpression = $"((ListItem_t*)0x{delayedItem:x})->pxNext";
 var badTaskLoop = await FaultSnapshotAsync(command =>
 {
     var expression = Expression(command);
-    if (expression.Contains("xDelayedTaskList1.uxNumberOfItems", StringComparison.Ordinal)) return Value(2);
+    if (expression.Contains("xDelayedTaskList1.uxNumberOfItems", StringComparison.Ordinal))
+    {
+        return Value(2);
+    }
     return expression.Contains(nextItemExpression, StringComparison.Ordinal) ? Value(delayedItem) : null;
 });
 Check(badTaskLoop.Tasks.Count == 5 && badTaskLoop.Diagnostics.Any(message => message.Contains("循环", StringComparison.Ordinal)),
@@ -249,7 +258,7 @@ Pass("Implausible suspend nesting is not displayed as a trustworthy counter");
 
 var oversizedHeap = await FaultSnapshotAsync(command => Expression(command).EndsWith("::xFreeBytesRemaining)", StringComparison.Ordinal) ? Value(2792760398) : null);
 Check(oversizedHeap.IsAvailable && oversizedHeap.Tasks.Count == 5 && oversizedHeap.Heap is
-    { TotalBytes: 4096, FreeBytes: null, MinimumEverFreeBytes: null, LargestFreeBlockBytes: null, FreeBlockCount: null },
+{ TotalBytes: 4096, FreeBytes: null, MinimumEverFreeBytes: null, LargestFreeBlockBytes: null, FreeBlockCount: null },
     "A heap free-byte value above the DWARF array capacity must not be shown as a valid usage metric.");
 Pass("Heap free bytes above ucHeap capacity are hidden instead of being shown as billion-byte usage");
 
@@ -272,7 +281,11 @@ var truncatedMemory = new FaultMiTransport(truncatedNative, command => command.S
 await using (var adapter = new GdbDebugAdapter(truncatedMemory))
 {
     await InitializeAsync(adapter, armElf);
-    try { await new FreeRtosInspector(adapter, true).ReadAsync(); throw new InvalidOperationException("Expected GDB_PROTOCOL for truncated stack memory."); }
+    try
+    {
+        await new FreeRtosInspector(adapter, true).ReadAsync();
+        throw new InvalidOperationException("Expected GDB_PROTOCOL for truncated stack memory.");
+    }
     catch (StudioXException exception) when (exception.Code == "GDB_PROTOCOL") { }
 }
 Pass("Truncated stack memory replies fail with GDB_PROTOCOL and cannot produce a false watermark");
@@ -291,12 +304,17 @@ Pass("Truncated stack memory replies fail with GDB_PROTOCOL and cannot produce a
     Check(delayed.HeldToken is { CanBeCanceled: false }, "In-flight RTOS MI must not receive user cancellation and fault the hardware transport.");
     Check(!read.IsCompleted, "Cancellation must wait for the pending MI response rather than leave a response outstanding.");
     delayed.CompleteRead();
-    try { await read; throw new InvalidOperationException("Expected active RTOS cancellation."); }
+    try
+    {
+        await read;
+        throw new InvalidOperationException("Expected active RTOS cancellation.");
+    }
     catch (OperationCanceledException) { }
     Check(delayed.Commands.Count == first + 1 && !delayed.Disposed,
         "Cancellation after the first completed read must not send another MI command or dispose the transport.");
     var fresh = await new FreeRtosInspector(adapter, true).ReadAsync();
-    CheckFixture(fresh); CheckReadOnly(delayed.Commands.Skip(first));
+    CheckFixture(fresh);
+    CheckReadOnly(delayed.Commands.Skip(first));
     Pass("Cancellation during pending MI drains the read, issues no next command and leaves the same adapter usable for a fresh snapshot");
 }
 
@@ -306,7 +324,11 @@ Pass("Truncated stack memory replies fail with GDB_PROTOCOL and cannot produce a
         ? "^done,value=\"4\",value=\"8\"" : null);
     await using var adapter = new GdbDebugAdapter(malformed);
     await InitializeAsync(adapter, armElf);
-    try { await new FreeRtosInspector(adapter).ReadAsync(); throw new InvalidOperationException("Expected GDB_PROTOCOL for duplicate value."); }
+    try
+    {
+        await new FreeRtosInspector(adapter).ReadAsync();
+        throw new InvalidOperationException("Expected GDB_PROTOCOL for duplicate value.");
+    }
     catch (StudioXException exception) when (exception.Code == "GDB_PROTOCOL") { }
     Pass("Ambiguous MI numeric fields fail with GDB_PROTOCOL");
 }
@@ -318,11 +340,20 @@ Pass("Truncated stack memory replies fail with GDB_PROTOCOL and cannot produce a
     var first = native.Commands.Count;
     foreach (var invalid in new[] { "erase()", "externalQueue[0]", "externalQueue=0", "$pc", "0x20000000", "x;quit", "x\nquit" })
     {
-        try { await new FreeRtosInspector(adapter).ReadAsync([invalid]); throw new InvalidOperationException("Expected invalid object symbol rejection."); }
+        try
+        {
+            await new FreeRtosInspector(adapter).ReadAsync([invalid]);
+            throw new InvalidOperationException("Expected invalid object symbol rejection.");
+        }
         catch (ArgumentException) { }
     }
-    using var cancellation = new CancellationTokenSource(); cancellation.Cancel();
-    try { await new FreeRtosInspector(adapter).ReadAsync(token: cancellation.Token); throw new InvalidOperationException("Expected canceled read."); }
+    using var cancellation = new CancellationTokenSource();
+    cancellation.Cancel();
+    try
+    {
+        await new FreeRtosInspector(adapter).ReadAsync(token: cancellation.Token);
+        throw new InvalidOperationException("Expected canceled read.");
+    }
     catch (OperationCanceledException) { }
     Check(native.Commands.Count == first, "Invalid handles and pre-cancellation must issue no MI command.");
     Pass("Function calls, assignment, indexing and command injection are rejected before MI; cancellation also sends nothing");
@@ -330,8 +361,11 @@ Pass("Truncated stack memory replies fail with GDB_PROTOCOL and cannot produce a
 
 await File.WriteAllTextAsync(Path.Combine(output, "summary.json"), JsonSerializer.Serialize(new
 {
-    hardwareAccess = false, inferiorExecuted = false, fixtureKind = "Initialized local ELF data with FreeRTOS V10.4.6 field definitions",
-    passed = passed.Count, checks = passed
+    hardwareAccess = false,
+    inferiorExecuted = false,
+    fixtureKind = "Initialized local ELF data with FreeRTOS V10.4.6 field definitions",
+    passed = passed.Count,
+    checks = passed
 }, new JsonSerializerOptions { WriteIndented = true }));
 Console.WriteLine($"PASS — {passed.Count} RTOS offline checks; no probe, OpenOCD, target connection or inferior execution");
 return 0;

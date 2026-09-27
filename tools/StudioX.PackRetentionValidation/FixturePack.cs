@@ -27,28 +27,36 @@ internal sealed record FixturePack(PackManifest Manifest, string Archive, string
             ["link.ld"] = Encoding.UTF8.GetBytes("MEMORY { FLASH(rx): ORIGIN=0x08000000, LENGTH=128K }\n")
         };
         foreach (var template in deviceSpecs.SelectMany(spec => spec.Templates).Distinct())
+        {
             files.Add("templates/" + template + ".c",
-                Encoding.UTF8.GetBytes("/* " + template + " */\nint main(void) { for (;;) {} }\n"));
+            Encoding.UTF8.GetBytes("/* " + template + " */\nint main(void) { for (;;) {} }\n"));
+        }
         var hashes = files.ToDictionary(pair => pair.Key,
             pair => Convert.ToHexString(SHA256.HashData(pair.Value)).ToLowerInvariant(), StringComparer.Ordinal);
         files.Add("files.sha256.json", JsonSerializer.SerializeToUtf8Bytes(hashes, JsonStore.Options));
         Directory.CreateDirectory(output);
         var archive = Path.Combine(output, id + "-" + version + ".mcupack");
         await using (var stream = new FileStream(archive, FileMode.CreateNew, FileAccess.Write))
-        using (var zip = new ZipArchive(stream, ZipArchiveMode.Create))
-            foreach (var (name, bytes) in files)
+        {
+            using (var zip = new ZipArchive(stream, ZipArchiveMode.Create))
             {
-                var entry = zip.CreateEntry(name, CompressionLevel.SmallestSize);
-                await using var entryStream = entry.Open();
-                await entryStream.WriteAsync(bytes);
+                foreach (var (name, bytes) in files)
+                {
+                    var entry = zip.CreateEntry(name, CompressionLevel.SmallestSize);
+                    await using var entryStream = entry.Open();
+                    await entryStream.WriteAsync(bytes);
+                }
             }
+        }
         return new(manifest, archive, Convert.ToHexString(SHA256.HashData(await File.ReadAllBytesAsync(archive))).ToLowerInvariant());
     }
 
     public static Task WriteBundleIndexAsync(string directory, params FixturePack[] packs) =>
         JsonStore.WriteAsync(Path.Combine(directory, "index.json"), packs.Select(pack => new
         {
-            file = Path.GetFileName(pack.Archive), id = pack.Manifest.Id,
-            version = pack.Manifest.Version, sha256 = pack.Sha256
+            file = Path.GetFileName(pack.Archive),
+            id = pack.Manifest.Id,
+            version = pack.Manifest.Version,
+            sha256 = pack.Sha256
         }).ToArray());
 }

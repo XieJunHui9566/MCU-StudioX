@@ -29,34 +29,42 @@ internal static class DebugMemoryPagingChecks
         var defaultRead = await session.CallToolAsync("debug_read_memory",
             "{\"address\":\"0x20000000\"}");
         using (var result = JsonDocument.Parse(defaultRead))
+        {
             check(result.RootElement.GetProperty("byteCount").GetInt32() == 64 &&
-                result.RootElement.GetProperty("requestedByteCount").GetInt32() == 64 &&
-                result.RootElement.GetProperty("hex").GetString()!.Length == 128 &&
-                result.RootElement.GetProperty("nextAddress").GetString() == "0x20000040",
-                "debug_read_memory retains the 64-byte default and returns a continuation address");
+            result.RootElement.GetProperty("requestedByteCount").GetInt32() == 64 &&
+            result.RootElement.GetProperty("hex").GetString()!.Length == 128 &&
+            result.RootElement.GetProperty("nextAddress").GetString() == "0x20000040",
+            "debug_read_memory retains the 64-byte default and returns a continuation address");
+        }
 
         var page = await session.CallToolAsync("debug_read_memory",
             "{\"address\":\"0x20000000\",\"byteCount\":128}");
         using (var result = JsonDocument.Parse(page))
+        {
             check(result.RootElement.GetProperty("byteCount").GetInt32() == 128 &&
-                result.RootElement.GetProperty("hex").GetString()!.Length == 256 &&
-                result.RootElement.GetProperty("nextAddress").GetString() == "0x20000080" &&
-                result.RootElement.GetProperty("complete").GetBoolean(),
-                "debug_read_memory reads a 128-byte page without truncation");
+            result.RootElement.GetProperty("hex").GetString()!.Length == 256 &&
+            result.RootElement.GetProperty("nextAddress").GetString() == "0x20000080" &&
+            result.RootElement.GetProperty("complete").GetBoolean(),
+            "debug_read_memory reads a 128-byte page without truncation");
+        }
 
         var finalPage = await session.CallToolAsync("debug_read_memory",
             "{\"address\":\"0x20000080\",\"byteCount\":128}");
         using (var result = JsonDocument.Parse(finalPage))
+        {
             check(result.RootElement.GetProperty("byteCount").GetInt32() == 128 &&
-                result.RootElement.GetProperty("nextAddress").GetString() == "0x20000100",
-                "debug_read_memory can continue to the end of the offline RAM window");
+            result.RootElement.GetProperty("nextAddress").GetString() == "0x20000100",
+            "debug_read_memory can continue to the end of the offline RAM window");
+        }
 
         var maximum = await session.CallToolAsync("debug_read_memory",
             "{\"address\":\"0x20000000\",\"byteCount\":256}");
         using (var result = JsonDocument.Parse(maximum))
+        {
             check(result.RootElement.GetProperty("byteCount").GetInt32() == 256 &&
-                result.RootElement.GetProperty("hex").GetString()!.Length == 512,
-                "debug_read_memory permits the adapter's verified 256-byte maximum");
+            result.RootElement.GetProperty("hex").GetString()!.Length == 512,
+            "debug_read_memory permits the adapter's verified 256-byte maximum");
+        }
 
         var oversized = await session.CallToolAsync("debug_read_memory",
             "{\"address\":\"0x20000000\",\"byteCount\":257}");

@@ -1,4 +1,5 @@
 """Write a human-readable catalog and checksums for the separately delivered packs."""
+
 import hashlib
 import json
 import sys
@@ -16,12 +17,22 @@ for path in sorted(root.glob('*.mcupack')):
         assert manifest['id'] == 'studiox.' + next(iter(family)).lower()
         assert len(manifest['devices']) == len(catalog)
         assert all(len(d['templates']) == 4 for d in manifest['devices'])
-        entries.append(dict(file=path.name, id=manifest['id'], version=manifest['version'],
-                            subfamily=next(iter(family)), devices=[d['id'] for d in catalog],
-                            systemClockMHz=sorted({d['hz'] // 1000000 for d in catalog}),
-                            bytes=path.stat().st_size, sha256=hashlib.sha256(path.read_bytes()).hexdigest()))
+        entries.append(
+            dict(
+                file=path.name,
+                id=manifest['id'],
+                version=manifest['version'],
+                subfamily=next(iter(family)),
+                devices=[d['id'] for d in catalog],
+                systemClockMHz=sorted({d['hz'] // 1000000 for d in catalog}),
+                bytes=path.stat().st_size,
+                sha256=hashlib.sha256(path.read_bytes()).hexdigest(),
+            )
+        )
 assert len(entries) == 23 and sum(len(e['devices']) for e in entries) == 244
-(root / 'index.json').write_text(json.dumps(entries, ensure_ascii=False, indent=2), encoding='utf-8')
+(root / 'index.json').write_text(
+    json.dumps(entries, ensure_ascii=False, indent=2), encoding='utf-8'
+)
 text = '''# STM32 独立子系列包
 
 23 个独立 .mcupack，244 个基础型号。按需要导入对应子系列包，例如 STM32F103C8T6 选择 **STM32F103** 包中的 **STM32F103C8**。

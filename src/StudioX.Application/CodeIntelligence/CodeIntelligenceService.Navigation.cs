@@ -27,9 +27,18 @@ public sealed partial class CodeIntelligenceService
                 {
                     var disk = await ReadNavigationDocumentAsync(new(file, new(new(0, 0), new(0, 0)), file), token).ConfigureAwait(false);
                     // clangd 关闭文档后仍保留索引；丢弃编辑时先让索引恢复为磁盘内容。
-                    if (synchronizedDocuments[uri] != disk.Text) await SynchronizeAsync(file, disk.Text, token, forceReparse: true).ConfigureAwait(false);
+                    if (synchronizedDocuments[uri] != disk.Text)
+                    {
+                        await SynchronizeAsync(file, disk.Text, token, forceReparse: true).ConfigureAwait(false);
+                    }
                 }
-                await connection!.NotifyAsync("textDocument/didClose", new { textDocument = new { uri } }, token).ConfigureAwait(false);
+                await connection!.NotifyAsync("textDocument/didClose", new
+                {
+                    textDocument = new
+                    {
+                        uri
+                    }
+                }, token).ConfigureAwait(false);
                 synchronizedDocuments.Remove(uri);
                 documentsNeedingReparse.Remove(uri);
                 documentsNeedingReparse.UnionWith(synchronizedDocuments.Keys);
@@ -43,7 +52,10 @@ public sealed partial class CodeIntelligenceService
     public async Task<IReadOnlyList<CodeLocation>> NavigateAsync(string path, string text, int offset, bool declaration,
         CancellationToken token = default, IReadOnlyList<CodeDocumentSnapshot>? documents = null)
     {
-        if (!Supports(path)) return [];
+        if (!Supports(path))
+        {
+            return [];
+        }
         await gate.WaitAsync(token).ConfigureAwait(false);
         try
         {
@@ -55,7 +67,10 @@ public sealed partial class CodeIntelligenceService
 
     public async Task<CodeHover?> HoverAsync(string path, string text, int offset, CancellationToken token = default, IReadOnlyList<CodeDocumentSnapshot>? documents = null)
     {
-        if (!Supports(path)) return null;
+        if (!Supports(path))
+        {
+            return null;
+        }
         await gate.WaitAsync(token).ConfigureAwait(false);
         try
         {
@@ -64,7 +79,10 @@ public sealed partial class CodeIntelligenceService
             var response = await connection!.RequestAsync("textDocument/hover", Parameters(uri, position), token).ConfigureAwait(false);
             var contents = response.ValueKind == JsonValueKind.Object && response.TryGetProperty("contents", out var value) ? HoverText(value) : "";
             var locations = await LocationsAsync(uri, position, declaration: true, token).ConfigureAwait(false);
-            if (locations.Count == 0) locations = await LocationsAsync(uri, position, declaration: false, token).ConfigureAwait(false);
+            if (locations.Count == 0)
+            {
+                locations = await LocationsAsync(uri, position, declaration: false, token).ConfigureAwait(false);
+            }
             return contents.Length == 0 && locations.Count == 0 ? null : new(contents, locations);
         }
         finally { gate.Release(); }
@@ -79,9 +97,15 @@ public sealed partial class CodeIntelligenceService
         foreach (var item in items)
         {
             var targetUri = String(item, "targetUri", String(item, "uri"));
-            if (!Uri.TryCreate(targetUri, UriKind.Absolute, out var locationUri) || !locationUri.IsFile || locationUri.IsUnc) continue;
+            if (!Uri.TryCreate(targetUri, UriKind.Absolute, out var locationUri) || !locationUri.IsFile || locationUri.IsUnc)
+            {
+                continue;
+            }
             var rangeName = item.TryGetProperty("targetSelectionRange", out var range) ? "targetSelectionRange" : "range";
-            if (rangeName == "range" && !item.TryGetProperty("range", out range)) continue;
+            if (rangeName == "range" && !item.TryGetProperty("range", out range))
+            {
+                continue;
+            }
             try
             {
                 var path = ResolveDocumentPath(locationUri.LocalPath);
@@ -91,7 +115,9 @@ public sealed partial class CodeIntelligenceService
                 var display = insideProject ? relative : "内置头文件/" + Path.GetRelativePath(compilerHeaders is not null && IsInside(compilerHeaders, path) ? compilerHeaders : Path.Combine(runtimeDirectory, "languages"), path).Replace('\\', '/');
                 var span = JsonSerializer.Deserialize<CodeRange>(range, JsonStore.Options);
                 if (span is not null && span.Start.Line >= 0 && span.Start.Character >= 0 && span.End.Line >= span.Start.Line && span.End.Character >= 0)
+                {
                     result.Add(new(documentPath, span, display));
+                }
             }
             catch (StudioXException ex) { log.Enqueue("跳转位置不可访问：" + ex.Message); }
         }
@@ -109,12 +135,24 @@ public sealed partial class CodeIntelligenceService
     private static bool IsInside(string root, string path) => path.StartsWith(Path.GetFullPath(root).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase);
     private string ResolveDocumentPath(string path)
     {
-        if (!Path.IsPathRooted(path)) return PathBoundary.Resolve(projectRoot, path);
+        if (!Path.IsPathRooted(path))
+        {
+            return PathBoundary.Resolve(projectRoot, path);
+        }
         var full = Path.GetFullPath(path);
-        if (IsInside(projectRoot, full)) return PathBoundary.Resolve(projectRoot, Path.GetRelativePath(projectRoot, full).Replace('\\', '/'));
+        if (IsInside(projectRoot, full))
+        {
+            return PathBoundary.Resolve(projectRoot, Path.GetRelativePath(projectRoot, full).Replace('\\', '/'));
+        }
         var languageRoot = Path.GetFullPath(Path.Combine(runtimeDirectory, "languages"));
-        if (IsInside(languageRoot, full) && Supports(full)) return PathBoundary.Resolve(languageRoot, Path.GetRelativePath(languageRoot, full).Replace('\\', '/'));
-        if (compilerHeaders is not null && IsInside(compilerHeaders, full) && Supports(full)) return PathBoundary.Resolve(compilerHeaders, Path.GetRelativePath(compilerHeaders, full).Replace('\\', '/'));
+        if (IsInside(languageRoot, full) && Supports(full))
+        {
+            return PathBoundary.Resolve(languageRoot, Path.GetRelativePath(languageRoot, full).Replace('\\', '/'));
+        }
+        if (compilerHeaders is not null && IsInside(compilerHeaders, full) && Supports(full))
+        {
+            return PathBoundary.Resolve(compilerHeaders, Path.GetRelativePath(compilerHeaders, full).Replace('\\', '/'));
+        }
         throw new StudioXException("LANGUAGE_LOCATION", "跳转目标不在当前工程或内置头文件目录中。");
     }
 
@@ -122,8 +160,16 @@ public sealed partial class CodeIntelligenceService
     {
         var path = ResolveDocumentPath(location.DocumentPath);
         var files = new ProjectFileService();
-        if (IsInside(projectRoot, path)) return await files.ReadAsync(projectRoot, Path.GetRelativePath(projectRoot, path).Replace('\\', '/'), token).ConfigureAwait(false);
+        if (IsInside(projectRoot, path))
+        {
+            return await files.ReadAsync(projectRoot, Path.GetRelativePath(projectRoot, path).Replace('\\', '/'), token).ConfigureAwait(false);
+        }
         var document = await files.ReadAsync(runtimeDirectory, Path.GetRelativePath(runtimeDirectory, path).Replace('\\', '/'), token).ConfigureAwait(false);
-        return document with { RelativePath = path.Replace('\\', '/'), IsReadOnly = true, ReadOnlyReason = "只读 · 内置工具链头文件" };
+        return document with
+        {
+            RelativePath = path.Replace('\\', '/'),
+            IsReadOnly = true,
+            ReadOnlyReason = "只读 · 内置工具链头文件"
+        };
     }
 }

@@ -18,7 +18,9 @@ public partial class MainWindow
         TemplatePicker.SelectedIndex = 0;
         if (TemplatePicker.Items.Count != 3 || !CreateProjectButton.IsEnabled ||
             ManufacturerOption.FromId(pack.Manifest.Vendor).Logo is null)
+        {
             throw new InvalidOperationException("RP2350 C 模板、厂商图标或创建入口缺失。");
+        }
         foreach (var theme in new[] { ThemeService.Dark, ThemeService.Light })
         {
             ApplyTheme(theme);
@@ -33,7 +35,9 @@ public partial class MainWindow
         var configuration = await services.Downloads.ConfigurationAsync(project) ?? throw new InvalidOperationException("缺少下载配置。");
         if (!supportsDownload || !DownloadButton.IsEnabled || !services.Intelligence.IsReady ||
             configuration.Options.SpeedKhz != 1000 || OpenOcdDebugPlanner.ResolveProbe(configuration).Id != "cmsis-dap")
+        {
             throw new InvalidOperationException("RP2350 下载、调试或语言服务入口未就绪。");
+        }
         UpdateLayout();
         await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
         Render(this, Path.Combine(directory, "rp2350-c-editor.png"));

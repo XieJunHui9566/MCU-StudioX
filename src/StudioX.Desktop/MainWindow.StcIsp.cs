@@ -23,7 +23,10 @@ public partial class MainWindow
 
     private void ConfigureStcIspForProject()
     {
-        if (StcIspPanel is null) return;
+        if (StcIspPanel is null)
+        {
+            return;
+        }
         loadedStcIspSettings = null;
         stcIspCapabilities = null;
         StcIspPanel.Visibility = IsStcSdccProject ? Visibility.Visible : Visibility.Collapsed;
@@ -42,12 +45,18 @@ public partial class MainWindow
             var toolTask = ReadStcToolStatusSafeAsync();
             var portsTask = ReadStcPortsSafeAsync();
             await Task.WhenAll(toolTask, portsTask);
-            if (revision != projectDetailsRevision || projectDirectory != root || closing) return;
+            if (revision != projectDetailsRevision || projectDirectory != root || closing)
+            {
+                return;
+            }
             ApplyStcIspSettings(await settingsTask, await capabilitiesTask, await toolTask, await portsTask);
         }
         catch (Exception ex)
         {
-            if (revision != projectDetailsRevision || projectDirectory != root || closing) return;
+            if (revision != projectDetailsRevision || projectDirectory != root || closing)
+            {
+                return;
+            }
             StcIspStatus.Text = "读取 STC 下载设置失败：" + ex.Message;
             Log("STC 下载设置：" + ex);
         }
@@ -55,7 +64,10 @@ public partial class MainWindow
 
     private async Task<StcIspToolStatus> ReadStcToolStatusSafeAsync()
     {
-        try { return await services.StcIsp.GetToolStatusAsync(); }
+        try
+        {
+            return await services.StcIsp.GetToolStatusAsync();
+        }
         catch (Exception ex)
         {
             Log("读取 STC 下载工具状态失败：" + ex);
@@ -65,7 +77,10 @@ public partial class MainWindow
 
     private async Task<string[]> ReadStcPortsSafeAsync()
     {
-        try { return await SerialTerminalService.ListPortsAsync(); }
+        try
+        {
+            return await SerialTerminalService.ListPortsAsync();
+        }
         catch (Exception ex)
         {
             Log("列举 STC 串口失败：" + ex);
@@ -92,7 +107,10 @@ public partial class MainWindow
             StcPortPicker.ItemsSource = ports;
             StcPortPicker.Text = settings.Port;
             StcBaudPicker.SelectedItem = settings.TransferBaud;
-            if (StcBaudPicker.SelectedItem is null) StcBaudPicker.Text = settings.TransferBaud.ToString(CultureInfo.InvariantCulture);
+            if (StcBaudPicker.SelectedItem is null)
+            {
+                StcBaudPicker.Text = settings.TransferBaud.ToString(CultureInfo.InvariantCulture);
+            }
             StcToolStatus.Text = (tool.Available ? "下载工具已就绪：" : "下载工具不可用：") + tool.Message +
                 (tool.ProgrammerExecutable is null ? "" : "\n" + tool.ProgrammerExecutable);
             UpdateStcClockHelp();
@@ -105,7 +123,10 @@ public partial class MainWindow
 
     private void UpdateStcClockHelp()
     {
-        if (StcClockModePicker is null || StcClockHelp is null) return;
+        if (StcClockModePicker is null || StcClockHelp is null)
+        {
+            return;
+        }
         var mode = StcClockModePicker.SelectedValue is StcClockMode selected ? selected : StcClockMode.Preserve;
         var frequencyEnabled = mode == StcClockMode.ExternalCrystal ||
             mode == StcClockMode.InternalRc && stcIspCapabilities?.SupportsRcTrim == true;
@@ -125,7 +146,11 @@ public partial class MainWindow
     {
         settings = new();
         error = "";
-        if (stcIspCapabilities is null) { error = "STC 型号能力尚未加载。"; return false; }
+        if (stcIspCapabilities is null)
+        {
+            error = "STC 型号能力尚未加载。";
+            return false;
+        }
         var mode = StcClockModePicker.SelectedValue is StcClockMode selected ? selected : StcClockMode.Preserve;
         int? hz = null;
         if (mode == StcClockMode.ExternalCrystal || mode == StcClockMode.InternalRc && stcIspCapabilities.SupportsRcTrim)
@@ -136,22 +161,34 @@ public partial class MainWindow
                 if ((!decimal.TryParse(frequencyText, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var mhz) &&
                      !decimal.TryParse(frequencyText, NumberStyles.AllowDecimalPoint, CultureInfo.CurrentCulture, out mhz)) ||
                     mhz <= 0 || mhz > int.MaxValue / 1000000m || mhz * 1000000m != decimal.Truncate(mhz * 1000000m))
-                { error = "时钟频率请输入 MHz 数值，最多 6 位小数（例如 11.0592）。"; return false; }
+                {
+                    error = "时钟频率请输入 MHz 数值，最多 6 位小数（例如 11.0592）。";
+                    return false;
+                }
                 hz = (int)(mhz * 1000000m);
             }
         }
         if (!int.TryParse(StcBaudPicker.Text, NumberStyles.None, CultureInfo.InvariantCulture, out var baud))
-        { error = "请选择有效的串口传输波特率。"; return false; }
+        {
+            error = "请选择有效的串口传输波特率。";
+            return false;
+        }
         settings = new StcIspSettings(Port: StcPortPicker.Text.Trim().ToUpperInvariant(), ClockMode: mode,
             ClockFrequencyHz: hz, TransferBaud: baud);
-        try { settings.ValidateFor(stcIspCapabilities); }
+        try
+        {
+            settings.ValidateFor(stcIspCapabilities);
+        }
         catch (StudioXException ex) { error = ex.Message; return false; }
         return true;
     }
 
     private void UpdateStcIspControls()
     {
-        if (StcIspPanel is null || applyingStcIsp) return;
+        if (StcIspPanel is null || applyingStcIsp)
+        {
+            return;
+        }
         var enabled = IsStcSdccProject && projectDirectory is not null && loadedStcIspSettings is not null &&
             !projectActionsBusy && !services.Debugger.IsActive;
         StcIspPanel.IsEnabled = enabled;
@@ -160,7 +197,10 @@ public partial class MainWindow
 
     private void StcClockMode_Changed(object sender, SelectionChangedEventArgs e)
     {
-        if (StcClockHelp is null || applyingStcIsp) return;
+        if (StcClockHelp is null || applyingStcIsp)
+        {
+            return;
+        }
         StcClockFrequencyBox.Clear();
         UpdateStcClockHelp();
         UpdateStcIspDirtyStatus();
@@ -172,7 +212,10 @@ public partial class MainWindow
 
     private void UpdateStcIspDirtyStatus()
     {
-        if (applyingStcIsp || loadedStcIspSettings is null || StcIspStatus is null) return;
+        if (applyingStcIsp || loadedStcIspSettings is null || StcIspStatus is null)
+        {
+            return;
+        }
         StcIspStatus.Text = !TrySelectedStcIspSettings(out var selected, out var error) ? error :
             selected == loadedStcIspSettings ? "设置与已保存配置一致。" : "设置尚未保存；保存后下次编译/下载生效。";
     }
@@ -190,7 +233,11 @@ public partial class MainWindow
     private async void SaveStcIspSettings_Click(object sender, RoutedEventArgs e) => await RunAsync(async token =>
     {
         EnsureNoActiveDebug();
-        if (!TrySelectedStcIspSettings(out var settings, out var error)) { StcIspStatus.Text = error; return; }
+        if (!TrySelectedStcIspSettings(out var settings, out var error))
+        {
+            StcIspStatus.Text = error;
+            return;
+        }
         await services.StcIsp.SaveSettingsAsync(RequireProject(), settings, token);
         loadedStcIspSettings = settings;
         StcIspStatus.Text = Status.Text = "STC 串口与时钟设置已保存；重新编译后生效，芯片配置将在下载时写入。";
@@ -199,7 +246,10 @@ public partial class MainWindow
     private async void ChooseStcgal_Click(object sender, RoutedEventArgs e)
     {
         var dialog = new OpenFileDialog { Filter = "stcgal 可执行文件|stcgal.exe", Title = "选择 stcgal 1.10" };
-        if (dialog.ShowDialog(this) != true) return;
+        if (dialog.ShowDialog(this) != true)
+        {
+            return;
+        }
         await RunAsync(async token =>
         {
             await services.StcIsp.SaveProgrammerPathAsync(dialog.FileName, token);
@@ -225,15 +275,25 @@ public partial class MainWindow
         }
         var settings = await services.StcIsp.LoadSettingsAsync(root, token);
         var capabilities = await services.StcIsp.GetCapabilitiesAsync(root, token);
-        try { settings.ValidateFor(capabilities, requirePort: true); }
+        try
+        {
+            settings.ValidateFor(capabilities, requirePort: true);
+        }
         catch (StudioXException ex) { await ShowProjectDetailsAsync(); StcIspStatus.Text = ex.Message; return; }
         await SaveAllSourcesAsync(root, token);
         ShowBottom(0);
         BuildLog.Clear();
         var build = await BuildWithSummaryAsync(root, token);
-        if (build.LogPath is { } logPath) Log("构建日志：" + logPath);
+        if (build.LogPath is { } logPath)
+        {
+            Log("构建日志：" + logPath);
+        }
         Log(build.Summary);
-        if (!build.Success) { Status.Text = "编译失败，未打开串口或下载。"; return; }
+        if (!build.Success)
+        {
+            Status.Text = "编译失败，未打开串口或下载。";
+            return;
+        }
         var prepared = await services.StcIsp.PrepareAsync(root, settings, token);
         var clock = settings.ClockMode switch
         {
@@ -244,9 +304,14 @@ public partial class MainWindow
         var message = $"目标型号：{prepared.ExpectedModel}\n串口：{prepared.Port}\n固件：{prepared.SourceImage}\nSHA-256：{prepared.ImageSha256}\n时钟：{clock}\n\n串口 ISP 会擦除并覆盖芯片现有程序，且无法读回旧程序备份。下载开始等待后，请按开发板的下载/上电按钮。\n\n确认写入这份固件吗？";
         if (settings.ClockMode == StcClockMode.ExternalCrystal &&
             prepared.ExpectedModel.Equals("IAP15F2K61S2", StringComparison.OrdinalIgnoreCase))
+        {
             message += "\n\n注意：你先前使用的赛点 V3.1 开发板没有 MCU 外部晶振。如果仍是这块板，请取消下载并选择内部 RC。";
+        }
         if (MessageBox.Show(this, message, "确认 STC 串口下载", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No) != MessageBoxResult.Yes)
-        { Status.Text = "已取消 STC 下载，未打开串口。"; return; }
+        {
+            Status.Text = "已取消 STC 下载，未打开串口。";
+            return;
+        }
         Status.Text = "等待开发板进入 STC ISP…";
         StcIspReport result;
         try

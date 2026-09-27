@@ -25,7 +25,10 @@ public partial class MainWindow
         GitHubAvatarContainer.Visibility = account is null ? Visibility.Collapsed : Visibility.Visible;
         GitHubIdentityButton.ToolTip = account is null ? "未登录 GitHub · 点击打开协作页登录" : $"GitHub：{account} · 打开协作页";
         AutomationProperties.SetName(GitHubIdentityButton, account is null ? "未登录 GitHub" : $"GitHub 账号 {account}");
-        if (account is null) return;
+        if (account is null)
+        {
+            return;
+        }
 
         var cancellation = new CancellationTokenSource();
         githubProfileCancellation = cancellation;
@@ -38,7 +41,10 @@ public partial class MainWindow
         {
             var profile = await services.GitHubAccounts.GetProfileAsync(account, cancellation.Token);
             if (cancellation.IsCancellationRequested || version != githubProfileVersion || closed ||
-                !string.Equals(account, GitHubWorkspace.SelectedAccount, StringComparison.OrdinalIgnoreCase)) return;
+                !string.Equals(account, GitHubWorkspace.SelectedAccount, StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
 
             GitHubIdentityName.Text = profile.Login;
             AutomationProperties.SetName(GitHubIdentityButton, $"GitHub 账号 {profile.Login}");
@@ -63,7 +69,10 @@ public partial class MainWindow
         catch (Exception ex) when (ex is GitHubApiException { StatusCode: HttpStatusCode.Unauthorized }
             or StudioXException { Code: "GITHUB_AUTH_REQUIRED" })
         {
-            if (version != githubProfileVersion || closed) return;
+            if (version != githubProfileVersion || closed)
+            {
+                return;
+            }
             GitHubAvatarBrush.ImageSource = null;
             GitHubAvatarImage.Visibility = Visibility.Collapsed;
             GitHubAvatarInitial.Text = "!";
@@ -77,11 +86,16 @@ public partial class MainWindow
         {
             // 头像或资料不可用时仍显示已选择的账号；下次打开协作页可重试。
             if (version == githubProfileVersion && !closed)
+            {
                 Log("读取 GitHub 用户资料失败：" + ex.Message);
+            }
         }
         finally
         {
-            if (ReferenceEquals(githubProfileCancellation, cancellation)) githubProfileCancellation = null;
+            if (ReferenceEquals(githubProfileCancellation, cancellation))
+            {
+                githubProfileCancellation = null;
+            }
             cancellation.Dispose();
         }
     }
@@ -102,7 +116,9 @@ public partial class MainWindow
     private void GitHubRepositoryValidated(string directory)
     {
         if (!string.Equals(GitGraph.RepositoryDirectory, directory, StringComparison.OrdinalIgnoreCase))
+        {
             GitGraph.SetProject(directory);
+        }
     }
 
     private Task<bool> PrepareGitHubWorkingTreeChangeAsync(CancellationToken token) =>
@@ -126,7 +142,9 @@ public partial class MainWindow
                 GitHubWorkspace.SetProject(directory);
             }
             else
+            {
                 Status.Text = "仓库已克隆，打开工程已取消；可稍后从文件菜单打开。";
+            }
             return;
         }
         GitHubWorkspace.SetProject(directory);

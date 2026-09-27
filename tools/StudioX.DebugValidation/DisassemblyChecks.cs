@@ -57,7 +57,9 @@ internal static class DisassemblyChecks
         pass("Disassembly preserves the original ^error diagnostic and GDB_COMMAND code");
 
         await using (var adapter = new GdbDebugAdapter(new ResponseTransport("^done,asm_insns=[]")))
+        {
             Check((await adapter.ReadDisassemblyAsync(0x08000100, 8)).Length == 0, "A valid empty disassembly list must remain empty");
+        }
         pass("A valid empty disassembly response does not invent instructions");
 
         foreach (var response in new[]
@@ -82,7 +84,9 @@ internal static class DisassemblyChecks
         await using (var adapter = new GdbDebugAdapter(transport))
         {
             foreach (var count in new[] { -1, 0, 513, int.MaxValue })
+            {
                 await RejectArgumentAsync(() => adapter.ReadDisassemblyAsync(0x08000100, count));
+            }
             await RejectArgumentAsync(() => adapter.ReadDisassemblyAsync(uint.MaxValue, 1));
             await RejectArgumentAsync(() => adapter.ReadDisassemblyAsync(uint.MaxValue - 15, 16));
             Check(transport.Commands.Count == 0, "Invalid byte counts and overflowing address ranges must never send MI");
@@ -132,16 +136,28 @@ internal static class DisassemblyChecks
     private static string Row(uint address, string opcodes, string instruction, string? function = null, string? offset = null) =>
         "{address=" + MiRecord.Quote("0x" + address.ToString("x8", CultureInfo.InvariantCulture)) + ",opcodes=" + MiRecord.Quote(opcodes) + ",inst=" + MiRecord.Quote(instruction) +
         (function is null ? "" : ",func-name=" + MiRecord.Quote(function)) + (offset is null ? "" : ",offset=" + MiRecord.Quote(offset)) + "}";
-    private static void Check(bool value, string message) { if (!value) throw new InvalidOperationException(message); }
+    private static void Check(bool value, string message)
+    {
+        if (!value)
+        {
+            throw new InvalidOperationException(message);
+        }
+    }
     private static async Task<StudioXException> RejectStudioAsync(Func<Task> action, string code)
     {
-        try { await action(); }
+        try
+        {
+            await action();
+        }
         catch (StudioXException error) when (error.Code == code) { return error; }
         throw new InvalidOperationException("Expected " + code);
     }
     private static async Task RejectArgumentAsync(Func<Task> action)
     {
-        try { await action(); }
+        try
+        {
+            await action();
+        }
         catch (ArgumentOutOfRangeException) { return; }
         throw new InvalidOperationException("Expected invalid disassembly range to be rejected.");
     }

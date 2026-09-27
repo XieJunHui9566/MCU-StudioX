@@ -24,7 +24,8 @@ internal sealed class BracketPairColorizer : DocumentColorizingTransformer, IDis
 
     public BracketPairColorizer(TextEditor editor, Action<Exception> onError)
     {
-        this.editor = editor; this.onError = onError;
+        this.editor = editor;
+        this.onError = onError;
         editor.TextChanged += TextChanged;
         timer.Tick += async (_, _) => await RefreshAsync();
     }
@@ -32,39 +33,73 @@ internal sealed class BracketPairColorizer : DocumentColorizingTransformer, IDis
     {
         palette = dark ? Dark : Light;
         var transformers = editor.TextArea.TextView.LineTransformers;
-        transformers.Remove(this); transformers.Add(this);
-        if (language != nextLanguage) { language = nextLanguage; QueueRefresh(); }
+        transformers.Remove(this);
+        transformers.Add(this);
+        if (language != nextLanguage)
+        {
+            language = nextLanguage;
+            QueueRefresh();
+        }
         editor.TextArea.TextView.Redraw();
     }
     private void TextChanged(object? sender, EventArgs e) => QueueRefresh();
     private void QueueRefresh()
     {
-        revision++; cancellation?.Cancel(); timer.Stop(); Brackets = [];
+        revision++;
+        cancellation?.Cancel();
+        timer.Stop();
+        Brackets = [];
         editor.TextArea.TextView.Redraw();
-        if (!disposed && BracketPairs.Supports(language)) timer.Start();
+        if (!disposed && BracketPairs.Supports(language))
+        {
+            timer.Start();
+        }
     }
     internal async Task RefreshAsync()
     {
-        timer.Stop(); cancellation?.Cancel();
-        if (disposed || !BracketPairs.Supports(language)) return;
-        var request = new CancellationTokenSource(); cancellation = request;
-        var version = ++revision; var document = editor.Document;
-        var text = document.Text; var syntax = language;
+        timer.Stop();
+        cancellation?.Cancel();
+        if (disposed || !BracketPairs.Supports(language))
+        {
+            return;
+        }
+        var request = new CancellationTokenSource();
+        cancellation = request;
+        var version = ++revision;
+        var document = editor.Document;
+        var text = document.Text;
+        var syntax = language;
         try
         {
             var result = await Task.Run(() => BracketPairs.Find(text, syntax, request.Token), request.Token);
-            if (disposed || request.IsCancellationRequested || revision != version || editor.Document != document) return;
-            Brackets = result; editor.TextArea.TextView.Redraw();
+            if (disposed || request.IsCancellationRequested || revision != version || editor.Document != document)
+            {
+                return;
+            }
+            Brackets = result;
+            editor.TextArea.TextView.Redraw();
         }
         catch (OperationCanceledException) when (request.IsCancellationRequested) { }
-        catch (Exception ex) { if (!disposed && revision == version) onError(ex); }
-        finally { if (cancellation == request) cancellation = null; request.Dispose(); }
+        catch (Exception ex) { if (!disposed && revision == version) { onError(ex); } }
+        finally { if (cancellation == request) { cancellation = null; } request.Dispose(); }
     }
     protected override void ColorizeLine(DocumentLine line)
     {
         // 仅处理可见行中的括号，滚动/字号变化不重新扫描全文。
-        var low = 0; var high = Brackets.Length;
-        while (low < high) { var mid = low + (high - low) / 2; if (Brackets[mid].Offset < line.Offset) low = mid + 1; else high = mid; }
+        var low = 0;
+        var high = Brackets.Length;
+        while (low < high)
+        {
+            var mid = low + (high - low) / 2;
+            if (Brackets[mid].Offset < line.Offset)
+            {
+                low = mid + 1;
+            }
+            else
+            {
+                high = mid;
+            }
+        }
         for (var i = low; i < Brackets.Length && Brackets[i].Offset < line.EndOffset; i++)
         {
             var bracket = Brackets[i];
@@ -72,10 +107,17 @@ internal sealed class BracketPairColorizer : DocumentColorizingTransformer, IDis
         }
     }
     private static Brush[] Palette(params string[] colors) => colors.Select(color =>
-    { var brush = new SolidColorBrush((Color)ColorConverter.ConvertFromString(color)); brush.Freeze(); return (Brush)brush; }).ToArray();
+    {
+        var brush = new SolidColorBrush((Color)ColorConverter.ConvertFromString(color));
+        brush.Freeze();
+        return (Brush)brush;
+    }).ToArray();
     public void Dispose()
     {
-        disposed = true; revision++; timer.Stop(); cancellation?.Cancel();
+        disposed = true;
+        revision++;
+        timer.Stop();
+        cancellation?.Cancel();
         editor.TextChanged -= TextChanged;
     }
 }

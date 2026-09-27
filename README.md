@@ -1,12 +1,16 @@
 # MCU StudioX
 
-MCU StudioX 是 Windows x64 单片机 IDE。当前源码版本为 **0.2.4 预览版**，使用 C#、.NET 10 和 WPF 构建。
+MCU StudioX 是 Windows x64 单片机 IDE。当前源码版本为 **0.2.5 预览版**，使用 C#、.NET 10 和 WPF 构建。
 
 IDE 提供 C/C++ 编辑与代码提示、CMake 工程构建、器件包导入、固件下载与调试界面、串口工具、Git 图谱，以及带 MCP 工具的 AI 助手。器件能力取决于具体 `.mcupack`、工具链和硬件；尚未通过实板验证的型号不应视为已完成下载或调试适配。经过许可审查的部分器件包见 [MCU-StudioX-MCUPacks](https://github.com/XieJunHui9566/MCU-StudioX-MCUPacks)。
 
-## 0.2.4 更新
+## 0.2.5 更新
 
-新增反汇编和 FreeRTOS 调试窗口，并向内置 Agent 与外部 MCP 提供 `debug_disassemble`、`debug_rtos_snapshot`。修复了 WCH 固件校验误判和无效内存被识别为 RTOS 数据的问题；器件包管理可清理被新版完整覆盖的重复版本，WCH 包配方补入已核实的 FreeRTOS 模板。2026-09-26 已在 STM32F407ZG / ST-Link 和 CH32V307VCT6 / WCH-LinkE 上完成对应固件的 RTOS 实板 MCP 验收。详见 [0.2.4 发行说明](docs/RELEASE-0.2.4.md)、[源码调试](docs/DEBUGGING.md)与 [FreeRTOS 使用和验证范围](docs/RTOS_DEBUGGING.md)。
+- 集成 ESP-IDF **5.5.4**，支持 ESP32/WROOM32、ESP32-P4、ESP32-S3、ESP32-C3/C5/C6；ESP8266 使用独立 RTOS SDK 3.4。七个芯片目标提供 **125 项模组与存储规格预设**，也可按板卡配置 Flash、PSRAM、P4 修订系列与经典 ESP32 核心模式。
+- 内置 PC 编译链，在独立 Windows 窗口运行用户的 **LVGL 8.3.x UI**。配置向导支持多层库目录、UI 入口、字体、图片及运行时资源，并显示资源预算和 PC 运行统计。
+- 修复 AG32 `.ve` 文件高亮导致 IDE 崩溃的问题；拆分 AI、工具协议、授权、进度和编辑器同步职责，统一代码排版与注释。
+
+上述功能已进行软件配置、真实编译与离线界面验证，**不代表所有芯片或模组完成实板验收**。PC 的 FPS、堆和内存统计也不能代替 MCU 性能测量。此前反汇编、FreeRTOS、AI/MCP、串口与 Git 功能继续保留；既有 STM32F407ZG 和 CH32V307 实板范围见 [FreeRTOS 说明](docs/RTOS_DEBUGGING.md)。详情见 [0.2.5 发行说明](docs/RELEASE-0.2.5.md)、[Espressif 支持](docs/ESPRESSIF_SUPPORT.md)和 [LVGL PC 预览](docs/LVGL-PC-PREVIEW.md)。
 
 ## AI 助手与 MCP
 
@@ -18,9 +22,21 @@ IDE 提供 C/C++ 编辑与代码提示、CMake 工程构建、器件包导入、
 
 ## 安装包
 
-项目维护者分享的 Windows x64 **0.2.4 安装包**：[百度网盘下载 MCUStdioX](https://pan.baidu.com/s/5fh5exaJIgC6ThwSS_IdDOA)。
+Windows x64 **0.2.5 安装包与分卷**：[GitHub Release 下载](https://github.com/XieJunHui9566/MCU-StudioX/releases/tag/v0.2.5)。完整离线发行包含内置 SDK、工具链与器件包，安装目录约 **12 GB**。下载同组全部分卷至同一目录，用 7-Zip 打开 `.7z.001`，解压出完整 `Setup.exe` 或便携目录，再运行安装器或程序；具体文件和 SHA-256 以 Release 页面为准。
 
-安装与第三方材料状态见[安装与分发说明](docs/INSTALLER.md)，版本更新见[0.2.4 发行说明](docs/RELEASE-0.2.4.md)。网盘文件由项目维护者分享，本仓库不托管安装包。
+项目维护者此前分享的 **0.2.4 安装包**仍可通过[百度网盘下载 MCUStdioX](https://pan.baidu.com/s/5fh5exaJIgC6ThwSS_IdDOA)，该链接不代表 0.2.5。安装与第三方材料状态见[安装与分发说明](docs/INSTALLER.md)。安装包作为 Release 附件单独分发，不写入 Git 源码树。
+
+## 0.2.5 软件界面
+
+以下截图由 0.2.5 发行程序在隔离示例工程中生成，验证模组配置界面与保存行为，**不属于实板测试**。截图中的存储容量是配置规格，不是硬件探测结果。
+
+**ESP32-S3-WROOM-1-N16R8：** 16 MiB Quad Flash 与 8 MiB Octal PSRAM 预设。
+
+![0.2.5 的 S3 N16R8 模组配置界面](docs/screenshots/esp-module-0.2.5.png)
+
+**ESP32-P4：** 自定义存储配置、HEX PSRAM 接口与芯片修订系列选项。
+
+![0.2.5 的 P4 存储与修订系列配置界面](docs/screenshots/esp-p4-module-0.2.5.png)
 
 ## 实际运行界面
 
@@ -38,7 +54,7 @@ IDE 提供 C/C++ 编辑与代码提示、CMake 工程构建、器件包导入、
 
 ![演示仓库中的树状 Git 分支图谱](docs/screenshots/git-graph-branches.jpg)
 
-**STM32F407 实板串口验收（2026-09-22）：** 通过 CH340 连接的测试固件回传 168 MHz 时钟、115200 波特率及收发/错误计数。此图记录当时的硬件验收，并非 0.2.4 的全部功能复测。
+**STM32F407 实板串口验收（2026-09-22）：** 通过 CH340 连接的测试固件回传 168 MHz 时钟、115200 波特率及收发/错误计数。此图记录当时的硬件验收，并非 0.2.5 的全部功能复测。
 
 ![STM32F407 实板串口终端回传数据](docs/screenshots/f407-serial-terminal-hardware.png)
 
@@ -70,6 +86,6 @@ IDE 提供 C/C++ 编辑与代码提示、CMake 工程构建、器件包导入、
 
 ## 发布范围与许可
 
-本仓库只提供经过筛选的 IDE 源码快照。构建缓存、本机工程、硬件诊断记录、用户数据和凭据均不属于源码发布内容。厂商 Logo 未纳入本快照，选择器使用文字缩写显示。器件包及其厂商 SDK 单独管理；各器件包仍需遵守对应厂商的授权和再分发条件。上方安装包链接由项目维护者通过外部网盘分享，本仓库不托管安装包。
+本仓库只提供经过筛选的 IDE 源码快照。构建缓存、本机工程、硬件诊断记录、用户数据和凭据均不属于源码发布内容。厂商 Logo 未纳入本快照，选择器使用文字缩写显示。器件包及其厂商 SDK 单独管理；各器件包仍需遵守对应厂商的授权和再分发条件。完整安装包通过 Release 附件分发，旧版网盘链接单独保留；大型二进制不进入 Git 源码树。
 
 本项目自有源码采用 [MIT 许可证](LICENSE)，版权归 2026 XieJunHui9566 所有。厂商名称和 Logo、第三方库、工具链、SDK 及其他外部素材不因收录在仓库或安装包中而改用 MIT；详情见 [第三方声明](NOTICE.md)、`licenses/` 和 `runtime/THIRD-PARTY-NOTICES.txt`。

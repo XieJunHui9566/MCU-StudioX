@@ -9,18 +9,29 @@ public partial class MainWindow
 {
     public Task ShowDebugDemoAsync(string packArchive) => RunAsync(async token =>
     {
-        if (!await CloseProjectAsync(token)) return;
-        await services.Packs.ImportAsync(packArchive, token); await RefreshPacksAsync(token);
+        if (!await CloseProjectAsync(token))
+        {
+            return;
+        }
+        await services.Packs.ImportAsync(packArchive, token);
+        await RefreshPacksAsync(token);
         var root = await DebugSessionService.CreateExampleAsync(services.Packs, services.DataDirectory, Path.Combine(AppContext.BaseDirectory, "device-packs"), token);
         await OpenProjectAsync(root, token);
         await services.Debugger.ToggleBreakpointAsync(F407DebugExample.RelativeFile, F407DebugExample.Call, token);
-        await services.Debugger.StartOfflineAsync(token); await NavigateSelectedDebugFrameAsync();
+        await services.Debugger.StartOfflineAsync(token);
+        await NavigateSelectedDebugFrameAsync();
         Status.Text = "F407 离线调试 · F9 断点 / F5 运行 / F10 逐过程 / F11 进入 · 未连接芯片";
     });
 
     public async Task RenderDebugPreviewAsync(string directory, string packArchive)
     {
-        void Check(bool value, string message) { if (!value) throw new InvalidOperationException(message); }
+        void Check(bool value, string message)
+        {
+            if (!value)
+            {
+                throw new InvalidOperationException(message);
+            }
+        }
         async Task Settle()
         {
             await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ContextIdle);
@@ -32,68 +43,108 @@ public partial class MainWindow
         async Task WaitStopped()
         {
             using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(8));
-            while (services.Debugger.State != DebugState.Stopped) await Task.Delay(20, timeout.Token);
+            while (services.Debugger.State != DebugState.Stopped)
+            {
+                await Task.Delay(20, timeout.Token);
+            }
             await Settle();
         }
         Check(RegistersTab.Visibility == Visibility.Collapsed && DebugTab.Visibility == Visibility.Collapsed, "Debug tabs should be hidden before starting");
-        await ShowDebugDemoAsync(packArchive); await Settle();
+        await ShowDebugDemoAsync(packArchive);
+        await Settle();
         Check(services.Debugger.State == DebugState.Stopped, "Demo start: " + Status.Text);
         Check(RegistersTab.Visibility == Visibility.Visible && DebugTab.Visibility == Visibility.Visible, "Debug tabs should appear after starting");
         Check(DebugContinueButton.IsEnabled && !DebugPauseButton.IsEnabled && !BuildButton.IsEnabled && !DownloadButton.IsEnabled, "Stopped controls");
         Check(SourceEditor.IsReadOnly && RegisterGrid.Items.Count == 56 && debugMargin!.ExecutionLine == F407DebugExample.Entry, "Editor lock, registers or execution arrow");
-        DebugContinue_Click(this, new RoutedEventArgs()); await pendingOperation; await WaitStopped();
+        DebugContinue_Click(this, new RoutedEventArgs());
+        await pendingOperation;
+        await WaitStopped();
         Check(SourceEditor.TextArea.Caret.Line == F407DebugExample.Call && services.Debugger.Reason.Contains("命中断点", StringComparison.Ordinal), "Run to breakpoint navigation");
-        DebugInto_Click(this, new RoutedEventArgs()); await pendingOperation; await WaitStopped();
+        DebugInto_Click(this, new RoutedEventArgs());
+        await pendingOperation;
+        await WaitStopped();
         Check(DebugOutButton.IsEnabled && services.Debugger.Snapshot.Frames.Length == 2 && SourceEditor.TextArea.Caret.Line == F407DebugExample.Function, "Step into UI");
-        DebugOver_Click(this, new RoutedEventArgs()); await pendingOperation; await WaitStopped();
+        DebugOver_Click(this, new RoutedEventArgs());
+        await pendingOperation;
+        await WaitStopped();
         Check(services.Debugger.Snapshot.Locals.Single(v => v.Name == "doubled").Value == "2", "Locals refresh");
-        DebugTools.ShowDisassembly(); await Settle();
+        DebugTools.ShowDisassembly();
+        await Settle();
         var pc = uint.Parse(services.Debugger.Snapshot.Registers.Single(register => register.Name == "pc").Value.AsSpan(2), System.Globalization.NumberStyles.HexNumber);
         Check(DebugTools.DisassemblyInstructionCount > 0 && DebugTools.DisassemblyCurrentAddress == pc && DebugTools.CanReadDisassembly && DebugTools.DisassemblyStatus.Contains("离线模拟", StringComparison.Ordinal), "Disassembly must show paused PC and mark simulation");
-        DebugTools.ReadDisassemblyAt("0x08000100"); await Settle();
+        DebugTools.ReadDisassemblyAt("0x08000100");
+        await Settle();
         Check(DebugTools.DisassemblyInstructionCount > 0 && DebugTools.DisassemblyCurrentAddress == pc, "Manual address should retain actual PC");
-        DebugTools.ReadDisassemblyAt("invalid-address"); await Settle();
+        DebugTools.ReadDisassemblyAt("invalid-address");
+        await Settle();
         Check(DebugTools.DisassemblyInstructionCount == 0 && DebugTools.DisassemblyStatus.Contains("读取失败", StringComparison.Ordinal) && services.Debugger.State == DebugState.Stopped, "Address error must be inline without ending the session");
-        DebugTools.FollowCurrentDisassembly(); await Settle();
+        DebugTools.FollowCurrentDisassembly();
+        await Settle();
         foreach (var theme in new[] { ThemeService.Dark, ThemeService.Light })
         {
-            ApplyTheme(theme); UpdateLayout(); await Settle();
-            DebugTools.ShowDisassembly(); await Settle();
+            ApplyTheme(theme);
+            UpdateLayout();
+            await Settle();
+            DebugTools.ShowDisassembly();
+            await Settle();
             Render(this, Path.Combine(directory, "debug-" + theme.Id + ".png"));
             Render(DebugTools, Path.Combine(directory, "disassembly-" + theme.Id + ".png"));
-            DebugTools.ShowLocals(); UpdateLayout(); await Settle();
+            DebugTools.ShowLocals();
+            UpdateLayout();
+            await Settle();
             Render(DebugTools, Path.Combine(directory, "locals-" + theme.Id + ".png"));
         }
-        DebugTools.ShowDisassembly(); ApplyTheme(ThemeService.Dark); Width = 1100; Height = 720; UpdateLayout(); await Settle();
+        DebugTools.ShowDisassembly();
+        ApplyTheme(ThemeService.Dark);
+        Width = 1100;
+        Height = 720;
+        UpdateLayout();
+        await Settle();
         Check(BottomPanel.TranslatePoint(new Point(0, BottomPanel.ActualHeight), WindowRoot).Y <= WindowRoot.ActualHeight - 24, "Bottom debug panel clipped at minimum size");
         Check(DebugToolbar.ActualHeight > 30 && SourceEditor.ActualHeight > 120, "Editor or debug toolbar collapsed");
         Render(this, Path.Combine(directory, "debug-minimum.png"));
-        Width = 1460; Height = 920;
-        await services.Debugger.RefreshAsync(1); await Settle();
+        Width = 1460;
+        Height = 920;
+        await services.Debugger.RefreshAsync(1);
+        await Settle();
         Check(debugMargin!.SelectedLine == F407DebugExample.Call, "Selected stack frame marker");
         Check(DebugTools.DisassemblyCurrentAddress == pc, "Selecting a caller must not replace the actual PC highlight");
-        DebugOut_Click(this, new RoutedEventArgs()); await pendingOperation; await WaitStopped();
+        DebugOut_Click(this, new RoutedEventArgs());
+        await pendingOperation;
+        await WaitStopped();
         Check(services.Debugger.Snapshot.Frames.Length == 1 && !DebugOutButton.IsEnabled, "Outermost controls");
         await services.Debugger.ChangeBreakpointAsync(services.Debugger.Breakpoints.Single().Id, false);
-        DebugContinue_Click(this, new RoutedEventArgs()); await pendingOperation; await Settle();
+        DebugContinue_Click(this, new RoutedEventArgs());
+        await pendingOperation;
+        await Settle();
         Check(services.Debugger.State == DebugState.Running && Status.Text == services.Debugger.Reason && DebugStateText.Text == Status.Text,
             "Running state must reach both debug toolbar and bottom status");
         Check(!DebugTools.CanReadDisassembly && DebugTools.DisassemblyCurrentAddress is null && DebugTools.DisassemblyStatus.Contains("上次暂停快照", StringComparison.Ordinal), "Running disassembly must be read-disabled and visibly stale");
-        DebugPause_Click(this, new RoutedEventArgs()); await pendingOperation; await WaitStopped();
+        DebugPause_Click(this, new RoutedEventArgs());
+        await pendingOperation;
+        await WaitStopped();
         Check(Status.Text == services.Debugger.Reason, "Pause notification must refresh bottom status");
         Check(DebugTools.CanReadDisassembly && DebugTools.DisassemblyCurrentAddress is not null, "Pause must automatically refresh disassembly");
-        DebugStop_Click(this, new RoutedEventArgs()); await pendingOperation; await Settle();
+        DebugStop_Click(this, new RoutedEventArgs());
+        await pendingOperation;
+        await Settle();
         Check(!SourceEditor.IsReadOnly && BuildButton.IsEnabled && debugMargin.ExecutionLine is null && RegisterGrid.Items.Count == 0, "End debugging restores edit/build and clears snapshots");
         Check(RegistersTab.Visibility == Visibility.Collapsed && DebugTab.Visibility == Visibility.Collapsed && LeftToolTabs.SelectedIndex == 0 && BottomTabs.SelectedIndex == 0, "Debug tabs should hide after stopping");
         Check(DebugTools.DisassemblyInstructionCount == 0 && !DebugTools.CanReadDisassembly, "Stopping must clear disassembly");
         var point = services.Debugger.Breakpoints.Single();
-        SourceEditor.Document.Insert(0, "// anchor test\n"); await PersistBreakpointLinesAsync(); await Settle();
+        SourceEditor.Document.Insert(0, "// anchor test\n");
+        await PersistBreakpointLinesAsync();
+        await Settle();
         Check(services.Debugger.Breakpoints.Single().Line == point.Line && debugMargin.Breakpoints.Single().Line == point.Line + 1, "Unsaved edit should move visible marker without changing persisted position");
-        await SaveAllSourcesAsync(RequireProject(), CancellationToken.None); await Settle();
+        await SaveAllSourcesAsync(RequireProject(), CancellationToken.None);
+        await Settle();
         Check(services.Debugger.Breakpoints.Single().Line == point.Line + 1, "Breakpoint anchor did not follow inserted line");
-        SourceEditor.Document.UndoStack.Undo(); await SaveAllSourcesAsync(RequireProject(), CancellationToken.None); await Settle();
+        SourceEditor.Document.UndoStack.Undo();
+        await SaveAllSourcesAsync(RequireProject(), CancellationToken.None);
+        await Settle();
         Check(services.Debugger.Breakpoints.Single().Line == point.Line, "Breakpoint anchor did not follow undo");
-        await CloseProjectAsync(CancellationToken.None); await Settle();
+        await CloseProjectAsync(CancellationToken.None);
+        await Settle();
         Check(services.Debugger.Breakpoints.Count == 0 && DebugToolbar.Visibility == Visibility.Collapsed && RegisterGrid.Items.Count == 0, "Close did not clear debug UI");
         await File.WriteAllTextAsync(Path.Combine(directory, "result.txt"), "PASS: F407 offline demo; gutter binding; entry/stop navigation; run/step into/over/out; call-stack selection; register/locals UI; disassembly PC/manual address/inline error/caller selection/automatic refresh/stale running view/stop cleanup; running/paused status synchronization; busy/read-only states; restore edit/build after stop; breakpoint anchors follow edits and undo; project cleanup; dark/light/minimum-size renders. No hardware accessed.\n");
     }

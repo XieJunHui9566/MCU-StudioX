@@ -8,8 +8,14 @@ public sealed class Icon : FrameworkElement
 {
     public static readonly DependencyProperty KindProperty = DependencyProperty.Register(nameof(Kind), typeof(string), typeof(Icon), new FrameworkPropertyMetadata("chip", FrameworkPropertyMetadataOptions.AffectsRender));
     public static readonly DependencyProperty ForegroundProperty = DependencyProperty.Register(nameof(Foreground), typeof(Brush), typeof(Icon), new FrameworkPropertyMetadata(Brushes.Gray, FrameworkPropertyMetadataOptions.AffectsRender));
-    public string Kind { get => (string)GetValue(KindProperty); set => SetValue(KindProperty, value); }
-    public Brush Foreground { get => (Brush)GetValue(ForegroundProperty); set => SetValue(ForegroundProperty, value); }
+    public string Kind
+    {
+        get => (string)GetValue(KindProperty); set => SetValue(KindProperty, value);
+    }
+    public Brush Foreground
+    {
+        get => (Brush)GetValue(ForegroundProperty); set => SetValue(ForegroundProperty, value);
+    }
     // 小尺寸图标必须遵守布局约束，否则 WPF 仍按 18 像素绘制并裁掉右侧和底部。
     protected override Size MeasureOverride(Size availableSize) => new(Math.Min(18, availableSize.Width), Math.Min(18, availableSize.Height));
     protected override void OnRender(DrawingContext dc)

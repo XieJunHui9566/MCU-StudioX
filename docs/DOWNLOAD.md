@@ -1,6 +1,6 @@
 # 下载与烧录
 
-CH32V203 新增独立包和 WCH-Link / SDI 下载配置，按具体型号核对 Flash/RAM，不套用 V307 内存划分。C8T6 + WCH-LinkE 已完成最小固件下载、校验和物理 Flash 回读，其他型号仍为软件验证，见 [V203 实板记录](CH32V203-DEBUG-ACCEPTANCE-20260923.md)。IDE 遇到读保护仍拒绝自动解锁。
+CH32V203 新增独立包和 WCH-Link / SDI 下载配置，按具体型号核对 Flash/RAM，不套用 V307 内存划分。C8T6 + WCH-LinkE 已完成最小固件下载、校验和物理 Flash 回读，其他型号仍为软件验证，见 V203 实板记录（本地记录）。IDE 遇到读保护仍拒绝自动解锁。
 
 工程共用顶部「烧录器」下拉栏。STM32F1/F4 提供 ST-Link、DAP-Link (CMSIS-DAP)、J-Link；器件包工程采用包声明的烧录器、传输协议和默认速度，CubeMX 导入工程采用 IDE 中匹配具体型号的下载目录。HAL、标准库及带 FreeRTOS 的模板使用相同入口。
 
@@ -26,9 +26,9 @@ OpenOCD 擦写/校验语义参考：[Flash Commands](https://openocd.org/doc/htm
 
 CubeMX 下载目录包含已有 F1/F4 包中的 244 个基础型号，容量和目标保护脚本从固定版本的 StudioX 器件包生成，不按型号字符串猜测容量。`tools/New-Stm32DownloadCatalog.ps1` 生成 Engine 嵌入资源 `Resources/stm32-download.json`，其中记录来源包 SHA-256；包的 SDK/Keil PDSC 来源见 `examples/packs/st.stm32-series/*-provenance.json`。可识别例如 STM32F407ZG / STM32F407ZGT6 的明确订货号，含 `(E-G)` 的不确定容量名称不启用下载。CubeMX 改换型号后需重新导入元数据。
 
-框架向所有工程类型开放，但并非任意芯片都支持三种烧录器。没有 `openOcd` 定义的器件包保持下载不可用，包括旧 `studiox.preview.ag32vf303 0.1.0` 包。AG32 0.1.1 新包增加官方 AGM BLASTER 的独立入口、专用 OpenOCD 和 156 KiB 应用区限制，要求已核实的 100 KiB 未压缩逻辑布局；不将 STM32 的配置套到 RISC-V AG32。详见 [AG32 适配记录](AG32-DEBUG-ACCEPTANCE-20260922.md)。
+框架向所有工程类型开放，但并非任意芯片都支持三种烧录器。没有 `openOcd` 定义的器件包保持下载不可用，包括旧 `studiox.preview.ag32vf303 0.1.0` 包。AG32 0.1.1 新包增加官方 AGM BLASTER 的独立入口、专用 OpenOCD 和 156 KiB 应用区限制，要求已核实的 100 KiB 未压缩逻辑布局；不将 STM32 的配置套到 RISC-V AG32。详见 AG32 适配记录（本地记录）。
 
-CH32V307 的 `wch.ch32v307/0.1.1` 包提供 WCH-Link / WCH-LinkE（RISC-V / SDI）入口，使用独立的沁恒工具集。接口脚本随器件包提供，显式打开厂商 `page_erase` 模式，避免其默认全代码区擦除。写入前核对具体型号、读保护状态和 256 KiB Flash / 64 KiB RAM 划分；不自动改变选项字节。下载后执行 `reset halt; resume`：当前沁恒 OpenOCD 的 `reset run` 在实测中会停留在复位入口。下载配置不代表已支持交互式调试；旧 0.1.0 工程不会自动更换器件配置。实机范围与证据见 [CH32V307 验证记录](CH32V307_VERIFICATION.md)。
+CH32V307 的 `wch.ch32v307/0.1.1` 包提供 WCH-Link / WCH-LinkE（RISC-V / SDI）入口，使用独立的沁恒工具集。接口脚本随器件包提供，显式打开厂商 `page_erase` 模式，避免其默认全代码区擦除。写入前核对具体型号、读保护状态和 256 KiB Flash / 64 KiB RAM 划分；不自动改变选项字节。下载后执行 `reset halt; resume`：当前沁恒 OpenOCD 的 `reset run` 在实测中会停留在复位入口。下载配置不代表已支持交互式调试；旧 0.1.0 工程不会自动更换器件配置。实机范围与证据见 CH32V307 验证记录（本地记录）。
 
 上述 STM32 下载目录的初始验证为离线检查；后续 ST-Link / DAP 实机记录见对应调试验收文档。设备在 Windows 上需要其对应 USB 驱动，J-Link 型号/固件也须支持目标使用的 SWD/JTAG 协议。
 

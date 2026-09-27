@@ -17,7 +17,9 @@ public sealed class WebCredentialStore
     {
         EnsureWindows();
         if (string.IsNullOrWhiteSpace(apiKey) || apiKey.Length > 2560 || apiKey.Any(c => c is < '!' or > '~'))
+        {
             throw new StudioXException("WEB_API_KEY", "Tavily API Key 格式无效。");
+        }
         var bytes = StrictUtf8.GetBytes(apiKey);
         IntPtr blob = IntPtr.Zero;
         try
@@ -33,7 +35,10 @@ public sealed class WebCredentialStore
                 Persist = LocalMachine,
                 UserName = "MCU StudioX"
             };
-            if (!CredWrite(ref credential, 0)) throw NativeError("WEB_CREDENTIAL_SAVE", "无法保存 Tavily API Key。");
+            if (!CredWrite(ref credential, 0))
+            {
+                throw NativeError("WEB_CREDENTIAL_SAVE", "无法保存 Tavily API Key。");
+            }
         }
         finally
         {
@@ -49,7 +54,10 @@ public sealed class WebCredentialStore
     public bool HasApiKey()
     {
         EnsureWindows();
-        if (!TryRead(out var pointer)) return false;
+        if (!TryRead(out var pointer))
+        {
+            return false;
+        }
         try
         {
             var credential = Marshal.PtrToStructure<NativeCredential>(pointer);
@@ -62,18 +70,25 @@ public sealed class WebCredentialStore
     {
         EnsureWindows();
         if (!CredDelete(Target, Generic, 0) && Marshal.GetLastWin32Error() != NotFound)
+        {
             throw NativeError("WEB_CREDENTIAL_DELETE", "无法删除 Tavily API Key。");
+        }
     }
 
     internal string? GetApiKey()
     {
         EnsureWindows();
-        if (!TryRead(out var pointer)) return null;
+        if (!TryRead(out var pointer))
+        {
+            return null;
+        }
         try
         {
             var credential = Marshal.PtrToStructure<NativeCredential>(pointer);
             if (credential.CredentialBlobSize is 0 or > 2560 || credential.CredentialBlob == IntPtr.Zero)
+            {
                 throw new StudioXException("WEB_CREDENTIAL", "保存的 Tavily API Key 无效，请重新设置。");
+            }
             var bytes = new byte[credential.CredentialBlobSize];
             try
             {
@@ -91,15 +106,23 @@ public sealed class WebCredentialStore
 
     private static bool TryRead(out IntPtr pointer)
     {
-        if (CredRead(Target, Generic, 0, out pointer)) return true;
-        if (Marshal.GetLastWin32Error() == NotFound) return false;
+        if (CredRead(Target, Generic, 0, out pointer))
+        {
+            return true;
+        }
+        if (Marshal.GetLastWin32Error() == NotFound)
+        {
+            return false;
+        }
         throw NativeError("WEB_CREDENTIAL_READ", "无法读取 Tavily API Key。");
     }
 
     private static void EnsureWindows()
     {
         if (!OperatingSystem.IsWindows())
+        {
             throw new StudioXException("WEB_CREDENTIAL_PLATFORM", "Tavily API Key 安全存储需要 Windows。");
+        }
     }
 
     private static StudioXException NativeError(string code, string message) =>

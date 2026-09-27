@@ -11,32 +11,63 @@ public sealed class ProcessRunner
     public async Task<ProcessResult> RunAsync(ProcessRequest request, CancellationToken cancellationToken = default)
     {
         if (!Path.IsPathFullyQualified(request.Executable) || !File.Exists(request.Executable))
+        {
             throw new StudioXException("TOOL_MISSING", $"工具组件不存在：{request.Executable}");
+        }
         var start = new ProcessStartInfo(request.Executable)
         {
-            WorkingDirectory = request.WorkingDirectory, UseShellExecute = false, CreateNoWindow = true,
-            RedirectStandardOutput = true, RedirectStandardError = true,
+            WorkingDirectory = request.WorkingDirectory,
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
             RedirectStandardInput = request.StandardInput is not null,
-            StandardOutputEncoding = Encoding.UTF8, StandardErrorEncoding = Encoding.UTF8
+            StandardOutputEncoding = Encoding.UTF8,
+            StandardErrorEncoding = Encoding.UTF8
         };
-        foreach (var argument in request.Arguments) start.ArgumentList.Add(argument);
+        foreach (var argument in request.Arguments)
+        {
+            start.ArgumentList.Add(argument);
+        }
         if (request.RemoveEnvironment is not null)
-            foreach (var key in request.RemoveEnvironment) start.Environment.Remove(key);
+        {
+            foreach (var key in request.RemoveEnvironment)
+            {
+                start.Environment.Remove(key);
+            }
+        }
         if (request.Environment is not null)
-            foreach (var (key, value) in request.Environment) start.Environment[key] = value;
+        {
+            foreach (var (key, value) in request.Environment)
+            {
+                start.Environment[key] = value;
+            }
+        }
         using var process = new Process { StartInfo = start };
         cancellationToken.ThrowIfCancellationRequested();
-        if (!process.Start()) throw new StudioXException("TOOL_START", "无法启动工具进程。");
+        if (!process.Start())
+        {
+            throw new StudioXException("TOOL_START", "无法启动工具进程。");
+        }
         using var timeout = new CancellationTokenSource(request.Timeout);
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(timeout.Token, cancellationToken);
-        var output = DrainAsync(process.StandardOutput, linked.Token, request.Output);
-        var error = DrainAsync(process.StandardError, linked.Token, request.Output);
+        var output = DrainAsync(process.StandardOutput, linked.Token, request.Output, request.StreamCompleteOutput);
+        var error = DrainAsync(process.StandardError, linked.Token, request.Output, request.StreamCompleteOutput);
         var input = request.StandardInput is not null ? WriteInputAsync(process, request.StandardInput, linked.Token) : Task.CompletedTask;
         var timedOut = false;
-        try { await Task.WhenAll(process.WaitForExitAsync(linked.Token), output, error, input); }
+        try
+        {
+            await Task.WhenAll(process.WaitForExitAsync(linked.Token), output, error, input);
+        }
         catch (OperationCanceledException)
         {
-            try { if (!process.HasExited) process.Kill(entireProcessTree: true); }
+            try
+            {
+                if (!process.HasExited)
+                {
+                    process.Kill(entireProcessTree: true);
+                }
+            }
             catch (InvalidOperationException) { /* 退出与取消可能同时发生。 */ }
             await process.WaitForExitAsync(CancellationToken.None);
             timedOut = !cancellationToken.IsCancellationRequested;
@@ -49,12 +80,16 @@ public sealed class ProcessRunner
 
     private static async Task WriteInputAsync(Process process, string input, CancellationToken token)
     {
-        try { await process.StandardInput.WriteLineAsync(input.AsMemory(), token); }
+        try
+        {
+            await process.StandardInput.WriteLineAsync(input.AsMemory(), token);
+        }
         catch (IOException) { /* 提前退出的宿主由退出码和原始诊断报告。 */ }
         finally { process.StandardInput.Close(); }
     }
 
-    private static async Task<(string Text, bool Truncated)> DrainAsync(StreamReader reader, CancellationToken token, IProgress<string>? progress)
+    private static async Task<(string Text, bool Truncated)> DrainAsync(StreamReader reader, CancellationToken token, IProgress<string>? progress,
+        bool streamCompleteOutput)
     {
         var text = new StringBuilder();
         var buffer = new char[4096];
@@ -66,7 +101,12 @@ public sealed class ProcessRunner
             {
                 var retained = Math.Min(count, MaximumLogCharacters - text.Length);
                 text.Append(buffer, 0, retained);
-                if (retained > 0) progress?.Report(new string(buffer, 0, retained));
+                // 默认观察器与日志同样截断；依赖扫描可显式继续流式处理，缓存的诊断仍保持大小边界。
+                var observed = streamCompleteOutput ? count : retained;
+                if (observed > 0)
+                {
+                    progress?.Report(new string(buffer, 0, observed));
+                }
                 truncated |= retained != count;
             }
         }

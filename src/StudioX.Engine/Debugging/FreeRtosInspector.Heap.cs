@@ -9,7 +9,10 @@ public sealed partial class FreeRtosInspector
         private async Task<FreeRtosHeap?> ReadHeapAsync()
         {
             heapScope = await ScopeAsync("heap_4.c", "xFreeBytesRemaining");
-            if (heapScope == "::") heapScope = await ScopeAsync("heap_5.c", "xFreeBytesRemaining");
+            if (heapScope == "::")
+            {
+                heapScope = await ScopeAsync("heap_5.c", "xFreeBytesRemaining");
+            }
             var free = await NumberAsync(HeapGlobal("xFreeBytesRemaining"), "FreeRTOS 堆可用字节");
             var end = await NumberAsync(HeapGlobal("pxEnd"), "heap_4/5 结束块");
             var first = await NumberAsync(HeapGlobal("xStart.pxNextFreeBlock"), "heap_4/5 首个空闲块");
@@ -22,7 +25,10 @@ public sealed partial class FreeRtosInspector
             var isHeap5 = heapScope == "'heap_5.c'::";
             // 没有 ucHeap 不能唯一证明 heap_5，可能是优化丢失或自定义兼容分配器。
             var kind = isHeap5 ? "heap_5" : total is not null ? "heap_4" : "heap_4/5";
-            if (total is null) diagnostics.Add("堆总容量不可用；heap_5 的多个区域及被优化掉的 ucHeap 不从空闲字节数推断容量。");
+            if (total is null)
+            {
+                diagnostics.Add("堆总容量不可用；heap_5 的多个区域及被优化掉的 ucHeap 不从空闲字节数推断容量。");
+            }
             var minimum = await NumberAsync(HeapGlobal("xMinimumEverFreeBytesRemaining"), "堆历史最少可用");
             var allocations = await OptionalHeapNumberAsync("xNumberOfSuccessfulAllocations", "成功分配次数");
             var frees = await OptionalHeapNumberAsync("xNumberOfSuccessfulFrees", "成功释放次数");
@@ -79,7 +85,11 @@ public sealed partial class FreeRtosInspector
                 var expression = Pointer("BlockLink_t", node);
                 var size = await NumberAsync(expression + "->xBlockSize", "堆空闲块大小");
                 var next = await NumberAsync(expression + "->pxNextFreeBlock", "堆下一空闲块");
-                if (size is null || next is null) { valid = false; break; }
+                if (size is null || next is null)
+                {
+                    valid = false;
+                    break;
+                }
                 var decoded = next.Value ^ canary;
                 // heap_5 的区域结束哨兵 size=0；它们不是可分配空闲块。
                 if (size > 0)

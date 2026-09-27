@@ -36,11 +36,16 @@ internal static class McpChecks
 
         string Args(string selectedSha, string selectedPort, string selectedMode, int? selectedFrequency,
             bool erase, bool readback) => JsonSerializer.Serialize(new
-        {
-            deviceId, imageSha256 = selectedSha, port = selectedPort, transferBaud = baud,
-            clockMode = selectedMode, clockFrequencyHz = selectedFrequency,
-            acknowledgeFullErase = erase, acknowledgeNoReadback = readback
-        });
+            {
+                deviceId,
+                imageSha256 = selectedSha,
+                port = selectedPort,
+                transferBaud = baud,
+                clockMode = selectedMode,
+                clockFrequencyHz = selectedFrequency,
+                acknowledgeFullErase = erase,
+                acknowledgeNoReadback = readback
+            });
         var wrongHash = await session.CallToolAsync("stc_isp_download",
             Args(new string('0', 64), port, clockMode, frequency, true, true));
         var wrongPort = await session.CallToolAsync("stc_isp_download",

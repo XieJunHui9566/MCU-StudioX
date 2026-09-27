@@ -2,11 +2,6 @@ namespace StudioX.Application;
 
 using StudioX.Foundation;
 
-/// <summary>用户的模型连接偏好。API Key 始终存于 Windows 凭据管理器，不属于此设置。</summary>
-public sealed record AiSettings(int FormatVersion = 1, string BaseUrl = "https://api.deepseek.com",
-    string Model = "deepseek-flash", int TimeoutSeconds = 120,
-    string ReasoningEffort = "high", int? ContextWindowTokens = null);
-
 public sealed class AiSettingsService(string dataDirectory)
 {
     private string SettingsPath => Path.Combine(dataDirectory, "ai.json");
@@ -32,7 +27,9 @@ public sealed class AiSettingsService(string dataDirectory)
             settings.Model.Any(char.IsWhiteSpace) || settings.Model.Any(char.IsControl) ||
             settings.ReasoningEffort is not ("none" or "low" or "high" or "max") ||
             settings.ContextWindowTokens is < 1 or > 2_000_000)
+        {
             throw new StudioXException("AI_SETTINGS", "AI 模型或超时设置无效。");
+        }
         _ = CompletionUri(settings);
     }
 
@@ -42,9 +39,13 @@ public sealed class AiSettingsService(string dataDirectory)
     public static int? EffectiveContextWindowTokens(AiSettings settings)
     {
         if (settings.ContextWindowTokens is { } configured)
+        {
             return configured;
+        }
         if (!SupportsReasoningEffort(settings))
+        {
             return null;
+        }
         return settings.Model is "deepseek-flash" or "deepseek-v4-pro" ? 1_000_000 : null;
     }
 
@@ -56,7 +57,9 @@ public sealed class AiSettingsService(string dataDirectory)
             baseUri.Scheme != Uri.UriSchemeHttps ||
             !string.IsNullOrEmpty(baseUri.UserInfo) || !string.IsNullOrEmpty(baseUri.Query) ||
             !string.IsNullOrEmpty(baseUri.Fragment))
+        {
             throw new StudioXException("AI_ENDPOINT", "AI API 地址必须是无账号、查询参数和片段的 HTTPS 基础地址。");
+        }
         return new Uri(baseUri.AbsoluteUri.TrimEnd('/') + "/chat/completions", UriKind.Absolute);
     }
 }

@@ -7,15 +7,6 @@ using System.Text.RegularExpressions;
 using StudioX.Foundation;
 using StudioX.Packages;
 
-public sealed record RemotePackSyncFailure(string Path, string Message);
-public sealed record RemotePackSyncResult(string CommitSha, int Imported, int Skipped,
-    IReadOnlyList<RemotePackSyncFailure> Failures);
-public sealed record RemotePackSyncProgress(int Total, int Processed, string? CurrentPath,
-    string Stage, int Imported, int Skipped, int Failed);
-public sealed record RemotePackUpdate(string Id, string Version, string? InstalledVersion, string Path);
-public sealed record RemotePackCheckResult(string CommitSha, int UpToDate,
-    IReadOnlyList<RemotePackUpdate> Updates);
-
 /// <summary>从固定的公开 GitHub 仓库下载器件包；同一轮始终使用同一个提交快照。</summary>
 public sealed class GitHubPackSyncService : IDisposable
 {
@@ -41,12 +32,18 @@ public sealed class GitHubPackSyncService : IDisposable
             Timeout = System.Threading.Timeout.InfiniteTimeSpan
         };
         ownsClient = client is null;
-        if (ownsClient) this.client.Timeout = Timeout.InfiniteTimeSpan;
+        if (ownsClient)
+        {
+            this.client.Timeout = Timeout.InfiniteTimeSpan;
+        }
     }
 
     public void Dispose()
     {
-        if (ownsClient) client.Dispose();
+        if (ownsClient)
+        {
+            client.Dispose();
+        }
         syncGate.Dispose();
     }
 
@@ -66,9 +63,13 @@ public sealed class GitHubPackSyncService : IDisposable
                 token.ThrowIfCancellationRequested();
                 installed.TryGetValue(entry.Id, out var localVersion);
                 if (localVersion is not null && CompareVersions(localVersion, entry.Version) >= 0)
+                {
                     upToDate++;
+                }
                 else
+                {
                     updates.Add(new(entry.Id, entry.Version, localVersion, entry.Path));
+                }
             }
             return new(commit, upToDate, updates);
         }
@@ -113,7 +114,9 @@ public sealed class GitHubPackSyncService : IDisposable
                     progress?.Report(new(latest.Length, processed, entry.Path, "校验并导入", imported, skipped, failures.Count));
                     var pack = await packs.ImportAsync(temporary, cancellationToken);
                     if (pack.Manifest.Id != entry.Id || pack.Manifest.Version != entry.Version)
+                    {
                         throw new StudioXException("PACK_REMOTE_ID", "导入后器件包身份与 GitHub 目录不一致。");
+                    }
                     installed[entry.Id] = entry.Version;
                     imported++;
                     processed++;
@@ -134,7 +137,10 @@ public sealed class GitHubPackSyncService : IDisposable
                 }
                 finally
                 {
-                    if (File.Exists(temporary)) File.Delete(temporary);
+                    if (File.Exists(temporary))
+                    {
+                        File.Delete(temporary);
+                    }
                 }
             }
             return new(commit, imported, skipped, failures);
@@ -165,7 +171,9 @@ public sealed class GitHubPackSyncService : IDisposable
         if (root.ValueKind != JsonValueKind.Object || !root.TryGetProperty("sha", out var value) ||
             value.ValueKind != JsonValueKind.String || value.GetString() is not { } sha ||
             !Regex.IsMatch(sha, "\\A[0-9a-fA-F]{40}\\z", RegexOptions.CultureInvariant))
+        {
             throw new StudioXException("PACK_REMOTE_COMMIT", "GitHub 没有返回有效的仓库提交哈希。");
+        }
         return sha.ToLowerInvariant();
     }
 
@@ -173,10 +181,15 @@ public sealed class GitHubPackSyncService : IDisposable
     {
         var bytes = await ReadMetadataAsync(RawUri(commit, "index.json"), "器件包目录", token);
         RemotePackIndex? index;
-        try { index = JsonSerializer.Deserialize<RemotePackIndex>(bytes, JsonStore.Options); }
+        try
+        {
+            index = JsonSerializer.Deserialize<RemotePackIndex>(bytes, JsonStore.Options);
+        }
         catch (JsonException ex) { throw new StudioXException("PACK_REMOTE_INDEX", "GitHub 器件包目录不是有效 JSON：" + ex.Message); }
         if (index is not { FormatVersion: 1, Packs: { Count: > 0 and <= 4096 } })
+        {
             throw new StudioXException("PACK_REMOTE_INDEX", "GitHub 器件包目录格式或包数量无效。");
+        }
 
         var paths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var identities = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -189,7 +202,9 @@ public sealed class GitHubPackSyncService : IDisposable
                 entry.Sha256.Length != 64 || !entry.Sha256.All(Uri.IsHexDigit) ||
                 entry.Size is <= 0 or > MaximumArchiveBytes ||
                 !paths.Add(entry.Path) || !identities.Add(entry.Id + "\n" + entry.Version))
+            {
                 throw new StudioXException("PACK_REMOTE_INDEX", "GitHub 器件包目录含无效或重复的路径、身份、大小或哈希。");
+            }
             PackValidator.Token(entry.Id);
             PackValidator.Version(entry.Version);
         }
@@ -206,9 +221,13 @@ public sealed class GitHubPackSyncService : IDisposable
             request.Headers.UserAgent.ParseAdd("MCU-StudioX/0.2");
             using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, timeout.Token);
             if (!response.IsSuccessStatusCode)
+            {
                 throw new StudioXException("PACK_REMOTE_HTTP", $"读取{description}失败（HTTP {(int)response.StatusCode}）。");
+            }
             if (response.Content.Headers.ContentLength is > MaximumMetadataBytes)
+            {
                 throw new StudioXException("PACK_REMOTE_LIMIT", $"{description}超过大小限制。");
+            }
             await using var stream = await response.Content.ReadAsStreamAsync(timeout.Token);
             using var output = new MemoryStream();
             var buffer = new byte[65536];
@@ -216,13 +235,17 @@ public sealed class GitHubPackSyncService : IDisposable
             while ((count = await stream.ReadAsync(buffer, timeout.Token)) > 0)
             {
                 if (output.Length + count > MaximumMetadataBytes)
+                {
                     throw new StudioXException("PACK_REMOTE_LIMIT", $"{description}超过大小限制。");
+                }
                 output.Write(buffer, 0, count);
             }
             return output.ToArray();
         }
         catch (OperationCanceledException) when (!token.IsCancellationRequested)
-        { throw new StudioXException("PACK_REMOTE_TIMEOUT", $"读取{description}超时。"); }
+        {
+            throw new StudioXException("PACK_REMOTE_TIMEOUT", $"读取{description}超时。");
+        }
     }
 
     private async Task DownloadAsync(string commit, RemotePackIndexEntry entry, string target, CancellationToken token)
@@ -233,9 +256,13 @@ public sealed class GitHubPackSyncService : IDisposable
         request.Headers.UserAgent.ParseAdd("MCU-StudioX/0.2");
         using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, timeout.Token);
         if (!response.IsSuccessStatusCode)
+        {
             throw new StudioXException("PACK_REMOTE_HTTP", $"下载器件包失败（HTTP {(int)response.StatusCode}）。");
+        }
         if (response.Content.Headers.ContentLength is { } length && length != entry.Size)
+        {
             throw new StudioXException("PACK_REMOTE_SIZE", "器件包响应长度与 GitHub 目录不一致。");
+        }
 
         await using var source = await response.Content.ReadAsStreamAsync(timeout.Token);
         await using var destination = new FileStream(target, FileMode.CreateNew, FileAccess.Write, FileShare.None);
@@ -247,12 +274,16 @@ public sealed class GitHubPackSyncService : IDisposable
         {
             written += count;
             if (written > entry.Size || written > MaximumArchiveBytes)
+            {
                 throw new StudioXException("PACK_REMOTE_SIZE", "器件包下载长度超过 GitHub 目录声明。");
+            }
             hash.AppendData(buffer, 0, count);
             await destination.WriteAsync(buffer.AsMemory(0, count), timeout.Token);
         }
         if (written != entry.Size || !Convert.ToHexString(hash.GetHashAndReset()).Equals(entry.Sha256, StringComparison.OrdinalIgnoreCase))
+        {
             throw new StudioXException("PACK_REMOTE_HASH", "器件包 SHA-256 与 GitHub 目录不一致。");
+        }
     }
 
     private static async Task CheckManifestIdentityAsync(string archive, RemotePackIndexEntry entry, CancellationToken token)
@@ -262,7 +293,9 @@ public sealed class GitHubPackSyncService : IDisposable
         var manifestEntry = zip.GetEntry("manifest.json")
             ?? throw new StudioXException("PACK_REMOTE_ID", "下载的器件包缺少清单。");
         if (manifestEntry.Length > MaximumMetadataBytes)
+        {
             throw new StudioXException("PACK_REMOTE_LIMIT", "下载的器件包清单过大。");
+        }
         await using var source = manifestEntry.Open();
         using var bytes = new MemoryStream();
         var buffer = new byte[16384];
@@ -270,13 +303,17 @@ public sealed class GitHubPackSyncService : IDisposable
         while ((count = await source.ReadAsync(buffer, token)) > 0)
         {
             if (bytes.Length + count > MaximumMetadataBytes)
+            {
                 throw new StudioXException("PACK_REMOTE_LIMIT", "下载的器件包清单解压后过大。");
+            }
             bytes.Write(buffer, 0, count);
         }
         var manifest = JsonSerializer.Deserialize<PackManifest>(bytes.ToArray(), JsonStore.Options)
             ?? throw new StudioXException("PACK_REMOTE_ID", "下载的器件包清单无效。");
         if (manifest.Id != entry.Id || manifest.Version != entry.Version)
+        {
             throw new StudioXException("PACK_REMOTE_ID", "器件包清单的 ID/版本与 GitHub 目录不一致。");
+        }
     }
 
     private static Uri RawUri(string commit, string path) =>

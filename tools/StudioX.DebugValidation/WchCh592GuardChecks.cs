@@ -8,14 +8,18 @@ internal static class WchCh592GuardChecks
     {
         if (device.FlashBytes != 448 * 1024 || device.RamBytes != 26 * 1024 ||
             device.OpenOcd?.ApplicationFlashBytes != 448 * 1024)
+        {
             throw new InvalidOperationException("CH592 Code Flash and SRAM ranges must match the vendor SDK");
+        }
         var operation = plan.Arguments[^1];
         var interfaceFile = Path.Combine(project, "device/interface/wch-link.cfg");
         if (operation.IndexOf("studiox_check_target", StringComparison.Ordinal) < 0 ||
             operation.IndexOf("studiox_check_target", StringComparison.Ordinal) >= operation.IndexOf("flash write_image", StringComparison.Ordinal) ||
             !operation.Contains("reset halt; resume", StringComparison.Ordinal) ||
             !File.ReadAllText(interfaceFile).Contains("page_erase", StringComparison.Ordinal))
+        {
             throw new InvalidOperationException("CH592 requires guarded page programming and explicit resume");
+        }
 
         // 执行包内真实 Tcl；模拟寄存器读取且 OpenOCD noinit，绝不访问 USB 或目标板。
         var script = "set fake_chip 0x92; set fake_cfg 0x11; set fake_read_error 0; " +
@@ -34,7 +38,9 @@ internal static class WchCh592GuardChecks
             project, TimeSpan.FromSeconds(15), ToolsetEnvironment.Create(plan.Tools), RemoveEnvironment: ToolsetEnvironment.AmbientVariables));
         await File.WriteAllTextAsync(Path.Combine(project, "ch592-guards.log"), dry.StandardOutput + dry.StandardError);
         if (!dry.Success || !(dry.StandardOutput + dry.StandardError).Contains("STUDIOX_CH592_GUARDS_OK", StringComparison.Ordinal))
+        {
             throw new InvalidOperationException(dry.StandardOutput + dry.StandardError);
+        }
 
         var config = plan.Configuration;
         foreach (var invalid in new[]

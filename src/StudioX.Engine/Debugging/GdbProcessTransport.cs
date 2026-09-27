@@ -29,14 +29,23 @@ public sealed class GdbProcessTransport : IGdbMiTransport
     private GdbProcessTransport(string logPath)
     {
         lease = ProbeLease.Acquire();
-        try { job = new(); log = new(logPath, false, new UTF8Encoding(false)) { AutoFlush = true }; }
+        try
+        {
+            job = new();
+            log = new(logPath, false, new UTF8Encoding(false))
+            {
+                AutoFlush = true
+            };
+        }
         catch { job?.Dispose(); lease.Dispose(); throw; }
     }
     public static async Task<(GdbProcessTransport Transport, OpenOcdDebugPlan Plan)> StartAsync(HardwareDebugPreparation preparation, CancellationToken token)
     {
         // 只连接本次进程实际声明成功监听的端口，绝不复用已运行的未知 GDB server。
-        var listener = new TcpListener(IPAddress.Loopback, 0); listener.Start();
-        var port = ((IPEndPoint)listener.LocalEndpoint).Port; listener.Stop();
+        var listener = new TcpListener(IPAddress.Loopback, 0);
+        listener.Start();
+        var port = ((IPEndPoint)listener.LocalEndpoint).Port;
+        listener.Stop();
         var plan = OpenOcdDebugPlanner.Create(preparation.ProjectDirectory, preparation.Configuration, preparation.Tools, preparation.Elf, port);
         var transport = new GdbProcessTransport(preparation.LogPath);
         try
@@ -58,17 +67,36 @@ public sealed class GdbProcessTransport : IGdbMiTransport
     {
         var start = new ProcessStartInfo(executable)
         {
-            WorkingDirectory = preparation.ProjectDirectory, UseShellExecute = false, CreateNoWindow = true,
-            RedirectStandardInput = true, RedirectStandardOutput = true, RedirectStandardError = true,
-            StandardInputEncoding = new UTF8Encoding(false), StandardOutputEncoding = Encoding.UTF8, StandardErrorEncoding = Encoding.UTF8
+            WorkingDirectory = preparation.ProjectDirectory,
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            RedirectStandardInput = true,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            StandardInputEncoding = new UTF8Encoding(false),
+            StandardOutputEncoding = Encoding.UTF8,
+            StandardErrorEncoding = Encoding.UTF8
         };
-        foreach (var argument in arguments) start.ArgumentList.Add(argument);
-        foreach (var name in ToolsetEnvironment.AmbientVariables) start.Environment.Remove(name);
-        foreach (var (name, value) in ToolsetEnvironment.Create(preparation.Tools)) start.Environment[name] = value;
+        foreach (var argument in arguments)
+        {
+            start.ArgumentList.Add(argument);
+        }
+        foreach (var name in ToolsetEnvironment.AmbientVariables)
+        {
+            start.Environment.Remove(name);
+        }
+        foreach (var (name, value) in ToolsetEnvironment.Create(preparation.Tools))
+        {
+            start.Environment[name] = value;
+        }
         var process = Process.Start(start) ?? throw new StudioXException("DEBUG_PROCESS", "无法启动 " + executable);
-        try { job.Add(process); }
-        catch { try { if (!process.HasExited) process.Kill(true); } finally { process.Dispose(); } throw; }
-        WriteLog($"START {process.Id}: {executable}"); return process;
+        try
+        {
+            job.Add(process);
+        }
+        catch { try { if (!process.HasExited) { process.Kill(true); } } finally { process.Dispose(); } throw; }
+        WriteLog($"START {process.Id}: {executable}");
+        return process;
     }
     private async Task DrainAsync(StreamReader stream, string channel, int port)
     {
@@ -76,16 +104,48 @@ public sealed class GdbProcessTransport : IGdbMiTransport
         {
             while (await stream.ReadLineAsync() is { } line)
             {
-                if (line.Length > 1024 * 1024) throw new IOException("调试器输出记录过长。");
+                if (line.Length > 1024 * 1024)
+                {
+                    throw new IOException("调试器输出记录过长。");
+                }
                 WriteLog(channel + " < " + line);
-                if (channel == "OpenOCD" && line.Contains($"Listening on port {port} for gdb connections", StringComparison.Ordinal)) ready.TrySetResult();
-                if (channel == "OpenOCD" && line.Contains("STUDIOX_DETACHED_RUNNING", StringComparison.Ordinal)) detached.TrySetResult();
-                if (channel != "GDB") { RecordReceived?.Invoke("&" + MiRecord.Quote(channel + ": " + line)); continue; }
-                if (line.Length == 0 || line.Trim() == "(gdb)") continue;
+                if (channel == "OpenOCD" && line.Contains($"Listening on port {port} for gdb connections", StringComparison.Ordinal))
+                {
+                    ready.TrySetResult();
+                }
+                if (channel == "OpenOCD" && line.Contains("STUDIOX_DETACHED_RUNNING", StringComparison.Ordinal))
+                {
+                    detached.TrySetResult();
+                }
+                if (channel != "GDB")
+                {
+                    RecordReceived?.Invoke("&" + MiRecord.Quote(channel + ": " + line));
+                    continue;
+                }
+                if (line.Length == 0 || line.Trim() == "(gdb)")
+                {
+                    continue;
+                }
                 var record = MiRecord.Parse(line);
-                if (record.Kind == '*') { if (record.Class == "running") targetRunning = true; else if (record.Class == "stopped") targetRunning = false; }
-                if (record.Kind == '^' && record.Token is { } id && pending.TryRemove(id, out var completion)) completion.TrySetResult(line);
-                else RecordReceived?.Invoke(line);
+                if (record.Kind == '*')
+                {
+                    if (record.Class == "running")
+                    {
+                        targetRunning = true;
+                    }
+                    else if (record.Class == "stopped")
+                    {
+                        targetRunning = false;
+                    }
+                }
+                if (record.Kind == '^' && record.Token is { } id && pending.TryRemove(id, out var completion))
+                {
+                    completion.TrySetResult(line);
+                }
+                else
+                {
+                    RecordReceived?.Invoke(line);
+                }
             }
         }
         catch (Exception ex) { Fail(ex); }
@@ -93,44 +153,83 @@ public sealed class GdbProcessTransport : IGdbMiTransport
     private async Task ObserveExitAsync(Process process, string name)
     {
         await process.WaitForExitAsync();
-        if (!closing) Fail(new StudioXException("DEBUG_PROCESS_EXIT", $"{name} 意外退出，退出代码：{process.ExitCode}。请查看调试日志。"));
+        if (!closing)
+        {
+            Fail(new StudioXException("DEBUG_PROCESS_EXIT", $"{name} 意外退出，退出代码：{process.ExitCode}。请查看调试日志。"));
+        }
     }
     private void Fail(Exception exception)
     {
-        if (closing || Interlocked.Exchange(ref faulted, 1) != 0) return;
-        WriteLog(exception.ToString()); ready.TrySetException(exception);
-        foreach (var (id, item) in pending) if (pending.TryRemove(id, out _)) item.TrySetException(exception);
+        if (closing || Interlocked.Exchange(ref faulted, 1) != 0)
+        {
+            return;
+        }
+        WriteLog(exception.ToString());
+        ready.TrySetException(exception);
+        foreach (var (id, item) in pending)
+        {
+            if (pending.TryRemove(id, out _))
+            {
+                item.TrySetException(exception);
+            }
+        }
         RecordReceived?.Invoke("=studiox-transport-error,msg=" + MiRecord.Quote(exception.Message));
     }
     public async Task<string> ExecuteAsync(string command, CancellationToken token = default)
     {
         ObjectDisposedException.ThrowIf(disposed != 0, this);
-        if (faulted != 0 || gdb is null || gdb.HasExited) throw new StudioXException("DEBUG_DISCONNECTED", "调试器已断开，请结束会话后重新连接。");
+        if (faulted != 0 || gdb is null || gdb.HasExited)
+        {
+            throw new StudioXException("DEBUG_DISCONNECTED", "调试器已断开，请结束会话后重新连接。");
+        }
         var separator = command.IndexOf('-');
         if (separator <= 0 || !int.TryParse(command.AsSpan(0, separator), NumberStyles.None, CultureInfo.InvariantCulture, out var id) || command.Contains('\n') || command.Contains('\r'))
+        {
             throw new ArgumentException("Invalid MI command.");
+        }
         var completion = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
-        if (!pending.TryAdd(id, completion)) throw new InvalidOperationException("Duplicate MI token.");
+        if (!pending.TryAdd(id, completion))
+        {
+            throw new InvalidOperationException("Duplicate MI token.");
+        }
         try
         {
             await writes.WaitAsync(token);
-            try { WriteLog("GDB > " + command); await gdb.StandardInput.WriteLineAsync(command.AsMemory(), token); await gdb.StandardInput.FlushAsync(token); }
+            try
+            {
+                WriteLog("GDB > " + command);
+                await gdb.StandardInput.WriteLineAsync(command.AsMemory(), token);
+                await gdb.StandardInput.FlushAsync(token);
+            }
             finally { writes.Release(); }
             var result = await completion.Task.WaitAsync(TimeSpan.FromSeconds(20), token);
-            if (command.Contains("-target-select ", StringComparison.Ordinal) && MiRecord.Parse(result).Class == "connected") targetConnected = true;
+            if (command.Contains("-target-select ", StringComparison.Ordinal) && MiRecord.Parse(result).Class == "connected")
+            {
+                targetConnected = true;
+            }
             return result;
         }
         catch (Exception ex) when (ex is TimeoutException or OperationCanceledException or IOException)
-        { Fail(ex); throw; }
+        {
+            Fail(ex);
+            throw;
+        }
         finally { pending.TryRemove(id, out _); }
     }
     private void WriteLog(string text)
     {
         lock (logSync)
         {
-            if (logCharacters > 20 * 1024 * 1024) return;
-            log.WriteLine($"[{DateTimeOffset.Now:O}] {text}"); logCharacters += text.Length;
-            if (logCharacters > 20 * 1024 * 1024) log.WriteLine("[会话日志达到 20 MiB，后续记录省略]");
+            if (logCharacters > 20 * 1024 * 1024)
+            {
+                return;
+            }
+            log.WriteLine($"[{DateTimeOffset.Now:O}] {text}");
+            logCharacters += text.Length;
+            if (logCharacters > 20 * 1024 * 1024)
+            {
+                log.WriteLine("[会话日志达到 20 MiB，后续记录省略]");
+            }
         }
     }
     public async ValueTask DisposeAsync()
@@ -146,7 +245,10 @@ public sealed class GdbProcessTransport : IGdbMiTransport
                 if (targetRunning)
                 {
                     CheckResponse(await ExecuteAsync("2000000000-exec-interrupt --all", timeout.Token));
-                    while (targetRunning) await Task.Delay(20, timeout.Token);
+                    while (targetRunning)
+                    {
+                        await Task.Delay(20, timeout.Token);
+                    }
                 }
                 CheckResponse(await ExecuteAsync("2000000001-break-delete", timeout.Token));
                 CheckResponse(await ExecuteAsync("2000000002-target-detach", timeout.Token));
@@ -157,29 +259,54 @@ public sealed class GdbProcessTransport : IGdbMiTransport
             }
             catch (Exception ex) { detachFailure = ex; WriteLog("结束会话未能确认目标恢复运行：" + ex.Message); }
         }
-        if (Interlocked.Exchange(ref disposed, 1) != 0) return;
+        if (Interlocked.Exchange(ref disposed, 1) != 0)
+        {
+            return;
+        }
         closing = true;
-        foreach (var (_, item) in pending) item.TrySetException(new StudioXException("DEBUG_DISCONNECTED", "调试会话已关闭。"));
+        foreach (var (_, item) in pending)
+        {
+            item.TrySetException(new StudioXException("DEBUG_DISCONNECTED", "调试会话已关闭。"));
+        }
         // 正常断开由应用层发送 detach；异常时只回收本会话拥有的进程，不附加复位/烧录动作。
         try
         {
             foreach (var process in new[] { gdb, openocd })
+            {
                 if (process is not null)
-                    try { if (!process.HasExited) process.Kill(true); }
+                {
+                    try
+                    {
+                        if (!process.HasExited)
+                        {
+                            process.Kill(true);
+                        }
+                    }
                     catch (InvalidOperationException) { }
                     catch (System.ComponentModel.Win32Exception ex) { WriteLog("进程回收失败，交由作业对象清理：" + ex.Message); }
+                }
+            }
         }
         finally
         {
             job.Dispose();
-            try { await Task.WhenAll(readers); }
-            finally { gdb?.Dispose(); openocd?.Dispose(); try { lock (logSync) log.Dispose(); } finally { lease.Dispose(); } }
+            try
+            {
+                await Task.WhenAll(readers);
+            }
+            finally { gdb?.Dispose(); openocd?.Dispose(); try { lock (logSync) { log.Dispose(); } } finally { lease.Dispose(); } }
         }
-        if (detachFailure is not null) throw new StudioXException("DEBUG_DETACH", "调试进程和探针已释放，但未确认芯片恢复运行。请查看会话日志后重新连接。", detachFailure);
+        if (detachFailure is not null)
+        {
+            throw new StudioXException("DEBUG_DETACH", "调试进程和探针已释放，但未确认芯片恢复运行。请查看会话日志后重新连接。", detachFailure);
+        }
     }
     private static void CheckResponse(string text)
     {
         var record = MiRecord.Parse(text);
-        if (record.Class == "error") throw new StudioXException("GDB_COMMAND", record.Data.String("msg"));
+        if (record.Class == "error")
+        {
+            throw new StudioXException("GDB_COMMAND", record.Data.String("msg"));
+        }
     }
 }

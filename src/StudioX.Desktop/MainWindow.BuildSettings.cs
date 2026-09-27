@@ -1,8 +1,8 @@
 namespace StudioX.Desktop;
 
+using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
-using System.Globalization;
 using StudioX.Engine;
 using StudioX.Foundation;
 
@@ -59,17 +59,29 @@ public partial class MainWindow
             BuildOptimizationPicker.SelectedValue is CompilerOptimization optimization ? optimization : CompilerOptimization.ProjectDefault,
             DebugInfo: !IsStcSdccProject && BuildDebugInfoPicker.SelectedValue is CompilerDebugInfo debug ? debug : CompilerDebugInfo.ProjectDefault);
         error = "";
-        if (!IsStcSdccProject || StcCodeRomSizeBox is null) return true;
+        if (!IsStcSdccProject || StcCodeRomSizeBox is null)
+        {
+            return true;
+        }
         var text = StcCodeRomSizeBox.Text.Trim();
-        if (text.Length == 0) return true;
+        if (text.Length == 0)
+        {
+            return true;
+        }
         if (!int.TryParse(text, NumberStyles.None, CultureInfo.InvariantCulture, out var bytes))
         {
             error = "程序 Flash 容量上限请输入正整数字节数，或留空使用器件包默认值。";
             return false;
         }
-        try { stcCodeRomLimit?.Validate(bytes); }
+        try
+        {
+            stcCodeRomLimit?.Validate(bytes);
+        }
         catch (StudioXException ex) { error = ex.Message; return false; }
-        settings = settings with { CodeRomSizeBytes = bytes };
+        settings = settings with
+        {
+            CodeRomSizeBytes = bytes
+        };
         return true;
     }
 
@@ -94,28 +106,40 @@ public partial class MainWindow
 
     private void BuildSettings_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (BuildSettingsSummary is null) return;
+        if (BuildSettingsSummary is null)
+        {
+            return;
+        }
         UpdateBuildSettingsControls();
         UpdateBuildSettingsDirtyStatus();
     }
 
     private void StcCodeRomSize_TextChanged(object sender, TextChangedEventArgs e)
     {
-        if (BuildSettingsSummary is null) return;
+        if (BuildSettingsSummary is null)
+        {
+            return;
+        }
         UpdateBuildSettingsControls();
         UpdateBuildSettingsDirtyStatus();
     }
 
     private void UpdateBuildSettingsDirtyStatus()
     {
-        if (applyingBuildSettings || loadedBuildSettings is null) return;
+        if (applyingBuildSettings || loadedBuildSettings is null)
+        {
+            return;
+        }
         BuildSettingsStatus.Text = !TrySelectedBuildSettings(out var settings, out var error) ? error
             : settings == loadedBuildSettings ? "参数与已保存配置一致。" : "参数尚未保存。";
     }
 
     private void UpdateBuildSettingsControls()
     {
-        if (BuildSettingsEditor is null) return;
+        if (BuildSettingsEditor is null)
+        {
+            return;
+        }
         var enabled = projectDirectory is not null && loadedBuildSettings is not null && !projectActionsBusy && !services.Debugger.IsActive;
         BuildSettingsEditor.IsEnabled = enabled;
         if (!TrySelectedBuildSettings(out var selected, out var error))
@@ -141,7 +165,10 @@ public partial class MainWindow
         EnsureNoActiveDebug();
         var directory = RequireProject();
         if (!TrySelectedBuildSettings(out var settings, out var error))
-        { BuildSettingsStatus.Text = error; return; }
+        {
+            BuildSettingsStatus.Text = error;
+            return;
+        }
         await services.Builds.SaveSettingsAsync(directory, settings, token);
         loadedBuildSettings = settings;
         BuildMemory.SetMessage("编译参数已修改，重新编译后更新占用。");

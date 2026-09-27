@@ -35,7 +35,10 @@ internal sealed class EditorGlowLayer : FrameworkElement
 
     protected override void OnRender(DrawingContext drawingContext)
     {
-        if (!view.VisualLinesValid) return;
+        if (!view.VisualLinesValid)
+        {
+            return;
+        }
         // 复用编辑器已经排版的可见行，自动保持语法颜色、字号、缩进与滚动位置一致。
         foreach (var line in view.VisualLines)
         {

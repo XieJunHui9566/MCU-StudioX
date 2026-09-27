@@ -11,8 +11,12 @@ internal static class WindowMonitor
         monitor = work = Rect.Empty;
         var info = new MonitorInfo { Size = Marshal.SizeOf<MonitorInfo>() };
         var handle = MonitorFromWindow(window, 2); // MONITOR_DEFAULTTONEAREST：兼容副屏和负坐标。
-        if (handle == 0 || !GetMonitorInfo(handle, ref info)) return false;
-        monitor = info.Monitor.ToRect(); work = info.Work.ToRect();
+        if (handle == 0 || !GetMonitorInfo(handle, ref info))
+        {
+            return false;
+        }
+        monitor = info.Monitor.ToRect();
+        work = info.Work.ToRect();
         return true;
     }
 

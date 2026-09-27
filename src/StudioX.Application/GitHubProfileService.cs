@@ -6,9 +6,6 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using StudioX.Engine;
 
-/// <summary>已授权 GitHub.com 账号的显示资料。头像缺失不影响登录名展示。</summary>
-public sealed record GitHubUserProfile(string Login, string? Name, byte[]? AvatarBytes);
-
 /// <summary>从 GitHub 读取当前 OAuth 身份及头像，不将令牌交给桌面视图。</summary>
 public sealed class GitHubProfileService : IDisposable
 {
@@ -33,18 +30,31 @@ public sealed class GitHubProfileService : IDisposable
             UseCookies = false
         });
         ownsClient = client is null;
-        if (ownsClient) this.client.Timeout = TimeSpan.FromSeconds(30);
+        if (ownsClient)
+        {
+            this.client.Timeout = TimeSpan.FromSeconds(30);
+        }
     }
 
-    public void Dispose() { if (ownsClient) client.Dispose(); }
+    public void Dispose()
+    {
+        if (ownsClient)
+        {
+            client.Dispose();
+        }
+    }
 
     public async Task<GitHubUserProfile> GetProfileAsync(string account, CancellationToken token = default)
     {
         if (string.IsNullOrWhiteSpace(account))
+        {
             throw new ArgumentException("请先选择 GitHub 账号。", nameof(account));
+        }
         var credential = await tokenProvider(account, token);
         if (string.IsNullOrWhiteSpace(credential) || credential.Contains('\r') || credential.Contains('\n'))
+        {
             throw new InvalidOperationException("GitHub 凭据不可用，请重新登录。");
+        }
 
         using var request = new HttpRequestMessage(HttpMethod.Get, UserUri);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", credential);
@@ -53,12 +63,14 @@ public sealed class GitHubProfileService : IDisposable
         request.Headers.UserAgent.ParseAdd("MCU-StudioX/0.2");
         using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, token);
         if (!response.IsSuccessStatusCode)
+        {
             throw new GitHubApiException(response.StatusCode, response.StatusCode switch
             {
                 HttpStatusCode.Unauthorized => "GitHub 登录已过期，请重新登录。",
                 HttpStatusCode.Forbidden => "GitHub 拒绝读取账号资料，请检查授权或网络限制。",
                 _ => $"读取 GitHub 账号资料失败（HTTP {(int)response.StatusCode}）。"
             });
+        }
 
         var json = await ReadBoundedAsync(response.Content, ProfileLimit, token);
         using var document = JsonDocument.Parse(json);
@@ -66,9 +78,13 @@ public sealed class GitHubProfileService : IDisposable
         var login = ReadOptionalString(root, "login");
         if (string.IsNullOrWhiteSpace(login)
             || !Regex.IsMatch(login, "\\A[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?\\z", RegexOptions.CultureInvariant))
+        {
             throw new InvalidDataException("GitHub 未返回有效的账号名称。");
+        }
         if (!string.Equals(login, account, StringComparison.OrdinalIgnoreCase))
+        {
             throw new InvalidDataException("GitHub 授权身份与选定账号不一致，请重新选择或登录账号。");
+        }
 
         var name = ReadOptionalString(root, "name");
         var avatar = await TryReadAvatarAsync(ReadOptionalString(root, "avatar_url"), token);
@@ -77,7 +93,10 @@ public sealed class GitHubProfileService : IDisposable
 
     private async Task<byte[]?> TryReadAvatarAsync(string? url, CancellationToken token)
     {
-        if (!Uri.TryCreate(url, UriKind.Absolute, out var avatarUri) || !TrustedAvatarUri(avatarUri)) return null;
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var avatarUri) || !TrustedAvatarUri(avatarUri))
+        {
+            return null;
+        }
         try
         {
             using var request = new HttpRequestMessage(HttpMethod.Get, avatarUri);
@@ -85,9 +104,15 @@ public sealed class GitHubProfileService : IDisposable
             request.Headers.UserAgent.ParseAdd("MCU-StudioX/0.2");
             // 头像是公开资源；此请求绝不附带 OAuth token，也不跟随重定向。
             using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, token);
-            if (!response.IsSuccessStatusCode) return null;
+            if (!response.IsSuccessStatusCode)
+            {
+                return null;
+            }
             var mime = response.Content.Headers.ContentType?.MediaType;
-            if (mime is not ("image/png" or "image/jpeg" or "image/gif")) return null;
+            if (mime is not ("image/png" or "image/jpeg" or "image/gif"))
+            {
+                return null;
+            }
             var bytes = await ReadBoundedAsync(response.Content, AvatarLimit, token);
             return SupportedImage(bytes, mime) ? bytes : null;
         }
@@ -120,16 +145,23 @@ public sealed class GitHubProfileService : IDisposable
     private static async Task<byte[]> ReadBoundedAsync(HttpContent content, int maxBytes, CancellationToken token)
     {
         if (content.Headers.ContentLength > maxBytes)
+        {
             throw new InvalidDataException("GitHub 返回的数据超过允许大小。");
+        }
         await using var source = await content.ReadAsStreamAsync(token);
         using var buffer = new MemoryStream();
         var block = new byte[16 * 1024];
         while (true)
         {
             var read = await source.ReadAsync(block, token);
-            if (read == 0) break;
+            if (read == 0)
+            {
+                break;
+            }
             if (buffer.Length + read > maxBytes)
+            {
                 throw new InvalidDataException("GitHub 返回的数据超过允许大小。");
+            }
             buffer.Write(block, 0, read);
         }
         return buffer.ToArray();

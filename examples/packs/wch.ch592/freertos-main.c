@@ -2,6 +2,7 @@
 #include "FreeRTOS.h"
 #include "task.h"
 
+/* 各任务独立写自己的计数器；volatile 便于调试观察，不承担任务间同步。 */
 volatile uint32_t studiox_task_200ms_count;
 volatile uint32_t studiox_task_500ms_count;
 volatile uint32_t studiox_rtos_start_error;
@@ -41,5 +42,7 @@ int main(void)
         studiox_rtos_start_error = 2;
     }
     taskDISABLE_INTERRUPTS();
-    for (;;) { }
+    for (;;)
+    {
+    }
 }

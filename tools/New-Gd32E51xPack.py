@@ -18,7 +18,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 RECIPE = ROOT / "examples/packs/gigadevice.gd32e51x"
 LOCK = json.loads((RECIPE / "sources.json").read_text(encoding="utf-8"))
-SPEC = importlib.util.spec_from_file_location("studiox_gd32_common", ROOT / "tools/New-Gd32Packs.py")
+SPEC = importlib.util.spec_from_file_location(
+    "studiox_gd32_common", ROOT / "tools/New-Gd32Packs.py"
+)
 common = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(common)
 common.RECIPE = RECIPE
@@ -37,8 +39,12 @@ class E51Sdk(common.Sdk):
     def __init__(self, folder: Path):
         super().__init__("GD32E51x", folder)
         self.extra = {
-            "Firmware/CMSIS/cmsis_gcc.h": verified(folder / LOCK["cmsisGcc"]["file"], LOCK["cmsisGcc"]["sha256"]),
-            "Firmware/CMSIS/mpu_armv8.h": verified(folder / LOCK["cmsisMpu"]["file"], LOCK["cmsisMpu"]["sha256"]),
+            "Firmware/CMSIS/cmsis_gcc.h": verified(
+                folder / LOCK["cmsisGcc"]["file"], LOCK["cmsisGcc"]["sha256"]
+            ),
+            "Firmware/CMSIS/mpu_armv8.h": verified(
+                folder / LOCK["cmsisMpu"]["file"], LOCK["cmsisMpu"]["sha256"]
+            ),
         }
         self.entries.update({name: name for name in self.extra})
 
@@ -63,12 +69,18 @@ def extract_addon(folder: Path, target: Path) -> tuple[Path, Path]:
     verified(outer_archive, info["sha256"])
     outer = target / "outer"
     inner = target / "inner"
-    subprocess.run([seven_zip, "x", str(outer_archive), "-o" + str(outer), "-y"],
-                   check=True, stdout=subprocess.DEVNULL)
+    subprocess.run(
+        [seven_zip, "x", str(outer_archive), "-o" + str(outer), "-y"],
+        check=True,
+        stdout=subprocess.DEVNULL,
+    )
     inner_archive = outer / "GD32E51x_AddOn_v1.5.0.7z"
     verified(inner_archive, info["innerSha256"])
-    subprocess.run([seven_zip, "x", str(inner_archive), "-o" + str(inner), "-y"],
-                   check=True, stdout=subprocess.DEVNULL)
+    subprocess.run(
+        [seven_zip, "x", str(inner_archive), "-o" + str(inner), "-y"],
+        check=True,
+        stdout=subprocess.DEVNULL,
+    )
     addon = inner / "GD32E51x_AddOn_v1.5.0"
     pack = addon / "GigaDevice.GD32E51x_DFP.1.5.0.pack"
     verified(pack, info["packSha256"])
@@ -98,16 +110,22 @@ def main():
     with tempfile.TemporaryDirectory(prefix="studiox-gd32e51x-") as temp_name:
         pdsc, addon_license = extract_addon(sources, Path(temp_name))
         devices = list(common.pdsc_devices(pdsc))
-        devices = [d for d in devices if d["id"].startswith(("GD32E513", "GD32E515", "GD32E517", "GD32E518"))]
+        devices = [
+            d
+            for d in devices
+            if d["id"].startswith(("GD32E513", "GD32E515", "GD32E517", "GD32E518"))
+        ]
         if len(devices) != 20 or len({d["id"] for d in devices}) != 20:
             raise ValueError(f"Unexpected official DFP inventory: {len(devices)}")
         for device in devices:
-            device["defines"] = ["GD32E51X_HD" if device["id"].startswith("GD32E513") else "GD32E51X_CL",
-                                 "GD32E518" if device["id"].startswith("GD32E518") else "USE_STDPERIPH_DRIVER"]
+            device["defines"] = [
+                "GD32E51X_HD" if device["id"].startswith("GD32E513") else "GD32E51X_CL",
+                "GD32E518" if device["id"].startswith("GD32E518") else "USE_STDPERIPH_DRIVER",
+            ]
             if device["id"].startswith("GD32E518"):
                 device["defines"].append("USE_STDPERIPH_DRIVER")
-        # DFP 1.5.0 has a single erratum. The official E513xx Datasheet Rev1.6,
-        # table 2-1, specifies 128 KiB for every xE device, including ZE.
+        # DFP 1.5.0 此项容量有误；官方 E513xx 数据手册 Rev1.6 表 2-1
+        # 将包含 ZE 在内的所有 xE 器件列为 128 KiB。
         ze = next(d for d in devices if d["id"] == "GD32E513ZE")
         if ze["ram"] != 96 * 1024 or ze["flash"] != 512 * 1024:
             raise ValueError("E513ZE DFP erratum changed; re-review official datasheet")
@@ -124,39 +142,58 @@ def main():
     for device in manifest["devices"]:
         device["templates"][0]["id"] = "spl"
         device["templates"][0]["displayName"] = "标准外设库 · 内部时钟最小工程"
-        device["templates"].append({
-            "id": "cmsis", "displayName": "CMSIS · 内部时钟最小工程",
-            "description": "使用厂商 CMSIS 和内部 IRC8M，不操作任何板级引脚。",
-            "entryFile": "templates/cmsis.c"})
+        device["templates"].append(
+            {
+                "id": "cmsis",
+                "displayName": "CMSIS · 内部时钟最小工程",
+                "description": "使用厂商 CMSIS 和内部 IRC8M，不操作任何板级引脚。",
+                "entryFile": "templates/cmsis.c",
+            }
+        )
     manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
     (stage / "templates/main.c").write_text(
         '#include <stdint.h>\n#include "gd32e51x.h"\n#include "gd32e51x_rcu.h"\n'
         'volatile uint32_t app_counter;\nint main(void) { for (;;) { app_counter = rcu_clock_freq_get(CK_SYS); __NOP(); } }\n',
-        encoding="utf-8")
+        encoding="utf-8",
+    )
     (stage / "templates/cmsis.c").write_text(
         '#include <stdint.h>\n#include "gd32e51x.h"\n'
         'volatile uint32_t app_counter;\nint main(void) { for (;;) { app_counter = SystemCoreClock; __NOP(); } }\n',
-        encoding="utf-8")
+        encoding="utf-8",
+    )
     provenance_path = stage / "provenance.json"
     provenance = json.loads(provenance_path.read_text(encoding="utf-8"))
-    provenance.update(addonVersion=LOCK["addon"]["version"], addonSourceUrl=LOCK["addon"]["url"],
-        addonArchiveSha256=LOCK["addon"]["sha256"], addonInnerSha256=LOCK["addon"]["innerSha256"],
+    provenance.update(
+        addonVersion=LOCK["addon"]["version"],
+        addonSourceUrl=LOCK["addon"]["url"],
+        addonArchiveSha256=LOCK["addon"]["sha256"],
+        addonInnerSha256=LOCK["addon"]["innerSha256"],
         addonDfpPackSha256=LOCK["addon"]["packSha256"],
-        cmsisGccSource=LOCK["cmsisGcc"]["url"], cmsisGccSha256=LOCK["cmsisGcc"]["sha256"],
-        cmsisMpuSource=LOCK["cmsisMpu"]["url"], cmsisMpuSha256=LOCK["cmsisMpu"]["sha256"],
-        memoryCorrection={"device": "GD32E513ZE", "dfpRamBytes": 96 * 1024,
+        cmsisGccSource=LOCK["cmsisGcc"]["url"],
+        cmsisGccSha256=LOCK["cmsisGcc"]["sha256"],
+        cmsisMpuSource=LOCK["cmsisMpu"]["url"],
+        cmsisMpuSha256=LOCK["cmsisMpu"]["sha256"],
+        memoryCorrection={
+            "device": "GD32E513ZE",
+            "dfpRamBytes": 96 * 1024,
             "datasheetRamBytes": 128 * 1024,
             "datasheet": "https://www.gd32mcu.com/data/documents/datasheet/GD32E513xx_Datasheet_Rev1.6.pdf",
-            "table": "2-1"},
-        omittedDevices=["GD32EPRTRET6A", "GD32EPRTVET6A"])
-    provenance_path.write_text(json.dumps(provenance, ensure_ascii=False, indent=2), encoding="utf-8")
+            "table": "2-1",
+        },
+        omittedDevices=["GD32EPRTRET6A", "GD32EPRTVET6A"],
+    )
+    provenance_path.write_text(
+        json.dumps(provenance, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
     archive = output / result["file"]
     final_archive = archive.with_name(archive.stem + ".final.mcupack")
     subprocess.run(["dotnet", str(cli), "pack", str(stage), str(final_archive)], check=True)
     final_archive.replace(archive)
     result["sha256"] = common.sha256(archive)
     result["bytes"] = archive.stat().st_size
-    (output / "index.json").write_text(json.dumps([result], ensure_ascii=False, indent=2), encoding="utf-8")
+    (output / "index.json").write_text(
+        json.dumps([result], ensure_ascii=False, indent=2), encoding="utf-8"
+    )
     print(f"GD32E51x: {len(devices)} models, two templates, {result['sha256']}")
 
 

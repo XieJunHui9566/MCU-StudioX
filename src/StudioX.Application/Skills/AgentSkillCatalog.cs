@@ -4,16 +4,6 @@ using System.Text;
 using System.Text.Json;
 using StudioX.Foundation;
 
-public sealed record AgentSkillMetadata(string Name, string Description, string Scope);
-
-public sealed record AgentSkillDiscovery(
-    IReadOnlyList<AgentSkillMetadata> Skills,
-    IReadOnlyList<string> Diagnostics);
-
-public sealed record AgentSkillContent(string Name, string Scope, string Content);
-
-public sealed record AgentSkillResource(string Name, string Path, string Content);
-
 /// <summary>
 /// 只发现和读取 Agent Skills；技能文本不授予工具权限，也不会执行脚本。
 /// 每次读取重新验证目录及文件，避免缓存了已经被替换的技能路径。
@@ -36,12 +26,16 @@ public sealed class AgentSkillCatalog
         string? bundledSkillsRoot = null)
     {
         if (string.IsNullOrWhiteSpace(projectPath) || !Path.IsPathFullyQualified(projectPath))
+        {
             throw new StudioXException("SKILL_PROJECT", "技能目录需要绑定绝对路径的工程。");
+        }
 
         var project = Path.TrimEndingDirectorySeparator(Path.GetFullPath(projectPath));
         var userHome = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
         if (string.IsNullOrWhiteSpace(userHome) && userSkillsRoot is null)
+        {
             throw new StudioXException("SKILL_HOME", "无法找到当前用户的主目录。");
+        }
 
         this.projectSkillsRoot = projectSkillsRoot is null
             ? Path.Combine(project, ".agents", "skills")
@@ -71,7 +65,9 @@ public sealed class AgentSkillCatalog
         var content = ReadUtf8(path, MaxSkillBytes);
         var metadata = ParseMetadata(content, entry.Directory);
         if (metadata.Name != name)
+        {
             throw new StudioXException("SKILL_CHANGED", "技能元数据已变化，请重新发现技能。");
+        }
         return new(name, entry.Metadata.Scope, content);
     }
 
@@ -82,12 +78,16 @@ public sealed class AgentSkillCatalog
         if (string.IsNullOrWhiteSpace(relativePath) ||
             !relativePath.StartsWith("references/", StringComparison.Ordinal) ||
             relativePath.Length <= "references/".Length)
+        {
             throw new StudioXException("SKILL_REFERENCE", "技能资源路径必须位于 references/ 目录。");
+        }
 
         EnsureNoReparse(entry.Directory);
         var path = PathBoundary.Resolve(entry.Directory, relativePath);
         if (!File.Exists(path))
+        {
             throw new StudioXException("SKILL_REFERENCE_MISSING", "技能引用文件不存在。");
+        }
         var content = ReadUtf8(path, MaxReferenceBytes);
         return new(name, relativePath, content);
     }
@@ -95,10 +95,14 @@ public sealed class AgentSkillCatalog
     private SkillEntry FindEntry(string name)
     {
         if (!ValidName(name))
+        {
             throw new StudioXException("SKILL_NAME", "技能名称不符合 Agent Skills 规范。");
+        }
         var entries = DiscoverEntries(new List<string>());
         if (!entries.TryGetValue(name, out var entry))
+        {
             throw new StudioXException("SKILL_MISSING", $"未发现技能：{name}");
+        }
         return entry;
     }
 
@@ -106,11 +110,17 @@ public sealed class AgentSkillCatalog
     {
         var entries = new Dictionary<string, SkillEntry>(StringComparer.Ordinal);
         // 随程序发布的技能是默认值；用户技能与已启用的工程技能可按名称覆盖它们。
-        if (bundledSkillsRoot is not null) ReadScope(bundledSkillsRoot, "bundled", entries, diagnostics);
+        if (bundledSkillsRoot is not null)
+        {
+            ReadScope(bundledSkillsRoot, "bundled", entries, diagnostics);
+        }
         ReadScope(userSkillsRoot, "user", entries, diagnostics);
         // 同名项目技能覆盖用户技能，符合 Agent Skills 的工程级优先规则。
         // 工程内文件可来自不可信仓库；只有宿主显式信任后才纳入发现和读取。
-        if (includeProjectSkills) ReadScope(projectSkillsRoot, "project", entries, diagnostics);
+        if (includeProjectSkills)
+        {
+            ReadScope(projectSkillsRoot, "project", entries, diagnostics);
+        }
         return entries;
     }
 
@@ -119,7 +129,10 @@ public sealed class AgentSkillCatalog
     {
         try
         {
-            if (!Directory.Exists(root)) return;
+            if (!Directory.Exists(root))
+            {
+                return;
+            }
             EnsureNoReparse(root);
             var directories = Directory.EnumerateDirectories(root)
                 .Take(MaxDirectoriesPerScope + 1).ToArray();
@@ -140,7 +153,10 @@ public sealed class AgentSkillCatalog
                 {
                     EnsureNoReparse(directory);
                     var manifest = SafeSkillFile(directory);
-                    if (!File.Exists(manifest)) continue;
+                    if (!File.Exists(manifest))
+                    {
+                        continue;
+                    }
                     var content = ReadUtf8(manifest, MaxSkillBytes);
                     var metadata = ParseMetadata(content, directory);
                     entries[metadata.Name] = new(new(metadata.Name, metadata.Description, scope), directory);
@@ -162,7 +178,9 @@ public sealed class AgentSkillCatalog
         var lines = content.Replace("\r\n", "\n", StringComparison.Ordinal)
             .Replace('\r', '\n').Split('\n');
         if (lines.Length < 3 || lines[0] != "---")
+        {
             throw new StudioXException("SKILL_FRONTMATTER", "SKILL.md 必须以 YAML frontmatter 开始。");
+        }
 
         var closing = -1;
         var characters = 4;
@@ -170,7 +188,9 @@ public sealed class AgentSkillCatalog
         {
             characters += lines[index].Length + 1;
             if (characters > MaxFrontmatterChars)
+            {
                 throw new StudioXException("SKILL_FRONTMATTER", "技能 frontmatter 超过长度限制。");
+            }
             if (lines[index] == "---")
             {
                 closing = index;
@@ -178,18 +198,29 @@ public sealed class AgentSkillCatalog
             }
         }
         if (closing < 0)
+        {
             throw new StudioXException("SKILL_FRONTMATTER", "技能 frontmatter 没有结束标记。");
+        }
 
         string? name = null;
         string? description = null;
         for (var index = 1; index < closing; index++)
         {
             var line = lines[index];
-            if (line.Length == 0 || char.IsWhiteSpace(line[0]) || line.StartsWith('#')) continue;
+            if (line.Length == 0 || char.IsWhiteSpace(line[0]) || line.StartsWith('#'))
+            {
+                continue;
+            }
             var colon = line.IndexOf(':');
-            if (colon <= 0) continue;
+            if (colon <= 0)
+            {
+                continue;
+            }
             var key = line[..colon].Trim();
-            if (key is not ("name" or "description")) continue;
+            if (key is not ("name" or "description"))
+            {
+                continue;
+            }
             var scalar = line[(colon + 1)..].Trim();
             string value;
             if (scalar is "|" or "|-" or "|+" or ">" or ">-" or ">+")
@@ -203,21 +234,29 @@ public sealed class AgentSkillCatalog
             if (key == "name")
             {
                 if (name is not null)
+                {
                     throw new StudioXException("SKILL_FRONTMATTER", "技能名称重复定义。");
+                }
                 name = value;
             }
             else
             {
                 if (description is not null)
+                {
                     throw new StudioXException("SKILL_FRONTMATTER", "技能简介重复定义。");
+                }
                 description = value;
             }
         }
 
         if (!ValidName(name) || !string.Equals(name, Path.GetFileName(directory), StringComparison.Ordinal))
+        {
             throw new StudioXException("SKILL_NAME", "技能名称无效，或与目录名称不一致。");
+        }
         if (string.IsNullOrWhiteSpace(description) || description.Length > 1024)
+        {
             throw new StudioXException("SKILL_DESCRIPTION", "技能简介必须为 1 至 1024 个字符。");
+        }
         return new(name!, description, "");
     }
 
@@ -230,25 +269,43 @@ public sealed class AgentSkillCatalog
         {
             var line = lines[end];
             var whitespace = line.Length - line.TrimStart(' ', '\t').Length;
-            if (line.Length > whitespace && whitespace == 0) break;
-            if (line.Length > whitespace) indent = Math.Min(indent, whitespace);
+            if (line.Length > whitespace && whitespace == 0)
+            {
+                break;
+            }
+            if (line.Length > whitespace)
+            {
+                indent = Math.Min(indent, whitespace);
+            }
             end++;
         }
         index = end - 1;
-        if (indent == int.MaxValue) return "";
+        if (indent == int.MaxValue)
+        {
+            return "";
+        }
         var values = new List<string>();
         for (var cursor = start; cursor < end; cursor++)
         {
             var line = lines[cursor];
             values.Add(string.IsNullOrWhiteSpace(line) ? "" : line[Math.Min(indent, line.Length)..]);
         }
-        while (values.Count > 0 && values[^1].Length == 0) values.RemoveAt(values.Count - 1);
-        if (!folded) return string.Join("\n", values);
+        while (values.Count > 0 && values[^1].Length == 0)
+        {
+            values.RemoveAt(values.Count - 1);
+        }
+        if (!folded)
+        {
+            return string.Join("\n", values);
+        }
 
         var builder = new StringBuilder();
         for (var cursor = 0; cursor < values.Count; cursor++)
         {
-            if (cursor > 0) builder.Append(values[cursor - 1].Length == 0 || values[cursor].Length == 0 ? '\n' : ' ');
+            if (cursor > 0)
+            {
+                builder.Append(values[cursor - 1].Length == 0 || values[cursor].Length == 0 ? '\n' : ' ');
+            }
             builder.Append(values[cursor]);
         }
         return builder.ToString();
@@ -271,9 +328,15 @@ public sealed class AgentSkillCatalog
                     escaped = true;
                     continue;
                 }
-                if (scalar[index] != '"') continue;
+                if (scalar[index] != '"')
+                {
+                    continue;
+                }
                 RequireCommentOrEnd(scalar[(index + 1)..]);
-                try { return JsonSerializer.Deserialize<string>(scalar[..(index + 1)]) ?? ""; }
+                try
+                {
+                    return JsonSerializer.Deserialize<string>(scalar[..(index + 1)]) ?? "";
+                }
                 catch (JsonException)
                 {
                     throw new StudioXException("SKILL_FRONTMATTER", "技能元数据的双引号字符串格式无效。");
@@ -285,7 +348,10 @@ public sealed class AgentSkillCatalog
         {
             for (var index = 1; index < scalar.Length; index++)
             {
-                if (scalar[index] != '\'') continue;
+                if (scalar[index] != '\'')
+                {
+                    continue;
+                }
                 if (index + 1 < scalar.Length && scalar[index + 1] == '\'')
                 {
                     index++;
@@ -297,7 +363,9 @@ public sealed class AgentSkillCatalog
             throw new StudioXException("SKILL_FRONTMATTER", "技能元数据的单引号字符串没有结束标记。");
         }
         if (scalar.StartsWith('[') || scalar.StartsWith('{') || scalar.StartsWith('!'))
+        {
             throw new StudioXException("SKILL_FRONTMATTER", "技能名称和简介必须是 YAML 字符串。");
+        }
         var comment = scalar.IndexOf(" #", StringComparison.Ordinal);
         return (comment >= 0 ? scalar[..comment] : scalar).Trim();
     }
@@ -306,7 +374,9 @@ public sealed class AgentSkillCatalog
     {
         var trimmed = tail.TrimStart();
         if (trimmed.Length > 0 && !trimmed.StartsWith('#'))
+        {
             throw new StudioXException("SKILL_FRONTMATTER", "技能元数据的引号字符串后有多余内容。");
+        }
     }
 
     private static string SafeSkillFile(string directory)
@@ -318,17 +388,25 @@ public sealed class AgentSkillCatalog
     private static string ReadUtf8(string path, int limit)
     {
         if ((File.GetAttributes(path) & FileAttributes.ReparsePoint) != 0)
+        {
             throw new StudioXException("SKILL_LINK", "技能文件不能是符号链接或重解析点。");
+        }
         using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
         if (stream.Length > limit)
+        {
             throw new StudioXException("SKILL_SIZE", $"技能文件超过 {limit / 1024} KiB 限制。");
+        }
         var bytes = new byte[limit + 1];
         var total = 0;
         int read;
         while (total < bytes.Length && (read = stream.Read(bytes, total, bytes.Length - total)) > 0)
+        {
             total += read;
+        }
         if (total > limit)
+        {
             throw new StudioXException("SKILL_SIZE", $"技能文件超过 {limit / 1024} KiB 限制。");
+        }
         try
         {
             var content = StrictUtf8.GetString(bytes, 0, total);
@@ -347,9 +425,14 @@ public sealed class AgentSkillCatalog
         {
             if ((File.Exists(current) || Directory.Exists(current)) &&
                 (File.GetAttributes(current) & FileAttributes.ReparsePoint) != 0)
+            {
                 throw new StudioXException("SKILL_LINK", "技能目录不能包含符号链接或重解析点。");
+            }
             var parent = Path.GetDirectoryName(current);
-            if (parent is null || parent == current) break;
+            if (parent is null || parent == current)
+            {
+                break;
+            }
             current = parent;
         }
     }
@@ -357,12 +440,20 @@ public sealed class AgentSkillCatalog
     private static bool ValidName(string? name)
     {
         if (string.IsNullOrEmpty(name) || name.Length > 64 || name[0] == '-' || name[^1] == '-')
+        {
             return false;
+        }
         var previousHyphen = false;
         foreach (var character in name)
         {
-            if (character is not (>= 'a' and <= 'z' or >= '0' and <= '9' or '-')) return false;
-            if (character == '-' && previousHyphen) return false;
+            if (character is not (>= 'a' and <= 'z' or >= '0' and <= '9' or '-'))
+            {
+                return false;
+            }
+            if (character == '-' && previousHyphen)
+            {
+                return false;
+            }
             previousHyphen = character == '-';
         }
         return true;

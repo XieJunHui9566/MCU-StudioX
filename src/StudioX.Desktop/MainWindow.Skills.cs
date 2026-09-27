@@ -31,7 +31,10 @@ public partial class MainWindow
     private async void WorkspaceTabs_SkillsSelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (!ReferenceEquals(e.OriginalSource, WorkspaceTabs) ||
-            !ReferenceEquals(WorkspaceTabs.SelectedItem, ExtensionsTab) || SkillsList is null) return;
+            !ReferenceEquals(WorkspaceTabs.SelectedItem, ExtensionsTab) || SkillsList is null)
+        {
+            return;
+        }
         await RefreshSkillsAsync();
     }
 
@@ -39,7 +42,10 @@ public partial class MainWindow
 
     private async void ProjectSkillsEnabled_Changed(object sender, RoutedEventArgs e)
     {
-        if (skillsToggleUpdating || projectDirectory is not { } project) return;
+        if (skillsToggleUpdating || projectDirectory is not { } project)
+        {
+            return;
+        }
         var enable = ProjectSkillsEnabledToggle.IsChecked == true;
         if (enable)
         {
@@ -94,7 +100,10 @@ public partial class MainWindow
             SkillsRefreshButton.IsEnabled = false;
             var discovery = await Task.Run(() => services.AiSkills.Discover(project));
             if (generation != skillsRefreshGeneration ||
-                !string.Equals(projectDirectory, project, StringComparison.OrdinalIgnoreCase)) return;
+                !string.Equals(projectDirectory, project, StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
 
             SkillsList.ItemsSource = discovery.Skills.Select(SkillDisplayRow.From).ToArray();
             SkillsEmptyHint.Text = "尚未发现可用技能。";
@@ -107,7 +116,10 @@ public partial class MainWindow
         }
         catch (Exception error)
         {
-            if (generation != skillsRefreshGeneration) return;
+            if (generation != skillsRefreshGeneration)
+            {
+                return;
+            }
             SkillsEmptyHint.Text = "无法读取技能。";
             SkillsDiagnosticText.Text = error.Message;
             SkillsDiagnosticText.Visibility = Visibility.Visible;
@@ -127,7 +139,10 @@ public partial class MainWindow
     private void SetProjectSkillsToggle(bool enabled)
     {
         skillsToggleUpdating = true;
-        try { ProjectSkillsEnabledToggle.IsChecked = enabled; }
+        try
+        {
+            ProjectSkillsEnabledToggle.IsChecked = enabled;
+        }
         finally { skillsToggleUpdating = false; }
     }
 

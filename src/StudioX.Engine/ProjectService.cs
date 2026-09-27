@@ -10,12 +10,22 @@ public sealed class ProjectService(Func<string, CancellationToken, Task>? initia
         PackValidator.Token(name);
         var device = pack.Manifest.Devices.SingleOrDefault(d => d.Id == deviceId)
             ?? throw new StudioXException("PROJECT_DEVICE", "请选择明确的芯片型号。");
-        if (!device.Templates.Any(t => t.Id == templateId)) throw new StudioXException("PROJECT_TEMPLATE", "请选择明确的模板。");
+        if (!device.Templates.Any(t => t.Id == templateId))
+        {
+            throw new StudioXException("PROJECT_TEMPLATE", "请选择明确的模板。");
+        }
         if (enableAg32Logic && !IsAg32LogicDevice(pack, deviceId))
+        {
             throw new StudioXException("PROJECT_LOGIC_DEVICE", "逻辑/Verilog 特殊模式目前仅支持 AGM AG32VF303CCT6（LQFP48）。");
+        }
         var logic = enableAg32Logic ? new Ag32LogicProjectSettings("AGRV2KL48", "logic/user_logic.v", "logic/pins.ve") : null;
+        var espressif = device.Espressif is { } profile
+            ? new EspressifProjectSettings(profile.Framework, profile.Target, profile.SdkVersion) : null;
+        var selectedTemplate = device.Templates.Single(template => template.Id == templateId);
+        var entryFile = selectedTemplate.EspressifExample is { } example
+            ? selectedTemplate.EntryFile[(example.ExampleDirectory.TrimEnd('/').Length + 1)..] : null;
         return new BuildPlan(new ProjectManifest(1, name, pack.Manifest.Id, pack.Manifest.Version, pack.ContentHash,
-            deviceId, templateId, device.ToolsetId, device.ToolsetVersion, device.CompilerId, Logic: logic), TemplateResolver.Resolve(device, templateId));
+            deviceId, templateId, device.ToolsetId, device.ToolsetVersion, device.CompilerId, Logic: logic, Espressif: espressif, EntryFile: entryFile), TemplateResolver.Resolve(device, templateId));
     }
 
     public static bool IsAg32LogicDevice(InstalledPack pack, string deviceId) =>
@@ -27,7 +37,10 @@ public sealed class ProjectService(Func<string, CancellationToken, Task>? initia
     {
         _ = Plan(pack, deviceId, templateId, name, enableAg32Logic);
         var target = Path.GetFullPath(destination);
-        if (Directory.Exists(target) || File.Exists(target)) throw new StudioXException("PROJECT_EXISTS", "目标路径已存在，请选择新的工程目录。");
+        if (Directory.Exists(target) || File.Exists(target))
+        {
+            throw new StudioXException("PROJECT_EXISTS", "目标路径已存在，请选择新的工程目录。");
+        }
         // 选择器只读包目录；复制任何模板或 SDK 前，对这个包进行完整校验并使用新读取的清单。
         pack = await PackRepository.VerifyAsync(pack, cancellationToken);
         var plan = Plan(pack, deviceId, templateId, name, enableAg32Logic);
@@ -45,59 +58,111 @@ public sealed class ProjectService(Func<string, CancellationToken, Task>? initia
                 if (plan.Device.Templates.Single(t => t.Id == templateId).Build is not null && relative.StartsWith("sdk/", StringComparison.Ordinal) &&
                     relative != plan.Device.LinkerScript &&
                     !plan.Device.Sources.Contains(relative, StringComparer.Ordinal) &&
-                    !plan.Device.IncludeDirectories.Any(include => relative.StartsWith(include.TrimEnd('/') + "/", StringComparison.Ordinal))) continue;
+                    !plan.Device.IncludeDirectories.Any(include => relative.StartsWith(include.TrimEnd('/') + "/", StringComparison.Ordinal)))
+                {
+                    continue;
+                }
                 var copy = PathBoundary.Resolve(Path.Combine(staging, "device"), relative);
                 Directory.CreateDirectory(Path.GetDirectoryName(copy)!);
                 File.Copy(PathBoundary.Resolve(pack.RootDirectory, relative), copy);
             }
-            Directory.CreateDirectory(Path.Combine(staging, "src"));
             var template = plan.Device.Templates.Single(t => t.Id == templateId);
-            File.Copy(PathBoundary.Resolve(pack.RootDirectory, template.EntryFile), Path.Combine(staging, "src", "main.c"));
+            if (template.EspressifExample is null)
+            {
+                Directory.CreateDirectory(Path.Combine(staging, "src"));
+                File.Copy(PathBoundary.Resolve(pack.RootDirectory, template.EntryFile), Path.Combine(staging, "src", "main.c"));
+            }
             Directory.CreateDirectory(Path.Combine(staging, "include"));
             if (template.Files is not null)
+            {
                 foreach (var (relative, source) in template.Files)
                 {
                     if (!(relative.StartsWith("src/", StringComparison.Ordinal) || relative.StartsWith("include/", StringComparison.Ordinal)))
+                    {
                         throw new StudioXException("PROJECT_TEMPLATE_FILE", "模板文件超出用户源码目录。");
+                    }
                     var file = PathBoundary.Resolve(staging, relative);
                     Directory.CreateDirectory(Path.GetDirectoryName(file)!);
                     File.Copy(PathBoundary.Resolve(pack.RootDirectory, source), file);
                 }
+            }
             if (plan.Project.Logic is { } logic)
-                await WriteAg32LogicScaffoldAsync(staging, logic, cancellationToken);
-            await JsonStore.WriteAsync(Path.Combine(staging, ".studiox", "project.json"), plan.Project, cancellationToken);
-            await File.WriteAllTextAsync(Path.Combine(staging, "CMakeLists.txt"), CMakeGenerator.Render(plan), cancellationToken);
-            foreach (var (relative, content) in new[] { (CMakeGenerator.DeviceListPath, CMakeGenerator.RenderDevice(plan)), (CMakeGenerator.PlatformPath, CMakeGenerator.RenderPlatform(plan)) })
             {
-                var path = PathBoundary.Resolve(staging, relative);
-                // 器件包不能占用生成器的固定入口，避免静默覆盖包内文件。
-                if (File.Exists(path)) throw new StudioXException("PROJECT_RESERVED_FILE", $"器件包占用了工程生成器路径：{relative}");
-                await File.WriteAllTextAsync(path, content, cancellationToken);
+                await WriteAg32LogicScaffoldAsync(staging, logic, cancellationToken);
+            }
+            await JsonStore.WriteAsync(Path.Combine(staging, ".studiox", "project.json"), plan.Project, cancellationToken);
+            if (plan.Project.Espressif is not null)
+            {
+                await EspressifProjectScaffold.WriteAsync(staging, plan, cancellationToken);
+            }
+            else
+            {
+                await File.WriteAllTextAsync(Path.Combine(staging, "CMakeLists.txt"), CMakeGenerator.Render(plan), cancellationToken);
+                foreach (var (relative, content) in new[] { (CMakeGenerator.DeviceListPath, CMakeGenerator.RenderDevice(plan)), (CMakeGenerator.PlatformPath, CMakeGenerator.RenderPlatform(plan)) })
+                {
+                    var path = PathBoundary.Resolve(staging, relative);
+                    // 器件包不能占用生成器的固定入口，避免静默覆盖包内文件。
+                    if (File.Exists(path))
+                    {
+                        throw new StudioXException("PROJECT_RESERVED_FILE", $"器件包占用了工程生成器路径：{relative}");
+                    }
+                    await File.WriteAllTextAsync(path, content, cancellationToken);
+                }
             }
             var gitignore = ".build/\nbuild/\ncmake-build-*/\n.studiox/debug.json\n.studiox/breakpoints.json\n*.user\n";
             if (plan.Project.Logic is not null)
+            {
                 gitignore += "logic/db/\nlogic/incremental_db/\nlogic/output_files/\nlogic/*.vo\nlogic/*.bin\n";
+            }
+            if (plan.Project.Espressif is not null)
+            {
+                gitignore += "sdkconfig.old\nmanaged_components/\n";
+            }
             await File.WriteAllTextAsync(Path.Combine(staging, ".gitignore"), gitignore, cancellationToken);
-            if (initializeRepository is not null) await initializeRepository(staging, cancellationToken);
+            if (initializeRepository is not null)
+            {
+                await initializeRepository(staging, cancellationToken);
+            }
             cancellationToken.ThrowIfCancellationRequested();
             Directory.Move(staging, target);
             return plan.Project;
         }
-        finally { if (Directory.Exists(staging)) Directory.Delete(staging, recursive: true); }
+        finally { if (Directory.Exists(staging)) { Directory.Delete(staging, recursive: true); } }
     }
 
     public static async Task<ProjectManifest> ReadAsync(string directory, CancellationToken cancellationToken = default)
     {
         var project = await JsonStore.ReadAsync<ProjectManifest>(Path.Combine(directory, ".studiox", "project.json"), cancellationToken);
-        if (project.FormatVersion != 1) throw new StudioXException("PROJECT_FORMAT", "不支持的工程格式。");
-        if (project.Kind == ProjectKind.CubeMx) CubeMxImportService.Validate(directory, project);
-        else if (project.Kind != ProjectKind.Pack || project.CubeMx is not null) throw new StudioXException("PROJECT_KIND", "不支持的工程类型。");
-        else PackValidator.Token(project.Name);
+        if (project.FormatVersion != 1)
+        {
+            throw new StudioXException("PROJECT_FORMAT", "不支持的工程格式。");
+        }
+        if (project.Kind == ProjectKind.CubeMx)
+        {
+            CubeMxImportService.Validate(directory, project);
+        }
+        else if (project.Kind != ProjectKind.Pack || project.CubeMx is not null)
+        {
+            throw new StudioXException("PROJECT_KIND", "不支持的工程类型。");
+        }
+        else
+        {
+            PackValidator.Token(project.Name);
+        }
         if (project.Logic is { } logic && (project.Kind != ProjectKind.Pack ||
             !string.Equals(project.DeviceId, "AG32VF303CCT6", StringComparison.OrdinalIgnoreCase) ||
             logic != new Ag32LogicProjectSettings("AGRV2KL48", "logic/user_logic.v", "logic/pins.ve")))
+        {
             throw new StudioXException("PROJECT_LOGIC_SETTINGS", "AG32 逻辑工程配置无效或不受当前版本支持。");
-        PackValidator.Token(project.ToolsetId); PackValidator.Version(project.ToolsetVersion);
+        }
+        PackValidator.Token(project.ToolsetId);
+        PackValidator.Version(project.ToolsetVersion);
+        EspressifProjectScaffold.Validate(project);
+        if (project.EntryFile is { } entryFile)
+        {
+            // 入口仅用于首次打开；用户可以重构源码，文件不存在时仍允许打开工程修复。
+            _ = PathBoundary.Resolve(directory, entryFile);
+        }
         return project;
     }
 

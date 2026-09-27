@@ -31,14 +31,18 @@ public partial class MainWindow
                 {
                     BottomTabs.SelectedIndex = tab;
                     var log = tab == 0 ? BuildLog : DeviceLog;
-                    await Layout(); log.ScrollToEnd(); await Layout();
+                    await Layout();
+                    log.ScrollToEnd();
+                    await Layout();
                     var line = log.GetRectFromCharacterIndex(log.Text.Length, true);
                     var scroll = (ScrollViewer)log.Template.FindName("PART_ContentHost", log);
                     var statusBottom = Status.PointToScreen(new Point(0, Status.ActualHeight)).Y;
                     var logBottom = log.PointToScreen(new Point(0, log.ActualHeight)).Y;
                     var lineBottom = log.PointToScreen(line.BottomLeft).Y;
                     if (!WindowMonitor.TryGetBounds(new WindowInteropHelper(this).Handle, out _, out var work))
+                    {
                         throw new InvalidOperationException("无法读取当前屏幕工作区。");
+                    }
                     var atEnd = Math.Abs(scroll.VerticalOffset - scroll.ScrollableHeight) < 1;
                     var lineVisible = !line.IsEmpty && line.Top >= 0 && line.Bottom <= log.ActualHeight;
                     var fits = state != WindowState.Maximized || (statusBottom <= work.Bottom && logBottom <= work.Bottom && lineBottom <= work.Bottom);
@@ -49,8 +53,16 @@ public partial class MainWindow
             Render(this, Path.Combine(directory, $"layout-{state}.png"));
         }
         await File.WriteAllTextAsync(Path.Combine(directory, "layout.txt"), report.ToString());
-        if (failed) throw new InvalidOperationException("窗口边界或日志末行被裁切，详见 layout.txt。");
+        if (failed)
+        {
+            throw new InvalidOperationException("窗口边界或日志末行被裁切，详见 layout.txt。");
+        }
         await File.WriteAllTextAsync(Path.Combine(directory, "result.txt"), "PASS: normal/maximized/restored window; both log tabs at 150/400 px panel heights; last line and status inside the visible work area. No project or hardware actions.\n");
-        async Task Layout() { UpdateLayout(); await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Loaded); await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render); }
+        async Task Layout()
+        {
+            UpdateLayout();
+            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Loaded);
+            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+        }
     }
 }

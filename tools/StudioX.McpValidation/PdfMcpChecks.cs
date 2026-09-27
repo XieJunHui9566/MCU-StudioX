@@ -25,51 +25,86 @@ internal static class PdfMcpChecks
             session.CallToolAsync(name, JsonSerializer.Serialize(arguments));
         static bool Error(string text) => text.Contains("\"error\"", StringComparison.OrdinalIgnoreCase);
 
-        var rootList = await Call("pdf_list", new { scope = "project" });
-        var docsList = await Call("pdf_list", new { scope = "project", directory = "docs" });
+        var rootList = await Call("pdf_list", new
+        {
+            scope = "project"
+        });
+        var docsList = await Call("pdf_list", new
+        {
+            scope = "project",
+            directory = "docs"
+        });
         check(rootList.Contains("docs", StringComparison.Ordinal) &&
               docsList.Contains("docs/board.pdf", StringComparison.Ordinal),
             "pdf_list browses project documents one directory at a time");
 
-        var info = await Call("pdf_inspect", new { scope = "project", path = "docs/board.pdf" });
-        if (Error(info)) throw new Exception("Fixture PDF inspection failed: " + info);
+        var info = await Call("pdf_inspect", new
+        {
+            scope = "project",
+            path = "docs/board.pdf"
+        });
+        if (Error(info))
+        {
+            throw new Exception("Fixture PDF inspection failed: " + info);
+        }
         using (var json = JsonDocument.Parse(info))
+        {
             check(json.RootElement.GetProperty("pageCount").GetInt32() == 2 &&
-                  json.RootElement.GetProperty("sha256").GetString()!.Length == 64,
-                "pdf_inspect identifies page count and stable file hash");
+              json.RootElement.GetProperty("sha256").GetString()!.Length == 64,
+            "pdf_inspect identifies page count and stable file hash");
+        }
 
         var search = await Call("pdf_inspect", new
         {
-            scope = "project", path = "docs/board.pdf", query = "STM32F407", startPage = 1,
+            scope = "project",
+            path = "docs/board.pdf",
+            query = "STM32F407",
+            startPage = 1,
             maxPages = 1
         });
         using (var json = JsonDocument.Parse(search))
+        {
             check(json.RootElement.GetProperty("matches")[0].GetProperty("page").GetInt32() == 1 &&
-                  json.RootElement.GetProperty("nextPage").GetInt32() == 2,
-                "datasheet phrase search returns a page citation and continuation");
+              json.RootElement.GetProperty("nextPage").GetInt32() == 2,
+            "datasheet phrase search returns a page citation and continuation");
+        }
 
         var pageText = await Call("pdf_page", new
         {
-            scope = "project", path = "docs/board.pdf", page = 1, maxCharacters = 100
+            scope = "project",
+            path = "docs/board.pdf",
+            page = 1,
+            maxCharacters = 100
         });
         using (var json = JsonDocument.Parse(pageText))
+        {
             check(json.RootElement.GetProperty("text").GetString()!.Contains("STM32F407",
-                      StringComparison.Ordinal) &&
-                  json.RootElement.GetProperty("image").ValueKind == JsonValueKind.Null,
-                "pdf_page returns bounded extractable text without a requested image");
+                  StringComparison.Ordinal) &&
+              json.RootElement.GetProperty("image").ValueKind == JsonValueKind.Null,
+            "pdf_page returns bounded extractable text without a requested image");
+        }
 
         var imageArgs = JsonSerializer.Serialize(new
         {
-            scope = "project", path = "docs/board.pdf", page = 2, includeImage = true,
-            x = 0.1, y = 0.1, width = 0.8, height = 0.5, maxDimension = 800
+            scope = "project",
+            path = "docs/board.pdf",
+            page = 2,
+            includeImage = true,
+            x = 0.1,
+            y = 0.1,
+            width = 0.8,
+            height = 0.5,
+            maxDimension = 800
         });
         var detailed = await session.CallToolDetailedAsync("pdf_page", imageArgs);
         using (var json = JsonDocument.Parse(detailed.Text))
+        {
             check(detailed.Images.Count == 1 && detailed.Images[0].MimeType == "image/png" &&
-                  detailed.Images[0].Data.AsSpan().StartsWith(new byte[] { 137, 80, 78, 71, 13, 10, 26, 10 }) &&
-                  json.RootElement.GetProperty("page").GetInt32() == 2 &&
-                  json.RootElement.GetProperty("image").GetProperty("PixelWidth").GetInt32() > 0,
-                "real MCP call preserves cropped PNG image and text blocks together");
+              detailed.Images[0].Data.AsSpan().StartsWith(new byte[] { 137, 80, 78, 71, 13, 10, 26, 10 }) &&
+              json.RootElement.GetProperty("page").GetInt32() == 2 &&
+              json.RootElement.GetProperty("image").GetProperty("PixelWidth").GetInt32() > 0,
+            "real MCP call preserves cropped PNG image and text blocks together");
+        }
         var legacyText = await session.CallToolAsync("pdf_page", imageArgs);
         check(legacyText.Contains("\"page\":2", StringComparison.Ordinal) &&
               !legacyText.Contains("iVBOR", StringComparison.Ordinal),
@@ -77,11 +112,15 @@ internal static class PdfMcpChecks
 
         var denied = await Call("pdf_page", new
         {
-            scope = "external", rootId = "not-approved", path = "reference.pdf", page = 1
+            scope = "external",
+            rootId = "not-approved",
+            path = "reference.pdf",
+            page = 1
         });
         var escape = await Call("pdf_inspect", new
         {
-            scope = "project", path = "../pdf-examples/reference.pdf"
+            scope = "project",
+            path = "../pdf-examples/reference.pdf"
         });
         check(Error(denied) && Error(escape),
             "PDF reads reject unapproved external roots and project path traversal");
@@ -90,12 +129,17 @@ internal static class PdfMcpChecks
         try
         {
             authorizer.Allow = true;
-            var opened = await Call("external_project_open", new { directory = external });
+            var opened = await Call("external_project_open", new
+            {
+                directory = external
+            });
             using var json = JsonDocument.Parse(opened);
             var rootId = json.RootElement.GetProperty("rootId").GetString()!;
             var externalInfo = await Call("pdf_inspect", new
             {
-                scope = "external", rootId, path = "reference.pdf"
+                scope = "external",
+                rootId,
+                path = "reference.pdf"
             });
             check(externalInfo.Contains("\"pageCount\":2", StringComparison.Ordinal),
                 "approved external directory supports read-only PDF inspection");
@@ -131,7 +175,10 @@ internal static class PdfMcpChecks
         Object(7, Stream("0 0 1 RG 40 100 m 400 100 l S\n"));
         var xref = output.Position;
         Write($"xref\n0 {offsets.Count}\n0000000000 65535 f \n");
-        foreach (var offset in offsets.Skip(1)) Write($"{offset:0000000000} 00000 n \n");
+        foreach (var offset in offsets.Skip(1))
+        {
+            Write($"{offset:0000000000} 00000 n \n");
+        }
         Write($"trailer\n<< /Size {offsets.Count} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n");
         return output.ToArray();
     }

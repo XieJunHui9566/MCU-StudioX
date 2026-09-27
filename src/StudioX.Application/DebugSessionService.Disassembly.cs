@@ -7,8 +7,14 @@ public sealed partial class DebugSessionService
 {
     public async Task<DebugDisassembly> ReadDisassemblyAsync(uint? address = null, int byteCount = 128, CancellationToken token = default)
     {
-        if (byteCount is < 1 or > 512) throw new ArgumentOutOfRangeException(nameof(byteCount), "单次反汇编必须为 1–512 字节。");
-        if (address is { } requested) ValidateDisassemblyRange(requested, byteCount);
+        if (byteCount is < 1 or > 512)
+        {
+            throw new ArgumentOutOfRangeException(nameof(byteCount), "单次反汇编必须为 1–512 字节。");
+        }
+        if (address is { } requested)
+        {
+            ValidateDisassemblyRange(requested, byteCount);
+        }
         await gate.WaitAsync(token);
         try
         {
@@ -27,7 +33,10 @@ public sealed partial class DebugSessionService
     private static uint ValidateDisassemblyRange(uint address, int byteCount)
     {
         var end = (ulong)address + (uint)byteCount;
-        if (end > uint.MaxValue) throw new ArgumentOutOfRangeException(nameof(address), "反汇编范围超出可表示的 32 位地址。");
+        if (end > uint.MaxValue)
+        {
+            throw new ArgumentOutOfRangeException(nameof(address), "反汇编范围超出可表示的 32 位地址。");
+        }
         return (uint)end;
     }
 

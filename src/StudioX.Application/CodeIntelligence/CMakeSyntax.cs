@@ -24,50 +24,85 @@ internal static class CMakeSyntax
         {
             token.ThrowIfCancellationRequested();
             var c = text[index];
-            if (char.IsWhiteSpace(c)) { current = null; index++; continue; }
+            if (char.IsWhiteSpace(c))
+            {
+                current = null;
+                index++;
+                continue;
+            }
             if (c == '#')
             {
                 if (BracketOpen(text, index + 1, limit, out var begin, out var closing))
                 {
                     var end = text.IndexOf(closing, begin, StringComparison.Ordinal);
-                    if (end < 0 || end + closing.Length > limit) return Result(true);
+                    if (end < 0 || end + closing.Length > limit)
+                    {
+                        return Result(true);
+                    }
                     index = end + closing.Length;
                 }
                 else
                 {
                     var end = text.IndexOf('\n', index);
-                    if (end < 0 || end >= limit) return Result(true);
+                    if (end < 0 || end >= limit)
+                    {
+                        return Result(true);
+                    }
                     index = end + 1;
                 }
-                current = null; continue;
+                current = null;
+                continue;
             }
             if (c == '(')
             {
                 if (depth == 0)
                 {
                     call = new CMakeCall((pending ?? "").ToLowerInvariant(), []);
-                    calls.Add(call); pending = null;
+                    calls.Add(call);
+                    pending = null;
                 }
-                else call?.Arguments.Add(new("(", index, index + 1, false, true));
-                depth++; index++; current = null; continue;
+                else
+                {
+                    call?.Arguments.Add(new("(", index, index + 1, false, true));
+                }
+                depth++;
+                index++;
+                current = null;
+                continue;
             }
             if (c == ')')
             {
-                if (depth > 0 && --depth == 0) call = null;
-                else call?.Arguments.Add(new(")", index, index + 1, false, true));
-                index++; current = null; pending = null; continue;
+                if (depth > 0 && --depth == 0)
+                {
+                    call = null;
+                }
+                else
+                {
+                    call?.Arguments.Add(new(")", index, index + 1, false, true));
+                }
+                index++;
+                current = null;
+                pending = null;
+                continue;
             }
             var start = index;
             if (BracketOpen(text, index, limit, out var content, out var close))
             {
                 var end = text.IndexOf(close, content, StringComparison.Ordinal);
-                if (end < 0 || end + close.Length > limit) return Result(true);
+                if (end < 0 || end + close.Length > limit)
+                {
+                    return Result(true);
+                }
                 index = end + close.Length;
                 call?.Arguments.Add(new(text[content..end], start, index, true, true));
-                current = null; continue;
+                current = null;
+                continue;
             }
             var quoted = c == '"';
-            if (quoted) index++;
+            if (quoted)
+            {
+                index++;
+            }
             var value = new StringBuilder();
             var closed = false;
             while (index < limit)
@@ -75,17 +110,39 @@ internal static class CMakeSyntax
                 c = text[index];
                 if (c == '\\' && index + 1 < limit)
                 {
-                    if (text[index + 1] != '\n') value.Append(text[index + 1]);
-                    index += 2; continue;
+                    if (text[index + 1] != '\n')
+                    {
+                        value.Append(text[index + 1]);
+                    }
+                    index += 2;
+                    continue;
                 }
-                if (quoted && c == '"') { index++; closed = true; break; }
-                if (!quoted && (char.IsWhiteSpace(c) || c is '(' or ')' or '#')) break;
-                value.Append(c); index++;
+                if (quoted && c == '"')
+                {
+                    index++;
+                    closed = true;
+                    break;
+                }
+                if (!quoted && (char.IsWhiteSpace(c) || c is '(' or ')' or '#'))
+                {
+                    break;
+                }
+                value.Append(c);
+                index++;
             }
             current = new(value.ToString(), start, index, quoted, closed);
-            if (call is not null) call.Arguments.Add(current);
-            else pending = current.Value;
-            if (closed) current = null;
+            if (call is not null)
+            {
+                call.Arguments.Add(current);
+            }
+            else
+            {
+                pending = current.Value;
+            }
+            if (closed)
+            {
+                current = null;
+            }
         }
         return Result(false);
 
@@ -95,12 +152,23 @@ internal static class CMakeSyntax
 
     private static bool BracketOpen(string text, int offset, int limit, out int content, out string close)
     {
-        content = offset; close = "";
-        if (offset >= limit || text[offset] != '[') return false;
+        content = offset;
+        close = "";
+        if (offset >= limit || text[offset] != '[')
+        {
+            return false;
+        }
         var end = offset + 1;
-        while (end < limit && text[end] == '=') end++;
-        if (end >= limit || text[end] != '[') return false;
-        content = end + 1; close = "]" + new string('=', end - offset - 1) + "]";
+        while (end < limit && text[end] == '=')
+        {
+            end++;
+        }
+        if (end >= limit || text[end] != '[')
+        {
+            return false;
+        }
+        content = end + 1;
+        close = "]" + new string('=', end - offset - 1) + "]";
         return true;
     }
 }

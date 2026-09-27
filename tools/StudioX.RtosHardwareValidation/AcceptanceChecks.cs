@@ -10,7 +10,10 @@ internal static class AcceptanceChecks
         var checks = 0;
         void Check(bool condition, string description)
         {
-            if (!condition) throw new Exception(description);
+            if (!condition)
+            {
+                throw new Exception(description);
+            }
             Console.WriteLine("PASS " + description);
             checks++;
         }
@@ -22,26 +25,82 @@ internal static class AcceptanceChecks
             tasks, new("heap_4", 32 * 1024, 16 * 1024, 8 * 1024, 11, 3, 8 * 1024, 2), [], []);
         var accepted = SnapshotAcceptance.Validate(good, ramBytes);
         Check(accepted.Accepted && accepted.PartialFields.Length > 0 &&
-            SnapshotAcceptance.Validate(good with { TickCount = good.TickCount }, ramBytes).Accepted,
+            SnapshotAcceptance.Validate(good with
+            {
+                TickCount = good.TickCount
+            }, ramBytes).Accepted,
             "valid non-fixed task/heap values and unchanged Tick remain accepted with unknown optional fields");
-        Check(!SnapshotAcceptance.Validate(good with { ReportedTaskCount = 1552988982, Tasks = [] }, ramBytes).Accepted &&
-            !SnapshotAcceptance.Validate(good with { CurrentTaskAddress = 0x20000103 }, ramBytes).Accepted &&
-            !SnapshotAcceptance.Validate(good with { SchedulerRunning = null }, ramBytes).Accepted,
+        Check(!SnapshotAcceptance.Validate(good with
+        {
+            ReportedTaskCount = 1552988982,
+            Tasks = []
+        }, ramBytes).Accepted &&
+            !SnapshotAcceptance.Validate(good with
+            {
+                CurrentTaskAddress = 0x20000103
+            }, ramBytes).Accepted &&
+            !SnapshotAcceptance.Validate(good with
+            {
+                SchedulerRunning = null
+            }, ramBytes).Accepted,
             "bogus task count, unaligned current TCB and unreadable scheduler are refused");
-        Check(!SnapshotAcceptance.Validate(good with { Heap = good.Heap! with { FreeBytes = 2792760398 } }, ramBytes).Accepted &&
-            !SnapshotAcceptance.Validate(good with { Heap = good.Heap! with { MinimumEverFreeBytes = 20000 } }, ramBytes).Accepted &&
-            !SnapshotAcceptance.Validate(good with { Heap = good.Heap! with { LargestFreeBlockBytes = 20000 } }, ramBytes).Accepted &&
-            !SnapshotAcceptance.Validate(good with { Heap = good.Heap! with { TotalBytes = ramBytes + 1 } }, ramBytes).Accepted,
+        Check(!SnapshotAcceptance.Validate(good with
+        {
+            Heap = good.Heap! with
+            {
+                FreeBytes = 2792760398
+            }
+        }, ramBytes).Accepted &&
+            !SnapshotAcceptance.Validate(good with
+            {
+                Heap = good.Heap! with
+                {
+                    MinimumEverFreeBytes = 20000
+                }
+            }, ramBytes).Accepted &&
+            !SnapshotAcceptance.Validate(good with
+            {
+                Heap = good.Heap! with
+                {
+                    LargestFreeBlockBytes = 20000
+                }
+            }, ramBytes).Accepted &&
+            !SnapshotAcceptance.Validate(good with
+            {
+                Heap = good.Heap! with
+                {
+                    TotalBytes = ramBytes + 1
+                }
+            }, ramBytes).Accepted,
             "heap values cannot exceed capacity or contradict free/minimum/largest relationships");
-        Check(!SnapshotAcceptance.Validate(good with { Heap = good.Heap! with { FreeBlockCount = 0 } }, ramBytes).Accepted &&
-            !SnapshotAcceptance.Validate(good with { Heap = good.Heap! with { FreeBlockCount = 1 } }, ramBytes).Accepted &&
-            !SnapshotAcceptance.Validate(good with { Tasks = [tasks[0], tasks[0]], ReportedTaskCount = 2 }, ramBytes).Accepted,
+        Check(!SnapshotAcceptance.Validate(good with
+        {
+            Heap = good.Heap! with
+            {
+                FreeBlockCount = 0
+            }
+        }, ramBytes).Accepted &&
+            !SnapshotAcceptance.Validate(good with
+            {
+                Heap = good.Heap! with
+                {
+                    FreeBlockCount = 1
+                }
+            }, ramBytes).Accepted &&
+            !SnapshotAcceptance.Validate(good with
+            {
+                Tasks = [tasks[0], tasks[0]],
+                ReportedTaskCount = 2
+            }, ramBytes).Accepted,
             "inconsistent free-block statistics and duplicate task addresses are refused");
 
         static ImageVerificationEvidence Evidence(params string[] lines)
         {
             var result = new ImageVerificationEvidence();
-            foreach (var line in lines) result.AddLogLine(line);
+            foreach (var line in lines)
+            {
+                result.AddLogLine(line);
+            }
             return result;
         }
         Check(Evidence("[t] GDB < @\"verified 355780 bytes in 3s\\n\"").Accepted &&

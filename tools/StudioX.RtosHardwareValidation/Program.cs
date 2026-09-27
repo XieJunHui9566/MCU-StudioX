@@ -21,7 +21,9 @@ if (args.Length == 0)
     return;
 }
 if (args.Length is < 4 or > 5 || args[0] is not ("--prepare" or "--attach"))
+{
     throw new ArgumentException("Expected --prepare|--attach <project> <runtime> <output> [object-symbols].");
+}
 
 var run = new HardwareCheck(args[1], args[2], args[3], args.Length == 5 ? args[4] : null);
 Environment.ExitCode = await run.RunAsync(args[0] == "--attach");

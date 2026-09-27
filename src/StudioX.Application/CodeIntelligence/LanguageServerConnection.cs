@@ -21,15 +21,31 @@ internal sealed class LanguageServerConnection : IAsyncDisposable
 
     public LanguageServerConnection(string executable, string workingDirectory, string cacheDirectory, Action<string> log)
     {
-        var start = new ProcessStartInfo(executable) { WorkingDirectory = workingDirectory, UseShellExecute = false,
-            CreateNoWindow = true, RedirectStandardInput = true, RedirectStandardOutput = true, RedirectStandardError = true };
+        var start = new ProcessStartInfo(executable)
+        {
+            WorkingDirectory = workingDirectory,
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            RedirectStandardInput = true,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true
+        };
         foreach (var argument in new[] { "--background-index", "-j=2", "--clang-tidy=false", "--header-insertion=never", "--completion-style=detailed",
-            "--completion-parse=always", "--use-dirty-headers", "--limit-results=100", "--log=error", "--enable-config=false", "--pch-storage=memory", "--compile-commands-dir=" + cacheDirectory }) start.ArgumentList.Add(argument);
+            "--completion-parse=always", "--use-dirty-headers", "--limit-results=100", "--log=error", "--enable-config=false", "--pch-storage=memory", "--compile-commands-dir=" + cacheDirectory })
+        {
+            start.ArgumentList.Add(argument);
+        }
         process = Process.Start(start) ?? throw new StudioXException("LANGUAGE_START", "无法启动代码提示服务。");
         reader = ReadAsync();
         errors = Task.Run(async () =>
         {
-            try { while (await process.StandardError.ReadLineAsync(lifetime.Token).ConfigureAwait(false) is { } line) log(line); }
+            try
+            {
+                while (await process.StandardError.ReadLineAsync(lifetime.Token).ConfigureAwait(false) is { } line)
+                {
+                    log(line);
+                }
+            }
             catch (OperationCanceledException) when (lifetime.IsCancellationRequested) { }
             catch (IOException ex) { log(ex.Message); }
         });
@@ -43,12 +59,25 @@ internal sealed class LanguageServerConnection : IAsyncDisposable
         pending[id] = completion;
         try
         {
-            if (!IsRunning) throw new StudioXException("LANGUAGE_EXITED", "代码提示服务已退出；重新打开工程可重启。");
-            await SendAsync(new { jsonrpc = "2.0", id, method, @params = parameters }, token).ConfigureAwait(false);
-            try { return await completion.Task.WaitAsync(TimeSpan.FromSeconds(12), token).ConfigureAwait(false); }
+            if (!IsRunning)
+            {
+                throw new StudioXException("LANGUAGE_EXITED", "代码提示服务已退出；重新打开工程可重启。");
+            }
+            await SendAsync(new
+            {
+                jsonrpc = "2.0",
+                id,
+                method,
+                @params = parameters
+            }, token).ConfigureAwait(false);
+            try
+            {
+                return await completion.Task.WaitAsync(TimeSpan.FromSeconds(12), token).ConfigureAwait(false);
+            }
             catch (OperationCanceledException)
             {
-                await TryCancelAsync(id).ConfigureAwait(false); throw;
+                await TryCancelAsync(id).ConfigureAwait(false);
+                throw;
             }
             catch (TimeoutException)
             {
@@ -60,7 +89,13 @@ internal sealed class LanguageServerConnection : IAsyncDisposable
     }
     private async Task TryCancelAsync(int id)
     {
-        try { await NotifyAsync("$/cancelRequest", new { id }, lifetime.Token).ConfigureAwait(false); }
+        try
+        {
+            await NotifyAsync("$/cancelRequest", new
+            {
+                id
+            }, lifetime.Token).ConfigureAwait(false);
+        }
         catch (Exception ex) when (ex is IOException or OperationCanceledException or ObjectDisposedException) { }
     }
     private async Task SendAsync(object value, CancellationToken token)
@@ -82,7 +117,10 @@ internal sealed class LanguageServerConnection : IAsyncDisposable
             catch (OperationCanceledException) when (!lifetime.IsCancellationRequested)
             {
                 // 超时后的通道可能留下半帧，必须结束这个自有子进程，不能继续拼接消息。
-                if (!process.HasExited) process.Kill(entireProcessTree: true);
+                if (!process.HasExited)
+                {
+                    process.Kill(entireProcessTree: true);
+                }
                 throw new StudioXException("LANGUAGE_IO_TIMEOUT", "代码提示服务通信超时；重新打开工程可重启。");
             }
         }
@@ -100,46 +138,87 @@ internal sealed class LanguageServerConnection : IAsyncDisposable
                 var header = new StringBuilder();
                 while (true)
                 {
-                    if (await stream.ReadAsync(single, lifetime.Token).ConfigureAwait(false) == 0) throw new EndOfStreamException("clangd 输出已结束。");
+                    if (await stream.ReadAsync(single, lifetime.Token).ConfigureAwait(false) == 0)
+                    {
+                        throw new EndOfStreamException("clangd 输出已结束。");
+                    }
                     header.Append((char)single[0]);
-                    if (header.Length > 8192) throw new IOException("LSP 消息头超出限制。");
-                    if (header.Length >= 4 && header.ToString(header.Length - 4, 4) == "\r\n\r\n") break;
+                    if (header.Length > 8192)
+                    {
+                        throw new IOException("LSP 消息头超出限制。");
+                    }
+                    if (header.Length >= 4 && header.ToString(header.Length - 4, 4) == "\r\n\r\n")
+                    {
+                        break;
+                    }
                 }
                 var length = header.ToString().Split("\r\n").Where(line => line.StartsWith("Content-Length:", StringComparison.OrdinalIgnoreCase))
                     .Select(line => int.Parse(line[15..].Trim(), System.Globalization.CultureInfo.InvariantCulture)).Single();
-                if (length is < 0 or > 16 * 1024 * 1024) throw new IOException("LSP 消息体超出限制。");
-                var body = new byte[length]; await stream.ReadExactlyAsync(body, lifetime.Token).ConfigureAwait(false);
-                using var json = JsonDocument.Parse(body); var message = json.RootElement;
+                if (length is < 0 or > 16 * 1024 * 1024)
+                {
+                    throw new IOException("LSP 消息体超出限制。");
+                }
+                var body = new byte[length];
+                await stream.ReadExactlyAsync(body, lifetime.Token).ConfigureAwait(false);
+                using var json = JsonDocument.Parse(body);
+                var message = json.RootElement;
                 if (message.TryGetProperty("id", out var id) && !message.TryGetProperty("method", out _))
                 {
                     if (id.TryGetInt32(out var number) && pending.TryRemove(number, out var completion))
                     {
-                        if (message.TryGetProperty("error", out var error)) completion.TrySetException(new StudioXException("LANGUAGE_REQUEST", error.ToString()));
-                        else completion.TrySetResult(message.GetProperty("result").Clone());
+                        if (message.TryGetProperty("error", out var error))
+                        {
+                            completion.TrySetException(new StudioXException("LANGUAGE_REQUEST", error.ToString()));
+                        }
+                        else
+                        {
+                            completion.TrySetResult(message.GetProperty("result").Clone());
+                        }
                     }
                 }
                 else if (message.TryGetProperty("id", out var requestId))
-                    await SendAsync(new { jsonrpc = "2.0", id = requestId.Clone(), error = new { code = -32601, message = "Unsupported client method" } }, lifetime.Token).ConfigureAwait(false);
+                {
+                    await SendAsync(new
+                    {
+                        jsonrpc = "2.0",
+                        id = requestId.Clone(),
+                        error = new
+                        {
+                            code = -32601,
+                            message = "Unsupported client method"
+                        }
+                    }, lifetime.Token).ConfigureAwait(false);
+                }
             }
         }
         catch (Exception ex) { failure = ex; }
-        finally { foreach (var entry in pending) if (pending.TryRemove(entry.Key, out var completion)) completion.TrySetException(failure); }
+        finally { foreach (var entry in pending) { if (pending.TryRemove(entry.Key, out var completion)) { completion.TrySetException(failure); } } }
     }
     public async ValueTask DisposeAsync()
     {
-        if (Interlocked.Exchange(ref disposed, 1) != 0) return;
+        if (Interlocked.Exchange(ref disposed, 1) != 0)
+        {
+            return;
+        }
         try
         {
             if (IsRunning)
             {
                 using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(1));
-                try { await RequestAsync("shutdown", null, timeout.Token).ConfigureAwait(false); await NotifyAsync("exit", null, timeout.Token).ConfigureAwait(false); }
+                try
+                {
+                    await RequestAsync("shutdown", null, timeout.Token).ConfigureAwait(false);
+                    await NotifyAsync("exit", null, timeout.Token).ConfigureAwait(false);
+                }
                 catch (Exception ex) when (ex is OperationCanceledException or IOException or StudioXException) { }
             }
             lifetime.Cancel();
             if (!process.HasExited)
             {
-                try { await process.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(1)).ConfigureAwait(false); }
+                try
+                {
+                    await process.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(1)).ConfigureAwait(false);
+                }
                 catch (TimeoutException) { process.Kill(entireProcessTree: true); await process.WaitForExitAsync().ConfigureAwait(false); }
             }
             await Task.WhenAll(reader, errors).ConfigureAwait(false);

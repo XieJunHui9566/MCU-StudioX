@@ -28,7 +28,9 @@ internal sealed partial class RetentionChecks
         newer = await FixturePack.CreateAsync(corruptBundle, "fixture.bad-bundle", "0.10.0");
         await FixturePack.WriteBundleIndexAsync(corruptBundle, old, newer);
         await using (var stream = new FileStream(newer.Archive, FileMode.Append, FileAccess.Write))
+        {
             await stream.WriteAsync(new byte[] { 0xff });
+        }
         repository = new PackRepository(Path.Combine(corruptDirectory, "packs"));
         imported = await repository.ImportBundledMissingAsync(corruptBundle);
         Require(imported.Imported == 1 && imported.Failures.Count == 1 && imported.Skipped == 0,

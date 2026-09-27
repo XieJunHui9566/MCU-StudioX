@@ -11,11 +11,29 @@ internal sealed class EditorDocumentSession(SourceDocument source)
     public TextDocument Buffer { get; } = new(source.Text);
     public TabItem Tab { get; } = new() { Padding = new(10, 4, 8, 4), Height = 34 };
     public TextBlock Label { get; } = new() { VerticalAlignment = System.Windows.VerticalAlignment.Center, MaxWidth = 240, TextTrimming = System.Windows.TextTrimming.CharacterEllipsis };
-    public EventHandler? Changed { get; set; }
-    public int CaretOffset { get; set; }
-    public int SelectionStart { get; set; }
-    public int SelectionLength { get; set; }
-    public double VerticalOffset { get; set; }
-    public double HorizontalOffset { get; set; }
+    public EventHandler? Changed
+    {
+        get; set;
+    }
+    public int CaretOffset
+    {
+        get; set;
+    }
+    public int SelectionStart
+    {
+        get; set;
+    }
+    public int SelectionLength
+    {
+        get; set;
+    }
+    public double VerticalOffset
+    {
+        get; set;
+    }
+    public double HorizontalOffset
+    {
+        get; set;
+    }
     public bool IsDirty => !string.Equals(Buffer.Text, Source.Text, StringComparison.Ordinal);
 }

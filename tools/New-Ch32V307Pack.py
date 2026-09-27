@@ -1,4 +1,5 @@
 """Package the pinned local MounRiver WCH SDK. No tool binaries or downloads in mcupack."""
+
 import argparse
 import hashlib
 import json
@@ -22,12 +23,17 @@ def main():
     parser = argparse.ArgumentParser(__doc__)
     parser.add_argument("--sdk", type=Path, required=True, help="CH32V307/NoneOS directory")
     parser.add_argument("--output", type=Path, required=True, help="New output directory")
-    parser.add_argument("--rtos-sdk", type=Path, help="Official CH32V307-FreeRTOS.zip; defaults to sibling FreeRTOS directory")
+    parser.add_argument(
+        "--rtos-sdk",
+        type=Path,
+        help="Official CH32V307-FreeRTOS.zip; defaults to sibling FreeRTOS directory",
+    )
     args = parser.parse_args()
     repo = Path(__file__).resolve().parents[1]
     cli = repo / "src/StudioX.Cli/bin/Release/net10.0/StudioX.Cli.dll"
     if not cli.is_file():
         raise RuntimeError("Build the Release CLI first")
+    # SDK 哈希同时约束启动文件、时钟配置与模板结构；升级 SDK 必须先审查配方。
     metadata = {}
     for part, digest in ARCHIVES.items():
         archive = args.sdk / f"CH32V307{part}.zip"
@@ -55,34 +61,70 @@ def main():
         for name in ["ch32v30x_conf.h", "ch32v30x_it.h", "ch32v30x_it.c", "system_ch32v30x.h"]:
             write("system/" + name, z.read("User/" + name))
         clock = z.read("User/system_ch32v30x.c").decode().replace("\r\n", "\n").replace("\r", "\n")
-        clock, count = re.subn(r"(?m)^#define SYSCLK_FREQ_96MHz_HSE\s+96000000\s*$", "#define SYSCLK_FREQ_144MHz_HSE 144000000", clock)
+        clock, count = re.subn(
+            r"(?m)^#define SYSCLK_FREQ_96MHz_HSE\s+96000000\s*$",
+            "#define SYSCLK_FREQ_144MHz_HSE 144000000",
+            clock,
+        )
         if count != 1:
             raise RuntimeError("Clock selection changed")
-        write("system/system_ch32v30x.c", "/* StudioX: default HSE 8 MHz / SYSCLK 144 MHz. */\n" + clock)
+        write(
+            "system/system_ch32v30x.c",
+            "/* StudioX: default HSE 8 MHz / SYSCLK 144 MHz. */\n" + clock,
+        )
         linker = z.read("Ld/Link.ld").decode().replace("\r\n", "\n").replace("\r", "\n")
-        linker, count = re.subn(r"MEMORY\s*\{.*?\}", "MEMORY\n{\n    FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 256K\n    RAM (xrw)  : ORIGIN = 0x20000000, LENGTH = 64K\n}", linker, count=1, flags=re.S)
+        linker, count = re.subn(
+            r"MEMORY\s*\{.*?\}",
+            "MEMORY\n{\n    FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 256K\n    RAM (xrw)  : ORIGIN = 0x20000000, LENGTH = 64K\n}",
+            linker,
+            count=1,
+            flags=re.S,
+        )
         if count != 1:
             raise RuntimeError("Linker memory definition changed")
-        write("linker/ch32v307.ld", "/* StudioX: 256K Flash / 64K RAM option-byte split; flash executes at alias 0. */\n" + linker)
+        write(
+            "linker/ch32v307.ld",
+            "/* StudioX: 256K Flash / 64K RAM option-byte split; flash executes at alias 0. */\n"
+            + linker,
+        )
     for name in ["system_config.h", "system_config.c"]:
         write("system/" + name, (repo / "examples/packs/wch.ch32v307" / name).read_bytes())
     write("templates/main.c", (repo / "examples/packs/wch.ch32v307/main.c").read_bytes())
-    write("templates/freertos/main.c", (repo / "examples/packs/wch.ch32v307/freertos-main.c").read_bytes())
-    rtos = extract_freertos(write, args.rtos_sdk or args.sdk.parent / "FreeRTOS/CH32V307-FreeRTOS.zip", RTOS_SHA256,
-                            ["startup_ch32v30x_D8C.S"])
-    write("interface/wch-link.cfg", (repo / "examples/packs/wch.ch32v307/wch-link.cfg").read_bytes())
+    write(
+        "templates/freertos/main.c",
+        (repo / "examples/packs/wch.ch32v307/freertos-main.c").read_bytes(),
+    )
+    rtos = extract_freertos(
+        write,
+        args.rtos_sdk or args.sdk.parent / "FreeRTOS/CH32V307-FreeRTOS.zip",
+        RTOS_SHA256,
+        ["startup_ch32v30x_D8C.S"],
+    )
+    write(
+        "interface/wch-link.cfg", (repo / "examples/packs/wch.ch32v307/wch-link.cfg").read_bytes()
+    )
     svd = args.sdk / "CH32V307xx.svd"
     write("svd/CH32V307xx.svd", svd.read_bytes())
     write("README.md", (repo / "examples/packs/wch.ch32v307/README.md").read_bytes())
-    write("vendor/provenance.json", json.dumps({
-        "source": "MounRiver Studio 2 / WCH / CH32V307 NoneOS; PeripheralVersion 3.1",
-        "upstream": "https://github.com/openwch/ch32v307",
-        "archives": {f"CH32V307{k}.zip": v for k, v in ARCHIVES.items()},
-        "svdSha256": hashlib.sha256(svd.read_bytes()).hexdigest(),
-        "changes": ["HSE 8 MHz -> 144 MHz selection", "256K Flash / 64K RAM linker split", "StudioX minimal main and system wrapper"],
-        "license": "WCH source notices retained: software and binaries for WCH-manufactured microcontrollers only.",
-        "rtos": rtos
-    }, indent=2))
+    write(
+        "vendor/provenance.json",
+        json.dumps(
+            {
+                "source": "MounRiver Studio 2 / WCH / CH32V307 NoneOS; PeripheralVersion 3.1",
+                "upstream": "https://github.com/openwch/ch32v307",
+                "archives": {f"CH32V307{k}.zip": v for k, v in ARCHIVES.items()},
+                "svdSha256": hashlib.sha256(svd.read_bytes()).hexdigest(),
+                "changes": [
+                    "HSE 8 MHz -> 144 MHz selection",
+                    "256K Flash / 64K RAM linker split",
+                    "StudioX minimal main and system wrapper",
+                ],
+                "license": "WCH source notices retained: software and binaries for WCH-manufactured microcontrollers only.",
+                "rtos": rtos,
+            },
+            indent=2,
+        ),
+    )
     sources = sorted(p.relative_to(stage).as_posix() for p in (stage / "sdk").rglob("*.c"))
     # 启动文件必须跟随模板选择；FreeRTOS 的 CSR/上下文配置不能复用 NoneOS 启动。
     sources = [source for source in sources if not source.startswith("sdk/freertos/")]
@@ -91,27 +133,98 @@ def main():
     for part, device_id in metadata.items():
         chip_id = {"VCT": "0x30700508", "RCT": "0x30710508", "WCU": "0x30730508"}[part]
         target = "debug/" + device_id.lower() + ".cfg"
-        write(target, (repo / "examples/packs/wch.ch32v307/ch32v307.cfg.in").read_text(encoding="utf-8").replace("@CHIP_ID@", chip_id).replace("@DEVICE_ID@", device_id))
-        devices.append(dict(
-            id=device_id, displayName=device_id, architecture="riscv",
-            flashOrigin=0, flashBytes=256 * 1024, ramOrigin=0x20000000, ramBytes=64 * 1024,
-            toolsetId="wch.riscv", toolsetVersion="1.0.0", compilerId="wch-gcc-12.2.0-v1.4",
-            cpuFlags=["-march=rv32imac_xw", "-mabi=ilp32", "-msmall-data-limit=8", "-msave-restore"],
-            defines=["CH32V30x_D8C", "HSE_VALUE=8000000"],
-            includeDirectories=["sdk/Core", "sdk/Peripheral/inc", "sdk/Debug", "system"], sources=sources,
-            linkerScript="linker/ch32v307.ld",
-            compileOptions=["-Og", "-g3", "-ffunction-sections", "-fdata-sections", "-fno-common", "-fsigned-char"],
-            linkOptions=["-nostartfiles", "--specs=nano.specs", "--specs=nosys.specs", "-Wl,--gc-sections", "-Wl,--print-memory-usage"],
-            templates=[plain_template("templates/main.c",
-                "模板默认：外部 8 MHz 晶振 → 144 MHz；256 KiB Flash / 64 KiB SRAM。时钟与初始化位于 device/system；实际配置以工程代码为准。",
-                "sdk/Startup/startup_ch32v30x_D8C.S"),
-                freertos_template("templates/freertos/main.c", "startup_ch32v30x_D8C.S", "外部 8 MHz → 144 MHz；256/64 KiB", 12288)],
-            openOcd=dict(targetScript=target, applicationFlashBytes=256 * 1024, probes=[dict(id="wch-link", displayName="WCH-Link / WCH-LinkE", interfaceScript="interface/wch-link.cfg", transport="sdi", defaultSpeedKhz=6000)])))
-    manifest = dict(formatVersion=1, id="wch.ch32v307", version=VERSION, displayName="CH32V307 · 标准库", vendor="WCH", devices=devices)
+        write(
+            target,
+            (repo / "examples/packs/wch.ch32v307/ch32v307.cfg.in")
+            .read_text(encoding="utf-8")
+            .replace("@CHIP_ID@", chip_id)
+            .replace("@DEVICE_ID@", device_id),
+        )
+        devices.append(
+            dict(
+                id=device_id,
+                displayName=device_id,
+                architecture="riscv",
+                flashOrigin=0,
+                flashBytes=256 * 1024,
+                ramOrigin=0x20000000,
+                ramBytes=64 * 1024,
+                toolsetId="wch.riscv",
+                toolsetVersion="1.0.0",
+                compilerId="wch-gcc-12.2.0-v1.4",
+                cpuFlags=[
+                    "-march=rv32imac_xw",
+                    "-mabi=ilp32",
+                    "-msmall-data-limit=8",
+                    "-msave-restore",
+                ],
+                defines=["CH32V30x_D8C", "HSE_VALUE=8000000"],
+                includeDirectories=["sdk/Core", "sdk/Peripheral/inc", "sdk/Debug", "system"],
+                sources=sources,
+                linkerScript="linker/ch32v307.ld",
+                compileOptions=[
+                    "-Og",
+                    "-g3",
+                    "-ffunction-sections",
+                    "-fdata-sections",
+                    "-fno-common",
+                    "-fsigned-char",
+                ],
+                linkOptions=[
+                    "-nostartfiles",
+                    "--specs=nano.specs",
+                    "--specs=nosys.specs",
+                    "-Wl,--gc-sections",
+                    "-Wl,--print-memory-usage",
+                ],
+                templates=[
+                    plain_template(
+                        "templates/main.c",
+                        "模板默认：外部 8 MHz 晶振 → 144 MHz；256 KiB Flash / 64 KiB SRAM。时钟与初始化位于 device/system；实际配置以工程代码为准。",
+                        "sdk/Startup/startup_ch32v30x_D8C.S",
+                    ),
+                    freertos_template(
+                        "templates/freertos/main.c",
+                        "startup_ch32v30x_D8C.S",
+                        "外部 8 MHz → 144 MHz；256/64 KiB",
+                        12288,
+                    ),
+                ],
+                openOcd=dict(
+                    targetScript=target,
+                    applicationFlashBytes=256 * 1024,
+                    probes=[
+                        dict(
+                            id="wch-link",
+                            displayName="WCH-Link / WCH-LinkE",
+                            interfaceScript="interface/wch-link.cfg",
+                            transport="sdi",
+                            defaultSpeedKhz=6000,
+                        )
+                    ],
+                ),
+            )
+        )
+    manifest = dict(
+        formatVersion=1,
+        id="wch.ch32v307",
+        version=VERSION,
+        displayName="CH32V307 · 标准库",
+        vendor="WCH",
+        devices=devices,
+    )
     write("manifest.json", json.dumps(manifest, ensure_ascii=False, indent=2))
     archive = args.output / f"wch.ch32v307-{VERSION}.mcupack"
     subprocess.run(["dotnet", str(cli), "pack", str(stage), str(archive)], check=True)
-    index = [dict(file=archive.name, id=manifest["id"], version=manifest["version"], devices=list(metadata.values()), sha256=hashlib.sha256(archive.read_bytes()).hexdigest())]
+    index = [
+        dict(
+            file=archive.name,
+            id=manifest["id"],
+            version=manifest["version"],
+            devices=list(metadata.values()),
+            sha256=hashlib.sha256(archive.read_bytes()).hexdigest(),
+        )
+    ]
     (args.output / "index.json").write_text(json.dumps(index, indent=2), encoding="utf-8")
 
 

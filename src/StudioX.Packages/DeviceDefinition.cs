@@ -6,7 +6,5 @@ public sealed record DeviceDefinition(string Id, string DisplayName, string Arch
     IReadOnlyList<string> CpuFlags, IReadOnlyList<string> Defines,
     IReadOnlyList<string> IncludeDirectories, IReadOnlyList<string> Sources,
     string LinkerScript, IReadOnlyList<string> CompileOptions, IReadOnlyList<string> LinkOptions,
-    IReadOnlyList<ProjectTemplate> Templates, OpenOcdDefinition? OpenOcd = null);
-
-public sealed record OpenOcdDefinition(string TargetScript, IReadOnlyList<DebugProbeDefinition> Probes, uint? ApplicationFlashBytes = null);
-public sealed record DebugProbeDefinition(string Id, string DisplayName, string InterfaceScript, string Transport, int DefaultSpeedKhz);
+    IReadOnlyList<ProjectTemplate> Templates, OpenOcdDefinition? OpenOcd = null,
+    EspressifDeviceDefinition? Espressif = null);

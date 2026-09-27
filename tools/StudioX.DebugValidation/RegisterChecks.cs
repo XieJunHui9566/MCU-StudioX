@@ -25,7 +25,13 @@ internal static class RegisterChecks
         Check(snapshot.Registers.Any(r => r.Name == "sp") && snapshot.Registers.Any(r => r.Name == "zero"), "RISC-V integer registers");
         Check(snapshot.Registers.All(r => r.Name is not ("xpsr" or "r0" or "fpscr" or "s0") && r.Name.Length > 0), "No ARM or unnamed registers invented");
     }
-    private static void Check(bool value, string message) { if (!value) throw new InvalidOperationException(message); }
+    private static void Check(bool value, string message)
+    {
+        if (!value)
+        {
+            throw new InvalidOperationException(message);
+        }
+    }
 
     // 稀疏、非连续的寄存器编号，防止未来按 M4 固定索引映射 M3 的寄存器。
     private sealed class RegisterTransport(bool fpu, bool riscv = false) : IGdbMiTransport
@@ -34,7 +40,8 @@ internal static class RegisterChecks
         public Task<string> ExecuteAsync(string command, CancellationToken token = default)
         {
             var index = command.IndexOf('-');
-            var number = command[..index]; var body = command[index..];
+            var number = command[..index];
+            var body = command[index..];
             var response = body switch
             {
                 "-stack-list-frames 0 31" => "stack=[frame={level=\"0\",func=\"main\",file=\"main.c\",line=\"12\",addr=\"0x08000100\"}]",
@@ -47,11 +54,13 @@ internal static class RegisterChecks
                 _ => throw new InvalidOperationException("Unexpected MI: " + body)
             };
             if (riscv)
+            {
                 response = response.Replace("0x08000100", "0x80000100", StringComparison.Ordinal)
-                    .Replace("\"r0\"", "\"zero\"", StringComparison.Ordinal)
-                    .Replace("\"xpsr\"", "\"mstatus\"", StringComparison.Ordinal)
-                    .Replace("\"s0\"", "\"ft0\"", StringComparison.Ordinal)
-                    .Replace("\"fpscr\"", "\"sp\"", StringComparison.Ordinal);
+                .Replace("\"r0\"", "\"zero\"", StringComparison.Ordinal)
+                .Replace("\"xpsr\"", "\"mstatus\"", StringComparison.Ordinal)
+                .Replace("\"s0\"", "\"ft0\"", StringComparison.Ordinal)
+                .Replace("\"fpscr\"", "\"sp\"", StringComparison.Ordinal);
+            }
             return Task.FromResult(number + "^done" + (response.Length > 0 ? "," + response : ""));
         }
         public ValueTask DisposeAsync() => ValueTask.CompletedTask;

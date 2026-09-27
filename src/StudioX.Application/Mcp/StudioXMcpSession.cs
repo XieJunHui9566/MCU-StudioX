@@ -8,11 +8,6 @@ using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
 using StudioX.Application.Skills;
 
-/// <summary>工具图像只在当前模型请求中使用，不能写进对话历史或工具文本。</summary>
-public sealed record StudioXMcpImage(string MimeType, byte[] Data);
-
-public sealed record StudioXMcpToolResult(string Text, IReadOnlyList<StudioXMcpImage> Images);
-
 /// <summary>内置 Agent 通过真实 MCP 客户端发现并调用同进程的 MCP 服务端。</summary>
 public sealed class StudioXMcpSession : IAsyncDisposable
 {
@@ -51,12 +46,43 @@ public sealed class StudioXMcpSession : IAsyncDisposable
                 cancellationToken: token).ConfigureAwait(false);
             return new StudioXMcpSession(server, client, tools, serverLoop);
         }
-        catch
+        catch (Exception initializationError)
         {
-            await server.DisposeAsync().ConfigureAwait(false);
-            await tools.DisposeAsync().ConfigureAwait(false);
+            var cleanupErrors = await CleanupFailedCreationAsync(initializationError,
+                () => server.DisposeAsync(), () => tools.DisposeAsync()).ConfigureAwait(false);
+            if (cleanupErrors is not null)
+            {
+                throw cleanupErrors;
+            }
+            // 清理成功时保留初始化异常原来的类型与堆栈，取消仍由调用方按取消处理。
             throw;
         }
+    }
+
+    /// <summary>初始化失败后分别释放每个所有者；清理错误不能阻止后续释放或覆盖原始诊断。</summary>
+    private static async Task<AggregateException?> CleanupFailedCreationAsync(Exception initializationError,
+        Func<ValueTask> disposeServer, Func<ValueTask> disposeTools)
+    {
+        List<Exception> errors = [initializationError];
+        try
+        {
+            await disposeServer().ConfigureAwait(false);
+        }
+        catch (Exception error)
+        {
+            errors.Add(error);
+        }
+        try
+        {
+            await disposeTools().ConfigureAwait(false);
+        }
+        catch (Exception error)
+        {
+            errors.Add(error);
+        }
+        return errors.Count > 1
+            ? new AggregateException("MCP 会话初始化失败；清理期间也发生错误。", errors)
+            : null;
     }
 
     public async Task<IReadOnlyList<AiToolDefinition>> ListToolsAsync(CancellationToken token = default)
@@ -75,13 +101,28 @@ public sealed class StudioXMcpSession : IAsyncDisposable
         CancellationToken token = default)
     {
         Dictionary<string, object?>? arguments;
-        try { arguments = JsonSerializer.Deserialize<Dictionary<string, object?>>(argumentsJson); }
+        try
+        {
+            arguments = JsonSerializer.Deserialize<Dictionary<string, object?>>(argumentsJson);
+        }
         catch (JsonException)
-        { return new(JsonSerializer.Serialize(new { error = "MCP_ARGUMENTS: 工具参数必须是 JSON 对象。",
-            code = "MCP_ARGUMENTS", message = "工具参数必须是 JSON 对象。" }), []); }
+        {
+            return new(JsonSerializer.Serialize(new
+            {
+                error = "MCP_ARGUMENTS: 工具参数必须是 JSON 对象。",
+                code = "MCP_ARGUMENTS",
+                message = "工具参数必须是 JSON 对象。"
+            }), []);
+        }
         if (arguments is null)
-            return new(JsonSerializer.Serialize(new { error = "MCP_ARGUMENTS: 工具参数必须是 JSON 对象。",
-                code = "MCP_ARGUMENTS", message = "工具参数必须是 JSON 对象。" }), []);
+        {
+            return new(JsonSerializer.Serialize(new
+            {
+                error = "MCP_ARGUMENTS: 工具参数必须是 JSON 对象。",
+                code = "MCP_ARGUMENTS",
+                message = "工具参数必须是 JSON 对象。"
+            }), []);
+        }
         var result = await client.CallToolAsync(name, arguments, cancellationToken: token)
             .ConfigureAwait(false);
         var content = string.Join("\n", result.Content.OfType<TextContentBlock>().Select(item => item.Text));
@@ -103,23 +144,41 @@ public sealed class StudioXMcpSession : IAsyncDisposable
                 code = match.Groups["code"].Value,
                 message = match.Groups["message"].Value
             }), [])
-            : new(JsonSerializer.Serialize(new { error = content }), []);
+            : new(JsonSerializer.Serialize(new
+            {
+                error = content
+            }), []);
     }
 
     public async ValueTask DisposeAsync()
     {
         List<Exception> errors = [];
-        try { await client.DisposeAsync().ConfigureAwait(false); }
+        try
+        {
+            await client.DisposeAsync().ConfigureAwait(false);
+        }
         catch (Exception ex) { errors.Add(ex); }
-        try { await server.DisposeAsync().ConfigureAwait(false); }
+        try
+        {
+            await server.DisposeAsync().ConfigureAwait(false);
+        }
         catch (Exception ex) { errors.Add(ex); }
-        try { await tools.DisposeAsync().ConfigureAwait(false); }
+        try
+        {
+            await tools.DisposeAsync().ConfigureAwait(false);
+        }
         catch (Exception ex) { errors.Add(ex); }
-        try { await serverLoop.ConfigureAwait(false); }
+        try
+        {
+            await serverLoop.ConfigureAwait(false);
+        }
         catch (OperationCanceledException) { }
         catch (IOException) { }
         catch (ObjectDisposedException) { }
         catch (Exception ex) { errors.Add(ex); }
-        if (errors.Count > 0) throw new AggregateException("MCP 会话清理失败。", errors);
+        if (errors.Count > 0)
+        {
+            throw new AggregateException("MCP 会话清理失败。", errors);
+        }
     }
 }

@@ -4,10 +4,10 @@ using StudioX.Engine;
 using StudioX.Foundation;
 using StudioX.Packages;
 
-if (args.Length != 2) throw new ArgumentException("Usage: StartupValidation <user-data-directory> <new-output-directory>");
+if (args.Length != 2) { throw new ArgumentException("Usage: StartupValidation <user-data-directory> <new-output-directory>"); }
 var data = Path.GetFullPath(args[0]);
 var output = Path.GetFullPath(args[1]);
-if (Directory.Exists(output)) throw new ArgumentException("Output must be a new directory.");
+if (Directory.Exists(output)) { throw new ArgumentException("Output must be a new directory."); }
 Directory.CreateDirectory(output);
 var results = new List<string>();
 void Pass(string text) { results.Add(text); Console.WriteLine(text); }
@@ -40,7 +40,9 @@ var projects = new ProjectService();
 var validProject = Path.Combine(output, "valid-project");
 await projects.CreateAsync(selection, device.Id, "bare", "valid_project", validProject);
 if (!File.Exists(Path.Combine(validProject, "src", "main.c")) || !File.Exists(Path.Combine(validProject, "CMakeLists.txt")))
+{
     throw new InvalidOperationException("Catalog selection did not generate a project.");
+}
 Pass("PASS: catalog selection creates project after full verification");
 await ProjectDeviceInfoChecks.RunAsync(validProject, manifest, Pass);
 
@@ -54,7 +56,9 @@ async Task RejectCreate(string name)
     }
     catch (StudioXException ex) when (ex.Code == "PACK_HASH") { }
     if (Directory.Exists(destination) || Directory.EnumerateDirectories(output, ".studiox-create-*").Any())
+    {
         throw new InvalidOperationException("Failed verification left project files behind.");
+    }
     Pass("PASS: " + name + " rejected before copying");
 }
 
@@ -77,15 +81,35 @@ File.Move(extra, Path.Combine(output, "extra.c"));
 var manifestPath = Path.Combine(selection.RootDirectory, "manifest.json");
 var originalManifest = await File.ReadAllBytesAsync(manifestPath);
 await File.AppendAllTextAsync(manifestPath, " ");
-try { await repository.ListCatalogAsync(); throw new InvalidOperationException("Changed manifest accepted."); }
+try
+{
+    await repository.ListCatalogAsync();
+    throw new InvalidOperationException("Changed manifest accepted.");
+}
 catch (StudioXException ex) when (ex.Code == "PACK_HASH") { Pass("PASS: changed catalog manifest rejected"); }
 await File.WriteAllBytesAsync(manifestPath, originalManifest);
-try { await PackRepository.VerifyAsync(selection with { ContentHash = new string('0', 64) }); throw new InvalidOperationException("Stale selection accepted."); }
+try
+{
+    await PackRepository.VerifyAsync(selection with
+    {
+        ContentHash = new string('0', 64)
+    });
+    throw new InvalidOperationException("Stale selection accepted.");
+}
 catch (StudioXException ex) when (ex.Code == "PACK_CHANGED") { Pass("PASS: stale selection rejected"); }
-using var cancelled = new CancellationTokenSource(); cancelled.Cancel();
-try { await repository.ListCatalogAsync(cancelled.Token); throw new InvalidOperationException("Cancellation ignored."); }
+using var cancelled = new CancellationTokenSource();
+cancelled.Cancel();
+try
+{
+    await repository.ListCatalogAsync(cancelled.Token);
+    throw new InvalidOperationException("Cancellation ignored.");
+}
 catch (OperationCanceledException) { Pass("PASS: catalog cancellation"); }
-try { await PackRepository.VerifyAsync(selection, cancelled.Token); throw new InvalidOperationException("Cancellation ignored."); }
+try
+{
+    await PackRepository.VerifyAsync(selection, cancelled.Token);
+    throw new InvalidOperationException("Cancellation ignored.");
+}
 catch (OperationCanceledException) { Pass("PASS: verification cancellation"); }
 
 // 首次读取只访问记录文件；随后在后台清理确认已删除的本地工程。
@@ -95,26 +119,36 @@ var unknownNetworkProject = @"\\studiox-unavailable\share\missing-project";
 await isolatedHistory.RememberAsync("valid", validProject);
 await isolatedHistory.RememberAsync("missing", missingProject);
 await isolatedHistory.RememberAsync("network", unknownNetworkProject);
-if ((await isolatedHistory.LoadAsync()).Count != 3) throw new InvalidOperationException("Recent list probed projects during the initial read.");
+if ((await isolatedHistory.LoadAsync()).Count != 3) { throw new InvalidOperationException("Recent list probed projects during the initial read."); }
 Pass("PASS: initial recent read is independent of project availability");
 var pruned = await isolatedHistory.PruneMissingLocalAsync();
 if (pruned.Count != 2 || !pruned.Any(project => project.Name == "valid") || !pruned.Any(project => project.Name == "network") ||
     (await isolatedHistory.LoadAsync()).Any(project => project.Name == "missing"))
+{
     throw new InvalidOperationException("Missing local project was not pruned and persisted, or valid/unknown project was removed.");
+}
 Pass("PASS: missing local project pruned while valid and unknown network projects remain");
 Directory.Delete(validProject, recursive: true);
 if (!await isolatedHistory.RemoveIfMissingLocalAsync(validProject) ||
     (await isolatedHistory.LoadAsync()).Any(project => project.Name == "valid"))
+{
     throw new InvalidOperationException("Deleted recent project remained after click-time validation.");
+}
 if (!await isolatedHistory.RemoveIfMissingLocalAsync(validProject))
+{
     throw new InvalidOperationException("A concurrently removed missing project was not recognized as missing.");
+}
 Pass("PASS: deleted local project removed on click-time validation");
 if (!await isolatedHistory.RemoveAsync(unknownNetworkProject) || (await isolatedHistory.LoadAsync()).Count != 0)
+{
     throw new InvalidOperationException("Explicit removal did not persist.");
+}
 Pass("PASS: explicit recent project removal persists");
 await Task.WhenAll(Enumerable.Range(0, 4).Select(index =>
     isolatedHistory.RememberAsync("parallel-" + index, Path.Combine(output, "parallel-" + index))));
 if ((await isolatedHistory.LoadAsync()).Count != 4)
+{
     throw new InvalidOperationException("Concurrent recent writes lost an entry.");
+}
 Pass("PASS: concurrent recent writes preserve all entries");
 await File.WriteAllLinesAsync(Path.Combine(output, "result.txt"), results);

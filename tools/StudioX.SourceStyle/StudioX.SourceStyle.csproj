@@ -1,0 +1,16 @@
+<Project
+  Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RuntimeIdentifier />
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- 复用当前 .NET SDK 的语法解析器；格式检查不下载额外工具或复制工具链。 -->
+    <Reference
+      Include="Microsoft.CodeAnalysis"
+      HintPath="$(MSBuildBinPath)/Roslyn/bincore/Microsoft.CodeAnalysis.dll" />
+    <Reference
+      Include="Microsoft.CodeAnalysis.CSharp"
+      HintPath="$(MSBuildBinPath)/Roslyn/bincore/Microsoft.CodeAnalysis.CSharp.dll" />
+  </ItemGroup>
+</Project>

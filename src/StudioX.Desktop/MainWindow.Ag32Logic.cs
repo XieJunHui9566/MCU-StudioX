@@ -71,7 +71,13 @@ public partial class MainWindow
         Log("Quartus II：" + (inspection.QuartusExecutable ?? "未在 PATH 中检测到；可设置 STUDIOX_AG32_QUARTUS。必须使用 Full 版，检测不代表版本或授权有效。"));
         Log("Supra：" + (inspection.SupraExecutable ?? "未在 PATH 中检测到；可设置 STUDIOX_AG32_SUPRA，或从 AGM AgRV SDK 的 tool-agrv_logic/bin 启动。"));
         Log("预期逻辑 BIN：" + inspection.BinaryPath + (inspection.BinaryBytes is { } bytes ? $" · {bytes} 字节" : " · 尚未生成"));
-        foreach (var error in inspection.Errors) Log("检查问题：" + error);
-        foreach (var note in inspection.Notes) Log("提示：" + note);
+        foreach (var error in inspection.Errors)
+        {
+            Log("检查问题：" + error);
+        }
+        foreach (var note in inspection.Notes)
+        {
+            Log("提示：" + note);
+        }
     }
 }

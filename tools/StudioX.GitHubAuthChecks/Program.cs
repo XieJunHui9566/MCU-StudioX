@@ -13,7 +13,10 @@ var checks = 0;
 
 void Check(bool condition, string label)
 {
-    if (!condition) throw new Exception(label);
+    if (!condition)
+    {
+        throw new Exception(label);
+    }
     checks++;
     Console.WriteLine("PASS " + label);
 }
@@ -143,8 +146,11 @@ Check(redirectProfile.Login == "alice" && redirectProfile.AvatarBytes is null,
 
 using var largeAvatarClient = new HttpClient(new StubHandler(request =>
 {
-    if (request.RequestUri?.Host == "api.github.com") return Json(HttpStatusCode.OK,
+    if (request.RequestUri?.Host == "api.github.com")
+    {
+        return Json(HttpStatusCode.OK,
         """{"login":"alice","avatar_url":"https://avatars.githubusercontent.com/u/1"}""");
+    }
     var oversized = new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent(new byte[1024 * 1024 + 1]) };
     oversized.Content.Headers.ContentType = new("image/png");
     return oversized;
@@ -156,8 +162,11 @@ Check(largeAvatarProfile.Login == "alice" && largeAvatarProfile.AvatarBytes is n
 
 using var corruptAvatarClient = new HttpClient(new StubHandler(request =>
 {
-    if (request.RequestUri?.Host == "api.github.com") return Json(HttpStatusCode.OK,
+    if (request.RequestUri?.Host == "api.github.com")
+    {
+        return Json(HttpStatusCode.OK,
         """{"login":"alice","avatar_url":"https://avatars.githubusercontent.com/u/1"}""");
+    }
     var corrupt = new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent("not an image"u8.ToArray()) };
     corrupt.Content.Headers.ContentType = new("image/png");
     return corrupt;
@@ -187,7 +196,9 @@ Console.WriteLine($"PASS {checks} offline GitHub authentication checks; no accou
 static HttpClient ProfileClient(string body) => new(new StubHandler(request =>
 {
     if (request.RequestUri?.Host != "api.github.com")
+    {
         throw new Exception("Unexpected avatar request: " + request.RequestUri);
+    }
     return Json(HttpStatusCode.OK, body);
 }));
 

@@ -8,13 +8,6 @@ using StudioX.Foundation;
 using UglyToad.PdfPig;
 using UglyToad.PdfPig.DocumentLayoutAnalysis.TextExtractor;
 
-public sealed record PdfDocumentInfo(int PageCount, long Bytes, string Sha256);
-public sealed record PdfPageText(int PageNumber, int PageCount, string Text, bool HasExtractableText);
-public sealed record PdfSearchHit(int Page, int OffsetCharacters, string Snippet);
-public sealed record PdfSearchResult(int ScannedThroughPage, int PagesWithoutExtractableText,
-    IReadOnlyList<PdfSearchHit> Matches);
-public sealed record PdfRenderedRegion(int PageNumber, int PixelWidth, int PixelHeight, byte[] PngBytes);
-
 /// <summary>有界读取 PDF 的文字或页面区域；工具层负责批准与校验路径所属工程。</summary>
 public static class PdfDocumentService
 {
@@ -45,7 +38,9 @@ public static class PdfDocumentService
     {
         if (string.IsNullOrWhiteSpace(query) || query.Length is < 2 or > 120 ||
             query.Any(char.IsControl) || maxPages is < 1 or > 12 || maxHits is < 1 or > 12)
+        {
             throw new StudioXException("MCP_PDF_SEARCH", "PDF 查询词或扫描范围无效。");
+        }
         var bytes = ReadCheckedPdf(path, token);
         using var document = OpenPdf(bytes, token);
         RequirePage(startPage, document.NumberOfPages);
@@ -57,7 +52,11 @@ public static class PdfDocumentService
             token.ThrowIfCancellationRequested();
             var text = ExtractText(document, page, token);
             lastPage = page;
-            if (string.IsNullOrWhiteSpace(text)) { missingText++; continue; }
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                missingText++;
+                continue;
+            }
             var offset = text.IndexOf(query, StringComparison.OrdinalIgnoreCase);
             if (offset >= 0)
             {
@@ -65,7 +64,9 @@ public static class PdfDocumentService
                 var end = Math.Min(text.Length, offset + query.Length + 120);
                 var snippet = text[begin..end].Replace('\r', ' ').Replace('\n', ' ').Trim();
                 if (hits.Count < maxHits)
+                {
                     hits.Add(new PdfSearchHit(page, offset, snippet));
+                }
             }
         }
         return new PdfSearchResult(lastPage, missingText, hits);
@@ -75,22 +76,30 @@ public static class PdfDocumentService
         double width, double height, int maxDimension, CancellationToken token = default)
     {
         if (!OperatingSystem.IsWindows())
+        {
             throw new StudioXException("MCP_PDF_PLATFORM", "PDF 页面渲染当前仅支持 Windows。");
+        }
         if (maxDimension is < 256 or > 1_600 ||
             !double.IsFinite(x) || !double.IsFinite(y) || !double.IsFinite(width) || !double.IsFinite(height) ||
             x < 0 || y < 0 || width <= 0 || height <= 0 || x + width > 1.000001 || y + height > 1.000001)
+        {
             throw new StudioXException("MCP_PDF_REGION", "PDF 裁切区域无效；坐标须为页面左上角起算的 0–1 比例。");
+        }
 
         var bytes = ReadCheckedPdf(path, token);
         using (var document = OpenPdf(bytes, token))
+        {
             RequirePage(page, document.NumberOfPages);
+        }
         token.ThrowIfCancellationRequested();
         try
         {
             var pageSize = Conversion.GetPageSize(bytes, new Index(page - 1));
             if (!float.IsFinite(pageSize.Width) || !float.IsFinite(pageSize.Height) ||
                 pageSize.Width <= 0 || pageSize.Height <= 0)
+            {
                 throw new StudioXException("MCP_PDF_RENDER", "PDF 页面的尺寸无效。");
+            }
             var bounds = new RectangleF((float)(x * pageSize.Width), (float)(y * pageSize.Height),
                 (float)(width * pageSize.Width), (float)(height * pageSize.Height));
             var longSide = Math.Max(bounds.Width, bounds.Height);
@@ -106,18 +115,24 @@ public static class PdfDocumentService
                 using var bitmap = Conversion.ToImage(bytes, new Index(page - 1), options: options);
                 if (bitmap is null || bitmap.Width < 1 || bitmap.Height < 1 ||
                     bitmap.Width > 1_600 || bitmap.Height > 1_600)
+                {
                     throw new StudioXException("MCP_PDF_RENDER", "PDF 页面渲染失败或图像尺寸超限。");
+                }
                 using var encoded = bitmap.Encode(SKEncodedImageFormat.Png, 100);
                 if (encoded is null)
+                {
                     throw new StudioXException("MCP_PDF_RENDER", "PDF 页面无法编码为 PNG 图像。");
+                }
                 if (encoded.Size <= MaxPngBytes)
                 {
                     token.ThrowIfCancellationRequested();
                     return new PdfRenderedRegion(page, bitmap.Width, bitmap.Height, encoded.ToArray());
                 }
                 if (dimension <= 320)
+                {
                     throw new StudioXException("MCP_PDF_IMAGE_SIZE",
-                        "PDF 区域渲染后的 PNG 超过 700 KiB；请缩小裁切区域。");
+                    "PDF 区域渲染后的 PNG 超过 700 KiB；请缩小裁切区域。");
+                }
                 dimension = Math.Max(320, (int)(dimension * 0.75));
             }
         }
@@ -135,13 +150,17 @@ public static class PdfDocumentService
         token.ThrowIfCancellationRequested();
         if (string.IsNullOrWhiteSpace(path) || !Path.IsPathFullyQualified(path) ||
             !Path.GetExtension(path).Equals(".pdf", StringComparison.OrdinalIgnoreCase))
+        {
             throw new StudioXException("MCP_PDF_PATH", "PDF 路径必须是已授权的绝对 .pdf 文件路径。");
+        }
         try
         {
             using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read,
                 bufferSize: 64 * 1024, FileOptions.SequentialScan);
             if (stream.Length is < 5 or > MaxPdfBytes)
+            {
                 throw new StudioXException("MCP_PDF_SIZE", "PDF 文件必须小于等于 32 MiB。");
+            }
             var bytes = new byte[(int)stream.Length];
             var offset = 0;
             while (offset < bytes.Length)
@@ -149,11 +168,15 @@ public static class PdfDocumentService
                 token.ThrowIfCancellationRequested();
                 var read = stream.Read(bytes, offset, bytes.Length - offset);
                 if (read == 0)
+                {
                     throw new StudioXException("MCP_PDF_FILE", "PDF 文件读取时发生变化，请重新打开。");
+                }
                 offset += read;
             }
             if (!bytes.AsSpan(0, 5).SequenceEqual("%PDF-"u8))
+            {
                 throw new StudioXException("MCP_PDF_FORMAT", "文件不是有效的 PDF 格式。");
+            }
             token.ThrowIfCancellationRequested();
             return bytes;
         }
@@ -200,7 +223,9 @@ public static class PdfDocumentService
             var text = ContentOrderTextExtractor.GetText(document.GetPage(page));
             token.ThrowIfCancellationRequested();
             if (text.Length > MaxPageTextChars)
+            {
                 throw new StudioXException("MCP_PDF_TEXT_SIZE", "该 PDF 页面的文字超过 512000 字符，无法安全读取。");
+            }
             return text;
         }
         catch (StudioXException) { throw; }
@@ -215,6 +240,8 @@ public static class PdfDocumentService
     private static void RequirePage(int page, int count)
     {
         if (page < 1 || page > count)
+        {
             throw new StudioXException("MCP_PDF_PAGE", $"PDF 页码必须在 1–{count} 之间。");
+        }
     }
 }

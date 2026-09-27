@@ -28,7 +28,9 @@ def checked_bytes(path: Path, expected: str) -> bytes:
     content = path.read_bytes()
     digest = hashlib.sha256(content).hexdigest()
     if digest != expected:
-        raise RuntimeError(f"Official SDK file changed; review before updating recipe: {path.name}: {digest}")
+        raise RuntimeError(
+            f"Official SDK file changed; review before updating recipe: {path.name}: {digest}"
+        )
     return content
 
 
@@ -46,7 +48,12 @@ def main() -> None:
     metadata = {name: checked_bytes(sdk / name, sha) for name, sha in METADATA.items()}
     processor = json.loads(metadata["CH595-targetProcessor.json"])
     flash = json.loads(metadata["CH595-flash.json"])
-    if processor["architecture"] != "rv32i" or processor["integer_ABI"] != "ilp32" or flash["type"] != "CH595/6" or flash["id"] != 203:
+    if (
+        processor["architecture"] != "rv32i"
+        or processor["integer_ABI"] != "ilp32"
+        or flash["type"] != "CH595/6"
+        or flash["id"] != 203
+    ):
         raise RuntimeError("CH595 SDK target metadata changed")
 
     archives: dict[str, zipfile.ZipFile] = {}
@@ -61,20 +68,36 @@ def main() -> None:
                 archive.close()
                 raise RuntimeError(f"CH595{suffix}.zip identifies a different device")
             linker = archive.read("Ld/Link.ld").decode("ascii", errors="replace")
-            if not re.search(r"FLASH\s*\(rx\)\s*:\s*ORIGIN\s*=\s*0x00000000\s*,\s*LENGTH\s*=\s*240K", linker) or not re.search(
+            if not re.search(
+                r"FLASH\s*\(rx\)\s*:\s*ORIGIN\s*=\s*0x00000000\s*,\s*LENGTH\s*=\s*240K", linker
+            ) or not re.search(
                 r"RAM\s*\(xrw\)\s*:\s*ORIGIN\s*=\s*0x20000000\s*,\s*LENGTH\s*=\s*32K", linker
             ):
                 archive.close()
                 raise RuntimeError(f"CH595{suffix}.zip linker memory range changed")
             archives[suffix] = archive
 
-        # D/F/X differ only in Eclipse metadata, not the firmware support files.
-        # Fail closed if a later official SDK makes the source package specific.
-        sdk_files = [name for name in archives["D"].namelist() if not name.endswith("/") and name.startswith(SDK_PREFIXES)]
+        # D/F/X 的差别仅在 Eclipse 元数据，固件支持文件相同。
+        # 若后续 SDK 开始按封装提供不同源码，必须先审查差异再更新配方。
+        sdk_files = [
+            name
+            for name in archives["D"].namelist()
+            if not name.endswith("/") and name.startswith(SDK_PREFIXES)
+        ]
         for suffix in "FX":
-            if any(name not in archives[suffix].namelist() or archives[suffix].read(name) != archives["D"].read(name) for name in sdk_files):
-                raise RuntimeError(f"CH595{suffix}.zip firmware support differs from CH595D.zip; review per-device assets")
-        if not sdk_files or "Startup/startup_CH595.S" not in sdk_files or "Ld/Link.ld" not in sdk_files:
+            if any(
+                name not in archives[suffix].namelist()
+                or archives[suffix].read(name) != archives["D"].read(name)
+                for name in sdk_files
+            ):
+                raise RuntimeError(
+                    f"CH595{suffix}.zip firmware support differs from CH595D.zip; review per-device assets"
+                )
+        if (
+            not sdk_files
+            or "Startup/startup_CH595.S" not in sdk_files
+            or "Ld/Link.ld" not in sdk_files
+        ):
             raise RuntimeError("CH595 SDK support files are incomplete")
 
         output = args.output.resolve()
@@ -95,56 +118,127 @@ def main() -> None:
         write("interface/wch-link.cfg", (recipe / "wch-link.cfg").read_bytes())
         write("README.md", (recipe / "README.md").read_bytes())
 
-        sources = sorted("sdk/" + name for name in sdk_files if name.startswith("StdPeriphDriver/") and name.endswith(".c"))
+        sources = sorted(
+            "sdk/" + name
+            for name in sdk_files
+            if name.startswith("StdPeriphDriver/") and name.endswith(".c")
+        )
         sources.append("sdk/Startup/startup_CH595.S")
         devices = []
         for suffix in "DFX":
             device_id = "CH595" + suffix
             target_path = "debug/" + device_id.lower() + ".cfg"
-            target = (recipe / "ch595.cfg.in").read_text(encoding="utf-8").replace("@DEVICE_ID@", device_id)
+            target = (
+                (recipe / "ch595.cfg.in")
+                .read_text(encoding="utf-8")
+                .replace("@DEVICE_ID@", device_id)
+            )
             write(target_path, target)
-            devices.append(dict(
-                id=device_id,
-                displayName=device_id,
-                architecture="riscv",
-                flashOrigin=0,
-                flashBytes=256 * 1024,
-                ramOrigin=0x20000000,
-                ramBytes=32 * 1024,
-                toolsetId="wch.riscv",
-                toolsetVersion="1.0.0",
-                compilerId="wch-gcc-12.2.0-v1.4",
-                # 官方 .cproject 配置 M/C/B/XW 而 A=false；GCC12 须明确展开 B 子扩展。
-                cpuFlags=["-march=rv32imc_zba_zbb_zbc_zbs_xw", "-mabi=ilp32", "-msmall-data-limit=8"],
-                defines=["FREQ_SYS=80000000", "SYSCLK_FREQ=CLK_SOURCE_HSI_PLL_80MHz"],
-                includeDirectories=["sdk/RVMSIS", "sdk/StdPeriphDriver/inc"],
-                sources=sources,
-                linkerScript="sdk/Ld/Link.ld",
-                compileOptions=["-Og", "-g3", "-ffunction-sections", "-fdata-sections", "-fno-common", "-fsigned-char"],
-                linkOptions=["-nostartfiles", "--specs=nano.specs", "--specs=nosys.specs", "-Wl,--gc-sections", "-Wl,--print-memory-usage"],
-                templates=[dict(id="spl", displayName="标准库 · 精简 main", entryFile="templates/main.c",
-                                description="内部 HSI + PLL 80 MHz；256 KiB 物理 ROM，应用代码限定为 240 KiB；32 KiB SRAM。模板不使用板级引脚。")],
-                openOcd=dict(targetScript=target_path, applicationFlashBytes=240 * 1024,
-                             probes=[dict(id="wch-link", displayName="WCH-Link / WCH-LinkE", interfaceScript="interface/wch-link.cfg",
-                                          transport="sdi", defaultSpeedKhz=4000)]),
-            ))
-        write("vendor/provenance.json", json.dumps(dict(
-            source="MounRiver Studio 2 / WCH / CH595 NoneOS; PeripheralVersion 1.1",
-            upstream="https://www.wch.cn/products/CH595.html",
-            archives={f"CH595{suffix}.zip": digest for suffix, digest in ARCHIVES.items()},
-            metadataSha256=METADATA,
-            changes=["internal HSI PLL 80 MHz blank template", "240 KiB application Flash boundary",
-                     "CH595 family ID and read-protection guard before download/debug"],
-            license="WCH original source notices retained; use for WCH manufactured microcontrollers only.",
-        ), indent=2, ensure_ascii=False))
-        manifest = dict(formatVersion=1, id=PACK_ID, version=VERSION, displayName="CH595 · 标准库", vendor="WCH", devices=devices)
+            devices.append(
+                dict(
+                    id=device_id,
+                    displayName=device_id,
+                    architecture="riscv",
+                    flashOrigin=0,
+                    flashBytes=256 * 1024,
+                    ramOrigin=0x20000000,
+                    ramBytes=32 * 1024,
+                    toolsetId="wch.riscv",
+                    toolsetVersion="1.0.0",
+                    compilerId="wch-gcc-12.2.0-v1.4",
+                    # 官方 .cproject 配置 M/C/B/XW 而 A=false；GCC12 须明确展开 B 子扩展。
+                    cpuFlags=[
+                        "-march=rv32imc_zba_zbb_zbc_zbs_xw",
+                        "-mabi=ilp32",
+                        "-msmall-data-limit=8",
+                    ],
+                    defines=["FREQ_SYS=80000000", "SYSCLK_FREQ=CLK_SOURCE_HSI_PLL_80MHz"],
+                    includeDirectories=["sdk/RVMSIS", "sdk/StdPeriphDriver/inc"],
+                    sources=sources,
+                    linkerScript="sdk/Ld/Link.ld",
+                    compileOptions=[
+                        "-Og",
+                        "-g3",
+                        "-ffunction-sections",
+                        "-fdata-sections",
+                        "-fno-common",
+                        "-fsigned-char",
+                    ],
+                    linkOptions=[
+                        "-nostartfiles",
+                        "--specs=nano.specs",
+                        "--specs=nosys.specs",
+                        "-Wl,--gc-sections",
+                        "-Wl,--print-memory-usage",
+                    ],
+                    templates=[
+                        dict(
+                            id="spl",
+                            displayName="标准库 · 精简 main",
+                            entryFile="templates/main.c",
+                            description="内部 HSI + PLL 80 MHz；256 KiB 物理 ROM，应用代码限定为 240 KiB；32 KiB SRAM。模板不使用板级引脚。",
+                        )
+                    ],
+                    openOcd=dict(
+                        targetScript=target_path,
+                        applicationFlashBytes=240 * 1024,
+                        probes=[
+                            dict(
+                                id="wch-link",
+                                displayName="WCH-Link / WCH-LinkE",
+                                interfaceScript="interface/wch-link.cfg",
+                                transport="sdi",
+                                defaultSpeedKhz=4000,
+                            )
+                        ],
+                    ),
+                )
+            )
+        write(
+            "vendor/provenance.json",
+            json.dumps(
+                dict(
+                    source="MounRiver Studio 2 / WCH / CH595 NoneOS; PeripheralVersion 1.1",
+                    upstream="https://www.wch.cn/products/CH595.html",
+                    archives={f"CH595{suffix}.zip": digest for suffix, digest in ARCHIVES.items()},
+                    metadataSha256=METADATA,
+                    changes=[
+                        "internal HSI PLL 80 MHz blank template",
+                        "240 KiB application Flash boundary",
+                        "CH595 family ID and read-protection guard before download/debug",
+                    ],
+                    license="WCH original source notices retained; use for WCH manufactured microcontrollers only.",
+                ),
+                indent=2,
+                ensure_ascii=False,
+            ),
+        )
+        manifest = dict(
+            formatVersion=1,
+            id=PACK_ID,
+            version=VERSION,
+            displayName="CH595 · 标准库",
+            vendor="WCH",
+            devices=devices,
+        )
         write("manifest.json", json.dumps(manifest, indent=2, ensure_ascii=False))
         package = output / f"{PACK_ID}-{VERSION}.mcupack"
         subprocess.run(["dotnet", str(cli), "pack", str(stage), str(package)], check=True)
-        (output / "index.json").write_text(json.dumps([dict(
-            file=package.name, id=PACK_ID, version=VERSION, devices=[d["id"] for d in devices],
-            sha256=hashlib.sha256(package.read_bytes()).hexdigest(),
-        )], indent=2), encoding="utf-8")
+        (output / "index.json").write_text(
+            json.dumps(
+                [
+                    dict(
+                        file=package.name,
+                        id=PACK_ID,
+                        version=VERSION,
+                        devices=[d["id"] for d in devices],
+                        sha256=hashlib.sha256(package.read_bytes()).hexdigest(),
+                    )
+                ],
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
     finally:
         for archive in archives.values():
             archive.close()

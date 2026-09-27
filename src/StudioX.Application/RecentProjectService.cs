@@ -1,8 +1,6 @@
 namespace StudioX.Application;
 
 using StudioX.Foundation;
-
-public sealed record RecentProject(string Name, string Directory, DateTimeOffset LastOpened);
 public sealed class RecentProjectService(string dataDirectory)
 {
     private readonly string path = Path.Combine(dataDirectory, "recent-projects.json");
@@ -34,7 +32,10 @@ public sealed class RecentProjectService(string dataDirectory)
         {
             var existing = await LoadAsync(token);
             var updated = existing.Where(project => !SameDirectory(project.Directory, full)).ToArray();
-            if (updated.Length == existing.Count) return false;
+            if (updated.Length == existing.Count)
+            {
+                return false;
+            }
             await JsonStore.WriteAsync(path, updated, token);
             return true;
         }
@@ -48,10 +49,16 @@ public sealed class RecentProjectService(string dataDirectory)
         await mutationGate.WaitAsync(token);
         try
         {
-            if (!await Task.Run(() => IsMissingLocalProject(full), token)) return false;
+            if (!await Task.Run(() => IsMissingLocalProject(full), token))
+            {
+                return false;
+            }
             var existing = await LoadAsync(token);
             var updated = existing.Where(project => !SameDirectory(project.Directory, full)).ToArray();
-            if (updated.Length != existing.Count) await JsonStore.WriteAsync(path, updated, token);
+            if (updated.Length != existing.Count)
+            {
+                await JsonStore.WriteAsync(path, updated, token);
+            }
             return true;
         }
         finally { mutationGate.Release(); }
@@ -63,18 +70,27 @@ public sealed class RecentProjectService(string dataDirectory)
         try
         {
             var existing = await LoadAsync(token);
-            if (existing.Count == 0) return existing;
+            if (existing.Count == 0)
+            {
+                return existing;
+            }
             var missing = await Task.Run(() =>
             {
                 var result = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                 foreach (var project in existing)
                 {
                     token.ThrowIfCancellationRequested();
-                    if (IsMissingLocalProject(project.Directory)) result.Add(project.Directory);
+                    if (IsMissingLocalProject(project.Directory))
+                    {
+                        result.Add(project.Directory);
+                    }
                 }
                 return result;
             }, token);
-            if (missing.Count == 0) return existing;
+            if (missing.Count == 0)
+            {
+                return existing;
+            }
             var updated = existing.Where(project => !missing.Contains(project.Directory)).ToArray();
             await JsonStore.WriteAsync(path, updated, token);
             return updated;
@@ -89,12 +105,21 @@ public sealed class RecentProjectService(string dataDirectory)
     {
         try
         {
-            if (!Path.IsPathFullyQualified(directory)) return false;
+            if (!Path.IsPathFullyQualified(directory))
+            {
+                return false;
+            }
             var root = Path.GetPathRoot(directory);
             // UNC、映射网络盘和可移动盘离线时不能推断用户已经删除工程。
-            if (root is not { Length: 3 } || root[1] != ':' || (root[2] != '\\' && root[2] != '/')) return false;
+            if (root is not { Length: 3 } || root[1] != ':' || (root[2] != '\\' && root[2] != '/'))
+            {
+                return false;
+            }
             var drive = new DriveInfo(root);
-            if (drive.DriveType != DriveType.Fixed || !drive.IsReady) return false;
+            if (drive.DriveType != DriveType.Fixed || !drive.IsReady)
+            {
+                return false;
+            }
         }
         catch (IOException) { return false; }
         catch (UnauthorizedAccessException) { return false; }

@@ -19,24 +19,38 @@ public partial class MainWindow
     }
     private void ClearBuildDiagnostics()
     {
-        diagnosticRevision++; buildDiagnostics.Clear(); diagnosticRenderer?.Set([]); HideSymbolHover();
+        diagnosticRevision++;
+        buildDiagnostics.Clear();
+        diagnosticRenderer?.Set([]);
+        HideSymbolHover();
     }
     private async Task PublishBuildDiagnosticsAsync(string directory, string log, long revision, CancellationToken token)
     {
         var parsed = await Task.Run(() => BuildDiagnostics.Parse(directory, log), token);
         foreach (var group in parsed.GroupBy(item => item.RelativePath, StringComparer.OrdinalIgnoreCase))
         {
-            if (revision != diagnosticRevision || !string.Equals(projectDirectory, directory, StringComparison.OrdinalIgnoreCase)) return;
+            if (revision != diagnosticRevision || !string.Equals(projectDirectory, directory, StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
             try
             {
                 var source = await services.Files.ReadAsync(directory, group.Key, token);
-                if (revision != diagnosticRevision) return;
+                if (revision != diagnosticRevision)
+                {
+                    return;
+                }
                 // 未保存的缓冲区可能在构建期间改变；绝不把磁盘错误套到其他文本上。
-                if (FindEditor(group.Key) is { } session && session.Buffer.Text != source.Text) continue;
+                if (FindEditor(group.Key) is { } session && session.Buffer.Text != source.Text)
+                {
+                    continue;
+                }
                 buildDiagnostics[group.Key] = (source.Text, group.ToArray());
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException or ArgumentException)
-            { Log($"无法标记 {group.Key}：{ex.Message}（原始诊断保留在构建输出中）"); }
+            {
+                Log($"无法标记 {group.Key}：{ex.Message}（原始诊断保留在构建输出中）");
+            }
         }
         RefreshDiagnosticMarkers();
     }
@@ -47,17 +61,32 @@ public partial class MainWindow
     }
     private bool TryShowDiagnosticHover(Point point)
     {
-        if (activeEditor is null || WorkspaceTabs.SelectedItem != EditorTab || diagnosticRenderer is null) return false;
+        if (activeEditor is null || WorkspaceTabs.SelectedItem != EditorTab || diagnosticRenderer is null)
+        {
+            return false;
+        }
         var view = SourceEditor.TextArea.TextView;
         var local = SourceEditor.TranslatePoint(point, view);
-        if (local.X < 0 || local.Y < 0 || local.X >= view.ActualWidth || local.Y >= view.ActualHeight) return false;
+        if (local.X < 0 || local.Y < 0 || local.X >= view.ActualWidth || local.Y >= view.ActualHeight)
+        {
+            return false;
+        }
         var position = view.GetPositionFloor(local + view.ScrollOffset);
-        if (position is null) return false;
+        if (position is null)
+        {
+            return false;
+        }
         var line = SourceEditor.Document.GetLineByNumber(position.Value.Line);
-        if (position.Value.Column > line.Length + 1) return false;
+        if (position.Value.Column > line.Length + 1)
+        {
+            return false;
+        }
         var offset = SourceEditor.Document.GetOffset(position.Value.Location);
         var matches = diagnosticRenderer.Markers.Where(m => offset >= m.Offset && offset <= Math.Max(m.Offset, m.EndOffset - 1)).ToArray();
-        if (matches.Length == 0) return false;
+        if (matches.Length == 0)
+        {
+            return false;
+        }
         HideSymbolHover();
         var body = new StackPanel { MaxWidth = 650, Margin = new Thickness(9, 6, 9, 6) };
         foreach (var marker in matches)
@@ -66,10 +95,14 @@ public partial class MainWindow
             body.Children.Add(new TextBlock { Text = diagnostic.IsWarning ? "编译警告" : "编译错误", Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString(diagnostic.IsWarning ? "#E8B85B" : "#FF6475")), FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 3, 0, 5) });
             body.Children.Add(new TextBlock { Text = diagnostic.Message, TextWrapping = TextWrapping.Wrap });
             var location = new TextBlock { Text = $"{diagnostic.RelativePath}:{diagnostic.Line}" + (diagnostic.Column > 0 ? $":{diagnostic.Column}" : ""), Margin = new Thickness(0, 5, 0, 3), FontSize = 11 };
-            location.SetResourceReference(TextBlock.ForegroundProperty, "Muted"); body.Children.Add(location);
+            location.SetResourceReference(TextBlock.ForegroundProperty, "Muted");
+            body.Children.Add(location);
         }
         symbolToolTip = new ToolTip { Content = new ScrollViewer { Content = body, MaxHeight = 360, VerticalScrollBarVisibility = ScrollBarVisibility.Auto }, PlacementTarget = SourceEditor, Placement = PlacementMode.Relative, HorizontalOffset = point.X + 12, VerticalOffset = point.Y + 24, IsHitTestVisible = false, StaysOpen = true };
-        symbolToolTip.SetResourceReference(Control.BackgroundProperty, "Surface"); symbolToolTip.SetResourceReference(Control.ForegroundProperty, "Text"); symbolToolTip.SetResourceReference(Control.BorderBrushProperty, "Border");
-        symbolToolTip.IsOpen = true; return true;
+        symbolToolTip.SetResourceReference(Control.BackgroundProperty, "Surface");
+        symbolToolTip.SetResourceReference(Control.ForegroundProperty, "Text");
+        symbolToolTip.SetResourceReference(Control.BorderBrushProperty, "Border");
+        symbolToolTip.IsOpen = true;
+        return true;
     }
 }

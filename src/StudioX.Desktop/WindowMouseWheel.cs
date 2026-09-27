@@ -16,7 +16,10 @@ internal static class WindowMouseWheel
 
     public static void Install()
     {
-        if (installed) return;
+        if (installed)
+        {
+            return;
+        }
         installed = true;
         EventManager.RegisterClassHandler(typeof(Window), FrameworkElement.LoadedEvent, new RoutedEventHandler(WindowLoaded));
         EventManager.RegisterClassHandler(typeof(Window), Mouse.PreviewMouseWheelEvent, new MouseWheelEventHandler(PreviewWheel));
@@ -27,21 +30,35 @@ internal static class WindowMouseWheel
     private static void WindowLoaded(object sender, RoutedEventArgs e)
     {
         if (sender is Window window && ReferenceEquals(e.OriginalSource, window) && !hooks.TryGetValue(window, out _))
+        {
             hooks.Add(window, new NativeHook(window));
+        }
     }
 
     private static void PreviewWheel(object sender, MouseWheelEventArgs e)
     {
-        if (e.Handled || sender is not UIElement { IsEnabled: true }) return;
+        if (e.Handled || sender is not UIElement { IsEnabled: true })
+        {
+            return;
+        }
         var hit = Mouse.DirectlyOver as DependencyObject ?? e.OriginalSource as DependencyObject;
         var window = sender as Window ?? (hit is not null ? Window.GetWindow(hit) : null);
-        if (Route(window, hit, e.Delta, Keyboard.Modifiers.HasFlag(ModifierKeys.Control))) e.Handled = true;
+        if (Route(window, hit, e.Delta, Keyboard.Modifiers.HasFlag(ModifierKeys.Control)))
+        {
+            e.Handled = true;
+        }
     }
 
     private static bool Route(Window? window, DependencyObject? hit, int delta, bool control)
     {
-        if (delta == 0) return false;
-        if (window is MainWindow main && main.HandleTextMouseWheel(hit, delta, control)) return true;
+        if (delta == 0)
+        {
+            return false;
+        }
+        if (window is MainWindow main && main.HandleTextMouseWheel(hit, delta, control))
+        {
+            return true;
+        }
         return !control && ScrollAtPointer(hit, delta);
     }
 
@@ -50,16 +67,28 @@ internal static class WindowMouseWheel
         // 从最内层向外查找：内层没有可滚动内容或已经到边界时，允许滚动外层页面。
         for (var item = hit; item is not null; item = Parent(item))
         {
-            if (item is not ScrollViewer { IsVisible: true, IsEnabled: true } viewer) continue;
+            if (item is not ScrollViewer { IsVisible: true, IsEnabled: true } viewer)
+            {
+                continue;
+            }
             var horizontal = viewer.VerticalScrollBarVisibility == ScrollBarVisibility.Disabled && viewer.ScrollableWidth > 0;
             var offset = horizontal ? viewer.HorizontalOffset : viewer.VerticalOffset;
             var maximum = horizontal ? viewer.ScrollableWidth : viewer.ScrollableHeight;
-            if (maximum <= 0 || (delta > 0 ? offset <= 0 : offset >= maximum - 0.01)) continue;
+            if (maximum <= 0 || (delta > 0 ? offset <= 0 : offset >= maximum - 0.01))
+            {
+                continue;
+            }
 
             var lines = SystemParameters.WheelScrollLines;
-            if (lines == 0) return true;
+            if (lines == 0)
+            {
+                return true;
+            }
             var remainder = remainders.GetValue(viewer, static _ => new WheelRemainder());
-            if (remainder.Horizontal != horizontal) remainder.Delta = 0;
+            if (remainder.Horizontal != horizontal)
+            {
+                remainder.Delta = 0;
+            }
             remainder.Horizontal = horizontal;
             remainder.Delta += delta;
             var steps = remainder.Delta / Mouse.MouseWheelDeltaForOneLine;
@@ -70,11 +99,51 @@ internal static class WindowMouseWheel
             {
                 if (horizontal)
                 {
-                    if (lines < 0) { if (steps > 0) viewer.PageLeft(); else viewer.PageRight(); }
-                    else { if (steps > 0) viewer.LineLeft(); else viewer.LineRight(); }
+                    if (lines < 0)
+                    {
+                        if (steps > 0)
+                        {
+                            viewer.PageLeft();
+                        }
+                        else
+                        {
+                            viewer.PageRight();
+                        }
+                    }
+                    else
+                    {
+                        if (steps > 0)
+                        {
+                            viewer.LineLeft();
+                        }
+                        else
+                        {
+                            viewer.LineRight();
+                        }
+                    }
                 }
-                else if (lines < 0) { if (steps > 0) viewer.PageUp(); else viewer.PageDown(); }
-                else { if (steps > 0) viewer.LineUp(); else viewer.LineDown(); }
+                else if (lines < 0)
+                {
+                    if (steps > 0)
+                    {
+                        viewer.PageUp();
+                    }
+                    else
+                    {
+                        viewer.PageDown();
+                    }
+                }
+                else
+                {
+                    if (steps > 0)
+                    {
+                        viewer.LineUp();
+                    }
+                    else
+                    {
+                        viewer.LineDown();
+                    }
+                }
             }
             return true;
         }
@@ -104,7 +173,10 @@ internal static class WindowMouseWheel
         private nint Message(nint hwnd, int message, nint wParam, nint lParam, ref bool handled)
         {
             const int mouseWheel = 0x020A, control = 0x0008;
-            if (handled || message != mouseWheel || !window.IsEnabled || !window.IsVisible) return 0;
+            if (handled || message != mouseWheel || !window.IsEnabled || !window.IsVisible)
+            {
+                return 0;
+            }
             // lParam 是物理屏幕坐标，PointFromScreen 同时完成窗口偏移和 DPI 换算。
             var point = window.PointFromScreen(new Point(unchecked((short)(long)lParam), unchecked((short)((long)lParam >> 16))));
             var hit = window.InputHitTest(point) as DependencyObject;
@@ -113,7 +185,10 @@ internal static class WindowMouseWheel
         }
         private void Closed(object? sender, EventArgs e)
         {
-            if (source is { IsDisposed: false }) source.RemoveHook(Message);
+            if (source is { IsDisposed: false })
+            {
+                source.RemoveHook(Message);
+            }
             window.Closed -= Closed;
             hooks.Remove(window);
         }

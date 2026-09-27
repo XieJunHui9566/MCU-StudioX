@@ -8,8 +8,14 @@ using System.Windows.Media;
 public sealed class FileIcon : FrameworkElement
 {
     public string FileName { get; init; } = "";
-    public bool IsDirectory { get; init; }
-    public bool IsExpanded { get; set; }
+    public bool IsDirectory
+    {
+        get; init;
+    }
+    public bool IsExpanded
+    {
+        get; set;
+    }
     protected override void OnRender(DrawingContext dc)
     {
         base.OnRender(dc);
@@ -31,13 +37,18 @@ public sealed class FileIcon : FrameworkElement
             var extension = System.IO.Path.GetExtension(FileName).ToLowerInvariant();
             var (label, color) = extension switch
             {
-                ".c" => ("C", "#5D9FFF"), ".h" => ("H", "#BB83F4"),
+                ".c" => ("C", "#5D9FFF"),
+                ".h" => ("H", "#BB83F4"),
                 ".cpp" or ".cc" or ".cxx" => ("C+", "#5D9FFF"),
                 ".hpp" or ".hh" or ".hxx" => ("H+", "#BB83F4"),
-                ".s" or ".asm" => ("S", "#F0B957"), ".ld" or ".lds" => ("LD", "#EB9852"),
-                ".v" or ".sv" => ("V", "#78C8B9"), ".ve" => ("VE", "#78C8B9"),
-                ".json" => ("{}", "#E4B957"), ".xml" or ".svd" => ("<>", "#53C59A"),
-                ".md" or ".txt" => ("T", "#A5B5CB"), _ => ("·", "#A5B5CB")
+                ".s" or ".asm" => ("S", "#F0B957"),
+                ".ld" or ".lds" => ("LD", "#EB9852"),
+                ".v" or ".sv" => ("V", "#78C8B9"),
+                ".ve" => ("VE", "#78C8B9"),
+                ".json" => ("{}", "#E4B957"),
+                ".xml" or ".svd" => ("<>", "#53C59A"),
+                ".md" or ".txt" => ("T", "#A5B5CB"),
+                _ => ("·", "#A5B5CB")
             };
             var brush = Brush(color);
             dc.DrawGeometry(new SolidColorBrush(Color.FromArgb(30, brush.Color.R, brush.Color.G, brush.Color.B)), new Pen(brush, 1),
@@ -54,7 +65,9 @@ public sealed class FileIcon : FrameworkElement
         var value = (Color)ColorConverter.ConvertFromString(color);
         if (System.Windows.Application.Current.TryFindResource("Background") is SolidColorBrush background &&
             background.Color.R * .299 + background.Color.G * .587 + background.Color.B * .114 >= 140)
+        {
             value = Color.FromRgb((byte)(value.R * .67), (byte)(value.G * .67), (byte)(value.B * .67));
+        }
         return new(value);
     }
 }

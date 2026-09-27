@@ -5,7 +5,10 @@ using StudioX.Application;
 
 static void Check(bool condition, string message)
 {
-    if (!condition) throw new Exception(message);
+    if (!condition)
+    {
+        throw new Exception(message);
+    }
 }
 
 var expectedSha = new string('a', 40);
@@ -35,7 +38,9 @@ var handler = new StubHandler(async request =>
     {
         Check(body?.Contains(expectedSha, StringComparison.Ordinal) == true, "conditional merge SHA");
         if (body?.Contains("\"merge_method\":\"squash\"", StringComparison.Ordinal) != true)
+        {
             throw new Exception("merge method missing");
+        }
         return Json(HttpStatusCode.OK, """{"merged":true,"sha":"merged-sha","message":"Pull Request successfully merged"}""");
     }
     if (request.Method == HttpMethod.Post && path.EndsWith("/pulls", StringComparison.Ordinal))
@@ -44,8 +49,10 @@ var handler = new StubHandler(async request =>
         return Json(HttpStatusCode.Created, pullJson);
     }
     if (request.Method == HttpMethod.Post && path.EndsWith("/comments", StringComparison.Ordinal))
+    {
         return Json(HttpStatusCode.Created,
-            """{"body":"Looks good","user":{"login":"bob"},"created_at":"2026-09-24T04:00:00Z","html_url":"https://github.com/acme/firmware/pull/7#issuecomment-1"}""");
+        """{"body":"Looks good","user":{"login":"bob"},"created_at":"2026-09-24T04:00:00Z","html_url":"https://github.com/acme/firmware/pull/7#issuecomment-1"}""");
+    }
     if (request.Method == HttpMethod.Post && path.EndsWith("/reviews", StringComparison.Ordinal))
     {
         Check(body?.Contains("\"event\":\"APPROVE\"", StringComparison.Ordinal) == true, "review event");
@@ -53,27 +60,46 @@ var handler = new StubHandler(async request =>
             """{"state":"APPROVED","body":"Approved","user":{"login":"bob"},"submitted_at":"2026-09-24T04:00:00Z"}""");
     }
     if (path.StartsWith("/repos/acme/firmware/pulls?", StringComparison.Ordinal))
+    {
         return Json(HttpStatusCode.OK, "[" + pullJson + "]");
-    if (path == "/repos/acme/firmware/pulls/7") return Json(HttpStatusCode.OK, pullJson);
+    }
+    if (path == "/repos/acme/firmware/pulls/7")
+    {
+        return Json(HttpStatusCode.OK, pullJson);
+    }
     if (path.StartsWith("/repos/acme/firmware/pulls/7/files?", StringComparison.Ordinal))
+    {
         return Json(HttpStatusCode.OK,
-            """[{"filename":"src/main.c","status":"modified","additions":2,"deletions":1,"patch":"@@ -1 +1 @@"}]""");
+        """[{"filename":"src/main.c","status":"modified","additions":2,"deletions":1,"patch":"@@ -1 +1 @@"}]""");
+    }
     if (path.StartsWith("/repos/acme/firmware/pulls/7/reviews?", StringComparison.Ordinal))
+    {
         return Json(HttpStatusCode.OK,
-            """[{"state":"APPROVED","body":"Okay","user":{"login":"bob"},"submitted_at":"2026-09-24T04:00:00Z"}]""");
+        """[{"state":"APPROVED","body":"Okay","user":{"login":"bob"},"submitted_at":"2026-09-24T04:00:00Z"}]""");
+    }
     if (path.StartsWith("/repos/acme/firmware/pulls/7/comments?", StringComparison.Ordinal))
+    {
         return Json(HttpStatusCode.OK,
-            """[{"id":99,"body":"Handle rollover","path":"src/main.c","line":42,"side":"RIGHT","original_line":42,"user":{"login":"reviewer"},"created_at":"2026-09-24T04:01:00Z","html_url":"https://github.com/acme/firmware/pull/7#discussion_r99"},{"id":100,"body":"Outdated note","path":"src/main.c","line":null,"side":"LEFT","original_line":12,"in_reply_to_id":99,"user":{"login":"alice"},"created_at":"2026-09-24T04:02:00Z"}]""");
+        """[{"id":99,"body":"Handle rollover","path":"src/main.c","line":42,"side":"RIGHT","original_line":42,"user":{"login":"reviewer"},"created_at":"2026-09-24T04:01:00Z","html_url":"https://github.com/acme/firmware/pull/7#discussion_r99"},{"id":100,"body":"Outdated note","path":"src/main.c","line":null,"side":"LEFT","original_line":12,"in_reply_to_id":99,"user":{"login":"alice"},"created_at":"2026-09-24T04:02:00Z"}]""");
+    }
     if (path.StartsWith("/repos/acme/firmware/issues/7/comments?", StringComparison.Ordinal))
+    {
         return Json(HttpStatusCode.OK,
-            """[{"body":"Ready","user":{"login":"carol"},"created_at":"2026-09-24T04:00:00Z"}]""");
+        """[{"body":"Ready","user":{"login":"carol"},"created_at":"2026-09-24T04:00:00Z"}]""");
+    }
     if (path == "/repos/acme/firmware")
+    {
         return Json(HttpStatusCode.OK, """{"full_name":"acme/firmware","default_branch":"release/2026"}""");
+    }
     if (path.EndsWith("/status", StringComparison.Ordinal))
+    {
         return Json(HttpStatusCode.OK, """{"state":"success"}""");
+    }
     if (path.Contains("/check-runs?", StringComparison.Ordinal))
+    {
         return Json(HttpStatusCode.OK,
-            """{"check_runs":[{"name":"build","status":"completed","conclusion":"success","html_url":"https://github.com/acme/firmware/actions/runs/1"}]}""");
+        """{"check_runs":[{"name":"build","status":"completed","conclusion":"success","html_url":"https://github.com/acme/firmware/actions/runs/1"}]}""");
+    }
     throw new Exception("Unexpected API route: " + path);
 });
 
@@ -94,7 +120,9 @@ Check(GitHubPullRequestService.TryParseRepository("ssh://git@github.com/acme/fir
 foreach (var invalid in new[] { "http://github.com/acme/firmware.git",
     "https://github.com.evil.test/acme/firmware.git", "https://user:secret@github.com/acme/firmware.git",
     "https://github.com/acme/firmware.git/other", "file:///repo.git", "https://github.com/acme/../firmware.git" })
+{
     Check(GitHubPullRequestService.TryParseRepository(invalid) is null, "reject remote " + invalid);
+}
 
 var list = await service.ListAsync(repository, account: "alice");
 Check(list.Count == 1 && list[0].Number == 7 && list[0].HeadSha == expectedSha, "list and parse PR");

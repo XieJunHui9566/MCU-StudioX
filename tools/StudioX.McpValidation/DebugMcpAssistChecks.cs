@@ -12,16 +12,20 @@ internal static class DebugMcpAssistChecks
         var immediate = await session.CallToolAsync("debug_wait",
             "{\"expectedState\":\"Disconnected\",\"timeoutMs\":100}");
         using (var response = JsonDocument.Parse(immediate))
+        {
             check(response.RootElement.GetProperty("timedOut").GetBoolean() == false &&
-                response.RootElement.GetProperty("state").GetString() == "Disconnected",
-                "debug_wait returns an already reached offline state without polling");
+            response.RootElement.GetProperty("state").GetString() == "Disconnected",
+            "debug_wait returns an already reached offline state without polling");
+        }
 
         var timeout = await session.CallToolAsync("debug_wait",
             "{\"expectedState\":\"Stopped\",\"timeoutMs\":30}");
         using (var response = JsonDocument.Parse(timeout))
+        {
             check(response.RootElement.GetProperty("timedOut").GetBoolean() &&
-                response.RootElement.GetProperty("state").GetString() == "Disconnected",
-                "debug_wait reports bounded timeout without starting hardware");
+            response.RootElement.GetProperty("state").GetString() == "Disconnected",
+            "debug_wait reports bounded timeout without starting hardware");
+        }
 
         var noLog = await session.CallToolAsync("debug_log", "{}");
         check(noLog.Contains("DEBUG_LOG", StringComparison.Ordinal),

@@ -17,13 +17,18 @@ internal static class ProjectMcpPagingChecks
         var largePath = Path.Combine(drivers, "large.c");
         var original = new StringBuilder();
         for (var line = 0; line < 2000; line++)
+        {
             original.Append("static const unsigned line_").Append(line).Append(" = ").Append(line).AppendLine(";");
+        }
         original.AppendLine("int UniqueMarker(void) { return 7; }");
         var initialText = original.ToString();
         await File.WriteAllTextAsync(largePath, initialText);
         var originalSha = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(initialText)));
 
-        var first = await Call(session, "project_read_file", new { path = "Drivers/Example/large.c" });
+        var first = await Call(session, "project_read_file", new
+        {
+            path = "Drivers/Example/large.c"
+        });
         using var firstJson = JsonDocument.Parse(first);
         check(!firstJson.RootElement.GetProperty("endOfFile").GetBoolean() &&
               firstJson.RootElement.GetProperty("sha256").GetString() == originalSha &&
@@ -37,21 +42,30 @@ internal static class ProjectMcpPagingChecks
             using var data = JsonDocument.Parse(page);
             rebuilt.Append(data.RootElement.GetProperty("text").GetString());
             pageCount++;
-            if (data.RootElement.GetProperty("endOfFile").GetBoolean()) break;
+            if (data.RootElement.GetProperty("endOfFile").GetBoolean())
+            {
+                break;
+            }
             page = await Call(session, "project_read_file", new
             {
                 path = "Drivers/Example/large.c",
                 startLine = data.RootElement.GetProperty("nextLine").GetInt32(),
                 startColumn = data.RootElement.GetProperty("nextColumn").GetInt32()
             });
-            if (pageCount > 30) throw new Exception("Source page cursor did not advance.");
+            if (pageCount > 30)
+            {
+                throw new Exception("Source page cursor did not advance.");
+            }
         }
         check(pageCount > 1 && rebuilt.ToString() == initialText,
             "line and column page cursors reconstruct source larger than 64 KiB");
 
         var longLine = "/*" + new string('x', 37_000) + "*/";
         await File.WriteAllTextAsync(Path.Combine(drivers, "one_line.c"), longLine);
-        var longFirst = await Call(session, "project_read_file", new { path = "Drivers/Example/one_line.c" });
+        var longFirst = await Call(session, "project_read_file", new
+        {
+            path = "Drivers/Example/one_line.c"
+        });
         using var longJson = JsonDocument.Parse(longFirst);
         check(longJson.RootElement.GetProperty("nextLine").GetInt32() == 1 &&
               longJson.RootElement.GetProperty("nextColumn").GetInt32() > 1,
@@ -59,21 +73,29 @@ internal static class ProjectMcpPagingChecks
 
         var foundLarge = await Call(session, "project_search", new
         {
-            query = "UniqueMarker", directory = "Drivers/Example", maxResults = 10
+            query = "UniqueMarker",
+            directory = "Drivers/Example",
+            maxResults = 10
         });
         check(foundLarge.Contains("Drivers/Example/large.c", StringComparison.Ordinal) &&
               foundLarge.Contains("UniqueMarker", StringComparison.Ordinal),
             "project search scans source above the old 32 KiB cutoff");
 
         for (var index = 0; index < 90; index++)
+        {
             await File.WriteAllTextAsync(Path.Combine(middleware, $"sample_{index:D2}.c"),
-                index == 89 ? "// LaterPageMarker\n" : $"// sample {index}\n");
-        var listedFirst = await Call(session, "project_list_files", new { directory = "Middlewares/Example" });
+            index == 89 ? "// LaterPageMarker\n" : $"// sample {index}\n");
+        }
+        var listedFirst = await Call(session, "project_list_files", new
+        {
+            directory = "Middlewares/Example"
+        });
         using var listedFirstJson = JsonDocument.Parse(listedFirst);
         var listedNext = listedFirstJson.RootElement.GetProperty("nextCursor").GetString();
         var listedSecond = await Call(session, "project_list_files", new
         {
-            directory = "Middlewares/Example", cursor = listedNext
+            directory = "Middlewares/Example",
+            cursor = listedNext
         });
         using var listedSecondJson = JsonDocument.Parse(listedSecond);
         check(listedFirstJson.RootElement.GetProperty("entries").GetArrayLength() == 80 &&
@@ -87,21 +109,29 @@ internal static class ProjectMcpPagingChecks
         {
             var search = await Call(session, "project_search", new
             {
-                query = "LaterPageMarker", directory = "Middlewares/Example",
-                maxResults = 1, cursor = searchCursor
+                query = "LaterPageMarker",
+                directory = "Middlewares/Example",
+                maxResults = 1,
+                cursor = searchCursor
             });
             using var data = JsonDocument.Parse(search);
             foundLater |= data.RootElement.GetProperty("results").GetArrayLength() > 0;
             searchPages++;
             searchCursor = data.RootElement.GetProperty("nextCursor").GetString() ?? "";
-            if (searchPages > 4) throw new Exception("Search cursor did not advance.");
+            if (searchPages > 4)
+            {
+                throw new Exception("Search cursor did not advance.");
+            }
         } while (!foundLater && searchCursor.Length > 0);
         check(foundLater && searchPages >= 2,
             "project search cursor continues beyond the per-call file budget");
 
         var devicePath = Path.Combine(device, "chip.h");
         await File.WriteAllTextAsync(devicePath, "#define CHIP_VALUE 1\n");
-        var deviceRead = await Call(session, "project_read_file", new { path = "device/chip.h" });
+        var deviceRead = await Call(session, "project_read_file", new
+        {
+            path = "device/chip.h"
+        });
         using var deviceJson = JsonDocument.Parse(deviceRead);
         var rejectedDevicePatch = await Call(session, "project_patch_file", new
         {
@@ -118,7 +148,8 @@ internal static class ProjectMcpPagingChecks
 
         var patchArgs = new
         {
-            path = "Drivers/Example/large.c", originalSha256 = originalSha,
+            path = "Drivers/Example/large.c",
+            originalSha256 = originalSha,
             hunks = new[]
             {
                 new { oldText = "line_20 = 20", newText = "line_20 = 21" },
@@ -151,12 +182,14 @@ internal static class ProjectMcpPagingChecks
         var currentSha = patchJson.RootElement.GetProperty("sha256").GetString();
         var ambiguous = await Call(session, "project_patch_file", new
         {
-            path = "Drivers/Example/large.c", originalSha256 = currentSha,
+            path = "Drivers/Example/large.c",
+            originalSha256 = currentSha,
             hunks = new[] { new { oldText = "static const unsigned", newText = "const unsigned" } }
         });
         var overlapping = await Call(session, "project_patch_file", new
         {
-            path = "Drivers/Example/large.c", originalSha256 = currentSha,
+            path = "Drivers/Example/large.c",
+            originalSha256 = currentSha,
             hunks = new[]
             {
                 new { oldText = "line_20 = 21", newText = "line_20 = 22" },
@@ -171,12 +204,18 @@ internal static class ProjectMcpPagingChecks
 
         var previousCreateApproval = authorizer.Allow;
         authorizer.Allow = false;
-        var deniedDirectory = await Call(session, "project_create_directory", new { path = "Middlewares/Generated" });
+        var deniedDirectory = await Call(session, "project_create_directory", new
+        {
+            path = "Middlewares/Generated"
+        });
         check(deniedDirectory.Contains("MCP_APPROVAL_DENIED", StringComparison.OrdinalIgnoreCase) &&
               !Directory.Exists(Path.Combine(project, "Middlewares", "Generated")),
             "denied project directory creation leaves the workspace unchanged");
         authorizer.Allow = true;
-        var created = await Call(session, "project_create_directory", new { path = "Middlewares/Generated" });
+        var created = await Call(session, "project_create_directory", new
+        {
+            path = "Middlewares/Generated"
+        });
         check(created.Contains("\"created\":true", StringComparison.Ordinal) &&
               Directory.Exists(Path.Combine(project, "Middlewares", "Generated")),
             "approved project directory creation uses the project file service");

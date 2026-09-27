@@ -7,7 +7,8 @@ int main(void)
 {
     HAL_Init();
     /* 不预设外部晶振或任何开发板引脚。 */
-    for (;;) {
+    for (;;)
+    {
         ++app_counter;
         __NOP();
     }

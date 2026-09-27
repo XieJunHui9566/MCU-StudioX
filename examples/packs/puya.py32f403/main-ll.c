@@ -7,8 +7,11 @@ volatile uint32_t app_counter;
 int main(void)
 {
     LL_RCC_HSI_Enable();
-    while (LL_RCC_HSI_IsReady() != 1U) { }
-    for (;;) {
+    while (LL_RCC_HSI_IsReady() != 1U)
+    {
+    }
+    for (;;)
+    {
         ++app_counter;
         __NOP();
     }

@@ -14,7 +14,10 @@ internal sealed class ExternalMcpAuthorizer : IStudioXMcpAuthorizer
     {
         token.ThrowIfCancellationRequested();
         // 没有可交互桌面时默认拒绝，避免无界面的 MCP 客户端隐式读取外部目录或修改工程与设备。
-        if (!OperatingSystem.IsWindows() || !Environment.UserInteractive) return false;
+        if (!OperatingSystem.IsWindows() || !Environment.UserInteractive)
+        {
+            return false;
+        }
         await gate.WaitAsync(token).ConfigureAwait(false);
         try
         {

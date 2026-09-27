@@ -12,31 +12,30 @@
 #include "system.h"
 #include "interrupt.h"
 
-#define APP_SAMPLE_PERIOD  1000u
-#define APP_MAGIC          0x41473332u
+#define APP_SAMPLE_PERIOD 1000u
+#define APP_MAGIC 0x41473332u
 
-typedef enum {
+typedef enum
+{
     APP_STATE_STARTING = 0,
     APP_STATE_RUNNING,
     APP_STATE_PAUSED
 } app_state_t;
 
-typedef struct {
+typedef struct
+{
     uint32_t magic;
     uint32_t device_id;
     uint32_t heartbeat;
     uint32_t sample_count;
-    int32_t  temperature_x100;
-    bool     digital_state;
+    int32_t temperature_x100;
+    bool digital_state;
     app_state_t state;
 } app_telemetry_t;
 
 /* 后续接入调试器时，可在变量窗口观察该结构体。 */
 volatile app_telemetry_t g_app = {
-    .magic = APP_MAGIC,
-    .temperature_x100 = 2500,
-    .state = APP_STATE_STARTING
-};
+    .magic = APP_MAGIC, .temperature_x100 = 2500, .state = APP_STATE_STARTING};
 
 static void clock_init(void)
 {
@@ -55,12 +54,14 @@ static void app_update(void)
 {
     ++g_app.heartbeat;
 
-    if (g_app.state != APP_STATE_RUNNING) {
+    if (g_app.state != APP_STATE_RUNNING)
+    {
         return;
     }
 
     /* 这是循环计数，不是毫秒；真实周期应由定时器提供。 */
-    if ((g_app.heartbeat % APP_SAMPLE_PERIOD) == 0u) {
+    if ((g_app.heartbeat % APP_SAMPLE_PERIOD) == 0u)
+    {
         ++g_app.sample_count;
         g_app.temperature_x100 = make_demo_sample(g_app.sample_count);
         g_app.digital_state = !g_app.digital_state;
@@ -75,7 +76,8 @@ int main(void)
     g_app.device_id = SYS_GetDeviceID();
     g_app.state = APP_STATE_RUNNING;
 
-    for (;;) {
+    for (;;)
+    {
         app_update();
         /* TODO: 添加你的应用逻辑。 */
     }

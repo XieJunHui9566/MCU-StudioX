@@ -1,27 +1,224 @@
-<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup><OutputType>WinExe</OutputType><TargetFramework>net10.0-windows</TargetFramework><UseWPF>true</UseWPF><AssemblyName>MCU StudioX</AssemblyName></PropertyGroup>
-  <PropertyGroup><ApplicationIcon>Assets/StudioX.ico</ApplicationIcon></PropertyGroup>
-  <ItemGroup><Resource Include="Assets/StudioX.ico" /></ItemGroup>
-  <PropertyGroup><StudioXRuntimeAssetsDirectory Condition="'$(StudioXRuntimeAssetsDirectory)' == ''">$(MSBuildThisFileDirectory)../../artifacts/tool-runtime</StudioXRuntimeAssetsDirectory></PropertyGroup>
-  <ItemGroup><ProjectReference Include="../StudioX.Application/StudioX.Application.csproj" /></ItemGroup>
-  <ItemGroup><ProjectReference Include="../StudioX.PluginHost/StudioX.PluginHost.csproj" ReferenceOutputAssembly="false" /></ItemGroup>
-  <ItemGroup><Content Include="../../examples/protocols/*.js" Link="examples/protocols/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" /></ItemGroup>
-  <ItemGroup><Content Include="../../examples/skills/**/*" Link="runtime/skills/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" /></ItemGroup>
-  <ItemGroup><Content Include="../../licenses/Jint-*.txt" Link="licenses/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" /></ItemGroup>
-  <Target Name="CopyDevelopmentPluginHost" AfterTargets="Build" Condition="'$(Configuration)' == 'Debug'">
-    <ItemGroup><ScriptHostFiles Include="../StudioX.PluginHost/bin/$(Configuration)/net10.0/*" /></ItemGroup>
-    <Copy SourceFiles="@(ScriptHostFiles)" DestinationFolder="$(OutDir)runtime/plugin-host" SkipUnchangedFiles="true" />
+<Project
+  Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <AssemblyName>MCU StudioX</AssemblyName>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationIcon>Assets/StudioX.ico</ApplicationIcon>
+  </PropertyGroup>
+  <ItemGroup>
+    <Resource
+      Include="Assets/StudioX.ico" />
+  </ItemGroup>
+  <PropertyGroup>
+    <StudioXRuntimeAssetsDirectory
+      Condition="'$(StudioXRuntimeAssetsDirectory)' == ''">$(MSBuildThisFileDirectory)../../artifacts/tool-runtime</StudioXRuntimeAssetsDirectory>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference
+      Include="../StudioX.Application/StudioX.Application.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference
+      Include="../StudioX.PluginHost/StudioX.PluginHost.csproj"
+      ReferenceOutputAssembly="false" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content
+      Include="../../examples/protocols/*.js"
+      Link="examples/protocols/%(Filename)%(Extension)"
+      CopyToOutputDirectory="PreserveNewest"
+      CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content
+      Include="../../examples/skills/**/*"
+      Link="runtime/skills/%(RecursiveDir)%(Filename)%(Extension)"
+      CopyToOutputDirectory="PreserveNewest"
+      CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content
+      Include="../../artifacts/device-packs-development/**/*"
+      Link="device-packs/%(RecursiveDir)%(Filename)%(Extension)"
+      CopyToOutputDirectory="PreserveNewest"
+      CopyToPublishDirectory="Never" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content
+      Include="../../licenses/Jint-*.txt"
+      Link="licenses/%(Filename)%(Extension)"
+      CopyToOutputDirectory="PreserveNewest"
+      CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+  <Target
+    Name="CopyDevelopmentPluginHost"
+    AfterTargets="Build"
+    Condition="'$(Configuration)' == 'Debug'">
+    <ItemGroup>
+      <ScriptHostFiles
+        Include="../StudioX.PluginHost/bin/$(Configuration)/net10.0/*" />
+    </ItemGroup>
+    <Copy
+      SourceFiles="@(ScriptHostFiles)"
+      DestinationFolder="$(OutDir)runtime/plugin-host"
+      SkipUnchangedFiles="true" />
   </Target>
-  <ItemGroup><PackageReference Include="AvalonEdit" /></ItemGroup>
-  <ItemGroup><Content Include="../../artifacts/git-runtime/git/**/*" Link="runtime/git/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" /></ItemGroup>
-  <ItemGroup><Content Include="../../licenses/Git-for-Windows-NOTICE.md" Link="licenses/Git-for-Windows-NOTICE.md" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" /></ItemGroup>
-  <ItemGroup><Content Include="../../licenses/AvalonEdit-MIT.txt" Link="licenses/AvalonEdit-MIT.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" /></ItemGroup>
-  <ItemGroup><Content Include="../../licenses/System.IO.Ports-*.txt" Link="licenses/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" /></ItemGroup>
-  <ItemGroup><Content Include="../../licenses/PdfPig-*.txt;../../licenses/PDFtoImage-*.txt;../../licenses/PDFium-*.txt;../../licenses/Skia-*.txt;../../licenses/SkiaSharp-*.txt" Link="licenses/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" /></ItemGroup>
-  <ItemGroup><Content Include="../../licenses/PDF-Dependencies-NOTICE.md" Link="licenses/PDF-Dependencies-NOTICE.md" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" /></ItemGroup>
-  <ItemGroup><Content Include="../../artifacts/language-runtime/clangd/**/*" Link="runtime/languages/clangd/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" /></ItemGroup>
-  <ItemGroup><Content Include="../../artifacts/language-runtime/sysroots/**/*" Link="runtime/languages/sysroots/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" /></ItemGroup>
-  <ItemGroup><Content Include="$(StudioXRuntimeAssetsDirectory)/toolsets/**/*" Link="runtime/toolsets/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" /></ItemGroup>
-  <ItemGroup><Content Include="$(StudioXRuntimeAssetsDirectory)/stc-isp-portable-3.14.7/**/*" Link="runtime/stc-isp/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" /></ItemGroup>
-  <ItemGroup><Content Include="$(StudioXRuntimeAssetsDirectory)/THIRD-PARTY-NOTICES.txt" Link="runtime/THIRD-PARTY-NOTICES.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" Condition="Exists('$(StudioXRuntimeAssetsDirectory)/THIRD-PARTY-NOTICES.txt')" /></ItemGroup>
+  <ItemGroup>
+    <PackageReference
+      Include="AvalonEdit" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content
+      Include="../../artifacts/git-runtime/git/**/*"
+      Link="runtime/git/%(RecursiveDir)%(Filename)%(Extension)"
+      CopyToOutputDirectory="PreserveNewest"
+      CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content
+      Include="../../licenses/Git-for-Windows-NOTICE.md"
+      Link="licenses/Git-for-Windows-NOTICE.md"
+      CopyToOutputDirectory="PreserveNewest"
+      CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource
+      Include="Assets/Manufacturers/*.jpg" />
+    <Resource
+      Include="Assets/Manufacturers/*.png" />
+    <Resource
+      Include="Assets/Manufacturers/*.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content
+      Include="../../licenses/Manufacturer-Logos-NOTICE.md"
+      Link="licenses/Manufacturer-Logos-NOTICE.md"
+      CopyToOutputDirectory="PreserveNewest"
+      CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content
+      Include="../../licenses/AvalonEdit-MIT.txt"
+      Link="licenses/AvalonEdit-MIT.txt"
+      CopyToOutputDirectory="PreserveNewest"
+      CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content
+      Include="../../licenses/System.IO.Ports-*.txt"
+      Link="licenses/%(Filename)%(Extension)"
+      CopyToOutputDirectory="PreserveNewest"
+      CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content
+      Include="../../licenses/PdfPig-*.txt;../../licenses/PDFtoImage-*.txt;../../licenses/PDFium-*.txt;../../licenses/Skia-*.txt;../../licenses/SkiaSharp-*.txt"
+      Link="licenses/%(Filename)%(Extension)"
+      CopyToOutputDirectory="PreserveNewest"
+      CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content
+      Include="../../licenses/PDF-Dependencies-NOTICE.md"
+      Link="licenses/PDF-Dependencies-NOTICE.md"
+      CopyToOutputDirectory="PreserveNewest"
+      CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content
+      Include="../../artifacts/language-runtime/clangd/**/*"
+      Link="runtime/languages/clangd/%(RecursiveDir)%(Filename)%(Extension)"
+      CopyToOutputDirectory="PreserveNewest"
+      CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content
+      Include="../../artifacts/language-runtime/sysroots/**/*"
+      Link="runtime/languages/sysroots/%(RecursiveDir)%(Filename)%(Extension)"
+      CopyToOutputDirectory="PreserveNewest"
+      CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content
+      Include="$(StudioXRuntimeAssetsDirectory)/toolsets/**/*"
+      Exclude="$(StudioXRuntimeAssetsDirectory)/toolsets/pc.mingw/**/*;$(StudioXRuntimeAssetsDirectory)/toolsets/espressif.idf/**/*;$(StudioXRuntimeAssetsDirectory)/toolsets/espressif.esp8266-rtos/**/*"
+      Link="runtime/toolsets/%(RecursiveDir)%(Filename)%(Extension)"
+      CopyToOutputDirectory="PreserveNewest"
+      CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content
+      Include="$(StudioXRuntimeAssetsDirectory)/toolsets/pc.mingw/**/*"
+      Link="runtime/toolsets/pc.mingw/%(RecursiveDir)%(Filename)%(Extension)"
+      CopyToOutputDirectory="Never"
+      CopyToPublishDirectory="PreserveNewest" />
+    <StudioXPcRuntimeFiles
+      Include="$(StudioXRuntimeAssetsDirectory)/toolsets/pc.mingw/**/*" />
+    <Content
+      Include="../../licenses/PC-Toolchain-NOTICE.md"
+      Link="licenses/PC-Toolchain-NOTICE.md"
+      CopyToOutputDirectory="PreserveNewest"
+      CopyToPublishDirectory="PreserveNewest"
+      Condition="Exists('../../licenses/PC-Toolchain-NOTICE.md')" />
+  </ItemGroup>
+  <!-- PC SDK 为只读内置资源；同卷开发构建用硬链接节省空间，发布目录仍独立复制。 -->
+  <Target
+    Name="StudioXCopyPcToolchainForDevelopment"
+    AfterTargets="CopyFilesToOutputDirectory">
+    <Copy
+      SourceFiles="@(StudioXPcRuntimeFiles)"
+      DestinationFiles="@(StudioXPcRuntimeFiles-&gt;'$(TargetDir)runtime/toolsets/pc.mingw/%(RecursiveDir)%(Filename)%(Extension)')"
+      SkipUnchangedFiles="true"
+      UseHardlinksIfPossible="true" />
+  </Target>
+  <ItemGroup>
+    <StudioXEspressifRuntimeFiles
+      Include="$(StudioXRuntimeAssetsDirectory)/toolsets/espressif.idf/**/*">
+      <RuntimeRelativePath>espressif.idf/%(RecursiveDir)%(Filename)%(Extension)</RuntimeRelativePath>
+    </StudioXEspressifRuntimeFiles>
+    <StudioXEspressifRuntimeFiles
+      Include="$(StudioXRuntimeAssetsDirectory)/toolsets/espressif.esp8266-rtos/**/*">
+      <RuntimeRelativePath>espressif.esp8266-rtos/%(RecursiveDir)%(Filename)%(Extension)</RuntimeRelativePath>
+    </StudioXEspressifRuntimeFiles>
+    <Content
+      Include="@(StudioXEspressifRuntimeFiles)"
+      Link="runtime/toolsets/%(RuntimeRelativePath)"
+      CopyToOutputDirectory="Never"
+      CopyToPublishDirectory="PreserveNewest" />
+    <Content
+      Include="../../licenses/Espressif-NOTICE.md"
+      Link="licenses/Espressif-NOTICE.md"
+      CopyToOutputDirectory="PreserveNewest"
+      CopyToPublishDirectory="PreserveNewest"
+      Condition="Exists('../../licenses/Espressif-NOTICE.md')" />
+  </ItemGroup>
+  <!-- ESP 共享组件不可写；开发构建保留同卷硬链接，避免每种配置复制数 GB 的 SDK。 -->
+  <Target
+    Name="StudioXCopyEspressifForDevelopment"
+    AfterTargets="CopyFilesToOutputDirectory">
+    <Copy
+      SourceFiles="@(StudioXEspressifRuntimeFiles)"
+      DestinationFiles="@(StudioXEspressifRuntimeFiles-&gt;'$(TargetDir)runtime/toolsets/%(RuntimeRelativePath)')"
+      SkipUnchangedFiles="true"
+      UseHardlinksIfPossible="true" />
+  </Target>
+  <ItemGroup>
+    <Content
+      Include="$(StudioXRuntimeAssetsDirectory)/stc-isp-portable-3.14.7/**/*"
+      Link="runtime/stc-isp/%(RecursiveDir)%(Filename)%(Extension)"
+      CopyToOutputDirectory="PreserveNewest"
+      CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content
+      Include="$(StudioXRuntimeAssetsDirectory)/THIRD-PARTY-NOTICES.txt"
+      Link="runtime/THIRD-PARTY-NOTICES.txt"
+      CopyToOutputDirectory="PreserveNewest"
+      CopyToPublishDirectory="PreserveNewest"
+      Condition="Exists('$(StudioXRuntimeAssetsDirectory)/THIRD-PARTY-NOTICES.txt')" />
+  </ItemGroup>
 </Project>

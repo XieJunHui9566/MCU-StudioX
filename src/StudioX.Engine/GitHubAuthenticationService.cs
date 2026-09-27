@@ -12,7 +12,10 @@ public sealed class GitHubAuthenticationService(GitRepositoryService git)
     public async Task<IReadOnlyList<string>> ListAccountsAsync(CancellationToken token = default)
     {
         var result = await RunAccountCommandAsync(["github", "list", "--no-ui"], TimeSpan.FromSeconds(30), token);
-        if (!result.Success || result.OutputTruncated) throw CommandError("读取 GitHub 账号", result);
+        if (!result.Success || result.OutputTruncated)
+        {
+            throw CommandError("读取 GitHub 账号", result);
+        }
         return ParseAccounts(result.StandardOutput);
     }
 
@@ -20,7 +23,10 @@ public sealed class GitHubAuthenticationService(GitRepositoryService git)
     public async Task<IReadOnlyList<string>> LoginWithBrowserAsync(CancellationToken token = default)
     {
         var result = await RunAccountCommandAsync(["github", "login", "--browser"], TimeSpan.FromMinutes(10), token);
-        if (!result.Success || result.OutputTruncated) throw CommandError("GitHub 浏览器登录", result);
+        if (!result.Success || result.OutputTruncated)
+        {
+            throw CommandError("GitHub 浏览器登录", result);
+        }
         return await ListAccountsAsync(token);
     }
 
@@ -29,9 +35,14 @@ public sealed class GitHubAuthenticationService(GitRepositoryService git)
     {
         ValidateAccount(account);
         if (!(await ListAccountsAsync(token)).Contains(account, StringComparer.OrdinalIgnoreCase))
+        {
             throw new StudioXException("GITHUB_ACCOUNT_MISSING", "本机凭据库中没有该 GitHub 账号。");
+        }
         var result = await RunAccountCommandAsync(["github", "logout", account, "--no-ui"], TimeSpan.FromSeconds(30), token);
-        if (!result.Success || result.OutputTruncated) throw CommandError("移除 GitHub 账号", result);
+        if (!result.Success || result.OutputTruncated)
+        {
+            throw CommandError("移除 GitHub 账号", result);
+        }
     }
 
     /// <summary>供 IDE 内 GitHub REST 操作按请求取用令牌；仅在内存中交给调用方，不经日志或磁盘。</summary>
@@ -41,8 +52,14 @@ public sealed class GitHubAuthenticationService(GitRepositoryService git)
         if (account is null)
         {
             var accounts = await ListAccountsAsync(token);
-            if (accounts.Count == 0) throw new StudioXException("GITHUB_NOT_SIGNED_IN", "请先登录 GitHub 账号。");
-            if (accounts.Count != 1) throw new StudioXException("GITHUB_ACCOUNT_SELECTION", "有多个 GitHub 账号，请先选择用于当前工程的账号。");
+            if (accounts.Count == 0)
+            {
+                throw new StudioXException("GITHUB_NOT_SIGNED_IN", "请先登录 GitHub 账号。");
+            }
+            if (accounts.Count != 1)
+            {
+                throw new StudioXException("GITHUB_ACCOUNT_SELECTION", "有多个 GitHub 账号，请先选择用于当前工程的账号。");
+            }
             account = accounts[0];
         }
         ValidateAccount(account);
@@ -51,7 +68,10 @@ public sealed class GitHubAuthenticationService(GitRepositoryService git)
         var start = NewStartInfo(["get"], interactive: false, redirectInput: true);
         using var process = new Process { StartInfo = start };
         token.ThrowIfCancellationRequested();
-        if (!process.Start()) throw new StudioXException("GITHUB_GCM_START", "无法启动内置 Git Credential Manager。");
+        if (!process.Start())
+        {
+            throw new StudioXException("GITHUB_GCM_START", "无法启动内置 Git Credential Manager。");
+        }
         using var timeout = new CancellationTokenSource(TimeSpan.FromMinutes(1));
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(token, timeout.Token);
         var input = process.StandardInput.WriteAsync($"protocol=https\nhost=github.com\nusername={account}\n\n".AsMemory(), linked.Token);
@@ -66,13 +86,22 @@ public sealed class GitHubAuthenticationService(GitRepositoryService git)
         }
         catch (OperationCanceledException)
         {
-            try { if (!process.HasExited) process.Kill(entireProcessTree: true); }
+            try
+            {
+                if (!process.HasExited)
+                {
+                    process.Kill(entireProcessTree: true);
+                }
+            }
             catch (InvalidOperationException) { }
             await process.WaitForExitAsync(CancellationToken.None);
             token.ThrowIfCancellationRequested();
             throw new StudioXException("GITHUB_GCM_TIMEOUT", "读取 GitHub 凭据超时。");
         }
-        if (process.ExitCode != 0) throw new StudioXException("GITHUB_AUTH_REQUIRED", "GitHub 凭据不可用或已过期，请重新登录。");
+        if (process.ExitCode != 0)
+        {
+            throw new StudioXException("GITHUB_AUTH_REQUIRED", "GitHub 凭据不可用或已过期，请重新登录。");
+        }
         var credential = ParseCredential(output.Result, account);
         return credential;
     }
@@ -97,9 +126,18 @@ public sealed class GitHubAuthenticationService(GitRepositoryService git)
             StandardOutputEncoding = Encoding.UTF8,
             StandardErrorEncoding = Encoding.UTF8
         };
-        foreach (var key in AmbientCredentialVariables()) start.Environment.Remove(key);
-        foreach (var (key, value) in SafeEnvironment(interactive)) start.Environment[key] = value;
-        foreach (var arg in args) start.ArgumentList.Add(arg);
+        foreach (var key in AmbientCredentialVariables())
+        {
+            start.Environment.Remove(key);
+        }
+        foreach (var (key, value) in SafeEnvironment(interactive))
+        {
+            start.Environment[key] = value;
+        }
+        foreach (var arg in args)
+        {
+            start.ArgumentList.Add(arg);
+        }
         return start;
     }
 
@@ -112,7 +150,10 @@ public sealed class GitHubAuthenticationService(GitRepositoryService git)
         environment["GCM_INTERACTIVE"] = interactive ? "true" : "false";
         environment["GCM_PROVIDER"] = "github";
         environment["GIT_TERMINAL_PROMPT"] = "0";
-        if (!interactive) environment["GCM_GUI_PROMPT"] = "0";
+        if (!interactive)
+        {
+            environment["GCM_GUI_PROMPT"] = "0";
+        }
         return environment;
     }
 
@@ -129,24 +170,37 @@ public sealed class GitHubAuthenticationService(GitRepositoryService git)
 
     private static string ParseCredential(string output, string expectedAccount)
     {
-        if (output.Length > 128 * 1024) throw new StudioXException("GITHUB_GCM_OUTPUT", "GitHub 凭据响应过大。");
+        if (output.Length > 128 * 1024)
+        {
+            throw new StudioXException("GITHUB_GCM_OUTPUT", "GitHub 凭据响应过大。");
+        }
         string? account = null;
         string? secret = null;
         foreach (var line in output.Split('\n'))
         {
             var field = line.TrimEnd('\r');
-            if (field.StartsWith("username=", StringComparison.Ordinal)) account = field[9..];
-            else if (field.StartsWith("password=", StringComparison.Ordinal)) secret = field[9..];
+            if (field.StartsWith("username=", StringComparison.Ordinal))
+            {
+                account = field[9..];
+            }
+            else if (field.StartsWith("password=", StringComparison.Ordinal))
+            {
+                secret = field[9..];
+            }
         }
         if (!string.Equals(account, expectedAccount, StringComparison.OrdinalIgnoreCase) || string.IsNullOrWhiteSpace(secret))
+        {
             throw new StudioXException("GITHUB_AUTH_REQUIRED", "GitHub 凭据不可用或账号不匹配，请重新登录。");
+        }
         return secret;
     }
 
     private static void ValidateAccount(string account)
     {
         if (string.IsNullOrWhiteSpace(account) || account.Length > 256 || account.IndexOfAny(['\r', '\n', '\0']) >= 0)
+        {
             throw new StudioXException("GITHUB_ACCOUNT", "GitHub 账号名称无效。");
+        }
     }
 
     private static StudioXException CommandError(string operation, ProcessResult result) =>

@@ -24,14 +24,20 @@ internal static partial class Stm32DownloadCatalog
     internal static Profile? FindProfile(string deviceId)
     {
         var match = PartNumber().Match(deviceId.ToUpperInvariant());
-        if (!match.Success) return null;
+        if (!match.Success)
+        {
+            return null;
+        }
         return Data.Value.Devices.SingleOrDefault(item => item.Id == match.Groups[1].Value);
     }
 
     public static DownloadConfiguration? Find(ProjectManifest project)
     {
         var profile = FindProfile(project.DeviceId);
-        if (profile is null) return null;
+        if (profile is null)
+        {
+            return null;
+        }
         var definition = new OpenOcdDefinition("", [
             new("stlink", "ST-Link", "interface/stlink.cfg", "swd", 2000),
             new("cmsis-dap", "DAP-Link (CMSIS-DAP)", "interface/cmsis-dap.cfg", "swd", 2000),

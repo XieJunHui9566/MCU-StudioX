@@ -14,7 +14,7 @@ The output directory must not already exist. Results are written to `result.txt`
 Cleanup is a separate explicit operation accepting an absolute installed pack root:
 
 ```powershell
-dotnet run --project tools/StudioX.PackRetentionValidation -- --prune %LOCALAPPDATA%/MCUStudioX/packs
+dotnet run --project tools/StudioX.PackRetentionValidation -- --prune "$env:LOCALAPPDATA/MCUStudioX/packs"
 ```
 
 It prints each removed ID/version, replacement version and reclaimed bytes. Failures

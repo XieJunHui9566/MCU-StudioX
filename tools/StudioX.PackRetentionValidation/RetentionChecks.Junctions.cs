@@ -6,7 +6,10 @@ internal sealed partial class RetentionChecks
 {
     private async Task CheckJunctionsAsync()
     {
-        if (!OperatingSystem.IsWindows()) throw new PlatformNotSupportedException("Junction validation requires Windows.");
+        if (!OperatingSystem.IsWindows())
+        {
+            throw new PlatformNotSupportedException("Junction validation requires Windows.");
+        }
         await CheckLinkedRootAsync(false);
         await CheckLinkedRootAsync(true);
         await CheckLinkedIdentityAsync();
@@ -31,7 +34,10 @@ internal sealed partial class RetentionChecks
             }
             catch (StudioXException ex) when (ex.Code == "PATH_LINK") { }
             Require((await externalRepository.ListCatalogAsync()).Count == 2, "linked root cleanup preserves external versions");
-            foreach (var pack in await externalRepository.ListCatalogAsync()) await PackRepository.VerifyAsync(pack);
+            foreach (var pack in await externalRepository.ListCatalogAsync())
+            {
+                await PackRepository.VerifyAsync(pack);
+            }
             Pass(ancestor ? "junction in pack-root ancestor rejected without touching target" : "junction pack root rejected without touching target");
         }
         finally { RemoveJunction(link); }
@@ -83,7 +89,9 @@ internal sealed partial class RetentionChecks
     {
         var repository = new PackRepository(Path.Combine(directory, "packs"));
         foreach (var version in new[] { "0.9.0", "0.10.0" })
+        {
             await repository.ImportAsync((await FixturePack.CreateAsync(Path.Combine(directory, "archives"), id, version)).Archive);
+        }
         return repository;
     }
 
@@ -91,15 +99,25 @@ internal sealed partial class RetentionChecks
     {
         // 只在全新隔离fixture中创建junction；无需管理员或开启开发者符号链接权限。
         if (link.Contains('"') || target.Contains('"') || Directory.Exists(link) || File.Exists(link))
+        {
             throw new ArgumentException("Invalid or existing junction fixture path.");
+        }
         Directory.CreateDirectory(Path.GetDirectoryName(link)!);
         var start = new ProcessStartInfo("cmd.exe", $"/d /c mklink /J \"{link}\" \"{target}\"")
-        { UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true, RedirectStandardError = true };
+        {
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true
+        };
         using var process = Process.Start(start) ?? throw new InvalidOperationException("Could not create fixture junction.");
         var stdout = process.StandardOutput.ReadToEndAsync();
         var stderr = process.StandardError.ReadToEndAsync();
         await process.WaitForExitAsync();
-        if (process.ExitCode != 0) throw new InvalidOperationException("Junction creation failed: " + await stdout + await stderr);
+        if (process.ExitCode != 0)
+        {
+            throw new InvalidOperationException("Junction creation failed: " + await stdout + await stderr);
+        }
         Require((File.GetAttributes(link) & FileAttributes.ReparsePoint) != 0, "fixture is a reparse point");
     }
 

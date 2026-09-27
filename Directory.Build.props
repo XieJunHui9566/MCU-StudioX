@@ -7,9 +7,10 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <Deterministic>true</Deterministic>
     <!-- 首发只运行于 Windows x64；默认构建只复制该平台的 PDF 原生库。 -->
-    <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == '' and $([MSBuild]::IsOSPlatform('Windows'))">win-x64</RuntimeIdentifier>
+    <RuntimeIdentifier
+      Condition="'$(RuntimeIdentifier)' == '' and $([MSBuild]::IsOSPlatform('Windows'))">win-x64</RuntimeIdentifier>
     <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
-    <Version>0.2.4</Version>
+    <Version>0.2.5</Version>
     <InformationalVersion>$(Version)-preview</InformationalVersion>
   </PropertyGroup>
 </Project>

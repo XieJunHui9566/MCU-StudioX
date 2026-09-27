@@ -12,7 +12,12 @@ public sealed class FrameSubscription : IDisposable
     {
         this.remove = remove;
         channel = Channel.CreateBounded<DeviceFrame>(new BoundedChannelOptions(capacity)
-        { FullMode = BoundedChannelFullMode.DropOldest, SingleWriter = true, SingleReader = false, AllowSynchronousContinuations = false },
+        {
+            FullMode = BoundedChannelFullMode.DropOldest,
+            SingleWriter = true,
+            SingleReader = false,
+            AllowSynchronousContinuations = false
+        },
             _ => Interlocked.Increment(ref dropped));
     }
     public ChannelReader<DeviceFrame> Reader => channel.Reader;
@@ -21,7 +26,10 @@ public sealed class FrameSubscription : IDisposable
     internal void Complete(Exception? error = null) => channel.Writer.TryComplete(error);
     public void Dispose()
     {
-        if (Interlocked.Exchange(ref disposed, 1) != 0) return;
+        if (Interlocked.Exchange(ref disposed, 1) != 0)
+        {
+            return;
+        }
         remove(this);
         Complete();
     }

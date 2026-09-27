@@ -10,14 +10,19 @@ public sealed partial class GitRepositoryService(string runtimeDirectory)
     public string CredentialManagerExecutable => Path.Combine(RootDirectory, "mingw64", "bin", "git-credential-manager.exe");
     public void RequireAvailable()
     {
-        if (!File.Exists(Executable)) throw new StudioXException("GIT_MISSING", "内置 Git 组件缺失，请修复软件安装。开发环境请运行 tools/Prepare-GitRuntime.ps1 后重新编译。");
+        if (!File.Exists(Executable))
+        {
+            throw new StudioXException("GIT_MISSING", "内置 Git 组件缺失，请修复软件安装。开发环境请运行 tools/Prepare-GitRuntime.ps1 后重新编译。");
+        }
     }
 
     public void RequireCredentialManagerAvailable()
     {
         RequireAvailable();
         if (!File.Exists(CredentialManagerExecutable))
+        {
             throw new StudioXException("GITHUB_GCM_MISSING", "内置 Git Credential Manager 缺失，请修复软件安装。");
+        }
     }
 
     // URL 级配置可覆盖普通 credential.helper，因此对已验证的远端完整 URL 再清空并指定随包 GCM。
@@ -29,7 +34,9 @@ public sealed partial class GitRepositoryService(string runtimeDirectory)
             || !Uri.TryCreate(remoteUrl, UriKind.Absolute, out var uri) || uri.Scheme != Uri.UriSchemeHttps
             || !uri.Host.Equals("github.com", StringComparison.OrdinalIgnoreCase) || uri.UserInfo.Length != 0
             || uri.Query.Length != 0 || uri.Fragment.Length != 0 || uri.AbsolutePath.Length < 2)
+        {
             throw new StudioXException("GITHUB_REMOTE_URL", "GitHub HTTPS 远端地址无效，未调用凭据助手。");
+        }
         var scope = "credential." + remoteUrl.TrimEnd('/') + ".helper=";
         return ["-c", "credential.helper=", "-c", scope, "-c", scope + "manager"];
     }
@@ -40,8 +47,11 @@ public sealed partial class GitRepositoryService(string runtimeDirectory)
         return new(StringComparer.OrdinalIgnoreCase)
         {
             ["PATH"] = Path.Combine(RootDirectory, "cmd") + ";" + Path.Combine(RootDirectory, "mingw64", "bin") + ";" + Path.Combine(RootDirectory, "usr", "bin") + ";" + System.Environment.GetEnvironmentVariable("PATH"),
-            ["GIT_PAGER"] = "cat", ["GIT_EDITOR"] = "notepad.exe", ["GIT_SEQUENCE_EDITOR"] = "notepad.exe",
-            ["TERM"] = "xterm-256color", ["LANG"] = "C.UTF-8"
+            ["GIT_PAGER"] = "cat",
+            ["GIT_EDITOR"] = "notepad.exe",
+            ["GIT_SEQUENCE_EDITOR"] = "notepad.exe",
+            ["TERM"] = "xterm-256color",
+            ["LANG"] = "C.UTF-8"
         };
     }
 
@@ -54,11 +64,15 @@ public sealed partial class GitRepositoryService(string runtimeDirectory)
         RequireAvailable();
         // 新建流程在 staging 中执行，指定当前目录创建独立仓库，不误用父目录的仓库。
         if (Directory.Exists(Path.Combine(directory, ".git")) || File.Exists(Path.Combine(directory, ".git")))
+        {
             throw new StudioXException("GIT_EXISTS", "目标目录已经包含 Git 仓库，未重新初始化。");
+        }
         var result = await new ProcessRunner().RunAsync(new(Executable,
             ["-c", "init.templateDir=", "init", "--initial-branch=main", "."], directory, TimeSpan.FromSeconds(30),
             Environment(), RemoveEnvironment: AmbientVariables), token);
         if (result.ExitCode != 0 || result.TimedOut)
+        {
             throw new StudioXException("GIT_INIT", "Git 初始化失败：\n" + result.StandardOutput + result.StandardError);
+        }
     }
 }

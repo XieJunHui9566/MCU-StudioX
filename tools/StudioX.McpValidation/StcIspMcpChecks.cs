@@ -16,7 +16,10 @@ internal static class StcIspMcpChecks
         var before = Directory.EnumerateDirectories(sessions, "stc-isp-*").Count();
         var plan = await session.CallToolAsync("stc_isp_plan", "{}");
         var engineRejected = false;
-        try { await services.StcIsp.PreviewAsync(project, new StcIspSettings(Port: "COM5")); }
+        try
+        {
+            await services.StcIsp.PreviewAsync(project, new StcIspSettings(Port: "COM5"));
+        }
         catch (StudioXException ex) when (ex.Code == "STC_ISP_DEVICE") { engineRejected = true; }
         check(plan.Contains("error", StringComparison.OrdinalIgnoreCase) && engineRejected &&
             Directory.EnumerateDirectories(sessions, "stc-isp-*").Count() == before &&
@@ -24,9 +27,14 @@ internal static class StcIspMcpChecks
             "STC plan rejects non-STC project without creating a snapshot or requesting approval");
         var omittedErase = await session.CallToolAsync("stc_isp_download", JsonSerializer.Serialize(new
         {
-            deviceId = "IAP15F2K61S2", imageSha256 = new string('0', 64), port = "COM5",
-            transferBaud = 115200, clockMode = "preserve", clockFrequencyHz = (int?)null,
-            acknowledgeFullErase = false, acknowledgeNoReadback = true
+            deviceId = "IAP15F2K61S2",
+            imageSha256 = new string('0', 64),
+            port = "COM5",
+            transferBaud = 115200,
+            clockMode = "preserve",
+            clockFrequencyHz = (int?)null,
+            acknowledgeFullErase = false,
+            acknowledgeNoReadback = true
         }));
         check(omittedErase.Contains("error", StringComparison.OrdinalIgnoreCase) &&
             Directory.EnumerateDirectories(sessions, "stc-isp-*").Count() == before &&

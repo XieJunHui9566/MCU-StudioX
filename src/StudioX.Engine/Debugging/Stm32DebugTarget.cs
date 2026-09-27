@@ -10,7 +10,10 @@ public static class Stm32DebugTarget
         var profile = Stm32DownloadCatalog.FindProfile(device.Id);
         if (profile is null || device.Architecture != "arm" || profile.Architecture != device.Architecture ||
             profile.FlashOrigin != device.FlashOrigin || profile.FlashBytes != device.FlashBytes ||
-            profile.RamOrigin != device.RamOrigin || profile.RamBytes != device.RamBytes) return null;
+            profile.RamOrigin != device.RamOrigin || profile.RamBytes != device.RamBytes)
+        {
+            return null;
+        }
         return profile.Id.StartsWith("STM32F1", StringComparison.Ordinal)
             ? new(profile.Id, "Cortex-M3", false)
             : profile.Id.StartsWith("STM32F4", StringComparison.Ordinal) ? new(profile.Id, "Cortex-M4", true) : null;

@@ -9,6 +9,18 @@ using StudioX.Devices;
 using StudioX.Engine;
 using StudioX.Foundation;
 
+if (args is ["--verify-contracts", var baselinePath])
+{
+    await ProviderContractChecks.VerifyAsync(baselinePath);
+    return;
+}
+
+if (args is ["--contracts", var outputPath])
+{
+    await ProviderContractChecks.WriteAsync(outputPath);
+    return;
+}
+
 if (args is ["--disassembly"])
 {
     await DisassemblyMcpChecks.RunAsync();
@@ -21,18 +33,34 @@ if (args is ["--rtos"])
     return;
 }
 
+if (args is ["--espressif-module", var espressifProject])
+{
+    await EspressifModuleMcpChecks.RunAsync(espressifProject);
+    return;
+}
+
+await ProviderContractChecks.VerifyAsync(Path.Combine(AppContext.BaseDirectory,
+    "Fixtures", "mcp-tool-contracts.json"));
+
 var root = Path.Combine(Path.GetTempPath(), "studiox-mcp-validation-" + Guid.NewGuid().ToString("N"));
 Directory.CreateDirectory(root);
 var checks = 0;
 void Check(bool condition, string description)
 {
-    if (!condition) throw new Exception(description);
+    if (!condition)
+    {
+        throw new Exception(description);
+    }
     Console.WriteLine("PASS " + description);
     checks++;
 }
 bool RejectsSkillPath(Action action)
 {
-    try { action(); return false; }
+    try
+    {
+        action();
+        return false;
+    }
     catch (StudioXException) { return true; }
 }
 
@@ -127,7 +155,10 @@ try
     Check(!services.AiSkills.IsProjectEnabled(project) &&
         !services.AiSkills.Discover(project).Skills.Any(skill => skill.Name == "project-validation"),
         "project Skill instructions are excluded before explicit enablement");
-    if (hasBundledGit) await services.Git.InitializeAsync(project);
+    if (hasBundledGit)
+    {
+        await services.Git.InitializeAsync(project);
+    }
     await using var session = await StudioXMcpSession.CreateAsync(new StudioXMcpTools(services, project, authorizer));
 
     var definitions = await session.ListToolsAsync();
@@ -188,9 +219,13 @@ try
                 Encoding.UTF8, "application/json")
         };
     })))
-    using (var chat = new AiChatClient(_ => "offline-test-key", http))
-        _ = await chat.CompleteAsync(new AiSettings(BaseUrl: "https://example.test/v1"),
+    {
+        using (var chat = new AiChatClient(_ => "offline-test-key", http))
+        {
+            _ = await chat.CompleteAsync(new AiSettings(BaseUrl: "https://example.test/v1"),
             new AiChatRequest([new AiChatMessage("user", "offline")], definitions));
+        }
+    }
     Check(serializedToolCount == names.Length,
         "AI provider request serializes the complete MCP tool catalog within limits");
 
@@ -207,7 +242,9 @@ try
 
     var editArgs = JsonSerializer.Serialize(new
     {
-        path = "src/main.c", originalSha256 = sha, content = "int main(void) { return 1; }\n"
+        path = "src/main.c",
+        originalSha256 = sha,
+        content = "int main(void) { return 1; }\n"
     });
     var denied = await session.CallToolAsync("project_edit_file", editArgs);
     Check(denied.Contains("MCP_APPROVAL_DENIED", StringComparison.OrdinalIgnoreCase) ||
@@ -250,16 +287,18 @@ try
     _ = await session.CallToolAsync("plot_stop", "{}");
 
     await using (var hub = new DeviceHub())
-    await using (var serial = new SerialTerminalService(hub, Path.Combine(root, "data"),
-        _ => new SimulationTransport(TimeSpan.FromMilliseconds(5))))
     {
-        await serial.ConnectAsync(new SerialSettings("COM1"));
-        await Task.Delay(60);
-        var raw = serial.ReadRaw(0, 128);
-        Check(raw.Chunks.Count > 0 && raw.NextReceivedByteOffset > 0 &&
-            Convert.FromBase64String(raw.Chunks[0].Base64).Length > 0,
-            "serial raw RX preserves simulated binary frames and byte cursor");
-        await serial.DisconnectAsync();
+        await using (var serial = new SerialTerminalService(hub, Path.Combine(root, "data"),
+        _ => new SimulationTransport(TimeSpan.FromMilliseconds(5))))
+        {
+            await serial.ConnectAsync(new SerialSettings("COM1"));
+            await Task.Delay(60);
+            var raw = serial.ReadRaw(0, 128);
+            Check(raw.Chunks.Count > 0 && raw.NextReceivedByteOffset > 0 &&
+                Convert.FromBase64String(raw.Chunks[0].Base64).Length > 0,
+                "serial raw RX preserves simulated binary frames and byte cursor");
+            await serial.DisconnectAsync();
+        }
     }
 
     var fakeTransport = new McpAgentTransport();
@@ -315,10 +354,13 @@ try
     await WebMcpChecks.RunAsync(session, services, project, Check);
     await PdfMcpChecks.RunAsync(session, authorizer, project, root, Check);
     await McpErrorPropagationChecks.RunAsync(services, project, Check);
+    await McpSessionCreationCleanupChecks.RunAsync(services, project, Check);
     var cliExecutable = Path.GetFullPath("src/StudioX.Cli/bin/Debug/net10.0/StudioX.Cli.exe");
     if (File.Exists(cliExecutable))
+    {
         await McpErrorPropagationChecks.RunExternalAsync(cliExecutable, project,
-            Path.Combine(root, "runtime"), Check);
+        Path.Combine(root, "runtime"), Check);
+    }
 
     Console.WriteLine($"PASS {checks} offline MCP checks; no live device, network database or Git remote was called.");
 }
@@ -334,14 +376,19 @@ finally
         Directory.Exists(full))
     {
         foreach (var file in Directory.EnumerateFiles(full, "*", SearchOption.AllDirectories))
+        {
             File.SetAttributes(file, FileAttributes.Normal);
+        }
         Directory.Delete(full, recursive: true);
     }
 }
 
 sealed class SwitchingAuthorizer : IStudioXMcpAuthorizer
 {
-    public bool Allow { get; set; }
+    public bool Allow
+    {
+        get; set;
+    }
     public List<StudioXMcpApprovalRequest> Requests { get; } = [];
     public Task<bool> ApproveAsync(StudioXMcpApprovalRequest request, CancellationToken token)
     {

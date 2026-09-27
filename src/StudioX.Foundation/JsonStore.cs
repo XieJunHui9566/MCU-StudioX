@@ -5,7 +5,10 @@ using System.Text.Json.Serialization;
 
 public static class JsonStore
 {
-    public static JsonSerializerOptions Options { get; } = new(JsonSerializerDefaults.Web)
+    public static JsonSerializerOptions Options
+    {
+        get;
+    } = new(JsonSerializerDefaults.Web)
     {
         WriteIndented = true,
         Converters = { new JsonStringEnumConverter() }
@@ -26,9 +29,11 @@ public static class JsonStore
         try
         {
             await using (var stream = new FileStream(temporary, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+            {
                 await JsonSerializer.SerializeAsync(stream, value, Options, cancellationToken);
+            }
             File.Move(temporary, fullPath, overwrite: true);
         }
-        finally { if (File.Exists(temporary)) File.Delete(temporary); }
+        finally { if (File.Exists(temporary)) { File.Delete(temporary); } }
     }
 }

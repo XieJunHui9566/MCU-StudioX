@@ -7,7 +7,8 @@ int main(void)
 {
     HAL_Init();
     /* 不假设外部晶振、开发板 LED 或调试探针。 */
-    for (;;) {
+    for (;;)
+    {
         ++app_counter;
         __NOP();
     }

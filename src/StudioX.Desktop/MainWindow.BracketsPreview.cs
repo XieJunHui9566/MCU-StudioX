@@ -25,7 +25,11 @@ public partial class MainWindow
         using (var canceled = new CancellationTokenSource())
         {
             canceled.Cancel();
-            try { BracketPairs.Find("{}", "C", canceled.Token); throw new InvalidOperationException("取消未生效"); }
+            try
+            {
+                BracketPairs.Find("{}", "C", canceled.Token);
+                throw new InvalidOperationException("取消未生效");
+            }
             catch (OperationCanceledException) { }
         }
 
@@ -57,7 +61,10 @@ public partial class MainWindow
         Check(bracketColors.Brackets.Length > 30, "实际编辑器配色接入");
         foreach (var theme in new[] { ThemeService.Dark, ThemeService.Light })
         {
-            ApplyTheme(theme); SourceEditor.Select(0, 0); SourceEditor.ScrollToHome(); UpdateLayout();
+            ApplyTheme(theme);
+            SourceEditor.Select(0, 0);
+            SourceEditor.ScrollToHome();
+            UpdateLayout();
             await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
             var view = SourceEditor.TextArea.TextView;
             var actualColors = bracketColors.Brackets.Select(bracket =>
@@ -72,19 +79,30 @@ public partial class MainWindow
         }
         session.Buffer.Text = "{ value[0]; }";
         await bracketColors.RefreshAsync();
-        session.Buffer.Remove(0, 1); await bracketColors.RefreshAsync();
+        session.Buffer.Remove(0, 1);
+        await bracketColors.RefreshAsync();
         Check(bracketColors.Brackets.Length == 2, "删除括号后不残留旧配对");
-        SourceEditor.Undo(); await bracketColors.RefreshAsync();
+        SourceEditor.Undo();
+        await bracketColors.RefreshAsync();
         Check(bracketColors.Brackets.Length == 4, "撤销后恢复配对");
         session.Buffer.Text = string.Concat(Enumerable.Repeat("{ f(a[0]); }\n", 60000));
         var stale = bracketColors.RefreshAsync();
         ShowSource(new SourceDocument("src/bracket_review.json", "{\"x\":[0]}", Encoding.UTF8, "", false));
-        await bracketColors.RefreshAsync(); await stale;
+        await bracketColors.RefreshAsync();
+        await stale;
         Check(bracketColors.Brackets.Select(item => item.Offset).SequenceEqual(new[] { 0, 5, 7, 8 }), "快速切换文件拒绝过期结果");
         session.Buffer.Text = sample;
-        ShowDocument(session.Tab); ApplyTheme(ThemeService.Dark); await bracketColors.RefreshAsync();
+        ShowDocument(session.Tab);
+        ApplyTheme(ThemeService.Dark);
+        await bracketColors.RefreshAsync();
         await File.WriteAllTextAsync(Path.Combine(directory, "result.txt"), "PASS: paired colors and nested depths, comments/strings/raw strings/numeric separators/CMake/JSON/Verilog, unmatched brackets, cancellation, real dark/light glyph colors, editing/undo and stale results after switching a large document. No project writes or hardware access.\n");
 
-        static void Check(bool pass, string name) { if (!pass) throw new InvalidOperationException(name); }
+        static void Check(bool pass, string name)
+        {
+            if (!pass)
+            {
+                throw new InvalidOperationException(name);
+            }
+        }
     }
 }

@@ -4,9 +4,10 @@
 #include "ch32v30x.h"
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
-void System_Init(void);
+    void System_Init(void);
 #ifdef __cplusplus
 }
 #endif

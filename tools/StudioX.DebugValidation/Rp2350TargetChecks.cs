@@ -10,7 +10,10 @@ internal static class Rp2350TargetChecks
     public static async Task<int> RunAsync(string archive, string runtime, string output)
     {
         var root = Path.GetFullPath(output);
-        if (Directory.Exists(root)) throw new ArgumentException("Use a new validation directory.");
+        if (Directory.Exists(root))
+        {
+            throw new ArgumentException("Use a new validation directory.");
+        }
         var pack = await new PackRepository(Path.Combine(root, "packs")).ImportAsync(Path.GetFullPath(archive));
         var catalog = new ToolsetCatalog(Path.Combine(Path.GetFullPath(runtime), "toolsets"));
         var builds = new BuildService(catalog);
@@ -52,9 +55,17 @@ internal static class Rp2350TargetChecks
             Check(dry.Success && (dry.StandardOutput + dry.StandardError).Contains("RP2350_OFFLINE_PASS", StringComparison.Ordinal), dry.StandardOutput + dry.StandardError);
             foreach (var invalid in new[] { device with { Id = "RP2350B" }, device with { Architecture = "riscv" }, device with { ToolsetId = "riscv.xpack" },
                 device with { FlashBytes = 0x200000 }, device with { RamBytes = 512 * 1024 }, device with { OpenOcd = null } })
+            {
                 Check(DebugTargetProfile.Find(invalid) is null, "Reject mismatched board/tool/memory");
-            Reject(config with { Options = new("stlink", 1000) }, "DEBUG_PROBE");
-            Reject(config with { TargetScriptText = "unverified" }, "DEBUG_CONFIG");
+            }
+            Reject(config with
+            {
+                Options = new("stlink", 1000)
+            }, "DEBUG_PROBE");
+            Reject(config with
+            {
+                TargetScriptText = "unverified"
+            }, "DEBUG_CONFIG");
             await using (var session = new DebugSessionService(Path.Combine(root, "user-data")))
             {
                 await session.OpenProjectAsync(project);
@@ -75,7 +86,10 @@ internal static class Rp2350TargetChecks
             }
             void Reject(DownloadConfiguration invalid, string code)
             {
-                try { OpenOcdDebugPlanner.Create(project, invalid, prepared.Tools, prepared.Elf); }
+                try
+                {
+                    OpenOcdDebugPlanner.Create(project, invalid, prepared.Tools, prepared.Elf);
+                }
                 catch (StudioXException ex) when (ex.Code == code) { return; }
                 throw new InvalidOperationException("Expected " + code);
             }
@@ -97,5 +111,11 @@ internal static class Rp2350TargetChecks
         Check((await service.NavigateAsync("src/main.c", text, position, true, timeout.Token)).Count > 0, "SDK declaration");
         Check(await service.HoverAsync("src/main.c", text, position, timeout.Token) is not null, "SDK hover");
     }
-    private static void Check(bool value, string message) { if (!value) throw new InvalidOperationException(message); }
+    private static void Check(bool value, string message)
+    {
+        if (!value)
+        {
+            throw new InvalidOperationException(message);
+        }
+    }
 }

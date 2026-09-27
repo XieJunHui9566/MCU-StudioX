@@ -18,7 +18,7 @@ if (args.Length < 3)
 
 var runtime = Path.GetFullPath(args[0]);
 var output = Path.GetFullPath(args[1]);
-if (Directory.Exists(output) || File.Exists(output)) throw new InvalidOperationException("验收输出目录必须尚不存在。");
+if (Directory.Exists(output) || File.Exists(output)) { throw new InvalidOperationException("验收输出目录必须尚不存在。"); }
 Directory.CreateDirectory(output);
 var catalog = new ToolsetCatalog(Path.Combine(runtime, "toolsets"));
 var builds = new BuildService(catalog);
@@ -58,7 +58,9 @@ foreach (var archive in args.Skip(2))
                 Check(File.Exists(Path.Combine(project, "device", device.LinkerScript)), "生成工程缺少链接脚本。");
                 Check(File.Exists(Path.Combine(project, "src", "main.c")), "生成工程缺少用户入口。");
                 foreach (var source in StartupSources(device, template))
+                {
                     Check(File.Exists(Path.Combine(project, "device", source)), "生成工程缺少启动/向量文件：" + source);
+                }
 
                 var config = await downloads.ConfigurationAsync(project);
                 var debugPlans = 0;
@@ -70,7 +72,10 @@ foreach (var archive in args.Skip(2))
                     totalParses += checkedPlans.Parsed;
                     totalDebugPlans += debugPlans = checkedPlans.DebugPlans;
                 }
-                else Check(config is null, "未声明 OpenOCD 的器件意外开放下载。");
+                else
+                {
+                    Check(config is null, "未声明 OpenOCD 的器件意外开放下载。");
+                }
 
                 long binaryBytes = 0;
                 if (compile)
@@ -125,11 +130,21 @@ static HashSet<(string DeviceId, string TemplateId)> SelectBuilds(IReadOnlyList<
     var groups = devices.SelectMany(d => d.Templates.Select(t => (Device: d, Template: t)))
         .GroupBy(x => JsonSerializer.Serialize(new
         {
-            x.Device.Architecture, x.Device.ToolsetId, x.Device.ToolsetVersion, x.Device.CompilerId,
-            x.Device.FlashBytes, x.Device.RamOrigin, x.Device.RamBytes, x.Device.CpuFlags,
-            x.Device.Defines, x.Device.Sources, x.Device.CompileOptions, x.Device.LinkOptions,
+            x.Device.Architecture,
+            x.Device.ToolsetId,
+            x.Device.ToolsetVersion,
+            x.Device.CompilerId,
+            x.Device.FlashBytes,
+            x.Device.RamOrigin,
+            x.Device.RamBytes,
+            x.Device.CpuFlags,
+            x.Device.Defines,
+            x.Device.Sources,
+            x.Device.CompileOptions,
+            x.Device.LinkOptions,
             Startup = StartupSources(x.Device, x.Template),
-            x.Template.Id, x.Template.Build
+            x.Template.Id,
+            x.Template.Build
         }, JsonStore.Options), StringComparer.Ordinal);
     return groups.Select(g => g.OrderBy(x => x.Device.Id, StringComparer.Ordinal).First())
         .Select(x => (x.Device.Id, x.Template.Id)).ToHashSet();
@@ -184,8 +199,16 @@ static void ValidateLinkerMemory(string script, DeviceDefinition device)
 
 static uint ParseSize(string text)
 {
-    if (text.StartsWith("0x", StringComparison.OrdinalIgnoreCase)) return Convert.ToUInt32(text[2..], 16);
-    var multiplier = text[^1] switch { 'k' or 'K' => 1024U, 'm' or 'M' => 1024U * 1024U, _ => 1U };
+    if (text.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
+    {
+        return Convert.ToUInt32(text[2..], 16);
+    }
+    var multiplier = text[^1] switch
+    {
+        'k' or 'K' => 1024U,
+        'm' or 'M' => 1024U * 1024U,
+        _ => 1U
+    };
     return checked(uint.Parse(multiplier == 1 ? text : text[..^1]) * multiplier);
 }
 
@@ -206,12 +229,18 @@ static void ValidateImage(byte[] image, byte[] elf, DeviceDefinition device)
     for (var index = 0; index < programCount; index++)
     {
         var offset = checked((int)programOffset + index * programSize);
-        if (BinaryPrimitives.ReadUInt32LittleEndian(elf.AsSpan(offset)) != 1) continue;
+        if (BinaryPrimitives.ReadUInt32LittleEndian(elf.AsSpan(offset)) != 1)
+        {
+            continue;
+        }
         var fileOffset = BinaryPrimitives.ReadUInt32LittleEndian(elf.AsSpan(offset + 4));
         var address = BinaryPrimitives.ReadUInt32LittleEndian(elf.AsSpan(offset + 12));
         var length = BinaryPrimitives.ReadUInt32LittleEndian(elf.AsSpan(offset + 16));
         var memoryLength = BinaryPrimitives.ReadUInt32LittleEndian(elf.AsSpan(offset + 20));
-        if (length == 0) continue;
+        if (length == 0)
+        {
+            continue;
+        }
         var end = (ulong)address + length;
         Check(length <= memoryLength && (ulong)fileOffset + length <= (ulong)elf.Length &&
               address >= device.FlashOrigin && end <= (ulong)device.FlashOrigin + device.FlashBytes,
@@ -220,7 +249,10 @@ static void ValidateImage(byte[] image, byte[] elf, DeviceDefinition device)
                            (ulong)(entry & (device.Architecture == "arm" ? ~1U : uint.MaxValue)) < end;
     }
     Check(hasEntrySegment, "ELF 入口未处于 Flash 装载段。");
-    if (device.Architecture != "arm") return; // RISC-V 启动代码不是 Cortex-M 的 SP/Reset 双向量。
+    if (device.Architecture != "arm")
+    {
+        return;
+    } // RISC-V 启动代码不是 Cortex-M 的 SP/Reset 双向量。
     Check(image.Length >= 8, "Cortex-M BIN 缺少 SP/Reset 双向量。");
     var stack = BinaryPrimitives.ReadUInt32LittleEndian(image);
     var reset = BinaryPrimitives.ReadUInt32LittleEndian(image.AsSpan(4));
@@ -238,7 +270,10 @@ static async Task<(int Parsed, int DebugPlans)> CheckDebugPlansAsync(string proj
     var debugPlans = 0;
     foreach (var probe in config.OpenOcd.Probes)
     {
-        var selected = config with { Options = new(probe.Id, probe.DefaultSpeedKhz) };
+        var selected = config with
+        {
+            Options = new(probe.Id, probe.DefaultSpeedKhz)
+        };
         try
         {
             var plan = OpenOcdDebugPlanner.Create(project, selected, tools, Path.Combine(project, "firmware.elf"));
@@ -272,7 +307,10 @@ static async Task<(int Parsed, int DebugPlans)> CheckDebugPlansAsync(string proj
 
 static void Check(bool condition, string message)
 {
-    if (!condition) throw new InvalidOperationException(message);
+    if (!condition)
+    {
+        throw new InvalidOperationException(message);
+    }
 }
 
 internal sealed record ValidationRow(string Model, bool Compiled, uint FlashBytes, uint RamBytes,

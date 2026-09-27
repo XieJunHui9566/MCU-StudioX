@@ -13,15 +13,25 @@ internal static class FixtureBuild
             "-o", elf, fixture
         };
         args.AddRange(arm ? ["-mcpu=cortex-m4", "-mthumb"] : ["-march=rv32imac", "-mabi=ilp32"]);
-        if (minimal) args.Add("-DFIXTURE_MINIMAL=1");
+        if (minimal)
+        {
+            args.Add("-DFIXTURE_MINIMAL=1");
+        }
         var start = new ProcessStartInfo(gcc) { UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true, RedirectStandardError = true };
-        foreach (var argument in args) start.ArgumentList.Add(argument);
+        foreach (var argument in args)
+        {
+            start.ArgumentList.Add(argument);
+        }
         using var process = Process.Start(start) ?? throw new InvalidOperationException("GCC failed to start.");
-        var stdout = process.StandardOutput.ReadToEndAsync(); var stderr = process.StandardError.ReadToEndAsync();
+        var stdout = process.StandardOutput.ReadToEndAsync();
+        var stderr = process.StandardError.ReadToEndAsync();
         await process.WaitForExitAsync();
         var log = await stdout + await stderr;
         await File.WriteAllTextAsync(Path.ChangeExtension(elf, ".build.log"), log);
-        if (process.ExitCode != 0) throw new InvalidOperationException("Fixture GCC failed: " + log);
+        if (process.ExitCode != 0)
+        {
+            throw new InvalidOperationException("Fixture GCC failed: " + log);
+        }
         return elf;
     }
 }

@@ -1,10 +1,14 @@
+# 第一方文本使用一致换行；二进制和第三方资源按 Git 的默认识别处理。
 * text=auto
 *.cs text eol=lf
 *.xaml text eol=lf
+*.csproj text eol=lf
+*.props text eol=lf
+*.targets text eol=lf
+*.slnx text eol=lf
+*.ps1 text eol=lf
+*.py text eol=lf
+*.c text eol=lf
+*.h text eol=lf
+.editorconfig text eol=lf
 *.md text eol=lf
-*.json text eol=lf
-*.js text eol=lf
-*.ps1 text eol=crlf
-*.png binary
-*.jpg binary
-*.ico binary

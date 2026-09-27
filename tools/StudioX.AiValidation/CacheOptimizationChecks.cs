@@ -77,7 +77,10 @@ internal static class CacheOptimizationChecks
             "guidance never interrupts an assistant tool-call/result pair");
         var conversation = await services.AiConversations.CreateAsync(project);
         var saved = await services.AiConversations.SaveAsync(project,
-            conversation with { Turns = guided.History });
+            conversation with
+            {
+                Turns = guided.History
+            });
         var restored = await services.AiConversations.LoadAsync(project, saved.Id);
         check(restored.Turns[^1].SteeringMessages!.SequenceEqual(delivered) &&
               restored.Turns[^1].ProtocolMessages!.Count(message => message.StudioXKind == "steering") == 2,
@@ -86,7 +89,10 @@ internal static class CacheOptimizationChecks
         var abandoned = new AiAgentSteeringQueue();
         var brokenAgent = new AiAgentService(new FailingTransport(abandoned), new AiSettings(), session);
         var failed = false;
-        try { _ = await brokenAgent.SendAsync(project, "可取消任务", steering: abandoned); }
+        try
+        {
+            _ = await brokenAgent.SendAsync(project, "可取消任务", steering: abandoned);
+        }
         catch (InvalidOperationException) { failed = true; }
         check(failed && !abandoned.IsAccepting &&
               abandoned.DrainPending().SequenceEqual(["未消费的提示仍在队列"]),
@@ -106,7 +112,9 @@ internal static class CacheOptimizationChecks
             var usage = new AiTokenUsage(100 + round, 10, 110 + round,
                 70 + round, 30);
             if (round == Batches + 1)
+            {
                 return Task.FromResult(new AiChatResponse("检查完成", [], "stop", null, usage));
+            }
             var calls = Enumerable.Range(0, 5).Select(index =>
                 new AiToolCall($"cache-{round}-{index}", "project_info", "{}")).ToArray();
             return Task.FromResult(new AiChatResponse(null, calls, "tool_calls", null,
@@ -124,13 +132,19 @@ internal static class CacheOptimizationChecks
             Requests.Add(request);
             if (Requests.Count == 1)
             {
-                if (!queue.TryEnqueue("先确认工程范围")) throw new Exception("guidance was rejected");
+                if (!queue.TryEnqueue("先确认工程范围"))
+                {
+                    throw new Exception("guidance was rejected");
+                }
                 return Task.FromResult(new AiChatResponse(null,
                     [new AiToolCall("steer-call", "project_info", "{}")], "tool_calls", null));
             }
             if (Requests.Count == 2)
             {
-                if (!queue.TryEnqueue("回答前再说明验证范围")) throw new Exception("guidance was rejected");
+                if (!queue.TryEnqueue("回答前再说明验证范围"))
+                {
+                    throw new Exception("guidance was rejected");
+                }
                 return Task.FromResult(new AiChatResponse("中间回答", [], "stop", null));
             }
             return Task.FromResult(new AiChatResponse("最终回答", [], "stop", null));

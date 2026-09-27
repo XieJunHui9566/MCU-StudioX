@@ -39,7 +39,10 @@ public static class WchDebugTarget
             device.FlashOrigin != 0 || device.FlashBytes != layout.FlashKib * 1024 ||
             device.RamOrigin != 0x20000000 || device.RamBytes != layout.RamKib * 1024 ||
             device.OpenOcd is not { } config || config.ApplicationFlashBytes != layout.ApplicationFlashKib * 1024 ||
-            config.TargetScript != "debug/" + device.Id.ToLowerInvariant() + ".cfg") return null;
+            config.TargetScript != "debug/" + device.Id.ToLowerInvariant() + ".cfg")
+        {
+            return null;
+        }
         return new(device.Id, layout.Core, layout.HasFpu);
     }
 }

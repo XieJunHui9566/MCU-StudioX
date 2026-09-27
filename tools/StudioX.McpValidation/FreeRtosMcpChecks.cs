@@ -15,7 +15,10 @@ internal static class FreeRtosMcpChecks
         var checks = 0;
         void Check(bool condition, string description)
         {
-            if (!condition) throw new Exception(description);
+            if (!condition)
+            {
+                throw new Exception(description);
+            }
             Console.WriteLine("PASS " + description);
             checks++;
         }
@@ -54,7 +57,9 @@ internal static class FreeRtosMcpChecks
             var pausedSnapshot = services.Debugger.Snapshot;
             var current = Parse(await session.CallToolAsync("debug_rtos_snapshot", "{}"));
             if (!current.TryGetProperty("snapshot", out _))
+            {
                 throw new Exception("Paused RTOS MCP read has no snapshot: " + current.GetRawText());
+            }
             Check(true, "paused RTOS MCP read returns a structured snapshot");
             var rtos = current.GetProperty("snapshot");
             Check(current.GetProperty("simulated").GetBoolean() && !current.GetProperty("hardware").GetBoolean() &&
@@ -72,7 +77,10 @@ internal static class FreeRtosMcpChecks
             foreach (var symbol in new[] { "vTaskDelay(1)", "*queue", "queue[0]", "queue;continue", "" })
             {
                 var invalid = Parse(await session.CallToolAsync("debug_rtos_snapshot",
-                    JsonSerializer.Serialize(new { objectSymbols = new[] { symbol } })));
+                    JsonSerializer.Serialize(new
+                    {
+                        objectSymbols = new[] { symbol }
+                    })));
                 Check(invalid.TryGetProperty("error", out _) && services.Debugger.State == DebugState.Stopped,
                     $"RTOS MCP refuses executable or unsupported object expression '{symbol}'");
             }
@@ -93,7 +101,9 @@ internal static class FreeRtosMcpChecks
             // 只回收本次创建的临时目录，避免测试删除工程或正常用户数据。
             if (root.StartsWith(tempRoot + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase) &&
                 Path.GetFileName(root).StartsWith("studiox-rtos-mcp-", StringComparison.Ordinal) && Directory.Exists(root))
+            {
                 Directory.Delete(root, recursive: true);
+            }
         }
     }
 }

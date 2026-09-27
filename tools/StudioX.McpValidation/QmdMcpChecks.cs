@@ -13,7 +13,9 @@ internal static class QmdMcpChecks
             "void studioxQmdFixture(void) { HAL_GPIO_TogglePin(GPIOF, GPIO_PIN_9); }\n");
         var request = JsonSerializer.Serialize(new
         {
-            query = "HAL_GPIO_TogglePin", directory = "src", maxResults = 5
+            query = "HAL_GPIO_TogglePin",
+            directory = "src",
+            maxResults = 5
         });
         var first = await session.CallToolAsync("project_qmd_search", request);
         if (first.Contains("MCP_QMD_NOT_INSTALLED", StringComparison.Ordinal))
@@ -62,7 +64,9 @@ internal static class QmdMcpChecks
             "uniqueQmdSecretNeedle\n");
         var excluded = await session.CallToolAsync("project_qmd_search", JsonSerializer.Serialize(new
         {
-            query = "uniqueQmdSecretNeedle", directory = "src", maxResults = 5
+            query = "uniqueQmdSecretNeedle",
+            directory = "src",
+            maxResults = 5
         }));
         using var excludedJson = JsonDocument.Parse(excluded);
         check(excludedJson.RootElement.GetProperty("results").GetArrayLength() == 0 &&
@@ -73,7 +77,9 @@ internal static class QmdMcpChecks
             "void studioxQmdFixture(void) { HAL_GPIO_WritePin(GPIOF, GPIO_PIN_10, GPIO_PIN_SET); }\n");
         var changed = await session.CallToolAsync("project_qmd_search", JsonSerializer.Serialize(new
         {
-            query = "HAL_GPIO_WritePin", directory = "src", maxResults = 5
+            query = "HAL_GPIO_WritePin",
+            directory = "src",
+            maxResults = 5
         }));
         using var changedJson = JsonDocument.Parse(changed);
         check(!changedJson.RootElement.GetProperty("reusedIndex").GetBoolean() &&

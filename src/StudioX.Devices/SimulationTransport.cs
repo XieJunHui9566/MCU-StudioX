@@ -13,7 +13,10 @@ public sealed class SimulationTransport(TimeSpan? interval = null) : IDeviceTran
     public ValueTask OpenAsync(CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        if (Interlocked.Exchange(ref open, 1) != 0) throw new InvalidOperationException("Transport already open.");
+        if (Interlocked.Exchange(ref open, 1) != 0)
+        {
+            throw new InvalidOperationException("Transport already open.");
+        }
         return ValueTask.CompletedTask;
     }
     public async IAsyncEnumerable<ReadOnlyMemory<byte>> ReceiveAsync([EnumeratorCancellation] CancellationToken cancellationToken)
@@ -29,5 +32,9 @@ public sealed class SimulationTransport(TimeSpan? interval = null) : IDeviceTran
         }
     }
     public ValueTask SendAsync(ReadOnlyMemory<byte> bytes, CancellationToken cancellationToken) => throw new NotSupportedException("模拟传感器是只读数据源。");
-    public ValueTask DisposeAsync() { Interlocked.Exchange(ref open, 0); return ValueTask.CompletedTask; }
+    public ValueTask DisposeAsync()
+    {
+        Interlocked.Exchange(ref open, 0);
+        return ValueTask.CompletedTask;
+    }
 }

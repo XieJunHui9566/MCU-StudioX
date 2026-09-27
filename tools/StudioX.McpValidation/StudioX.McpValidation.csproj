@@ -1,4 +1,13 @@
-<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup><OutputType>Exe</OutputType></PropertyGroup>
-  <ItemGroup><ProjectReference Include="../../src/StudioX.Application/StudioX.Application.csproj" /></ItemGroup>
+<Project
+  Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+  <ItemGroup>
+    <None
+      Update="Fixtures/mcp-tool-contracts.json"
+      CopyToOutputDirectory="PreserveNewest" />
+    <ProjectReference
+      Include="../../src/StudioX.Application/StudioX.Application.csproj" />
+  </ItemGroup>
 </Project>

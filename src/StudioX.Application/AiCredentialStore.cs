@@ -20,12 +20,17 @@ public sealed class AiCredentialStore
         EnsureWindows();
         var target = TargetFor(baseUrl);
         if (string.IsNullOrWhiteSpace(apiKey) || apiKey.Any(c => c is < '!' or > '~'))
+        {
             throw new StudioXException("AI_API_KEY", "API Key 无效。");
+        }
         var bytes = StrictUtf8.GetBytes(apiKey);
         IntPtr blob = IntPtr.Zero;
         try
         {
-            if (bytes.Length > 2560) throw new StudioXException("AI_API_KEY", "API Key 过长。");
+            if (bytes.Length > 2560)
+            {
+                throw new StudioXException("AI_API_KEY", "API Key 过长。");
+            }
             blob = Marshal.AllocHGlobal(bytes.Length);
             Marshal.Copy(bytes, 0, blob, bytes.Length);
             var credential = new NativeCredential
@@ -37,7 +42,10 @@ public sealed class AiCredentialStore
                 Persist = LocalMachine,
                 UserName = "MCU StudioX"
             };
-            if (!CredWrite(ref credential, 0)) throw NativeError("AI_CREDENTIAL_SAVE", "无法保存 AI API Key。");
+            if (!CredWrite(ref credential, 0))
+            {
+                throw NativeError("AI_CREDENTIAL_SAVE", "无法保存 AI API Key。");
+            }
         }
         finally
         {
@@ -55,7 +63,10 @@ public sealed class AiCredentialStore
     public bool HasApiKey(string baseUrl)
     {
         EnsureWindows();
-        if (!TryRead(TargetFor(baseUrl), out var pointer)) return false;
+        if (!TryRead(TargetFor(baseUrl), out var pointer))
+        {
+            return false;
+        }
         try
         {
             var credential = Marshal.PtrToStructure<NativeCredential>(pointer);
@@ -70,18 +81,25 @@ public sealed class AiCredentialStore
     {
         EnsureWindows();
         if (!CredDelete(TargetFor(baseUrl), Generic, 0) && Marshal.GetLastWin32Error() != NotFound)
+        {
             throw NativeError("AI_CREDENTIAL_DELETE", "无法删除 AI API Key。");
+        }
     }
 
     internal string? GetApiKey(string baseUrl)
     {
         EnsureWindows();
-        if (!TryRead(TargetFor(baseUrl), out var pointer)) return null;
+        if (!TryRead(TargetFor(baseUrl), out var pointer))
+        {
+            return null;
+        }
         try
         {
             var credential = Marshal.PtrToStructure<NativeCredential>(pointer);
             if (credential.CredentialBlobSize is 0 or > 2560 || credential.CredentialBlob == IntPtr.Zero)
+            {
                 throw new StudioXException("AI_CREDENTIAL", "保存的 AI API Key 无效，请重新设置。");
+            }
             var bytes = new byte[credential.CredentialBlobSize];
             try
             {
@@ -99,8 +117,14 @@ public sealed class AiCredentialStore
 
     private static bool TryRead(string target, out IntPtr pointer)
     {
-        if (CredRead(target, Generic, 0, out pointer)) return true;
-        if (Marshal.GetLastWin32Error() == NotFound) return false;
+        if (CredRead(target, Generic, 0, out pointer))
+        {
+            return true;
+        }
+        if (Marshal.GetLastWin32Error() == NotFound)
+        {
+            return false;
+        }
         throw NativeError("AI_CREDENTIAL_READ", "无法读取 AI API Key。");
     }
 
@@ -114,7 +138,9 @@ public sealed class AiCredentialStore
     private static void EnsureWindows()
     {
         if (!OperatingSystem.IsWindows())
+        {
             throw new StudioXException("AI_CREDENTIAL_PLATFORM", "AI API Key 安全存储需要 Windows。");
+        }
     }
 
     private static StudioXException NativeError(string code, string message) =>

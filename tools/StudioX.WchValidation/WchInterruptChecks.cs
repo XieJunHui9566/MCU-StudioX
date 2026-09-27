@@ -8,9 +8,15 @@ internal static class WchInterruptChecks
     // 只生成目标文件并反汇编，不生成可下载映像、不调用 GDB 或 OpenOCD。
     public static async Task RunAsync(string runtime, string output, string architecture = "rv32imac_xw")
     {
-        if (architecture is not ("rv32imac_xw" or "rv32imc_zba_zbb_zbc_zbs_xw")) throw new ArgumentException("Unsupported WCH ISA.");
+        if (architecture is not ("rv32imac_xw" or "rv32imc_zba_zbb_zbc_zbs_xw"))
+        {
+            throw new ArgumentException("Unsupported WCH ISA.");
+        }
         var root = Path.GetFullPath(output);
-        if (Directory.Exists(root)) throw new ArgumentException("Use a new output directory.");
+        if (Directory.Exists(root))
+        {
+            throw new ArgumentException("Use a new output directory.");
+        }
         var tools = await new ToolsetCatalog(Path.Combine(Path.GetFullPath(runtime), "toolsets"))
             .ResolveAsync("wch.riscv", "1.0.0", "wch-gcc-12.2.0-v1.4");
         Directory.CreateDirectory(root);
@@ -45,15 +51,20 @@ internal static class WchInterruptChecks
                 {
                     var text = await Run("objdump", ["-dr", "--disassemble=" + function, obj]);
                     if (!text.Contains("<" + function + ">:", StringComparison.Ordinal))
+                    {
                         throw new InvalidOperationException("Missing unmangled symbol: " + function);
+                    }
                     var mret = Regex.IsMatch(text, @"\bmret\b");
                     if (mret != (function != "ordinary_handler"))
+                    {
                         throw new InvalidOperationException("Wrong interrupt return: " + name + " " + function);
+                    }
                     assembly.AppendLine(text);
                 }
                 await File.WriteAllTextAsync(Path.Combine(root, name + ".disassembly.txt"), assembly.ToString());
                 var line = "PASS " + name + ": fast/software ISR use mret; ordinary function does not; C symbols preserved.";
-                Console.WriteLine(line); log.AppendLine(line);
+                Console.WriteLine(line);
+                log.AppendLine(line);
             }
         }
         log.AppendLine("ISA: " + architecture + ". Object-code checks only; no hardware access or interrupt nesting runtime validation.");
@@ -63,7 +74,10 @@ internal static class WchInterruptChecks
         {
             var result = await new ProcessRunner().RunAsync(new(tools.Tool(role), arguments, root, TimeSpan.FromSeconds(30),
                 ToolsetEnvironment.Create(tools), RemoveEnvironment: ToolsetEnvironment.AmbientVariables));
-            if (!result.Success) throw new InvalidOperationException(result.StandardOutput + result.StandardError);
+            if (!result.Success)
+            {
+                throw new InvalidOperationException(result.StandardOutput + result.StandardError);
+            }
             return result.StandardOutput;
         }
     }

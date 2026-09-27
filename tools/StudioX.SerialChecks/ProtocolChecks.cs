@@ -7,7 +7,14 @@ internal static class ProtocolChecks
     public static async Task<int> RunAsync(string fixture)
     {
         var checks = 0;
-        void Check(bool condition, string label) { if (!condition) throw new Exception(label); checks++; }
+        void Check(bool condition, string label)
+        {
+            if (!condition)
+            {
+                throw new Exception(label);
+            }
+            checks++;
+        }
         var root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../.."));
         var configuration = new DirectoryInfo(AppContext.BaseDirectory).Parent!.Name;
         var host = Path.Combine(root, "src/StudioX.PluginHost/bin", configuration, "net10.0/StudioX.PluginHost.exe");
@@ -30,7 +37,8 @@ internal static class ProtocolChecks
         Check(both.Count == 2 && both.All(f => f.Direction == "TX"), "Concatenated requests");
         var lots = d.Feed(new(now, false, Enumerable.Repeat(response, 120).SelectMany(b => b).ToArray()));
         Check(lots.Count == 120 && lots.All(f => f.Status == "CRC 正确"), "Large concatenated receive truncates frames");
-        var bad = response.ToArray(); bad[^1] ^= 1;
+        var bad = response.ToArray();
+        bad[^1] ^= 1;
         Check(d.Feed(new(now, false, bad)).Count == 0, "Bad CRC should wait for idle / resync");
         Check(d.Flush().Single().Status.Contains("CRC 错误"), "Bad CRC not visible");
         var recovery = d.Feed(new(now, false, new byte[] { 0xff, 0xfe, 0, 4 }.Concat(response).ToArray()));
@@ -40,7 +48,8 @@ internal static class ProtocolChecks
         Check(d.Feed(new(now, true, ModbusRtuDecoder.WithCrc([1, 3, 0, 0, 0, 0]))).Single().Status == "字段异常", "Invalid quantity accepted");
         var multiple = ModbusRtuDecoder.WithCrc([1, 16, 0, 16, 0, 2, 4, 0, 1, 0, 2]);
         Check(d.Feed(new(now, true, multiple)).Single().Fields.Any(f => f.Name == "寄存器 +1" && f.Value.EndsWith("/ 2")), "Write registers content");
-        d.Feed(new(now, false, response[..3])); d.Feed(new(now, false, [], true));
+        d.Feed(new(now, false, response[..3]));
+        d.Feed(new(now, false, [], true));
         Check(d.Feed(new(now, false, response)).Single().Status == "CRC 正确", "Boundary joined sessions");
         var unknown = ModbusRtuDecoder.WithCrc([1, 0x41, 0xaa, 0x55]);
         Check(d.Feed(new(now, false, unknown)).Count == 0 && d.Flush().Single().Status == "CRC 正确", "Vendor function raw frame");
@@ -50,7 +59,9 @@ internal static class ProtocolChecks
         Check(monitor.Feed(new(now, false, request.Concat(response).ToArray())).Count == 2, "Passive monitoring");
         foreach (var pdu in new byte[][] { [1, 1, 0, 0, 0, 8], [1, 2, 0, 0, 0, 8], [1, 4, 0, 0, 0, 1], [1, 5, 0, 0, 0xff, 0],
             [1, 15, 0, 0, 0, 8, 1, 0xa5], [1, 22, 0, 1, 0xff, 0x00, 0x00, 0xff], [1, 23, 0, 0, 0, 1, 0, 1, 0, 1, 2, 0, 42] })
+        {
             Check(new ModbusRtuDecoder().Feed(new(now, true, ModbusRtuDecoder.WithCrc(pdu))).Single().Status == "CRC 正确", "Function request 0x" + pdu[1].ToString("X2"));
+        }
         await using (var client = await SerialScriptClient.StartAsync(host, source))
         {
             var sample = Convert.FromHexString("AA55030109C4CF");
@@ -59,14 +70,17 @@ internal static class ProtocolChecks
             Check(decoded.Consumed == 14 && decoded.Frames.Length == 2 && decoded.Frames[0].Fields!["温度"] == "25.00 °C", "Script packet / temperature");
             sample[^1] ^= 1;
             Check((await client.DecodeAsync(sample, "RX", now, false)).Frames.Single().Status == "error", "Script checksum error");
-            await client.ResetAsync(default); checks++;
+            await client.ResetAsync(default);
+            checks++;
         }
         await Reject("function decode(b,c) { while(true) {} }", true, "Infinite loop not stopped");
         await Reject("while(true) {}", false, "Initialization loop not stopped");
         await Reject("function decode(b,c) {return {consumed:b.length,frames:[{offset:999,length:1,summary:'bad'}]};}", true, "Out of range script frame accepted");
         await Reject("function decode(b,c) {throw new Error('script failure');}", true, "Script exception swallowed");
         await using (var client = await SerialScriptClient.StartAsync(host, "function decode(b,c) { return {consumed:b.length, frames:[{offset:0,length:b.length,summary:typeof System + '/' + typeof require + '/' + typeof fetch}]}; }"))
+        {
             Check((await client.DecodeAsync([1], "RX", now, false)).Frames[0].Summary == "undefined/undefined/undefined", "Unexpected IO/CLR bindings");
+        }
         await using (var protocol = new SerialProtocolMonitor(host))
         {
             await protocol.ConfigureAsync(new(SerialProtocol.ModbusRtu));
@@ -111,7 +125,14 @@ internal static class ProtocolChecks
         async Task Reject(string script, bool decode, string label)
         {
             var rejected = false;
-            try { await using var client = await SerialScriptClient.StartAsync(host, script); if (decode) await client.DecodeAsync([1], "RX", now, false); }
+            try
+            {
+                await using var client = await SerialScriptClient.StartAsync(host, script);
+                if (decode)
+                {
+                    await client.DecodeAsync([1], "RX", now, false);
+                }
+            }
             catch (IOException) { rejected = true; }
             Check(rejected, label);
         }
@@ -119,6 +140,9 @@ internal static class ProtocolChecks
     private static async Task WaitFor(Func<bool> condition)
     {
         using var timeout = new CancellationTokenSource(5000);
-        while (!condition()) await Task.Delay(10, timeout.Token);
+        while (!condition())
+        {
+            await Task.Delay(10, timeout.Token);
+        }
     }
 }

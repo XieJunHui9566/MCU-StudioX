@@ -24,15 +24,27 @@ public sealed class GitHubPullRequestService : IDisposable
         this.tokenProvider = tokenProvider ?? throw new ArgumentNullException(nameof(tokenProvider));
         this.client = client ?? new HttpClient(new HttpClientHandler { AllowAutoRedirect = false });
         ownsClient = client is null;
-        if (ownsClient) this.client.Timeout = TimeSpan.FromSeconds(45);
+        if (ownsClient)
+        {
+            this.client.Timeout = TimeSpan.FromSeconds(45);
+        }
     }
 
-    public void Dispose() { if (ownsClient) client.Dispose(); }
+    public void Dispose()
+    {
+        if (ownsClient)
+        {
+            client.Dispose();
+        }
+    }
 
     /// <summary>只接受 github.com 的 HTTPS 或 SSH Git 远端；拒绝 URL 内嵌凭据和任意 API 主机。</summary>
     public static GitHubRepository? TryParseRepository(string? remoteUrl)
     {
-        if (string.IsNullOrWhiteSpace(remoteUrl)) return null;
+        if (string.IsNullOrWhiteSpace(remoteUrl))
+        {
+            return null;
+        }
         var value = remoteUrl.Trim();
         string? path = null;
         if (value.StartsWith("git@github.com:", StringComparison.OrdinalIgnoreCase))
@@ -47,12 +59,24 @@ public sealed class GitHubPullRequestService : IDisposable
                     && uri.UserInfo == "git")))
         {
             path = uri.AbsolutePath.TrimStart('/');
-            if (path.Contains('%')) return null;
+            if (path.Contains('%'))
+            {
+                return null;
+            }
         }
-        if (path is null || path.Contains('\\')) return null;
-        if (path.EndsWith(".git", StringComparison.OrdinalIgnoreCase)) path = path[..^4];
+        if (path is null || path.Contains('\\'))
+        {
+            return null;
+        }
+        if (path.EndsWith(".git", StringComparison.OrdinalIgnoreCase))
+        {
+            path = path[..^4];
+        }
         var parts = path.Split('/');
-        if (parts.Length != 2 || !ValidOwner(parts[0]) || !ValidRepositoryName(parts[1])) return null;
+        if (parts.Length != 2 || !ValidOwner(parts[0]) || !ValidRepositoryName(parts[1]))
+        {
+            return null;
+        }
         return new GitHubRepository(parts[0], parts[1]);
     }
 
@@ -67,7 +91,10 @@ public sealed class GitHubPullRequestService : IDisposable
             using var document = await GetJsonAsync($"{path}?state={state.ToString().ToLowerInvariant()}&sort=updated&direction=desc&per_page=100&page={page}", account, token);
             var entries = document.RootElement.EnumerateArray().ToArray();
             result.AddRange(entries.Select(ParsePullRequest));
-            if (entries.Length < 100) return result;
+            if (entries.Length < 100)
+            {
+                return result;
+            }
         }
         throw new InvalidDataException("GitHub PR 列表超过 1000 条；请缩小查询范围。");
     }
@@ -93,7 +120,9 @@ public sealed class GitHubPullRequestService : IDisposable
         using var result = await GetJsonAsync(RepositoryPath(repository), account, token);
         var branch = OptionalString(result.RootElement, "default_branch");
         if (string.IsNullOrWhiteSpace(branch))
+        {
             throw new InvalidDataException("GitHub 没有返回仓库默认分支；请手动指定目标分支。");
+        }
         return branch;
     }
 
@@ -103,10 +132,18 @@ public sealed class GitHubPullRequestService : IDisposable
         ArgumentNullException.ThrowIfNull(request);
         if (string.IsNullOrWhiteSpace(request.Title) || request.Title.Length > 256
             || string.IsNullOrWhiteSpace(request.Head) || string.IsNullOrWhiteSpace(request.Base))
+        {
             throw new ArgumentException("PR 标题、源分支和目标分支不能为空。", nameof(request));
+        }
         using var result = await SendJsonAsync(HttpMethod.Post, RepositoryPath(repository) + "/pulls",
-            new { title = request.Title.Trim(), body = request.Body ?? "", head = request.Head.Trim(),
-                @base = request.Base.Trim(), draft = request.Draft }, account, token);
+            new
+            {
+                title = request.Title.Trim(),
+                body = request.Body ?? "",
+                head = request.Head.Trim(),
+                @base = request.Base.Trim(),
+                draft = request.Draft
+            }, account, token);
         return ParsePullRequest(result.RootElement);
     }
 
@@ -114,18 +151,29 @@ public sealed class GitHubPullRequestService : IDisposable
     public async Task<GitHubPullRequestComment> CommentAsync(GitHubRepository repository, int number,
         string body, CancellationToken token = default, string? account = null)
     {
-        if (string.IsNullOrWhiteSpace(body)) throw new ArgumentException("评论不能为空。", nameof(body));
+        if (string.IsNullOrWhiteSpace(body))
+        {
+            throw new ArgumentException("评论不能为空。", nameof(body));
+        }
         using var result = await SendJsonAsync(HttpMethod.Post,
-            RepositoryPath(repository) + $"/issues/{RequireNumber(number)}/comments", new { body = body.Trim() }, account, token);
+            RepositoryPath(repository) + $"/issues/{RequireNumber(number)}/comments", new
+            {
+                body = body.Trim()
+            }, account, token);
         return ParseComment(result.RootElement);
     }
 
     public async Task<GitHubPullRequestReview> ReviewAsync(GitHubRepository repository, int number,
         GitHubReviewEvent reviewEvent, string body, CancellationToken token = default, string? account = null)
     {
-        if (!Enum.IsDefined(reviewEvent)) throw new ArgumentOutOfRangeException(nameof(reviewEvent));
+        if (!Enum.IsDefined(reviewEvent))
+        {
+            throw new ArgumentOutOfRangeException(nameof(reviewEvent));
+        }
         if (reviewEvent != GitHubReviewEvent.Approve && string.IsNullOrWhiteSpace(body))
+        {
             throw new ArgumentException("评论或请求修改时必须填写审阅意见。", nameof(body));
+        }
         var action = reviewEvent switch
         {
             GitHubReviewEvent.Approve => "APPROVE",
@@ -133,7 +181,11 @@ public sealed class GitHubPullRequestService : IDisposable
             _ => "COMMENT"
         };
         using var result = await SendJsonAsync(HttpMethod.Post, PullPath(repository, number) + "/reviews",
-            new { body = body?.Trim() ?? "", @event = action }, account, token);
+            new
+            {
+                body = body?.Trim() ?? "",
+                @event = action
+            }, account, token);
         return ParseReview(result.RootElement);
     }
 
@@ -143,10 +195,19 @@ public sealed class GitHubPullRequestService : IDisposable
         string? account = null)
     {
         if (!Regex.IsMatch(expectedHeadSha ?? "", "\\A[0-9a-fA-F]{40,64}\\z", RegexOptions.CultureInvariant))
+        {
             throw new ArgumentException("合并前需要当前 PR 源提交的 SHA。", nameof(expectedHeadSha));
-        if (!Enum.IsDefined(method)) throw new ArgumentOutOfRangeException(nameof(method));
+        }
+        if (!Enum.IsDefined(method))
+        {
+            throw new ArgumentOutOfRangeException(nameof(method));
+        }
         using var result = await SendJsonAsync(HttpMethod.Put, PullPath(repository, number) + "/merge",
-            new { sha = expectedHeadSha, merge_method = method.ToString().ToLowerInvariant() }, account, token);
+            new
+            {
+                sha = expectedHeadSha,
+                merge_method = method.ToString().ToLowerInvariant()
+            }, account, token);
         return new GitHubMergeResult(GetBoolean(result.RootElement, "merged") ?? false,
             GetString(result.RootElement, "sha"), GetString(result.RootElement, "message"));
     }
@@ -155,7 +216,9 @@ public sealed class GitHubPullRequestService : IDisposable
         string headSha, CancellationToken token = default, string? account = null)
     {
         if (!Regex.IsMatch(headSha ?? "", "\\A[0-9a-fA-F]{40,64}\\z", RegexOptions.CultureInvariant))
+        {
             throw new ArgumentException("检查状态需要有效的源提交 SHA。", nameof(headSha));
+        }
         var path = RepositoryPath(repository) + "/commits/" + headSha;
         string status;
         try
@@ -186,7 +249,10 @@ public sealed class GitHubPullRequestService : IDisposable
             using var document = await GetJsonAsync($"{path}?per_page=100&page={page}", account, token);
             var entries = document.RootElement.EnumerateArray().ToArray();
             result.AddRange(entries.Select(parse));
-            if (entries.Length < 100) return result;
+            if (entries.Length < 100)
+            {
+                return result;
+            }
         }
         throw new InvalidDataException("GitHub 返回超过 1000 条记录，当前列表无法完整显示。");
     }
@@ -200,17 +266,23 @@ public sealed class GitHubPullRequestService : IDisposable
         // path 仅由本服务生成；认证值不能进入 URL、异常文本或日志。
         var credential = await tokenProvider(account, token);
         if (string.IsNullOrWhiteSpace(credential) || credential.Contains('\r') || credential.Contains('\n'))
+        {
             throw new InvalidOperationException("GitHub 凭据不可用，请先登录账号。");
+        }
         using var request = new HttpRequestMessage(method, new Uri("https://api.github.com/" + path));
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
         request.Headers.Add("X-GitHub-Api-Version", ApiVersion);
         request.Headers.UserAgent.ParseAdd("MCU-StudioX/0.2");
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", credential);
         if (body is not null)
+        {
             request.Content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
+        }
         using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, token);
         if (!response.IsSuccessStatusCode)
+        {
             throw await MakeApiErrorAsync(response, credential, token);
+        }
         await using var stream = await response.Content.ReadAsStreamAsync(token);
         return await JsonDocument.ParseAsync(stream, cancellationToken: token);
     }
@@ -237,7 +309,10 @@ public sealed class GitHubPullRequestService : IDisposable
             _ => $"GitHub API 请求失败（HTTP {(int)response.StatusCode}）。"
         };
         var safe = serverMessage?.Replace(credential, "[redacted]", StringComparison.Ordinal) ?? "";
-        if (safe.Length > 400) safe = safe[..400];
+        if (safe.Length > 400)
+        {
+            safe = safe[..400];
+        }
         return new GitHubApiException(response.StatusCode, string.IsNullOrWhiteSpace(safe) ? prefix : prefix + " " + safe);
     }
 
@@ -245,7 +320,9 @@ public sealed class GitHubPullRequestService : IDisposable
     {
         ArgumentNullException.ThrowIfNull(repository);
         if (!ValidOwner(repository.Owner) || !ValidRepositoryName(repository.Name))
+        {
             throw new ArgumentException("GitHub 仓库名称无效。", nameof(repository));
+        }
         return $"repos/{repository.Owner}/{repository.Name}";
     }
 
@@ -259,7 +336,8 @@ public sealed class GitHubPullRequestService : IDisposable
 
     private static GitHubPullRequest ParsePullRequest(JsonElement e)
     {
-        var head = Property(e, "head"); var target = Property(e, "base");
+        var head = Property(e, "head");
+        var target = Property(e, "base");
         return new GitHubPullRequest(GetInt(e, "number"), GetString(e, "title"), GetString(e, "body"),
             GetString(e, "state"), GetBoolean(e, "draft") ?? false,
             GetBoolean(e, "merged") ?? OptionalString(e, "merged_at") is not null,

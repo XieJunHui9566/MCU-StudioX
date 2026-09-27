@@ -12,7 +12,10 @@ internal static class Stm32TargetChecks
     public static async Task<int> RunAsync(string packDirectory, string runtime, string output)
     {
         var root = Path.GetFullPath(output);
-        if (Directory.Exists(root)) throw new InvalidOperationException("Use a new validation directory.");
+        if (Directory.Exists(root))
+        {
+            throw new InvalidOperationException("Use a new validation directory.");
+        }
         Directory.CreateDirectory(root);
         var toolRoot = Path.GetFullPath(Path.Combine(runtime, "toolsets/arm.gnu/1.0.0"));
         var tools = new ResolvedToolset(await JsonStore.ReadAsync<ToolsetManifest>(Path.Combine(toolRoot, "toolset.json")), toolRoot, "offline-configuration-only");
@@ -40,7 +43,9 @@ internal static class Stm32TargetChecks
                 Check(device.CpuFlags.Contains(expectedCore == "Cortex-M3" ? "-mcpu=cortex-m3" : "-mcpu=cortex-m4"), "Pack declares CPU");
                 var script = await Read(device.OpenOcd!.TargetScript);
                 using (var stream = zip.GetEntry(device.OpenOcd.TargetScript)!.Open())
+                {
                     Check(Convert.ToHexString(SHA256.HashData(stream)).Equals(hashes[device.OpenOcd.TargetScript], StringComparison.OrdinalIgnoreCase), "Target script hash");
+                }
                 var packProject = Path.Combine(root, "pack", device.Id);
                 var cubeProject = Path.Combine(root, "cubemx", device.Id);
                 var project = new ProjectManifest(1, device.Id, manifest.Id, manifest.Version, "offline", device.Id,
@@ -52,7 +57,8 @@ internal static class Stm32TargetChecks
                 await File.WriteAllTextAsync(targetFile, script);
                 await JsonStore.WriteAsync(Path.Combine(cubeProject, ".studiox/project.json"), project with
                 {
-                    Kind = ProjectKind.CubeMx, CubeMx = new("test.ioc", "cmake/gcc-arm-none-eabi.cmake", null)
+                    Kind = ProjectKind.CubeMx,
+                    CubeMx = new("test.ioc", "cmake/gcc-arm-none-eabi.cmake", null)
                 });
                 var packConfig = (await downloads.ConfigurationAsync(packProject))!;
                 var cubeConfig = (await downloads.ConfigurationAsync(cubeProject))!;
@@ -64,35 +70,48 @@ internal static class Stm32TargetChecks
                     templates++;
                 }
                 foreach (var (directory, config, kind) in new[] { (packProject, packConfig, "pack"), (cubeProject, cubeConfig, "cubemx") })
-                foreach (var probe in new[] { "stlink", "cmsis-dap" })
                 {
-                    var selected = config with { Options = new(probe, 2000) };
-                    var target = OpenOcdDebugPlanner.ResolveTarget(selected);
-                    Check(target.Core == expectedCore && target.HasFpu == (expectedCore == "Cortex-M4"), "Correct CPU/FPU " + device.Id);
-                    var plan = OpenOcdDebugPlanner.Create(directory, selected, tools, Path.Combine(directory, "firmware.elf"), 43333);
-                    plans++;
-                    Check(plan.OpenOcdArguments.Contains(Path.Combine(tools.ResourceDirectory("openocdScripts"), "interface", probe + ".cfg")), "Probe selection");
-                    Check(plan.OpenOcdArguments.Contains("$_TARGETNAME configure -work-area-size 0 -work-area-backup 1"), "RAM preservation");
-                    Check(plan.InitializeCommands.Contains("-gdb-set remote hardware-breakpoint-limit unlimited"), "No fixed F407 breakpoint capacity");
-                    Check(plan.InitializeCommands.Any(c => c.Contains("monitor studiox_check_target", StringComparison.Ordinal)), "Identity check before debugging");
-                    Check(plan.InitializeCommands.Any(c => c.Contains("monitor verify_image", StringComparison.Ordinal)), "ELF verification");
-                    Check(!plan.InitializeCommands.Any(c => c.Contains("target-download", StringComparison.Ordinal)), "No implicit download");
-                    // noinit 阻止自动连接；只使用假的读数执行身份校验，然后在配置阶段 shutdown。
-                    var id = Regex.Match(script, @"\$id != (0x[0-9a-f]+)").Groups[1].Value;
-                    var kb = Regex.Match(script, @"\$kb != ([0-9]+)").Groups[1].Value;
-                    Check(id.Length > 0 && kb == (device.FlashBytes / 1024).ToString(), "Chip identity / Flash capacity guard");
-                    var check = $"set fake_id {id}; set fake_kb {kb}; " +
-                        "proc read_memory {address width count} { global fake_id fake_kb; if {$width == 32} {return [list $fake_id]}; return [list $fake_kb] }; " +
-                        "studiox_check_target; set fake_id 0; if {![catch {studiox_check_target}]} {error ID_GUARD_FAILED}; " +
-                        $"set fake_id {id}; set fake_kb 0; if {{![catch {{studiox_check_target}}]}} {{error SIZE_GUARD_FAILED}}; " +
-                        "echo STUDIOX_OFFLINE_OK; shutdown";
-                    var parsed = await runner.RunAsync(new(tools.Tool("openocd"), ["-c", "noinit", .. plan.OpenOcdArguments, "-c", check], directory,
-                        TimeSpan.FromSeconds(15), environment, RemoveEnvironment: ToolsetEnvironment.AmbientVariables));
-                    var log = parsed.StandardOutput + parsed.StandardError;
-                    await File.WriteAllTextAsync(Path.Combine(directory, probe + "-parse.log"), log);
-                    Check(parsed.Success && log.Contains("STUDIOX_OFFLINE_OK", StringComparison.Ordinal), "Offline OpenOCD parse: " + directory + "/" + probe + "\n" + log);
-                    parses++;
-                    rows.Add(new { device = device.Id, kind, probe, target.Core, target.HasFpu, success = true });
+                    foreach (var probe in new[] { "stlink", "cmsis-dap" })
+                    {
+                        var selected = config with
+                        {
+                            Options = new(probe, 2000)
+                        };
+                        var target = OpenOcdDebugPlanner.ResolveTarget(selected);
+                        Check(target.Core == expectedCore && target.HasFpu == (expectedCore == "Cortex-M4"), "Correct CPU/FPU " + device.Id);
+                        var plan = OpenOcdDebugPlanner.Create(directory, selected, tools, Path.Combine(directory, "firmware.elf"), 43333);
+                        plans++;
+                        Check(plan.OpenOcdArguments.Contains(Path.Combine(tools.ResourceDirectory("openocdScripts"), "interface", probe + ".cfg")), "Probe selection");
+                        Check(plan.OpenOcdArguments.Contains("$_TARGETNAME configure -work-area-size 0 -work-area-backup 1"), "RAM preservation");
+                        Check(plan.InitializeCommands.Contains("-gdb-set remote hardware-breakpoint-limit unlimited"), "No fixed F407 breakpoint capacity");
+                        Check(plan.InitializeCommands.Any(c => c.Contains("monitor studiox_check_target", StringComparison.Ordinal)), "Identity check before debugging");
+                        Check(plan.InitializeCommands.Any(c => c.Contains("monitor verify_image", StringComparison.Ordinal)), "ELF verification");
+                        Check(!plan.InitializeCommands.Any(c => c.Contains("target-download", StringComparison.Ordinal)), "No implicit download");
+                        // noinit 阻止自动连接；只使用假的读数执行身份校验，然后在配置阶段 shutdown。
+                        var id = Regex.Match(script, @"\$id != (0x[0-9a-f]+)").Groups[1].Value;
+                        var kb = Regex.Match(script, @"\$kb != ([0-9]+)").Groups[1].Value;
+                        Check(id.Length > 0 && kb == (device.FlashBytes / 1024).ToString(), "Chip identity / Flash capacity guard");
+                        var check = $"set fake_id {id}; set fake_kb {kb}; " +
+                            "proc read_memory {address width count} { global fake_id fake_kb; if {$width == 32} {return [list $fake_id]}; return [list $fake_kb] }; " +
+                            "studiox_check_target; set fake_id 0; if {![catch {studiox_check_target}]} {error ID_GUARD_FAILED}; " +
+                            $"set fake_id {id}; set fake_kb 0; if {{![catch {{studiox_check_target}}]}} {{error SIZE_GUARD_FAILED}}; " +
+                            "echo STUDIOX_OFFLINE_OK; shutdown";
+                        var parsed = await runner.RunAsync(new(tools.Tool("openocd"), ["-c", "noinit", .. plan.OpenOcdArguments, "-c", check], directory,
+                            TimeSpan.FromSeconds(15), environment, RemoveEnvironment: ToolsetEnvironment.AmbientVariables));
+                        var log = parsed.StandardOutput + parsed.StandardError;
+                        await File.WriteAllTextAsync(Path.Combine(directory, probe + "-parse.log"), log);
+                        Check(parsed.Success && log.Contains("STUDIOX_OFFLINE_OK", StringComparison.Ordinal), "Offline OpenOCD parse: " + directory + "/" + probe + "\n" + log);
+                        parses++;
+                        rows.Add(new
+                        {
+                            device = device.Id,
+                            kind,
+                            probe,
+                            target.Core,
+                            target.HasFpu,
+                            success = true
+                        });
+                    }
                 }
                 reference ??= packConfig;
             }
@@ -104,13 +123,18 @@ internal static class Stm32TargetChecks
         {
             var configDirectory = Path.Combine(root, "cubemx", id[..11].ToUpperInvariant());
             var project = await ProjectService.ReadAsync(configDirectory);
-            await JsonStore.WriteAsync(Path.Combine(configDirectory, ".studiox/project.json"), project with { DeviceId = id });
+            await JsonStore.WriteAsync(Path.Combine(configDirectory, ".studiox/project.json"), project with
+            {
+                DeviceId = id
+            });
             var config = (await downloads.ConfigurationAsync(configDirectory))!;
             Check(OpenOcdDebugPlanner.ResolveTarget(config).DeviceId == id[..11].ToUpperInvariant(), "Full ordering suffix " + id);
         }
         var valid = reference!;
         foreach (var bad in new[] { "STM32F407FAKE", "STM32F999ZG", "STM32H743ZI", "STM32F103C(E-G)", "AG32VF303CCT6" })
+        {
             Check(Stm32DebugTarget.Find(valid.Device with { Id = bad }) is null, "Reject unknown/ambiguous model " + bad);
+        }
         Check(Stm32DebugTarget.Find(valid.Device with { Architecture = "riscv" }) is null, "Reject wrong architecture");
         Check(Stm32DebugTarget.Find(valid.Device with { FlashBytes = valid.Device.FlashBytes + 1024 }) is null, "Reject wrong Flash layout");
         Check(Stm32DebugTarget.Find(valid.Device with { RamOrigin = 0 }) is null, "Reject wrong RAM layout");
@@ -126,5 +150,11 @@ internal static class Stm32TargetChecks
         return 0;
     }
 
-    private static void Check(bool value, string message) { if (!value) throw new InvalidOperationException(message); }
+    private static void Check(bool value, string message)
+    {
+        if (!value)
+        {
+            throw new InvalidOperationException(message);
+        }
+    }
 }

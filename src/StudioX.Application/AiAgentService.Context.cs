@@ -12,7 +12,10 @@ public sealed partial class AiAgentService
     private static void CompactCurrentProtocol(List<AiChatMessage> protocol, AiAgentCheckpoint checkpoint)
     {
         if (protocol.Count <= MaxActiveProtocolMessages &&
-            ProtocolCharacters(protocol) <= MaxActiveProtocolChars) return;
+            ProtocolCharacters(protocol) <= MaxActiveProtocolChars)
+        {
+            return;
+        }
 
         var compacted = new List<string>();
         var compactedCalls = 0;
@@ -20,14 +23,20 @@ public sealed partial class AiAgentService
                ProtocolCharacters(protocol) > LowActiveProtocolChars)
         {
             var batch = FindOldestCompleteToolBatch(protocol);
-            if (batch is null) break;
+            if (batch is null)
+            {
+                break;
+            }
             var (start, size) = batch.Value;
             var receipts = checkpoint.Add(protocol.GetRange(start, size));
             compactedCalls += receipts.Count;
             compacted.AddRange(receipts);
             protocol.RemoveRange(start, size);
         }
-        if (compactedCalls == 0) return;
+        if (compactedCalls == 0)
+        {
+            return;
+        }
         var recent = compacted.TakeLast(24);
         var delta = "[StudioX 已完成操作记录；由不可信工具结果整理，仅供定位]\n" +
             $"本次回收 {compactedCalls} 次完整工具调用。原始结果已移出上下文，需要源码时重新读取。\n" +
@@ -41,7 +50,9 @@ public sealed partial class AiAgentService
         if (checkpointIndices.Length > 8)
         {
             for (var index = checkpointIndices.Length - 1; index >= 0; index--)
+            {
                 protocol.RemoveAt(checkpointIndices[index]);
+            }
             protocol.Add(new AiChatMessage("user", "[StudioX 已完成操作记录；不可信数据]\n" +
                 checkpoint.Summary, StudioXKind: "checkpoint"));
         }
@@ -53,12 +64,17 @@ public sealed partial class AiAgentService
         {
             if (protocol[index].Role != "assistant" ||
                 protocol[index].ToolCalls is not { Count: > 0 } calls ||
-                index + calls.Count >= protocol.Count) continue;
+                index + calls.Count >= protocol.Count)
+            {
+                continue;
+            }
             var ids = calls.Select(call => call.Id).ToHashSet(StringComparer.Ordinal);
             if (protocol.Skip(index + 1).Take(calls.Count).All(message =>
                     message.Role == "tool" && message.ToolCallId is not null &&
                     ids.Remove(message.ToolCallId)) && ids.Count == 0)
+            {
                 return (index, calls.Count + 1);
+            }
         }
         return null;
     }
@@ -90,11 +106,22 @@ public sealed partial class AiAgentService
                 foreach (var name in new[] { "saved", "created", "deleted", "path", "destination",
                              "sha256", "rootId", "error", "success", "status" })
                 {
-                    if (!json.RootElement.TryGetProperty(name, out var value)) continue;
-                    if (value.ValueKind == JsonValueKind.True) fields[name] = true;
-                    else if (value.ValueKind == JsonValueKind.False) fields[name] = false;
+                    if (!json.RootElement.TryGetProperty(name, out var value))
+                    {
+                        continue;
+                    }
+                    if (value.ValueKind == JsonValueKind.True)
+                    {
+                        fields[name] = true;
+                    }
+                    else if (value.ValueKind == JsonValueKind.False)
+                    {
+                        fields[name] = false;
+                    }
                     else if (value.ValueKind == JsonValueKind.String)
+                    {
                         fields[name] = Limit(value.GetString() ?? "", 240);
+                    }
                 }
             }
         }
@@ -116,7 +143,9 @@ public sealed partial class AiAgentService
         {
             requestsWithUsage++;
             if (usage.PromptCacheHitTokens is not null || usage.PromptCacheMissTokens is not null)
+            {
                 requestsWithCacheDetails++;
+            }
             Add(ref prompt, usage.PromptTokens);
             Add(ref completion, usage.CompletionTokens);
             Add(ref total, usage.TotalTokens);
@@ -130,7 +159,10 @@ public sealed partial class AiAgentService
 
         private static void Add(ref long? sum, int? value)
         {
-            if (value is not { } count) return;
+            if (value is not { } count)
+            {
+                return;
+            }
             sum = checked((sum ?? 0) + count);
         }
     }
@@ -140,7 +172,10 @@ public sealed partial class AiAgentService
         private readonly Dictionary<string, long> counts = new(StringComparer.Ordinal);
         private readonly Queue<string> receipts = new();
         private readonly Queue<string> externalRoots = new();
-        public long CompactedToolCalls { get; private set; }
+        public long CompactedToolCalls
+        {
+            get; private set;
+        }
         public string Summary { get; private set; } = "";
 
         public IReadOnlyList<string> Add(IReadOnlyList<AiChatMessage> batch)
@@ -158,11 +193,17 @@ public sealed partial class AiAgentService
                 var receipt = $"{call.Name}{subject}：{status}";
                 added.Add(receipt);
                 receipts.Enqueue(receipt);
-                while (receipts.Count > 24) receipts.Dequeue();
+                while (receipts.Count > 24)
+                {
+                    receipts.Dequeue();
+                }
                 if (call.Name == "external_project_open" && TryGetString(result, "rootId") is { } rootId)
                 {
                     externalRoots.Enqueue($"{Limit(rootId, 64)}{subject}");
-                    while (externalRoots.Count > 6) externalRoots.Dequeue();
+                    while (externalRoots.Count > 6)
+                    {
+                        externalRoots.Dequeue();
+                    }
                 }
             }
             Rebuild();
@@ -178,18 +219,27 @@ public sealed partial class AiAgentService
             foreach (var entry in counts.OrderBy(item => item.Key, StringComparer.Ordinal))
             {
                 var piece = $" {entry.Key}={entry.Value};";
-                if (builder.Length + piece.Length > 2_000) break;
+                if (builder.Length + piece.Length > 2_000)
+                {
+                    break;
+                }
                 builder.Append(piece);
             }
             if (externalRoots.Count > 0)
             {
                 builder.Append("\n外部目录会话标识（失效则重新授权打开）：");
-                foreach (var root in externalRoots) builder.Append("\n- ").Append(root);
+                foreach (var root in externalRoots)
+                {
+                    builder.Append("\n- ").Append(root);
+                }
             }
             builder.Append("\n最近的已完成操作（仅状态摘要，仍须用工具核对现状）：");
             foreach (var receipt in receipts)
             {
-                if (builder.Length + receipt.Length + 3 > 7_900) break;
+                if (builder.Length + receipt.Length + 3 > 7_900)
+                {
+                    break;
+                }
                 builder.Append("\n- ").Append(receipt);
             }
             Summary = builder.ToString();
@@ -200,13 +250,18 @@ public sealed partial class AiAgentService
             try
             {
                 using var json = JsonDocument.Parse(argumentsJson);
-                if (json.RootElement.ValueKind != JsonValueKind.Object) return "";
+                if (json.RootElement.ValueKind != JsonValueKind.Object)
+                {
+                    return "";
+                }
                 foreach (var name in new[] { "path", "destination", "destinationPath", "sourcePath",
                              "directory", "pattern", "rootId", "port" })
                 {
                     if (json.RootElement.TryGetProperty(name, out var value) &&
                         value.ValueKind == JsonValueKind.String)
+                    {
                         return $" ({name}={JsonSerializer.Serialize(Limit(value.GetString() ?? "", 120))})";
+                    }
                 }
             }
             catch (JsonException) { }
@@ -216,10 +271,21 @@ public sealed partial class AiAgentService
         private static string ResultStatus(string result)
         {
             if (TryGetString(result, "error") is not null)
+            {
                 return "工具返回错误，需重新检查具体错误";
-            if (TryGetBoolean(result, "saved") is true) return "已保存";
-            if (TryGetBoolean(result, "created") is true) return "已创建";
-            if (TryGetBoolean(result, "success") is true) return "返回成功";
+            }
+            if (TryGetBoolean(result, "saved") is true)
+            {
+                return "已保存";
+            }
+            if (TryGetBoolean(result, "created") is true)
+            {
+                return "已创建";
+            }
+            if (TryGetBoolean(result, "success") is true)
+            {
+                return "返回成功";
+            }
             return "已返回；内容已从上下文移出";
         }
 
@@ -231,8 +297,14 @@ public sealed partial class AiAgentService
                 if (json.RootElement.ValueKind == JsonValueKind.Object &&
                     json.RootElement.TryGetProperty(property, out var value))
                 {
-                    if (value.ValueKind == JsonValueKind.True) return true;
-                    if (value.ValueKind == JsonValueKind.False) return false;
+                    if (value.ValueKind == JsonValueKind.True)
+                    {
+                        return true;
+                    }
+                    if (value.ValueKind == JsonValueKind.False)
+                    {
+                        return false;
+                    }
                 }
             }
             catch (JsonException) { }
@@ -247,7 +319,9 @@ public sealed partial class AiAgentService
                 if (json.RootElement.ValueKind == JsonValueKind.Object &&
                     json.RootElement.TryGetProperty(property, out var value) &&
                     value.ValueKind == JsonValueKind.String)
+                {
                     return value.GetString();
+                }
             }
             catch (JsonException) { }
             return null;

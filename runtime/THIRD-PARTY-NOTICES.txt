@@ -6,6 +6,18 @@ Generic RISC-V: xPack GNU RISC-V Embedded GCC 15.2.0
 WCH RISC-V: MounRiver WCH GCC12 12.2.0 v1.4, WCH OpenOCD 0.11.0+dev snapshot 2026-08-25
 Generic OpenOCD: xPack OpenOCD 0.12.0-7 (binary version recorded in provenance.json)
 Build system: CMake 4.4.0, Ninja 1.10.2
+Windows PC: MinGW GCC/G++ 13.1.0, GNU binutils 2.39, MinGW-w64 runtime 11
+Distribution: x86_64-13.1.0-release-win32-seh-msvcrt-rt_v11-rev1
+PC subset retains C/C++/LTO, full Windows headers/import libraries and required DLLs.
+GDB/Python and Fortran are excluded; CMake/Ninja are reused, not duplicated.
+
+Espressif: ESP-IDF 5.5.4; Xtensa and RISC-V GCC esp-14.2.0_20260121;
+Python 3.11.2, esptool 4.12.dev1, CMake 3.30.2, Ninja 1.12.1.
+ESP8266: separate RTOS SDK 3.4, Xtensa LX106 GCC 8.4.0-esp-2020r3,
+Python 3.8.10 and esptool 2.8; the SDK's native build retains esptool 2.4.0.
+SDK source, compiler headers/libraries, Python dependencies and license files
+are included once per immutable component; projects do not copy the SDK.
+See licenses/Espressif-NOTICE.md and each component's SOURCE.json/toolset.json.
 
 Each toolset retains its distribution files, headers, runtime libraries,
 scripts and embedded notices. Additional license texts are under licenses/.
@@ -21,6 +33,11 @@ https://github.com/xpack-dev-tools/openocd-xpack
 https://openocd.org/
 https://cmake.org/
 https://github.com/ninja-build/ninja/tree/v1.10.2
+https://github.com/niXman/mingw-builds-binaries/releases/tag/13.1.0-rt_v11-rev1
+https://github.com/niXman/mingw-builds
+https://www.mingw-w64.org/
+https://www.gnu.org/software/binutils/
+https://www.gnu.org/licenses/gcc-exception-3.1-faq.en.html
 
 This is a local development bundle assembled from the machine's existing
 tool distributions. The modified AGM binaries identify themselves separately.

@@ -17,7 +17,10 @@ public partial class MainWindow
     private static nint WindowBoundsMessage(nint window, int message, nint wParam, nint lParam, ref bool handled)
     {
         const int getMinMaxInfo = 0x0024;
-        if (message != getMinMaxInfo || !WindowMonitor.TryGetBounds(window, out var monitor, out var work)) return 0;
+        if (message != getMinMaxInfo || !WindowMonitor.TryGetBounds(window, out var monitor, out var work))
+        {
+            return 0;
+        }
         var bounds = Marshal.PtrToStructure<MinMaxInfo>(lParam);
         // 自绘边框的客户区覆盖整个窗口；最大化必须使用当前屏幕工作区，否则底部落入任务栏后方。
         // 消息和屏幕矩形均为物理像素，不混入 WPF DIP；保留系统/WPF 的最小尺寸及拖动尺寸约束。
@@ -41,7 +44,10 @@ public partial class MainWindow
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    private struct NativePoint { public int X, Y; }
+    private struct NativePoint
+    {
+        public int X, Y;
+    }
     [StructLayout(LayoutKind.Sequential)]
     private struct MinMaxInfo
     {

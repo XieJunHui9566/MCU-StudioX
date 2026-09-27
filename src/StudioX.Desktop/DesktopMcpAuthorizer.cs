@@ -13,14 +13,19 @@ internal sealed class DesktopMcpAuthorizer(
 {
     public async Task<bool> ApproveAsync(StudioXMcpApprovalRequest request, CancellationToken token)
     {
-        if (token.IsCancellationRequested || owner.Dispatcher.HasShutdownStarted) return false;
+        if (token.IsCancellationRequested || owner.Dispatcher.HasShutdownStarted)
+        {
+            return false;
+        }
         try
         {
             // 工程身份和窗口状态只能在桌面线程读取；等待卡片选择时不阻塞消息循环。
             return await owner.Dispatcher.InvokeAsync(async () =>
             {
                 if (token.IsCancellationRequested || !owner.IsLoaded || !isCurrentProject(request.Project))
+                {
                     return false;
+                }
                 var approved = await requestApproval(request, token);
                 return approved && !token.IsCancellationRequested && owner.IsLoaded &&
                     isCurrentProject(request.Project);

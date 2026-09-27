@@ -72,74 +72,92 @@ Filename: "{app}\MCU StudioX.exe"; Description: "{cm:LaunchProgram,MCU StudioX}"
 [Code]
 function NextVersionPart(var Version: String): Integer;
 var
-  Separator: Integer;
-  Part: String;
+    Separator: Integer;
+    Part: String;
 begin
-  Separator := Pos('.', Version);
-  if Separator = 0 then begin
-    Part := Version; Version := '';
-  end else begin
-    Part := Copy(Version, 1, Separator - 1);
-    Delete(Version, 1, Separator);
-  end;
-  Result := StrToIntDef(Part, 0);
+    Separator := Pos('.', Version);
+    if Separator = 0 then
+    begin
+        Part := Version;
+        Version := '';
+    end
+    else
+    begin
+        Part := Copy(Version, 1, Separator - 1);
+        Delete(Version, 1, Separator);
+    end;
+    Result := StrToIntDef(Part, 0);
 end;
 
 function CompareReleaseVersions(Left, Right: String): Integer;
 var
-  I, A, B: Integer;
+    I, A, B: Integer;
 begin
-  Result := 0;
-  for I := 0 to 3 do begin
-    A := NextVersionPart(Left); B := NextVersionPart(Right);
-    if A > B then begin Result := 1; Exit; end;
-    if A < B then begin Result := -1; Exit; end;
-  end;
+    Result := 0;
+    for I := 0 to 3 do
+    begin
+        A := NextVersionPart(Left);
+        B := NextVersionPart(Right);
+        if A > B then
+        begin
+            Result := 1;
+            Exit;
+        end;
+        if A < B then
+        begin
+            Result := -1;
+            Exit;
+        end;
+    end;
 end;
 
 function InitializeSetup(): Boolean;
 var
-  InstalledVersion: String;
+    InstalledVersion: String;
 begin
-  Result := True;
-  if RegQueryStringValue(HKCU64,
-    'Software\Microsoft\Windows\CurrentVersion\Uninstall\{#ProductId}_is1',
-    'DisplayVersion', InstalledVersion) then begin
-    Log('Existing MCU StudioX version: ' + InstalledVersion);
-    if CompareReleaseVersions(InstalledVersion, '{#AppVersion}') > 0 then begin
-      SuppressibleMsgBox('已安装较新版本 MCU StudioX ' + InstalledVersion +
-        '，不能用 {#AppVersion} 覆盖。请使用相同版本或更新的安装包。' + #13#10 +
-        'A newer MCU StudioX version is already installed. Downgrade is not allowed.', mbError, MB_OK, IDOK);
-      Result := False;
+    Result := True;
+    if RegQueryStringValue(HKCU64,
+        'Software\Microsoft\Windows\CurrentVersion\Uninstall\{#ProductId}_is1',
+        'DisplayVersion', InstalledVersion) then
+    begin
+        Log('Existing MCU StudioX version: ' + InstalledVersion);
+        if CompareReleaseVersions(InstalledVersion, '{#AppVersion}') > 0 then
+        begin
+            SuppressibleMsgBox('已安装较新版本 MCU StudioX ' + InstalledVersion +
+                '，不能用 {#AppVersion} 覆盖。请使用相同版本或更新的安装包。' + #13#10 +
+                'A newer MCU StudioX version is already installed. Downgrade is not allowed.', mbError, MB_OK, IDOK);
+            Result := False;
+        end;
     end;
-  end;
 end;
 
 function NextButtonClick(CurPageID: Integer): Boolean;
 begin
-  Result := True;
-  if CurPageID = wpSelectDir then begin
-    { 升级始终使用注册的原目录；不允许一份卸载记录指向多套安装。 }
-    if (GetPreviousData('InstallDirectory', '') <> '') and
-       (CompareText(ExpandFileName(WizardDirValue), ExpandFileName(GetPreviousData('InstallDirectory', ''))) <> 0) then begin
-      SuppressibleMsgBox('升级请使用原安装目录。若要迁移安装位置，请先卸载，个人数据和工程会保留。', mbError, MB_OK, IDOK);
-      Result := False;
+    Result := True;
+    if CurPageID = wpSelectDir then
+    begin
+        { 升级始终使用注册的原目录；不允许一份卸载记录指向多套安装。 }
+        if (GetPreviousData('InstallDirectory', '') <> '') and
+            (CompareText(ExpandFileName(WizardDirValue), ExpandFileName(GetPreviousData('InstallDirectory', ''))) <> 0) then
+        begin
+            SuppressibleMsgBox('升级请使用原安装目录。若要迁移安装位置，请先卸载，个人数据和工程会保留。', mbError, MB_OK, IDOK);
+            Result := False;
+        end;
     end;
-  end;
 end;
 
 function PrepareToInstall(var NeedsRestart: Boolean): String;
 begin
-  Result := '';
-  { 静默升级同样执行目录约束，不能靠 /DIR 绕过。 }
-  if (GetPreviousData('InstallDirectory', '') <> '') and
-     (CompareText(ExpandFileName(WizardDirValue), ExpandFileName(GetPreviousData('InstallDirectory', ''))) <> 0) then
-    Result := '安装目录与原版本不同，请使用原目录升级，或先卸载再迁移。';
+    Result := '';
+    { 静默升级同样执行目录约束，不能靠 /DIR 绕过。 }
+    if (GetPreviousData('InstallDirectory', '') <> '') and
+        (CompareText(ExpandFileName(WizardDirValue), ExpandFileName(GetPreviousData('InstallDirectory', ''))) <> 0) then
+        Result := '安装目录与原版本不同，请使用原目录升级，或先卸载再迁移。';
 end;
 
 procedure RegisterPreviousData(PreviousDataKey: Integer);
 begin
-  SetPreviousData(PreviousDataKey, 'InstallDirectory', ExpandFileName(WizardDirValue));
+    SetPreviousData(PreviousDataKey, 'InstallDirectory', ExpandFileName(WizardDirValue));
 end;
 
 // 不设置 UninstallDelete：卸载只删除安装器记录的文件，保留用户后来添加的数据。

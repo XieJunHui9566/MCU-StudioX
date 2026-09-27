@@ -20,7 +20,9 @@ public static class CMakeGenerator
         if (plan.Device.Architecture == "mcs51")
         {
             if (sources.Any(p => !p.EndsWith(".c", StringComparison.OrdinalIgnoreCase)))
+            {
                 throw new StudioXException("PROJECT_LANGUAGE", "SDCC MCS-51 工程模板只能包含 C 源码。");
+            }
             var sdcc = """
                 cmake_minimum_required(VERSION 3.24)
 
@@ -104,9 +106,11 @@ public static class CMakeGenerator
         // 同一接口同时传递到应用与厂商源码；CPU/ABI 在编译和链接阶段保持一致。
         Append("target_compile_options", d.CpuFlags.Concat(d.CompileOptions));
         if (d.Architecture == "mcs51")
-            // CMake 会去重独立选项元素；--iram-size 256 和 --xram-size 256 的两个 256
-            // 若不分组，后一项会被删掉。SHELL: 保留每组开关与参数的相邻关系。
+        // CMake 会去重独立选项元素；--iram-size 256 和 --xram-size 256 的两个 256
+        // 若不分组，后一项会被删掉。SHELL: 保留每组开关与参数的相邻关系。
+        {
             Append("target_link_options", d.CpuFlags.Concat(GroupSdccLinkOptions(d.LinkOptions)));
+        }
         else
         {
             // Windows GCC 转发绝对中文路径到 ld 时可能改变编码；链接器从构建根目录解析相对脚本路径。
@@ -118,9 +122,15 @@ public static class CMakeGenerator
         void Append(string command, IEnumerable<string> values, bool generated = false)
         {
             var items = values.ToArray();
-            if (items.Length == 0) return;
+            if (items.Length == 0)
+            {
+                return;
+            }
             text.AppendLine(command + "(studiox_device INTERFACE");
-            foreach (var value in items) text.AppendLine("    " + Quote(value, generated));
+            foreach (var value in items)
+            {
+                text.AppendLine("    " + Quote(value, generated));
+            }
             text.AppendLine(")\n");
         }
     }
@@ -128,6 +138,7 @@ public static class CMakeGenerator
     public static string RenderPlatform(BuildPlan plan)
     {
         if (plan.Device.Architecture == "mcs51")
+        {
             return ManagedMarker + "\n" + """
                 # SDCC/CMake 原生生成 .ihx (Intel HEX)，不使用 ELF、objcopy 或 GCC 链接脚本。
                 include_guard(GLOBAL)
@@ -144,6 +155,7 @@ public static class CMakeGenerator
                     )
                 endfunction()
                 """ + "\n";
+        }
         // POST_BUILD 必须在创建目标的目录注册，因此把函数定义在内部文件，由根目录调用。
         // 不能把 add_custom_command(TARGET firmware) 直接挪到 add_subdirectory(device) 的作用域。
         return ManagedMarker + "\n" + """
@@ -182,13 +194,21 @@ public static class CMakeGenerator
             var option = options[index];
             if (option.StartsWith("--", StringComparison.Ordinal) && index + 1 < options.Count &&
                 !options[index + 1].StartsWith("-", StringComparison.Ordinal))
+            {
                 yield return "SHELL:" + option + " " + options[++index];
-            else yield return option;
+            }
+            else
+            {
+                yield return option;
+            }
         }
     }
     private static string Checked(string value)
     {
-        if (value.Any(c => c is '"' or ';' or '$' or '\n' or '\r' or '\\' or '\0')) throw new StudioXException("CMAKE_VALUE", "不支持的 CMake 参数字符。");
+        if (value.Any(c => c is '"' or ';' or '$' or '\n' or '\r' or '\\' or '\0'))
+        {
+            throw new StudioXException("CMAKE_VALUE", "不支持的 CMake 参数字符。");
+        }
         return value;
     }
     private static string Quote(string value, bool generated = false)

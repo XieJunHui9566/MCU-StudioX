@@ -77,7 +77,11 @@ internal static class AgentExternalWorkloadChecks
             var historyStore = new AiConversationStore(Path.Combine(temporaryRoot, "agent-long-history"));
             var conversation = await historyStore.CreateAsync(project);
             var saved = await historyStore.SaveAsync(project,
-                conversation with { Title = "长工程分析", Turns = workloadReply.History });
+                conversation with
+                {
+                    Title = "长工程分析",
+                    Turns = workloadReply.History
+                });
             var loaded = await historyStore.LoadAsync(project, saved.Id);
             check(loaded.Turns.Single().Assistant == workloadReply.Text &&
                   loaded.Turns.Single().ProtocolMessages is { } savedProtocol &&
@@ -98,7 +102,10 @@ internal static class AgentExternalWorkloadChecks
             var cancellationTransport = new LongWorkloadTransport();
             var cancellationProgress = new InlineProgress(completed =>
             {
-                if (completed == 105) cancellation.Cancel();
+                if (completed == 105)
+                {
+                    cancellation.Cancel();
+                }
             });
             var cancellationAgent = new AiAgentService(cancellationTransport, new AiSettings(), session);
             var stopped = false;
@@ -165,7 +172,10 @@ internal static class AgentExternalWorkloadChecks
     private sealed class ExternalBurstTransport(string externalDirectory) : IAiAgentTransport
     {
         public List<AiChatRequest> Requests { get; } = [];
-        public string? RootId { get; private set; }
+        public string? RootId
+        {
+            get; private set;
+        }
 
         public Task<AiChatResponse> CompleteAsync(AiSettings settings, AiChatRequest request,
             CancellationToken token = default)
@@ -174,7 +184,10 @@ internal static class AgentExternalWorkloadChecks
             var round = Requests.Count;
             if (round == 1)
             {
-                var arguments = JsonSerializer.Serialize(new { directory = externalDirectory });
+                var arguments = JsonSerializer.Serialize(new
+                {
+                    directory = externalDirectory
+                });
                 return Task.FromResult(new AiChatResponse(null,
                     [new AiToolCall("external-open", "external_project_open", arguments)],
                     "tool_calls", null));
@@ -188,10 +201,16 @@ internal static class AgentExternalWorkloadChecks
             }
 
             if (round >= 10 || request.Tools is { Count: 0 })
+            {
                 return Task.FromResult(new AiChatResponse("示例已读取，可继续选择文件复制。", [], "stop", null));
+            }
 
             var calls = round == 8 || round == 9 ? 3 : 5;
-            var argumentsJson = JsonSerializer.Serialize(new { rootId = RootId, directory = "" });
+            var argumentsJson = JsonSerializer.Serialize(new
+            {
+                rootId = RootId,
+                directory = ""
+            });
             var batch = Enumerable.Range(0, calls).Select(index =>
                 new AiToolCall($"external-list-{round}-{index}",
                     "external_project_list_files", argumentsJson)).ToArray();
@@ -212,10 +231,17 @@ internal static class AgentExternalWorkloadChecks
         {
             Requests.Add(request);
             if (Requests.Count == Batches + 1)
+            {
                 return Task.FromResult(new AiChatResponse("已完成长工程分析。", [], "stop", null));
+            }
             if (Requests.Count > Batches + 1)
+            {
                 throw new Exception("Agent did not stop after the model's final answer");
-            var argumentsJson = JsonSerializer.Serialize(new { path = "src/agent-workload.c" });
+            }
+            var argumentsJson = JsonSerializer.Serialize(new
+            {
+                path = "src/agent-workload.c"
+            });
             var calls = Enumerable.Range(0, CallsPerBatch).Select(index =>
                 new AiToolCall($"long-read-{Requests.Count}-{index}",
                     "project_read_file", argumentsJson)).ToArray();
@@ -233,7 +259,9 @@ internal static class AgentExternalWorkloadChecks
         {
             Requests.Add(request);
             if (Requests.Count > 1)
+            {
                 throw new Exception("Unexpected extra model request in resumed history test");
+            }
             return Task.FromResult(new AiChatResponse("后续分析完成。", [], "stop", null));
         }
     }
@@ -252,11 +280,17 @@ internal static class AgentExternalWorkloadChecks
 
     private sealed class InlineProgress(Action<int>? afterCompletion = null) : IProgress<AiAgentProgress>
     {
-        public int CompletedTools { get; private set; }
+        public int CompletedTools
+        {
+            get; private set;
+        }
 
         public void Report(AiAgentProgress value)
         {
-            if (value.Kind != AiAgentProgressKind.ToolCallCompleted) return;
+            if (value.Kind != AiAgentProgressKind.ToolCallCompleted)
+            {
+                return;
+            }
             CompletedTools++;
             afterCompletion?.Invoke(CompletedTools);
         }
@@ -268,7 +302,9 @@ internal static class AgentExternalWorkloadChecks
             request.Messages[0].Role != "system" ||
             request.Tools is not { Count: > 0 } ||
             JsonSerializer.SerializeToUtf8Bytes(request).Length > 2 * 1024 * 1024)
+        {
             return false;
+        }
         return ValidProtocol(request.Messages.Skip(1).ToArray());
     }
 
@@ -279,15 +315,29 @@ internal static class AgentExternalWorkloadChecks
         {
             if (message.Role == "assistant" && message.ToolCalls is { Count: > 0 } calls)
             {
-                if (pending.Count > 0) return false;
+                if (pending.Count > 0)
+                {
+                    return false;
+                }
                 foreach (var call in calls)
-                    if (!pending.Add(call.Id)) return false;
+                {
+                    if (!pending.Add(call.Id))
+                    {
+                        return false;
+                    }
+                }
             }
             else if (message.Role == "tool")
             {
-                if (message.ToolCallId is null || !pending.Remove(message.ToolCallId)) return false;
+                if (message.ToolCallId is null || !pending.Remove(message.ToolCallId))
+                {
+                    return false;
+                }
             }
-            else if (pending.Count > 0) return false;
+            else if (pending.Count > 0)
+            {
+                return false;
+            }
         }
         return pending.Count == 0;
     }

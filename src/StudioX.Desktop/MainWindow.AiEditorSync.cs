@@ -5,6 +5,25 @@ using StudioX.Application;
 public partial class MainWindow
 {
     private Task aiEditorSyncTask = Task.CompletedTask;
+    private EditorDocumentSynchronizer? editorSynchronizer;
+
+    private EditorDocumentSynchronizer EditorSynchronizer => editorSynchronizer ??= new(
+        session => ReferenceEquals(activeEditor, session), CaptureEditorView,
+        UpdateEditorHeader, RestoreEditorViewAfterDiskSync);
+
+    private void RestoreEditorViewAfterDiskSync(EditorDocumentSession session)
+    {
+        var start = Math.Clamp(session.SelectionStart, 0, session.Buffer.TextLength);
+        SourceEditor.Select(start, Math.Clamp(session.SelectionLength, 0, session.Buffer.TextLength - start));
+        SourceEditor.CaretOffset = Math.Clamp(session.CaretOffset, 0, session.Buffer.TextLength);
+        SourceEditor.ScrollToVerticalOffset(session.VerticalOffset);
+        SourceEditor.ScrollToHorizontalOffset(session.HorizontalOffset);
+        RefreshActiveEditorMetadata();
+        UpdateEditorPosition();
+        RefreshDiagnosticMarkers();
+        RefreshDebugMarkers();
+        QueueOutlineRefresh(clear: true);
+    }
 
     /// <summary>工具写入成功就更新编辑器；后续模型请求失败或取消也不撤回已落盘的改动。</summary>
     private void OnAiToolCompletedForEditor(AiAgentProgress progress)
@@ -12,7 +31,9 @@ public partial class MainWindow
         if (progress.ToolName is not ("project_edit_file" or "project_patch_file" or
             "project_create_file" or "project_create_directory" or "external_project_copy") ||
             string.IsNullOrWhiteSpace(progress.Text) || projectDirectory is not { } project)
+        {
             return;
+        }
 
         var generation = aiProjectGeneration;
         var path = progress.Text;
@@ -28,7 +49,10 @@ public partial class MainWindow
     {
         // 文件写入按模型工具调用顺序完成；UI 同步也保持这个顺序。
         await previous;
-        if (!IsCurrentAiEditorProject(project, generation)) return;
+        if (!IsCurrentAiEditorProject(project, generation))
+        {
+            return;
+        }
         try
         {
             if (copied || directoryCreated)
@@ -37,16 +61,24 @@ public partial class MainWindow
                 RefreshProjectTree(path);
                 Status.Text = copied ? $"AI 已复制 {path} 到工程，工程树已更新。"
                     : $"AI 已创建目录 {path}，工程树已更新。";
-                try { await RefreshExplorerLanguageAsync(CancellationToken.None); }
+                try
+                {
+                    await RefreshExplorerLanguageAsync(CancellationToken.None);
+                }
                 catch (Exception ex) { Log("AI 复制后语言服务刷新失败：" + ex); }
             }
-            else await SyncAiEditorAfterWriteAsync(project, generation, path, created);
+            else
+            {
+                await SyncAiEditorAfterWriteAsync(project, generation, path, created);
+            }
         }
         catch (Exception ex)
         {
             Log("AI 写入后同步编辑器失败：" + path + "：" + ex);
             if (IsCurrentAiEditorProject(project, generation))
+            {
                 AppendAiTranscript("IDE", $"{path} 已写入磁盘，但编辑器刷新失败：{ex.Message}。请检查磁盘文件。");
+            }
         }
     }
 
@@ -58,43 +90,18 @@ public partial class MainWindow
         string path, bool created)
     {
         var disk = await services.Files.ReadAsync(project, path);
-        if (!IsCurrentAiEditorProject(project, generation)) return;
+        if (!IsCurrentAiEditorProject(project, generation))
+        {
+            return;
+        }
 
         if (FindEditor(path) is { } session)
         {
-            if (!string.Equals(disk.DiskHash, session.Source.DiskHash, StringComparison.Ordinal))
+            if (EditorSynchronizer.Apply(session, disk) == EditorDiskSyncResult.UnsavedChangesPreserved)
             {
-                if (session.IsDirty)
-                {
-                    // 绝不覆盖用户在工具授权后的新编辑；旧磁盘哈希会让保存操作拒绝覆盖。
-                    AppendAiTranscript("IDE", $"{path} 已由 AI 写入磁盘，但编辑器有未保存修改。当前缓冲区已保留；请核对两份内容后再保存。");
-                    Status.Text = $"{path}：磁盘文件已变化，编辑器中的未保存修改已保留。";
-                    return;
-                }
-
-                var active = ReferenceEquals(activeEditor, session);
-                if (active) CaptureEditorView();
-                if (session.Changed is not null) session.Buffer.TextChanged -= session.Changed;
-                try
-                {
-                    session.Source = disk;
-                    session.Buffer.Text = disk.Text;
-                    session.Buffer.UndoStack.ClearAll();
-                    UpdateEditorHeader(session);
-                }
-                finally { if (session.Changed is not null) session.Buffer.TextChanged += session.Changed; }
-
-                if (active)
-                {
-                    var start = Math.Clamp(session.SelectionStart, 0, session.Buffer.TextLength);
-                    SourceEditor.Select(start, Math.Clamp(session.SelectionLength, 0, session.Buffer.TextLength - start));
-                    SourceEditor.CaretOffset = Math.Clamp(session.CaretOffset, 0, session.Buffer.TextLength);
-                    RefreshActiveEditorMetadata();
-                    UpdateEditorPosition();
-                    RefreshDiagnosticMarkers();
-                    RefreshDebugMarkers();
-                    QueueOutlineRefresh(clear: true);
-                }
+                AppendAiTranscript("IDE", $"{path} 已由 AI 写入磁盘，但编辑器有未保存修改。当前缓冲区已保留；请核对两份内容后再保存。");
+                Status.Text = $"{path}：磁盘文件已变化，编辑器中的未保存修改已保留。";
+                return;
             }
         }
         else if (created)
@@ -105,7 +112,62 @@ public partial class MainWindow
 
         RefreshProjectTree(created ? path : null);
         Status.Text = $"AI 已写入 {path}，编辑器和工程树已更新。";
-        try { await RefreshExplorerLanguageAsync(CancellationToken.None); }
+        try
+        {
+            await RefreshExplorerLanguageAsync(CancellationToken.None);
+        }
         catch (Exception ex) { Log("AI 写入后语言服务刷新失败：" + ex); }
     }
+
+    private async Task<bool> RefreshAiWorkspaceAfterToolsAsync(string project, AiAgentTurn turn, int generation)
+    {
+        var changedWorkspace = turn.ProtocolMessages?.Any(message =>
+            message.ToolCalls?.Any(AiWorkspaceChangePolicy.MayChangeWorkspace) == true) == true;
+        if (!changedWorkspace)
+        {
+            return false;
+        }
+        var needsReview = false;
+        foreach (var session in editorDocuments.ToArray())
+        {
+            if (generation != aiProjectGeneration ||
+                !string.Equals(projectDirectory, project, StringComparison.OrdinalIgnoreCase))
+            {
+                return needsReview;
+            }
+            SourceDocument disk;
+            try
+            {
+                disk = await services.Files.ReadAsync(project, session.Source.RelativePath);
+            }
+            catch (Exception ex)
+            {
+                Log("AI 工具操作后刷新编辑器失败：" + session.Source.RelativePath + "：" + ex.Message);
+                needsReview = true;
+                continue;
+            }
+            if (generation != aiProjectGeneration ||
+                !string.Equals(projectDirectory, project, StringComparison.OrdinalIgnoreCase))
+            {
+                return needsReview;
+            }
+            if (EditorSynchronizer.Apply(session, disk) == EditorDiskSyncResult.UnsavedChangesPreserved)
+            {
+                needsReview = true;
+            }
+        }
+        if (generation != aiProjectGeneration ||
+            !string.Equals(projectDirectory, project, StringComparison.OrdinalIgnoreCase))
+        {
+            return needsReview;
+        }
+        RefreshProjectTree();
+        try
+        {
+            await RefreshExplorerLanguageAsync(CancellationToken.None);
+        }
+        catch (Exception ex) { Log("AI 工具操作后语言服务刷新失败：" + ex); }
+        return needsReview;
+    }
+
 }

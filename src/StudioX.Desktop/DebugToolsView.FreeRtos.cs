@@ -10,12 +10,19 @@ public partial class DebugToolsView
     private void RefreshFreeRtos(DebugSnapshot snapshot, DebugState state)
     {
         var changed = !ReferenceEquals(rtosDebugSnapshot, snapshot);
-        rtosDebugSnapshot = snapshot; RtosView.RefreshState(state, changed);
-        if (state == DebugState.Stopped && changed && RtosTab.IsSelected && RtosView.RefreshOnPause) RequestFreeRtos();
+        rtosDebugSnapshot = snapshot;
+        RtosView.RefreshState(state, changed);
+        if (state == DebugState.Stopped && changed && RtosTab.IsSelected && RtosView.RefreshOnPause)
+        {
+            RequestFreeRtos();
+        }
     }
     private void RequestFreeRtos()
     {
-        if (RtosView.CanRead) FreeRtosRequested?.Invoke();
+        if (RtosView.CanRead)
+        {
+            FreeRtosRequested?.Invoke();
+        }
     }
     public event Action? FreeRtosRequested;
 }

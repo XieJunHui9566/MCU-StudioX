@@ -1,7 +1,11 @@
-<Project Sdk="Microsoft.NET.Sdk">
+<Project
+  Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
-    <ProjectReference Include="../StudioX.Foundation/StudioX.Foundation.csproj" />
-    <ProjectReference Include="../StudioX.Packages/StudioX.Packages.csproj" />
-    <ProjectReference Include="../StudioX.Extensions.Abstractions/StudioX.Extensions.Abstractions.csproj" />
+    <ProjectReference
+      Include="../StudioX.Foundation/StudioX.Foundation.csproj" />
+    <ProjectReference
+      Include="../StudioX.Packages/StudioX.Packages.csproj" />
+    <ProjectReference
+      Include="../StudioX.Extensions.Abstractions/StudioX.Extensions.Abstractions.csproj" />
   </ItemGroup>
 </Project>

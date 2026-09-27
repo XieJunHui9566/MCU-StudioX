@@ -4,7 +4,8 @@
 void System_Init(void)
 {
 #ifdef USE_HAL_DRIVER
-    if (HAL_Init() != HAL_OK) StudioX_Panic(20);
+    if (HAL_Init() != HAL_OK)
+        StudioX_Panic(20);
 #endif
     BoardClock_Init();
 }
@@ -24,6 +25,8 @@ void System_Start(void)
     vTaskStartScheduler();
     /* 调度器返回表示空闲/定时器任务创建失败，保留可调试错误码。 */
     StudioX_Panic(22);
-    for (;;) { }
+    for (;;)
+    {
+    }
 }
 #endif

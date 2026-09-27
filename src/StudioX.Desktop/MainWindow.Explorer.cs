@@ -19,12 +19,15 @@ public partial class MainWindow
 
     private void InitializeExplorer()
     {
-        var menu = new ContextMenu(); SetMenuColors(menu); explorerMenu = menu;
+        var menu = new ContextMenu();
+        SetMenuColors(menu);
+        explorerMenu = menu;
         MenuItem Add(string label, string gesture, Func<ProjectEntry, CancellationToken, Task> action)
         {
             var item = new MenuItem { Header = label, InputGestureText = gesture };
-            item.Click += async (_, _) => { if (explorerMenuEntry is { } entry) await RunAsync(token => action(entry, token)); };
-            menu.Items.Add(item); return item;
+            item.Click += async (_, _) => { if (explorerMenuEntry is { } entry) { await RunAsync(token => action(entry, token)); } };
+            menu.Items.Add(item);
+            return item;
         }
         var open = Add("打开", "Enter", OpenExplorerEntryAsync);
         menu.Items.Add(new Separator());
@@ -42,16 +45,28 @@ public partial class MainWindow
         Add("刷新", "F5", (entry, _) => { RefreshProjectTree(entry.RelativePath); return Task.CompletedTask; });
         menu.Opened += (_, _) =>
         {
-            if (!explorerMouseContext) explorerMenuEntry = SelectedProjectEntry ?? RootProjectEntry;
+            if (!explorerMouseContext)
+            {
+                explorerMenuEntry = SelectedProjectEntry ?? RootProjectEntry;
+            }
             var entry = explorerMenuEntry;
             var available = entry is { IsLink: false } && projectDirectory is not null && pendingOperation.IsCompleted && !closing;
-            foreach (var item in menu.Items.OfType<MenuItem>()) item.IsEnabled = available;
-            if (!available || entry is null) return;
+            foreach (var item in menu.Items.OfType<MenuItem>())
+            {
+                item.IsEnabled = available;
+            }
+            if (!available || entry is null)
+            {
+                return;
+            }
             var target = DestinationFolder(entry);
             file.IsEnabled = folder.IsEnabled = !services.Debugger.IsActive && ProjectFileService.CanCreateIn(target);
             rename.IsEnabled = !services.Debugger.IsActive && ProjectFileService.CanRenameEntry(entry.RelativePath);
             copy.IsEnabled = entry.RelativePath.Length > 0;
-            try { paste.IsEnabled = !services.Debugger.IsActive && ProjectFileService.CanCreateIn(target) && Clipboard.ContainsFileDropList(); }
+            try
+            {
+                paste.IsEnabled = !services.Debugger.IsActive && ProjectFileService.CanCreateIn(target) && Clipboard.ContainsFileDropList();
+            }
             catch (System.Runtime.InteropServices.ExternalException) { paste.IsEnabled = false; }
             open.Header = entry.IsDirectory ? "展开 / 折叠" : "打开";
         };
@@ -61,32 +76,61 @@ public partial class MainWindow
         ProjectTree.PreviewMouseRightButtonDown += (_, e) =>
         {
             var node = FindTreeNode(e.OriginalSource as DependencyObject);
-            if (node?.Tag is ProjectEntry entry) { node.IsSelected = true; node.Focus(); explorerMenuEntry = entry; }
-            else { explorerMenuEntry = RootProjectEntry; ProjectTree.Focus(); }
+            if (node?.Tag is ProjectEntry entry)
+            {
+                node.IsSelected = true;
+                node.Focus();
+                explorerMenuEntry = entry;
+            }
+            else
+            {
+                explorerMenuEntry = RootProjectEntry;
+                ProjectTree.Focus();
+            }
             explorerMouseContext = true;
         };
     }
     private async void Explorer_PreviewKeyDown(object sender, KeyEventArgs e)
     {
         var entry = SelectedProjectEntry ?? RootProjectEntry;
-        if (entry is null || entry.IsLink) return;
+        if (entry is null || entry.IsLink)
+        {
+            return;
+        }
         if (Keyboard.Modifiers == ModifierKeys.Control && e.Key == Key.C && entry.RelativePath.Length > 0)
-        { e.Handled = true; await RunAsync(_ => { CopyExplorerEntry(entry); return Task.CompletedTask; }); }
+        {
+            e.Handled = true;
+            await RunAsync(_ => { CopyExplorerEntry(entry); return Task.CompletedTask; });
+        }
         else if (Keyboard.Modifiers == ModifierKeys.Control && e.Key == Key.V && ProjectFileService.CanCreateIn(DestinationFolder(entry)))
-        { e.Handled = true; await RunAsync(token => PasteExplorerEntriesAsync(entry, token)); }
+        {
+            e.Handled = true;
+            await RunAsync(token => PasteExplorerEntriesAsync(entry, token));
+        }
         else if (Keyboard.Modifiers == ModifierKeys.None && e.Key == Key.F2)
-        { e.Handled = true; await RunAsync(token => RenameExplorerEntryAsync(entry, token)); }
+        {
+            e.Handled = true;
+            await RunAsync(token => RenameExplorerEntryAsync(entry, token));
+        }
     }
     private static TreeViewItem? FindTreeNode(DependencyObject? element)
     {
         while (element is not null && element is not TreeViewItem)
+        {
             element = element is Visual ? VisualTreeHelper.GetParent(element) : LogicalTreeHelper.GetParent(element);
+        }
         return element as TreeViewItem;
     }
     private Task OpenExplorerEntryAsync(ProjectEntry entry, CancellationToken token)
     {
-        if (!entry.IsDirectory) return OpenSourceAsync(entry.RelativePath, token);
-        if (FindProjectNode(entry.RelativePath) is { } node) node.IsExpanded = !node.IsExpanded;
+        if (!entry.IsDirectory)
+        {
+            return OpenSourceAsync(entry.RelativePath, token);
+        }
+        if (FindProjectNode(entry.RelativePath) is { } node)
+        {
+            node.IsExpanded = !node.IsExpanded;
+        }
         return Task.CompletedTask;
     }
     private void CopyExplorerEntry(ProjectEntry entry)
@@ -102,14 +146,20 @@ public partial class MainWindow
         var logicFolder = currentProjectManifest?.Logic is not null && (parent.Equals("logic", StringComparison.OrdinalIgnoreCase) || parent.StartsWith("logic/", StringComparison.OrdinalIgnoreCase));
         var suggestedName = directory ? "新建文件夹" : logicFolder ? "user_module.v" : "untitled.c";
         var dialog = new EntryNameWindow(directory ? "新建文件夹" : "新建文件", "位置：" + (parent.Length == 0 ? "工程根目录" : parent), suggestedName, directory) { Owner = this };
-        if (dialog.ShowDialog() != true) return;
+        if (dialog.ShowDialog() != true)
+        {
+            return;
+        }
         await CreateExplorerEntryCoreAsync(parent, dialog.EntryName, directory, token);
     }
     private async Task CreateExplorerEntryCoreAsync(string parent, string name, bool directory, CancellationToken token)
     {
         var path = await services.Files.CreateEntryAsync(RequireProject(), parent, name, directory, token);
         RefreshProjectTree(path);
-        if (!directory) await OpenSourceAsync(path, token);
+        if (!directory)
+        {
+            await OpenSourceAsync(path, token);
+        }
         await RefreshExplorerLanguageAsync(token);
         var sourceFile = Path.GetExtension(path).ToLowerInvariant() is ".c" or ".cpp" or ".cc" or ".cxx" or ".s" or ".asm";
         var logicFile = !directory && currentProjectManifest?.Logic is not null && Path.GetExtension(path).ToLowerInvariant() is ".v" or ".sv" or ".ve";
@@ -118,7 +168,10 @@ public partial class MainWindow
     private async Task PasteExplorerEntriesAsync(ProjectEntry entry, CancellationToken token)
     {
         EnsureNoActiveDebug();
-        if (!Clipboard.ContainsFileDropList()) return;
+        if (!Clipboard.ContainsFileDropList())
+        {
+            return;
+        }
         var sources = Clipboard.GetFileDropList().Cast<string>().ToArray();
         var paths = await services.Files.CopyEntriesAsync(RequireProject(), DestinationFolder(entry), sources, token);
         RefreshProjectTree(paths.LastOrDefault());
@@ -129,68 +182,116 @@ public partial class MainWindow
     private async Task RenameExplorerEntryAsync(ProjectEntry entry, CancellationToken token)
     {
         EnsureNoActiveDebug();
-        if (!ProjectFileService.CanRenameEntry(entry.RelativePath)) return;
+        if (!ProjectFileService.CanRenameEntry(entry.RelativePath))
+        {
+            return;
+        }
         var dialog = new EntryNameWindow("重命名", "名称：" + entry.RelativePath, entry.Name, entry.IsDirectory) { Owner = this };
-        if (dialog.ShowDialog() != true || dialog.EntryName == entry.Name) return;
+        if (dialog.ShowDialog() != true || dialog.EntryName == entry.Name)
+        {
+            return;
+        }
         await RenameExplorerEntryCoreAsync(entry, dialog.EntryName, token);
     }
     private async Task RenameExplorerEntryCoreAsync(ProjectEntry entry, string name, CancellationToken token)
     {
         EnsureNoActiveDebug();
-        token.ThrowIfCancellationRequested(); CloseCodeAssistance(); CaptureEditorView();
+        token.ThrowIfCancellationRequested();
+        CloseCodeAssistance();
+        CaptureEditorView();
         var previous = entry.RelativePath;
         ProjectFileService.ValidateEntryName(name);
         var parent = ProjectFileService.ParentDirectory(previous);
         var proposed = parent.Length == 0 ? name : parent + "/" + name;
         var mappedPaths = editorDocuments.Select(session => ProjectFileService.ContainsPath(previous, session.Source.RelativePath) ? proposed + session.Source.RelativePath[previous.Length..] : session.Source.RelativePath);
         if (mappedPaths.Distinct(StringComparer.OrdinalIgnoreCase).Count() != editorDocuments.Count)
+        {
             throw new StudioXException("EDITOR_PATH_OPEN", "目标路径已有打开的标签，请先处理该标签中的内容。");
+        }
         var renamed = services.Files.RenameEntry(RequireProject(), previous, name);
         ClearBuildDiagnostics();
         string Remap(string path) => ProjectFileService.ContainsPath(previous, path) ? renamed + path[previous.Length..] : path;
         foreach (var session in editorDocuments)
         {
             var path = Remap(session.Source.RelativePath);
-            if (path == session.Source.RelativePath) continue;
-            session.Source = session.Source with { RelativePath = path };
+            if (path == session.Source.RelativePath)
+            {
+                continue;
+            }
+            session.Source = session.Source with
+            {
+                RelativePath = path
+            };
             if (session.Tab.Header is StackPanel { Children.Count: > 0 } row && row.Children[0] is StackPanel { Children.Count: > 0 } label && label.Children[0] is FileIcon icon)
             {
                 var replacement = new FileIcon { FileName = path, Width = icon.Width, Height = icon.Height, Margin = icon.Margin, VerticalAlignment = icon.VerticalAlignment };
-                label.Children.RemoveAt(0); label.Children.Insert(0, replacement);
+                label.Children.RemoveAt(0);
+                label.Children.Insert(0, replacement);
             }
         }
-        for (var i = 0; i < navigationBack.Count; i++) navigationBack[i] = navigationBack[i] with { Path = Remap(navigationBack[i].Path) };
-        for (var i = 0; i < navigationForward.Count; i++) navigationForward[i] = navigationForward[i] with { Path = Remap(navigationForward[i].Path) };
-        UpdateEditorHeaders(); RefreshActiveEditorMetadata();
+        for (var i = 0; i < navigationBack.Count; i++)
+        {
+            navigationBack[i] = navigationBack[i] with
+            {
+                Path = Remap(navigationBack[i].Path)
+            };
+        }
+        for (var i = 0; i < navigationForward.Count; i++)
+        {
+            navigationForward[i] = navigationForward[i] with
+            {
+                Path = Remap(navigationForward[i].Path)
+            };
+        }
+        UpdateEditorHeaders();
+        RefreshActiveEditorMetadata();
         RefreshProjectTree(renamed, previous);
         await RefreshExplorerLanguageAsync(token);
         Status.Text = "已重命名为 " + renamed + " · 请同步修改 CMake 和 #include 中引用的路径";
     }
     private void RefreshActiveEditorMetadata()
     {
-        if (activeDocument is not { } document) return;
-        EditorBreadcrumb.Text = document.RelativePath.Replace("/", "  ›  "); EditorBreadcrumb.ToolTip = document.RelativePath;
+        if (activeDocument is not { } document)
+        {
+            return;
+        }
+        EditorBreadcrumb.Text = document.RelativePath.Replace("/", "  ›  ");
+        EditorBreadcrumb.ToolTip = document.RelativePath;
         EditorLanguage.Text = $"{CodeLanguage.ForFile(document.RelativePath)}    ·    {document.Encoding.WebName.ToUpperInvariant()}    ·    {(SourceEditor.Text.Contains("\r\n") ? "CRLF" : "LF")}" + (document.IsReadOnly ? "    ·    " + (document.ReadOnlyReason ?? "只读") : "");
         ApplyEditorTheme();
     }
     private async Task RefreshExplorerLanguageAsync(CancellationToken token)
     {
         CloseCodeAssistance();
-        try { await services.Intelligence.StartAsync(RequireProject(), token); QueueOutlineRefresh(clear: true); }
+        try
+        {
+            await services.Intelligence.StartAsync(RequireProject(), token);
+            QueueOutlineRefresh(clear: true);
+        }
         catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }
         catch (Exception ex) { Log(ex.ToString()); Log("文件操作已完成，语言服务刷新失败；重新打开工程可重试。"); }
     }
     private TreeViewItem? FindProjectNode(string path)
     {
-        if (ProjectTree.Items.Cast<object>().FirstOrDefault() is not TreeViewItem root) return null;
-        if (path.Length == 0) return root;
-        var node = root; var accumulated = "";
+        if (ProjectTree.Items.Cast<object>().FirstOrDefault() is not TreeViewItem root)
+        {
+            return null;
+        }
+        if (path.Length == 0)
+        {
+            return root;
+        }
+        var node = root;
+        var accumulated = "";
         foreach (var part in path.Split('/'))
         {
             node.IsExpanded = true;
             accumulated = accumulated.Length == 0 ? part : accumulated + "/" + part;
             var child = node.Items.OfType<TreeViewItem>().FirstOrDefault(item => item.Tag is ProjectEntry entry && entry.RelativePath.Equals(accumulated, StringComparison.OrdinalIgnoreCase));
-            if (child is null) return null;
+            if (child is null)
+            {
+                return null;
+            }
             node = child;
         }
         return node;
@@ -202,15 +303,28 @@ public partial class MainWindow
         void Capture(ItemsControl parent)
         {
             foreach (var child in parent.Items.OfType<TreeViewItem>())
-                if (child is { IsExpanded: true, Tag: ProjectEntry entry }) { expanded.Add(entry.RelativePath); Capture(child); }
+            {
+                if (child is { IsExpanded: true, Tag: ProjectEntry entry })
+                {
+                    expanded.Add(entry.RelativePath);
+                    Capture(child);
+                }
+            }
         }
         Capture(ProjectTree);
         PopulateProjectTree(WindowProjectTitle.Text, expandSource: false);
         foreach (var path in expanded.OrderBy(path => path.Length))
         {
             var adjusted = renamedFrom is not null && ProjectFileService.ContainsPath(renamedFrom, path) ? selected + path[renamedFrom.Length..] : path;
-            if (FindProjectNode(adjusted) is { } node) node.IsExpanded = true;
+            if (FindProjectNode(adjusted) is { } node)
+            {
+                node.IsExpanded = true;
+            }
         }
-        if (FindProjectNode(selected) is { } target) { target.IsSelected = true; target.BringIntoView(); }
+        if (FindProjectNode(selected) is { } target)
+        {
+            target.IsSelected = true;
+            target.BringIntoView();
+        }
     }
 }

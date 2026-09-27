@@ -53,7 +53,7 @@ internal sealed partial class RetentionChecks(string output)
         var expectedBytes = Directory.GetFiles(oldInstallation, "*", SearchOption.AllDirectories).Sum(path => new FileInfo(path).Length);
         var result = await repository.PruneSupersededAsync();
         Require(result.Failures.Count == 0 && result.Removed.Count == 1 && result.Removed[0] is
-            { Id: "fixture.same", Version: "0.9.0", ReplacementVersion: "0.10.0" }, "prune removal identity");
+        { Id: "fixture.same", Version: "0.9.0", ReplacementVersion: "0.10.0" }, "prune removal identity");
         Require(result.ReclaimedBytes == expectedBytes && result.Removed[0].Bytes == expectedBytes, "exact reclaimed byte accounting");
         Require(!Directory.Exists(oldInstallation), "global older installation deleted");
         var readProject = await ProjectService.ReadAsync(projectDirectory);
@@ -80,7 +80,9 @@ internal sealed partial class RetentionChecks(string output)
             [new("fixture-chip", ["hal"]), new("fixture-other-chip", ["hal"])]);
         var fewerDevices = await FixturePack.CreateAsync(archives, "fixture.devices", "0.10.0");
         foreach (var fixture in new[] { spl, hal, anotherId, oldDevices, fewerDevices })
+        {
             await repository.ImportAsync(fixture.Archive);
+        }
         Require(!PackCatalogPolicy.Supersedes(hal.Manifest, spl.Manifest), "unique SPL template preserves old pack");
         Require(!PackCatalogPolicy.Supersedes(fewerDevices.Manifest, oldDevices.Manifest), "missing device preserves old pack");
         Require(!PackCatalogPolicy.Supersedes(anotherId.Manifest, hal.Manifest), "same display name does not merge IDs");
@@ -114,19 +116,32 @@ internal sealed partial class RetentionChecks(string output)
         var directory = Path.Combine(output, "cancelled");
         var repository = new PackRepository(Path.Combine(directory, "packs"));
         foreach (var version in new[] { "0.9.0", "0.10.0" })
+        {
             await repository.ImportAsync((await FixturePack.CreateAsync(Path.Combine(directory, "archives"), "fixture.cancel", version)).Archive);
+        }
         using var cancellation = new CancellationTokenSource();
         cancellation.Cancel();
-        try { await repository.PruneSupersededAsync(cancellation.Token); throw new InvalidOperationException("Cancellation was ignored."); }
+        try
+        {
+            await repository.PruneSupersededAsync(cancellation.Token);
+            throw new InvalidOperationException("Cancellation was ignored.");
+        }
         catch (OperationCanceledException) { }
         Require((await repository.ListCatalogAsync()).Count == 2, "cancelled operation preserves both versions");
         Pass("pre-cancelled cleanup preserves all installations");
     }
 
-    private void Pass(string message) { passed.Add(message); Console.WriteLine("PASS: " + message); }
+    private void Pass(string message)
+    {
+        passed.Add(message);
+        Console.WriteLine("PASS: " + message);
+    }
     private static void Require(bool condition, string message)
     {
-        if (!condition) throw new InvalidOperationException("FAIL: " + message);
+        if (!condition)
+        {
+            throw new InvalidOperationException("FAIL: " + message);
+        }
     }
     private static async Task<string> HashAsync(string path) => Convert.ToHexString(SHA256.HashData(await File.ReadAllBytesAsync(path)));
 }

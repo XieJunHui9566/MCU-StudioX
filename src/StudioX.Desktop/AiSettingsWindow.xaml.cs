@@ -48,22 +48,35 @@ public partial class AiSettingsWindow : Window
         {
             var contextText = ContextWindowInput.Text.Trim();
             if (contextText.Length > 0 && !int.TryParse(contextText, out _))
+            {
                 throw new ArgumentException("上下文窗口必须是正整数 token 数。");
+            }
             var settings = savedSettings with
             {
-                BaseUrl = BaseUrlInput.Text.Trim(), Model = ModelInput.Text.Trim(),
+                BaseUrl = BaseUrlInput.Text.Trim(),
+                Model = ModelInput.Text.Trim(),
                 ContextWindowTokens = contextText.Length == 0 ? null : int.Parse(contextText)
             };
             AiSettingsService.Validate(settings);
             var key = KeyInput.Password.Trim();
             if (key.Length > 2560 || key.Any(c => c is < '!' or > '~'))
+            {
                 throw new ArgumentException("API Key 格式无效。");
+            }
             var webKey = WebKeyInput.Password.Trim();
             if (webKey.Length > 2560 || webKey.Any(c => c is < '!' or > '~'))
+            {
                 throw new ArgumentException("Tavily API Key 格式无效。");
+            }
             await settingsService.SaveAsync(settings);
-            if (key.Length > 0) credentials.SetApiKey(key, settings.BaseUrl);
-            if (webKey.Length > 0) webCredentials.SetApiKey(webKey);
+            if (key.Length > 0)
+            {
+                credentials.SetApiKey(key, settings.BaseUrl);
+            }
+            if (webKey.Length > 0)
+            {
+                webCredentials.SetApiKey(webKey);
+            }
             KeyInput.Clear();
             WebKeyInput.Clear();
             DialogResult = true;

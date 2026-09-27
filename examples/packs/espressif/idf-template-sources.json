@@ -1,0 +1,34 @@
+{
+  "formatVersion": 1,
+  "sdkVersion": "5.5.4",
+  "upstreamCommit": "735507283d5b2f9fb363a1901172dbd9e847945d",
+  "filesSha256": {
+    "LICENSE": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+    "tools/cmake/version.cmake": "67c7b42e7442ffb8474fe0048bae0f06f67f9d7e97c084bab975d9a585060a82",
+    "examples/get-started/hello_world/CMakeLists.txt": "49af6567ee0b9c381654ad42f7ea0c40fe61a8ca0d9421625faa01ca21603009",
+    "examples/get-started/hello_world/main/CMakeLists.txt": "116b04da44200b6ddeee8aed45c9fbfb5e487d727c7d29b028e79807e76137cc",
+    "examples/get-started/hello_world/main/hello_world_main.c": "b2d1c8573307e010d276d2d0df537f1fe752416f8422e267aa8b1661c1744595",
+    "examples/get-started/hello_world/README.md": "ff3d88ffac063e7e90e6cca9acaef101da29b2c22a60687b1af87b3d4cf8342b",
+    "examples/system/freertos/real_time_stats/CMakeLists.txt": "7b7faeec69813d608cd584568a714e336408b40e763972066bea49b4d9f486af",
+    "examples/system/freertos/real_time_stats/main/CMakeLists.txt": "00b7cc2a858a0498b52b8515f28512aecd33e93e23e6ae96f6708dfbb4480a63",
+    "examples/system/freertos/real_time_stats/main/real_time_stats_example_main.c": "e90ba48a308b9e5735de50e86776ae2b9731fac05ede5bd2a0ad9efef73ab29c",
+    "examples/system/freertos/real_time_stats/sdkconfig.defaults": "dd87b8ef92c63b2f067114fd906a08f24842d850b9819ea94d8ffb95b9f414a4",
+    "examples/system/freertos/real_time_stats/README.md": "dea0032817e5048153727f107eca5d95eefbe4e014bcd3553648c021093aba51"
+  },
+  "examples": [
+    {
+      "id": "hello-world",
+      "examplePath": "examples/get-started/hello_world",
+      "entryFile": "main/hello_world_main.c",
+      "displayName": "官方 Hello World",
+      "description": "ESP-IDF 5.5.4 原始示例；显示芯片/Flash/堆信息并定期重启。"
+    },
+    {
+      "id": "freertos",
+      "examplePath": "examples/system/freertos/real_time_stats",
+      "entryFile": "main/real_time_stats_example_main.c",
+      "displayName": "官方 FreeRTOS 运行统计",
+      "description": "ESP-IDF 5.5.4 原始任务运行统计示例；保留官方调度代码及统计配置。"
+    }
+  ]
+}

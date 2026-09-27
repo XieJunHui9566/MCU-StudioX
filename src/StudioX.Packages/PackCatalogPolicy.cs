@@ -15,7 +15,12 @@ public static class PackCatalogPolicy
         {
             var retained = new List<InstalledPack>();
             foreach (var pack in group.OrderByDescending(pack => pack.Manifest.Version, Comparer<string>.Create(PackVersion.Compare)))
-                if (!retained.Any(newer => Supersedes(newer.Manifest, pack.Manifest))) retained.Add(pack);
+            {
+                if (!retained.Any(newer => Supersedes(newer.Manifest, pack.Manifest)))
+                {
+                    retained.Add(pack);
+                }
+            }
             result.AddRange(retained);
         }
         return result.OrderBy(pack => pack.Manifest.Id, StringComparer.Ordinal)

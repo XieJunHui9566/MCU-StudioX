@@ -11,14 +11,20 @@ public partial class MainWindow
     private void CheckPackUpdates_Click(object sender, RoutedEventArgs e)
     {
         ShowDocument(PackagesTab);
-        if (closing || packSyncCancellation is not null) return;
+        if (closing || packSyncCancellation is not null)
+        {
+            return;
+        }
         StartPackOperation(checkOnly: true);
     }
 
     private void SyncPacks_Click(object sender, RoutedEventArgs e)
     {
         ShowDocument(PackagesTab);
-        if (closing || packSyncCancellation is not null) return;
+        if (closing || packSyncCancellation is not null)
+        {
+            return;
+        }
         StartPackOperation(checkOnly: false);
     }
 
@@ -44,18 +50,26 @@ public partial class MainWindow
         {
             var result = await services.RemotePacks.CheckForUpdatesAsync(cancellation.Token);
             cancellation.Token.ThrowIfCancellationRequested();
-            if (closing) return;
+            if (closing)
+            {
+                return;
+            }
             var summary = result.Updates.Count == 0
                 ? "GitHub 器件包已是最新；未发现需要下载的新版本。"
                 : $"发现 {result.Updates.Count} 个可同步的器件包；点击“同步下载”导入。";
             PackSyncStatus.Text = summary;
             Log(summary);
             foreach (var update in result.Updates)
+            {
                 Log($"可更新器件包：{update.Id} · {update.InstalledVersion ?? "未安装"} → {update.Version}");
+            }
         }
         catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
         {
-            if (!closing) PackSyncStatus.Text = "已取消 GitHub 器件包更新检查。";
+            if (!closing)
+            {
+                PackSyncStatus.Text = "已取消 GitHub 器件包更新检查。";
+            }
         }
         catch (Exception ex)
         {
@@ -74,7 +88,10 @@ public partial class MainWindow
         {
             var progress = new Progress<RemotePackSyncProgress>(report =>
             {
-                if (closing || cancellation.IsCancellationRequested || !ReferenceEquals(packSyncCancellation, cancellation)) return;
+                if (closing || cancellation.IsCancellationRequested || !ReferenceEquals(packSyncCancellation, cancellation))
+                {
+                    return;
+                }
                 PackSyncProgressBar.IsIndeterminate = report.Total <= 0;
                 if (report.Total > 0)
                 {
@@ -89,19 +106,29 @@ public partial class MainWindow
             cancellation.Token.ThrowIfCancellationRequested();
             // 刷新选择器前等已有工作台操作结束，避免与新建工程时的本地目录读取交错。
             await pendingOperation.WaitAsync(cancellation.Token);
-            if (closing) return;
+            if (closing)
+            {
+                return;
+            }
             await RefreshPacksAsync(cancellation.Token, preserveSelection: true);
             var summary = $"GitHub 器件包同步完成：新增 {result.Imported}，已存在 {result.Skipped}，失败 {result.Failures.Count}。";
             PackSyncStatus.Text = summary;
             Log(summary);
             foreach (var failure in result.Failures)
+            {
                 Log($"GitHub 器件包同步失败：{failure.Path}：{failure.Message}");
+            }
             if (result.Failures.Count > 0)
+            {
                 PackSyncStatus.Text += " 详情见构建日志；可稍后重试。";
+            }
         }
         catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
         {
-            if (!closing) PackSyncStatus.Text = "已取消 GitHub 器件包同步；已有器件包仍可使用。";
+            if (!closing)
+            {
+                PackSyncStatus.Text = "已取消 GitHub 器件包同步；已有器件包仍可使用。";
+            }
         }
         catch (Exception ex)
         {

@@ -7,21 +7,6 @@ using StudioX.Engine.Debugging;
 using StudioX.Foundation;
 using StudioX.Packages;
 
-public sealed record DownloadOptions(string ProbeId, int SpeedKhz, string? Serial = null);
-public sealed record DownloadConfiguration(DeviceDefinition Device, OpenOcdDefinition OpenOcd, DownloadOptions Options, string? TargetScriptText = null);
-public sealed record DownloadReport(bool Success, string Log, string LogPath, int ExitCode, bool TimedOut)
-{
-    public string Summary => $"下载{(Success ? "成功" : "失败")}，退出代码：{ExitCode}" +
-        (Success ? " · 已校验并复位运行" : TimedOut ? "（工具执行超时）" : " · 请查看 OpenOCD 日志");
-}
-public sealed record DownloadPreparation(DownloadConfiguration Configuration, DownloadOptions Options,
-    ResolvedToolset Tools, string SourceImage, string Image, string[] Arguments, string LogPath)
-{
-    public ulong ImageByteCount { get; init; }
-}
-public sealed record DownloadPreview(DownloadConfiguration Configuration, DownloadOptions Options,
-    string SourceImage, string Format, string Sha256, long ImageBytes);
-
 /// <summary>OpenOCD 单次下载会话；用户明确启动后才接触硬件。</summary>
 public sealed class OpenOcdService(ToolsetCatalog catalog)
 {
@@ -33,26 +18,40 @@ public sealed class OpenOcdService(ToolsetCatalog catalog)
         if (project.Kind == ProjectKind.CubeMx)
         {
             var imported = Stm32DownloadCatalog.Find(project);
-            if (imported is null) return null;
+            if (imported is null)
+            {
+                return null;
+            }
             configuration = imported;
         }
         else
         {
             var pack = await JsonStore.ReadAsync<PackManifest>(PathBoundary.Resolve(projectDirectory, "device/manifest.json"), token);
             var packDevice = pack.Devices.Single(d => d.Id == project.DeviceId);
-            if (packDevice.OpenOcd is not { Probes.Count: > 0 } packDefinition) return null;
+            if (packDevice.OpenOcd is not { Probes.Count: > 0 } packDefinition)
+            {
+                return null;
+            }
             // 保留包声明的兼容范围和协议，统一 DAP 在界面上的名称。
-            packDefinition = packDefinition with { Probes = packDefinition.Probes.Select(p => p.Id == "cmsis-dap" ? p with { DisplayName = "DAP-Link (CMSIS-DAP)" } : p).ToArray() };
+            packDefinition = packDefinition with
+            {
+                Probes = packDefinition.Probes.Select(p => p.Id == "cmsis-dap" ? p with { DisplayName = "DAP-Link (CMSIS-DAP)" } : p).ToArray()
+            };
             configuration = new(packDevice, packDefinition, new(packDefinition.Probes[0].Id, packDefinition.Probes[0].DefaultSpeedKhz));
         }
         var device = configuration.Device;
         var definition = configuration.OpenOcd;
         if (device.ToolsetId != project.ToolsetId || device.ToolsetVersion != project.ToolsetVersion || device.CompilerId != project.CompilerId)
+        {
             throw new StudioXException("DOWNLOAD_TOOLSET", "工程与器件的下载工具集不一致。");
+        }
         var settings = PathBoundary.Resolve(projectDirectory, ".studiox/download.json");
         var options = File.Exists(settings) ? await JsonStore.ReadAsync<DownloadOptions>(settings, token) : configuration.Options;
         Validate(definition, options);
-        return configuration with { Options = options };
+        return configuration with
+        {
+            Options = options
+        };
     }
 
     public async Task SaveOptionsAsync(string projectDirectory, DownloadOptions options, CancellationToken token = default)
@@ -89,29 +88,41 @@ public sealed class OpenOcdService(ToolsetCatalog catalog)
         var lockPath = PathBoundary.Resolve(root, ".studiox/toolchain.lock.json");
         var receiptPath = PathBoundary.Resolve(root, BuildReceipt.RelativePath);
         if (!File.Exists(lockPath) || await JsonStore.ReadAsync<ToolchainLock>(lockPath, token) != expected || !File.Exists(receiptPath))
+        {
             throw new StudioXException("DOWNLOAD_BUILD", "请先使用当前工具集成功编译工程。");
+        }
         var receipt = await JsonStore.ReadAsync<BuildReceipt>(receiptPath, token);
         if (receipt.Project != project || receipt.ToolFingerprint != tools.Fingerprint || receipt.Images.Length == 0 ||
             receipt.SourceStamp is null ||
             receipt.SourceStamp != await DebugSourceStamp.ComputeAsync(root, token))
+        {
             throw new StudioXException("DOWNLOAD_BUILD", "源码或工程配置已变化，请重新编译后下载。");
+        }
         if (receipt.Images.Length != 1)
+        {
             throw new StudioXException("DOWNLOAD_TARGET", "工程包含多个可执行固件目标，无法自动确定下载对象；请保留一个应用固件目标后重试。");
+        }
         if (project.CubeMx is { } cube)
         {
             var ioc = await File.ReadAllLinesAsync(PathBoundary.Resolve(root, cube.IocFile), token);
             var currentDevice = ioc.FirstOrDefault(line => line.StartsWith("Mcu.CPN=", StringComparison.Ordinal))?[8..]
                 ?? ioc.FirstOrDefault(line => line.StartsWith("Mcu.Name=", StringComparison.Ordinal))?[9..];
             if (!string.Equals(currentDevice?.Trim(), project.DeviceId, StringComparison.OrdinalIgnoreCase))
+            {
                 throw new StudioXException("DOWNLOAD_DEVICE", "CubeMX 的芯片型号已改变，请重新导入工程后下载。");
+            }
         }
         var source = receipt.Images[0];
         var sourceImage = PathBoundary.Resolve(root, source.RelativePath);
         if (!File.Exists(sourceImage) || new FileInfo(sourceImage).Length > 64 * 1024 * 1024)
+        {
             throw new StudioXException("DOWNLOAD_IMAGE", "固件不存在或超过 64 MiB，请重新编译。");
+        }
         var bytes = await File.ReadAllBytesAsync(sourceImage, token);
         if (!string.Equals(Convert.ToHexString(SHA256.HashData(bytes)), source.Sha256, StringComparison.OrdinalIgnoreCase))
+        {
             throw new StudioXException("DOWNLOAD_CHANGED", "编译后的固件已被替换或修改，请重新编译后下载。");
+        }
         var imageByteCount = FirmwareImage.Validate(bytes, source.Format, device);
         return new(configuration, tools, sourceImage, source.Format, source.Sha256, bytes, imageByteCount);
     }
@@ -123,7 +134,9 @@ public sealed class OpenOcdService(ToolsetCatalog catalog)
         var validated = await ValidateImageAsync(root, options, token);
         if (expectedDeviceId is not null && !string.Equals(validated.Configuration.Device.Id, expectedDeviceId, StringComparison.Ordinal) ||
             expectedImageSha256 is not null && !string.Equals(validated.Sha256, expectedImageSha256, StringComparison.OrdinalIgnoreCase))
+        {
             throw new StudioXException("DOWNLOAD_APPROVAL_CHANGED", "审批后的芯片型号或固件哈希已变化，请重新预览并授权。");
+        }
         // 使用构建产物快照，避免用户之后修改产物影响实际写入内容。
         var session = PathBoundary.Resolve(root, ".build/download-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(session);
@@ -131,7 +144,9 @@ public sealed class OpenOcdService(ToolsetCatalog catalog)
         await File.WriteAllBytesAsync(image, validated.Bytes, token);
         var arguments = CreateArguments(root, validated.Configuration, options, validated.Tools, image, validated.Format);
         return new(validated.Configuration, options, validated.Tools, validated.SourceImage, image, arguments, Path.Combine(session, "openocd.log"))
-        { ImageByteCount = validated.ImageByteCount };
+        {
+            ImageByteCount = validated.ImageByteCount
+        };
     }
 
     public Task<DownloadReport> DownloadAsync(string projectDirectory, DownloadOptions options, IProgress<string>? output = null, CancellationToken token = default)
@@ -143,7 +158,9 @@ public sealed class OpenOcdService(ToolsetCatalog catalog)
     {
         if (string.IsNullOrWhiteSpace(expectedDeviceId) || expectedImageSha256 is null ||
             expectedImageSha256.Length != 64 || !expectedImageSha256.All(Uri.IsHexDigit))
+        {
             throw new StudioXException("DOWNLOAD_APPROVAL", "需要明确的芯片型号和完整固件 SHA-256。");
+        }
         return Task.Run(() => DownloadCoreAsync(projectDirectory, options, output, token,
             expectedDeviceId, expectedImageSha256), token);
     }
@@ -151,7 +168,10 @@ public sealed class OpenOcdService(ToolsetCatalog catalog)
     private async Task<DownloadReport> DownloadCoreAsync(string projectDirectory, DownloadOptions options, IProgress<string>? output,
         CancellationToken token, string? expectedDeviceId, string? expectedImageSha256)
     {
-        if (!await gate.WaitAsync(0, token)) throw new StudioXException("DOWNLOAD_BUSY", "烧录器正在使用中。");
+        if (!await gate.WaitAsync(0, token))
+        {
+            throw new StudioXException("DOWNLOAD_BUSY", "烧录器正在使用中。");
+        }
         try
         {
             var root = Path.GetFullPath(projectDirectory);
@@ -198,21 +218,36 @@ public sealed class OpenOcdService(ToolsetCatalog catalog)
              configuration.OpenOcd.TargetScript != configuration.Device.OpenOcd!.TargetScript ||
              configuration.OpenOcd.ApplicationFlashBytes != applicationBytes || configuration.OpenOcd.Probes.Count != 1 ||
              probe.Id != "wch-link" || probe.Transport != "sdi" || probe.InterfaceScript != "interface/wch-link.cfg"))
+        {
             throw new StudioXException("DOWNLOAD_TARGET", "CH592/CH595 下载需要匹配的器件包、应用 Flash 范围及 WCH-Link SDI 配置。");
+        }
         var scripts = tools.ResourceDirectory("openocdScripts");
         var interfaceFile = PathBoundary.Resolve(scripts, probe.InterfaceScript);
         // 厂商接口也可随包提供纯 Tcl 配置，工具集本身保持版本不可变。
-        if (!File.Exists(interfaceFile)) interfaceFile = PathBoundary.Resolve(projectDirectory, "device/" + probe.InterfaceScript);
+        if (!File.Exists(interfaceFile))
+        {
+            interfaceFile = PathBoundary.Resolve(projectDirectory, "device/" + probe.InterfaceScript);
+        }
         var targetFile = configuration.TargetScriptText is null ? PathBoundary.Resolve(projectDirectory, "device/" + configuration.OpenOcd.TargetScript) : null;
-        if (!File.Exists(interfaceFile) || targetFile is not null && !File.Exists(targetFile)) throw new StudioXException("DOWNLOAD_CONFIG", "缺少烧录器或目标下载配置。");
-        if (format is not ("bin" or "elf")) throw new StudioXException("DOWNLOAD_IMAGE", "不支持的下载格式。");
+        if (!File.Exists(interfaceFile) || targetFile is not null && !File.Exists(targetFile))
+        {
+            throw new StudioXException("DOWNLOAD_CONFIG", "缺少烧录器或目标下载配置。");
+        }
+        if (format is not ("bin" or "elf"))
+        {
+            throw new StudioXException("DOWNLOAD_IMAGE", "不支持的下载格式。");
+        }
         // ELF 使用自己的绝对装载地址；BIN 才需要器件的 Flash 基地址。
         var address = format == "elf" ? "0" : "0x" + configuration.Device.FlashOrigin.ToString("x8", CultureInfo.InvariantCulture);
         // 沁恒分支基于 0.11，保留下划线形式的服务端口命令。
         var legacy = probe.Transport == "sdi";
         List<string> arguments = ["-s", scripts, "-c", legacy ? "gdb_port disabled" : "gdb port disabled", "-c", legacy ? "tcl_port disabled" : "tcl port disabled", "-c", legacy ? "telnet_port disabled" : "telnet port disabled",
             "-f", interfaceFile, "-c", "transport select " + probe.Transport];
-        if (!string.IsNullOrWhiteSpace(options.Serial)) { arguments.Add("-c"); arguments.Add("adapter serial " + TclString(options.Serial)); }
+        if (!string.IsNullOrWhiteSpace(options.Serial))
+        {
+            arguments.Add("-c");
+            arguments.Add("adapter serial " + TclString(options.Serial));
+        }
         arguments.AddRange(targetFile is not null ? ["-f", targetFile] : ["-c", configuration.TargetScriptText!]);
         arguments.AddRange(["-c", "adapter speed " + options.SpeedKhz.ToString(CultureInfo.InvariantCulture)]);
         // 先核对硅片系列和容量，再按映像范围擦写；不执行全片擦除、解锁或选项字节写入。
@@ -230,9 +265,13 @@ public sealed class OpenOcdService(ToolsetCatalog catalog)
         var probe = definition.Probes.SingleOrDefault(p => p.Id == options.ProbeId) ?? throw new StudioXException("DOWNLOAD_PROBE", "请选择当前器件支持的烧录器。");
         if (options.SpeedKhz is < 100 or > 15000 || options.Serial?.Length > 100 || options.Serial?.Any(char.IsControl) == true ||
             probe.Transport is not ("swd" or "jtag" or "hla_swd" or "dapdirect_swd" or "sdi"))
+        {
             throw new StudioXException("DOWNLOAD_OPTIONS", "速度范围为 100–15000 kHz，序列号不能包含控制字符。");
+        }
         if (probe.Transport == "sdi" && (probe.Id != "wch-link" || options.SpeedKhz is not (400 or 4000 or 6000) || !string.IsNullOrWhiteSpace(options.Serial)))
+        {
             throw new StudioXException("DOWNLOAD_OPTIONS", "WCH-Link 支持 400、4000、6000 kHz；当前仅支持单台连接，请留空序列号。");
+        }
         return probe;
     }
 
@@ -241,7 +280,26 @@ public sealed class OpenOcdService(ToolsetCatalog catalog)
     private static StudioXException Unsupported() => new("DOWNLOAD_UNSUPPORTED", "当前器件尚无匹配的下载配置；器件包需提供 OpenOCD 配置，CubeMX 当前支持目录中的 STM32F1/F4 型号。");
     private sealed class DownloadOutput(StringBuilder log, IProgress<string>? forward) : IProgress<string>
     {
-        public void Report(string value) { lock (log) { if (log.Length < 5 * 1024 * 1024) log.Append(value); } forward?.Report(value); }
-        public string Text { get { lock (log) return log.ToString(); } }
+        public void Report(string value)
+        {
+            lock (log)
+            {
+                if (log.Length < 5 * 1024 * 1024)
+                {
+                    log.Append(value);
+                }
+            }
+            forward?.Report(value);
+        }
+        public string Text
+        {
+            get
+            {
+                lock (log)
+                {
+                    return log.ToString();
+                }
+            }
+        }
     }
 }

@@ -1,4 +1,5 @@
 """Keep application entry points separate from generated STM32 system configuration."""
+
 import json
 import shutil
 from pathlib import Path
@@ -10,16 +11,19 @@ VERSION = '0.1.1'
 def apply_layout(stage, manifest):
     if manifest['version'] != '0.1.0':
         raise ValueError('System-layout conversion requires a 0.1.0 source manifest')
+
     def copy(source, target):
         target.parent.mkdir(parents=True, exist_ok=True)
         if target.exists() and source.read_bytes() != target.read_bytes():
             raise ValueError('Conflicting system configuration: ' + str(target))
         shutil.copyfile(source, target)
 
-    for source, relative in [('main-bare.c', 'templates/bare/main.c'),
-                             ('main-rtos.c', 'templates/rtos/main.c'),
-                             ('system_config.h', 'templates/common/system_config.h'),
-                             ('system_config.c', 'system/common/system_config.c')]:
+    for source, relative in [
+        ('main-bare.c', 'templates/bare/main.c'),
+        ('main-rtos.c', 'templates/rtos/main.c'),
+        ('system_config.h', 'templates/common/system_config.h'),
+        ('system_config.c', 'system/common/system_config.c'),
+    ]:
         copy(RECIPE / source, stage / relative)
     for device in manifest['devices']:
         for template in device['templates']:
@@ -38,18 +42,27 @@ def apply_layout(stage, manifest):
             build['sources'].append('system/common/system_config.c')
             build['includeDirectories'].append(directory)
             template['files'] = {'include/system_config.h': 'templates/common/system_config.h'}
-            template['entryFile'] = 'templates/rtos/main.c' if 'freertos' in template['id'] else 'templates/bare/main.c'
-            template['description'] = template['description'].replace('内存心跳示例', '精简 main，系统配置位于 device/system')
+            template['entryFile'] = (
+                'templates/rtos/main.c' if 'freertos' in template['id'] else 'templates/bare/main.c'
+            )
+            template['description'] = template['description'].replace(
+                '内存心跳示例', '精简 main，系统配置位于 device/system'
+            )
     manifest['version'] = VERSION
     provenance_path = stage / 'provenance.json'
     if provenance_path.exists():
         provenance = json.loads(provenance_path.read_text(encoding='utf-8-sig'))
-        provenance['templateLayout'] = dict(version=VERSION, systemDirectory='device/system', sdkUnchanged=True)
-        provenance_path.write_text(json.dumps(provenance, ensure_ascii=False, indent=2), encoding='utf-8')
+        provenance['templateLayout'] = dict(
+            version=VERSION, systemDirectory='device/system', sdkUnchanged=True
+        )
+        provenance_path.write_text(
+            json.dumps(provenance, ensure_ascii=False, indent=2), encoding='utf-8'
+        )
 
 
 if __name__ == '__main__':
     import sys
+
     stage = Path(sys.argv[1])
     manifest_path = stage / 'manifest.json'
     manifest = json.loads(manifest_path.read_text(encoding='utf-8-sig'))

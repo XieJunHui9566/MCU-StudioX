@@ -23,3 +23,6 @@ tmp/
 *.key
 *.sqlite
 *.db
+.studiox/
+.codex/
+runtime/toolsets/

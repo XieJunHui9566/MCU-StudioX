@@ -5,9 +5,6 @@ using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using StudioX.Foundation;
 
-public enum CompilerOptimization { ProjectDefault, O0, Og, O1, O2, O3, Os }
-public enum CompilerDebugInfo { ProjectDefault, None, Standard, Full }
-
 /// <summary>工程级编译覆盖项；默认不改变模板、CMake 或预设中的参数。</summary>
 public sealed record ProjectBuildSettings(int FormatVersion = 1,
     CompilerOptimization Optimization = CompilerOptimization.ProjectDefault,
@@ -24,9 +21,13 @@ public sealed record ProjectBuildSettings(int FormatVersion = 1,
     public void Validate()
     {
         if (FormatVersion != 1 || !Enum.IsDefined(Optimization) || !Enum.IsDefined(DebugInfo))
+        {
             throw new StudioXException("BUILD_SETTINGS", "不支持的编译参数配置，请检查 .studiox/build.json。");
+        }
         if (CodeRomSizeBytes is < 1024)
+        {
             throw new StudioXException("BUILD_SETTINGS", "代码 ROM 大小至少为 1024 字节。");
+        }
     }
 
     public void ValidateFor(ProjectManifest project)
@@ -34,9 +35,13 @@ public sealed record ProjectBuildSettings(int FormatVersion = 1,
         Validate();
         if (project.ToolsetId == "stc.sdcc" && (DebugInfo != CompilerDebugInfo.ProjectDefault ||
             Optimization is not (CompilerOptimization.ProjectDefault or CompilerOptimization.O0 or CompilerOptimization.Os or CompilerOptimization.O2)))
+        {
             throw new StudioXException("BUILD_SETTINGS", "STC SDCC 仅支持默认、低优化、体积优先与速度优先；当前不提供调试信息设置。");
+        }
         if (project.ToolsetId != "stc.sdcc" && CodeRomSizeBytes is not null)
+        {
             throw new StudioXException("BUILD_SETTINGS", "代码 ROM 大小选项仅用于 STC SDCC 工程。");
+        }
     }
 
     internal string[] FlagsFor(ProjectManifest project) => project.ToolsetId == "stc.sdcc" ? Optimization switch
@@ -64,14 +69,17 @@ public sealed record ProjectBuildSettings(int FormatVersion = 1,
     {
         var path = PathBoundary.Resolve(root, RelativePath);
         var value = File.Exists(path) ? await JsonStore.ReadAsync<ProjectBuildSettings>(path, token) : new();
-        value.Validate(); return value;
+        value.Validate();
+        return value;
     }
 
     internal async Task<string> PrepareCMakeAsync(string build, ProjectManifest project, CancellationToken token, int? stcClockHz = null)
     {
         var hook = Path.Combine(build, "studiox-compiler-options.cmake").Replace('\\', '/');
         if (hook.Contains(';') || hook.Contains("]]", StringComparison.Ordinal))
+        {
             throw new StudioXException("BUILD_SETTINGS_PATH", "编译参数配置不支持工程路径中的分号或连续右方括号。");
+        }
         var flags = string.Join(' ', stcClockHz is { } hz
             ? FlagsFor(project).Append("-DSTUDIOX_CLOCK_HZ=" + hz.ToString(System.Globalization.CultureInfo.InvariantCulture) + "UL")
             : FlagsFor(project));
@@ -116,13 +124,19 @@ public sealed record ProjectBuildSettings(int FormatVersion = 1,
 
     internal async Task VerifyCommandsAsync(string build, ProjectManifest project, CancellationToken token, int? stcClockHz = null)
     {
-        if (!HasOverrides && stcClockHz is null) return;
+        if (!HasOverrides && stcClockHz is null)
+        {
+            return;
+        }
         using var document = JsonDocument.Parse(await File.ReadAllTextAsync(Path.Combine(build, "compile_commands.json"), token));
         var count = 0;
         foreach (var command in document.RootElement.EnumerateArray())
         {
             var file = command.GetProperty("file").GetString()!;
-            if (Path.GetExtension(file).ToLowerInvariant() is not (".c" or ".cpp" or ".cc" or ".cxx" or ".c++" or ".cp" or ".s" or ".asm" or ".sx")) continue;
+            if (Path.GetExtension(file).ToLowerInvariant() is not (".c" or ".cpp" or ".cc" or ".cxx" or ".c++" or ".cp" or ".s" or ".asm" or ".sx"))
+            {
+                continue;
+            }
             var arguments = command.TryGetProperty("arguments", out var list)
                 ? list.EnumerateArray().Select(value => value.GetString()!).ToArray()
                 : SplitCommand(command.GetProperty("command").GetString()!);
@@ -132,17 +146,26 @@ public sealed record ProjectBuildSettings(int FormatVersion = 1,
                 if (flags.Any(flag => !arguments.Contains(flag, StringComparer.Ordinal)) ||
                     Optimization is CompilerOptimization.Os or CompilerOptimization.O2 &&
                     arguments.LastOrDefault(arg => arg is "--opt-code-size" or "--opt-code-speed") != flags[^1])
+                {
                     throw new StudioXException("BUILD_SETTINGS_NOT_APPLIED", "SDCC 编译命令未应用所选优化档位：" + file);
+                }
                 if (stcClockHz is { } hz && arguments.LastOrDefault(arg => arg.StartsWith("-DSTUDIOX_CLOCK_HZ=", StringComparison.Ordinal)) !=
                     "-DSTUDIOX_CLOCK_HZ=" + hz.ToString(System.Globalization.CultureInfo.InvariantCulture) + "UL")
+                {
                     throw new StudioXException("BUILD_SETTINGS_NOT_APPLIED", "SDCC 编译命令未应用工程时钟宏：" + file);
+                }
             }
             else if (OptimizationFlag is { } optimization && arguments.LastOrDefault(arg => Regex.IsMatch(arg, @"^-O(?:[0-3sgz]|fast)?$")) != optimization ||
                 DebugFlag is { } debug && arguments.LastOrDefault(arg => Regex.IsMatch(arg, @"^-g(?:[0-3]|gdb[0-3]?)?$")) != debug)
+            {
                 throw new StudioXException("BUILD_SETTINGS_NOT_APPLIED", "工程自定义编译规则覆盖了所选参数，未开始编译。请恢复工程默认或检查 CMake：" + file);
+            }
             count++;
         }
-        if (count == 0) throw new StudioXException("BUILD_SETTINGS_NOT_APPLIED", "没有找到可核对编译参数的 C/C++/汇编命令。");
+        if (count == 0)
+        {
+            throw new StudioXException("BUILD_SETTINGS_NOT_APPLIED", "没有找到可核对编译参数的 C/C++/汇编命令。");
+        }
     }
 
     private static string[] SplitCommand(string command) => Regex.Matches(command, "(?:[^\\s\"']+|\"[^\"]*\"|'[^']*')+")

@@ -11,7 +11,10 @@ internal static class Ag32TargetChecks
     public static async Task<int> RunVerificationDiagnosticsAsync(string output)
     {
         var root = Path.GetFullPath(output);
-        if (Directory.Exists(root)) throw new InvalidOperationException("Use a new validation directory.");
+        if (Directory.Exists(root))
+        {
+            throw new InvalidOperationException("Use a new validation directory.");
+        }
         Directory.CreateDirectory(root);
         var results = new List<string>();
         await CheckImageVerificationDiagnosticsAsync(root, results.Add);
@@ -21,14 +24,21 @@ internal static class Ag32TargetChecks
     public static async Task<int> RunAsync(string archive, string runtime, string output)
     {
         var root = Path.GetFullPath(output);
-        if (Directory.Exists(root)) throw new InvalidOperationException("Use a new validation directory.");
+        if (Directory.Exists(root))
+        {
+            throw new InvalidOperationException("Use a new validation directory.");
+        }
         Directory.CreateDirectory(root);
         var pack = await new PackRepository(Path.Combine(root, "repository")).ImportAsync(archive);
         var catalog = new ToolsetCatalog(Path.GetFullPath(Path.Combine(runtime, "toolsets")));
         var downloads = new OpenOcdService(catalog);
         var builds = new BuildService(catalog);
         var results = new List<string>();
-        void Pass(string message) { results.Add(message); Console.WriteLine("PASS " + message); }
+        void Pass(string message)
+        {
+            results.Add(message);
+            Console.WriteLine("PASS " + message);
+        }
         foreach (var template in pack.Manifest.Devices.Single().Templates)
         {
             var project = Path.Combine(root, template.Id);
@@ -50,7 +60,9 @@ internal static class Ag32TargetChecks
             Check(plan.InitializeCommands.Any(c => c.Contains("verify_image", StringComparison.Ordinal)) && plan.InitializeCommands.All(c => !c.Contains("target-download", StringComparison.Ordinal)), "Verify before attaching without implicit download");
             Check(plan.OpenOcdArguments.Contains("$_TARGETNAME configure -work-area-size 0 -work-area-backup 1"), "No live RAM checksum workspace");
             foreach (var probe in new[] { "cmsis-dap", "stlink", "jlink" })
+            {
                 await Reject(() => { OpenOcdDebugPlanner.ResolveProbe(config with { Options = new(probe, 1000) }); return Task.CompletedTask; }, "DEBUG_PROBE");
+            }
             var environment = ToolsetEnvironment.Create(prepared.Tools);
             var runner = new ProcessRunner();
             var dry = await runner.RunAsync(new(plan.OpenOcd, ["-c", "noinit", .. plan.OpenOcdArguments, "-f", Path.GetFullPath("tools/StudioX.DebugValidation/ag32-offline-check.cfg")], project,
@@ -103,7 +115,8 @@ internal static class Ag32TargetChecks
         var receipt = JsonNode.Parse(receiptText)!;
         var binPath = Path.Combine(project, receipt["images"]![0]!["relativePath"]!.GetValue<string>());
         var elfPath = Path.Combine(project, receipt["images"]![0]!["symbolsPath"]!.GetValue<string>());
-        var bin = await File.ReadAllBytesAsync(binPath); var elf = await File.ReadAllBytesAsync(elfPath);
+        var bin = await File.ReadAllBytesAsync(binPath);
+        var elf = await File.ReadAllBytesAsync(elfPath);
         try
         {
             // 即使构建凭据摘要一致，超过 156 KiB 的 BIN 也不能覆盖逻辑区。
@@ -114,7 +127,9 @@ internal static class Ag32TargetChecks
             await Reject(() => downloads.PrepareAsync(project, config.Options), "DOWNLOAD_IMAGE");
             await File.WriteAllBytesAsync(binPath, bin);
             receipt = JsonNode.Parse(receiptText)!;
-            var wrong = elf.ToArray(); wrong[18] = 40; wrong[19] = 0;
+            var wrong = elf.ToArray();
+            wrong[18] = 40;
+            wrong[19] = 0;
             await File.WriteAllBytesAsync(elfPath, wrong);
             receipt["images"]![0]!["symbolsSha256"] = Convert.ToHexString(SHA256.HashData(wrong));
             await File.WriteAllTextAsync(receiptPath, receipt.ToJsonString(JsonStore.Options));
@@ -122,14 +137,25 @@ internal static class Ag32TargetChecks
         }
         finally
         {
-            await File.WriteAllBytesAsync(binPath, bin); await File.WriteAllBytesAsync(elfPath, elf);
+            await File.WriteAllBytesAsync(binPath, bin);
+            await File.WriteAllBytesAsync(elfPath, elf);
             await File.WriteAllTextAsync(receiptPath, receiptText);
         }
     }
-    private static void Check(bool value, string message) { if (!value) throw new InvalidOperationException(message); }
+    private static void Check(bool value, string message)
+    {
+        if (!value)
+        {
+            throw new InvalidOperationException(message);
+        }
+    }
     private static async Task Reject(Func<Task> action, string code)
     {
-        try { await action(); } catch (StudioXException ex) when (ex.Code == code) { return; }
+        try
+        {
+            await action();
+        }
+        catch (StudioXException ex) when (ex.Code == code) { return; }
         throw new InvalidOperationException("Expected rejection " + code);
     }
 }

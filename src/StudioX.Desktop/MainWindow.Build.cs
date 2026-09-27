@@ -17,11 +17,38 @@ public partial class MainWindow
                 new Progress<string>(text => Log(text.TrimEnd('\r', '\n'))));
             // 等待 Progress 已投递的输出，避免工具尾部文本排到中文结论之后。
             await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Background);
-            try { await PublishBuildDiagnosticsAsync(directory, report.Log, revision, token); }
+            try
+            {
+                await PublishBuildDiagnosticsAsync(directory, report.Log, revision, token);
+            }
             catch (Exception ex) when (ex is not OperationCanceledException)
-            { ClearBuildDiagnostics(); Log("编辑器错误标记不可用，原始诊断请查看构建输出：" + ex); }
-            if (report.Success) await RefreshBuildMemoryAsync(directory, token);
-            else BuildMemory.SetMessage("编译失败，暂无本次占用数据。");
+            {
+                ClearBuildDiagnostics();
+                Log("编辑器错误标记不可用，原始诊断请查看构建输出：" + ex);
+            }
+            if (report.Success)
+            {
+                await RefreshBuildMemoryAsync(directory, token);
+                if (currentProjectManifest?.Espressif is not null &&
+                    string.Equals(projectDirectory, directory, StringComparison.OrdinalIgnoreCase))
+                {
+                    try
+                    {
+                        await services.Intelligence.StartAsync(directory, token);
+                        Log(services.Intelligence.StatusDescription);
+                        QueueOutlineRefresh(clear: true);
+                    }
+                    catch (Exception error) when (error is not OperationCanceledException)
+                    {
+                        // 固件构建已经成功；保留独立的索引故障诊断，不把它改写成编译失败。
+                        Log("SDK 索引刷新失败，原始编译结果仍有效：" + error);
+                    }
+                }
+            }
+            else
+            {
+                BuildMemory.SetMessage("编译失败，暂无本次占用数据。");
+            }
             return report;
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested)

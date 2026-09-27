@@ -10,7 +10,11 @@ public sealed class SerialPlotChart : FrameworkElement
 {
     public static readonly Brush[] ChannelBrushes = new[] { "#56C7FF", "#FFA85C", "#72E6AA", "#D59FFF", "#FF7D96", "#F4DF70", "#63E6E6", "#B1BBFF",
         "#FFCD9C", "#B5EC8B", "#FFA3EB", "#73A6FF", "#E1AC75", "#BECCD9", "#F38B6D", "#64DBBE" }.Select(s =>
-        { var b = (Brush)new BrushConverter().ConvertFromString(s)!; b.Freeze(); return b; }).ToArray();
+        {
+            var b = (Brush)new BrushConverter().ConvertFromString(s)!;
+            b.Freeze();
+            return b;
+        }).ToArray();
     private PlotSample[] samples = [];
     private int channels;
     private PlotRange time = new(0, 10), value = new(0, 4096);
@@ -21,19 +25,49 @@ public sealed class SerialPlotChart : FrameworkElement
     public bool AutoY { get; set; } = true;
     public event Action? ViewChanged;
     private Rect Area => new(82, 28, Math.Max(1, ActualWidth - 104), Math.Max(1, ActualHeight - 82));
-    public SerialPlotChart() { Focusable = true; ClipToBounds = true; Cursor = Cursors.Cross; }
-    public void SetSamples(PlotSample[] data, int count) { samples = data; channels = count; InvalidateVisual(); }
-    public void ResetView() { time = new(0, 10); value = new(0, 4096); Follow = AutoY = true; ViewChanged?.Invoke(); InvalidateVisual(); }
+    public SerialPlotChart()
+    {
+        Focusable = true;
+        ClipToBounds = true;
+        Cursor = Cursors.Cross;
+    }
+    public void SetSamples(PlotSample[] data, int count)
+    {
+        samples = data;
+        channels = count;
+        InvalidateVisual();
+    }
+    public void ResetView()
+    {
+        time = new(0, 10);
+        value = new(0, 4096);
+        Follow = AutoY = true;
+        ViewChanged?.Invoke();
+        InvalidateVisual();
+    }
     public void Zoom(bool yAxis, double factor, double anchor = .5)
     {
-        if (yAxis) { AutoY = false; value = ClampValue(value.Zoom(factor, anchor, 1e-12, 2e100)); }
-        else { time = time.Zoom(factor, anchor, .001, 3600000); Follow = false; }
-        ViewChanged?.Invoke(); InvalidateVisual();
+        if (yAxis)
+        {
+            AutoY = false;
+            value = ClampValue(value.Zoom(factor, anchor, 1e-12, 2e100));
+        }
+        else
+        {
+            time = time.Zoom(factor, anchor, .001, 3600000);
+            Follow = false;
+        }
+        ViewChanged?.Invoke();
+        InvalidateVisual();
     }
     public bool HandleWheel(int delta, bool control)
     {
-        if (!IsVisible) return false;
-        var p = Mouse.GetPosition(this); var a = Area;
+        if (!IsVisible)
+        {
+            return false;
+        }
+        var p = Mouse.GetPosition(this);
+        var a = Area;
         if (control)
         {
             var y = p.X < a.Left || Keyboard.Modifiers.HasFlag(ModifierKeys.Shift);
@@ -42,31 +76,61 @@ public sealed class SerialPlotChart : FrameworkElement
         else
         {
             var shift = -delta / 120.0 * time.Span * .1;
-            time = new(time.Start + shift, time.End + shift); Follow = false; ViewChanged?.Invoke(); InvalidateVisual();
+            time = new(time.Start + shift, time.End + shift);
+            Follow = false;
+            ViewChanged?.Invoke();
+            InvalidateVisual();
         }
         return true;
     }
     protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
     {
-        base.OnMouseLeftButtonDown(e); Focus();
-        if (e.ClickCount == 2) { ResetView(); e.Handled = true; return; }
-        dragStart = e.GetPosition(this); dragTime = time; dragValue = value; CaptureMouse(); e.Handled = true;
+        base.OnMouseLeftButtonDown(e);
+        Focus();
+        if (e.ClickCount == 2)
+        {
+            ResetView();
+            e.Handled = true;
+            return;
+        }
+        dragStart = e.GetPosition(this);
+        dragTime = time;
+        dragValue = value;
+        CaptureMouse();
+        e.Handled = true;
     }
-    protected override void OnMouseLeftButtonUp(MouseButtonEventArgs e) { dragStart = null; ReleaseMouseCapture(); base.OnMouseLeftButtonUp(e); }
-    protected override void OnLostMouseCapture(MouseEventArgs e) { dragStart = null; base.OnLostMouseCapture(e); }
+    protected override void OnMouseLeftButtonUp(MouseButtonEventArgs e)
+    {
+        dragStart = null;
+        ReleaseMouseCapture();
+        base.OnMouseLeftButtonUp(e);
+    }
+    protected override void OnLostMouseCapture(MouseEventArgs e)
+    {
+        dragStart = null;
+        base.OnLostMouseCapture(e);
+    }
     protected override void OnMouseMove(MouseEventArgs e)
     {
-        base.OnMouseMove(e); pointer = e.GetPosition(this);
+        base.OnMouseMove(e);
+        pointer = e.GetPosition(this);
         if (dragStart is Point start)
         {
             var dx = (pointer.Value.X - start.X) / Area.Width * dragTime.Span;
             var dy = (pointer.Value.Y - start.Y) / Area.Height * dragValue.Span;
-            time = new(dragTime.Start - dx, dragTime.End - dx); value = ClampValue(new(dragValue.Start + dy, dragValue.End + dy));
-            Follow = AutoY = false; ViewChanged?.Invoke();
+            time = new(dragTime.Start - dx, dragTime.End - dx);
+            value = ClampValue(new(dragValue.Start + dy, dragValue.End + dy));
+            Follow = AutoY = false;
+            ViewChanged?.Invoke();
         }
         InvalidateVisual();
     }
-    protected override void OnMouseLeave(MouseEventArgs e) { pointer = null; InvalidateVisual(); base.OnMouseLeave(e); }
+    protected override void OnMouseLeave(MouseEventArgs e)
+    {
+        pointer = null;
+        InvalidateVisual();
+        base.OnMouseLeave(e);
+    }
     private static PlotRange ClampValue(PlotRange range)
     {
         var span = Math.Min(range.Span, 2.2e100);
@@ -83,7 +147,10 @@ public sealed class SerialPlotChart : FrameworkElement
     private static string Number(double n) => n.ToString(Math.Abs(n) is >= 1e6 or > 0 and < .001 ? "0.###E+0" : "0.###", CultureInfo.InvariantCulture);
     private static string Tick(double n, double step)
     {
-        if (Math.Abs(n) is >= 1e6 or > 0 and < .0001) return n.ToString("0.######E+0", CultureInfo.InvariantCulture);
+        if (Math.Abs(n) is >= 1e6 or > 0 and < .0001)
+        {
+            return n.ToString("0.######E+0", CultureInfo.InvariantCulture);
+        }
         var digits = (int)Math.Clamp(Math.Ceiling(-Math.Log10(step)) + 1, 0, 9);
         return n.ToString(digits == 0 ? "0" : "0." + new string('#', digits), CultureInfo.InvariantCulture);
     }
@@ -91,19 +158,36 @@ public sealed class SerialPlotChart : FrameworkElement
     {
         base.OnRender(dc);
         dc.DrawRectangle(Resource("EditorSurface"), null, new Rect(RenderSize));
-        if (ActualWidth < 150 || ActualHeight < 120) return;
-        var a = Area; var muted = Resource("Muted"); var text = Resource("Text");
+        if (ActualWidth < 150 || ActualHeight < 120)
+        {
+            return;
+        }
+        var a = Area;
+        var muted = Resource("Muted");
+        var text = Resource("Text");
         if (Follow && samples.Length > 0)
         {
-            var end = Math.Max(time.Span, samples[^1].Seconds); time = new(end - time.Span, end);
+            var end = Math.Max(time.Span, samples[^1].Seconds);
+            time = new(end - time.Span, end);
         }
         if (AutoY)
         {
-            var low = double.PositiveInfinity; var high = double.NegativeInfinity;
+            var low = double.PositiveInfinity;
+            var high = double.NegativeInfinity;
             foreach (var s in samples)
             {
-                if (s.Seconds < time.Start || s.Seconds > time.End) continue;
-                for (var c = 0; c < channels; c++) if (VisibleChannels[c]) { low = Math.Min(low, s.Values[c]); high = Math.Max(high, s.Values[c]); }
+                if (s.Seconds < time.Start || s.Seconds > time.End)
+                {
+                    continue;
+                }
+                for (var c = 0; c < channels; c++)
+                {
+                    if (VisibleChannels[c])
+                    {
+                        low = Math.Min(low, s.Values[c]);
+                        high = Math.Max(high, s.Values[c]);
+                    }
+                }
             }
             if (double.IsFinite(low))
             {
@@ -133,7 +217,10 @@ public sealed class SerialPlotChart : FrameworkElement
         dc.PushClip(new RectangleGeometry(a));
         for (var c = 0; c < channels; c++)
         {
-            if (!VisibleChannels[c]) continue;
+            if (!VisibleChannels[c])
+            {
+                continue;
+            }
             var points = PlotGeometry.Reduce(samples, c, time, (int)a.Width);
             var geometry = new StreamGeometry();
             using (var path = geometry.Open())
@@ -142,14 +229,26 @@ public sealed class SerialPlotChart : FrameworkElement
                 foreach (var p in points)
                 {
                     var point = new Point(X(p.Seconds), Y(p.Value));
-                    if (previous != p.Segment) path.BeginFigure(point, false, false);
-                    else path.LineTo(point, true, false);
+                    if (previous != p.Segment)
+                    {
+                        path.BeginFigure(point, false, false);
+                    }
+                    else
+                    {
+                        path.LineTo(point, true, false);
+                    }
                     previous = p.Segment;
                 }
             }
-            geometry.Freeze(); dc.DrawGeometry(null, new Pen(ChannelBrushes[c], 1.5), geometry);
+            geometry.Freeze();
+            dc.DrawGeometry(null, new Pen(ChannelBrushes[c], 1.5), geometry);
             if (points.Count is > 0 and < 100)
-                foreach (var p in points) dc.DrawEllipse(ChannelBrushes[c], null, new(X(p.Seconds), Y(p.Value)), 2, 2);
+            {
+                foreach (var p in points)
+                {
+                    dc.DrawEllipse(ChannelBrushes[c], null, new(X(p.Seconds), Y(p.Value)), 2, 2);
+                }
+            }
         }
         if (pointer is Point cursor && a.Contains(cursor) && samples.Length > 0)
         {
@@ -161,6 +260,9 @@ public sealed class SerialPlotChart : FrameworkElement
             Text(dc, label, new(a.Left + 13, a.Top + 11), text);
         }
         dc.Pop();
-        if (samples.Length == 0) Text(dc, "等待数值数据，例如 4095,1024 + 换行", new(a.Left + 24, a.Top + 28), muted, 14);
+        if (samples.Length == 0)
+        {
+            Text(dc, "等待数值数据，例如 4095,1024 + 换行", new(a.Left + 24, a.Top + 28), muted, 14);
+        }
     }
 }

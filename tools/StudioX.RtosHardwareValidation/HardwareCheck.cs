@@ -23,10 +23,14 @@ internal sealed class HardwareCheck
         this.runtime = FullPath(runtime);
         this.output = FullPath(output);
         if (Within(this.output, this.project) || Within(this.output, this.runtime))
+        {
             throw new ArgumentException("Validation output must be outside the firmware project and tool runtime.");
+        }
         symbols = objectSymbols?.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries) ?? [];
         if (symbols.Any(symbol => !FreeRtosInspector.IsObjectSymbol(symbol)))
+        {
             throw new ArgumentException("Object symbols must be plain C identifiers or dot-separated member paths.");
+        }
     }
 
     public async Task<int> RunAsync(bool attach)
@@ -36,7 +40,10 @@ internal sealed class HardwareCheck
         var plan = await PrepareAsync(services);
         await JsonStore.WriteAsync(Path.Combine(output, "plan.json"), plan);
         Console.WriteLine($"Local preparation ready={plan.Ready}; {Path.Combine(output, "plan.json")}");
-        if (!attach || !plan.Ready) return plan.Ready ? 0 : 2;
+        if (!attach || !plan.Ready)
+        {
+            return plan.Ready ? 0 : 2;
+        }
 
         // 准备操作不会授予硬件权限；只有调用者显式选择 --attach 后才构造有限授权器。
         var authorizer = new ValidationAuthorizer(project);
@@ -54,35 +61,65 @@ internal sealed class HardwareCheck
         {
             await services.Debugger.OpenProjectAsync(project);
             if (services.Debugger.Breakpoints.Count != 0)
+            {
                 throw new StudioXException("RTOS_BREAKPOINTS", "验收数据目录含既有断点，拒绝将其绑定到目标；请选择新的输出目录。");
+            }
             var tools = await session.ListToolsAsync();
             if (!tools.Any(tool => tool.Name == "debug_rtos_snapshot"))
+            {
                 throw new StudioXException("RTOS_MCP", "真实 MCP 握手未发现 debug_rtos_snapshot。");
+            }
             observations["toolDiscovered"] = true;
-            observations["attach"] = await CallAsync(session, "debug_start_hardware", new { });
+            observations["attach"] = await CallAsync(session, "debug_start_hardware", new
+            {
+            });
             sessionLogPath = services.Debugger.SessionLogPath;
             var verification = await ReadImageVerificationEvidenceAsync(sessionLogPath ?? throw new StudioXException("RTOS_IMAGE_VERIFY", "附加后没有原始会话日志，不能核对映像匹配证据。"));
             observations["imageVerificationEvidence"] = verification;
             imageEvidenceVerified = verification.Accepted;
             if (!imageEvidenceVerified)
+            {
                 throw new StudioXException("RTOS_IMAGE_VERIFY", "原始会话日志存在实际映像差异、USB 通信失败或没有 positive verified 字节输出，拒绝读取 RTOS 快照。");
-            observations["initialStatus"] = await CallAsync(session, "debug_status", new { });
-            var before = await CallAsync(session, "debug_rtos_snapshot", new { objectSymbols = symbols });
+            }
+            observations["initialStatus"] = await CallAsync(session, "debug_status", new
+            {
+            });
+            var before = await CallAsync(session, "debug_rtos_snapshot", new
+            {
+                objectSymbols = symbols
+            });
             observations["initialRtos"] = before;
             RequireHardware(before);
             observations["kernelAvailable"] = before.GetProperty("snapshot").GetProperty("isAvailable").GetBoolean();
             ValidateSnapshot(before, "initialRtosAcceptance", plan, observations);
-            observations["continue"] = await CallAsync(session, "debug_control", new { action = "continue" });
+            observations["continue"] = await CallAsync(session, "debug_control", new
+            {
+                action = "continue"
+            });
             await Task.Delay(200);
-            observations["pause"] = await CallAsync(session, "debug_control", new { action = "pause" });
-            observations["wait"] = await CallAsync(session, "debug_wait", new { expectedState = "Stopped", timeoutMs = 10_000 });
+            observations["pause"] = await CallAsync(session, "debug_control", new
+            {
+                action = "pause"
+            });
+            observations["wait"] = await CallAsync(session, "debug_wait", new
+            {
+                expectedState = "Stopped",
+                timeoutMs = 10_000
+            });
             if (services.Debugger.State != DebugState.Stopped)
+            {
                 throw new StudioXException("RTOS_STOP", "暂停请求未得到 Stopped 状态，不能读取后续内核快照。");
-            var after = await CallAsync(session, "debug_rtos_snapshot", new { objectSymbols = symbols });
+            }
+            var after = await CallAsync(session, "debug_rtos_snapshot", new
+            {
+                objectSymbols = symbols
+            });
             observations["secondRtos"] = after;
             RequireHardware(after);
             ValidateSnapshot(after, "secondRtosAcceptance", plan, observations);
-            observations["finalStatusBeforeStop"] = await CallAsync(session, "debug_status", new { });
+            observations["finalStatusBeforeStop"] = await CallAsync(session, "debug_status", new
+            {
+            });
             var tickBefore = Tick(before);
             var tickAfter = Tick(after);
             observations["tickObservation"] = new
@@ -102,15 +139,26 @@ internal sealed class HardwareCheck
             try
             {
                 if (services.Debugger.IsActive || services.Debugger.State == DebugState.Faulted)
-                    observations["stop"] = await CallAsync(session, "debug_control", new { action = "stop" });
-                else await services.Debugger.StopAsync();
+                {
+                    observations["stop"] = await CallAsync(session, "debug_control", new
+                    {
+                        action = "stop"
+                    });
+                }
+                else
+                {
+                    await services.Debugger.StopAsync();
+                }
                 stopConfirmed = services.Debugger.State == DebugState.Disconnected;
             }
             catch (Exception ex)
             {
                 errors.Add(ex);
                 // 保留第一次清理异常，同时尽力释放本次会话资源；第二次失败也必须记录。
-                try { await services.Debugger.StopAsync(); }
+                try
+                {
+                    await services.Debugger.StopAsync();
+                }
                 catch (Exception retry) { errors.Add(retry); }
             }
             try
@@ -121,19 +169,29 @@ internal sealed class HardwareCheck
             catch (Exception ex)
             {
                 observations["probeLeaseDiagnostic"] = ex.Message;
-                if (observations.ContainsKey("attach")) errors.Add(new StudioXException("RTOS_PROBE_LEASE", "已附加会话结束后探针租约仍不可用，不能确认探针释放。", ex));
+                if (observations.ContainsKey("attach"))
+                {
+                    errors.Add(new StudioXException("RTOS_PROBE_LEASE", "已附加会话结束后探针租约仍不可用，不能确认探针释放。", ex));
+                }
             }
             try
             {
                 targetRestoredRunning = sessionLogPath is not null && await ReadDetachedRunningMarkerAsync(sessionLogPath);
                 observations["detachedRunningMarkerObserved"] = targetRestoredRunning;
                 if (sessionLogPath is not null)
+                {
                     observations["sessionLogRelativePath"] = Path.GetRelativePath(project, sessionLogPath).Replace('\\', '/');
+                }
                 if (observations.ContainsKey("attach") && !targetRestoredRunning)
+                {
                     errors.Add(new StudioXException("RTOS_RESTORE", "原始 OpenOCD 会话日志没有 STUDIOX_DETACHED_RUNNING 输出，不能确认目标已恢复运行。"));
+                }
             }
             catch (Exception ex) { errors.Add(ex); }
-            if (!stopConfirmed) errors.Add(new StudioXException("RTOS_CLEANUP", "未确认调试器已结束，不能把本次验收标记成功。"));
+            if (!stopConfirmed)
+            {
+                errors.Add(new StudioXException("RTOS_CLEANUP", "未确认调试器已结束，不能把本次验收标记成功。"));
+            }
             services.Debugger.Output -= trace.Add;
             await File.WriteAllTextAsync(Path.Combine(output, "debug-trace.log"), trace.Text);
             await JsonStore.WriteAsync(Path.Combine(output, "result.json"), new
@@ -155,7 +213,10 @@ internal sealed class HardwareCheck
                 evidence = "显式 --attach 的 MCP/GDB 观测；板上固件匹配须有原始日志 positive verified 且无实际 diff/USB 失败。快照一致性单独验收。未编译、下载、擦除、复位、写内存或创建断点。"
             });
         }
-        if (errors.Count > 0) throw new AggregateException("RTOS hardware observation failed; inspect result.json and debug-trace.log.", errors);
+        if (errors.Count > 0)
+        {
+            throw new AggregateException("RTOS hardware observation failed; inspect result.json and debug-trace.log.", errors);
+        }
         var available = observations.GetValueOrDefault("kernelAvailable") is true;
         Console.WriteLine($"Hardware observation recorded; kernelAvailable={available}, cleanupConfirmed={stopConfirmed}, restoredRunning={targetRestoredRunning}, leaseAvailable={leaseAvailable}. Inspect partial fields and tick observations in result.json.");
         return stopConfirmed && targetRestoredRunning && leaseAvailable && available ? 0 : 2;
@@ -186,11 +247,15 @@ internal sealed class HardwareCheck
                 probe == "wch-link" && WchDebugTarget.Find(configuration.Device) is not null;
             // 精确型号白名单与领域配置验证同时成立，不能把支持其他 WCH 型号扩大为本次 RTOS 板卡验收。
             if (manifest.DeviceId != device || !stm32 && !ch32v307)
+            {
                 throw new StudioXException("RTOS_TARGET", "此验收工具只允许 STM32F407ZG / ST-Link，或 CH32V307VCT6、RCT6、WCU6 / WCH-Link 的匹配工程配置。");
+            }
             _ = OpenOcdDebugPlanner.ResolveProbe(configuration);
             var settings = await ProjectBuildSettings.ReadAsync(project);
             if (settings.DebugInfo == CompilerDebugInfo.None)
+            {
                 throw new StudioXException("DEBUG_SYMBOLS", "现有构建设置为 -g0，不能附加源码/RTOS 调试。");
+            }
             // Preview 校验工具集、构建凭据、源码摘要和唯一映像，不创建下载目录或运行工具。
             var preview = await services.Downloads.PreviewAsync(project, configuration.Options);
             imageSha256 = preview.Sha256;
@@ -201,17 +266,23 @@ internal sealed class HardwareCheck
             var symbolPath = image.GetProperty("symbolsPath").GetString();
             var expectedHash = image.GetProperty("symbolsSha256").GetString();
             if (string.IsNullOrEmpty(symbolPath) || string.IsNullOrEmpty(expectedHash))
+            {
                 throw new StudioXException("DEBUG_SYMBOLS", "现有构建凭据缺少 ELF 路径或 SHA-256。");
+            }
             elf = PathBoundary.Resolve(project, symbolPath);
             await using var stream = File.OpenRead(elf);
             elfSha256 = Convert.ToHexString(await SHA256.HashDataAsync(stream));
             if (!elfSha256.Equals(expectedHash, StringComparison.OrdinalIgnoreCase))
+            {
                 throw new StudioXException("DEBUG_SYMBOLS", "ELF 内容与构建凭据不一致。");
+            }
             diagnostics.Add("本地工具锁、源码摘要和映像/ELF哈希已校验；没有执行工具、连接探针或证明板上固件一致。");
             ready = true;
         }
         catch (Exception ex) when (ex is StudioXException or IOException or UnauthorizedAccessException or JsonException or KeyNotFoundException)
-        { diagnostics.Add(ex.GetType().Name + ": " + ex.Message); }
+        {
+            diagnostics.Add(ex.GetType().Name + ": " + ex.Message);
+        }
         return new(ready,
             project, runtime, manifest, device, probe, speedKhz, serialConfigured, toolFingerprint, sourceStamp,
             elf, elfSha256, imageSha256, ramBytes, symbols, diagnostics.ToArray(),
@@ -223,14 +294,18 @@ internal sealed class HardwareCheck
     {
         var result = JsonSerializer.Deserialize<JsonElement>(await session.CallToolAsync(tool, JsonSerializer.Serialize(arguments)));
         if (result.TryGetProperty("error", out var error))
+        {
             throw new StudioXException(result.TryGetProperty("code", out var code) ? code.GetString() ?? "RTOS_MCP" : "RTOS_MCP", error.GetString() ?? "MCP tool failed.");
+        }
         return result;
     }
 
     private static void RequireHardware(JsonElement response)
     {
         if (!response.GetProperty("hardware").GetBoolean() || response.GetProperty("simulated").GetBoolean())
+        {
             throw new StudioXException("RTOS_EVIDENCE", "此硬件验收不能接收模拟会话的数据。");
+        }
     }
 
     private static ulong? Tick(JsonElement response) => response.GetProperty("snapshot").GetProperty("tickCount") is var value &&
@@ -243,7 +318,9 @@ internal sealed class HardwareCheck
         var report = SnapshotAcceptance.Validate(snapshot, (ulong)(plan.RamBytes ?? 0));
         observations[stage] = report;
         if (!report.Accepted)
+        {
             throw new StudioXException("RTOS_SNAPSHOT_INVALID", "内核快照未满足验收一致性：" + string.Join("；", report.Errors));
+        }
     }
 
     private async Task<ImageVerificationEvidence> ReadImageVerificationEvidenceAsync(string logPath)
@@ -254,7 +331,10 @@ internal sealed class HardwareCheck
             4096, FileOptions.Asynchronous | FileOptions.SequentialScan);
         using var reader = new StreamReader(stream);
         var evidence = new ImageVerificationEvidence();
-        while (await reader.ReadLineAsync() is { } line) evidence.AddLogLine(line);
+        while (await reader.ReadLineAsync() is { } line)
+        {
+            evidence.AddLogLine(line);
+        }
         return evidence;
     }
 
@@ -270,9 +350,15 @@ internal sealed class HardwareCheck
             // 仅认可 OpenOCD 实际输出，不能把启动脚本内的 echo 命令当成恢复证明。
             const string prefix = " OpenOCD < ";
             var marker = line.IndexOf(prefix, StringComparison.Ordinal);
-            if (marker < 0) continue;
+            if (marker < 0)
+            {
+                continue;
+            }
             var payload = line[(marker + prefix.Length)..].Trim();
-            if (payload == "STUDIOX_DETACHED_RUNNING" || payload == "Info : STUDIOX_DETACHED_RUNNING") return true;
+            if (payload == "STUDIOX_DETACHED_RUNNING" || payload == "Info : STUDIOX_DETACHED_RUNNING")
+            {
+                return true;
+            }
         }
         return false;
     }
@@ -297,7 +383,12 @@ internal sealed class ValidationAuthorizer(string project) : IStudioXMcpAuthoriz
         var allowed = bound && (request.Permission == StudioXMcpPermission.HardwareConnect && request.Tool == "debug_start_hardware" ||
             request.Permission == StudioXMcpPermission.DebugControl && request.Tool == "debug_control" &&
             new[] { "continue", "pause", "stop" }.Any(action => request.Summary.EndsWith("执行 " + action + "。", StringComparison.Ordinal)));
-        Requests.Add(new { request.Tool, permission = request.Permission.ToString(), approved = allowed });
+        Requests.Add(new
+        {
+            request.Tool,
+            permission = request.Permission.ToString(),
+            approved = allowed
+        });
         return Task.FromResult(allowed);
     }
 }
@@ -307,19 +398,37 @@ internal sealed class BoundedTrace
     private const int MaximumCharacters = 1024 * 1024;
     private readonly StringBuilder builder = new();
     private readonly object sync = new();
-    public int DroppedLines { get; private set; }
+    public int DroppedLines
+    {
+        get; private set;
+    }
     public void Add(string line)
     {
         // 栈变量并非 RTOS 验收证据，不记录其原值；同样过滤可能包含凭据的命名行。
         if (line.Contains("variables=[", StringComparison.Ordinal) || line.Contains("args=[", StringComparison.Ordinal) ||
             new[] { "api_key", "apikey", "authorization", "password", "secret", "token", "bearer ", "sk-" }
                 .Any(marker => line.Contains(marker, StringComparison.OrdinalIgnoreCase)))
+        {
             line = "[调试输出行已过滤：局部变量或可能的凭据内容]";
+        }
         lock (sync)
         {
-            if (builder.Length + line.Length + Environment.NewLine.Length > MaximumCharacters) { DroppedLines++; return; }
+            if (builder.Length + line.Length + Environment.NewLine.Length > MaximumCharacters)
+            {
+                DroppedLines++;
+                return;
+            }
             builder.AppendLine(line);
         }
     }
-    public string Text { get { lock (sync) return builder + $"\n[omitted-lines={DroppedLines}]\n"; } }
+    public string Text
+    {
+        get
+        {
+            lock (sync)
+            {
+                return builder + $"\n[omitted-lines={DroppedLines}]\n";
+            }
+        }
+    }
 }

@@ -23,6 +23,7 @@ public partial class App : System.Windows.Application
         var completionPreview = e.Args is ["--preview-completion", _, _];
         var cmakePreview = e.Args is ["--preview-cmake", _, _];
         var documentsPreview = e.Args is ["--preview-documents", _, _];
+        var vePreview = e.Args is ["--preview-ve", _, _, _];
         var navigationPreview = e.Args is ["--preview-navigation", _, _];
         var explorerPreview = e.Args is ["--preview-explorer", _, _];
         var buildPreview = e.Args is ["--preview-build", _, _];
@@ -32,6 +33,8 @@ public partial class App : System.Windows.Application
         var projectPreview = e.Args is ["--preview-project", _, _];
         var cubeMxPreview = e.Args is ["--preview-cubemx", _, _];
         var downloadPreview = e.Args is ["--preview-download", _, _];
+        var espressifPreview = e.Args is ["--preview-espressif", _, _];
+        var espressifModulePreview = e.Args is ["--preview-espressif-module", _, _];
         var debugPreview = e.Args is ["--preview-debug", _, _];
         var rtosPreview = e.Args is ["--preview-rtos", _, _];
         var packCatalogPreview = e.Args is ["--preview-pack-catalog", _, _, _];
@@ -39,42 +42,137 @@ public partial class App : System.Windows.Application
         var importPerformancePreview = e.Args is ["--preview-import-performance", _, _];
         var stm32Preview = e.Args is ["--preview-stm32", _, _] or ["--preview-stm32", _, _, _];
         var rp2350Preview = e.Args is ["--preview-rp2350", _, _];
-        var anyPreview = preview || windowLayoutPreview || editorPreview || completionPreview || cmakePreview || documentsPreview || navigationPreview || explorerPreview || buildPreview || buildMemoryPreview || editingPreview || bracketsPreview || stm32Preview || rp2350Preview || projectPreview || cubeMxPreview || importPerformancePreview || downloadPreview || debugPreview || rtosPreview || packCatalogPreview || breakpointsPreview;
+        var lvglPreview = e.Args is ["--preview-lvgl-ui", _, _];
+        var lvglSetupPreview = e.Args is ["--preview-lvgl-setup", _, _, _, _];
+        var anyPreview = preview || windowLayoutPreview || editorPreview || completionPreview || cmakePreview || documentsPreview || vePreview || navigationPreview || explorerPreview || buildPreview || buildMemoryPreview || editingPreview || bracketsPreview || stm32Preview || rp2350Preview || projectPreview || cubeMxPreview || importPerformancePreview || downloadPreview || espressifPreview || espressifModulePreview || debugPreview || rtosPreview || packCatalogPreview || breakpointsPreview || lvglPreview || lvglSetupPreview;
         var data = (showDebugDemo || showBreakpointsDemo) && e.Args.Length == 3 ? Path.GetFullPath(e.Args[2]) : smoke || anyPreview ? Path.Combine(Path.GetFullPath(e.Args[1]), "user-data") :
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MCUStudioX");
         var services = new WorkbenchService(Path.Combine(AppContext.BaseDirectory, "runtime"), data);
         var window = new MainWindow(services);
         MainWindow = window;
-        if (smoke || anyPreview) { window.ShowActivated = false; window.ShowInTaskbar = false; window.WindowStartupLocation = WindowStartupLocation.Manual; window.Left = -20000; }
+        if (smoke || anyPreview)
+        {
+            window.ShowActivated = false;
+            window.ShowInTaskbar = false;
+            window.WindowStartupLocation = WindowStartupLocation.Manual;
+            window.Left = -20000;
+        }
         window.Show();
         await window.InitializeAsync();
         if (anyPreview)
         {
-            var directory = Path.GetFullPath(e.Args[1]); Directory.CreateDirectory(directory);
+            var directory = Path.GetFullPath(e.Args[1]);
+            Directory.CreateDirectory(directory);
             try
             {
-                if (windowLayoutPreview) await window.RenderWindowLayoutPreviewAsync(directory);
-                else if (buildMemoryPreview) await window.RenderBuildMemoryPreviewAsync(directory, Path.GetFullPath(e.Args[2]));
-                else if (editingPreview) await window.RenderEditingPreviewAsync(directory, Path.GetFullPath(e.Args[2]));
-                else if (bracketsPreview) await window.RenderBracketsPreviewAsync(directory, Path.GetFullPath(e.Args[2]));
-                else if (debugPreview) await window.RenderDebugPreviewAsync(directory, Path.GetFullPath(e.Args[2]));
-                else if (rtosPreview) await window.RenderFreeRtosPreviewAsync(directory, Path.GetFullPath(e.Args[2]));
-                else if (packCatalogPreview) await window.RenderPackCatalogPreviewAsync(directory, Path.GetFullPath(e.Args[2]), Path.GetFullPath(e.Args[3]));
-                else if (breakpointsPreview) await window.RenderBreakpointsPreviewAsync(directory, Path.GetFullPath(e.Args[2]));
-                else if (downloadPreview) await window.RenderDownloadPreviewAsync(directory, Path.GetFullPath(e.Args[2]));
-                else if (cubeMxPreview) await window.RenderCubeMxPreviewAsync(directory, Path.GetFullPath(e.Args[2]));
-                else if (importPerformancePreview) await window.MeasureImportPerformanceAsync(directory, Path.GetFullPath(e.Args[2]));
-                else if (projectPreview) await window.RenderProjectPreviewAsync(directory, Path.GetFullPath(e.Args[2]));
-                else if (stm32Preview) await window.RenderStm32PreviewAsync(directory, Path.GetFullPath(e.Args[2]), e.Args.Length == 4 ? Path.GetFullPath(e.Args[3]) : null);
-                else if (rp2350Preview) await window.RenderRp2350PreviewAsync(directory, Path.GetFullPath(e.Args[2]));
-                else if (buildPreview) await window.RenderBuildPreviewAsync(directory, Path.GetFullPath(e.Args[2]));
-                else if (explorerPreview) await window.RenderExplorerPreviewAsync(directory, Path.GetFullPath(e.Args[2]));
-                else if (navigationPreview) await window.RenderNavigationPreviewAsync(directory, Path.GetFullPath(e.Args[2]));
-                else if (documentsPreview) await window.RenderDocumentsPreviewAsync(directory, Path.GetFullPath(e.Args[2]));
-                else if (cmakePreview) await window.RenderCMakePreviewAsync(directory, Path.GetFullPath(e.Args[2]));
-                else if (completionPreview) await window.RenderCompletionPreviewAsync(directory, Path.GetFullPath(e.Args[2]));
-                else if (editorPreview) await window.RenderEditorPreviewAsync(directory, Path.GetFullPath(e.Args[2]));
-                else await window.RenderPreviewAsync(directory);
+                if (espressifModulePreview)
+                {
+                    await window.RenderEspressifModulePreviewAsync(directory, Path.GetFullPath(e.Args[2]));
+                }
+                else if (espressifPreview)
+                {
+                    await window.RenderEspressifPreviewAsync(directory, Path.GetFullPath(e.Args[2]));
+                }
+                else if (vePreview)
+                {
+                    await window.RenderVePreviewAsync(directory, Path.GetFullPath(e.Args[2]), e.Args[3]);
+                }
+                else if (windowLayoutPreview)
+                {
+                    await window.RenderWindowLayoutPreviewAsync(directory);
+                }
+                else if (lvglSetupPreview)
+                {
+                    await window.RenderLvglSetupPreviewAsync(directory, Path.GetFullPath(e.Args[2]), Path.GetFullPath(e.Args[3]), Path.GetFullPath(e.Args[4]));
+                }
+                else if (lvglPreview)
+                {
+                    await window.RenderLvglPreviewAsync(directory, Path.GetFullPath(e.Args[2]));
+                }
+                else if (buildMemoryPreview)
+                {
+                    await window.RenderBuildMemoryPreviewAsync(directory, Path.GetFullPath(e.Args[2]));
+                }
+                else if (editingPreview)
+                {
+                    await window.RenderEditingPreviewAsync(directory, Path.GetFullPath(e.Args[2]));
+                }
+                else if (bracketsPreview)
+                {
+                    await window.RenderBracketsPreviewAsync(directory, Path.GetFullPath(e.Args[2]));
+                }
+                else if (debugPreview)
+                {
+                    await window.RenderDebugPreviewAsync(directory, Path.GetFullPath(e.Args[2]));
+                }
+                else if (rtosPreview)
+                {
+                    await window.RenderFreeRtosPreviewAsync(directory, Path.GetFullPath(e.Args[2]));
+                }
+                else if (packCatalogPreview)
+                {
+                    await window.RenderPackCatalogPreviewAsync(directory, Path.GetFullPath(e.Args[2]), Path.GetFullPath(e.Args[3]));
+                }
+                else if (breakpointsPreview)
+                {
+                    await window.RenderBreakpointsPreviewAsync(directory, Path.GetFullPath(e.Args[2]));
+                }
+                else if (downloadPreview)
+                {
+                    await window.RenderDownloadPreviewAsync(directory, Path.GetFullPath(e.Args[2]));
+                }
+                else if (cubeMxPreview)
+                {
+                    await window.RenderCubeMxPreviewAsync(directory, Path.GetFullPath(e.Args[2]));
+                }
+                else if (importPerformancePreview)
+                {
+                    await window.MeasureImportPerformanceAsync(directory, Path.GetFullPath(e.Args[2]));
+                }
+                else if (projectPreview)
+                {
+                    await window.RenderProjectPreviewAsync(directory, Path.GetFullPath(e.Args[2]));
+                }
+                else if (stm32Preview)
+                {
+                    await window.RenderStm32PreviewAsync(directory, Path.GetFullPath(e.Args[2]), e.Args.Length == 4 ? Path.GetFullPath(e.Args[3]) : null);
+                }
+                else if (rp2350Preview)
+                {
+                    await window.RenderRp2350PreviewAsync(directory, Path.GetFullPath(e.Args[2]));
+                }
+                else if (buildPreview)
+                {
+                    await window.RenderBuildPreviewAsync(directory, Path.GetFullPath(e.Args[2]));
+                }
+                else if (explorerPreview)
+                {
+                    await window.RenderExplorerPreviewAsync(directory, Path.GetFullPath(e.Args[2]));
+                }
+                else if (navigationPreview)
+                {
+                    await window.RenderNavigationPreviewAsync(directory, Path.GetFullPath(e.Args[2]));
+                }
+                else if (documentsPreview)
+                {
+                    await window.RenderDocumentsPreviewAsync(directory, Path.GetFullPath(e.Args[2]));
+                }
+                else if (cmakePreview)
+                {
+                    await window.RenderCMakePreviewAsync(directory, Path.GetFullPath(e.Args[2]));
+                }
+                else if (completionPreview)
+                {
+                    await window.RenderCompletionPreviewAsync(directory, Path.GetFullPath(e.Args[2]));
+                }
+                else if (editorPreview)
+                {
+                    await window.RenderEditorPreviewAsync(directory, Path.GetFullPath(e.Args[2]));
+                }
+                else
+                {
+                    await window.RenderPreviewAsync(directory);
+                }
             }
             catch (Exception ex) { await File.WriteAllTextAsync(Path.Combine(directory, "error.txt"), ex.ToString()); Environment.ExitCode = 1; }
             finally { window.Close(); }
@@ -84,24 +182,65 @@ public partial class App : System.Windows.Application
         {
             if (showDebugDemo || showBreakpointsDemo)
             {
-                if (showBreakpointsDemo) await window.ShowSpecialBreakpointDemoAsync(e.Args[1]);
-                else await window.ShowDebugDemoAsync(e.Args[1]);
+                if (showBreakpointsDemo)
+                {
+                    await window.ShowSpecialBreakpointDemoAsync(e.Args[1]);
+                }
+                else
+                {
+                    await window.ShowDebugDemoAsync(e.Args[1]);
+                }
                 if (services.Debugger.State == StudioX.Engine.Debugging.DebugState.Stopped)
-                    await StudioX.Foundation.JsonStore.WriteAsync(Path.Combine(data, "debug-demo-ready.json"), new { processId = Environment.ProcessId, project = services.Debugger.ProjectDirectory, state = "Stopped", mode = "offline" });
+                {
+                    await StudioX.Foundation.JsonStore.WriteAsync(Path.Combine(data, "debug-demo-ready.json"), new
+                    {
+                        processId = Environment.ProcessId,
+                        project = services.Debugger.ProjectDirectory,
+                        state = "Stopped",
+                        mode = "offline"
+                    });
+                }
                 return;
             }
-            if (e.Args is ["--new-project"]) await window.ShowNewProjectAsync();
-            else if (e.Args is ["--import-cubemx"]) await window.ShowCubeMxImportAsync();
-            else if (e.Args is ["--import-cubemx", var cubeDirectory]) await window.ShowCubeMxImportAsync(cubeDirectory);
-            else if (e.Args is ["--new-project", var packId, var deviceId]) await window.ShowNewProjectAsync(packId, deviceId);
-            else if (e.Args is ["--open", var project]) await window.OpenFromCommandLineAsync(project);
-            else if (e.Args is ["--open", var fileProject, "--file", var relativePath]) await window.OpenFromCommandLineAsync(fileProject, relativePath);
-            else if (e.Args.Length > 3 && e.Args[0] == "--open" && e.Args[2] == "--files") await window.OpenFromCommandLineAsync(e.Args[1], e.Args[3..]);
+            if (e.Args is ["--new-project"])
+            {
+                await window.ShowNewProjectAsync();
+            }
+            else if (e.Args is ["--import-cubemx"])
+            {
+                await window.ShowCubeMxImportAsync();
+            }
+            else if (e.Args is ["--import-cubemx", var cubeDirectory])
+            {
+                await window.ShowCubeMxImportAsync(cubeDirectory);
+            }
+            else if (e.Args is ["--new-project", var packId, var deviceId])
+            {
+                await window.ShowNewProjectAsync(packId, deviceId);
+            }
+            else if (e.Args is ["--open", var lvglProject, "--lvgl-preview"])
+            {
+                await window.OpenFromCommandLineAsync(lvglProject);
+                await window.ShowLvglPreviewAsync(start: true);
+            }
+            else if (e.Args is ["--open", var project])
+            {
+                await window.OpenFromCommandLineAsync(project);
+            }
+            else if (e.Args is ["--open", var fileProject, "--file", var relativePath])
+            {
+                await window.OpenFromCommandLineAsync(fileProject, relativePath);
+            }
+            else if (e.Args.Length > 3 && e.Args[0] == "--open" && e.Args[2] == "--files")
+            {
+                await window.OpenFromCommandLineAsync(e.Args[1], e.Args[3..]);
+            }
             return;
         }
         try
         {
-            var output = Path.GetFullPath(e.Args[1]); Directory.CreateDirectory(output);
+            var output = Path.GetFullPath(e.Args[1]);
+            Directory.CreateDirectory(output);
             await window.ExerciseSimulationAsync();
             foreach (var theme in new[] { ThemeService.Dark, ThemeService.Light })
             {
@@ -109,8 +248,10 @@ public partial class App : System.Windows.Application
                 window.UpdateLayout();
                 var bitmap = new RenderTargetBitmap((int)window.ActualWidth, (int)window.ActualHeight, 96, 96, PixelFormats.Pbgra32);
                 bitmap.Render(window);
-                var encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(bitmap));
-                using var file = File.Create(Path.Combine(output, theme.Id + ".png")); encoder.Save(file);
+                var encoder = new PngBitmapEncoder();
+                encoder.Frames.Add(BitmapFrame.Create(bitmap));
+                using var file = File.Create(Path.Combine(output, theme.Id + ".png"));
+                encoder.Save(file);
             }
             await File.WriteAllTextAsync(Path.Combine(output, "result.txt"), "Window initialized; two subscribers received simulation frames; dark/light rendered.\n");
         }

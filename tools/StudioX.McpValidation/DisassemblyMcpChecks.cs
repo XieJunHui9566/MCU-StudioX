@@ -15,7 +15,10 @@ internal static class DisassemblyMcpChecks
         var checks = 0;
         void Check(bool condition, string description)
         {
-            if (!condition) throw new Exception(description);
+            if (!condition)
+            {
+                throw new Exception(description);
+            }
             Console.WriteLine("PASS " + description);
             checks++;
         }
@@ -74,11 +77,22 @@ internal static class DisassemblyMcpChecks
                 !manual.GetProperty("instructions").EnumerateArray().Any(row => row.GetProperty("isProgramCounter").GetBoolean()),
                 "explicit MCP hexadecimal range keeps the real PC separate from the requested location");
             foreach (var count in new[] { -1, 0, 513 })
-                Check(Error(Parse(await session.CallToolAsync("debug_disassemble", JsonSerializer.Serialize(new { byteCount = count }))), "MCP_ARGUMENT"),
-                    $"MCP rejects invalid disassembly byte count {count}");
+            {
+                Check(Error(Parse(await session.CallToolAsync("debug_disassemble", JsonSerializer.Serialize(new
+                {
+                    byteCount = count
+                }))), "MCP_ARGUMENT"),
+                $"MCP rejects invalid disassembly byte count {count}");
+            }
             foreach (var address in new[] { "", "invalid", "0x100000000", "0xFFFFFFFF" })
-                Check(Error(Parse(await session.CallToolAsync("debug_disassemble", JsonSerializer.Serialize(new { address, byteCount = 1 }))), "MCP_ARGUMENT"),
-                    $"MCP rejects malformed or overflowing disassembly address '{address}'");
+            {
+                Check(Error(Parse(await session.CallToolAsync("debug_disassemble", JsonSerializer.Serialize(new
+                {
+                    address,
+                    byteCount = 1
+                }))), "MCP_ARGUMENT"),
+                $"MCP rejects malformed or overflowing disassembly address '{address}'");
+            }
             var rawError = Parse(await session.CallToolAsync("debug_disassemble", "{\"address\":\"0x20000000\",\"byteCount\":16}"));
             Check(Error(rawError, "GDB_COMMAND") && rawError.GetProperty("message").GetString()!.Contains("离线示例仅提供", StringComparison.Ordinal) &&
                 services.Debugger.State == DebugState.Stopped,
@@ -119,7 +133,9 @@ internal static class DisassemblyMcpChecks
             // 删除范围必须保持在本次新建的临时目录，不能沿用工程、用户数据或工具目录。
             if (root.StartsWith(tempRoot + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase) &&
                 Path.GetFileName(root).StartsWith("studiox-disassembly-mcp-", StringComparison.Ordinal) && Directory.Exists(root))
+            {
                 Directory.Delete(root, recursive: true);
+            }
         }
     }
 }

@@ -13,7 +13,8 @@ internal sealed class ToolsetSnapshot
         var snapshot = new ToolsetSnapshot();
         var directories = new Stack<DirectoryInfo>();
         var rootInfo = new DirectoryInfo(root);
-        snapshot.Add("", rootInfo); directories.Push(rootInfo);
+        snapshot.Add("", rootInfo);
+        directories.Push(rootInfo);
         var options = new EnumerationOptions { AttributesToSkip = 0, IgnoreInaccessible = false, RecurseSubdirectories = false };
         while (directories.TryPop(out var directory))
         {
@@ -23,7 +24,10 @@ internal sealed class ToolsetSnapshot
                 token.ThrowIfCancellationRequested();
                 var relative = Path.GetRelativePath(root, item.FullName).Replace('\\', '/');
                 snapshot.Add(relative, item);
-                if (item is DirectoryInfo child) directories.Push(child);
+                if (item is DirectoryInfo child)
+                {
+                    directories.Push(child);
+                }
             }
         }
         return snapshot;
@@ -32,7 +36,9 @@ internal sealed class ToolsetSnapshot
     private void Add(string path, FileSystemInfo info)
     {
         if (info.Attributes.HasFlag(FileAttributes.ReparsePoint))
+        {
             throw new StudioXException("PATH_LINK", "工具目录不能包含符号链接或重解析点：" + path);
+        }
         // Windows 在复制大量文件后可能延迟刷新目录的时间戳。目录本身的时间不能
         // 证明文件内容变化；路径集合、重解析点检查和文件元数据仍完整参与快照。
         var entry = info is FileInfo file
@@ -47,7 +53,12 @@ internal sealed class ToolsetSnapshot
     public string? FirstDifference(ToolsetSnapshot other)
     {
         foreach (var (path, entry) in entries)
-            if (!other.entries.TryGetValue(path, out var current) || current != entry) return path;
+        {
+            if (!other.entries.TryGetValue(path, out var current) || current != entry)
+            {
+                return path;
+            }
+        }
         return other.entries.Keys.FirstOrDefault(path => !entries.ContainsKey(path));
     }
 

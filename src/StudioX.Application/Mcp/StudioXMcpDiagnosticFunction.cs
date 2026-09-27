@@ -41,7 +41,10 @@ internal sealed class StudioXMcpDiagnosticFunction(AIFunction innerFunction) : D
     private static string SafeMessage(string message)
     {
         var normalized = string.Concat(message.Take(600).Select(ch => char.IsControl(ch) ? ' ' : ch)).Trim();
-        if (normalized.Length == 0) return "MCP 工具操作失败。";
+        if (normalized.Length == 0)
+        {
+            return "MCP 工具操作失败。";
+        }
         normalized = UrlCredentials.Replace(normalized, "$1[redacted]@");
         normalized = SecretAssignment.Replace(normalized, "$1[redacted]");
         return BearerToken.Replace(normalized, "$1[redacted]");

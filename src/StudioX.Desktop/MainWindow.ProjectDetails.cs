@@ -11,8 +11,14 @@ public partial class MainWindow
 
     private async void DevicesAndTemplates_Click(object sender, RoutedEventArgs e)
     {
-        if (projectDirectory is null) await RunAsync(token => BeginNewProjectAsync(token));
-        else await RunAsync(_ => ShowProjectDetailsAsync());
+        if (projectDirectory is null)
+        {
+            await RunAsync(token => BeginNewProjectAsync(token));
+        }
+        else
+        {
+            await RunAsync(_ => ShowProjectDetailsAsync());
+        }
     }
 
     private void SetProjectDetailsMode(ProjectManifest? project)
@@ -27,13 +33,17 @@ public partial class MainWindow
         stcCodeRomLimit = null;
         ConfigureBuildSettingsForProject();
         UpdateBuildSettingsControls();
+        ConfigureEspressifModuleForProject();
         ConfigureStcIspForProject();
         RefreshAg32LogicUi(project);
     }
 
     private async Task ShowProjectDetailsAsync()
     {
-        if (projectDirectory is not { } directory || currentProjectManifest is not { } project) return;
+        if (projectDirectory is not { } directory || currentProjectManifest is not { } project)
+        {
+            return;
+        }
         var revision = ++projectDetailsRevision;
         NewProjectPanel.Visibility = Visibility.Collapsed;
         NewProjectPanel.IsEnabled = false;
@@ -50,6 +60,7 @@ public partial class MainWindow
         stcCodeRomLimit = null;
         BuildSettingsStatus.Text = "正在读取编译参数…";
         UpdateBuildSettingsControls();
+        ConfigureEspressifModuleForProject();
         ShowDocument(PackagesTab);
         var details = await ProjectDeviceInfo.ReadAsync(directory, project);
         var settings = await services.Builds.LoadSettingsAsync(directory);
@@ -57,8 +68,17 @@ public partial class MainWindow
         // 工程切换、关闭或窗口关闭期间完成的旧读取不能覆盖新页面。
         if (revision == projectDetailsRevision && projectDirectory == directory && !closing)
         {
-            stcCodeRomLimit = romLimit; ApplyProjectDetails(details); ApplyBuildSettings(settings);
-            if (IsStcSdccProject) await LoadStcIspProjectAsync(directory, revision);
+            stcCodeRomLimit = romLimit;
+            ApplyProjectDetails(details);
+            ApplyBuildSettings(settings);
+            if (IsEspressifProject)
+            {
+                await LoadEspressifModuleAsync(directory, revision);
+            }
+            if (IsStcSdccProject)
+            {
+                await LoadStcIspProjectAsync(directory, revision);
+            }
         }
     }
 
@@ -68,6 +88,7 @@ public partial class MainWindow
         var manufacturer = ManufacturerOption.FromId(details.Manufacturer);
         CurrentProjectVendor.Text = manufacturer.Description;
         CurrentProjectVendorLogo.Source = manufacturer.Logo;
+        CurrentProjectVendorLogoFrame.Width = Math.Max(56, manufacturer.LogoFrameWidth);
         CurrentProjectVendorMonogram.Text = manufacturer.Monogram;
         CurrentProjectVendorMonogram.Visibility = manufacturer.Logo is null ? Visibility.Visible : Visibility.Collapsed;
         CurrentProjectVendorLogoFrame.Visibility = Visibility.Visible;

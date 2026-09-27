@@ -15,10 +15,14 @@ internal static class ExternalProjectPaginationChecks
         Directory.CreateDirectory(sparse);
         Directory.CreateDirectory(repeated);
         for (var index = 0; index < 145; index++)
+        {
             await File.WriteAllTextAsync(Path.Combine(wide, $"sample_{index:D3}.c"),
-                $"int ANCHOR_MATCH_{index:D3};\n");
+            $"int ANCHOR_MATCH_{index:D3};\n");
+        }
         for (var index = 0; index < 2_105; index++)
+        {
             await File.WriteAllTextAsync(Path.Combine(sparse, $"source_{index:D4}.c"), "int no_match;\n");
+        }
         await File.WriteAllTextAsync(Path.Combine(repeated, "many.c"),
             string.Concat(Enumerable.Range(1, 75).Select(number => $"REPEATED_MATCH {number}\n")));
         var hidden = Path.Combine(wide, "sample_hidden.c");
@@ -36,19 +40,28 @@ internal static class ExternalProjectPaginationChecks
                 ? null : page.GetProperty("nextCursor").GetString();
 
             var toolNames = (await session.ListToolsAsync()).Select(item => item.Name).ToArray();
-            check(toolNames.Contains("external_project_roots", StringComparer.Ordinal) && toolNames.Length <= 64,
-                "external root discovery remains inside the 64-tool request budget");
+            check(toolNames.Contains("external_project_roots", StringComparer.Ordinal) &&
+                  toolNames.Distinct(StringComparer.Ordinal).Count() == toolNames.Length,
+                "external root discovery appears once in the complete MCP tool catalog");
 
             var approvalCount = authorizer.Requests.Count;
-            using var opened = JsonDocument.Parse(await Call("external_project_open", new { directory = root }));
+            using var opened = JsonDocument.Parse(await Call("external_project_open", new
+            {
+                directory = root
+            }));
             var rootId = opened.RootElement.GetProperty("rootId").GetString()!;
             using var reopened = JsonDocument.Parse(await Call("external_project_open",
-                new { directory = root + Path.DirectorySeparatorChar }));
+                new
+                {
+                    directory = root + Path.DirectorySeparatorChar
+                }));
             check(rootId == reopened.RootElement.GetProperty("rootId").GetString() &&
                   reopened.RootElement.GetProperty("alreadyApproved").GetBoolean() &&
                   authorizer.Requests.Count == approvalCount + 1,
                 "reopening an approved external directory reuses its root ID without another approval");
-            using var roots = JsonDocument.Parse(await Call("external_project_roots", new { }));
+            using var roots = JsonDocument.Parse(await Call("external_project_roots", new
+            {
+            }));
             check(roots.RootElement.GetProperty("roots").EnumerateArray().Count() == 1 &&
                   roots.RootElement.GetProperty("roots")[0].GetProperty("rootId").GetString() == rootId,
                 "approved external root IDs are discoverable in the same MCP session");
@@ -60,9 +73,16 @@ internal static class ExternalProjectPaginationChecks
             do
             {
                 using var page = JsonDocument.Parse(await Call("external_project_list_files",
-                    new { rootId, directory = "Wide", cursor = cursor ?? "" }));
+                    new
+                    {
+                        rootId,
+                        directory = "Wide",
+                        cursor = cursor ?? ""
+                    }));
                 foreach (var item in page.RootElement.GetProperty("entries").EnumerateArray())
+                {
                     unique &= listed.Add(item.GetProperty("path").GetString()!);
+                }
                 cursor = Next(page.RootElement);
                 pages++;
             } while (cursor is not null && pages < 20);
@@ -77,10 +97,18 @@ internal static class ExternalProjectPaginationChecks
             do
             {
                 using var page = JsonDocument.Parse(await Call("external_project_find_files",
-                    new { rootId, directory = "Wide", query = "sample_", maxResults = 17,
-                        cursor = cursor ?? "" }));
+                    new
+                    {
+                        rootId,
+                        directory = "Wide",
+                        query = "sample_",
+                        maxResults = 17,
+                        cursor = cursor ?? ""
+                    }));
                 foreach (var item in page.RootElement.GetProperty("results").EnumerateArray())
+                {
                     unique &= found.Add(item.GetProperty("path").GetString()!);
+                }
                 cursor = Next(page.RootElement);
                 pages++;
             } while (cursor is not null && pages < 30);
@@ -94,10 +122,18 @@ internal static class ExternalProjectPaginationChecks
             do
             {
                 using var page = JsonDocument.Parse(await Call("external_project_search",
-                    new { rootId, directory = "Wide", query = "ANCHOR_MATCH", maxResults = 11,
-                        cursor = cursor ?? "" }));
+                    new
+                    {
+                        rootId,
+                        directory = "Wide",
+                        query = "ANCHOR_MATCH",
+                        maxResults = 11,
+                        cursor = cursor ?? ""
+                    }));
                 foreach (var item in page.RootElement.GetProperty("results").EnumerateArray())
+                {
                     unique &= searched.Add(item.GetProperty("path").GetString()!);
+                }
                 cursor = Next(page.RootElement);
                 pages++;
             } while (cursor is not null && pages < 30);
@@ -110,10 +146,18 @@ internal static class ExternalProjectPaginationChecks
             do
             {
                 using var page = JsonDocument.Parse(await Call("external_project_search",
-                    new { rootId, directory = "Repeated", query = "REPEATED_MATCH", maxResults = 7,
-                        cursor = cursor ?? "" }));
+                    new
+                    {
+                        rootId,
+                        directory = "Repeated",
+                        query = "REPEATED_MATCH",
+                        maxResults = 7,
+                        cursor = cursor ?? ""
+                    }));
                 foreach (var item in page.RootElement.GetProperty("results").EnumerateArray())
+                {
                     unique &= lineNumbers.Add(item.GetProperty("line").GetInt32());
+                }
                 cursor = Next(page.RootElement);
             } while (cursor is not null && lineNumbers.Count < 100);
             check(unique && cursor is null && lineNumbers.Count == 75 &&
@@ -121,18 +165,36 @@ internal static class ExternalProjectPaginationChecks
                 "external search cursor preserves the position within a matching file");
 
             using var firstSparse = JsonDocument.Parse(await Call("external_project_search",
-                new { rootId, directory = "Sparse", query = "ABSENT_NEEDLE", maxResults = 11 }));
+                new
+                {
+                    rootId,
+                    directory = "Sparse",
+                    query = "ABSENT_NEEDLE",
+                    maxResults = 11
+                }));
             cursor = Next(firstSparse.RootElement);
             check(cursor is not null && firstSparse.RootElement.GetProperty("scannedEntries").GetInt32() == 2_000,
                 "external search returns a cursor after a bounded scan even with no matches");
             if (cursor is not null)
             {
                 var invalid = await Call("external_project_search",
-                    new { rootId, directory = "Sparse", query = "DIFFERENT_QUERY", cursor });
+                    new
+                    {
+                        rootId,
+                        directory = "Sparse",
+                        query = "DIFFERENT_QUERY",
+                        cursor
+                    });
                 check(invalid.Contains("error", StringComparison.OrdinalIgnoreCase),
                     "an external search cursor cannot be reused with a different query");
                 using var secondSparse = JsonDocument.Parse(await Call("external_project_search",
-                    new { rootId, directory = "Sparse", query = "ABSENT_NEEDLE", cursor }));
+                    new
+                    {
+                        rootId,
+                        directory = "Sparse",
+                        query = "ABSENT_NEEDLE",
+                        cursor
+                    }));
                 check(Next(secondSparse.RootElement) is null &&
                       secondSparse.RootElement.GetProperty("scannedEntries").GetInt32() == 105,
                     "external search continues beyond the first scan budget without rescanning entries");
@@ -142,18 +204,27 @@ internal static class ExternalProjectPaginationChecks
             {
                 var extra = Path.Combine(temporaryRoot, $"external-slot-{index}");
                 Directory.CreateDirectory(extra);
-                using var extraOpened = JsonDocument.Parse(await Call("external_project_open", new { directory = extra }));
+                using var extraOpened = JsonDocument.Parse(await Call("external_project_open", new
+                {
+                    directory = extra
+                }));
                 check(extraOpened.RootElement.TryGetProperty("rootId", out _),
                     "independent external directories can be authorized within the session limit");
             }
-            using var atCapacity = JsonDocument.Parse(await Call("external_project_open", new { directory = root }));
+            using var atCapacity = JsonDocument.Parse(await Call("external_project_open", new
+            {
+                directory = root
+            }));
             check(atCapacity.RootElement.GetProperty("rootId").GetString() == rootId,
                 "reopening the same directory still succeeds when all external slots are occupied");
         }
         finally
         {
             authorizer.Allow = oldApproval;
-            if (File.Exists(hidden)) File.SetAttributes(hidden, FileAttributes.Normal);
+            if (File.Exists(hidden))
+            {
+                File.SetAttributes(hidden, FileAttributes.Normal);
+            }
         }
     }
 }

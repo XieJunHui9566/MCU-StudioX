@@ -8,14 +8,30 @@ using System.Windows.Media;
 public sealed class SignalPlot : FrameworkElement
 {
     private readonly Queue<(double Value, int State)> samples = new();
-    public void Add(double value, int state) { samples.Enqueue((value, state)); while (samples.Count > 160) samples.Dequeue(); InvalidateVisual(); }
-    public void Clear() { samples.Clear(); InvalidateVisual(); }
+    public void Add(double value, int state)
+    {
+        samples.Enqueue((value, state));
+        while (samples.Count > 160)
+        {
+            samples.Dequeue();
+        }
+        InvalidateVisual();
+    }
+    public void Clear()
+    {
+        samples.Clear();
+        InvalidateVisual();
+    }
     protected override void OnRender(DrawingContext dc)
     {
         base.OnRender(dc);
-        var background = Resource("Background"); var border = Resource("Border"); var muted = Resource("Muted"); var accent = Resource("Accent");
+        var background = Resource("Background");
+        var border = Resource("Border");
+        var muted = Resource("Muted");
+        var accent = Resource("Accent");
         dc.DrawRoundedRectangle(background, new Pen(border, 1), new Rect(0, 0, ActualWidth, ActualHeight), 6, 6);
-        var width = Math.Max(1, ActualWidth - 82); var height = Math.Max(1, ActualHeight - 130);
+        var width = Math.Max(1, ActualWidth - 82);
+        var height = Math.Max(1, ActualHeight - 130);
         for (var i = 0; i <= 4; i++)
         {
             var y = 46 + i * height / 4;
@@ -25,10 +41,15 @@ public sealed class SignalPlot : FrameworkElement
         Label("TEMPERATURE / °C", 16, 14, muted);
         Label("DIGITAL / 0 · 1", 16, 64 + height, muted);
         var values = samples.ToArray();
-        if (values.Length < 2) { Label("连接模拟设备后显示曲线与状态波形", 90, 80, muted); return; }
+        if (values.Length < 2)
+        {
+            Label("连接模拟设备后显示曲线与状态波形", 90, 80, muted);
+            return;
+        }
         for (var i = 1; i < values.Length; i++)
         {
-            var x0 = 52 + (i - 1) * width / 159; var x1 = 52 + i * width / 159;
+            var x0 = 52 + (i - 1) * width / 159;
+            var x1 = 52 + i * width / 159;
             double Y(double v) => 46 + (32 - Math.Clamp(v, 16, 32)) / 16 * height;
             dc.DrawLine(new Pen(accent, 2), new Point(x0, Y(values[i - 1].Value)), new Point(x1, Y(values[i].Value)));
             var previous = ActualHeight - 20 - values[i - 1].State * 22;

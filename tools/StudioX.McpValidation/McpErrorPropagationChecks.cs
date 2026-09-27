@@ -15,9 +15,17 @@ internal static class McpErrorPropagationChecks
     {
         var tools = new StudioXMcpTools(services, project, new DenyStudioXMcpAuthorizer());
         var wrapped = tools.CreateToolCollection();
-        var original = typeof(StudioXMcpTools).GetMethods(BindingFlags.Instance | BindingFlags.Public)
+        var providers = ((System.Collections.IEnumerable)typeof(StudioXMcpTools)
+            .GetField("providers", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(tools)!)
+            .Cast<object>().ToArray();
+        check(providers.Select(provider => provider.GetType()).Distinct().Count() == 16 &&
+              typeof(StudioXMcpTools).GetMethods().All(method =>
+                  method.GetCustomAttribute<McpServerToolAttribute>() is null),
+            "MCP registry composes independent providers without retaining business tool methods");
+        var original = providers.SelectMany(provider => provider.GetType()
+            .GetMethods(BindingFlags.Instance | BindingFlags.Public)
             .Where(method => method.GetCustomAttribute<McpServerToolAttribute>() is not null)
-            .Select(method => McpServerTool.Create(method, tools))
+            .Select(method => McpServerTool.Create(method, provider)))
             .OrderBy(tool => tool.ProtocolTool.Name, StringComparer.Ordinal).ToArray();
         check(wrapped.Count == original.Length &&
               wrapped.Zip(original).All(pair =>
@@ -30,7 +38,10 @@ internal static class McpErrorPropagationChecks
             throw new StudioXException("MCP_SAMPLE", "Authorization: Bearer abc123 https://user:pass@example.com/path")));
         var sensitiveAdapter = (AIFunction)Activator.CreateInstance(adapterType, sensitiveFunction)!;
         var sanitized = false;
-        try { _ = await sensitiveAdapter.InvokeAsync(new AIFunctionArguments()); }
+        try
+        {
+            _ = await sensitiveAdapter.InvokeAsync(new AIFunctionArguments());
+        }
         catch (ModelContextProtocol.McpException error)
         {
             sanitized = error.Message.Contains("MCP_SAMPLE:", StringComparison.Ordinal) &&
@@ -43,16 +54,24 @@ internal static class McpErrorPropagationChecks
             throw new InvalidOperationException("INTERNAL_SECRET_NEVER_EXPOSE")));
         var unexpectedAdapter = (AIFunction)Activator.CreateInstance(adapterType, unexpectedFunction)!;
         var remainedUnexpected = false;
-        try { _ = await unexpectedAdapter.InvokeAsync(new AIFunctionArguments()); }
+        try
+        {
+            _ = await unexpectedAdapter.InvokeAsync(new AIFunctionArguments());
+        }
         catch (InvalidOperationException error)
-        { remainedUnexpected = error.Message == "INTERNAL_SECRET_NEVER_EXPOSE"; }
+        {
+            remainedUnexpected = error.Message == "INTERNAL_SECRET_NEVER_EXPOSE";
+        }
         check(remainedUnexpected, "unknown exceptions remain outside the MCP business-error conversion");
 
         var badArgumentFunction = AIFunctionFactory.Create((Func<string>)(() =>
             throw new ArgumentException("byteCount 超出范围，password=abc123", "byteCount")));
         var badArgumentAdapter = (AIFunction)Activator.CreateInstance(adapterType, badArgumentFunction)!;
         var argumentSanitized = false;
-        try { _ = await badArgumentAdapter.InvokeAsync(new AIFunctionArguments()); }
+        try
+        {
+            _ = await badArgumentAdapter.InvokeAsync(new AIFunctionArguments());
+        }
         catch (ModelContextProtocol.McpException error)
         {
             argumentSanitized = error.Message.Contains("MCP_ARGUMENT:", StringComparison.Ordinal) &&
@@ -125,8 +144,11 @@ internal static class McpErrorPropagationChecks
             "external stdio MCP advertises all PDF reference tools");
         var pdfResult = await client.CallToolAsync("pdf_page", new Dictionary<string, object?>
         {
-            ["scope"] = "project", ["path"] = "docs/board.pdf", ["page"] = 2,
-            ["includeImage"] = true, ["maxDimension"] = 600
+            ["scope"] = "project",
+            ["path"] = "docs/board.pdf",
+            ["page"] = 2,
+            ["includeImage"] = true,
+            ["maxDimension"] = 600
         });
         var pdfImage = pdfResult.Content.OfType<ImageContentBlock>().SingleOrDefault();
         check(pdfResult.IsError != true && pdfImage?.MimeType == "image/png" &&

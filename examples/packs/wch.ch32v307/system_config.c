@@ -9,5 +9,7 @@ void System_Init(void)
 
     /* 默认要求外部 8 MHz 晶振；启动失败时停止，避免以错误时钟操作外设。 */
     if ((RCC->CTLR & RCC_HSERDY) == 0)
-        while (1) { }
+        while (1)
+        {
+        }
 }

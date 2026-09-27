@@ -36,14 +36,20 @@ internal static class WebMcpChecks
                     content = "STM32F407 timer reference result " + index,
                     published_date = "2026-01-01"
                 });
-                return Json(HttpStatusCode.OK, new { query = "STM32F407 timer", results });
+                return Json(HttpStatusCode.OK, new
+                {
+                    query = "STM32F407 timer",
+                    results
+                });
             }
             if (path == "/extract")
+            {
                 return Json(HttpStatusCode.OK, new
                 {
                     results = new[] { new { url = "https://www.st.com/reference/0", raw_content = documentText } },
                     failed_results = Array.Empty<object>()
                 });
+            }
             throw new Exception("Unexpected Tavily endpoint in offline test: " + path);
         }));
         var research = new WebResearchService(http, () => OfflineApiKey);
@@ -53,10 +59,14 @@ internal static class WebMcpChecks
 
         var first = await webSession.CallToolAsync("web_search", JsonSerializer.Serialize(new
         {
-            query = "STM32F407 timer", maxResults = 3, offset = 0
+            query = "STM32F407 timer",
+            maxResults = 3,
+            offset = 0
         }));
         if (!first.Contains("\"status\":\"ok\"", StringComparison.Ordinal))
+        {
             throw new Exception("Offline web_search fixture failed: " + first);
+        }
         using (var response = JsonDocument.Parse(first))
         {
             var value = response.RootElement;
@@ -74,7 +84,9 @@ internal static class WebMcpChecks
         }
         var second = await webSession.CallToolAsync("web_search", JsonSerializer.Serialize(new
         {
-            query = "STM32F407 timer", maxResults = 3, offset = 3
+            query = "STM32F407 timer",
+            maxResults = 3,
+            offset = 3
         }));
         using (var response = JsonDocument.Parse(second))
         {
@@ -89,7 +101,9 @@ internal static class WebMcpChecks
 
         var fetch = await webSession.CallToolAsync("web_fetch", JsonSerializer.Serialize(new
         {
-            url = "https://www.st.com/reference/0", offsetCharacters = 0, maxCharacters = 1000
+            url = "https://www.st.com/reference/0",
+            offsetCharacters = 0,
+            maxCharacters = 1000
         }));
         var requestsBeforeFetchContinuation = requests.Count;
         using (var response = JsonDocument.Parse(fetch))
@@ -104,12 +118,16 @@ internal static class WebMcpChecks
         }
         var fetchNext = await webSession.CallToolAsync("web_fetch", JsonSerializer.Serialize(new
         {
-            url = "https://www.st.com/reference/0", offsetCharacters = 1000, maxCharacters = 1000
+            url = "https://www.st.com/reference/0",
+            offsetCharacters = 1000,
+            maxCharacters = 1000
         }));
         using (var response = JsonDocument.Parse(fetchNext))
+        {
             check(response.RootElement.GetProperty("content").GetString() ==
-                  documentText.Substring(1000, 1000),
-                "web_fetch continuation does not reread or return the first text segment");
+              documentText.Substring(1000, 1000),
+            "web_fetch continuation does not reread or return the first text segment");
+        }
 
         check(requests.Count == requestsBeforeFetchContinuation &&
               requests.Count is >= 2 and <= 3 &&
@@ -146,7 +164,10 @@ internal static class WebMcpChecks
         var rejected = true;
         foreach (var url in badUrls)
         {
-            var result = await webSession.CallToolAsync("web_fetch", JsonSerializer.Serialize(new { url }));
+            var result = await webSession.CallToolAsync("web_fetch", JsonSerializer.Serialize(new
+            {
+                url
+            }));
             rejected &= result.Contains("error", StringComparison.OrdinalIgnoreCase) &&
                 !result.Contains(UrlSecret, StringComparison.Ordinal);
         }
@@ -155,11 +176,15 @@ internal static class WebMcpChecks
 
         var invalidSearch = await webSession.CallToolAsync("web_search", JsonSerializer.Serialize(new
         {
-            query = "STM32F407 timer", maxResults = 11, offset = 0
+            query = "STM32F407 timer",
+            maxResults = 11,
+            offset = 0
         }));
         var invalidFetchPage = await webSession.CallToolAsync("web_fetch", JsonSerializer.Serialize(new
         {
-            url = "https://www.st.com/reference/0", offsetCharacters = 0, maxCharacters = 12001
+            url = "https://www.st.com/reference/0",
+            offsetCharacters = 0,
+            maxCharacters = 12001
         }));
         check(invalidSearch.Contains("error", StringComparison.OrdinalIgnoreCase) &&
               invalidFetchPage.Contains("error", StringComparison.OrdinalIgnoreCase) &&
@@ -176,7 +201,10 @@ internal static class WebMcpChecks
                 ? modes.SingleOrDefault() : null;
             keylessSource = request.Headers.TryGetValues("X-Client-Source", out var sources)
                 ? sources.SingleOrDefault() : null;
-            return Task.FromResult(Json(HttpStatusCode.OK, new { results = Array.Empty<object>() }));
+            return Task.FromResult(Json(HttpStatusCode.OK, new
+            {
+                results = Array.Empty<object>()
+            }));
         }));
         await using (var keylessSession = await StudioXMcpSession.CreateAsync(
             new StudioXMcpTools(services, project, new DenyStudioXMcpAuthorizer(),
@@ -184,7 +212,8 @@ internal static class WebMcpChecks
         {
             var result = await keylessSession.CallToolAsync("web_search", JsonSerializer.Serialize(new
             {
-                query = "STM32F407 timer", maxResults = 3
+                query = "STM32F407 timer",
+                maxResults = 3
             }));
             check(result.Contains("\"status\":\"ok\"", StringComparison.Ordinal) &&
                   keylessAuthorization is null && keylessMode == "keyless" &&
@@ -193,15 +222,19 @@ internal static class WebMcpChecks
         }
 
         using var oversizedHttp = new HttpClient(new WebStubHandler(_ => Task.FromResult(
-            Json(HttpStatusCode.OK, new { results = Array.Empty<object>(),
-                padding = new string('x', 600_000) }))));
+            Json(HttpStatusCode.OK, new
+            {
+                results = Array.Empty<object>(),
+                padding = new string('x', 600_000)
+            }))));
         await using (var oversizedSession = await StudioXMcpSession.CreateAsync(
             new StudioXMcpTools(services, project, new DenyStudioXMcpAuthorizer(),
                 webResearch: new WebResearchService(oversizedHttp, () => OfflineApiKey))))
         {
             var result = await oversizedSession.CallToolAsync("web_search", JsonSerializer.Serialize(new
             {
-                query = "STM32F407 timer", maxResults = 3
+                query = "STM32F407 timer",
+                maxResults = 3
             }));
             check(result.Contains("MCP_WEB_RESPONSE", StringComparison.Ordinal) &&
                   !result.Contains(OfflineApiKey, StringComparison.Ordinal),
@@ -220,7 +253,8 @@ internal static class WebMcpChecks
                 webResearch: failedResearch));
         var limited = await failedSession.CallToolAsync("web_search", JsonSerializer.Serialize(new
         {
-            query = "STM32F407 timer", maxResults = 3
+            query = "STM32F407 timer",
+            maxResults = 3
         }));
         check((limited.Contains("rate", StringComparison.OrdinalIgnoreCase) ||
                limited.Contains("429", StringComparison.Ordinal)) &&

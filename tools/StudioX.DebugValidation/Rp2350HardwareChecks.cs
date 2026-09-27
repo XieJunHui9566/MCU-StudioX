@@ -10,7 +10,10 @@ internal static class Rp2350HardwareChecks
     public static async Task<int> RunAsync(string archive, string runtime, string output, string serial)
     {
         var root = Path.GetFullPath(output);
-        if (Directory.Exists(root)) throw new ArgumentException("Use a new hardware evidence directory.");
+        if (Directory.Exists(root))
+        {
+            throw new ArgumentException("Use a new hardware evidence directory.");
+        }
         var pack = await new PackRepository(Path.Combine(root, "packs")).ImportAsync(Path.GetFullPath(archive));
         var catalog = new ToolsetCatalog(Path.Combine(Path.GetFullPath(runtime), "toolsets"));
         var downloads = new OpenOcdService(catalog);
@@ -53,7 +56,10 @@ internal static class Rp2350HardwareChecks
                 await session.OpenProjectAsync(project);
                 await session.ChangeWatchAsync("app_counter", false);
                 var dual = Path.GetFileName(project) == "multicore";
-                if (dual) await session.ChangeWatchAsync("core1_result", false);
+                if (dual)
+                {
+                    await session.ChangeWatchAsync("core1_result", false);
+                }
                 var lines = await File.ReadAllLinesAsync(Path.Combine(project, "src/main.c"));
                 var line = Array.FindIndex(lines, text => text.Contains(dual ? "sleep_ms(100)" : "++app_counter", StringComparison.Ordinal)) + 1;
                 await session.ToggleBreakpointAsync("src/main.c", line);
@@ -65,7 +71,9 @@ internal static class Rp2350HardwareChecks
                 Check(session.Snapshot.Frames[0].File == "src/main.c", "Source breakpoint");
                 await JsonStore.WriteAsync(Path.Combine(project, "breakpoint-snapshot.json"), session.Snapshot);
                 if (dual)
+                {
                     Check(Watch(session, "core1_result") == Watch(session, "app_counter") * 3 + 1, "Core 1 queue computation");
+                }
                 else
                 {
                     var before = Watch(session, "app_counter");
@@ -74,7 +82,10 @@ internal static class Rp2350HardwareChecks
                     Check(Watch(session, "app_counter") == before + 1, "Source step increments counter");
                     await JsonStore.WriteAsync(Path.Combine(project, "step-snapshot.json"), session.Snapshot);
                 }
-                foreach (var point in session.Breakpoints.ToArray()) await session.ChangeBreakpointAsync(point.Id, false);
+                foreach (var point in session.Breakpoints.ToArray())
+                {
+                    await session.ChangeBreakpointAsync(point.Id, false);
+                }
                 await session.ExecuteAsync(DebugAction.Continue);
                 await Task.Delay(350);
                 await session.ExecuteAsync(DebugAction.Pause);
@@ -117,9 +128,18 @@ internal static class Rp2350HardwareChecks
     private static async Task WaitStopped(DebugSessionService session)
     {
         using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(15));
-        while (session.State == DebugState.Running) await Task.Delay(20, deadline.Token);
+        while (session.State == DebugState.Running)
+        {
+            await Task.Delay(20, deadline.Token);
+        }
         Check(session.State == DebugState.Stopped, session.Reason);
     }
     private static string Quote(string path) => "\"" + path.Replace('\\', '/').Replace("\"", "\\\"").Replace("$", "\\$").Replace("[", "\\[").Replace("]", "\\]") + "\"";
-    private static void Check(bool condition, string message) { if (!condition) throw new InvalidOperationException(message); }
+    private static void Check(bool condition, string message)
+    {
+        if (!condition)
+        {
+            throw new InvalidOperationException(message);
+        }
+    }
 }

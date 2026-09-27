@@ -9,14 +9,26 @@ internal static class RtosDisplay
     internal static string Address(ulong? value) => value is { } address ? $"0x{address:x8}" : "—";
     internal static string State(string state) => state switch
     {
-        "Running" => "当前任务", "Ready" => "就绪", "Blocked" => "阻塞", "Suspended" => "挂起",
-        "PendingReady" => "待就绪", "Deleted" => "等待回收", "SuspendedOrBlocked" => "挂起/阻塞", _ => "未知"
+        "Running" => "当前任务",
+        "Ready" => "就绪",
+        "Blocked" => "阻塞",
+        "Suspended" => "挂起",
+        "PendingReady" => "待就绪",
+        "Deleted" => "等待回收",
+        "SuspendedOrBlocked" => "挂起/阻塞",
+        _ => "未知"
     };
     internal static string Kind(string kind) => kind switch
     {
-        "Queue" => "队列", "BinarySemaphore" => "二值信号量", "CountingSemaphore" => "计数信号量",
-        "Mutex" => "互斥锁", "RecursiveMutex" => "递归互斥锁", "QueueSet" => "队列集",
-        "QueueOrQueueSet" => "队列/队列集", "Semaphore" => "信号量", _ => "类型未记录"
+        "Queue" => "队列",
+        "BinarySemaphore" => "二值信号量",
+        "CountingSemaphore" => "计数信号量",
+        "Mutex" => "互斥锁",
+        "RecursiveMutex" => "递归互斥锁",
+        "QueueSet" => "队列集",
+        "QueueOrQueueSet" => "队列/队列集",
+        "Semaphore" => "信号量",
+        _ => "类型未记录"
     };
 }
 

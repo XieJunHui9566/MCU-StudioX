@@ -1,0 +1,524 @@
+<UserControl
+  x:Class="StudioX.Desktop.LvglPreviewSetupView"
+  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <UserControl.Resources>
+    <Style
+      x:Key="SetupLabel"
+      TargetType="TextBlock">
+      <Setter
+        Property="Foreground"
+        Value="{DynamicResource Muted}" />
+      <Setter
+        Property="FontSize"
+        Value="11" />
+      <Setter
+        Property="Margin"
+        Value="0,0,0,5" />
+    </Style>
+    <Style
+      x:Key="SetupMultiline"
+      TargetType="TextBox"
+      BasedOn="{StaticResource {x:Type TextBox}}">
+      <Setter
+        Property="AcceptsReturn"
+        Value="True" />
+      <Setter
+        Property="TextWrapping"
+        Value="NoWrap" />
+      <Setter
+        Property="VerticalScrollBarVisibility"
+        Value="Auto" />
+      <Setter
+        Property="HorizontalScrollBarVisibility"
+        Value="Auto" />
+      <Setter
+        Property="FontFamily"
+        Value="Cascadia Mono, Consolas" />
+      <Setter
+        Property="FontSize"
+        Value="11" />
+      <Setter
+        Property="MinHeight"
+        Value="58" />
+      <Setter
+        Property="MaxHeight"
+        Value="140" />
+    </Style>
+  </UserControl.Resources>
+  <Border
+    BorderBrush="{DynamicResource Border}"
+    BorderThickness="1"
+    CornerRadius="7"
+    Padding="16"
+    Background="Transparent">
+    <StackPanel>
+      <DockPanel
+        Margin="0,0,0,9">
+        <Button
+          x:Name="CloseButton"
+          Content="关闭配置"
+          DockPanel.Dock="Right"
+          Click="Close_Click"
+          Padding="9,4" />
+        <TextBlock
+          Text="配置自定义 UI"
+          FontSize="18"
+          FontWeight="SemiBold"
+          VerticalAlignment="Center" />
+      </DockPanel>
+      <TextBlock
+        Text="选择现有 LVGL 与 UI 源码，预览使用共享代码；向导只写预览配置。"
+        FontSize="11"
+        Foreground="{DynamicResource Muted}"
+        TextWrapping="Wrap"
+        Margin="0,0,0,12" />
+      <WrapPanel
+        Margin="0,0,0,13">
+        <Button
+          x:Name="LibraryStepButton"
+          Content="1 · LVGL 库"
+          Click="LibraryStep_Click"
+          Padding="10,5"
+          Margin="0,0,8,5" />
+        <Button
+          x:Name="UiStepButton"
+          Content="2 · UI 与入口"
+          Click="UiStep_Click"
+          Padding="10,5"
+          Margin="0,0,8,5" />
+        <Button
+          x:Name="ReviewStepButton"
+          Content="3 · 审阅与保存"
+          Click="ReviewStep_Click"
+          Padding="10,5"
+          Margin="0,0,8,5" />
+      </WrapPanel>
+      <StackPanel
+        x:Name="LibraryStep">
+        <TextBlock
+          Text="LVGL 库所在目录（可选择包含多层子目录的外层目录）"
+          Style="{StaticResource SetupLabel}" />
+        <DockPanel
+          Margin="0,0,0,9">
+          <Button
+            x:Name="LibraryBrowseButton"
+            Content="浏览…"
+            Click="LibraryBrowse_Click"
+            DockPanel.Dock="Right"
+            Margin="8,0,0,0" />
+          <TextBox
+            x:Name="LibrarySearchInput"
+            AutomationProperties.Name="LVGL 库扫描目录" />
+        </DockPanel>
+        <WrapPanel
+          Margin="0,0,0,10">
+          <Button
+            x:Name="DiscoverButton"
+            Content="扫描 LVGL 库"
+            Click="Discover_Click"
+            Margin="0,0,8,0" />
+          <TextBlock
+            x:Name="DiscoverySummary"
+            Text="扫描结果将显示真正的库根目录和精确版本。"
+            Foreground="{DynamicResource Muted}"
+            FontSize="11"
+            VerticalAlignment="Center"
+            TextWrapping="Wrap" />
+        </WrapPanel>
+        <ListBox
+          x:Name="LibraryCandidates"
+          Background="Transparent"
+          Foreground="{DynamicResource Text}"
+          BorderBrush="{DynamicResource Border}"
+          MinHeight="58"
+          MaxHeight="190"
+          ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+          SelectionChanged="LibraryCandidates_SelectionChanged"
+          AutomationProperties.Name="已发现的 LVGL 库版本">
+          <ListBox.ItemContainerStyle>
+            <Style
+              TargetType="ListBoxItem">
+              <Setter
+                Property="HorizontalContentAlignment"
+                Value="Stretch" />
+              <Setter
+                Property="Foreground"
+                Value="{DynamicResource Text}" />
+              <Setter
+                Property="Background"
+                Value="Transparent" />
+              <Setter
+                Property="Padding"
+                Value="0" />
+              <Setter
+                Property="Template">
+                <Setter.Value>
+                  <ControlTemplate
+                    TargetType="ListBoxItem">
+                    <Border
+                      x:Name="CandidateRow"
+                      Background="{TemplateBinding Background}"
+                      BorderBrush="Transparent"
+                      BorderThickness="1"
+                      CornerRadius="4"
+                      Padding="9,7">
+                      <ContentPresenter />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                      <Trigger
+                        Property="IsSelected"
+                        Value="True">
+                        <Setter
+                          TargetName="CandidateRow"
+                          Property="BorderBrush"
+                          Value="{DynamicResource Accent}" />
+                        <Setter
+                          TargetName="CandidateRow"
+                          Property="Background"
+                          Value="{DynamicResource HoverSurface}" />
+                      </Trigger>
+                      <Trigger
+                        Property="IsMouseOver"
+                        Value="True">
+                        <Setter
+                          TargetName="CandidateRow"
+                          Property="Background"
+                          Value="{DynamicResource HoverSurface}" />
+                      </Trigger>
+                    </ControlTemplate.Triggers>
+                  </ControlTemplate>
+                </Setter.Value>
+              </Setter>
+            </Style>
+          </ListBox.ItemContainerStyle>
+          <ListBox.ItemTemplate>
+            <DataTemplate>
+              <StackPanel>
+                <TextBlock
+                  Text="{Binding Label}"
+                  FontWeight="SemiBold" />
+                <TextBlock
+                  Text="{Binding Directory}"
+                  Foreground="{DynamicResource Muted}"
+                  FontSize="11"
+                  TextWrapping="Wrap"
+                  Margin="0,4,0,0" />
+                <TextBlock
+                  Text="{Binding Detail}"
+                  Foreground="{DynamicResource Muted}"
+                  FontSize="11"
+                  TextWrapping="Wrap"
+                  Margin="0,4,0,0" />
+              </StackPanel>
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+        <Button
+          x:Name="LibraryNextButton"
+          Content="下一步：选择 UI"
+          Click="UiStep_Click"
+          Style="{StaticResource PrimaryButton}"
+          HorizontalAlignment="Left"
+          Margin="0,10,0,0" />
+      </StackPanel>
+      <StackPanel
+        x:Name="UiStep"
+        Visibility="Collapsed">
+        <TextBlock
+          x:Name="SelectedLibraryLabel"
+          Foreground="{DynamicResource Muted}"
+          FontSize="11"
+          TextWrapping="Wrap"
+          Margin="0,0,0,12" />
+        <TextBlock
+          Text="UI 源码目录"
+          Style="{StaticResource SetupLabel}" />
+        <DockPanel
+          Margin="0,0,0,9">
+          <Button
+            x:Name="UiBrowseButton"
+            Content="浏览…"
+            Click="UiBrowse_Click"
+            DockPanel.Dock="Right"
+            Margin="8,0,0,0" />
+          <TextBox
+            x:Name="UiDirectoryInput"
+            AutomationProperties.Name="共享 UI 源码目录" />
+        </DockPanel>
+        <Button
+          x:Name="InspectButton"
+          Content="分析 UI、配置与入口"
+          Click="Inspect_Click"
+          HorizontalAlignment="Left"
+          Margin="0,0,0,12" />
+        <TextBlock
+          Text="共享 lv_conf.h"
+          Style="{StaticResource SetupLabel}" />
+        <DockPanel
+          Margin="0,0,0,7">
+          <Button
+            x:Name="HeaderBrowseButton"
+            Content="浏览…"
+            Click="HeaderBrowse_Click"
+            DockPanel.Dock="Right"
+            Margin="8,0,0,0" />
+          <TextBox
+            x:Name="ConfigurationHeaderInput"
+            AutomationProperties.Name="共享 LVGL 配置头文件" />
+        </DockPanel>
+        <ComboBox
+          x:Name="ConfigurationHeaders"
+          SelectionChanged="ConfigurationHeaders_SelectionChanged"
+          Margin="0,0,0,12"
+          AutomationProperties.Name="发现的 LVGL 配置头文件" />
+        <TextBlock
+          Text="UI 入口函数（void 名称(void)，可填写自己的初始化函数）"
+          Style="{StaticResource SetupLabel}" />
+        <TextBox
+          x:Name="EntryPointInput"
+          MaxLength="256"
+          AutomationProperties.Name="自定义 UI 入口函数"
+          Margin="0,0,0,7" />
+        <ComboBox
+          x:Name="EntryPoints"
+          DisplayMemberPath="Label"
+          SelectionChanged="EntryPoints_SelectionChanged"
+          Margin="0,0,0,8"
+          AutomationProperties.Name="扫描发现的 UI 入口" />
+        <TextBlock
+          Text="C++ 入口需要导出 extern &quot;C&quot;；硬件、RTOS 和 main 源码默认不纳入，缺少依赖时请提供实际 PC 适配源码。"
+          Foreground="{DynamicResource Muted}"
+          FontSize="11"
+          TextWrapping="Wrap"
+          Margin="0,0,0,10" />
+        <WrapPanel>
+          <Button
+            Content="返回库选择"
+            Click="LibraryStep_Click"
+            Margin="0,0,8,0" />
+          <Button
+            x:Name="UiNextButton"
+            Content="下一步：审阅编译内容"
+            Click="ReviewStep_Click"
+            Style="{StaticResource PrimaryButton}" />
+        </WrapPanel>
+      </StackPanel>
+      <StackPanel
+        x:Name="ReviewStep"
+        Visibility="Collapsed">
+        <TextBlock
+          x:Name="ReviewSummary"
+          FontWeight="SemiBold"
+          TextWrapping="Wrap"
+          Margin="0,0,0,10" />
+        <TextBlock
+          Text="参与预览的 C/C++ 源码、生成字体和图片源码"
+          Style="{StaticResource SetupLabel}" />
+        <ScrollViewer
+          MaxHeight="210"
+          VerticalScrollBarVisibility="Auto"
+          HorizontalScrollBarVisibility="Disabled"
+          Background="Transparent"
+          Margin="0,0,0,10">
+          <ItemsControl
+            x:Name="SourceCandidates">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <CheckBox
+                  IsChecked="{Binding Selected, Mode=TwoWay}"
+                  Margin="0,0,0,6"
+                  Checked="SetupEdited"
+                  Unchecked="SetupEdited">
+                  <StackPanel>
+                    <TextBlock
+                      Text="{Binding Path}"
+                      FontFamily="Cascadia Mono, Consolas"
+                      FontSize="11"
+                      TextWrapping="Wrap" />
+                    <TextBlock
+                      Text="{Binding Detail}"
+                      Foreground="{DynamicResource Muted}"
+                      FontSize="11"
+                      TextWrapping="Wrap" />
+                  </StackPanel>
+                </CheckBox>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </ScrollViewer>
+        <Expander
+          Header="路径与排除项（每行一个工程相对路径）"
+          Foreground="{DynamicResource Text}"
+          IsExpanded="False"
+          Margin="0,0,0,10">
+          <StackPanel
+            Margin="0,9,0,0">
+            <TextBlock
+              Text="补充源码（如实际 PC 适配源；填写 .c/.cpp 文件路径）"
+              Style="{StaticResource SetupLabel}" />
+            <TextBox
+              x:Name="AdditionalSourcesInput"
+              Style="{StaticResource SetupMultiline}"
+              TextChanged="SetupEdited"
+              Margin="0,0,0,9" />
+            <TextBlock
+              Text="包含目录"
+              Style="{StaticResource SetupLabel}" />
+            <TextBox
+              x:Name="IncludeDirectoriesInput"
+              Style="{StaticResource SetupMultiline}"
+              TextChanged="SetupEdited"
+              Margin="0,0,0,9" />
+            <TextBlock
+              Text="排除源码（这些路径即使勾选也不会参与预览构建）"
+              Style="{StaticResource SetupLabel}" />
+            <TextBox
+              x:Name="ExclusionsInput"
+              Style="{StaticResource SetupMultiline}"
+              TextChanged="SetupEdited"
+              Margin="0,0,0,9" />
+            <TextBlock
+              Text="文件资源目录（工程内部，如 ui/assets；保持代码中的工程相对路径）"
+              Style="{StaticResource SetupLabel}" />
+            <TextBox
+              x:Name="ResourceDirectoriesInput"
+              Style="{StaticResource SetupMultiline}"
+              TextChanged="SetupEdited" />
+          </StackPanel>
+        </Expander>
+        <WrapPanel
+          x:Name="DisplayInputs"
+          Margin="0,0,0,10">
+          <StackPanel
+            Width="78"
+            Margin="0,0,8,7">
+            <TextBlock
+              Text="宽度 px"
+              Style="{StaticResource SetupLabel}" />
+            <TextBox
+              x:Name="WidthInput"
+              Text="240"
+              MaxLength="4"
+              TextChanged="SetupEdited" />
+          </StackPanel>
+          <StackPanel
+            Width="78"
+            Margin="0,0,8,7">
+            <TextBlock
+              Text="高度 px"
+              Style="{StaticResource SetupLabel}" />
+            <TextBox
+              x:Name="HeightInput"
+              Text="320"
+              MaxLength="4"
+              TextChanged="SetupEdited" />
+          </StackPanel>
+          <StackPanel
+            Width="84"
+            Margin="0,0,8,7">
+            <TextBlock
+              Text="色深 bit"
+              Style="{StaticResource SetupLabel}" />
+            <ComboBox
+              x:Name="ColorDepthPicker"
+              SelectionChanged="SetupEdited" />
+          </StackPanel>
+          <TextBlock
+            Text="色深应与共享 lv_conf.h 相同。&#xA;已有工程的缓存、倍率、内存和传输模型设置会保留。"
+            Foreground="{DynamicResource Muted}"
+            FontSize="11"
+            VerticalAlignment="Center"
+            TextWrapping="Wrap"
+            Margin="0,0,0,7" />
+        </WrapPanel>
+        <WrapPanel>
+          <Button
+            Content="返回 UI 选择"
+            Click="UiStep_Click"
+            Margin="0,0,8,5" />
+          <Button
+            x:Name="ValidateButton"
+            Content="检查配置与依赖"
+            Click="Validate_Click"
+            Margin="0,0,8,5" />
+          <Button
+            x:Name="SaveButton"
+            Content="保存配置"
+            Click="Save_Click"
+            Margin="0,0,8,5" />
+          <Button
+            x:Name="SaveStartButton"
+            Content="保存并启动预览"
+            Click="SaveStart_Click"
+            Style="{StaticResource PrimaryButton}"
+            Margin="0,0,8,5" />
+        </WrapPanel>
+        <TextBlock
+          Text="只保存 .studiox/lvgl-preview.json；共享 LVGL 库和 MCU 目标 CMake 不改动。"
+          Foreground="{DynamicResource Muted}"
+          FontSize="11"
+          TextWrapping="Wrap"
+          Margin="0,3,0,0" />
+      </StackPanel>
+      <DockPanel
+        Margin="0,13,0,0">
+        <Button
+          x:Name="CancelButton"
+          Content="取消当前操作"
+          Click="Cancel_Click"
+          DockPanel.Dock="Right"
+          Visibility="Collapsed"
+          Padding="9,4" />
+        <TextBlock
+          x:Name="Notice"
+          Text="先扫描现有 LVGL 库。"
+          Foreground="{DynamicResource Muted}"
+          TextWrapping="Wrap"
+          VerticalAlignment="Center" />
+      </DockPanel>
+      <ItemsControl
+        x:Name="Diagnostics"
+        Margin="0,9,0,0">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate>
+            <Border
+              BorderBrush="{DynamicResource Border}"
+              BorderThickness="0,0,0,1"
+              Padding="0,7">
+              <StackPanel>
+                <TextBlock
+                  Text="{Binding Summary}"
+                  TextWrapping="Wrap">
+                  <TextBlock.Style>
+                    <Style
+                      TargetType="TextBlock">
+                      <Setter
+                        Property="Foreground"
+                        Value="{DynamicResource Text}" />
+                      <Style.Triggers>
+                        <DataTrigger
+                          Binding="{Binding Severity}"
+                          Value="error">
+                          <Setter
+                            Property="Foreground"
+                            Value="{DynamicResource DebugChanged}" />
+                        </DataTrigger>
+                      </Style.Triggers>
+                    </Style>
+                  </TextBlock.Style>
+                </TextBlock>
+                <TextBlock
+                  Text="{Binding Path}"
+                  Foreground="{DynamicResource Muted}"
+                  FontSize="11"
+                  TextWrapping="Wrap"
+                  Margin="0,3,0,0" />
+              </StackPanel>
+            </Border>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </StackPanel>
+  </Border>
+</UserControl>

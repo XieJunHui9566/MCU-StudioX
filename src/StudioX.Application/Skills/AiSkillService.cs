@@ -15,7 +15,9 @@ public sealed class AiSkillService
     public AiSkillService(string dataDirectory, string? runtimeDirectory = null)
     {
         if (string.IsNullOrWhiteSpace(dataDirectory))
+        {
             throw new ArgumentException("用户数据目录不能为空。", nameof(dataDirectory));
+        }
         settingsPath = Path.Combine(Path.GetFullPath(dataDirectory), "ai-skills.json");
         bundledSkillsRoot = runtimeDirectory is null ? null :
             Path.Combine(Path.GetFullPath(runtimeDirectory), "skills");
@@ -24,7 +26,10 @@ public sealed class AiSkillService
     public bool IsProjectEnabled(string project)
     {
         var full = NormalizeProject(project);
-        lock (gate) return ReadSettings().TrustedProjects.Contains(full, StringComparer.OrdinalIgnoreCase);
+        lock (gate)
+        {
+            return ReadSettings().TrustedProjects.Contains(full, StringComparer.OrdinalIgnoreCase);
+        }
     }
 
     public void SetProjectEnabled(string project, bool enabled)
@@ -33,10 +38,18 @@ public sealed class AiSkillService
         lock (gate)
         {
             var projects = ReadSettings().TrustedProjects.ToHashSet(StringComparer.OrdinalIgnoreCase);
-            if (enabled) projects.Add(full);
-            else projects.Remove(full);
+            if (enabled)
+            {
+                projects.Add(full);
+            }
+            else
+            {
+                projects.Remove(full);
+            }
             if (projects.Count > MaxTrustedProjects)
+            {
                 throw new StudioXException("SKILL_SETTINGS", "已启用工程技能的工程数量达到上限。");
+            }
             var settings = new AiSkillSettings(1, projects.Order(StringComparer.OrdinalIgnoreCase).ToArray());
             WriteSettings(settings);
         }
@@ -55,10 +68,15 @@ public sealed class AiSkillService
 
     private AiSkillSettings ReadSettings()
     {
-        if (!File.Exists(settingsPath)) return new(1, []);
+        if (!File.Exists(settingsPath))
+        {
+            return new(1, []);
+        }
         var info = new FileInfo(settingsPath);
         if (info.Length > MaxSettingsBytes)
+        {
             throw new StudioXException("SKILL_SETTINGS", "AI 技能设置文件过大。");
+        }
         try
         {
             var settings = JsonSerializer.Deserialize<AiSkillSettings>(File.ReadAllText(settingsPath), JsonStore.Options)
@@ -66,7 +84,9 @@ public sealed class AiSkillService
             if (settings.FormatVersion != 1 || settings.TrustedProjects is null ||
                 settings.TrustedProjects.Length > MaxTrustedProjects ||
                 settings.TrustedProjects.Any(path => string.IsNullOrWhiteSpace(path) || !Path.IsPathFullyQualified(path)))
+            {
                 throw new StudioXException("SKILL_SETTINGS", "AI 技能设置文件格式无效。");
+            }
             return settings;
         }
         catch (JsonException ex)
@@ -84,13 +104,15 @@ public sealed class AiSkillService
             File.WriteAllText(temporary, JsonSerializer.Serialize(settings, JsonStore.Options));
             File.Move(temporary, settingsPath, overwrite: true);
         }
-        finally { if (File.Exists(temporary)) File.Delete(temporary); }
+        finally { if (File.Exists(temporary)) { File.Delete(temporary); } }
     }
 
     private static string NormalizeProject(string project)
     {
         if (string.IsNullOrWhiteSpace(project) || !Path.IsPathFullyQualified(project))
+        {
             throw new StudioXException("SKILL_PROJECT", "技能设置需要绝对路径的工程目录。");
+        }
         return Path.TrimEndingDirectorySeparator(Path.GetFullPath(project));
     }
 

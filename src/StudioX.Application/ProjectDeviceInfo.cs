@@ -18,12 +18,20 @@ public sealed record ProjectDeviceInfo(string Manufacturer, string DeviceName, s
         CancellationToken cancellationToken = default)
     {
         var recorded = Recorded(project);
-        if (project.Kind == ProjectKind.CubeMx) return recorded;
+        if (project.Kind == ProjectKind.CubeMx)
+        {
+            return recorded;
+        }
         try
         {
             var pack = await JsonStore.ReadAsync<PackManifest>(Path.Combine(directory, "device", "manifest.json"), cancellationToken);
             if (pack.FormatVersion != 1 || pack.Id != project.PackId || pack.Version != project.PackVersion)
-                return recorded with { Notice = "工程内的器件包说明与创建记录不一致，以下显示工程记录的器件和模板标识。" };
+            {
+                return recorded with
+                {
+                    Notice = "工程内的器件包说明与创建记录不一致，以下显示工程记录的器件和模板标识。"
+                };
+            }
             var device = pack.Devices?.FirstOrDefault(d => d.Id == project.DeviceId);
             var template = device?.Templates?.FirstOrDefault(t => t.Id == project.TemplateId);
             return recorded with
@@ -38,7 +46,10 @@ public sealed record ProjectDeviceInfo(string Manufacturer, string DeviceName, s
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException or StudioXException)
         {
-            return recorded with { Notice = "无法读取工程内的器件包说明，显示工程记录的标识。\n" + ex.Message };
+            return recorded with
+            {
+                Notice = "无法读取工程内的器件包说明，显示工程记录的标识。\n" + ex.Message
+            };
         }
     }
 }

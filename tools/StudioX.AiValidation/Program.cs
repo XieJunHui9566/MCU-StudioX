@@ -8,7 +8,10 @@ using StudioX.Foundation;
 var checks = 0;
 void Check(bool condition, string description)
 {
-    if (!condition) throw new Exception(description);
+    if (!condition)
+    {
+        throw new Exception(description);
+    }
     Console.WriteLine("PASS " + description);
     checks++;
 }
@@ -120,7 +123,10 @@ try
             "data:image/png;base64," + Convert.ToBase64String(pageBytes),
         "page image is an ephemeral vision content part after the MCP tool message");
     await ExpectCodeAsync("AI_IMAGE_SIZE", () => chat.CompleteAsync(deepSeek,
-        toolReplay with { Images = [new AiRequestImage("image/png", new byte[900 * 1024], "过大页面")] }));
+        toolReplay with
+        {
+            Images = [new AiRequestImage("image/png", new byte[900 * 1024], "过大页面")]
+        }));
     Check(true, "oversized inline page images are rejected before an API call");
     await ExpectCodeAsync("AI_REQUEST_SIZE", () => chat.CompleteAsync(deepSeek,
         new AiChatRequest(Enumerable.Range(0, 128)
@@ -138,10 +144,16 @@ try
             """);
     }));
     using var genericChat = new AiChatClient(_ => "offline-test-key", genericHttp);
-    _ = await genericChat.CompleteAsync(deepSeek with { BaseUrl = "https://example.test/v1" },
+    _ = await genericChat.CompleteAsync(deepSeek with
+    {
+        BaseUrl = "https://example.test/v1"
+    },
         new AiChatRequest([new AiChatMessage("user", "hello")]));
     await ExpectCodeAsync("AI_VISION_UNAVAILABLE", () => genericChat.CompleteAsync(
-        deepSeek with { BaseUrl = "https://example.test/v1" }, imageReplay));
+        deepSeek with
+        {
+            BaseUrl = "https://example.test/v1"
+        }, imageReplay));
     Check(true, "unknown model endpoints never receive page images without verified vision support");
     Check(AiSettingsService.EffectiveContextWindowTokens(deepSeek) == 1_000_000 &&
         AiSettingsService.EffectiveContextWindowTokens(deepSeek with { BaseUrl = "https://example.test/v1" }) is null,
@@ -179,7 +191,8 @@ try
     var inB = await store.CreateAsync(projectB);
     var savedA = await store.SaveAsync(projectA, inA with
     {
-        Title = "检查工程信息", Turns = turns,
+        Title = "检查工程信息",
+        Turns = turns,
         LastPromptTokens = 180
     });
     Check((await store.ListAsync(projectA)).Single().Id == inA.Id &&
@@ -192,7 +205,10 @@ try
     var oversizedTurns = Enumerable.Range(0, 34)
         .Select(_ => new AiAgentTurn("question", new string('a', 16_000))).ToArray();
     await ExpectCodeAsync("AI_HISTORY_SIZE", () => store.SaveAsync(projectA,
-        savedA with { Turns = oversizedTurns }));
+        savedA with
+        {
+            Turns = oversizedTurns
+        }));
     Check((await store.LoadAsync(projectA, inA.Id)).Turns.Count == 2,
         "512 KiB limit rejects an oversized save without replacing prior history");
 
@@ -209,7 +225,10 @@ try
             new AiChatMessage("assistant", answer)
         ]);
     }).ToArray();
-    var compacted = await store.SaveAsync(projectA, savedA with { Turns = crowdedTurns });
+    var compacted = await store.SaveAsync(projectA, savedA with
+    {
+        Turns = crowdedTurns
+    });
     var reloadedCompacted = await store.LoadAsync(projectA, inA.Id);
     Check(compacted.Turns.Count == 3 && reloadedCompacted.Turns.Count == 3 &&
         compacted.Turns[0].ProtocolMessages is null && compacted.Turns[0].ReasoningContent is null &&
@@ -227,7 +246,10 @@ try
         new AiChatMessage("tool", new string('p', 600_000), ToolCallId: "large-call"),
         new AiChatMessage("assistant", "单轮可见回答")
     ]);
-    var compactedSingle = await store.SaveAsync(projectA, compacted with { Turns = [largeSingleTurn] });
+    var compactedSingle = await store.SaveAsync(projectA, compacted with
+    {
+        Turns = [largeSingleTurn]
+    });
     var reloadedSingle = await store.LoadAsync(projectA, inA.Id);
     Check(compactedSingle.Turns.Single().ProtocolMessages is null &&
         compactedSingle.Turns.Single().ReasoningContent is null &&
@@ -236,18 +258,24 @@ try
         "a single oversized tool round remains readable after its replay data is compacted");
 
     for (var index = 1; index < AiConversationStore.MaxConversationsPerProject; index++)
+    {
         _ = await store.CreateAsync(projectB);
+    }
     await ExpectCodeAsync("AI_HISTORY_COUNT", () => store.CreateAsync(projectB));
     Check((await store.ListAsync(projectB)).Count == AiConversationStore.MaxConversationsPerProject,
         "64 conversation cap rejects new history without pruning existing records");
 
+    await ProtocolTransportChecks.RunAsync(Check);
     await CacheOptimizationChecks.RunAsync(projectA, root, Check);
 
     Console.WriteLine($"PASS {checks} offline AI checks; no live API or toolchain access.");
 }
 finally
 {
-    foreach (var document in captured) document.Dispose();
+    foreach (var document in captured)
+    {
+        document.Dispose();
+    }
     // 清理本次唯一临时目录中创建的少量 JSON 文件，不触及已有用户数据。
     var safeRoot = Path.GetFullPath(root);
     var temp = Path.GetFullPath(Path.GetTempPath());
@@ -255,9 +283,15 @@ finally
         Path.GetFileName(safeRoot).StartsWith("studiox-ai-validation-", StringComparison.Ordinal) &&
         Directory.Exists(safeRoot))
     {
-        foreach (var file in Directory.EnumerateFiles(safeRoot, "*", SearchOption.AllDirectories)) File.Delete(file);
+        foreach (var file in Directory.EnumerateFiles(safeRoot, "*", SearchOption.AllDirectories))
+        {
+            File.Delete(file);
+        }
         foreach (var directory in Directory.EnumerateDirectories(safeRoot, "*", SearchOption.AllDirectories)
-                     .OrderByDescending(path => path.Length)) Directory.Delete(directory);
+                     .OrderByDescending(path => path.Length))
+        {
+            Directory.Delete(directory);
+        }
         Directory.Delete(safeRoot);
     }
 }
@@ -272,7 +306,10 @@ static async Task<string> CreateProjectAsync(string path)
 
 static async Task ExpectCodeAsync<T>(string code, Func<Task<T>> run)
 {
-    try { _ = await run(); }
+    try
+    {
+        _ = await run();
+    }
     catch (StudioXException error) when (error.Code == code) { return; }
     throw new Exception($"Expected StudioXException {code}");
 }

@@ -1,111 +1,10 @@
 namespace StudioX.Application;
 
-using System.Text.Json;
 using System.Text.Encodings.Web;
+using System.Text.Json;
 using StudioX.Application.Mcp;
 using StudioX.Engine;
 using StudioX.Foundation;
-
-/// <summary>保存可见对话及 API 协议消息；旧记录没有 ProtocolMessages 时仍可读取。</summary>
-public sealed record AiAgentTurn(string User, string Assistant, string? ReasoningContent = null,
-    IReadOnlyList<AiChatMessage>? ProtocolMessages = null, string? ContextSummary = null,
-    long CompactedToolCalls = 0, IReadOnlyList<string>? SteeringMessages = null);
-
-public sealed record AiAgentReply(string Text, IReadOnlyList<AiAgentTurn> History,
-    AiTokenUsage? Usage = null, string? ReasoningContent = null,
-    AiAgentUsageTotals? AggregateUsage = null);
-
-/// <summary>一轮请求的累计实际用量；字段缺失的请求不按零估算。</summary>
-public sealed record AiAgentUsageTotals(long? PromptTokens, long? CompletionTokens,
-    long? TotalTokens, long? PromptCacheHitTokens, long? PromptCacheMissTokens,
-    int RequestsWithUsage, int RequestsWithCacheDetails);
-
-/// <summary>运行中提示词的线程安全收件箱。被 Agent 消费前仍可在任务结束后取回。</summary>
-public sealed class AiAgentSteeringQueue
-{
-    private readonly object gate = new();
-    private readonly Queue<string> pending = new();
-    private bool accepting = true;
-
-    public event Action<string>? MessageDequeued;
-
-    public bool IsAccepting { get { lock (gate) return accepting; } }
-    public int PendingCount { get { lock (gate) return pending.Count; } }
-    public IReadOnlyList<string> PendingMessages { get { lock (gate) return pending.ToArray(); } }
-
-    public bool TryEnqueue(string text)
-    {
-        if (string.IsNullOrWhiteSpace(text) || text.Length > 4_000 || text.Contains('\0'))
-            throw new StudioXException("AI_PROMPT_SIZE", "运行中提示词不能为空，且不能超过 4000 个字符。");
-        lock (gate)
-        {
-            if (!accepting) return false;
-            pending.Enqueue(text);
-            return true;
-        }
-    }
-
-    /// <summary>任务取消或失败后，宿主可取回尚未消费的提示词。</summary>
-    public IReadOnlyList<string> ClearPending()
-    {
-        lock (gate)
-        {
-            var result = pending.ToArray();
-            pending.Clear();
-            return result;
-        }
-    }
-
-    public IReadOnlyList<string> DrainPending() => ClearPending();
-
-    internal IReadOnlyList<string> Consume() => ClearPending();
-
-    internal void NotifyDequeued(string message)
-    {
-        if (MessageDequeued is not { } callbacks) return;
-        foreach (Action<string> callback in callbacks.GetInvocationList())
-        {
-            // UI 通知不可改变 Agent 已接受提示词后的协议状态。
-            try { callback(message); }
-            catch (Exception) { }
-        }
-    }
-
-    internal bool TryCloseIfEmpty()
-    {
-        lock (gate)
-        {
-            if (pending.Count != 0) return false;
-            accepting = false;
-            return true;
-        }
-    }
-
-    internal void Close() { lock (gate) accepting = false; }
-}
-
-/// <summary>可替换的模型调用入口，供离线验证注入伪响应。</summary>
-public interface IAiAgentTransport
-{
-    Task<AiChatResponse> CompleteAsync(AiSettings settings, AiChatRequest request, CancellationToken token = default);
-}
-
-/// <summary>可选的流式传输；离线伪传输仍可只实现非流式入口。</summary>
-public interface IAiStreamingTransport : IAiAgentTransport
-{
-    Task<AiChatResponse> CompleteStreamingAsync(AiSettings settings, AiChatRequest request,
-        Action<AiStreamUpdate> onUpdate, CancellationToken token = default);
-}
-
-public enum AiAgentProgressKind
-{
-    ModelRequestStarted, ReasoningDelta, AnswerDelta, ModelResponseReceived,
-    ToolCallStarted, ToolCallCompleted
-}
-
-/// <summary>可见进度只包含模型实际返回的文本和真实工具阶段，不推测内部思维。</summary>
-public sealed record AiAgentProgress(AiAgentProgressKind Kind, int Round,
-    string? Text = null, string? ToolName = null);
 
 /// <summary>组织模型与工具轮次；通过 MCP 客户端发现和调用工程工具。</summary>
 public sealed partial class AiAgentService
@@ -167,10 +66,14 @@ public sealed partial class AiAgentService
         try
         {
             if (string.IsNullOrWhiteSpace(prompt) || prompt.Length > MaxPromptChars || prompt.Contains('\0'))
+            {
                 throw new StudioXException("AI_PROMPT_SIZE", "问题不能为空，且不能超过 4000 个字符。");
+            }
             var root = await ValidateProjectAsync(project, token).ConfigureAwait(false);
             if (!root.Equals(mcpSession.Project, StringComparison.OrdinalIgnoreCase))
+            {
                 throw new StudioXException("MCP_PROJECT", "MCP 会话未绑定当前工程，请重新打开工程。");
+            }
             var toolDefinitions = await mcpSession.ListToolsAsync(token).ConfigureAwait(false);
             var availableMcpTools = toolDefinitions.Select(item => item.Name)
                 .ToHashSet(StringComparer.Ordinal);
@@ -203,7 +106,10 @@ public sealed partial class AiAgentService
                         update => ReportStreamUpdate(progress!, roundNumber, update), token).ConfigureAwait(false)
                     : await transport.CompleteAsync(settings, activeRequest, token).ConfigureAwait(false);
                 AiChatResponse response;
-                try { response = await CompleteRoundAsync(request).ConfigureAwait(false); }
+                try
+                {
+                    response = await CompleteRoundAsync(request).ConfigureAwait(false);
+                }
                 catch (StudioXException error) when (error.Code == "AI_REQUEST_SIZE" && request.Images is { Count: > 0 })
                 {
                     // 图像序列化在发起 HTTP 请求前失败；保留文字工具结果并明确告知模型未看见图像。
@@ -225,10 +131,14 @@ public sealed partial class AiAgentService
                 if (!isStreaming)
                 {
                     if (!string.IsNullOrEmpty(response.ReasoningContent))
+                    {
                         progress?.Report(new(AiAgentProgressKind.ReasoningDelta, roundNumber,
-                            response.ReasoningContent));
+                        response.ReasoningContent));
+                    }
                     if (!string.IsNullOrEmpty(response.Content))
+                    {
                         progress?.Report(new(AiAgentProgressKind.AnswerDelta, roundNumber, response.Content));
+                    }
                 }
                 progress?.Report(new(AiAgentProgressKind.ModelResponseReceived, roundNumber,
                     response.ToolCalls.Count > 0 ? "模型提出工具调用" : "模型响应已完成"));
@@ -241,14 +151,18 @@ public sealed partial class AiAgentService
                 if (response.ToolCalls.Count == 0)
                 {
                     if (ContainsUnparsedToolMarkup(response.Content))
+                    {
                         throw new StudioXException("AI_RESPONSE_FORMAT",
-                            "模型把工具调用写成了普通文本，未执行这些操作。请重试或检查所选模型的工具调用兼容性。");
+                        "模型把工具调用写成了普通文本，未执行这些操作。请重试或检查所选模型的工具调用兼容性。");
+                    }
                     CompactCurrentProtocol(currentProtocol, checkpoint);
                     currentProtocol.Add(new AiChatMessage("assistant", response.Content ?? "",
                         ReasoningContent: response.ReasoningContent));
                     if (steering is null || steering.TryCloseIfEmpty())
+                    {
                         return Reply(response.Content ?? "", prompt, visibleHistory, usage,
-                            currentProtocol, response.ReasoningContent, checkpoint, usageTotals.Build());
+                        currentProtocol, response.ReasoningContent, checkpoint, usageTotals.Build());
+                    }
                     AppendSteeringAtCheckpoint(currentProtocol, steering);
                     continue;
                 }
@@ -256,9 +170,11 @@ public sealed partial class AiAgentService
                         string.IsNullOrWhiteSpace(call.Id) || call.Id.Length > 256 ||
                         string.IsNullOrWhiteSpace(call.Name) || call.Name.Length > 128) ||
                     response.ToolCalls.Select(call => call.Id).Distinct(StringComparer.Ordinal).Count() != response.ToolCalls.Count)
+                {
                     return Reply("模型返回的工具调用格式无效；此前已执行的工具结果仍保留。请在同一对话重试。",
-                        prompt, visibleHistory, usage, currentProtocol, checkpoint: checkpoint,
-                        aggregateUsage: usageTotals.Build());
+                    prompt, visibleHistory, usage, currentProtocol, checkpoint: checkpoint,
+                    aggregateUsage: usageTotals.Build());
+                }
 
                 var assistantMessage = new AiChatMessage("assistant", response.Content,
                     ToolCalls: response.ToolCalls, ReasoningContent: response.ReasoningContent);
@@ -271,7 +187,9 @@ public sealed partial class AiAgentService
                         .ConfigureAwait(false);
                     var result = toolResult.Text;
                     if (result.Length > MaxToolResultChars - (toolResult.Images.Count > 0 ? 512 : 0))
+                    {
                         result = TruncateToolResult(call.Name, result);
+                    }
                     if (toolResult.Images.Count > 0)
                     {
                         var canView = AiChatClient.SupportsInlineImages(settings);
@@ -281,7 +199,10 @@ public sealed partial class AiAgentService
                             if (!canView || pendingImages.Count >= MaxRequestImages ||
                                 image.Data.Length is < 1 or > AiChatClient.MaximumInlineImageBytes ||
                                 pendingImages.Sum(item => (long)item.Data.Length) + image.Data.Length >
-                                    AiChatClient.MaximumInlineImageTotalBytes) continue;
+                                    AiChatClient.MaximumInlineImageTotalBytes)
+                            {
+                                continue;
+                            }
                             pendingImages.Add(new AiRequestImage(image.MimeType, image.Data,
                                 $"{call.Name} 工具调用 {Limit(call.Id, 80)} 返回的页面图像 {++included}；与同一工具调用的文字结果对应。"));
                         }
@@ -323,19 +244,28 @@ public sealed partial class AiAgentService
                 !ContainsUnparsedToolMarkup(turn.Assistant) &&
                 ProtocolCharacters(protocol) <= remainingChars ? protocol : pair;
             var cost = ProtocolCharacters(candidate);
-            if (candidate.Count > remaining || cost > remainingChars) break;
+            if (candidate.Count > remaining || cost > remainingChars)
+            {
+                break;
+            }
             selected.Push(candidate);
             remaining -= candidate.Count;
             remainingChars -= (int)cost;
         }
         var messages = new List<AiChatMessage>(46);
-        foreach (var turn in selected) messages.AddRange(turn);
+        foreach (var turn in selected)
+        {
+            messages.AddRange(turn);
+        }
         return messages;
     }
 
     private static string HistoricalUserText(AiAgentTurn turn)
     {
-        if (turn.SteeringMessages is not { Count: > 0 } steering) return turn.User;
+        if (turn.SteeringMessages is not { Count: > 0 } steering)
+        {
+            return turn.User;
+        }
         var details = string.Join("\n", steering.Select(message => "- " + message));
         return Limit(turn.User + "\n运行中追加的用户提示（按时间）：\n" + details, 8_000);
     }
@@ -349,10 +279,15 @@ public sealed partial class AiAgentService
             (skillCatalogPrefix?.Content?.Length ?? 0);
         if (historyPrefix.Count + currentProtocol.Count + 1 + (skillCatalogPrefix is null ? 0 : 1) > 128 ||
             currentChars > MaxRequestContextChars)
+        {
             throw new StudioXException("AI_MESSAGES", "当前工具批次超过 API 单次请求容量，请缩小一次读取范围后重试。");
+        }
         var messages = new List<AiChatMessage>(historyPrefix.Count + currentProtocol.Count + 2)
             { new("system", systemInstruction) };
-        if (skillCatalogPrefix is not null) messages.Add(skillCatalogPrefix);
+        if (skillCatalogPrefix is not null)
+        {
+            messages.Add(skillCatalogPrefix);
+        }
         messages.AddRange(historyPrefix);
         messages.AddRange(currentProtocol);
         return messages;
@@ -361,7 +296,10 @@ public sealed partial class AiAgentService
     private static void AppendSteeringAtCheckpoint(List<AiChatMessage> currentProtocol,
         AiAgentSteeringQueue? steering)
     {
-        if (steering is null) return;
+        if (steering is null)
+        {
+            return;
+        }
         foreach (var message in steering.Consume())
         {
             currentProtocol.Add(new AiChatMessage("user", message, StudioXKind: "steering"));
@@ -373,15 +311,22 @@ public sealed partial class AiAgentService
         AiStreamUpdate update)
     {
         if (update.Kind == AiStreamUpdateKind.ReasoningDelta && !string.IsNullOrEmpty(update.Text))
+        {
             progress.Report(new(AiAgentProgressKind.ReasoningDelta, round, update.Text));
+        }
         else if (update.Kind == AiStreamUpdateKind.ContentDelta && !string.IsNullOrEmpty(update.Text))
+        {
             progress.Report(new(AiAgentProgressKind.AnswerDelta, round, update.Text));
+        }
     }
 
     private static string? CompletedWorkspaceWritePath(string tool, string result)
     {
         if (tool is not ("project_edit_file" or "project_patch_file" or "project_create_file" or
-                         "project_create_directory" or "external_project_copy")) return null;
+                         "project_create_directory" or "external_project_copy"))
+        {
+            return null;
+        }
         try
         {
             using var json = JsonDocument.Parse(result);
@@ -391,7 +336,9 @@ public sealed partial class AiAgentService
             if (root.ValueKind != JsonValueKind.Object ||
                 !root.TryGetProperty(success, out var completed) || completed.ValueKind != JsonValueKind.True ||
                 !root.TryGetProperty(pathProperty, out var path) || path.ValueKind != JsonValueKind.String)
+            {
                 return null;
+            }
             var relative = path.GetString();
             return relative is { Length: > 0 and <= 240 } && !relative.Any(char.IsControl)
                 ? relative : null;
@@ -402,7 +349,10 @@ public sealed partial class AiAgentService
     private static string? BuildSkillCatalogData(StudioXMcpSession session)
     {
         var catalog = session.DiscoverSkills().Skills;
-        if (catalog.Count == 0) return null;
+        if (catalog.Count == 0)
+        {
+            return null;
+        }
         // 只加入有界元数据；完整技能正文由固定 schema 的 MCP 工具按需读取。
         var entries = catalog.Take(24).Select(skill => new
         {
@@ -418,10 +368,18 @@ public sealed partial class AiAgentService
     private static async Task<StudioXMcpToolResult> ExecuteMcpToolAsync(StudioXMcpSession session,
         HashSet<string> availableTools, AiToolCall call, CancellationToken token)
     {
-        if (!availableTools.Contains(call.Name)) return new(Error("工具不可用。"), []);
+        if (!availableTools.Contains(call.Name))
+        {
+            return new(Error("工具不可用。"), []);
+        }
         if (call.ArgumentsJson is null || call.ArgumentsJson.Length > MaxArgumentsChars)
+        {
             return new(Error("工具参数过大或缺失。"), []);
-        try { return await session.CallToolDetailedAsync(call.Name, call.ArgumentsJson, token).ConfigureAwait(false); }
+        }
+        try
+        {
+            return await session.CallToolDetailedAsync(call.Name, call.ArgumentsJson, token).ConfigureAwait(false);
+        }
         catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }
         catch (Exception ex) when (ex is not OutOfMemoryException)
         {
@@ -434,14 +392,20 @@ public sealed partial class AiAgentService
         AiAgentCheckpoint? checkpoint = null, AiAgentUsageTotals? aggregateUsage = null)
     {
         if (reasoningContent is { Length: > MaxReasoningChars })
+        {
             throw new StudioXException("AI_HISTORY_SIZE", "AI 推理内容超过单轮会话上限。");
+        }
         var answer = string.IsNullOrWhiteSpace(text) ? "本轮没有收到可显示的回答。" : Limit(text, MaxAnswerChars);
         var completeProtocol = protocol.ToList();
         if (completeProtocol.Count == 0 || completeProtocol[^1].Role != "assistant" ||
             completeProtocol[^1].ToolCalls is { Count: > 0 })
+        {
             completeProtocol.Add(new AiChatMessage("assistant", answer));
+        }
         if (completeProtocol.Count > MaxStoredProtocolMessages)
+        {
             throw new StudioXException("AI_HISTORY_SIZE", "AI 工具交互消息超过单轮会话上限。");
+        }
         var next = TrimHistory([.. history,
             new AiAgentTurn(prompt, answer, reasoningContent, completeProtocol.ToArray(),
                 checkpoint?.Summary, checkpoint?.CompactedToolCalls ?? 0,
@@ -452,7 +416,10 @@ public sealed partial class AiAgentService
 
     private static IReadOnlyList<AiAgentTurn> TrimHistory(IReadOnlyList<AiAgentTurn>? history)
     {
-        if (history is null || history.Count == 0) return [];
+        if (history is null || history.Count == 0)
+        {
+            return [];
+        }
         var result = new List<AiAgentTurn>();
         var remaining = MaxHistoryChars;
         var remainingProtocol = MaxHistoryProtocolChars;
@@ -460,25 +427,38 @@ public sealed partial class AiAgentService
         for (var index = history.Count - 1; index >= 0 && result.Count < MaxHistoryTurns; index--)
         {
             var turn = history[index];
-            if (turn is null || string.IsNullOrWhiteSpace(turn.User) || string.IsNullOrWhiteSpace(turn.Assistant)) continue;
+            if (turn is null || string.IsNullOrWhiteSpace(turn.User) || string.IsNullOrWhiteSpace(turn.Assistant))
+            {
+                continue;
+            }
             if (turn.ReasoningContent is { Length: > MaxReasoningChars })
+            {
                 throw new StudioXException("AI_HISTORY_SIZE", "AI 推理内容超过单轮会话上限。");
+            }
             if (turn.ProtocolMessages is { } protocol)
+            {
                 ValidateProtocol(turn, protocol);
+            }
             var user = Limit(turn.User, MaxPromptChars);
             var assistant = Limit(turn.Assistant, MaxAnswerChars);
             var protocolChars = turn.ProtocolMessages is { } messages
                 ? ProtocolCharacters(messages)
                 : (long)user.Length + assistant.Length + (turn.ReasoningContent?.Length ?? 0);
             var protocolMessages = turn.ProtocolMessages?.Count ?? 2;
-            if (user.Length + assistant.Length > remaining) break;
+            if (user.Length + assistant.Length > remaining)
+            {
+                break;
+            }
             if (protocolChars > remainingProtocol || protocolMessages > remainingMessages)
             {
                 // 旧轮的完整工具结果并非续聊所必需，保留可见问答即可。
                 protocolChars = user.Length + assistant.Length;
                 protocolMessages = 2;
             }
-            if (protocolChars > remainingProtocol || protocolMessages > remainingMessages) break;
+            if (protocolChars > remainingProtocol || protocolMessages > remainingMessages)
+            {
+                break;
+            }
             remaining -= user.Length + assistant.Length;
             remainingProtocol -= (int)protocolChars;
             remainingMessages -= protocolMessages;
@@ -503,64 +483,89 @@ public sealed partial class AiAgentService
             !string.Equals(first.Content, turn.User, StringComparison.Ordinal) ||
             first.ToolCallId is not null || first.ToolCalls is { Count: > 0 } ||
             first.ReasoningContent is not null)
+        {
             throw new StudioXException("AI_HISTORY_FORMAT", "AI 历史中的协议消息无效。");
+        }
         var pendingTools = new HashSet<string>(StringComparer.Ordinal);
         for (var index = 1; index < protocol.Count; index++)
         {
             var message = protocol[index];
             if (message is null || message.Content is { Length: > 1024 * 1024 } ||
                 message.ReasoningContent is { Length: > MaxReasoningChars })
+            {
                 throw new StudioXException("AI_HISTORY_FORMAT", "AI 历史中的协议消息无效。");
+            }
             if (message.Role == "assistant")
             {
                 if (pendingTools.Count > 0 || message.ToolCallId is not null)
+                {
                     throw new StudioXException("AI_HISTORY_FORMAT", "AI 历史中的工具调用顺序无效。");
+                }
                 if (message.ToolCalls is { Count: > 0 } calls)
                 {
                     if (index == protocol.Count - 1 || calls.Count > 16)
+                    {
                         throw new StudioXException("AI_HISTORY_FORMAT", "AI 历史中的工具调用数量无效。");
+                    }
                     foreach (var call in calls)
                     {
                         if (call is null || string.IsNullOrWhiteSpace(call.Id) || call.Id.Length > 256 ||
                             string.IsNullOrWhiteSpace(call.Name) || call.ArgumentsJson is null ||
                             call.ArgumentsJson.Length > 512 * 1024 || !pendingTools.Add(call.Id))
+                        {
                             throw new StudioXException("AI_HISTORY_FORMAT", "AI 历史中的工具调用无效。");
+                        }
                     }
                 }
                 else if (message.Content is null || index != protocol.Count - 1 &&
                          protocol[index + 1]?.Role != "user")
+                {
                     throw new StudioXException("AI_HISTORY_FORMAT", "AI 历史中的助手消息顺序无效。");
+                }
             }
             else if (message.Role == "tool")
             {
                 if (message.Content is null || message.ReasoningContent is not null ||
                     message.ToolCalls is { Count: > 0 } || message.ToolCallId is null ||
                     !pendingTools.Remove(message.ToolCallId))
+                {
                     throw new StudioXException("AI_HISTORY_FORMAT", "AI 历史中的工具结果无效。");
+                }
             }
             else if (message.Role == "user")
             {
                 if (pendingTools.Count > 0 || message.Content is null or { Length: > 16_000 } ||
                     message.ToolCallId is not null || message.ToolCalls is { Count: > 0 } ||
                     message.ReasoningContent is not null)
+                {
                     throw new StudioXException("AI_HISTORY_FORMAT", "AI 历史中的追加提示词无效。");
+                }
             }
             else
+            {
                 throw new StudioXException("AI_HISTORY_FORMAT", "AI 历史中的消息角色无效。");
+            }
         }
         if (pendingTools.Count > 0 || protocol[^1].Role != "assistant" ||
             protocol[^1].ToolCalls is { Count: > 0 })
+        {
             throw new StudioXException("AI_HISTORY_FORMAT", "AI 历史中的工具调用未完成。");
+        }
     }
 
     private static string Limit(string text, int max) => text.Length <= max ? text : text[..max];
 
     private static async Task<string> ValidateProjectAsync(string project, CancellationToken token)
     {
-        if (string.IsNullOrWhiteSpace(project)) throw new StudioXException("AI_PROJECT", "请先选择工程。");
+        if (string.IsNullOrWhiteSpace(project))
+        {
+            throw new StudioXException("AI_PROJECT", "请先选择工程。");
+        }
         var root = Path.GetFullPath(project);
         if (!Directory.Exists(root) || (File.GetAttributes(root) & FileAttributes.ReparsePoint) != 0)
+        {
             throw new StudioXException("AI_PROJECT", "当前工程目录不存在或是链接目录。");
+        }
         _ = PathBoundary.Resolve(root, ".studiox/project.json");
         _ = await ProjectService.ReadAsync(root, token).ConfigureAwait(false);
         return root;

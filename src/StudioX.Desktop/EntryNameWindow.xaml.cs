@@ -8,7 +8,10 @@ public partial class EntryNameWindow : Window
     public string EntryName => NameInput.Text;
     public EntryNameWindow(string title, string prompt, string initial, bool directory)
     {
-        InitializeComponent(); Title = title; Prompt.Text = prompt; NameInput.Text = initial;
+        InitializeComponent();
+        Title = title;
+        Prompt.Text = prompt;
+        NameInput.Text = initial;
         Loaded += (_, _) =>
         {
             NameInput.Focus();
@@ -18,7 +21,11 @@ public partial class EntryNameWindow : Window
     }
     private void Accept_Click(object sender, RoutedEventArgs e)
     {
-        try { ProjectFileService.ValidateEntryName(EntryName); DialogResult = true; }
+        try
+        {
+            ProjectFileService.ValidateEntryName(EntryName);
+            DialogResult = true;
+        }
         catch (Exception ex) { ErrorLabel.Text = ex.Message; ErrorLabel.Visibility = Visibility.Visible; NameInput.Focus(); }
     }
 }

@@ -1,0 +1,69 @@
+<Project
+  Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference
+      Include="../../src/StudioX.Application/StudioX.Application.csproj" />
+    <PackageReference
+      Include="AvalonEdit" />
+  </ItemGroup>
+  <ItemGroup>
+    <Page
+      Include="../../src/StudioX.Desktop/BuildMemoryView.xaml"
+      Link="Product/BuildMemoryView.xaml" />
+    <Compile
+      Include="../../src/StudioX.Desktop/BuildMemoryView.xaml.cs"
+      Link="Product/BuildMemoryView.xaml.cs" />
+    <Compile
+      Include="../../src/StudioX.Desktop/Icon.cs"
+      Link="Product/Icon.cs" />
+    <Using
+      Include="System.IO" />
+    <Compile
+      Include="../../src/StudioX.Desktop/CodeLanguage.cs"
+      Link="Product/CodeLanguage.cs" />
+    <Compile
+      Include="../../src/StudioX.Desktop/SafeTextEditor.cs"
+      Link="Product/SafeTextEditor.cs" />
+    <Compile
+      Include="../../src/StudioX.Desktop/AiConversationController.cs"
+      Link="Product/AiConversationController.cs" />
+    <Compile
+      Include="../../src/StudioX.Desktop/AiConversationSaveResult.cs"
+      Link="Product/AiConversationSaveResult.cs" />
+    <Compile
+      Include="../../src/StudioX.Desktop/AiActivityPresenter.cs"
+      Link="Product/AiActivityPresenter.cs" />
+    <Compile
+      Include="../../src/StudioX.Desktop/AiApprovalPresenter.cs"
+      Link="Product/AiApprovalPresenter.cs" />
+    <Compile
+      Include="../../src/StudioX.Desktop/AiTurnDetailRenderer.cs"
+      Link="Product/AiTurnDetailRenderer.cs" />
+    <Compile
+      Include="../../src/StudioX.Desktop/AiTranscriptRenderer.cs"
+      Link="Product/AiTranscriptRenderer.cs" />
+    <Compile
+      Include="../../src/StudioX.Desktop/AiUiProgressBuffer.cs"
+      Link="Product/AiUiProgressBuffer.cs" />
+    <Compile
+      Include="../../src/StudioX.Desktop/AiUsageMeterPresenter.cs"
+      Link="Product/AiUsageMeterPresenter.cs" />
+    <Compile
+      Include="../../src/StudioX.Desktop/AiWorkspaceChangePolicy.cs"
+      Link="Product/AiWorkspaceChangePolicy.cs" />
+    <Compile
+      Include="../../src/StudioX.Desktop/EditorDocumentSession.cs"
+      Link="Product/EditorDocumentSession.cs" />
+    <Compile
+      Include="../../src/StudioX.Desktop/EditorDocumentSynchronizer.cs"
+      Link="Product/EditorDocumentSynchronizer.cs" />
+    <Compile
+      Include="../../src/StudioX.Desktop/EditorDiskSyncResult.cs"
+      Link="Product/EditorDiskSyncResult.cs" />
+  </ItemGroup>
+</Project>

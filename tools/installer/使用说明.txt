@@ -15,9 +15,9 @@ CubeMX CMake 工程也可直接从文件菜单导入，无需先安装 STM32 器
 3. 编译和下载
 F7 编译工程。STM32F1/F4 可在顶部选择 ST-Link、DAP-Link 或 J-Link，齿轮可设置速度和序列号。
 点击“下载”将自动保存、编译、烧录、校验并复位运行，下载会替换板上的应用固件。
-STM32 调试界面支持断点、条件/日志/临时断点、单步、调用栈、变量和寄存器查看。
+STM32 调试界面支持断点、条件/日志/临时断点、单步、调用栈、变量、寄存器和反汇编查看。
 STM32F407 配合 ST-Link、DAP-Link 已完成实机界面联调；其他型号和 J-Link 的实机覆盖范围见 docs 内验收记录。
-AG32 临时包支持工程创建和编译，并附带官方 AGM BLASTER 配置；当前硬件通信异常尚未解决，不将其下载或调试标为验收通过。
+AG32 临时包附带官方 AGM BLASTER 配置；通过 USB 扩展坞完成了相应实板调试验收，电脑 USB 直连仍有间歇性通信异常，具体边界见 docs 内记录。
 
 4. 升级和修复
 保存文件并关闭所有 MCU StudioX 窗口，运行新版安装包，在原目录覆盖安装即可。
@@ -40,7 +40,7 @@ AG32 临时包支持工程创建和编译，并附带官方 AGM BLASTER 配置�
 从“工具 → 工程终端”或 Ctrl+反引号打开；默认目录是当前工程，Git 已内置，无需单独安装。
 首次提交前设置自己的 user.name 和 user.email，再执行 git add、git commit；配置远程仓库后可执行 git pull、git push。
 终端采用 CMD 命令语法，支持持续会话、上下键历史、Ctrl+C 中断、滚轮浏览和 Ctrl+滚轮字号。
-提交前请先保存编辑器文件。拉取或切换分支后可刷新工程树，并关闭、重新打开相关代码标签以读取磁盘新内容。
+提交前请先保存编辑器文件。磁盘上的文件修改会同步到编辑区；已有未保存内容时保留缓冲区并提示处理冲突。
 完整示例与说明见 docs/GIT-TERMINAL.md。
 
 8. 串口工具
@@ -50,6 +50,12 @@ AG32 临时包支持工程创建和编译，并附带官方 AGM BLASTER 配置�
 具体操作见 docs/SERIAL_TERMINAL.md、docs/SERIAL-PROTOCOLS.md 和 docs/SERIAL-PLOT.md。
 
 9. AI 助手与 MCP
-打开工程后，点击窗口右上角的 AI 按钮展开聊天栏；从“工具 → AI 接口设置”填写模型服务地址、模型名和自己的 API Key。
-API Key 保存在当前 Windows 用户的凭据管理器中，不随安装包提供。写入文件、连接硬件及烧录等操作仍需按提示确认。
-外部客户端可启动 runtime/mcp-host/StudioX.Cli.exe 使用同一套 MCP 工具；配置和功能边界见 docs/AI_AGENT.md 与 docs/AI_MCP_EXTERNAL.md。
+在工具菜单配置 API，密钥保存在当前用户凭据中。
+内置 Agent 和外部 StudioX.Cli mcp 共用工程、编译、Git、下载、调试、串口、网络和 PDF 工具；变更及硬件连接需要相应授权。
+支持项目历史会话、运行中追加提示、实时工具活动、API 实际缓存用量和按需加载 MCU Skill。
+
+10. FreeRTOS 调试
+暂停目标后在调试窗口的 RTOS 页读取任务、调度器、可用堆统计与队列/同步对象；反汇编页查看机器指令和当前 PC。
+读取使用 ELF 调试信息及目标内存，不调用目标端内核函数；缺失字段显示不可用，不伪造任务或 CPU 百分比。
+内置 Agent 可通过 debug_rtos_snapshot 和 debug_disassemble 读取同一会话，调试本身不会隐式下载固件。
+STM32F407 / ST-Link 与 CH32V307VCT6 / WCH-LinkE 的已验证范围见 docs；其他内核版本、型号及同步对象争用仍需单独验证。
