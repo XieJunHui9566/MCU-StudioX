@@ -22,7 +22,7 @@ IDE 提供 C/C++ 编辑与代码提示、CMake 工程构建、器件包导入、
 
 ## 安装包
 
-Windows x64 **0.2.5 安装包与分卷**：[GitHub Release 下载](https://github.com/XieJunHui9566/MCU-StudioX/releases/tag/v0.2.5)。完整离线发行包含内置 SDK、工具链与器件包，安装目录约 **12 GB**。下载同组全部分卷至同一目录，用 7-Zip 打开 `.7z.001`，解压出完整 `Setup.exe` 或便携目录，再运行安装器或程序；具体文件和 SHA-256 以 Release 页面为准。
+Windows x64 **0.2.5 安装包与便携包**：[GitHub Release 下载](https://github.com/XieJunHui9566/MCU-StudioX/releases/tag/v0.2.5)。完整离线发行包含内置 SDK、工具链与器件包，安装目录约 **12 GB**。下载 `Setup.exe` 可直接安装；便携 `.7z` 解压后运行 `MCU StudioX.exe`。如大文件以 `.7z.001` 等分卷提供，下载同组全部分卷至同一目录，用 7-Zip 打开首卷解压，再运行得到的安装器或程序；具体文件和 SHA-256 以 Release 页面为准。
 
 项目维护者此前分享的 **0.2.4 安装包**仍可通过[百度网盘下载 MCUStdioX](https://pan.baidu.com/s/5fh5exaJIgC6ThwSS_IdDOA)，该链接不代表 0.2.5。安装与第三方材料状态见[安装与分发说明](docs/INSTALLER.md)。安装包作为 Release 附件单独分发，不写入 Git 源码树。
 
