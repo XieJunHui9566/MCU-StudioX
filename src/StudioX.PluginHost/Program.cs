@@ -9,6 +9,10 @@ using StudioX.Foundation;
 Console.InputEncoding = new UTF8Encoding(false);
 Console.OutputEncoding = new UTF8Encoding(false);
 if (args is ["--serial-script"]) { return await StudioX.PluginHost.SerialScriptHost.RunAsync(); }
+if (args is ["--extension", var extensionManifestPath])
+{
+    return await StudioX.PluginHost.ExtensionHost.RunAsync(extensionManifestPath);
+}
 var protocol = Console.Out;
 Console.SetOut(Console.Error); // 插件 Console.WriteLine 不得破坏宿主响应。
 DecoderRequest? request = null;
@@ -19,6 +23,10 @@ try
         throw new StudioXException("PLUGIN_ARGS", "需要 --plugin <清单路径>。");
     }
     var manifest = await PluginManifest.ReadAsync(manifestPath);
+    if (manifest.ApiVersion != 1)
+    {
+        throw new StudioXException("PLUGIN_API", "解码入口需要明确的 API 1 清单。");
+    }
     var input = new StringBuilder();
     var one = new char[1];
     while (await Console.In.ReadAsync(one) > 0 && one[0] != '\n')

@@ -11,6 +11,7 @@ public partial class MainWindow
         var revision = diagnosticRevision;
         try
         {
+            await SaveHdlBuildSettingsAsync(token);
             BuildMemory.SetMessage("正在编译，完成后更新占用…");
             var report = await services.Builds.BuildAsync(directory,
                 new Progress<string>(text => { Status.Text = text; Log(text); }), token,
@@ -48,6 +49,18 @@ public partial class MainWindow
             else
             {
                 BuildMemory.SetMessage("编译失败，暂无本次占用数据。");
+            }
+            if (currentProjectManifest?.PinMapping is not null && currentProjectManifest.Logic is null &&
+                string.Equals(projectDirectory, directory, StringComparison.OrdinalIgnoreCase))
+            {
+                try
+                {
+                    await RefreshAg32PinMappingStatusAsync(token);
+                }
+                catch (Exception error) when (error is not OperationCanceledException)
+                {
+                    Log("AG32 映射状态刷新失败，原始编译结果仍保留：" + error);
+                }
             }
             return report;
         }

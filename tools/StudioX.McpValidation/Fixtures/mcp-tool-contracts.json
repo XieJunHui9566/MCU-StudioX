@@ -1,5 +1,44 @@
 [
   {
+    "name": "ag32_pin_mapping_build",
+    "title": null,
+    "description": "\u9010\u6B21\u6388\u6743\u540E\u4F7F\u7528\u5185\u7F6E AGM VE/Supra \u5DE5\u5177\u7F16\u8BD1\u5F53\u524D\u57FA\u7840 .ve \u6620\u5C04\u5E76\u751F\u6210\u903B\u8F91 BIN\uFF1B\u65E0\u9700 Quartus\uFF0C\u9700\u8981\u672C\u673A\u6709\u6548 Supra \u5382\u5546\u8BB8\u53EF\u3002\u4FDD\u7559\u539F\u59CB\u8BCA\u65AD\uFF0C\u4E0D\u8FDE\u63A5\u786C\u4EF6\u3002\u666E\u901A project_build \u4E5F\u4F1A\u8054\u52A8\u7F16\u8BD1\u6620\u5C04\u3002",
+    "inputSchema": {
+      "type": "object",
+      "properties": {}
+    },
+    "outputSchema": null,
+    "annotations": null,
+    "icons": null,
+    "_meta": null
+  },
+  {
+    "name": "ag32_pin_mapping_enable",
+    "title": null,
+    "description": "\u9010\u6B21\u6388\u6743\u540E\u4E3A\u73B0\u6709 AG32VF303CCT6 \u5DE5\u7A0B\u542F\u7528\u57FA\u7840 .ve \u6620\u5C04\uFF1B\u4FDD\u7559\u5DF2\u6709 logic/pins.ve\uFF0C\u7F3A\u5931\u65F6\u5EFA\u7ACB\u6A21\u677F\u3002\u4E0D\u628A\u81EA\u5B9A\u4E49 Verilog \u5DE5\u7A0B\u8F6C\u6362\u4E3A\u57FA\u7840\u6620\u5C04\uFF0C\u4E0D\u70E7\u5F55\u3002",
+    "inputSchema": {
+      "type": "object",
+      "properties": {}
+    },
+    "outputSchema": null,
+    "annotations": null,
+    "icons": null,
+    "_meta": null
+  },
+  {
+    "name": "ag32_pin_mapping_status",
+    "title": null,
+    "description": "\u8BFB\u53D6 AG32 \u57FA\u7840 .ve \u6620\u5C04\u72B6\u6001\u3001\u6E90\u6587\u4EF6\u3001\u903B\u8F91\u955C\u50CF\u53CA\u6784\u5EFA\u51ED\u636E\u662F\u5426\u4ECD\u6709\u6548\uFF1B\u4E0D\u7F16\u8BD1\u3001\u4E0D\u8FDE\u63A5\u786C\u4EF6\u3002\u81EA\u5B9A\u4E49 Verilog \u6A21\u5F0F\u8FD4\u56DE\u5916\u90E8\u7EFC\u5408\u8BCA\u65AD\u3002",
+    "inputSchema": {
+      "type": "object",
+      "properties": {}
+    },
+    "outputSchema": null,
+    "annotations": null,
+    "icons": null,
+    "_meta": null
+  },
+  {
     "name": "debug_breakpoint_remove",
     "title": null,
     "description": "\u7ECF\u7528\u6237\u9010\u6B21\u6279\u51C6\u540E\u6309 debug_status \u8FD4\u56DE\u7684\u65AD\u70B9 ID \u79FB\u9664\u5F53\u524D\u5DE5\u7A0B\u65AD\u70B9\uFF1B\u8FD0\u884C\u4E2D\u4E0D\u53EF\u4FEE\u6539\u3002",
@@ -360,6 +399,92 @@
     "_meta": null
   },
   {
+    "name": "espressif_component_info",
+    "title": null,
+    "description": "\u6309 namespace/name \u8BFB\u53D6\u4E50\u946B\u5B98\u65B9\u7EC4\u4EF6\u6CE8\u518C\u8868\u7684\u6700\u65B0\u7248\u7EC4\u4EF6\u8BF4\u660E\u3001\u4F9D\u8D56\u3001\u7248\u672C\u548C\u6587\u6863\u3002\u53EA\u8BFB\uFF0C\u4E0D\u4E0B\u8F7D\u6216\u5B89\u88C5\u7EC4\u4EF6\uFF1B\u4E0D\u8981\u628A\u6700\u65B0\u7248\u517C\u5BB9\u6027\u5F53\u4F5C IDF 5.5.4 \u5DF2\u9A8C\u8BC1\u3002",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "namespaceName": {
+          "description": "\u7EC4\u4EF6\u547D\u540D\u7A7A\u95F4\uFF0C\u4F8B\u5982 espressif\u3002",
+          "type": "string"
+        },
+        "componentName": {
+          "description": "\u7EC4\u4EF6\u540D\u79F0\uFF0C\u4F8B\u5982 button\u3002",
+          "type": "string"
+        }
+      },
+      "required": [
+        "namespaceName",
+        "componentName"
+      ]
+    },
+    "outputSchema": null,
+    "annotations": null,
+    "icons": null,
+    "_meta": null
+  },
+  {
+    "name": "espressif_components_search",
+    "title": null,
+    "description": "\u533F\u540D\u67E5\u8BE2\u4E50\u946B\u5B98\u65B9 ESP Component Registry \u7684\u7EC4\u4EF6\u3001\u9A71\u52A8\u3001BSP \u6216\u793A\u4F8B\u5143\u6570\u636E\u3002\u53EA\u53D1\u9001\u516C\u5F00\u67E5\u8BE2\u8BCD\uFF0C\u4E0D\u5B89\u88C5\u4F9D\u8D56\u3002\u8FD4\u56DE\u6700\u65B0\u7248\u4FE1\u606F\uFF0C\u4F7F\u7528\u524D\u6838\u5BF9\u6240\u9009\u76EE\u6807\u548C\u5DE5\u7A0B\u7684 ESP-IDF \u7248\u672C\u3002",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "description": "\u7B80\u77ED\u7EC4\u4EF6\u540D\u79F0\u6216\u529F\u80FD\u5173\u952E\u8BCD\uFF0C\u4F8B\u5982 button\u3001LVGL\u3001ESP32-S3 LCD\u3002",
+          "type": "string"
+        }
+      },
+      "required": [
+        "query"
+      ]
+    },
+    "outputSchema": null,
+    "annotations": null,
+    "icons": null,
+    "_meta": null
+  },
+  {
+    "name": "espressif_docs_search",
+    "title": null,
+    "description": "\u901A\u8FC7\u5DF2\u767B\u5F55\u7684\u4E50\u946B\u5B98\u65B9 Documentation MCP \u68C0\u7D22\u4E2D\u82F1\u6587\u6570\u636E\u624B\u518C\u3001\u6280\u672F\u53C2\u8003\u3001SDK/API \u4E0E\u8BBE\u8BA1\u8D44\u6599\uFF0C\u8FD4\u56DE\u6765\u6E90\u94FE\u63A5\u4E0E\u7247\u6BB5\u3002\u4EC5\u53D1\u9001\u7B80\u77ED\u516C\u5F00\u67E5\u8BE2\u8BCD\uFF0C\u4E0D\u53D1\u9001\u672C\u5730\u6E90\u7801\u6216\u51ED\u636E\u3002\u77E5\u8BC6\u5E93\u4E3B\u8981\u4E3A\u6700\u65B0\u7248\u672C\uFF1BIDF 5.5.4 \u5DE5\u7A0B\u5FC5\u987B\u6838\u5BF9\u672C\u673A SDK \u548C\u6765\u6E90 URL \u7248\u672C\u3002\u672A\u767B\u5F55\u8FD4\u56DE authentication_required\uFF1B\u8FDC\u7AEF\u9650\u6D41\u5982\u5B9E\u8FD4\u56DE\uFF0C\u4E0D\u53CD\u590D\u91CD\u8BD5\u3002",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "description": "\u5355\u884C\u516C\u5F00\u67E5\u8BE2\u8BCD\uFF0C\u5305\u62EC\u51C6\u786E ESP \u578B\u53F7\u3001\u5916\u8BBE\u6216 API\uFF1B\u4E0D\u8981\u586B\u5199\u6E90\u7801\u3001\u5BC6\u94A5\u6216\u672C\u673A\u8DEF\u5F84\u3002",
+          "type": "string"
+        },
+        "language": {
+          "description": "\u8D44\u6599\u8BED\u8A00\uFF1Azh \u4E2D\u6587\uFF0Cen \u82F1\u6587\uFF1B\u9ED8\u8BA4 zh\u3002",
+          "type": "string",
+          "default": "zh"
+        }
+      },
+      "required": [
+        "query"
+      ]
+    },
+    "outputSchema": null,
+    "annotations": null,
+    "icons": null,
+    "_meta": null
+  },
+  {
+    "name": "espressif_docs_status",
+    "title": null,
+    "description": "\u67E5\u770B\u4E50\u946B\u5B98\u65B9 Documentation MCP \u7684\u767B\u5F55\u72B6\u6001\uFF0C\u4E0D\u8054\u7F51\u3001\u4E0D\u6253\u5F00\u6D4F\u89C8\u5668\u3001\u4E0D\u8FD4\u56DE\u4EE4\u724C\u3002\u672A\u767B\u5F55\u65F6\u5728 IDE \u7684 AI \u63A5\u53E3\u8BBE\u7F6E\u4E2D\u8FDE\u63A5\u4E50\u946B\u8D44\u6599\uFF1B\u7EC4\u4EF6\u6570\u636E\u5E93\u5DE5\u5177\u65E0\u9700\u767B\u5F55\u3002",
+    "inputSchema": {
+      "type": "object",
+      "properties": {}
+    },
+    "outputSchema": null,
+    "annotations": null,
+    "icons": null,
+    "_meta": null
+  },
+  {
     "name": "external_project_copy",
     "title": null,
     "description": "\u628A\u5DF2\u6388\u6743\u5916\u90E8\u76EE\u5F55\u672C\u8EAB\u3001\u5176\u4E2D\u5355\u4E2A\u6587\u4EF6\u6216\u901A\u7528\u5E93\u6587\u4EF6\u5939\u590D\u5236\u8FDB\u5F53\u524D\u7ED1\u5B9A\u5DE5\u7A0B\u3002\u4F1A\u8DF3\u8FC7\u9690\u85CF/\u6784\u5EFA/\u51ED\u636E\u9879\uFF1B\u9010\u6B21\u8BF7\u6C42\u5199\u5165\u6388\u6743\uFF0C\u7981\u6B62\u8986\u76D6\uFF0C\u6700\u591A 2000 \u6587\u4EF6/128 MiB\u3002",
@@ -576,7 +701,7 @@
   {
     "name": "firmware_download",
     "title": null,
-    "description": "\u9010\u6B21\u6388\u6743\u540E\u5C06\u5F53\u524D\u5DE5\u7A0B\u5DF2\u7F16\u8BD1\u7684\u56FA\u4EF6\u4E0B\u8F7D\u5230\u5B9E\u673A\u5E76\u6821\u9A8C\u3002\u5FC5\u987B\u586B\u5199\u9884\u68C0\u8FD4\u56DE\u7684\u51C6\u786E\u82AF\u7247 ID\u3001\u56FA\u4EF6 SHA-256\u3001\u70E7\u5F55\u5668 ID \u548C\u901F\u5EA6\uFF1B\u4E0D\u81EA\u52A8\u7F16\u8BD1\u3001\u4E0D\u63A5\u53D7\u4EFB\u610F\u6587\u4EF6\u8DEF\u5F84\u3002",
+    "description": "\u9010\u6B21\u6388\u6743\u540E\u5C06\u5F53\u524D\u5DE5\u7A0B\u5DF2\u7F16\u8BD1\u955C\u50CF\u4E0B\u8F7D\u5230\u5B9E\u673A\u5E76\u6821\u9A8C\uFF1BAG32 \u57FA\u7840\u6620\u5C04\u540C\u65F6\u5199\u5165 MCU \u56FA\u4EF6\u548C\u6620\u5C04 BIN\u3002\u5FC5\u987B\u590D\u8FF0\u9884\u68C0\u82AF\u7247 ID\u3001imageSha256\uFF08\u591A\u955C\u50CF\u4E3A\u5E03\u5C40\u54C8\u5E0C\uFF09\u3001\u70E7\u5F55\u5668 ID \u548C\u901F\u5EA6\uFF1B\u4E0D\u81EA\u52A8\u7F16\u8BD1\u3001\u4E0D\u63A5\u53D7\u4EFB\u610F\u6587\u4EF6\u8DEF\u5F84\u3002",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -585,7 +710,7 @@
           "type": "string"
         },
         "imageSha256": {
-          "description": "firmware_download_plan \u8FD4\u56DE\u7684\u5B8C\u6574 64 \u4F4D\u5341\u516D\u8FDB\u5236 SHA-256\u3002",
+          "description": "firmware_download_plan \u8FD4\u56DE\u7684 imageSha256\uFF0C\u5B8C\u6574 64 \u4F4D\u5341\u516D\u8FDB\u5236\uFF1B\u591A\u955C\u50CF\u4E3A\u6574\u4E2A\u5E03\u5C40\u54C8\u5E0C\u3002",
           "type": "string"
         },
         "probeId": {
@@ -636,7 +761,7 @@
   {
     "name": "firmware_download_plan",
     "title": null,
-    "description": "\u53EA\u8BFB\u9884\u68C0\u5F53\u524D\u5DE5\u7A0B\u5DF2\u7F16\u8BD1\u56FA\u4EF6\u3001\u82AF\u7247\u4E0E SHA-256\uFF1BOpenOCD \u8FD4\u56DE\u63A2\u9488\uFF0CEspressif \u8FD4\u56DE SDK \u591A\u6620\u50CF\u5E03\u5C40\u3001COM \u53E3\u4E0E\u6CE2\u7279\u7387\u3002ESP \u7684 imageSha256 \u56FA\u5B9A\u6574\u4E2A\u5E03\u5C40\uFF1B\u4E0D\u521B\u5EFA\u5FEB\u7167\u3001\u4E0D\u8FDE\u63A5\u786C\u4EF6\u3002",
+    "description": "\u53EA\u8BFB\u9884\u68C0\u5F53\u524D\u5DE5\u7A0B\u5DF2\u7F16\u8BD1\u56FA\u4EF6\u3001\u82AF\u7247\u4E0E SHA-256\uFF1BOpenOCD \u8FD4\u56DE\u63A2\u9488\uFF0CAG32 \u57FA\u7840\u6620\u5C04\u8FD4\u56DE MCU/\u6620\u5C04\u4E24\u4E2A\u955C\u50CF\u7684\u5730\u5740\u548C\u54C8\u5E0C\uFF0CEspressif \u8FD4\u56DE SDK \u591A\u6620\u50CF\u5E03\u5C40\u4E0E\u4E32\u53E3\u3002\u591A\u955C\u50CF\u7684 imageSha256 \u56FA\u5B9A\u6574\u4E2A\u5E03\u5C40\uFF1B\u4E0D\u521B\u5EFA\u5FEB\u7167\u3001\u4E0D\u8FDE\u63A5\u786C\u4EF6\u3002",
     "inputSchema": {
       "type": "object",
       "properties": {

@@ -22,7 +22,7 @@
 
 `sdk/` 的子目录由包决定；Engine 使用器件清单中的明确相对路径，不猜测厂商目录结构。用户入口从模板复制到 `src/main.c`，应用文件不放在 SDK 中。
 
-AG32VF303CCT6 工程若在创建时启用 Verilog 逻辑模式，还会生成独立的 `logic/user_logic.v`、`logic/pins.ve` 和 `logic/README.md`；默认工程没有 `logic/`。这部分不加入 MCU 的 CMake 目标，Quartus II / Supra 与逻辑下载流程见 [AG32 Verilog 逻辑模式](AG32_LOGIC_MODE.md)。
+AG32VF303CCT6 工程默认生成独立的 `logic/pins.ve` 与 `logic/README.md`，工程清单的 `pinMapping` 锁定 AGRV2KL48 与基础映射工具。`.ve` 将 MCU 内部功能绑定到真实封装引脚，不预设开发板连线；基础映射使用内置 AGM VE / Supra，不需要 Quartus。创建时另选自定义 Verilog 会额外生成 `logic/user_logic.v`，`logic` 记录这个独立模式，不能用默认映射替代其综合结果。旧工程可显式启用基础映射并保留既有 `.ve`；工作流程见 [AG32 基础引脚映射与自定义逻辑](AG32_LOGIC_MODE.md)。
 
 根配置只在创建工程时生成。构建服务不会重写根配置；新增文件需要显式填入相应区域，例如：
 

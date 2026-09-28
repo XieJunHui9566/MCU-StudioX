@@ -10,7 +10,7 @@ using StudioX.Foundation;
 internal sealed partial class FirmwareDownloadMcpTools(McpSessionContext context) : StudioXMcpToolProvider(context)
 {
     [McpServerTool(Name = "firmware_download_plan")]
-    [Description("只读预检当前工程已编译固件、芯片与 SHA-256；OpenOCD 返回探针，Espressif 返回 SDK 多映像布局、COM 口与波特率。ESP 的 imageSha256 固定整个布局；不创建快照、不连接硬件。")]
+    [Description("只读预检当前工程已编译固件、芯片与 SHA-256；OpenOCD 返回探针，AG32 基础映射返回 MCU/映射两个镜像的地址和哈希，Espressif 返回 SDK 多映像布局与串口。多镜像的 imageSha256 固定整个布局；不创建快照、不连接硬件。")]
     public async Task<string> FirmwareDownloadPlanAsync(
         [Description("可选烧录器 ID；省略时使用工程下载设置。")]
         string? probeId = null,
@@ -39,8 +39,17 @@ internal sealed partial class FirmwareDownloadMcpTools(McpSessionContext context
             deviceId = preview.Configuration.Device.Id,
             image = Path.GetRelativePath(Project, preview.SourceImage).Replace('\\', '/'),
             imageFormat = preview.Format,
-            imageSha256 = preview.Sha256,
+            imageSha256 = preview.ApprovalSha256,
             imageBytes = preview.ImageBytes,
+            images = preview.Images.Select(image => new
+            {
+                image.RelativePath,
+                image.Format,
+                image.Sha256,
+                image.Bytes,
+                address = $"0x{image.Address:X8}",
+                image.Role
+            }),
             probeId = selected.ProbeId,
             speedKhz = selected.SpeedKhz,
             serial = selected.Serial,
@@ -51,16 +60,18 @@ internal sealed partial class FirmwareDownloadMcpTools(McpSessionContext context
                 probe.DefaultSpeedKhz
             }),
             requiresApproval = true,
-            operation = "经逐次授权后，OpenOCD 将核对目标身份，按固件映像范围擦写、回读校验并复位运行。"
+            operation = preview.Images.Count > 1
+                ? "经逐次授权后，OpenOCD 将核对目标身份，按所列 MCU 与 VE 映射两个镜像范围擦写、分别校验并复位运行。imageSha256 固定整个下载布局。"
+                : "经逐次授权后，OpenOCD 将核对目标身份，按固件映像范围擦写、回读校验并复位运行。"
         });
     }
 
     [McpServerTool(Name = "firmware_download")]
-    [Description("逐次授权后将当前工程已编译的固件下载到实机并校验。必须填写预检返回的准确芯片 ID、固件 SHA-256、烧录器 ID 和速度；不自动编译、不接受任意文件路径。")]
+    [Description("逐次授权后将当前工程已编译镜像下载到实机并校验；AG32 基础映射同时写入 MCU 固件和映射 BIN。必须复述预检芯片 ID、imageSha256（多镜像为布局哈希）、烧录器 ID 和速度；不自动编译、不接受任意文件路径。")]
     public async Task<string> FirmwareDownloadAsync(
         [Description("firmware_download_plan 返回的准确芯片 ID。")]
         string deviceId,
-        [Description("firmware_download_plan 返回的完整 64 位十六进制 SHA-256。")]
+        [Description("firmware_download_plan 返回的 imageSha256，完整 64 位十六进制；多镜像为整个布局哈希。")]
         string imageSha256,
         [Description("firmware_download_plan 返回的烧录器 ID。")]
         string probeId,
@@ -92,14 +103,17 @@ internal sealed partial class FirmwareDownloadMcpTools(McpSessionContext context
         var selected = new DownloadOptions(probeId, speedKhz, serial);
         var preview = await Services.Downloads.PreviewAsync(Project, selected, cancellationToken).ConfigureAwait(false);
         if (!string.Equals(preview.Configuration.Device.Id, deviceId, StringComparison.Ordinal) ||
-            !string.Equals(preview.Sha256, imageSha256, StringComparison.OrdinalIgnoreCase))
+            !string.Equals(preview.ApprovalSha256, imageSha256, StringComparison.OrdinalIgnoreCase))
         {
             throw new StudioXException("DOWNLOAD_APPROVAL_CHANGED", "芯片型号或当前固件与预检值不一致，请重新读取下载计划。");
         }
         var probe = configuration.OpenOcd.Probes.Single(item => item.Id == selected.ProbeId);
-        var image = Path.GetRelativePath(Project, preview.SourceImage).Replace('\\', '/');
+        var imageDetails = preview.Images.Count > 0
+            ? string.Join("\n", preview.Images.Select(image =>
+                $"{image.Role}：{image.RelativePath} · 0x{image.Address:X8} · {image.Bytes} 字节 · SHA-256 {image.Sha256}"))
+            : $"固件：{Path.GetRelativePath(Project, preview.SourceImage)} · {preview.ImageBytes} 字节 · SHA-256 {preview.Sha256}";
         await RequireApprovalAsync("firmware_download",
-            $"将 {image}（SHA-256 {preview.Sha256}，{preview.ImageBytes} 字节）写入 {deviceId}；烧录器 {probe.DisplayName}"
+            $"写入 {deviceId}：\n{imageDetails}\n布局 SHA-256 {preview.ApprovalSha256}\n烧录器 {probe.DisplayName}"
                 + $" / {selected.SpeedKhz} kHz" + (string.IsNullOrEmpty(serial) ? "" : $" / 序列号 {serial}")
                 + "。将核对目标、按映像范围擦写、校验并复位运行；不执行整片擦除或选项字节修改。",
             StudioXMcpPermission.FirmwareDownload, cancellationToken).ConfigureAwait(false);

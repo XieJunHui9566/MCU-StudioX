@@ -1,0 +1,14 @@
+{
+  "formatVersion": 1,
+  "apiVersion": 2,
+  "id": "studiox.workspace-overview",
+  "version": "1.0.0",
+  "displayName": "工程与串口概览",
+  "description": "C# 命令、声明式面板和 Agent 只读工具示例。",
+  "kind": "dotnet",
+  "entryAssembly": "StudioX.SamplePlugin.dll",
+  "entryType": "StudioX.SamplePlugin.WorkspaceOverviewPlugin",
+  "capabilities": ["commands", "panels", "agentTools"],
+  "hostTools": ["project_info", "serial_status", "serial_read"],
+  "sha256": {}
+}

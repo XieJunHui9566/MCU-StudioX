@@ -29,7 +29,7 @@ public partial class MainWindow
     private void OnAiToolCompletedForEditor(AiAgentProgress progress)
     {
         if (progress.ToolName is not ("project_edit_file" or "project_patch_file" or
-            "project_create_file" or "project_create_directory" or "external_project_copy") ||
+            "project_create_file" or "project_create_directory" or "external_project_copy" or "ag32_pin_mapping_enable" or "ag32_pin_plan_apply") ||
             string.IsNullOrWhiteSpace(progress.Text) || projectDirectory is not { } project)
         {
             return;
@@ -37,11 +37,32 @@ public partial class MainWindow
 
         var generation = aiProjectGeneration;
         var path = progress.Text;
-        var created = progress.ToolName == "project_create_file";
+        var created = progress.ToolName is "project_create_file" or "ag32_pin_mapping_enable";
         var directoryCreated = progress.ToolName == "project_create_directory";
         var copied = progress.ToolName == "external_project_copy";
         aiEditorSyncTask = SyncAiEditorAfterPreviousAsync(aiEditorSyncTask, project, generation,
             path, created, directoryCreated, copied);
+        if (progress.ToolName is "ag32_pin_mapping_enable" or "ag32_pin_plan_apply")
+        {
+            aiEditorSyncTask = RefreshAg32AfterAiEnableAsync(aiEditorSyncTask, project, generation);
+        }
+    }
+
+    private async Task RefreshAg32AfterAiEnableAsync(Task previous, string project, int generation)
+    {
+        await previous;
+        if (!IsCurrentAiEditorProject(project, generation))
+        {
+            return;
+        }
+        try
+        {
+            await RefreshAg32PinMappingStatusAsync(CancellationToken.None);
+        }
+        catch (Exception error)
+        {
+            Log("AI 启用 AG32 映射后刷新状态失败：" + error);
+        }
     }
 
     private async Task SyncAiEditorAfterPreviousAsync(Task previous, string project, int generation,

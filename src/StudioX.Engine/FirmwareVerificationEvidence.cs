@@ -9,6 +9,21 @@ public static class FirmwareVerificationEvidence
 {
     public static void Require(string output, ulong expectedBytes, string logPath, bool truncated = false)
     {
+        RequireNoFailure(output, logPath);
+        var successes = Regex.Matches(output, @"^[ \t]*(?:OpenOCD:[ \t]*(?:Info[ \t]*:[ \t]*)?)?verified[ \t]+([0-9]+)[ \t]+bytes(?:[ \t]+in[^\r\n]*)?[ \t]*\r?$",
+            RegexOptions.Multiline | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+        var verified = expectedBytes > 0 && successes.Count > 0 && successes.All(match =>
+            ulong.TryParse(match.Groups[1].Value, NumberStyles.None, CultureInfo.InvariantCulture, out var bytes) && bytes == expectedBytes);
+        if (truncated || !verified)
+        {
+            throw new StudioXException("DEBUG_IMAGE_VERIFY", "OpenOCD 未确认完整映像的校验字节数；不能将源码或 RTOS 数据视为板上程序的结果。原始日志：" + logPath,
+                new StudioXException("GDB_COMMAND", "OpenOCD 没有提供完整映像匹配证据。"));
+        }
+    }
+
+    /// <summary>多映像校验时先检查整段日志，避免遗漏出现在单映像边界之外的传输错误。</summary>
+    public static void RequireNoFailure(string output, string logPath)
+    {
         // WCH OpenOCD 在发现逐字节差异后仍可能返回成功；该响应不是匹配证据。
         var failure = new StudioXException("GDB_COMMAND", "OpenOCD 没有提供完整映像匹配证据。");
         if (new[] { "error reading USB data", "error writing USB data", "CMD_INFO failed", "CMD_CONNECT failed",
@@ -20,14 +35,6 @@ public static class FirmwareVerificationEvidence
         if (Regex.IsMatch(output, @"\bdiff\s+[0-9]+\s+address\s+0x", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))
         {
             throw new StudioXException("DEBUG_IMAGE_MISMATCH", "板上读回的固件字节与当前 ELF 不一致。请确认对应工程后再调试。原始日志：" + logPath, failure);
-        }
-        var successes = Regex.Matches(output, @"^[ \t]*(?:OpenOCD:[ \t]*(?:Info[ \t]*:[ \t]*)?)?verified[ \t]+([0-9]+)[ \t]+bytes(?:[ \t]+in[^\r\n]*)?[ \t]*\r?$",
-            RegexOptions.Multiline | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-        var verified = expectedBytes > 0 && successes.Count > 0 && successes.All(match =>
-            ulong.TryParse(match.Groups[1].Value, NumberStyles.None, CultureInfo.InvariantCulture, out var bytes) && bytes == expectedBytes);
-        if (truncated || !verified)
-        {
-            throw new StudioXException("DEBUG_IMAGE_VERIFY", "OpenOCD 未确认完整映像的校验字节数；不能将源码或 RTOS 数据视为板上程序的结果。原始日志：" + logPath, failure);
         }
     }
 }

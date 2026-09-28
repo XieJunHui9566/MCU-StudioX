@@ -54,8 +54,11 @@ public partial class MainWindow
     }
 
     private Task<bool> AiHasUnsavedDocumentsAsync() => Dispatcher.CheckAccess()
-        ? Task.FromResult(editorDocuments.Any(session => session.IsDirty))
-        : Dispatcher.InvokeAsync(() => editorDocuments.Any(session => session.IsDirty)).Task;
+        ? Task.FromResult(HasUnsavedAiProjectChanges())
+        : Dispatcher.InvokeAsync(HasUnsavedAiProjectChanges).Task;
+
+    private bool HasUnsavedAiProjectChanges() => editorDocuments.Any(session => session.IsDirty) ||
+        (ag32PinPlanProject == projectDirectory && Ag32PinMapping.Planner.HasChanges);
 
     private void QueueAiMcpSessionDisposal() => aiMcpCoordinator?.QueueDisposal();
 
@@ -90,7 +93,8 @@ public partial class MainWindow
         {
             await aiThinkingSaveTask;
             var settings = await services.AiSettings.LoadAsync();
-            var dialog = new AiSettingsWindow(services.AiSettings, services.AiCredentials, services.WebCredentials, settings) { Owner = this };
+            var dialog = new AiSettingsWindow(services.AiSettings, services.AiCredentials, services.WebCredentials, settings,
+                services.EspressifDocumentation) { Owner = this };
             dialog.ShowDialog();
             await RefreshAiConfigurationAsync();
         }
@@ -618,6 +622,7 @@ public partial class MainWindow
 
     private void UpdateAiConversationButtons()
     {
+        RefreshPluginCommandState();
         var available = projectDirectory is not null && !aiConversationLoading &&
             !aiConversationOperationBusy && aiCancellation is null;
         AiHistoryButton.IsEnabled = available;

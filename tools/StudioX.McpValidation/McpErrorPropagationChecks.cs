@@ -18,7 +18,7 @@ internal static class McpErrorPropagationChecks
         var providers = ((System.Collections.IEnumerable)typeof(StudioXMcpTools)
             .GetField("providers", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(tools)!)
             .Cast<object>().ToArray();
-        check(providers.Select(provider => provider.GetType()).Distinct().Count() == 16 &&
+        check(providers.Select(provider => provider.GetType()).Distinct().Count() == 18 &&
               typeof(StudioXMcpTools).GetMethods().All(method =>
                   method.GetCustomAttribute<McpServerToolAttribute>() is null),
             "MCP registry composes independent providers without retaining business tool methods");

@@ -14,7 +14,7 @@
 | StudioX.Devices | 连接所有权、数据广播、发送串行化、模拟传输、记录格式 |
 | StudioX.Extensions.Abstractions | 插件公开 SDK 与协议 DTO，不引用宿主实现 |
 | StudioX.Extensions | 插件清单校验、目录、独立宿主客户端 |
-| StudioX.PluginHost | 加载受用户信任的 .NET 数据处理插件，标准输入输出通信 |
+| StudioX.PluginHost | 持久加载受用户信任的 .NET 插件，处理版本化双向协议与生命周期 |
 | StudioX.Application | 组合工作台用例、文件服务、clangd/LSP 生命周期、主题和用户偏好 |
 | StudioX.Desktop | WPF 工作台、命令与只读状态呈现 |
 
@@ -48,7 +48,11 @@ Engine 生成分层 CMake：根 `CMakeLists.txt` 交给用户维护，`device/CM
 
 ## 插件与主题
 
-插件清单声明 formatVersion、apiVersion、ID、版本、程序集、入口类型及能力。首版只开放数据解码器，插件在独立宿主中运行，提供正式示例。宿主负责超时与崩溃恢复；这不是防恶意代码的 OS 沙箱，用户代码以当前用户权限运行。后续受信原生 UI 扩展、签名、权限沙箱需独立设计，不能把 AssemblyLoadContext 当作安全边界。
+插件清单格式为 1，API 1 保留明确的数据解码契约，API 2 开放命令、声明式面板和 Agent 工具。C# 使用公开 SDK；Python、Rust、C++ 通过插件目录内固定 EXE 和相同的双向 JSON 行协议接入。`.studioxplugin` 安装只校验文件，显式启用才信任当前版本的代码执行。用户安装与启用指纹保存在用户数据目录；内容更新撤销启用，避免授权继承到新代码。详见 [插件开发](PLUGINS.md)。
+
+Application/Plugins 管理安装目录、贡献校验和每工程宿主。PluginWorkspaceBroker 将主机请求交给既有 MCP 应用工具，继续检查工程范围、文件哈希、脏缓冲区和逐次写入、构建、设备授权。串口、调试和下载仍由应用服务拥有；插件声明 HostTools 不能替代用户操作授权。Desktop 只渲染经校验的面板数据，不执行用户 XAML；编辑缓冲区通过应用接口读取与定位。
+
+插件在独立进程运行，宿主负责取消、退出和原始诊断；进程隔离不构成 OS 权限沙箱，用户插件仍具有当前用户的文件和网络权限。签名、原生 UI 注入及操作系统沙箱没有开放，不能把哈希或 AssemblyLoadContext 当作安全边界。
 
 主题接受 JSON 语义颜色，WPF 由应用控制的 ResourceDictionary 映射。用户偏好在 LocalAppData，主题不进入工程和构建指纹。工作台采用 CLion 风格的中性深灰布局，支持浅/深主题、配色导入、本地背景图片和静音循环视频。AppearanceService 管理媒体导入与设置，Desktop 负责渲染和播放生命周期；媒体不作为插件代码执行。详见 WORKBENCH_UI.md。停靠布局持久化、主题包市场留待后续。
 

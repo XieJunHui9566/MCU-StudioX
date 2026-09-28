@@ -1,8 +1,28 @@
 # MCU StudioX
 
-MCU StudioX 是 Windows x64 单片机 IDE。当前源码版本为 **0.2.5 预览版**，使用 C#、.NET 10 和 WPF 构建。
+MCU StudioX 是 Windows x64 单片机 IDE。当前源码版本为 **0.2.5.1 预览版**，使用 C#、.NET 10 和 WPF 构建。
 
 IDE 提供 C/C++ 编辑与代码提示、CMake 工程构建、器件包导入、固件下载与调试界面、串口工具、Git 图谱，以及带 MCP 工具的 AI 助手。器件能力取决于具体 `.mcupack`、工具链和硬件；尚未通过实板验证的型号不应视为已完成下载或调试适配。经过许可审查的部分器件包见 [MCU-StudioX-MCUPacks](https://github.com/XieJunHui9566/MCU-StudioX-MCUPacks)。
+
+## 0.2.5.1 更新
+
+- **AG32 图形化引脚分配**：七款精确型号及对应封装；左键菜单分配、整条引脚着色、功能名称和冲突标红，支持时钟与约束生成。
+- **MCU + FPGA 联合构建**：F7 编译 C 固件与自定义 Verilog，调用内置 VE / 原生综合 / Supra 生成逻辑镜像；下载前弹窗确认两段镜像。
+- **Verilog 电路图**：使用内置 Yosys 生成实际连接图，支持层级查看与元件定位。
+- **RTL 仿真与波形**：内置 Icarus Verilog，支持 testbench、信号筛选、缩放和拖动蓝色时间光标；静态时序报告与 RTL 波形分别展示，尚未接入 SDF 布局后延时仿真。
+- **插件与 Agent**：开放 C# SDK 和 Python / Rust / C++ 进程协议，支持命令、面板与 Agent 工具；新增 AG32 配置与仿真的 MCP 接口。
+
+完整介绍、使用条件与验证范围见 [0.2.5.1 发行说明](docs/RELEASE-0.2.5.1.md)。Supra 布局布线需要用户自己的有效许可证，安装包不包含私人许可。
+
+### 新版实际界面
+
+以下是 0.2.5.1 程序运行隔离示例的实际界面，未使用私人背景或账号数据。
+
+![AG32 图形化引脚与分配菜单](docs/screenshots/ag32-pins-0.2.5.1.png)
+
+![Verilog 电路图](docs/screenshots/ag32-schematic-0.2.5.1.png)
+
+![RTL 仿真与波形](docs/screenshots/ag32-waveform-0.2.5.1.png)
 
 ## 0.2.5 更新
 
@@ -22,9 +42,9 @@ IDE 提供 C/C++ 编辑与代码提示、CMake 工程构建、器件包导入、
 
 ## 安装包
 
-Windows x64 **0.2.5 完整安装包与便携包**已在本机打包，包含内置 SDK、工具链与器件包，解压后约 **11.7 GiB**。本轮 [GitHub Release](https://github.com/XieJunHui9566/MCU-StudioX/releases/tag/v0.2.5) 发布源码；完整二进制的公开分发仍需补齐供应商对应源码和再分发材料，尤其 AGM 修改版工具链，详见[安装与分发说明](docs/INSTALLER.md)。
+[下载 MCU StudioX 0.2.5.1 Windows x64 安装包](https://github.com/XieJunHui9566/MCU-StudioX/releases/tag/v0.2.5.1)。Release 同时提供新功能说明、SHA-256 校验文件和对应源码。安装包包含内置 SDK、工具链和当前器件包；不需要另装 .NET。安装程序为未签名预览版。
 
-项目维护者此前分享的 **0.2.4 安装包**仍可通过[百度网盘下载 MCUStdioX](https://pan.baidu.com/s/5fh5exaJIgC6ThwSS_IdDOA)，该链接不代表 0.2.5。安装包不写入 Git 源码树。
+旧版网盘链接仍保留：[百度网盘 MCUStdioX](https://pan.baidu.com/s/5fh5exaJIgC6ThwSS_IdDOA)。该链接由维护者单独更新，不代表本次 0.2.5.1 安装包。
 
 ## 0.2.5 软件界面
 

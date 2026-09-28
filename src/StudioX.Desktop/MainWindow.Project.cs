@@ -32,6 +32,7 @@ public partial class MainWindow
         ClearEditorDocuments();
         projectDirectory = directory;
         LvglPreview.SetProject(directory);
+        ClearHdlSchematic();
         ResetAiForProjectChange();
         RefreshSkillsForProjectChange();
         GitGraph.SetProject(directory);
@@ -64,6 +65,7 @@ public partial class MainWindow
         await RefreshBuildMemoryAsync(directory, token);
         await services.RecentProjects.RememberAsync(project.Name, directory, token);
         await RefreshRecentAsync(token);
+        await ReloadPluginWorkspaceAsync(token);
         Status.Text = "正在准备代码提示…";
         try
         {
@@ -112,6 +114,7 @@ public partial class MainWindow
             ClearEditorDocuments();
             projectDirectory = null;
             LvglPreview.SetProject(null);
+            ClearHdlSchematic();
             ResetAiForProjectChange();
             RefreshSkillsForProjectChange();
             GitGraph.SetProject(null);
@@ -174,5 +177,6 @@ public partial class MainWindow
         UpdateStcIspControls();
         UpdateDebugControls();
         RefreshAg32LogicUi(currentProjectManifest, busy);
+        RefreshPluginCommandState();
     }
 }

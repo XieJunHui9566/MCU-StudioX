@@ -5,6 +5,9 @@
 #ifndef PayloadDirectory
   #error PayloadDirectory is required
 #endif
+#ifndef AppFileVersion
+  #define AppFileVersion AppVersion
+#endif
 #define ProductId "{B8050FBC-2DE2-43F4-B839-F0E90522E671}"
 
 [Setup]
@@ -13,7 +16,7 @@ AppName=MCU StudioX
 AppVersion={#AppVersion}
 AppVerName=MCU StudioX {#AppVersion}
 AppPublisher=MCU StudioX
-VersionInfoVersion={#AppVersion}.0
+VersionInfoVersion={#AppFileVersion}
 VersionInfoProductVersion={#AppVersion}
 VersionInfoDescription=MCU StudioX 安装程序
 DefaultDirName={localappdata}\Programs\MCU StudioX

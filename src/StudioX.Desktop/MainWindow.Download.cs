@@ -34,7 +34,7 @@ public partial class MainWindow
             DownloadSettingsButton.ToolTip = IsEspressifProject ? "ESP 下载设置：COM 端口与波特率" :
                 IsStcSdccProject ? "STC 串口、时钟与下载设置" : "下载设置：速度与序列号";
             DownloadProbePicker.ToolTip = configuration is null ? "打开工程后选择该器件支持的烧录器" :
-                $"{configuration.Device.Id} · {probe!.Transport.ToUpperInvariant()} · {configuration.Options.SpeedKhz} kHz\n选择按当前工程保存；速度与序列号可在下载设置中修改。";
+                $"{configuration.Device.Id} · {probe!.DisplayName} · {probe.Transport.ToUpperInvariant()} · {configuration.Options.SpeedKhz} kHz\n选择按当前工程保存；速度与序列号可在下载设置中修改。";
         }
         finally { updatingDownloadPicker = false; }
         RefreshDebugUi();
@@ -139,6 +139,49 @@ public partial class MainWindow
         {
             Status.Text = "编译失败，未启动下载。";
             return;
+        }
+        if (currentProjectManifest is not null && Ag32DeviceCatalog.Find(currentProjectManifest.DeviceId)?.CanMap == true)
+        {
+            currentProjectManifest = await ProjectService.ReadAsync(root, token);
+            if (currentProjectManifest.PinMapping is null && currentProjectManifest.Logic is null)
+            {
+                await ShowAg32PinMappingAsync(token);
+                Status.Text = "该 AG32 工程尚未启用 VE 映射。请先启用并编译映射，再下载固件与映射。";
+                Log(Status.Text);
+                return;
+            }
+            if (currentProjectManifest.PinMapping is not null || currentProjectManifest.Logic is not null)
+            {
+                var preview = await services.Downloads.PreviewAsync(root, options, token);
+                var probeName = preview.Configuration.OpenOcd.Probes.FirstOrDefault(probe => probe.Id == options.ProbeId)?.DisplayName ?? options.ProbeId;
+                var details = $"目标：{preview.Configuration.Device.Id}\n烧录器：{probeName} · {options.SpeedKhz} kHz"
+                    + (string.IsNullOrWhiteSpace(options.Serial) ? "" : $" · 序列号 {options.Serial}")
+                    + "\n\n" + string.Join("\n\n", preview.Images.Select(image =>
+                        $"{image.Role}：{image.RelativePath}\n地址：0x{image.Address:X8} · {image.Bytes} 字节\nSHA-256：{image.Sha256}"))
+                    + $"\n\n布局 SHA-256：{preview.ApprovalSha256}\n\n将按两个镜像范围擦写、分别校验并复位运行；不修改选项字节。";
+                Status.Text = "请在下载确认窗口核对固件与映射两个镜像。";
+                if (!await Ag32PinMapping.ConfirmDownloadAsync(details,
+                    () => !closing && !closed && projectDirectory == root, token))
+                {
+                    Status.Text = "已取消 AG32 下载，未连接烧录器。";
+                    return;
+                }
+                EnsureNoActiveDebug();
+                if (editorDocuments.Any(document => document.IsDirty))
+                {
+                    Status.Text = "审批期间出现未保存的编辑。请保存后重新编译并核对下载计划。";
+                    Log(Status.Text);
+                    return;
+                }
+                Status.Text = "正在下载与校验 MCU 固件及 VE 映射…";
+                var approvedResult = await services.Downloads.DownloadApprovedAsync(root, options,
+                    preview.Configuration.Device.Id, preview.ApprovalSha256, output, token);
+                await Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Background);
+                Log("下载日志：" + approvedResult.LogPath);
+                Log(approvedResult.Summary);
+                Status.Text = approvedResult.Summary;
+                return;
+            }
         }
         Status.Text = "正在下载与校验…";
         var result = await services.Downloads.DownloadAsync(root, options, output, token);

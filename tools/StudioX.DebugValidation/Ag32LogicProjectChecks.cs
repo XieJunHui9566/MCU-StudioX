@@ -28,28 +28,54 @@ internal static class Ag32LogicProjectChecks
         }
 
         var ordinary = await service.CreateAsync(pack, "AG32VF303CCT6", template, "OrdinaryAG32", ordinaryPath);
-        Check(ordinary.Logic is null && !Directory.Exists(Path.Combine(ordinaryPath, "logic")),
-            "Default AG32 project must not create logic files");
-        Check((await ProjectService.ReadAsync(ordinaryPath)).Logic is null, "Default mode persists as disabled");
+        Check(ordinary.Logic is null && ordinary.PinMapping == new Ag32PinMappingProjectSettings("AGRV2KL48") &&
+              File.Exists(Path.Combine(ordinaryPath, "logic", "pins.ve")) && !File.Exists(Path.Combine(ordinaryPath, "logic", "user_logic.v")),
+            "Default AG32 project must create basic pin mapping without custom Verilog");
+        Check((await ProjectService.ReadAsync(ordinaryPath)).PinMapping == ordinary.PinMapping, "Basic mapping mode persists");
+        var ordinaryPinMapPath = Path.Combine(ordinaryPath, "logic", "pins.ve");
+        var ordinaryPinMap = await File.ReadAllTextAsync(ordinaryPinMapPath);
+        Check(!ordinaryPinMap.Split('\n').Select(line => line.Split('#', 2)[0]).Any(line =>
+                Regex.IsMatch(line, @"\b(?:PIN_\d+|(?:HSE|SYS|BUS)CLK)\b", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)),
+            "Basic scaffold must not guess board pins or clock frequencies");
         var ordinaryManifestPath = Path.Combine(ordinaryPath, ".studiox", "project.json");
         var ordinaryManifest = await File.ReadAllTextAsync(ordinaryManifestPath);
         try
         {
             var legacyDocument = JsonNode.Parse(ordinaryManifest)!.AsObject();
             legacyDocument.Remove("logic");
+            legacyDocument.Remove("pinMapping");
             await File.WriteAllTextAsync(ordinaryManifestPath, legacyDocument.ToJsonString(JsonStore.Options));
-            Check((await ProjectService.ReadAsync(ordinaryPath)).Logic is null,
-                "Existing projects without the new option must reopen in MCU-only mode");
+            Check((await ProjectService.ReadAsync(ordinaryPath)) is { Logic: null, PinMapping: null },
+                "Existing projects without new options must reopen without implicit mapping enablement");
+            var preservedBytes = new byte[] { 0xEF, 0xBB, 0xBF }.Concat(System.Text.Encoding.UTF8.GetBytes("# 原工程映射\r\nGPIO4_4 PIN_21\r\n")).ToArray();
+            await File.WriteAllBytesAsync(ordinaryPinMapPath, preservedBytes);
+            var upgraded = await ProjectService.EnableAg32PinMappingAsync(ordinaryPath);
+            Check(upgraded.PinMapping == ordinary.PinMapping && upgraded.Logic is null &&
+                  (await File.ReadAllBytesAsync(ordinaryPinMapPath)).SequenceEqual(preservedBytes),
+                "Explicitly enabling an old LED project must preserve exact VE bytes including BOM and line endings");
+            var enabledManifestBytes = await File.ReadAllBytesAsync(ordinaryManifestPath);
+            Check(await ProjectService.EnableAg32PinMappingAsync(ordinaryPath) == upgraded &&
+                  (await File.ReadAllBytesAsync(ordinaryManifestPath)).SequenceEqual(enabledManifestBytes),
+                "Already enabled project must be idempotent without rewriting metadata");
+            File.Delete(ordinaryPinMapPath);
+            Check((await ProjectService.EnableAg32PinMappingAsync(ordinaryPath)).PinMapping == ordinary.PinMapping && File.Exists(ordinaryPinMapPath),
+                "Explicit enable can recover a missing basic VE without rebuilding the project");
         }
-        finally { await File.WriteAllTextAsync(ordinaryManifestPath, ordinaryManifest); }
+        finally
+        {
+            await File.WriteAllTextAsync(ordinaryManifestPath, ordinaryManifest);
+            await File.WriteAllTextAsync(ordinaryPinMapPath, ordinaryPinMap);
+        }
         var workflow = new Ag32LogicWorkflowService();
         await RejectAsync(() => workflow.InspectAsync(ordinaryPath), "AG32_LOGIC_DISABLED");
-        Pass("AG32 default and existing project modes stay MCU-only after reopen");
+        Pass("Default AG32 has basic VE; legacy reopen stays unchanged; explicit enable preserves existing VE bytes and is idempotent");
 
         var enabled = await service.CreateAsync(pack, "AG32VF303CCT6", template, "LogicAG32", logicPath,
             enableAg32Logic: true);
         Check(enabled.Logic is { TargetDevice: "AGRV2KL48", VerilogFile: "logic/user_logic.v", PinMapFile: "logic/pins.ve" },
             "Selected AG32 logic mode must specify the LQFP48 device and files");
+        Check(enabled.PinMapping == ordinary.PinMapping, "Custom Verilog project retains its VE metadata as a distinct configuration");
+        await RejectAsync(() => ProjectService.EnableAg32PinMappingAsync(logicPath), "PROJECT_PIN_MAPPING_CUSTOM_LOGIC");
         Check(File.Exists(Path.Combine(logicPath, "logic", "user_logic.v")) &&
               File.Exists(Path.Combine(logicPath, "logic", "pins.ve")) &&
               File.Exists(Path.Combine(logicPath, "logic", "README.md")),
@@ -117,6 +143,50 @@ internal static class Ag32LogicProjectChecks
         }
         finally { await File.WriteAllTextAsync(manifestPath, original); }
         Pass("Reopen rejects a tampered 100-pin logic target");
+
+        try
+        {
+            var document = JsonNode.Parse(ordinaryManifest)!;
+            document["pinMapping"]!["targetDevice"] = "AGRV2KL100";
+            await File.WriteAllTextAsync(ordinaryManifestPath, document.ToJsonString(JsonStore.Options));
+            await RejectAsync(() => ProjectService.ReadAsync(ordinaryPath), "PROJECT_PIN_MAPPING_SETTINGS");
+            document["pinMapping"]!["targetDevice"] = "AGRV2KL48";
+            document["pinMapping"]!["pinMapFile"] = "../pins.ve";
+            await File.WriteAllTextAsync(ordinaryManifestPath, document.ToJsonString(JsonStore.Options));
+            await RejectAsync(() => ProjectService.ReadAsync(ordinaryPath), "PROJECT_PIN_MAPPING_SETTINGS");
+            document["pinMapping"]!["pinMapFile"] = "logic/pins.ve";
+            document["pinMapping"]!["toolsetVersion"] = "9.9.9";
+            await File.WriteAllTextAsync(ordinaryManifestPath, document.ToJsonString(JsonStore.Options));
+            await RejectAsync(() => ProjectService.ReadAsync(ordinaryPath), "PROJECT_PIN_MAPPING_SETTINGS");
+            document["pinMapping"] = null;
+            document["deviceId"] = "OTHER48";
+            await File.WriteAllTextAsync(ordinaryManifestPath, document.ToJsonString(JsonStore.Options));
+            await RejectAsync(() => ProjectService.EnableAg32PinMappingAsync(ordinaryPath), "PROJECT_PIN_MAPPING_DEVICE");
+        }
+        finally { await File.WriteAllTextAsync(ordinaryManifestPath, ordinaryManifest); }
+        var localPackPath = Path.Combine(ordinaryPath, "device", "manifest.json");
+        var localPack = await File.ReadAllTextAsync(localPackPath);
+        try
+        {
+            var document = JsonNode.Parse(localPack)!;
+            document["vendor"] = "Other";
+            await File.WriteAllTextAsync(localPackPath, document.ToJsonString(JsonStore.Options));
+            await RejectAsync(() => ProjectService.EnableAg32PinMappingAsync(ordinaryPath), "PROJECT_PIN_MAPPING_DEVICE");
+        }
+        finally { await File.WriteAllTextAsync(localPackPath, localPack); }
+        using (var cancellation = new CancellationTokenSource())
+        {
+            cancellation.Cancel();
+            try
+            {
+                await ProjectService.EnableAg32PinMappingAsync(ordinaryPath, cancellation.Token);
+                throw new InvalidOperationException("Expected cancelled enable");
+            }
+            catch (OperationCanceledException) { }
+            Check(await File.ReadAllTextAsync(ordinaryManifestPath) == ordinaryManifest && await File.ReadAllTextAsync(ordinaryPinMapPath) == ordinaryPinMap,
+                "Cancelled enable must preserve metadata and VE");
+        }
+        Pass("Basic mapping rejects unsupported target/path/tool version, alien device/vendor, custom Verilog substitution and preserves cancellation state");
 
         await File.WriteAllLinesAsync(Path.Combine(root, "result.txt"), results.Prepend("PASS — offline only; no logic tools or hardware used"));
         return 0;

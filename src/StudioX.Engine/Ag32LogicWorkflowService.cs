@@ -19,10 +19,11 @@ public sealed class Ag32LogicWorkflowService
         var root = Path.GetFullPath(projectDirectory);
         var project = await ProjectService.ReadAsync(root, token);
         var logic = project.Logic ?? throw new StudioXException("AG32_LOGIC_DISABLED", "当前工程未在创建时启用 AG32 逻辑/Verilog 特殊模式。");
-        if (project.Kind != ProjectKind.Pack || project.DeviceId != "AG32VF303CCT6" || logic.TargetDevice != "AGRV2KL48" ||
+        var profile = Ag32DeviceCatalog.Require(project.DeviceId);
+        if (project.Kind != ProjectKind.Pack || !profile.CanMap || logic.TargetDevice != profile.TargetDevice ||
             logic.VerilogFile != "logic/user_logic.v" || logic.PinMapFile != "logic/pins.ve")
         {
-            throw new StudioXException("AG32_LOGIC_TARGET", "逻辑模式目前只支持 AG32VF303CCT6 的 LQFP48 / AGRV2KL48 工程骨架。");
+            throw new StudioXException("AG32_LOGIC_TARGET", "逻辑模式需要匹配已核实 AGM 器件封装和厂商逻辑目标的工程骨架。");
         }
 
         var verilog = PathBoundary.Resolve(root, logic.VerilogFile);
@@ -50,9 +51,9 @@ public sealed class Ag32LogicWorkflowService
                 var line = lines[index].Split('#', 2)[0];
                 foreach (Match match in PinPattern.Matches(line))
                 {
-                    if (!int.TryParse(match.Groups[1].Value, out var number) || number is < 1 or > 48)
+                    if (!int.TryParse(match.Groups[1].Value, out var number) || number < 1 || number > profile.PinCount)
                     {
-                        errors.Add($"{logic.PinMapFile}:{index + 1}：{match.Value} 超出 LQFP48 的 1–48 脚范围。");
+                        errors.Add($"{logic.PinMapFile}:{index + 1}：{match.Value} 超出 {profile.PackageName} 的 1–{profile.PinCount} 脚范围。");
                         continue;
                     }
                     if (assignedPins.TryGetValue(number, out var previous))
@@ -67,7 +68,7 @@ public sealed class Ag32LogicWorkflowService
             }
             if (assignedPins.Count == 0)
             {
-                notes.Add("pins.ve 尚无实际 PIN_N 映射；请按板级原理图填写，不能套用 100 脚示例。");
+                notes.Add($"pins.ve 尚无实际 PIN_N 映射；请按 {profile.PackageName} 板级原理图填写，不能套用其它封装的示例。");
             }
         }
         notes.Add("静态检查仅覆盖引脚编号和重复映射；固定功能、电气约束及 MCU/CPLD 复用需在厂商工具和板级资料中核对。");

@@ -9,6 +9,7 @@ CH32V203 的 11 个型号使用现有 `wch.riscv/1.0.0`，独立包制作、CCT6
 | 工具集 / 版本 | 编译器标识 | 组件 |
 |---|---|---|
 | agm.agrv / 1.0.0 | agrv-gcc-11.1.0 | AGM GCC 11.1.0，AGM OpenOCD 0.12.0+dev-04519-ga93c217e2-dirty |
+| agm.pin-mapping / 1.0.0 | agm.ve | AGM VE 转换器、独立 Python、Supra 命令行与架构库；基础引脚映射无需 Quartus |
 | arm.gnu / 1.0.0 | arm-gnu-15.2.rel1 | Arm GNU 15.2.Rel1 / GCC 15.2.1，xPack OpenOCD 0.12.0-7 |
 | riscv.xpack / 1.0.0 | xpack-riscv-gcc-15.2.0 | xPack RISC-V GCC 15.2.0，xPack OpenOCD 0.12.0-7 |
 | wch.riscv / 1.0.0 | wch-gcc-12.2.0-v1.4 | MounRiver 沁恒 GCC 12.2.0 v1.4，WCH OpenOCD 0.11.0+dev（2026-08-25） |
@@ -22,6 +23,8 @@ CH32V203 的 11 个型号使用现有 `wch.riscv/1.0.0`，独立包制作、CCT6
 `pc.mingw` 明确标记 `purpose: windows-native`，不能用来生成 MCU 固件。PC 预览默认使用此内置工具集，无需用户安装 MinGW 或选择开发者机器路径。它复用已有 CMake/Ninja，保留 C/C++、LTO、Win32 头文件/导入库、启动文件和所需 DLL；剔除 GDB/Python、Fortran、文档、翻译与重复驱动入口。PC 工具和 MCU 工具分别解析和校验。
 
 AG32 可选的 Verilog 逻辑模式另需用户安装 **Quartus II Full 与 AGM Supra**，用于 Verilog 转换和逻辑镜像生成；它们不包含在上述 `agm.agrv` MCU 工具集中。StudioX 目前提供工具位置与工程检查、构建和下载指引，实际综合及逻辑下载按厂商流程执行，见 [AG32 逻辑模式](AG32_LOGIC_MODE.md)。
+
+AG32 基础 GPIO / MCU 外设映射使用独立 `agm.pin-mapping/1.0.0`，明确标记 `purpose: ag32-mapping`。普通编译会从当前 `.ve` 生成独立映射 BIN，下载会同时核对 MCU 与映射构建凭据；不调用 Quartus、PlatformIO 或 Shell。Supra 仍需有效厂商许可，许可由 IDE 导入私有用户目录，不能复制进工具集、工程或安装包。真实物理分配以布局器 `logic_db/io.asf` 为准；网表实例名、BIN 名字或 BIN 哈希不同都不能单独证明引脚生效。
 
 ## 开发者准备与发行
 
@@ -47,6 +50,16 @@ AG32 可选的 Verilog 逻辑模式另需用户安装 **Quartus II Full 与 AGM 
 
 沁恒资源单独追加，不覆盖上述工具集：`tools/Prepare-WchToolRuntime.ps1 -WchComponentsDirectory '<MounRiver 的 WCH 组件目录>'`。
 默认读取 `Toolchain/RISC-V Embedded GCC12` 和 `OpenOCD/OpenOCD`，复用已准备的 Arm 工具集中 CMake、Ninja 与许可证；输出 `artifacts/tool-runtime/toolsets/wch.riscv/1.0.0`。
+
+AG32 基础映射工具也单独准备，只读取本机已有厂商资源，并排除节点授权密钥：
+
+```powershell
+.\tools\Prepare-Ag32MappingRuntime.ps1 `
+  -PlatformDirectory '<本机 AgRV 平台目录>' `
+  -LogicToolsDirectory '<本机 tool-agrv_logic 目录>'
+```
+
+默认输出 `artifacts/tool-runtime/toolsets/agm.pin-mapping/1.0.0`，逐文件索引覆盖转换器、Python、Supra、架构库和原始文档。运行时在私有临时目录组合受校验的资源与本机许可，完成、失败或取消后清理；工程只记录相对文件和工具版本，不存开发者安装路径。
 
 STC 8 位资源也单独追加，不覆盖已有工具集：
 

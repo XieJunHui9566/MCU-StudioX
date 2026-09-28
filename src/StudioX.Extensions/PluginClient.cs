@@ -13,7 +13,11 @@ public sealed class PluginClient(string hostExecutable)
         {
             throw new StudioXException("PLUGIN_INPUT_LIMIT", "单次解码最多 64 KiB。");
         }
-        _ = await PluginManifest.ReadAsync(manifestPath, cancellationToken);
+        var manifest = await PluginManifest.ReadAsync(manifestPath, cancellationToken);
+        if (manifest.ApiVersion != 1)
+        {
+            throw new StudioXException("PLUGIN_API", "API 1 解码客户端不自动转换通用插件。");
+        }
         var request = new DecoderRequest(1, Guid.NewGuid().ToString("N"), Convert.ToBase64String(payload.Span));
         var response = await new ProcessRunner().RunAsync(new ProcessRequest(Path.GetFullPath(hostExecutable),
             ["--plugin", Path.GetFullPath(manifestPath)], Path.GetDirectoryName(Path.GetFullPath(hostExecutable))!, TimeSpan.FromSeconds(5),

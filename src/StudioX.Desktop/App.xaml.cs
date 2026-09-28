@@ -24,6 +24,9 @@ public partial class App : System.Windows.Application
         var cmakePreview = e.Args is ["--preview-cmake", _, _];
         var documentsPreview = e.Args is ["--preview-documents", _, _];
         var vePreview = e.Args is ["--preview-ve", _, _, _];
+        var ag32MappingPreview = e.Args is ["--preview-ag32-mapping", _, _];
+        var hdlPreview = e.Args is ["--preview-hdl", _, _];
+        var hdlWorkflowPreview = e.Args is ["--preview-hdl-workflow", _, _];
         var navigationPreview = e.Args is ["--preview-navigation", _, _];
         var explorerPreview = e.Args is ["--preview-explorer", _, _];
         var buildPreview = e.Args is ["--preview-build", _, _];
@@ -35,6 +38,7 @@ public partial class App : System.Windows.Application
         var downloadPreview = e.Args is ["--preview-download", _, _];
         var espressifPreview = e.Args is ["--preview-espressif", _, _];
         var espressifModulePreview = e.Args is ["--preview-espressif-module", _, _];
+        var pluginsPreview = e.Args is ["--preview-plugins", _] or ["--preview-plugins", _, _];
         var debugPreview = e.Args is ["--preview-debug", _, _];
         var rtosPreview = e.Args is ["--preview-rtos", _, _];
         var packCatalogPreview = e.Args is ["--preview-pack-catalog", _, _, _];
@@ -44,7 +48,7 @@ public partial class App : System.Windows.Application
         var rp2350Preview = e.Args is ["--preview-rp2350", _, _];
         var lvglPreview = e.Args is ["--preview-lvgl-ui", _, _];
         var lvglSetupPreview = e.Args is ["--preview-lvgl-setup", _, _, _, _];
-        var anyPreview = preview || windowLayoutPreview || editorPreview || completionPreview || cmakePreview || documentsPreview || vePreview || navigationPreview || explorerPreview || buildPreview || buildMemoryPreview || editingPreview || bracketsPreview || stm32Preview || rp2350Preview || projectPreview || cubeMxPreview || importPerformancePreview || downloadPreview || espressifPreview || espressifModulePreview || debugPreview || rtosPreview || packCatalogPreview || breakpointsPreview || lvglPreview || lvglSetupPreview;
+        var anyPreview = hdlWorkflowPreview || hdlPreview || ag32MappingPreview || pluginsPreview || preview || windowLayoutPreview || editorPreview || completionPreview || cmakePreview || documentsPreview || vePreview || navigationPreview || explorerPreview || buildPreview || buildMemoryPreview || editingPreview || bracketsPreview || stm32Preview || rp2350Preview || projectPreview || cubeMxPreview || importPerformancePreview || downloadPreview || espressifPreview || espressifModulePreview || debugPreview || rtosPreview || packCatalogPreview || breakpointsPreview || lvglPreview || lvglSetupPreview;
         var data = (showDebugDemo || showBreakpointsDemo) && e.Args.Length == 3 ? Path.GetFullPath(e.Args[2]) : smoke || anyPreview ? Path.Combine(Path.GetFullPath(e.Args[1]), "user-data") :
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MCUStudioX");
         var services = new WorkbenchService(Path.Combine(AppContext.BaseDirectory, "runtime"), data);
@@ -58,14 +62,30 @@ public partial class App : System.Windows.Application
             window.Left = -20000;
         }
         window.Show();
-        await window.InitializeAsync();
+        await window.InitializeAsync(loadGitHubAccounts: !smoke && !anyPreview);
         if (anyPreview)
         {
             var directory = Path.GetFullPath(e.Args[1]);
             Directory.CreateDirectory(directory);
             try
             {
-                if (espressifModulePreview)
+                if (hdlWorkflowPreview)
+                {
+                    await window.RenderHdlWorkflowPreviewAsync(directory, Path.GetFullPath(e.Args[2]));
+                }
+                else if (hdlPreview)
+                {
+                    await window.RenderHdlPreviewAsync(directory, Path.GetFullPath(e.Args[2]));
+                }
+                else if (ag32MappingPreview)
+                {
+                    await window.RenderAg32MappingPreviewAsync(directory, Path.GetFullPath(e.Args[2]));
+                }
+                else if (pluginsPreview)
+                {
+                    await window.RenderPluginsPreviewAsync(directory, e.Args.Length == 3 ? Path.GetFullPath(e.Args[2]) : null);
+                }
+                else if (espressifModulePreview)
                 {
                     await window.RenderEspressifModulePreviewAsync(directory, Path.GetFullPath(e.Args[2]));
                 }
@@ -217,6 +237,21 @@ public partial class App : System.Windows.Application
             else if (e.Args is ["--new-project", var packId, var deviceId])
             {
                 await window.ShowNewProjectAsync(packId, deviceId);
+            }
+            else if (e.Args is ["--open", var workflowProject, "--hdl-workflow"])
+            {
+                await window.OpenFromCommandLineAsync(workflowProject);
+                await window.ShowHdlWorkflowPageAsync();
+            }
+            else if (e.Args is ["--open", var hdlProject, "--hdl-schematic"])
+            {
+                await window.OpenFromCommandLineAsync(hdlProject);
+                await window.ShowHdlSchematicPageAsync();
+            }
+            else if (e.Args is ["--open", var mappingProject, "--ag32-pin-mapping"])
+            {
+                await window.OpenFromCommandLineAsync(mappingProject);
+                await window.ShowAg32PinMappingPageAsync();
             }
             else if (e.Args is ["--open", var lvglProject, "--lvgl-preview"])
             {

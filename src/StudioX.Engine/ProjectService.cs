@@ -3,7 +3,7 @@ namespace StudioX.Engine;
 using StudioX.Foundation;
 using StudioX.Packages;
 
-public sealed class ProjectService(Func<string, CancellationToken, Task>? initializeRepository = null)
+public sealed partial class ProjectService(Func<string, CancellationToken, Task>? initializeRepository = null)
 {
     public static BuildPlan Plan(InstalledPack pack, string deviceId, string templateId, string name, bool enableAg32Logic = false)
     {
@@ -16,21 +16,27 @@ public sealed class ProjectService(Func<string, CancellationToken, Task>? initia
         }
         if (enableAg32Logic && !IsAg32LogicDevice(pack, deviceId))
         {
-            throw new StudioXException("PROJECT_LOGIC_DEVICE", "逻辑/Verilog 特殊模式目前仅支持 AGM AG32VF303CCT6（LQFP48）。");
+            throw new StudioXException("PROJECT_LOGIC_DEVICE", "逻辑/Verilog 特殊模式需要已核实型号、封装和逻辑保留区的 AGM 器件包。");
         }
-        var logic = enableAg32Logic ? new Ag32LogicProjectSettings("AGRV2KL48", "logic/user_logic.v", "logic/pins.ve") : null;
+        var ag32 = IsAg32LogicDevice(pack, deviceId) ? Ag32DeviceCatalog.Require(deviceId) : null;
+        var logic = enableAg32Logic ? new Ag32LogicProjectSettings(ag32!.TargetDevice, "logic/user_logic.v", "logic/pins.ve") : null;
+        var pinMapping = ag32 is not null ? new Ag32PinMappingProjectSettings(ag32.TargetDevice) : null;
         var espressif = device.Espressif is { } profile
             ? new EspressifProjectSettings(profile.Framework, profile.Target, profile.SdkVersion) : null;
         var selectedTemplate = device.Templates.Single(template => template.Id == templateId);
         var entryFile = selectedTemplate.EspressifExample is { } example
             ? selectedTemplate.EntryFile[(example.ExampleDirectory.TrimEnd('/').Length + 1)..] : null;
         return new BuildPlan(new ProjectManifest(1, name, pack.Manifest.Id, pack.Manifest.Version, pack.ContentHash,
-            deviceId, templateId, device.ToolsetId, device.ToolsetVersion, device.CompilerId, Logic: logic, Espressif: espressif, EntryFile: entryFile), TemplateResolver.Resolve(device, templateId));
+            deviceId, templateId, device.ToolsetId, device.ToolsetVersion, device.CompilerId, Logic: logic, Espressif: espressif, EntryFile: entryFile,
+            PinMapping: pinMapping), TemplateResolver.Resolve(device, templateId));
     }
 
-    public static bool IsAg32LogicDevice(InstalledPack pack, string deviceId) =>
-        string.Equals(pack.Manifest.Vendor, "AGM", StringComparison.OrdinalIgnoreCase) &&
-        string.Equals(deviceId, "AG32VF303CCT6", StringComparison.OrdinalIgnoreCase);
+    public static bool IsAg32LogicDevice(InstalledPack pack, string deviceId)
+    {
+        var device = pack.Manifest.Devices.SingleOrDefault(item => string.Equals(item.Id, deviceId, StringComparison.OrdinalIgnoreCase));
+        return string.Equals(pack.Manifest.Vendor, "AGM", StringComparison.OrdinalIgnoreCase) &&
+            device is not null && Ag32DeviceCatalog.Find(deviceId) is { CanMap: true } profile && profile.Matches(device);
+    }
 
     public async Task<ProjectManifest> CreateAsync(InstalledPack pack, string deviceId, string templateId, string name,
         string destination, CancellationToken cancellationToken = default, bool enableAg32Logic = false)
@@ -86,9 +92,13 @@ public sealed class ProjectService(Func<string, CancellationToken, Task>? initia
                     File.Copy(PathBoundary.Resolve(pack.RootDirectory, source), file);
                 }
             }
+            if (plan.Project.PinMapping is { } pinMapping)
+            {
+                await WriteAg32PinMappingScaffoldAsync(staging, plan.Project.DeviceId, pinMapping, cancellationToken);
+            }
             if (plan.Project.Logic is { } logic)
             {
-                await WriteAg32LogicScaffoldAsync(staging, logic, cancellationToken);
+                await WriteAg32LogicScaffoldAsync(staging, plan.Project.DeviceId, logic, cancellationToken);
             }
             await JsonStore.WriteAsync(Path.Combine(staging, ".studiox", "project.json"), plan.Project, cancellationToken);
             if (plan.Project.Espressif is not null)
@@ -110,7 +120,7 @@ public sealed class ProjectService(Func<string, CancellationToken, Task>? initia
                 }
             }
             var gitignore = ".build/\nbuild/\ncmake-build-*/\n.studiox/debug.json\n.studiox/breakpoints.json\n*.user\n";
-            if (plan.Project.Logic is not null)
+            if (plan.Project.PinMapping is not null || plan.Project.Logic is not null)
             {
                 gitignore += "logic/db/\nlogic/incremental_db/\nlogic/output_files/\nlogic/*.vo\nlogic/*.bin\n";
             }
@@ -150,11 +160,12 @@ public sealed class ProjectService(Func<string, CancellationToken, Task>? initia
             PackValidator.Token(project.Name);
         }
         if (project.Logic is { } logic && (project.Kind != ProjectKind.Pack ||
-            !string.Equals(project.DeviceId, "AG32VF303CCT6", StringComparison.OrdinalIgnoreCase) ||
-            logic != new Ag32LogicProjectSettings("AGRV2KL48", "logic/user_logic.v", "logic/pins.ve")))
+            Ag32DeviceCatalog.Find(project.DeviceId) is not { CanMap: true } profile ||
+            logic != new Ag32LogicProjectSettings(profile.TargetDevice, "logic/user_logic.v", "logic/pins.ve")))
         {
             throw new StudioXException("PROJECT_LOGIC_SETTINGS", "AG32 逻辑工程配置无效或不受当前版本支持。");
         }
+        ValidateAg32PinMappingSettings(directory, project);
         PackValidator.Token(project.ToolsetId);
         PackValidator.Version(project.ToolsetVersion);
         EspressifProjectScaffold.Validate(project);
@@ -166,26 +177,23 @@ public sealed class ProjectService(Func<string, CancellationToken, Task>? initia
         return project;
     }
 
-    private static async Task WriteAg32LogicScaffoldAsync(string staging, Ag32LogicProjectSettings logic, CancellationToken token)
+    private static async Task WriteAg32LogicScaffoldAsync(string staging, string deviceId, Ag32LogicProjectSettings logic, CancellationToken token)
     {
+        var profile = Ag32DeviceCatalog.Require(deviceId);
         var directory = Path.Combine(staging, "logic");
         Directory.CreateDirectory(directory);
         // 不假设用户开发板的布线：错误的物理引脚映射可能与 MCU 外设复用冲突。
         await File.WriteAllTextAsync(PathBoundary.Resolve(staging, logic.VerilogFile),
-            "// 编辑起点，不能直接作为可下载设计。先填写 .ve，运行厂商 Prepare LOGIC，\n" +
-            "// 核对所生成的顶层与接口，再按需加入端口、逻辑并由顶层实例化。\n" +
+            "// 编辑起点。先填写 .ve，按映射信号定义端口与逻辑。\n" +
+            "// 顶部编译会生成顶层接口并联合构建 MCU 与 FPGA。\n" +
             "module user_logic;\nendmodule\n", token);
-        await File.WriteAllTextAsync(PathBoundary.Resolve(staging, logic.PinMapFile),
-            "# AG32VF303CCT6 / AGRV2KL48 逻辑与物理引脚映射\n" +
-            "# 请核对所用 LQFP48 开发板原理图和 AGM 引脚表，再添加 MCU/逻辑信号映射。\n" +
-            "# 此处故意不预设 PIN_N：厂商示例常针对其他封装，直接沿用可能造成引脚冲突。\n", token);
         await File.WriteAllTextAsync(Path.Combine(directory, "README.md"),
             "# AG32 逻辑/Verilog 特殊模式\n\n" +
-            "此目录独立于 `src/main.c` 的 MCU 固件。`user_logic.v` 只是编辑起点，不能直接综合下载；`pins.ve` 用于定义逻辑信号、MCU 功能与物理引脚的映射。当前目标为 AG32VF303CCT6 的 AGRV2KL48（LQFP48）。\n\n" +
-            "StudioX 当前没有 `Prepare LOGIC` 任务。先完成 `pins.ve` 的真实板级映射，再把此目录的文件复制或链接到 **AGM AgRV SDK / PlatformIO 配套工程**。在该配套工程的 `platformio.ini` 中配置相对路径，例如：\n\n" +
-            "```ini\n[setup_logic]\nlogic_ve = logic/pins.ve\nlogic_device = AGRV2KL48\nip_name = user_logic\nlogic_dir = logic\n```\n\n" +
-            "旧版 AgRV SDK 的字段名可能不同，请以实际安装版本的 `platformio.ini` 模板为准。在配套工程运行厂商的 `Prepare LOGIC`，检查它从 `.ve` 生成的顶层、接口和工程，然后按生成接口修改 `user_logic.v` 并接入顶层。上述配置只对 AGM/PlatformIO 配套工程生效；仅在 StudioX 工程中编辑文件不会执行生成步骤。\n\n" +
-            "逻辑综合和转换需要 **Quartus II Full** 与 **Supra**（Supra 通常随 AgRV SDK 提供）：用 Quartus II 编译为 `.vo`，再用 Supra 转换为逻辑 `.bin`（默认设计名 `pins` 时为 `logic/pins.bin`）。逻辑镜像需要通过厂商工具和适配的烧录器单独下载；MCU 固件构建与下载不会自动包含逻辑。\n\n" +
+            $"此目录独立于 `src/main.c` 的 MCU 固件。`user_logic.v` 只是编辑起点，不能直接综合下载；`pins.ve` 用于定义逻辑信号、MCU 功能与物理引脚的映射。当前目标为 {profile.DeviceId} 的 {profile.TargetDevice}（{profile.PackageName}）。\n\n" +
+            "在 AG32 页面配置源文件、包含目录、宏和附加 SDC。顶部编译 / F7 联合运行 MCU GCC、VE 转换、内置原生 mapper 和 Supra 布局布线，生成两段独立镜像。无需外部 Quartus；Supra 许可须导入本机用户目录。\n\n" +
+            "构建设置在 `.studiox/ag32-logic-build.json`，源文件路径相对工程。顶层 pins.v 和接口模板生成在 `.build/ag32-logic/<运行编号>/`；按模板核对 user_logic 的接口，不手工维护生成的顶层。失败保留原始日志，成功才建立可下载凭据。\n\n" +
+            "顶部下载先构建，再展示 MCU 与逻辑两段镜像的地址和 SHA-256。确认后分别写入校验、复位运行，不修改选项字节。当前实板身份检查仅开放已验证的 CCT6。\n\n" +
+            "RTL 仿真在 AG32 页面配置 testbench；内置 Icarus 输出可缩放、筛选的 VCD 数字波形，支持 #delay、断言和 X/Z。仿真设置在 `.studiox/hdl-simulation.json`。新建模板需要连接 DUT 并添加激励和断言；当前不包含 SDF 布局后延时仿真。\n\n" +
             "配置 `pins.ve` 前请检查板级原理图、封装引脚和 MCU 外设复用。这里未预设任何物理引脚。\n", token);
     }
 }

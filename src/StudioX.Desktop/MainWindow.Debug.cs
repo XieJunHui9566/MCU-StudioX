@@ -249,17 +249,6 @@ public partial class MainWindow
         ShowDebugLayout();
         RefreshDebugUi();
     }
-    private async void DebugExample_Click(object sender, RoutedEventArgs e) => await RunAsync(async token =>
-    {
-        if (!await CloseProjectAsync(token))
-        {
-            return;
-        }
-        var directory = await DebugSessionService.CreateExampleAsync(services.Packs, services.DataDirectory, Path.Combine(AppContext.BaseDirectory, "device-packs"), token);
-        await OpenProjectAsync(directory, token);
-        await services.Debugger.StartOfflineAsync(token);
-        await NavigateSelectedDebugFrameAsync();
-    });
     private async void DebugStart_Click(object sender, RoutedEventArgs e) => await RunAsync(async token =>
     {
         if (services.Debugger.IsActive)
@@ -274,7 +263,7 @@ public partial class MainWindow
         }
         if (projectDirectory is null)
         {
-            throw new StudioXException("DEBUG_PROJECT", "请先打开支持调试的工程并选择烧录器。STM32F1/F4 使用 ST-Link 或 DAP；AG32VF303 使用官方 AGM BLASTER；CH32V203 / V307 与 CH592 / CH595 使用 WCH-Link；RP2350 使用 DAP 和包含调试配置的器件包。");
+            throw new StudioXException("DEBUG_PROJECT", "请先打开支持调试的工程并选择烧录器。STM32F1/F4 使用 ST-Link 或 DAP；AG32 使用 DAP-Link 或 J-Link（V9 及以上）；CH32V203 / V307 与 CH592 / CH595 使用 WCH-Link；RP2350 使用 DAP 和包含调试配置的器件包。");
         }
         var configuration = await services.Downloads.ConfigurationAsync(RequireProject(), token)
             ?? throw new StudioXException("DEBUG_TARGET", "当前工程缺少调试配置。");

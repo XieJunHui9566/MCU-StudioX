@@ -1,0 +1,15 @@
+{
+  "formatVersion": 1,
+  "apiVersion": 2,
+  "id": "example.python-workspace",
+  "version": "1.0.0",
+  "displayName": "Python 工程概览",
+  "kind": "process",
+  "entryAssembly": "",
+  "entryType": "",
+  "entryExecutable": "python/python.exe",
+  "arguments": ["-I", "-u", "plugin.py"],
+  "capabilities": ["commands", "panels", "agentTools"],
+  "hostTools": ["project_info"],
+  "sha256": {}
+}

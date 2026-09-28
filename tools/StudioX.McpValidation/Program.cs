@@ -39,6 +39,18 @@ if (args is ["--espressif-module", var espressifProject])
     return;
 }
 
+if (args is ["--espressif-docs", var espressifDocsOutput])
+{
+    await EspressifDocsMcpChecks.RunAsync(espressifDocsOutput);
+    return;
+}
+
+if (args is ["--espressif-docs", var espressifDocsCliOutput, var espressifDocsCli])
+{
+    await EspressifDocsMcpChecks.RunAsync(espressifDocsCliOutput, espressifDocsCli);
+    return;
+}
+
 await ProviderContractChecks.VerifyAsync(Path.Combine(AppContext.BaseDirectory,
     "Fixtures", "mcp-tool-contracts.json"));
 

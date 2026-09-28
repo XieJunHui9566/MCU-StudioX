@@ -9,6 +9,9 @@
       Include="Resources/stm32-download.json" />
     <EmbeddedResource
       Include="Resources/studiox-stcgal-guard.py" />
+    <EmbeddedResource
+      Include="../../examples/packs/agm.ag32vf303-preview/debug/ag32vf303.cfg"
+      LogicalName="StudioX.Engine.Ag32PinMapping.Target.cfg" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource

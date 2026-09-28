@@ -1,0 +1,10 @@
+[package]
+name = "studiox-rust-overview"
+version = "1.0.0"
+edition = "2024"
+
+[dependencies]
+serde_json = "1"
+
+[profile.release]
+panic = "abort"

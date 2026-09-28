@@ -1,6 +1,6 @@
 # Windows 安装与升级
 
-版本从 `Directory.Build.props` 读取；独立 IDE 当前源码与安装器目标版本为 **0.2.5**，可覆盖升级首版 0.1.0，与旧 VS Code 插件的 0.17 分开。关于窗口、欢迎页、状态栏、EXE 文件版本和安装器版本保持一致。
+版本从 `Directory.Build.props` 读取；独立 IDE 当前源码与安装器目标版本为 **0.2.5.1**，可覆盖升级首版 0.1.0，与旧 VS Code 插件的 0.17 分开。关于窗口、欢迎页、状态栏、EXE 文件版本和安装器版本保持一致。
 
 ## 构建
 
@@ -14,7 +14,7 @@
 
 `Build-Installer.ps1` 调用自包含发布、检查工具和器件包、生成逐文件 SHA-256，再压缩为单个 EXE。默认输出 `artifacts/releases/<version>/`，包括安装器、SHA256SUMS.txt、使用说明、release.json 和单独的 device-packs。已成功发行的目录不允许覆盖；修复后递增产品版本再构建。
 
-下一次发行先递增 `Directory.Build.props` 的三段数字版本。`Publish.ps1 -ReleaseVersion` 仅用于明确的发行构建；工具集、器件包和插件版本分别管理，不随 IDE 版本强行改变。不要修改已经发行的工具集版本内容，因为工程会锁定其指纹。
+下一次发行先递增 `Directory.Build.props` 的三段数字版本或四段修订版本。`Publish.ps1 -ReleaseVersion` 仅用于明确的发行构建；工具集、器件包和插件版本分别管理，不随 IDE 版本强行改变。不要修改已经发行的工具集版本内容，因为工程会锁定其指纹。
 
 ## 安装语义
 

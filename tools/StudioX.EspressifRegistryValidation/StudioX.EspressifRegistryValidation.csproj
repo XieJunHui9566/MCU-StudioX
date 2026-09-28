@@ -1,0 +1,13 @@
+<Project
+  Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference
+      Include="ModelContextProtocol.Core" />
+    <Compile
+      Include="../../src/StudioX.Application/Espressif/EspressifComponentRegistryService.cs"
+      Link="EspressifComponentRegistryService.cs" />
+  </ItemGroup>
+</Project>

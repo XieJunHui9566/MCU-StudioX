@@ -1,0 +1,28 @@
+<Project
+  Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference
+      Include="ModelContextProtocol.Core" />
+    <Compile
+      Include="../../src/StudioX.Application/Espressif/EspressifDocumentationService.cs"
+      Link="EspressifDocumentationService.cs" />
+    <Compile
+      Include="../../src/StudioX.Application/Espressif/EspressifDocumentationStatus.cs"
+      Link="EspressifDocumentationStatus.cs" />
+    <Compile
+      Include="../../src/StudioX.Application/Espressif/EspressifDocumentationReply.cs"
+      Link="EspressifDocumentationReply.cs" />
+    <Compile
+      Include="../../src/StudioX.Application/Espressif/EspressifDocumentationHttpPolicy.cs"
+      Link="EspressifDocumentationHttpPolicy.cs" />
+    <Compile
+      Include="../../src/StudioX.Application/Espressif/EspressifOAuthCallback.cs"
+      Link="EspressifOAuthCallback.cs" />
+    <Compile
+      Include="../../src/StudioX.Application/Espressif/EspressifProtectedStore.cs"
+      Link="EspressifProtectedStore.cs" />
+  </ItemGroup>
+</Project>

@@ -6,8 +6,11 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 $Installer = [IO.Path]::GetFullPath($Installer)
-$releaseVersion = ([version](Get-Item -LiteralPath $Installer).VersionInfo.FileVersion).ToString(3)
-if ($PreviousVersion -notmatch '^\d+\.\d+\.\d+$' -or [version]$PreviousVersion -ge [version]$releaseVersion)
+. (Join-Path $PSScriptRoot 'Release-Version.ps1')
+$releaseVersion = (Get-Item -LiteralPath $Installer).VersionInfo.ProductVersion.Trim()
+$releaseIdentity = Get-StudioXReleaseVersion $releaseVersion
+$previousIdentity = Get-StudioXReleaseVersion $PreviousVersion
+if ([version]$previousIdentity.FileVersion -ge [version]$releaseIdentity.FileVersion)
 {
     throw 'PreviousVersion must be lower than the installer version.'
 }
@@ -98,7 +101,7 @@ Pass "$PreviousVersion fixture installed with the permanent product ID"
 $exitCode = Run-Program $Installer (Setup-Arguments 'upgrade-to-current')
 Assert ($exitCode -eq 0) "Upgrade failed: $exitCode"
 Assert ((Get-ItemProperty -LiteralPath $registry).DisplayVersion -eq $releaseVersion) 'New version registration incorrect'
-Assert ((Get-Item -LiteralPath (Join-Path $installed 'MCU StudioX.exe')).VersionInfo.FileVersion -eq "$releaseVersion.0") 'Executable version incorrect'
+Assert ((Get-Item -LiteralPath (Join-Path $installed 'MCU StudioX.exe')).VersionInfo.FileVersion -eq $releaseIdentity.FileVersion) 'Executable version incorrect'
 Pass 'Upgrade replaces old application and keeps one uninstall entry'
 
 $mutex = [Threading.Mutex]::new($false, 'MCUStudioX.Desktop.InstallLock')

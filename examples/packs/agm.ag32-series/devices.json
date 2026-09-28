@@ -1,0 +1,149 @@
+{
+  "formatVersion": 1,
+  "referenceManual": {
+    "revision": "2026-06-01",
+    "url": "https://www.agm-micro.com/upload/userfiles/files/AG32%20MCU%20Reference%20Manual%2820260601%E4%BF%AE%E8%AE%A2%E7%89%88%EF%BC%89.pdf",
+    "sha256": "422de1ab9cec9f45ef107046a0b5fcda1c13e6df0cbc62817bec780316694bf1",
+    "capacityPages": [
+      12,
+      317
+    ]
+  },
+  "pinout": {
+    "url": "https://www.agm-micro.com/upload/userfiles/files/AG32_pinout_100_64_48_32_2K.xlsx",
+    "sha256": "90e0be1539bf16f432ff6a6e22f93c4eeb685adf713464ca6b8e33ddcfd23bbc"
+  },
+  "hyperRamGuide": {
+    "title": "AG32VH 系列应用指南（厂商指南，授权代理托管）",
+    "url": "https://www.ag32mcu.com/wp-content/uploads/2025/06/MANUAL_AG32VH_HyperRAM.pdf",
+    "targetDevicePage": 3,
+    "pinoutPages": [
+      5,
+      6
+    ]
+  },
+  "debugProbes": {
+    "vendorGuide": "https://www.ag32mcu.com/dev-docs/doc_ag32_vscode_start/",
+    "jLinkV9Specification": "https://kb.segger.com/J-Link_BASE_V9",
+    "backend": "AGM patched OpenOCD 0.12.0+dev-04519-ga93c217e2-dirty",
+    "transport": "swd",
+    "interfaces": [
+      "interface/cmsis-dap.cfg",
+      "interface/jlink.cfg"
+    ],
+    "evidence": "原厂 agrv2k.cfg 默认 J-Link / SWD；两种接口在锁定 OpenOCD 中完成配置解析，不初始化探针。J-Link V9 及以上通过该 SWD 桥接通路使用，不等同于 SEGGER 原生 RISC-V 支持。",
+    "hardwareValidation": "仅 AG32VF303CCT6 的既有 CMSIS-DAP 实板验收；J-Link 尚未在本项目做实板验收，其余六个型号硬件入口仍关闭。"
+  },
+  "sdk": {
+    "packageName": "framework-agrv_sdk",
+    "packageVersion": "1.0.0",
+    "platformSource": "https://github.com/agm/platform-agrv.git",
+    "expectedSourceHashes": {
+      "sdk/package.json": "a38dee950359841cf8879ea99fa48fc4ec847d958ed494908c72d2b66414f8d2",
+      "sdk/misc/devices/AgRV2K_mem.ld": "0ecd82c65138eb4225fef1cc80e003c9154dd7b04e7ba60bbdc2ee5a63d317a5",
+      "platform/builder/common.py": "8703ec1a643c674dc06aff6da042699a6766db9b04f883a2cb15e917e19a55df",
+      "platform/etc/agrv2k.cfg": "ea38e3471c32d67e9b52d8c4e182b1b350dac2107c5c0ccecbf8e9c9dea08ee8",
+      "platform/etc/gen_vlog": "b5f0a02dc3394015e5ca2697a3f4a4eca22a2eb3341191a4e76eda9daeaea4d9"
+    }
+  },
+  "devices": [
+    {
+      "id": "AG32VF303KCU6",
+      "series": "AG32VF303",
+      "packageName": "QFN32",
+      "pinCount": 32,
+      "targetDevice": "AGRV2KQ32",
+      "flashBytes": 262144,
+      "ramBytes": 131072,
+      "externalPsramBytes": 0,
+      "maxCpuMhz": 248,
+      "applicationFlashBytes": 159744,
+      "logicImageAddress": 2147643392,
+      "logicReserveBytes": 102400
+    },
+    {
+      "id": "AG32VF303CCT6",
+      "series": "AG32VF303",
+      "packageName": "LQFP48",
+      "pinCount": 48,
+      "targetDevice": "AGRV2KL48",
+      "flashBytes": 262144,
+      "ramBytes": 131072,
+      "externalPsramBytes": 0,
+      "maxCpuMhz": 248,
+      "applicationFlashBytes": 159744,
+      "logicImageAddress": 2147643392,
+      "logicReserveBytes": 102400
+    },
+    {
+      "id": "AG32VF303VCT6",
+      "series": "AG32VF303",
+      "packageName": "LQFP100",
+      "pinCount": 100,
+      "targetDevice": "AGRV2KL100",
+      "flashBytes": 262144,
+      "ramBytes": 131072,
+      "externalPsramBytes": 0,
+      "maxCpuMhz": 248,
+      "applicationFlashBytes": 159744,
+      "logicImageAddress": 2147643392,
+      "logicReserveBytes": 102400
+    },
+    {
+      "id": "AG32VF407RGT6",
+      "series": "AG32VF407",
+      "packageName": "LQFP64",
+      "pinCount": 64,
+      "targetDevice": "AGRV2KL64",
+      "flashBytes": 1048576,
+      "ramBytes": 131072,
+      "externalPsramBytes": 0,
+      "maxCpuMhz": 248,
+      "applicationFlashBytes": 946176,
+      "logicImageAddress": 2148429824,
+      "logicReserveBytes": 102400
+    },
+    {
+      "id": "AG32VF407VGT6",
+      "series": "AG32VF407",
+      "packageName": "LQFP100",
+      "pinCount": 100,
+      "targetDevice": "AGRV2KL100",
+      "flashBytes": 1048576,
+      "ramBytes": 131072,
+      "externalPsramBytes": 0,
+      "maxCpuMhz": 248,
+      "applicationFlashBytes": 946176,
+      "logicImageAddress": 2148429824,
+      "logicReserveBytes": 102400
+    },
+    {
+      "id": "AG32VH303RCT6",
+      "series": "AG32VH303",
+      "packageName": "LQFP64",
+      "pinCount": 64,
+      "targetDevice": "AGRV2KL64H",
+      "flashBytes": 262144,
+      "ramBytes": 131072,
+      "externalPsramBytes": 8388608,
+      "maxCpuMhz": 248,
+      "applicationFlashBytes": 159744,
+      "logicImageAddress": 2147643392,
+      "logicReserveBytes": 102400
+    },
+    {
+      "id": "AG32VH407VGT6",
+      "series": "AG32VH407",
+      "packageName": "LQFP100",
+      "pinCount": 100,
+      "targetDevice": "AGRV2KL100H",
+      "flashBytes": 1048576,
+      "ramBytes": 131072,
+      "externalPsramBytes": 8388608,
+      "maxCpuMhz": 248,
+      "applicationFlashBytes": 946176,
+      "logicImageAddress": 2148429824,
+      "logicReserveBytes": 102400
+    }
+  ]
+}

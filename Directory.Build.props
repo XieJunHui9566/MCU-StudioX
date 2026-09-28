@@ -10,7 +10,7 @@
     <RuntimeIdentifier
       Condition="'$(RuntimeIdentifier)' == '' and $([MSBuild]::IsOSPlatform('Windows'))">win-x64</RuntimeIdentifier>
     <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
-    <Version>0.2.5</Version>
+    <Version>0.2.5.1</Version>
     <InformationalVersion>$(Version)-preview</InformationalVersion>
   </PropertyGroup>
 </Project>

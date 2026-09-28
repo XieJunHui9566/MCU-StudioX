@@ -8,6 +8,7 @@
 | --- | --- | --- |
 | `WorkspaceMcpTools` | 工程信息、源码列表、搜索、读取、局部补丁和新建 | 单次文件操作 |
 | `BuildMcpTools` | 已授权编译、读取原始日志 | 构建服务 |
+| `Ag32PinMappingMcpTools` | AG32 基础 VE 映射状态、显式启用与真实编译 | 映射构建服务 |
 | `GitMcpTools` | 当前工程的 Git 查询与写入 | Git 服务 |
 | `ExternalProjectMcpTools` | 外部目录入口、分页浏览、定位、读取、搜索 | 浏览游标 |
 | `ExternalProjectCopyMcpTools` | 外部库复制的清单审批、暂存与提交 | 单次复制事务 |
@@ -20,6 +21,8 @@
 | `PdfMcpTools` | PDF 列表、文字、搜索、页面图像 | 单次 PDF 读取 |
 | `QmdMcpTools` | 绑定工程的 BM25 快照与索引 | 工程有界缓存 |
 | `WebMcpTools` | 公开网页搜索与提取 | 联网服务 |
+| `EspressifKnowledgeMcpTools` | 乐鑫文档与组件数据库 | 文档 OAuth 与组件查询服务 |
+| `PluginMcpIntegration` | `plugin_status` 与已启用插件声明的 Agent 工具 | 当前 MCP 的插件工作区与 broker |
 
 ## 共享边界
 
@@ -34,6 +37,10 @@
 ## 生命周期
 
 设备会话与浏览游标由各工具组关闭；注册入口逐组清理，即使某组失败也继续清理其他组，最后汇总原始异常。调试只停止本 MCP 会话启动的会话，IDE 自建会话不归 MCP 所有。所有外部目录授权在会话结束时清除。
+
+`StudioXMcpSession.CreateAsync` 和 CLI 在工具发现前等待 `InitializePluginsAsync`。每次启动冻结插件贡献，工具名包含 ID 命名空间和摘要，避免截断与归一化冲突。插件停用立即拒绝旧定义的调用；新的启用或安装内容在下一次 MCP 会话生效，不在 Agent 轮次中改变工具 schema。`plugin_status` 区分冻结定义、宿主运行状态和启动诊断。
+
+插件主机调用通过 `PluginWorkspaceBroker` 建立关闭插件发现的内部 MCP 会话，避免工具注册递归。未在插件清单 HostTools 声明的请求拒绝；工程编辑、构建与设备操作仍使用原来的应用审批、文件哈希和设备所有者检查。桌面可额外提供 `editor_read` 的实时缓冲区和 `editor_open` 定位；外部无编辑器时读取磁盘，定位返回明确不可用错误。
 
 `StudioX.McpValidation --contracts <文件>` 可记录完整协议契约，`--verify-contracts <基线文件>` 核对实际注册结果的名称、参数和描述。职责拆分前后的记录应一致；完整验证另外覆盖写入授权、外部复制、分页、只读边界、离线调试及内置/外部客户端。
 

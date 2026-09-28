@@ -81,9 +81,9 @@ var agPack = await repository.ImportAsync(Path.Combine(packs, "studiox.preview.a
 var agRoot = Path.Combine(root, "native-ag32");
 await new ProjectService().CreateAsync(agPack, "AG32VF303CCT6", "minimal", "ag_download_test", agRoot);
 var agConfig = await downloads.ConfigurationAsync(agRoot) ?? throw new InvalidOperationException("Missing AG32 download configuration");
-Check(agConfig.OpenOcd.Probes.Select(p => p.Id).SequenceEqual(["agm-blaster"]) &&
-    agConfig.OpenOcd.ApplicationFlashBytes == 0x27000 && agConfig.Options.ProbeId == "agm-blaster",
-    "AG32 uses only the official probe and 156 KiB application region");
+Check(agConfig.OpenOcd.Probes.Select(p => p.Id).SequenceEqual(["cmsis-dap", "jlink"]) &&
+    agConfig.OpenOcd.ApplicationFlashBytes == 0x27000 && agConfig.Options.ProbeId == "cmsis-dap",
+    "AG32 uses DAP / J-Link SWD and 156 KiB application region");
 await Reject(() => downloads.PrepareAsync(agRoot, new("stlink", 2000)), "DOWNLOAD_PROBE");
 await BuildAndPrepare(agRoot, false);
 await File.WriteAllLinesAsync(Path.Combine(root, "result.txt"), passed.Prepend("PASS — offline only; no hardware accessed"));

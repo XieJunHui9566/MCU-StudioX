@@ -1,0 +1,77 @@
+<UserControl
+  x:Class="StudioX.Desktop.Ag32PinMappingView"
+  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:local="clr-namespace:StudioX.Desktop">
+  <ScrollViewer
+    VerticalScrollBarVisibility="Auto">
+    <StackPanel
+      Margin="32,28"
+      MaxWidth="1200">
+      <TextBlock
+        Text="AG32 引脚映射"
+        FontSize="23"
+        FontWeight="SemiBold" />
+      <TextBlock
+        x:Name="DescriptionText"
+        TextWrapping="Wrap"
+        Foreground="{DynamicResource Muted}"
+        Margin="0,10,0,16" />
+      <WrapPanel>
+        <Button x:Name="SchematicButton" Content="Verilog 电路图" Click="Schematic_Click" Visibility="Collapsed" Margin="0,0,8,8" />
+        <Button x:Name="WorkflowButton" Content="构建配置与波形仿真" Click="Workflow_Click" Visibility="Collapsed" Margin="0,0,8,8" />
+        <Button
+          x:Name="LicenseButton"
+          Content="配置 Supra 许可"
+          Margin="0,0,8,8"
+          Click="License_Click" />
+        <Button
+          x:Name="EnableButton"
+          Content="启用基础映射"
+          Margin="0,0,8,8"
+          Click="Enable_Click" />
+        <Button
+          x:Name="OpenButton"
+          Content="编辑 .ve"
+          Margin="0,0,8,8"
+          Click="Open_Click" />
+      </WrapPanel>
+      <Expander
+        Header="工具、许可与构建状态"
+        Margin="0,8,0,8">
+        <StackPanel>
+          <TextBox
+            x:Name="StatusText"
+            IsReadOnly="True"
+            TextWrapping="Wrap"
+            BorderThickness="0"
+            Background="Transparent"
+            Padding="0"
+            Margin="0,12,0,16" />
+          <TextBlock
+            x:Name="LicenseHelp"
+            Text="安装官方 AgRV SDK / Supra 后，选择 tool-agrv_logic/license/license.txt 导入。本机未取得或许可无效时，请向厂商申请适用于当前电脑的许可。文件已配置只表示存在，实际编译才检查其有效性。"
+            Foreground="{DynamicResource Muted}"
+            TextWrapping="Wrap"
+            Margin="0,0,0,8" />
+          <WrapPanel
+            x:Name="DocumentationActions"
+            Margin="0,0,0,16">
+            <Button
+              Content="打开 Supra 官方下载"
+              Margin="0,0,8,8"
+              Click="DownloadTools_Click" />
+            <Button
+              Content="打开厂商许可说明"
+              Margin="0,0,8,8"
+              Click="LicenseGuide_Click" />
+          </WrapPanel>
+        </StackPanel>
+      </Expander>
+      <local:Ag32PinPlanningView
+        x:Name="Planner"
+        Visibility="Collapsed"
+        Margin="0,16,0,0" />
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

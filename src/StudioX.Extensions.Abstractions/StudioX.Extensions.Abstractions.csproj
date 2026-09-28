@@ -1,2 +1,16 @@
 <Project
-  Sdk="Microsoft.NET.Sdk" />
+  Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <PackageId>StudioX.Plugin.Sdk</PackageId>
+    <Description>MCU StudioX versioned plugin contracts and declarative panel definitions.</Description>
+    <Authors>MCU StudioX</Authors>
+    <RepositoryUrl>https://github.com/XieJunHui9566/MCU-StudioX</RepositoryUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <None
+      Include="README.md"
+      Pack="true"
+      PackagePath="/" />
+  </ItemGroup>
+</Project>

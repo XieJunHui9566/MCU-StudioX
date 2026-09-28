@@ -50,6 +50,9 @@
       <SolidColorBrush
         x:Key="RunColor"
         Color="#6EBB82" />
+      <SolidColorBrush
+        x:Key="ErrorColor"
+        Color="#F06A6A" />
       <Style
         TargetType="Window">
         <Setter

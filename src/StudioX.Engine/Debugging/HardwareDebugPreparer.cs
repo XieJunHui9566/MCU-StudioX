@@ -16,6 +16,10 @@ public static class HardwareDebugPreparer
             var configuration = await downloads.ConfigurationAsync(root, token) ?? throw new StudioXException("DEBUG_TARGET", "当前工程缺少调试配置。");
             _ = OpenOcdDebugPlanner.ResolveProbe(configuration);
             var prepared = await downloads.PrepareAsync(root, configuration.Options, token);
+            if (prepared.Images.Any(snapshot => snapshot.Preview.Role == "pin-mapping"))
+            {
+                configuration = configuration with { TargetScriptText = Ag32PinMappingTargetScript.RequireCompatible(root) };
+            }
             var receipt = await JsonStore.ReadAsync<BuildReceipt>(PathBoundary.Resolve(root, BuildReceipt.RelativePath), token);
             if (receipt.SourceStamp is null || receipt.SourceStamp != await DebugSourceStamp.ComputeAsync(root, token))
             {
@@ -38,7 +42,8 @@ public static class HardwareDebugPreparer
             await File.WriteAllBytesAsync(elf, bytes, token);
             return new HardwareDebugPreparation(root, configuration, prepared.Tools, elf, Path.Combine(directory, "debug-session.log"))
             {
-                ImageByteCount = imageByteCount
+                ImageByteCount = imageByteCount,
+                PinMapping = prepared.Images.SingleOrDefault(snapshot => snapshot.Preview.Role == "pin-mapping")
             };
         }, token);
 }

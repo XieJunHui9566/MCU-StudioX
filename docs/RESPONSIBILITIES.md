@@ -13,18 +13,21 @@
 | 实时文件刷新 | `Desktop/EditorDocumentSynchronizer.cs` 是磁盘内容应用入口；主窗口同步标签、语言服务和界面视图 |
 | 模型协议 | `Application/AiChatClient.cs` 管 HTTP 和凭据；请求编码、响应解析、SSE 与工具增量分别有独立实现 |
 | Agent 循环 | `Application/AiAgentService.cs` 调度模型与 MCP，`AiAgentService.Context.cs` 管消息保留与回收；公开协议类型分文件 |
-| MCP 工具发现 | `Application/Mcp/StudioXMcpTools.cs` 组合 16 个工具组、排序注册和清理，不实现编程、调试或文件复制 |
+| MCP 工具发现 | `Application/Mcp/StudioXMcpTools.cs` 组合内置工具组和固定的插件贡献快照，排序注册和清理 |
 | 工程文件与外部目录 | `WorkspaceMcpTools` 调用工程文件服务；外部授权、路径策略、游标浏览与复制事务各自独立 |
 | 编译和 Git | `BuildMcpTools`、`GitMcpTools` 调用对应应用/引擎服务 |
 | 调试和 RTOS | `DebugMcpTools` 调用 `DebugSessionService`；Engine 的 MI、反汇编与 FreeRTOS 检查独立于 WPF |
 | 模拟设备和采集 | `Application/Simulation/SimulationLabService.cs` 拥有会话、两路订阅和记录器；Desktop 只显示事件 |
 | LVGL PC 预览 | Engine 扫描库、构建和启动原生窗口，Application 管预览会话/资源，Desktop 提供配置与状态 |
+| 插件安装与信任 | `Extensions/PluginRepository` 校验归档并原子发布；`Application/Plugins/PluginManagerService` 保存当前内容的启用指纹 |
+| 插件运行与主机调用 | `PluginWorkspaceSession` 拥有独立进程；`PluginWorkspaceBroker` 复用应用工具和授权，负责释放插件设备观察者 |
+| 插件界面 | `PluginManagerView` 管目录和临时授权，`PluginPanelRenderer` 渲染数据，`MainWindow.Plugins.cs` 协调当前工程命令与编辑器同步 |
 
 MCP 工具组完整目录见 `src/StudioX.Application/Mcp/README.md`；代码和注释约定见 [CODE_STYLE.md](CODE_STYLE.md)。
 
 ## 所有权与退出顺序
 
-工程打开前先验证目标清单、确认当前脏文档。切换和关闭共用以下顺序：结束 Agent/MCP → 保存断点 → 结束 PC 预览 → 结束调试及迟到导航 → 结束编辑辅助和语言服务。所有旧请求结束后，窗口再关闭旧文档、清理界面并绑定新工程。清理失败保留原始异常，不擅自绑定新工程。
+工程打开前先验证目标清单、确认当前脏文档。切换和关闭共用以下顺序：结束 Agent/MCP 和插件宿主 → 保存断点 → 结束 PC 预览 → 结束调试及迟到导航 → 结束编辑辅助和语言服务。所有旧请求结束后，窗口再关闭旧文档、清理界面并绑定新工程。清理失败保留原始异常，不擅自绑定新工程。
 
 AI 控制器、用量呈现、协议解析和路径策略独立于主窗口状态。WPF 主窗口仍负责工作台控件之间的呈现协调；它的事件处理器调用这些组件，不接管组件的业务状态。后续功能应在对应组件中扩展，避免继续向主窗口追加连接、协议或事务实现。
 

@@ -8,6 +8,10 @@ CH32V203 新增独立包和 WCH-Link / SDI 下载配置，按具体型号核对 
 
 点击「下载」依次保存已打开的源文件、编译、检查构建结果、连接目标、核对目标身份、按映像范围擦写、校验、复位运行。底部显示原始 OpenOCD 输出以及中文成功/失败和退出码。停止操作会终止工具进程树；中途停止不能视为烧录成功，应重新下载。日志保存在 `.build/download-<会话>/openocd.log`，取消也保留已收到的输出。
 
+失败摘要会区分 USB 通信、找不到 CMSIS-DAP、DAP 与目标通信失败、OpenOCD 异常退出和目标检查失败，原始工具文本仍完整保留。`cannot read IDR` 表示 DAP 未读到目标调试端口，不能仅由退出码 1 推断是固件编译问题；应检查目标供电、SWD 接线和下载速度。
+
+AG32 内置双映像下载记录连接与写入阶段。仅在已指定探针序列号、OpenOCD 明确以退出码 1 停在 `init`、日志完整且错误属于 DAP 连接或设备枚举失败时，按相同参数重连一次。两次输出保存在同一日志；未绑定序列号、已完成连接、开始擦写、超时、取消、日志截断或工具崩溃均不自动重试。此机制不替代实板稳定性验证。
+
 AI/MCP 的 OpenOCD 入口使用 `firmware_download_plan` 只读预检已成功编译的唯一固件，再使用 `firmware_download` 指定预检返回的芯片型号、完整 SHA-256、探针与速度。宿主会对本次真实烧录单独请求授权，审批后仍重新核对固件与芯片；不自动编译、不接受任意文件路径。内置 Agent 和外部 stdio 客户端使用同一套工具。
 
 STC 串口 ISP 在 MCP 中使用独立的 `stc_isp_plan` 与 `stc_isp_download`；预检不创建快照或打开 COM 口。下载工具要求复述 HEX 哈希、准确型号、COM 口、波特率与时钟选项，并明确承认原程序会按芯片协议被擦除（可能整片擦除）、没有原程序备份和 Flash 读回校验。授权后才创建单份固件快照并再次核对，详情见 [STC ISP](STC-ISP.md)。
@@ -26,7 +30,9 @@ OpenOCD 擦写/校验语义参考：[Flash Commands](https://openocd.org/doc/htm
 
 CubeMX 下载目录包含已有 F1/F4 包中的 244 个基础型号，容量和目标保护脚本从固定版本的 StudioX 器件包生成，不按型号字符串猜测容量。`tools/New-Stm32DownloadCatalog.ps1` 生成 Engine 嵌入资源 `Resources/stm32-download.json`，其中记录来源包 SHA-256；包的 SDK/Keil PDSC 来源见 `examples/packs/st.stm32-series/*-provenance.json`。可识别例如 STM32F407ZG / STM32F407ZGT6 的明确订货号，含 `(E-G)` 的不确定容量名称不启用下载。CubeMX 改换型号后需重新导入元数据。
 
-框架向所有工程类型开放，但并非任意芯片都支持三种烧录器。没有 `openOcd` 定义的器件包保持下载不可用，包括旧 `studiox.preview.ag32vf303 0.1.0` 包。AG32 0.1.1 新包增加官方 AGM BLASTER 的独立入口、专用 OpenOCD 和 156 KiB 应用区限制，要求已核实的 100 KiB 未压缩逻辑布局；不将 STM32 的配置套到 RISC-V AG32。详见 AG32 适配记录（本地记录）。
+框架向所有工程类型开放，但并非任意芯片都支持三种烧录器。没有 `openOcd` 定义的器件包保持下载不可用，包括旧 `studiox.preview.ag32vf303 0.1.0` 包。已核实的 AG32VF303CCT6 提供 DAP-Link (CMSIS-DAP) 与 J-Link（V9 及以上）两种 SWD 入口，继续使用 AGM 专用 OpenOCD、156 KiB 应用区和 100 KiB 未压缩逻辑布局。旧工程保存的 `agm-blaster` 选择在读取时兼容为 `cmsis-dap`，不改写工程内的器件包。其余 AG32 型号在各自完成目标身份验证前不开放下载。详见 AG32 适配记录（本地记录）。
+
+AG32 的 J-Link 通路使用 AGM OpenOCD 的 `interface/jlink.cfg`；Windows 须让 libusb 能访问 J-Link 对应接口。V9 标注表示支持的选择范围，软件不会从 USB 名称猜测实物版本。探针配置与命令解析已离线检查，新增 J-Link 通路仍需实板验收。
 
 CH32V307 的 `wch.ch32v307/0.1.1` 包提供 WCH-Link / WCH-LinkE（RISC-V / SDI）入口，使用独立的沁恒工具集。接口脚本随器件包提供，显式打开厂商 `page_erase` 模式，避免其默认全代码区擦除。写入前核对具体型号、读保护状态和 256 KiB Flash / 64 KiB RAM 划分；不自动改变选项字节。下载后执行 `reset halt; resume`：当前沁恒 OpenOCD 的 `reset run` 在实测中会停留在复位入口。下载配置不代表已支持交互式调试；旧 0.1.0 工程不会自动更换器件配置。实机范围与证据见 CH32V307 验证记录（本地记录）。
 

@@ -35,6 +35,13 @@
   </ItemGroup>
   <ItemGroup>
     <Content
+      Include="$(StudioXRuntimeAssetsDirectory)/hdl/**/*"
+      Link="runtime/hdl/%(RecursiveDir)%(Filename)%(Extension)"
+      CopyToOutputDirectory="PreserveNewest"
+      CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content
       Include="../../examples/skills/**/*"
       Link="runtime/skills/%(RecursiveDir)%(Filename)%(Extension)"
       CopyToOutputDirectory="PreserveNewest"
@@ -56,11 +63,21 @@
   </ItemGroup>
   <Target
     Name="CopyDevelopmentPluginHost"
-    AfterTargets="Build"
-    Condition="'$(Configuration)' == 'Debug'">
+    AfterTargets="Build">
+    <MSBuild
+      Projects="../StudioX.PluginHost/StudioX.PluginHost.csproj"
+      Targets="GetTargetPath"
+      Properties="Configuration=$(Configuration);TargetFramework=net10.0;RuntimeIdentifier=$(RuntimeIdentifier);ArtifactsPath=$(ArtifactsPath)">
+      <Output
+        TaskParameter="TargetOutputs"
+        ItemName="PluginHostTargetPath" />
+    </MSBuild>
+    <PropertyGroup>
+      <PluginHostOutputDirectory>@(PluginHostTargetPath-&gt;'%(RootDir)%(Directory)')</PluginHostOutputDirectory>
+    </PropertyGroup>
     <ItemGroup>
       <ScriptHostFiles
-        Include="../StudioX.PluginHost/bin/$(Configuration)/net10.0/*" />
+        Include="$(PluginHostOutputDirectory)*" />
     </ItemGroup>
     <Copy
       SourceFiles="@(ScriptHostFiles)"

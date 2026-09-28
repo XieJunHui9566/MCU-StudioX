@@ -1,7 +1,9 @@
 namespace StudioX.Application;
 
 using StudioX.Application.CodeIntelligence;
+using StudioX.Application.Espressif;
 using StudioX.Application.Mcp;
+using StudioX.Application.Plugins;
 using StudioX.Application.Simulation;
 using StudioX.Application.Skills;
 using StudioX.Devices;
@@ -28,10 +30,14 @@ public sealed class WorkbenchService : IAsyncDisposable
         RemotePacks = new GitHubPackSyncService(Packs);
         Toolsets = new ToolsetCatalog(Path.Combine(RuntimeDirectory, "toolsets"));
         ToolInventory = new ToolInventoryService(Toolsets);
-        Builds = new BuildService(Toolsets);
+        Builds = new BuildService(Toolsets, Path.Combine(DataDirectory, "licenses", "ag32-pin-mapping"));
         BuildMemory = new BuildMemoryService(Toolsets);
         LvglPreview = new Lvgl.LvglPreviewService(Toolsets, DataDirectory);
         Ag32Logic = new Ag32LogicWorkflowService();
+        HdlSchematic = new HdlSchematicService(RuntimeDirectory);
+        HdlWorkflow = new HdlWorkflowService(Toolsets, Path.Combine(DataDirectory, "licenses", "ag32-pin-mapping"));
+        Ag32PinMapping = new Ag32PinMappingBuildService(Toolsets, Path.Combine(DataDirectory, "licenses", "ag32-pin-mapping"));
+        Ag32PinPlanning = new Ag32PinPlanningService(Toolsets);
         CubeMx = new CubeMxImportService(Toolsets);
         Downloads = new OpenOcdService(Toolsets);
         EspressifDownloads = new EspressifDownloadService(new EspressifFlashService(Toolsets), Devices);
@@ -47,17 +53,22 @@ public sealed class WorkbenchService : IAsyncDisposable
         AiCredentials = new AiCredentialStore();
         WebCredentials = new WebCredentialStore();
         WebResearch = new WebResearchService(apiKeyProvider: () => WebCredentials.GetApiKey() ?? Environment.GetEnvironmentVariable("TAVILY_API_KEY"));
+        EspressifDocumentation = new EspressifDocumentationService(DataDirectory);
+        EspressifComponents = new EspressifComponentRegistryService();
         AiChat = new AiChatClient(AiCredentials);
         Intelligence = new CodeIntelligenceService(RuntimeDirectory, DataDirectory);
         Serial = new Serial.SerialTerminalService(Devices, DataDirectory, scriptHostExecutable: Path.Combine(RuntimeDirectory, "plugin-host", "StudioX.PluginHost.exe"));
         SerialPlot = new SerialPlot.SerialPlotService(Devices, DataDirectory);
         Plugins = new PluginClient(Path.Combine(RuntimeDirectory, "plugin-host", "StudioX.PluginHost.exe"));
+        PluginManager = new PluginManagerService(RuntimeDirectory, DataDirectory);
         Simulation = new SimulationLabService(Devices);
     }
     public string RuntimeDirectory
     {
         get;
     }
+    public HdlSchematicService HdlSchematic { get; }
+    public HdlWorkflowService HdlWorkflow { get; }
     public string DataDirectory
     {
         get;
@@ -123,6 +134,8 @@ public sealed class WorkbenchService : IAsyncDisposable
         get;
     }
     public BuildMemoryService BuildMemory { get; }
+    public Ag32PinMappingBuildService Ag32PinMapping { get; }
+    public Ag32PinPlanningService Ag32PinPlanning { get; }
     public CubeMxImportService CubeMx
     {
         get;
@@ -197,6 +210,8 @@ public sealed class WorkbenchService : IAsyncDisposable
     {
         get;
     }
+    public EspressifDocumentationService EspressifDocumentation { get; }
+    public EspressifComponentRegistryService EspressifComponents { get; }
     public AiChatClient AiChat
     {
         get;
@@ -212,6 +227,7 @@ public sealed class WorkbenchService : IAsyncDisposable
     {
         get;
     }
+    public PluginManagerService PluginManager { get; }
     public IEnumerable<string> PluginManifests => Directory.Exists(Path.Combine(RuntimeDirectory, "plugins"))
         ? Directory.EnumerateFiles(Path.Combine(RuntimeDirectory, "plugins"), "plugin.json", SearchOption.AllDirectories) : [];
     public static Task<string> ReadMainAsync(string project, CancellationToken token = default) => File.ReadAllTextAsync(Path.Combine(project, "src", "main.c"), token);
@@ -219,10 +235,13 @@ public sealed class WorkbenchService : IAsyncDisposable
     public async ValueTask DisposeAsync()
     {
         var cleanup = new ResourceCleanup();
+        await cleanup.RunAsync(PluginManager.DisposeAsync);
         cleanup.Run(AiChat.Dispose);
         cleanup.Run(RemotePacks.Dispose);
         cleanup.Run(GitHubPullRequests.Dispose);
         cleanup.Run(GitHubProfiles.Dispose);
+        await cleanup.RunAsync(EspressifDocumentation.DisposeAsync);
+        await cleanup.RunAsync(EspressifComponents.DisposeAsync);
         await cleanup.RunAsync(LvglPreview.DisposeAsync);
         await cleanup.RunAsync(Terminal.DisposeAsync);
         await cleanup.RunAsync(Simulation.DisposeAsync);

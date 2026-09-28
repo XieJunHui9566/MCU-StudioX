@@ -33,6 +33,15 @@ public sealed class StudioXMcpSession : IAsyncDisposable
         CancellationToken token = default)
     {
         ArgumentNullException.ThrowIfNull(tools);
+        try
+        {
+            await tools.InitializePluginsAsync(token).ConfigureAwait(false);
+        }
+        catch
+        {
+            await tools.DisposeAsync().ConfigureAwait(false);
+            throw;
+        }
         Pipe clientToServer = new();
         Pipe serverToClient = new();
         var server = McpServer.Create(

@@ -30,6 +30,12 @@ public partial class MainWindow
 
     private async void WorkspaceTabs_SkillsSelectionChanged(object sender, SelectionChangedEventArgs e)
     {
+        if (ReferenceEquals(e.OriginalSource, WorkspaceTabs) &&
+            ReferenceEquals(WorkspaceTabs.SelectedItem, Ag32PinMappingTab))
+        {
+            await RefreshSelectedAg32PinMappingAsync();
+            return;
+        }
         if (!ReferenceEquals(e.OriginalSource, WorkspaceTabs) ||
             !ReferenceEquals(WorkspaceTabs.SelectedItem, ExtensionsTab) || SkillsList is null)
         {

@@ -44,3 +44,25 @@ tool distributions. The modified AGM binaries identify themselves separately.
 For a public release, retain the corresponding vendors' source distribution
 and redistribution materials; these local binaries are not a source offer.
 MCU StudioX does not claim authorship of third-party components.
+
+HDL schematic preview: Yosys 0.61 (vendor-distributed build c18d47a44), ISC license.
+Source distribution: AGM Supra 2026.03.b0-a052d0a8 Windows x64, map/bin/yosys.exe.
+Upstream: https://github.com/YosysHQ/yosys/tree/v0.61
+License: licenses/Yosys-ISC.txt and runtime/hdl/yosys/Yosys-ISC.txt.
+The standalone executable and provenance/hash manifest are included.
+No Supra user license, Quartus installation, Node bridge or Digital IDE extension code is included for this preview.
+
+AG32 native custom logic: AGM Supra 2026.03.b0-a052d0a8 mapper and matching device libraries.
+Runtime: toolsets/agm.logic/1.0.0; VE and place-and-route reuse agm.pin-mapping/1.0.0.
+Mapper identifies Yosys 0.61 (c18d47a44), ISC license; vendor components retain vendor terms.
+Private Supra node licenses are not included. File identities are recorded in toolset.json.
+
+RTL simulation: Icarus Verilog 14.0 (devel), pre-existing Windows distribution.
+Runtime: toolsets/hdl.iverilog/14.0.0, including ivl target/VPI libraries and runtime DLLs.
+Upstream: https://github.com/steveicarus/iverilog
+Documentation: https://steveicarus.github.io/iverilog/usage/simulation.html
+License: GNU GPL v2 or later; text in Icarus-GPL-2.0.txt.
+This local binary does not report a source commit. Preserve the matching source distribution
+and dependency notices when preparing a public release; this development bundle is not a source offer.
+iverilog.exe SHA-256: F8BAD18D279F8C63AB041BD292606F21FC0E8B9CC0EDB37A311158F756C35EB0
+vvp.exe SHA-256: C3B28A3A088851FC3396A30A7C781C4B126C61DBBB7CEAD7C00644CC7AFAA4D4

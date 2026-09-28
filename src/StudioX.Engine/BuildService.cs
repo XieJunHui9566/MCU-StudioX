@@ -3,7 +3,7 @@ namespace StudioX.Engine;
 using System.Text;
 using StudioX.Foundation;
 
-public sealed partial class BuildService(ToolsetCatalog catalog)
+public sealed partial class BuildService(ToolsetCatalog catalog, string? ag32MappingLicenseDirectory = null)
 {
     private readonly SemaphoreSlim gate = new(1, 1);
     public Task<ProjectBuildSettings> LoadSettingsAsync(string directory, CancellationToken token = default) => ProjectBuildSettings.ReadAsync(directory, token);
@@ -69,6 +69,11 @@ public sealed partial class BuildService(ToolsetCatalog catalog)
                 File.Delete(receiptPath);
             }
             var project = await ProjectService.ReadAsync(root, cancellationToken);
+            if (project.Logic is not null) Hdl.Ag32NativeBuildService.Invalidate(root);
+            if (!configureOnly && project.PinMapping is not null && project.Logic is null)
+            {
+                Ag32PinMappingBuildService.Invalidate(root);
+            }
             var sourceStamp = await Debugging.DebugSourceStamp.ComputeAsync(root, cancellationToken);
             var settings = await ProjectBuildSettings.ReadAsync(root, cancellationToken);
             settings.ValidateFor(project);
@@ -104,6 +109,28 @@ public sealed partial class BuildService(ToolsetCatalog catalog)
             string[] cubeExecutables = [];
             async Task<BuildReport> CompleteAsync(ProcessResult result, string[] artifacts)
             {
+                if (result.Success && !configureOnly && project.Logic is not null)
+                {
+                    var logic = await new Hdl.Ag32NativeBuildService(catalog, ag32MappingLicenseDirectory).BuildAsync(root, progress, cancellationToken, output);
+                    log.AppendLine(logic.Log);
+                    if (!logic.Success)
+                    {
+                        await File.WriteAllTextAsync(logPath, log.ToString(), cancellationToken);
+                        return logic with { Log = log.ToString(), LogPath = logPath };
+                    }
+                    artifacts = artifacts.Concat(logic.Artifacts).ToArray();
+                }
+                if (result.Success && !configureOnly && project.PinMapping is not null && project.Logic is null)
+                {
+                    var mapping = await new Ag32PinMappingBuildService(catalog, ag32MappingLicenseDirectory).BuildAsync(root, progress, cancellationToken, output);
+                    log.AppendLine(mapping.Log);
+                    if (!mapping.Success)
+                    {
+                        await File.WriteAllTextAsync(logPath, log.ToString(), cancellationToken);
+                        return new(false, log.ToString(), [], logPath, mapping.ExitCode, mapping.TimedOut);
+                    }
+                    artifacts = artifacts.Concat(mapping.Artifacts).ToArray();
+                }
                 var report = new BuildReport(result.Success, "", artifacts, logPath, result.ExitCode, result.TimedOut);
                 log.AppendLine(configureOnly ? $"CMake 配置{(result.Success ? "成功" : "失败")}，退出代码：{result.ExitCode}" : report.Summary);
                 await File.WriteAllTextAsync(logPath, log.ToString(), cancellationToken);

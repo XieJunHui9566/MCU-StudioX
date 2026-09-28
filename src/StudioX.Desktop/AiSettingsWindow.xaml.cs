@@ -2,6 +2,7 @@ namespace StudioX.Desktop;
 
 using System.Windows;
 using StudioX.Application;
+using StudioX.Application.Espressif;
 
 public partial class AiSettingsWindow : Window
 {
@@ -10,18 +11,22 @@ public partial class AiSettingsWindow : Window
     private readonly WebCredentialStore webCredentials;
     private readonly AiSettings savedSettings;
 
-    public AiSettingsWindow(AiSettingsService settingsService, AiCredentialStore credentials, WebCredentialStore webCredentials, AiSettings savedSettings)
+    public AiSettingsWindow(AiSettingsService settingsService, AiCredentialStore credentials, WebCredentialStore webCredentials, AiSettings savedSettings,
+        EspressifDocumentationService? espressifDocumentation = null)
     {
         InitializeComponent();
         this.settingsService = settingsService;
         this.credentials = credentials;
         this.webCredentials = webCredentials;
         this.savedSettings = savedSettings;
+        this.espressifDocumentation = espressifDocumentation;
         BaseUrlInput.Text = savedSettings.BaseUrl;
         ModelInput.Text = savedSettings.Model;
         ContextWindowInput.Text = savedSettings.ContextWindowTokens?.ToString() ?? "";
         RefreshKeyState();
         RefreshWebKeyState();
+        RefreshEspressifState();
+        Closed += EspressifSettings_Closed;
     }
 
     private void RefreshKeyState()

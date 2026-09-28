@@ -191,9 +191,19 @@ public partial class MainWindow
     }
     private async Task SaveAllSourcesAsync(string directory, CancellationToken token)
     {
+        var savePinPlan = ag32PinPlanProject == directory && Ag32PinMapping.Planner.HasChanges;
+        if (savePinPlan && Ag32PinMapping.Planner.Snapshot is { } snapshot && FindEditor(snapshot.SourcePath)?.IsDirty == true)
+        {
+            throw new StudioX.Foundation.StudioXException("AG32_PIN_PLAN_DIRTY",
+                "VE 文本和图形配置同时有修改；请先单独保存 VE 并重新读取图形配置，再保存全部文件。");
+        }
         foreach (var session in editorDocuments.ToArray())
         {
             await SaveEditorAsync(directory, session, token);
+        }
+        if (savePinPlan)
+        {
+            await SaveAg32PinPlanAsync(directory, token);
         }
     }
     private async void SaveAll_Click(object sender, RoutedEventArgs e) => await RunAsync(async token =>
@@ -230,6 +240,19 @@ public partial class MainWindow
         try
         {
             // 先收集全部决定，再移除标签；后面的取消会保留前面选择不保存的内存副本。
+            if (ag32PinPlanProject == projectDirectory && Ag32PinMapping.Planner.HasChanges)
+            {
+                var choice = MessageBox.Show(this, "AG32 图形引脚配置尚未保存。\n是否保存并生成约束后关闭？",
+                    "未保存的引脚配置", MessageBoxButton.YesNoCancel, MessageBoxImage.None);
+                if (choice == MessageBoxResult.Cancel)
+                {
+                    return false;
+                }
+                if (choice == MessageBoxResult.Yes)
+                {
+                    await SaveAg32PinPlanAsync(RequireProject(), CancellationToken.None);
+                }
+            }
             foreach (var session in editorDocuments.ToArray())
             {
                 if (!await ConfirmEditorAsync(session, decide))

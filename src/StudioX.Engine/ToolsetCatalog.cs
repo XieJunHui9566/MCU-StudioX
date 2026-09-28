@@ -52,7 +52,7 @@ public sealed class ToolsetCatalog(string rootDirectory)
         {
             throw new StudioXException("TOOLSET_MANIFEST", "工具清单不完整。");
         }
-        if (manifest.Purpose is not (null or "windows-native" or "esp-idf" or "esp8266-rtos-sdk"))
+        if (manifest.Purpose is not (null or "windows-native" or "esp-idf" or "esp8266-rtos-sdk" or "ag32-mapping" or "hdl-native" or "hdl-simulation"))
         {
             throw new StudioXException("TOOLSET_PURPOSE", "工具清单包含不支持的用途。");
         }
@@ -66,7 +66,11 @@ public sealed class ToolsetCatalog(string rootDirectory)
                 }
             }
         }
-        var requiredRoles = manifest.Purpose is "esp-idf" or "esp8266-rtos-sdk"
+        var requiredRoles = manifest.Purpose == "ag32-mapping"
+            ? new[] { "python", "converter", "supra" }
+            : manifest.Purpose == "hdl-native" ? new[] { "mapper" }
+            : manifest.Purpose == "hdl-simulation" ? new[] { "iverilog", "vvp" }
+            : manifest.Purpose is "esp-idf" or "esp8266-rtos-sdk"
             ? EspressifToolsetRequirements.RequiredRoles(manifest.Purpose)
             : manifest.Purpose == "windows-native"
             ? new[] { "gcc", "gxx", "ar", "ranlib", "as", "ld", "objcopy", "objdump", "size" }

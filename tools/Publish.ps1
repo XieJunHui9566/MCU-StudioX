@@ -5,15 +5,26 @@ if (!$ReleaseVersion)
 {
     $ReleaseVersion = ([xml](Get-Content -LiteralPath (Join-Path $projectRoot 'Directory.Build.props') -Raw)).Project.PropertyGroup.Version
 }
-if ($ReleaseVersion -notmatch '^\d+\.\d+\.\d+$' -or ($ReleaseVersion.Split('.') | Where-Object { [int]$_ -gt 65535 }).Count)
-{
-    throw 'ReleaseVersion must be a three-part numeric version.'
-}
+. (Join-Path $PSScriptRoot 'Release-Version.ps1')
+$releaseIdentity = Get-StudioXReleaseVersion $ReleaseVersion
 if (!$RuntimeAssetsDirectory)
 {
     $RuntimeAssetsDirectory = Join-Path $projectRoot 'artifacts/tool-runtime'
 }
 $assets = [IO.Path]::GetFullPath($RuntimeAssetsDirectory)
+$hdlRoot = Join-Path $assets 'hdl/yosys'
+foreach ($file in @('yosys.exe', 'runtime.json', 'Yosys-ISC.txt'))
+{
+    if (!(Test-Path -LiteralPath (Join-Path $hdlRoot $file) -PathType Leaf))
+    {
+        throw "Prepare the bundled HDL preview runtime first: tools/Prepare-HdlRuntime.ps1 ($file)"
+    }
+}
+$hdlManifest = Get-Content -LiteralPath (Join-Path $hdlRoot 'runtime.json') -Raw | ConvertFrom-Json
+if ($hdlManifest.sha256 -ne (Get-FileHash -LiteralPath (Join-Path $hdlRoot 'yosys.exe') -Algorithm SHA256).Hash)
+{
+    throw 'Bundled Yosys executable does not match its SHA-256 manifest.'
+}
 $buildArguments = @()
 if ($BuildArtifactsDirectory)
 {
@@ -26,11 +37,29 @@ if (!(Test-Path -LiteralPath $toolsets -PathType Container))
 {
     throw 'Prepare the bundled tool runtime first: tools/Prepare-ToolRuntime.ps1'
 }
-foreach ($id in @('agm.agrv', 'arm.gnu', 'riscv.xpack', 'wch.riscv', 'stc.sdcc', 'pc.mingw'))
+foreach ($id in @('agm.agrv', 'agm.pin-mapping', 'agm.logic', 'arm.gnu', 'riscv.xpack', 'wch.riscv', 'stc.sdcc', 'pc.mingw'))
 {
     if (!(Test-Path -LiteralPath (Join-Path $toolsets "$id/1.0.0/toolset.json")))
     {
         throw "Required bundled toolset missing: $id 1.0.0"
+    }
+}
+if (!(Test-Path -LiteralPath (Join-Path $toolsets 'hdl.iverilog/14.0.0/toolset.json'))) {
+    throw 'Prepare the bundled Icarus simulation tools first: tools/Prepare-HdlWorkflowRuntime.ps1'
+}
+$mappingManifest = Get-Content -LiteralPath (Join-Path $toolsets 'agm.pin-mapping/1.0.0/toolset.json') -Raw | ConvertFrom-Json
+if ($mappingManifest.purpose -ne 'ag32-mapping' -or $mappingManifest.compilerId -ne 'agm.ve')
+{
+    throw 'Prepare the bundled AGM VE/Supra tools first: tools/Prepare-Ag32MappingRuntime.ps1'
+}
+foreach ($mappingFile in Get-ChildItem -LiteralPath (Join-Path $toolsets 'agm.pin-mapping/1.0.0') -File -Recurse)
+{
+    $mappingRelativePath = [IO.Path]::GetRelativePath((Join-Path $toolsets 'agm.pin-mapping/1.0.0'), $mappingFile.FullName).Replace('\', '/')
+    # Python 的 LICENSE.txt 是必须保留的开源条款；Supra 的 license.txt 才是本机授权数据。
+    if ($mappingRelativePath.StartsWith('supra/', [StringComparison]::OrdinalIgnoreCase) -and
+        ($mappingFile.Name -eq 'license.txt' -or $mappingRelativePath -match '(^|/)license(/|$)'))
+    {
+        throw 'AGM user licenses must remain in private user data and cannot enter published runtime assets.'
     }
 }
 $pcManifest = Get-Content -LiteralPath (Join-Path $toolsets 'pc.mingw/1.0.0/toolset.json') -Raw | ConvertFrom-Json
@@ -52,6 +81,10 @@ foreach ($file in @('stc-isp-portable-3.14.7/python.exe', 'stc-isp-portable-3.14
 $espressifCatalogRoot = Join-Path $projectRoot 'artifacts/packs/Espressif-0.1.1'
 $espressifPacks = @(Get-EspressifReleasePacks $espressifCatalogRoot)
 Test-EspressifPublishToolsets $toolsets
+# AGM 四个子系列从稳定的开发包索引读取，发布前完成型号、来源和路径核对。
+. (Join-Path $PSScriptRoot 'Ag32-PublishAssets.ps1')
+$ag32CatalogRoot = Join-Path $projectRoot 'artifacts/device-packs-development'
+$ag32Packs = @(Get-Ag32ReleasePacks $ag32CatalogRoot)
 if (!$OutputDirectory)
 {
     $OutputDirectory = Join-Path $projectRoot ('artifacts/MCUStudioX-' + (Get-Date -Format 'yyyyMMdd-HHmmss'))
@@ -72,18 +105,18 @@ if (!(Test-Path -LiteralPath (Join-Path $projectRoot 'artifacts/git-runtime/git/
 {
     throw 'Prepare the bundled Git first: tools/Prepare-GitRuntime.ps1'
 }
-& dotnet publish (Join-Path $projectRoot 'src/StudioX.Desktop/StudioX.Desktop.csproj') -c Release -r win-x64 --self-contained true -o $output "-p:StudioXRuntimeAssetsDirectory=$assets" "-p:Version=$ReleaseVersion" -p:DebugType=None -p:DebugSymbols=false --nologo @buildArguments
+& dotnet publish (Join-Path $projectRoot 'src/StudioX.Desktop/StudioX.Desktop.csproj') -c Release -r win-x64 --self-contained true -o $output "-p:StudioXRuntimeAssetsDirectory=$assets" "-p:Version=$ReleaseVersion" -p:DebugType=None -p:DebugSymbols=false -p:IncludeSourceRevisionInInformationalVersion=false --nologo @buildArguments
 if ($LASTEXITCODE -ne 0)
 {
     throw 'Desktop publish failed.'
 }
 $runtime = Join-Path $output 'runtime'
-& dotnet publish (Join-Path $projectRoot 'src/StudioX.PluginHost/StudioX.PluginHost.csproj') -c Release -r win-x64 --self-contained true -o (Join-Path $runtime 'plugin-host') "-p:Version=$ReleaseVersion" -p:DebugType=None -p:DebugSymbols=false --nologo @buildArguments
+& dotnet publish (Join-Path $projectRoot 'src/StudioX.PluginHost/StudioX.PluginHost.csproj') -c Release -r win-x64 --self-contained true -o (Join-Path $runtime 'plugin-host') "-p:Version=$ReleaseVersion" -p:DebugType=None -p:DebugSymbols=false -p:IncludeSourceRevisionInInformationalVersion=false --nologo @buildArguments
 if ($LASTEXITCODE -ne 0)
 {
     throw 'Plugin host publish failed.'
 }
-& dotnet publish (Join-Path $projectRoot 'src/StudioX.Cli/StudioX.Cli.csproj') -c Release -r win-x64 --self-contained true -o (Join-Path $runtime 'mcp-host') "-p:Version=$ReleaseVersion" -p:DebugType=None -p:DebugSymbols=false --nologo @buildArguments
+& dotnet publish (Join-Path $projectRoot 'src/StudioX.Cli/StudioX.Cli.csproj') -c Release -r win-x64 --self-contained true -o (Join-Path $runtime 'mcp-host') "-p:Version=$ReleaseVersion" -p:DebugType=None -p:DebugSymbols=false -p:IncludeSourceRevisionInInformationalVersion=false --nologo @buildArguments
 if ($LASTEXITCODE -ne 0)
 {
     throw 'MCP host publish failed.'
@@ -117,6 +150,23 @@ $manifest = [ordered]@{
     sha256        = @{ $dll = (Get-FileHash -Algorithm SHA256 -LiteralPath (Join-Path $plugin $dll)).Hash.ToLowerInvariant() }
 }
 $manifest | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $plugin 'plugin.json') -Encoding utf8
+$workspacePlugin = Join-Path $runtime 'plugins/studiox.workspace-overview'
+& dotnet publish (Join-Path $projectRoot 'examples/StudioX.SamplePlugin/StudioX.SamplePlugin.csproj') -c Release --self-contained false -o $workspacePlugin --nologo @buildArguments
+if ($LASTEXITCODE -ne 0)
+{
+    throw 'Workspace extension sample build failed.'
+}
+# 共享 SDK 类型由独立宿主提供；样例随发行附带，第一次使用仍需要显式启用。
+Get-ChildItem -LiteralPath $workspacePlugin -File | Where-Object { $_.Name -like 'StudioX.Extensions.Abstractions.*' -or $_.Extension -eq '.pdb' } | Remove-Item
+$workspaceManifest = Get-Content -LiteralPath (Join-Path $projectRoot 'examples/StudioX.SamplePlugin/plugin.template.json') -Raw | ConvertFrom-Json
+$workspaceHashes = [ordered]@{}
+foreach ($workspaceFile in Get-ChildItem -LiteralPath $workspacePlugin -File -Recurse)
+{
+    $relative = [IO.Path]::GetRelativePath($workspacePlugin, $workspaceFile.FullName).Replace('\', '/')
+    $workspaceHashes[$relative] = (Get-FileHash -LiteralPath $workspaceFile.FullName -Algorithm SHA256).Hash
+}
+$workspaceManifest.sha256 = $workspaceHashes
+$workspaceManifest | ConvertTo-Json -Depth 16 | Set-Content -LiteralPath (Join-Path $workspacePlugin 'plugin.json') -Encoding utf8
 # 工具资源由 Desktop 的 Content 项统一复制，开发运行与便携发行使用同一布局。
 Copy-Item -LiteralPath (Join-Path $projectRoot 'README.md') -Destination $output
 $publicDocs = Join-Path $output 'docs'
@@ -186,14 +236,28 @@ foreach ($entry in $packIndex)
         devices               =$entry.devices
     }
 }
-$agSource = Join-Path $preparedPacks 'studiox.preview.ag32vf303-0.1.1.mcupack'
-[IO.Directory]::CreateDirectory((Join-Path $packOutput 'AGM')) | Out-Null
-Copy-Item -LiteralPath $agSource -Destination (Join-Path $packOutput 'AGM')
-$releasedPacks += @{ file =('AGM/' + [IO.Path]::GetFileName($agSource));
-    id                    ='studiox.preview.ag32vf303';
-    version               ='0.1.1';
-    sha256                =(Get-FileHash -LiteralPath $agSource -Algorithm SHA256).Hash.ToLowerInvariant();
-    devices               =@('AG32VF303CCT6')
+foreach ($entry in $ag32Packs)
+{
+    # 再次解析边界并核对文件，防止编译期间源包被替换。
+    $source = Resolve-Ag32PublishPath $ag32CatalogRoot $entry.file
+    if ((Get-FileHash -LiteralPath $source -Algorithm SHA256).Hash -ne $entry.sha256)
+    {
+        throw "AG32 pack changed during publish: $source"
+    }
+    $target = Join-Path $packOutput $entry.file
+    [IO.Directory]::CreateDirectory([IO.Path]::GetDirectoryName($target)) | Out-Null
+    Copy-Item -LiteralPath $source -Destination $target
+    if ((Get-FileHash -LiteralPath $target -Algorithm SHA256).Hash -ne $entry.sha256)
+    {
+        throw "AG32 copied pack hash mismatch: $target"
+    }
+    $releasedPacks += @{ file = $entry.file;
+        id                    = $entry.id;
+        version               = $entry.version;
+        sha256                = $entry.sha256;
+        devices               = $entry.devices;
+        provenanceSha256      = $entry.provenanceSha256
+    }
 }
 foreach ($wchPack in @('CH32V307-0.1.3-verified', 'CH32V203-0.1.1-verified', 'CH592-0.1.1-verified', 'CH595-0.1.0'))
 {

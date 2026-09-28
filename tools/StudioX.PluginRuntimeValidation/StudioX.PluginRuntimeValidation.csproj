@@ -1,0 +1,16 @@
+<Project
+  Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference
+      Include="../../src/StudioX.Extensions/StudioX.Extensions.csproj" />
+    <ProjectReference
+      Include="../../src/StudioX.PluginHost/StudioX.PluginHost.csproj"
+      ReferenceOutputAssembly="false" />
+    <ProjectReference
+      Include="../../examples/StudioX.SampleDecoder/StudioX.SampleDecoder.csproj"
+      ReferenceOutputAssembly="false" />
+  </ItemGroup>
+</Project>

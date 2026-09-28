@@ -5,6 +5,7 @@ public partial class MainWindow
     private ProjectTransitionCoordinator CreateProjectTransitionCoordinator() => new(
         stopAgentAsync: async () =>
         {
+            await StopPluginWorkspaceAsync();
             aiCancellation?.Cancel();
             await DisposeAiMcpSessionAsync();
         },

@@ -35,6 +35,9 @@ public partial class MainWindow : Window
         InitializeEspressifModuleSettings();
         InitializeStcIsp();
         InitializeLvglPreview();
+        InitializeAg32PinPlanning();
+        InitializeHdlSchematic();
+        InitializeHdlWorkflow();
         SerialView.Attach(services.Serial);
         SerialPlotView.Attach(services.SerialPlot);
         ProjectTerminal.Attach(services.Terminal);
@@ -53,10 +56,11 @@ public partial class MainWindow : Window
         GitHubWorkspace.WorkingTreeChangedAsync = ApplyGitHubWorkingTreeChangeAsync;
         GitHubWorkspace.OpenClonedRepositoryAsync = OpenClonedGitHubRepositoryAsync;
         InitializeEditor();
+        InitializePlugins();
         Activated += (_, _) => QueueRecentPrune();
     }
 
-    public async Task InitializeAsync()
+    public async Task InitializeAsync(bool loadGitHubAccounts = true)
     {
         await RunAsync(async token =>
         {
@@ -83,9 +87,14 @@ public partial class MainWindow : Window
             catch (Exception ex) { Log("背景恢复失败：" + ex.Message); Status.Text = "背景不可用，可在外观设置中重新选择。"; }
             ToolInventory.Text = await services.ToolInventory.DescribeAsync(verify: false, token: token);
             PluginPicker.ItemsSource = services.PluginManifests.ToArray();
+            await PluginManager.RefreshAsync(token);
             try
             {
-                await GitHubWorkspace.RefreshAccountsForChromeAsync(token);
+                // 隔离截图与启动验证不读取系统凭据，避免将真实账号带入公开图片。
+                if (loadGitHubAccounts)
+                {
+                    await GitHubWorkspace.RefreshAccountsForChromeAsync(token);
+                }
             }
             catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }
             catch (Exception ex) { Log("GitHub 账号状态读取失败：" + ex.Message); }
@@ -531,6 +540,8 @@ public partial class MainWindow : Window
         IsEnabled = false;
         packSyncCancellation?.Cancel();
         aiCancellation?.Cancel();
+        pluginWorkspaceCancellation?.Cancel();
+        pluginInvocationCancellation?.Cancel();
         CancelOutline();
         CancelFreeRtosRead();
         CloseCodeAssistance();
@@ -557,9 +568,14 @@ public partial class MainWindow : Window
                 closing = false;
                 IsEnabled = true;
                 QueueOutlineRefresh();
+                await ReloadPluginWorkspaceAsync(CancellationToken.None);
                 return;
             }
             documentAccepted = true;
+            pluginUiTimer.Stop();
+            services.PluginManager.Changed -= PluginCatalog_Changed;
+            await StopPluginWorkspaceAsync();
+            await PluginManager.ShutdownAsync();
             await DisposeAiMcpSessionAsync();
             await SerialView.ShutdownAsync();
             await SerialPlotView.ShutdownAsync();
@@ -578,6 +594,7 @@ public partial class MainWindow : Window
                 IsEnabled = true;
                 QueueOutlineRefresh();
                 Status.Text = "未能保存修改，窗口保持打开。";
+                await ReloadPluginWorkspaceAsync(CancellationToken.None);
             }
         }
         finally { if (closing) { closed = true; _ = Dispatcher.BeginInvoke(new Action(Close)); } }

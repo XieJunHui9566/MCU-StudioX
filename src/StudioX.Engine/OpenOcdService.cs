@@ -8,7 +8,7 @@ using StudioX.Foundation;
 using StudioX.Packages;
 
 /// <summary>OpenOCD 单次下载会话；用户明确启动后才接触硬件。</summary>
-public sealed class OpenOcdService(ToolsetCatalog catalog)
+public sealed partial class OpenOcdService(ToolsetCatalog catalog)
 {
     private readonly SemaphoreSlim gate = new(1, 1);
     public async Task<DownloadConfiguration?> ConfigurationAsync(string projectDirectory, CancellationToken token = default)
@@ -39,6 +39,7 @@ public sealed class OpenOcdService(ToolsetCatalog catalog)
             };
             configuration = new(packDevice, packDefinition, new(packDefinition.Probes[0].Id, packDefinition.Probes[0].DefaultSpeedKhz));
         }
+        configuration = Ag32ProbeConfiguration.Normalize(configuration);
         var device = configuration.Device;
         var definition = configuration.OpenOcd;
         if (device.ToolsetId != project.ToolsetId || device.ToolsetVersion != project.ToolsetVersion || device.CompilerId != project.CompilerId)
@@ -47,6 +48,7 @@ public sealed class OpenOcdService(ToolsetCatalog catalog)
         }
         var settings = PathBoundary.Resolve(projectDirectory, ".studiox/download.json");
         var options = File.Exists(settings) ? await JsonStore.ReadAsync<DownloadOptions>(settings, token) : configuration.Options;
+        options = Ag32ProbeConfiguration.NormalizeOptions(device, options);
         Validate(definition, options);
         return configuration with
         {
@@ -57,6 +59,7 @@ public sealed class OpenOcdService(ToolsetCatalog catalog)
     public async Task SaveOptionsAsync(string projectDirectory, DownloadOptions options, CancellationToken token = default)
     {
         var configuration = await ConfigurationAsync(projectDirectory, token) ?? throw Unsupported();
+        options = Ag32ProbeConfiguration.NormalizeOptions(configuration.Device, options);
         Validate(configuration.OpenOcd, options);
         await JsonStore.WriteAsync(PathBoundary.Resolve(projectDirectory, ".studiox/download.json"), options, token);
     }
@@ -69,18 +72,21 @@ public sealed class OpenOcdService(ToolsetCatalog catalog)
     public async Task<DownloadPreview> PreviewAsync(string projectDirectory, DownloadOptions options, CancellationToken token = default)
     {
         var validated = await ValidateImageAsync(projectDirectory, options, token);
+        options = Ag32ProbeConfiguration.NormalizeOptions(validated.Configuration.Device, options);
         return new(validated.Configuration, options, validated.SourceImage, validated.Format,
-            validated.Sha256, validated.Bytes.LongLength);
+            validated.Sha256, validated.Bytes.LongLength) { Images = validated.Images };
     }
 
     private sealed record ValidatedImage(DownloadConfiguration Configuration, ResolvedToolset Tools,
-        string SourceImage, string Format, string Sha256, byte[] Bytes, ulong ImageByteCount);
+        string SourceImage, string Format, string Sha256, byte[] Bytes, ulong ImageByteCount,
+        IReadOnlyList<DownloadImagePreview> Images, byte[]? MappingBytes);
 
     private async Task<ValidatedImage> ValidateImageAsync(string projectDirectory, DownloadOptions options, CancellationToken token)
     {
         var root = Path.GetFullPath(projectDirectory);
         var project = await ProjectService.ReadAsync(root, token);
         var configuration = await ConfigurationAsync(root, token) ?? throw Unsupported();
+        options = Ag32ProbeConfiguration.NormalizeOptions(configuration.Device, options);
         Validate(configuration.OpenOcd, options);
         var device = configuration.Device;
         var tools = await catalog.ResolveAsync(device.ToolsetId, device.ToolsetVersion, device.CompilerId, token);
@@ -124,7 +130,12 @@ public sealed class OpenOcdService(ToolsetCatalog catalog)
             throw new StudioXException("DOWNLOAD_CHANGED", "编译后的固件已被替换或修改，请重新编译后下载。");
         }
         var imageByteCount = FirmwareImage.Validate(bytes, source.Format, device);
-        return new(configuration, tools, sourceImage, source.Format, source.Sha256, bytes, imageByteCount);
+        var application = new DownloadImagePreview(source.RelativePath, source.Format, source.Sha256,
+            bytes.LongLength, device.FlashOrigin, "application");
+        var mapping = await ValidatePinMappingImageAsync(root, project, configuration, token);
+        IReadOnlyList<DownloadImagePreview> images = mapping is null ? [application] : [application, mapping.Value.Preview];
+        return new(configuration, tools, sourceImage, source.Format, source.Sha256, bytes, imageByteCount,
+            images, mapping?.Bytes);
     }
 
     private async Task<DownloadPreparation> PrepareCoreAsync(string projectDirectory, DownloadOptions options, CancellationToken token,
@@ -132,8 +143,9 @@ public sealed class OpenOcdService(ToolsetCatalog catalog)
     {
         var root = Path.GetFullPath(projectDirectory);
         var validated = await ValidateImageAsync(root, options, token);
+        options = Ag32ProbeConfiguration.NormalizeOptions(validated.Configuration.Device, options);
         if (expectedDeviceId is not null && !string.Equals(validated.Configuration.Device.Id, expectedDeviceId, StringComparison.Ordinal) ||
-            expectedImageSha256 is not null && !string.Equals(validated.Sha256, expectedImageSha256, StringComparison.OrdinalIgnoreCase))
+            expectedImageSha256 is not null && !string.Equals(DownloadImageLayout.ApprovalSha256(validated.Images), expectedImageSha256, StringComparison.OrdinalIgnoreCase))
         {
             throw new StudioXException("DOWNLOAD_APPROVAL_CHANGED", "审批后的芯片型号或固件哈希已变化，请重新预览并授权。");
         }
@@ -142,10 +154,20 @@ public sealed class OpenOcdService(ToolsetCatalog catalog)
         Directory.CreateDirectory(session);
         var image = Path.Combine(session, "firmware." + validated.Format);
         await File.WriteAllBytesAsync(image, validated.Bytes, token);
-        var arguments = CreateArguments(root, validated.Configuration, options, validated.Tools, image, validated.Format);
+        List<DownloadImageSnapshot> snapshots = [new(validated.Images[0], image, validated.ImageByteCount)];
+        if (validated.MappingBytes is { } mappingBytes)
+        {
+            var mappingImage = PathBoundary.Resolve(session, "pin-mapping.bin");
+            await File.WriteAllBytesAsync(mappingImage, mappingBytes, token);
+            snapshots.Add(new(validated.Images[1], mappingImage, (ulong)mappingBytes.LongLength));
+        }
+        var arguments = snapshots.Count == 1
+            ? CreateArguments(root, validated.Configuration, options, validated.Tools, image, validated.Format)
+            : CreatePinMappingArguments(root, validated.Configuration, options, validated.Tools, snapshots);
         return new(validated.Configuration, options, validated.Tools, validated.SourceImage, image, arguments, Path.Combine(session, "openocd.log"))
         {
-            ImageByteCount = validated.ImageByteCount
+            ImageByteCount = validated.ImageByteCount,
+            Images = snapshots
         };
     }
 
@@ -177,27 +199,54 @@ public sealed class OpenOcdService(ToolsetCatalog catalog)
             var root = Path.GetFullPath(projectDirectory);
             output?.Report("准备下载：检查当前构建产物与下载范围…\n");
             var prepared = await PrepareCoreAsync(root, options, token, expectedDeviceId, expectedImageSha256);
+            options = prepared.Options;
             using var ownership = ProbeLease.Acquire();
             var probe = Validate(prepared.Configuration.OpenOcd, options);
             var log = new StringBuilder();
             var capture = new DownloadOutput(log, output);
             capture.Report($"{prepared.Configuration.Device.Id} · {probe.DisplayName} · {options.SpeedKhz} kHz\n固件：{prepared.SourceImage}\n下载日志：{prepared.LogPath}\n");
+            foreach (var snapshot in prepared.Images)
+            {
+                capture.Report($"映像：{snapshot.Preview.Role} · {snapshot.Preview.RelativePath} · 0x{snapshot.Preview.Address:x8} · {snapshot.Preview.Bytes} 字节 · SHA-256 {snapshot.Preview.Sha256}\n");
+            }
             try
             {
                 var result = await new ProcessRunner().RunAsync(new(prepared.Tools.Tool("openocd"), prepared.Arguments, root, TimeSpan.FromMinutes(5),
                     ToolsetEnvironment.Create(prepared.Tools), RemoveEnvironment: ToolsetEnvironment.AmbientVariables, Output: capture), token);
                 capture.Report($"\nexit={result.ExitCode}, timeout={result.TimedOut}, truncated={result.OutputTruncated}\n");
+                if (OpenOcdDownloadDiagnostics.CanRetryConnection(prepared, result))
+                {
+                    capture.Report("\n连接阶段失败，尚未开始写入；等待 USB 释放后按相同序列号、速度和映像重连一次。\n");
+                    await Task.Delay(750, token);
+                    // 只重试已退出的连接失败，不循环下载；取消、超时和写入阶段均不能到达这里。
+                    result = await new ProcessRunner().RunAsync(new(prepared.Tools.Tool("openocd"), prepared.Arguments, root, TimeSpan.FromMinutes(5),
+                        ToolsetEnvironment.Create(prepared.Tools), RemoveEnvironment: ToolsetEnvironment.AmbientVariables, Output: capture), token);
+                    capture.Report($"\n重连结果：exit={result.ExitCode}, timeout={result.TimedOut}, truncated={result.OutputTruncated}\n");
+                }
                 var success = result.Success && (result.StandardOutput + result.StandardError).Contains("STUDIOX_DOWNLOAD_VERIFIED", StringComparison.Ordinal);
                 if (success)
                 {
                     try
                     {
-                        FirmwareVerificationEvidence.Require(result.StandardOutput + "\n" + result.StandardError,
-                            prepared.ImageByteCount, prepared.LogPath, result.OutputTruncated);
+                        if (prepared.Images.Count > 1)
+                        {
+                            Ag32PinMappingDownloadEvidence.Require(result.StandardOutput + "\n" + result.StandardError,
+                                prepared.Images, prepared.LogPath, result.OutputTruncated);
+                        }
+                        else
+                        {
+                            FirmwareVerificationEvidence.Require(result.StandardOutput + "\n" + result.StandardError,
+                                prepared.ImageByteCount, prepared.LogPath, result.OutputTruncated);
+                        }
                     }
                     catch (StudioXException ex) { capture.Report("\n" + ex + "\n"); success = false; }
                 }
-                return new(success, capture.Text, prepared.LogPath, result.ExitCode, result.TimedOut);
+                var failureReason = success ? null : OpenOcdDownloadDiagnostics.FailureSummary(result.StandardOutput + "\n" + result.StandardError);
+                if (failureReason is not null)
+                {
+                    capture.Report("\n下载诊断：" + failureReason + "。\n");
+                }
+                return new(success, capture.Text, prepared.LogPath, result.ExitCode, result.TimedOut) { FailureReason = failureReason };
             }
             catch (OperationCanceledException) { capture.Report("\n下载已停止，未确认写入完成；请重新下载。\n"); throw; }
             catch (Exception ex) { capture.Report("\n" + ex + "\n"); throw; }
@@ -208,6 +257,8 @@ public sealed class OpenOcdService(ToolsetCatalog catalog)
 
     public static string[] CreateArguments(string projectDirectory, DownloadConfiguration configuration, DownloadOptions options, ResolvedToolset tools, string image, string format = "bin")
     {
+        configuration = Ag32ProbeConfiguration.Normalize(configuration);
+        options = Ag32ProbeConfiguration.NormalizeOptions(configuration.Device, options);
         var probe = Validate(configuration.OpenOcd, options);
         // CH592 应用区为 448 KiB；CH595 的物理 Flash 为 256 KiB，但程序区仅前 240 KiB。
         // 在启动 OpenOCD 前核对包与下载配置，避免越过程序区或错用其他芯片脚本。

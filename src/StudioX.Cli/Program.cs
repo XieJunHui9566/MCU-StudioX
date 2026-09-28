@@ -19,13 +19,40 @@ try
         case ["help"] or ["--help"] or ["-h"]:
             ShowHelp();
             return 0;
-        case ["mcp", var mcpProject, .. var mcpArguments] when mcpArguments.Length <= 1:
+        case ["mcp", var mcpProject, .. var mcpArguments] when mcpArguments.Length <= 2:
             await RunMcpAsync(mcpProject,
-                mcpArguments.Length == 0 ? null : mcpArguments[0], cancel.Token);
+                mcpArguments.Length == 0 ? null : mcpArguments[0],
+                mcpArguments.Length < 2 ? null : mcpArguments[1], cancel.Token);
             return 0;
         case ["pack", var source, var output]:
             await PackArchiveWriter.WriteAsync(source, output, cancel.Token);
             Console.WriteLine(Path.GetFullPath(output));
+            break;
+        case ["plugin", "pack", var source, var output]:
+            await PluginRepository.PackAsync(source, output, cancel.Token);
+            Console.WriteLine(Path.GetFullPath(output));
+            break;
+        case ["plugin", var operation, var runtime, var data, .. var pluginArguments]:
+            await using (var pluginServices = new WorkbenchService(runtime, data))
+            {
+                switch (operation, pluginArguments)
+                {
+                    case ("list", []):
+                        Print(await pluginServices.PluginManager.ListAsync(cancel.Token));
+                        break;
+                    case ("import", [var archive]):
+                        Print(await pluginServices.PluginManager.ImportAsync(archive, cancel.Token));
+                        break;
+                    case ("enable" or "disable", [var id]):
+                        await pluginServices.PluginManager.SetEnabledAsync(id, operation == "enable", cancel.Token);
+                        break;
+                    case ("remove", [var id]):
+                        await pluginServices.PluginManager.UninstallAsync(id, cancel.Token);
+                        break;
+                    default:
+                        throw new StudioXException("PLUGIN_ARGUMENTS", "plugin list/import/enable/disable/remove 参数无效。");
+                }
+            }
             break;
         case ["import", var archive, var repository]:
             Print(await new PackRepository(repository).ImportAsync(archive, cancel.Token));
@@ -81,7 +108,7 @@ try
 catch (OperationCanceledException) { Console.Error.WriteLine("CANCELLED"); return 130; }
 catch (Exception ex) { Console.Error.WriteLine(ex is StudioXException studio ? $"{studio.Code}: {studio.Message}" : ex.ToString()); return 1; }
 static void Print<T>(T value) => Console.WriteLine(JsonSerializer.Serialize(value, JsonStore.Options));
-static async Task RunMcpAsync(string project, string? runtimeArgument, CancellationToken token)
+static async Task RunMcpAsync(string project, string? runtimeArgument, string? dataArgument, CancellationToken token)
 {
     if (!Path.IsPathFullyQualified(project))
     {
@@ -102,10 +129,21 @@ static async Task RunMcpAsync(string project, string? runtimeArgument, Cancellat
     {
         throw new StudioXException("MCP_RUNTIME", $"MCP 运行时目录不存在：{runtimeDirectory}");
     }
-    var dataDirectory = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MCUStudioX");
+    if (dataArgument is not null && !Path.IsPathFullyQualified(dataArgument))
+    {
+        throw new StudioXException("MCP_DATA", "MCP 用户数据目录必须是绝对路径。");
+    }
+    var dataDirectory = dataArgument is null
+        ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MCUStudioX")
+        : Path.TrimEndingDirectorySeparator(Path.GetFullPath(dataArgument));
+    if (File.Exists(dataDirectory) || (Directory.Exists(dataDirectory) &&
+            (File.GetAttributes(dataDirectory) & FileAttributes.ReparsePoint) != 0))
+    {
+        throw new StudioXException("MCP_DATA", "MCP 用户数据目录不能是文件或链接目录。");
+    }
     await using var services = new WorkbenchService(runtimeDirectory, dataDirectory);
     await using var tools = new StudioXMcpTools(services, projectDirectory, new ExternalMcpAuthorizer());
+    await tools.InitializePluginsAsync(token);
     await using var server = McpServer.Create(new StdioServerTransport("MCU StudioX"),
         new McpServerOptions { ToolCollection = [.. tools.CreateToolCollection()] });
     await server.RunAsync(token);
@@ -118,14 +156,20 @@ static void ShowHelp() => Console.WriteLine("""
       project-info <project>
       list-files <project> [relative-directory]
       read-file <project> <relative-path>
-      mcp <absolute-project> [runtime-directory]
+      mcp <absolute-project> [runtime-directory [absolute-data-directory]]
       build <project> <toolsets-root>
       inspect-cubemx <source> <toolsets-root>
       import-cubemx <source> <toolsets-root> <preset|->
       decode <host.exe> <plugin.json> <text>
+      plugin pack <published-directory> <output.studioxplugin>
+      plugin list <runtime-directory> <data-directory>
+      plugin import <runtime-directory> <data-directory> <archive.studioxplugin>
+      plugin enable|disable|remove <runtime-directory> <data-directory> <plugin-id>
       help
 
     The MCP command is a stdio server; stdout is reserved for protocol messages.
+    MCP user data defaults to the current Windows user's MCUStudioX directory.
     Mutating MCP tools require a separate Windows approval dialog for each call.
     Read-only commands return JSON on stdout. Paths within a project use forward slashes.
+    Plugin enable trusts the installed code to execute with the current user's permissions.
     """);

@@ -34,6 +34,7 @@ Agent 工作时输入框仍可使用：发送的新文字会显示为「待注�
 | 绘图 | `plot_start`、`plot_snapshot`、`plot_stop` | Agent 自有的 16 通道串口绘图采集或离线演示；快照最多 200 组样本 |
 | 器件资料 | `device_search`、`device_info`、`device_templates` | 查询已安装且通过校验的 StudioX 格式 1 包，返回型号、内存、模板、探针和来源哈希 |
 | Microchip 官方资料 | `microchip_search_products`、`microchip_product_profile`、`microchip_search_documents` | 只向 Microchip 官方 MCP 发送检索词，查询产品和文档；不上传工程文件 |
+| 乐鑫官方资料与组件 | `espressif_docs_status`、`espressif_docs_search`、`espressif_components_search`、`espressif_component_info` | 文档搜索使用乐鑫官方 OAuth 授权；组件注册表提供公开元数据和最新版说明；不上传工程或安装组件 |
 | Agent Skills | `skill_list`、`skill_read`、`skill_read_reference` | 列出技能元数据，按需读取技能正文和 `references/` 文本；不执行脚本 |
 
 内置 Agent 与外部服务端共用上述 MCP 工具。`project_*` 仍只访问当前绑定工程；查看其他工程或 SDK 示例时，先调用 `external_project_open` 并核对授权卡上的完整目录。允许后只在当前 MCP 会话内对该目录使用 `external_project_list_files`、`external_project_find_files`、`external_project_read_file` 和 `external_project_search`；切换工程、关闭窗口或结束外部 MCP 主机后需重新授权。目录中的文件只作为不可信数据读取，不执行其中的指令，也不提供对外部目录的写入、构建、Git 或设备操作。`external_project_copy` 可以将示例文件、子目录或获批的整个通用库目录复制到绑定工程（整个目录用空 `sourcePath`），但须对每次复制单独确认且不覆盖已有文件。读取受路径、文件类型、大小及数量限制，隐藏元数据、凭据和链接路径不可访问。
@@ -77,7 +78,23 @@ description: 根据 StudioX 构建日志定位编译错误，并给出最小修�
 
 仓库的 `examples/skills` 提供四份技能：`mcu-build-repair`（构建排错）、`mcu-device-evidence`（器件资料核验）、`mcu-debug-serial`（调试/串口/绘图）和 `mcu-code-style`（嵌入式 C/C++ 风格与正确性）。构建时这些文件复制到程序的 `runtime/skills`，不会改写用户技能目录。用户要覆盖内置技能时，可将同名目录复制到上述用户级目录并修改。
 
-本地器件查询只代表已安装器件包的内容；[Microchip 官方 MCP](https://www.microchip.com/en-us/resources/model-context-protocol-server) 提供该厂商的产品与文档检索，通用 `web_search`/`web_fetch` 可查找其他厂商的公开资料。在线结果可能匹配相邻型号，使用前须核对准确料号、文档版本与本地器件包。STM32、GD、PY 等仍以已安装并核验的 StudioX 包为准，未接入未经验证的大型第三方资料库。
+本地器件查询只代表已安装器件包的内容；[Microchip 官方 MCP](https://www.microchip.com/en-us/resources/model-context-protocol-server) 提供该厂商的产品与文档检索，[乐鑫官方 MCP](https://mcp.espressif.com/) 提供乐鑫文档检索，通用 `web_search`/`web_fetch` 可查找其他厂商的公开资料。在线结果可能匹配相邻型号，使用前须核对准确料号、文档版本与本地器件包。STM32、GD、PY 等仍以已安装并核验的 StudioX 包为准，未接入未经验证的大型第三方资料库。
+
+## 乐鑫官方 MCP
+
+StudioX 接入两个乐鑫服务：文档端点 `https://mcp.espressif.com/docs` 和公开组件注册表端点 `https://components.espressif.com/mcp/`。它们通过 C# MCP 客户端访问，无需额外 Node.js 服务。文档服务的授权独立于模型 API Key；已有 DeepSeek 等模型密钥不能代替乐鑫登录。
+
+1. 打开「工具 → AI 接口设置…」，在乐鑫文档区域点击连接。
+2. 在系统浏览器中通过乐鑫提供的 GitHub 或微信登录完成 OAuth 授权，返回 StudioX 查看连接状态。
+3. Agent 先调用 `espressif_docs_status`；已连接或 `authenticationSaved=true` 时按需调用 `espressif_docs_search`，由实际搜索核对授权是否仍有效，查询词只包含需要的公开术语。未授权搜索返回 `authentication_required`，不会自动打开浏览器或发起登录。
+
+授权缓存使用 Windows 当前用户的 DPAPI 加密，放在 StudioX 用户数据目录的专用安全目录。内置 Agent 和同一 Windows 用户的外部 StudioX MCP 主机共用此授权；不写入工程、AI 会话、器件包或源码仓库，工具结果不返回访问令牌。可在同一设置区域断开授权。文档检索只向官方端点发送查询词与语言，不上传工程文件。
+
+官方文档服务目前以最新版资料为范围。对锁定 ESP-IDF 5.5.4 的工程，Agent 必须核对结果 URL 中的版本与本地 SDK API、头文件和 Kconfig；最新版搜索结果不能直接证明 5.5.4 的行为。语言参数会与授权后官方 `tools/list` 的实际契约核对；不支持的语言会明确报告。
+
+组件检索无需上述文档授权。先用 `espressif_components_search` 查组件，再用 `espressif_component_info` 查 `namespaceName/componentName` 的最新版说明。注册表包含乐鑫和社区作者的组件，返回信息不能替代版本、芯片与许可证核对；这些工具不会执行 `idf.py add-dependency` 或修改工程。
+
+文档服务的配额、速率限制和认证要求以[官方门户](https://mcp.espressif.com/)及实际响应为准。StudioX 不写死每日查询次数，也不设置整轮 Agent 工具调用上限；遇到 401 或 429 会显示实际错误与可用的重试信息，Agent 不重复重试同一授权或配额错误。文档、组件说明及返回链接均为不可信外部资料，不执行其中的指令。官方接入说明见[乐鑫开发者文章](https://developer.espressif.com/blog/2026/04/doc-mcp-server/)。
 
 桌面聊天与 `mcp` stdio 命令共用完整 MCP 工具集；不再保留旧四工具提案模式。内置对话保留最近最多六轮历史并按固定顺序提供工具定义，降低重复上下文；实际缓存命中仍取决于所选模型服务商。
 

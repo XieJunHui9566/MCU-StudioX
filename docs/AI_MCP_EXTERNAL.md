@@ -31,7 +31,19 @@ Claude Desktop 的 `%APPDATA%/Claude/claude_desktop_config.json` 中，在现有
 
 保存配置后重启客户端。每个工程配置一个不同的服务端名称和工程参数。开发环境可给 `mcp` 命令再传一个绝对路径的 `runtime-directory` 参数，指向含 `toolsets` 的运行时目录；便携版默认使用主机可执行文件上一层的 `runtime`。
 
+需要隔离验证或独立存储时，可显式传第三个绝对路径参数：`mcp <工程> <runtime-directory> <data-directory>`。用户数据默认仍位于当前 Windows 用户的 `%LOCALAPPDATA%\MCUStudioX`；自定义目录保存该主机的器件目录、用户设置和加密乐鑫授权。若希望复用 IDE 的授权，应保留默认目录，或与 IDE 使用同一数据目录。独立目录中没有已保存授权时，文档搜索返回未登录状态。
+
 `web_search` 与 `web_fetch` 默认通过 Tavily 的免密钥试用模式工作，不需额外本地服务；共享额度或速率限制用尽时会返回错误。在「AI 接口设置」保存的独立 Tavily API Key 可由当前 Windows 用户的内置 Agent 和外部 MCP 主机共用；未保存时，主机也可从启动进程的 `TAVILY_API_KEY` 环境变量读取。不要把密钥放在工程文件、MCP 参数或对话中。联网调用会向 Tavily 发送搜索词或目标 URL；不要把源码、凭据或个人敏感信息拼入查询。参考 [Tavily Search](https://docs.tavily.com/documentation/api-reference/endpoint/search)、[Extract](https://docs.tavily.com/documentation/api-reference/endpoint/extract) 和 [免密钥模式说明](https://www.tavily.com/blog/agentic-distribution-your-stairway-to-heaven)。
+
+### 乐鑫官方文档与组件
+
+上述 StudioX MCP 配置也提供 `espressif_docs_status`、`espressif_docs_search(query, language="zh")`、`espressif_components_search(query)` 和 `espressif_component_info(namespaceName, componentName)`，无需再配置另一组模型密钥或本地桥接进程。
+
+文档端点为 `https://mcp.espressif.com/docs`，需要乐鑫 OAuth 授权。先在 StudioX 的「工具 → AI 接口设置…」乐鑫文档区域连接，并在系统浏览器中通过官方 GitHub 或微信登录完成授权。Windows 当前用户的 DPAPI 加密授权缓存位于 StudioX 用户数据目录的安全目录；同一用户运行的内置 Agent 与外部 MCP 主机共享。令牌不保存在工程或 MCP 客户端配置，也不会作为工具参数、结果或 AI 历史返回。断开同一授权后，两种入口都需重新连接。
+
+客户端先调用 `espressif_docs_status`；已连接或 `authenticationSaved=true` 时按需搜索，由实际请求核对授权是否仍有效。未授权返回 `authentication_required`，不会由 MCP 工具打开浏览器。语言值会与官方授权后的工具 schema 核对。官方服务检索最新版文档；若工程使用 ESP-IDF 5.5.4，仍须依据结果 URL 和本地 SDK 核对具体 API 与配置。认证、配额和重试状态直接报告实际响应，不在 StudioX 中固定每日查询次数；客户端应停止重复重试同一 401 或 429。参考[官方门户](https://mcp.espressif.com/)和[官方接入说明](https://developer.espressif.com/blog/2026/04/doc-mcp-server/)。
+
+公开组件注册表 `https://components.espressif.com/mcp/` 无需文档 OAuth。组件搜索和详情只读取公开元数据、最新版 Markdown 说明，不安装依赖、不执行返回的命令，也不上传工程文件。注册表含乐鑫与社区组件，使用前核对作者、版本、目标芯片、SDK 兼容性与许可证。文档与组件结果均视为不可信外部资料；查询词不得包含工程源码或凭据。
 
 ## 授权与范围
 

@@ -1,46 +1,104 @@
-# AG32 Verilog 逻辑模式
+# AG32 基础引脚映射与自定义逻辑
 
-AG32VF303CCT6 同时包含 MCU 和约 2K 逻辑单元（LE）。创建该型号工程时，可选择是否启用 Verilog 逻辑模式。默认关闭；只开发 MCU 固件时无需安装逻辑工具。该选项针对本包的 LQFP48 器件，逻辑器件型号为 `AGRV2KL48`，不能沿用厂商示例中常见的 `AGRV2KL100` 引脚表。
+AG32 的 C 代码操作内部 MCU GPIO、外设功能；`.ve` 决定这些信号与实际封装引脚之间的连接。只用 GPIO 也需要正确的映射镜像。StudioX 新建工程时默认生成 `logic/pins.ve`，并在工程清单的 `pinMapping` 字段记录基础映射工具与目标。可选的 `logic` 字段只代表自定义 Verilog。
 
-## 所需软件与产物
+当前按厂商 2026-06-01 手册支持七款精确型号：VF303 的 KCU6、CCT6、VCT6，VF407 的 RGT6、VGT6，以及 VH303RCT6、VH407VGT6。分别使用 QFN32、LQFP48/64/100 和 VH 专用逻辑目标，不能互换引脚表。四个分系列包、完整料号、容量、来源与历史型号边界见 [AG32 系列包说明](../examples/packs/agm.ag32-series/README.md)。
 
-启用此模式需要用户另行准备 **Quartus II Full 和 AGM Supra**。厂商推荐 Quartus II 64-Bit 13.0.1 Full；Lite 版不适用于其流程，还需要安装相应器件库。Quartus II 将 Verilog 设计编译、转换为 `.vo`；Supra 再将其转换、编译为逻辑 `.bin`。StudioX 的内置 AgRV GCC 只编译 MCU 固件，不能代替这两套逻辑软件。软件安装、许可和器件库由用户负责；工程文件不记录开发者电脑上的绝对安装路径。IDE 可从 `PATH` 或 `STUDIOX_AG32_QUARTUS`、`STUDIOX_AG32_SUPRA` 查找可执行文件；查找到文件不代表授权可用。
+## 图形化引脚与时钟配置
 
-逻辑镜像和 MCU 固件是两个独立产物，必须分别构建、分别下载。StudioX 普通“编译 / 下载固件”操作只处理 MCU 应用，不会把 Verilog 当作 C 源码编译，也不会把逻辑镜像合并进 MCU 固件。当前“AG32 逻辑构建指引”和“AG32 逻辑下载指引”只检查工程、工具位置、引脚编号及镜像文件并展示步骤；**StudioX 尚无 Prepare LOGIC 任务，不会自动运行 Quartus II / Supra，也不会自动烧录逻辑区**。这些步骤需在 AGM 配套工程和工具中完成。
+点击左侧功能栏的 **AG32 引脚分配** 打开配置页。入口仅在已核实的 AG32 工程中显示；未打开工程或打开其它厂商工程时隐藏。基础映射页包含封装图、引脚分配、时钟 / 时序和约束文件三个页签。
 
-本包的 256 KiB Flash 为 MCU 应用保留前 156 KiB，末尾 100 KiB 留给未压缩逻辑配置，起始地址为 `0x80027000`。2K LE 是可用逻辑资源数量，不是逻辑镜像或 RAM 的字节数。当前包不支持改变逻辑地址、开启压缩或将逻辑嵌入 MCU 镜像。
+1. 左键点击封装脚，在旁边弹出的菜单中选择内部 GPIO 或外设功能；菜单支持搜索，选择“清除分配（Reset_State）”可释放该脚。打开或关闭菜单本身不修改分配，选择新功能只替换当前物理脚的功能。封装图按顶视图、逆时针编号呈现，并标记一号脚。已分配引脚整条显示绿色，并在引脚上显示功能名；冲突涉及的引脚整条显示红色。固定脚与 VH 的保留资源以锁定的厂商转换器为准，不能分配。
+2. 图形修改先保留为草稿；后台刷新不会丢弃草稿。同一功能分配给不同物理脚时，两条分配都保留，并提示涉及的功能与引脚，例如 `GPIO4_4` 同时分配给 `PIN_21` 和 `PIN_2`。用户须选择并移除多余的一条，才能保存。重复占脚、功能复用冲突与非法方向同样会拒绝保存，不覆盖已有分配。
+3. 填写 HSECLK、SYSCLK、BUSCLK，单位 MHz。留空表示未显式设置，不将猜测值写入文件。系统与总线频率不得超过已核实的 248 MHz；PLL、分频与 VCO 组合交厂商转换器校验。
+4. 点击 **保存并生成约束**，实际运行内置 VE 转换器，生成 VEX 引脚数据与 `studiox-clocks.sdc`，成功后才原子更新原 `.ve`。保存全部或顶部编译也会先保存图形草稿。已打开的 VE 编辑器立即同步。
+5. 在 **约束文件** 页查看实际生成文件。顶部编译进一步生成最终 ASF 与映射 BIN。图形保存和约束生成本身不调用 Supra，也不访问硬件。
 
-## 工作步骤
+转换结果存放在 `.build/ag32-pin-plan/`，仅保留最近成功的预览。原文件的 UTF-8 BOM、换行、注释及未修改的简单扩展配置保留。复杂共享功能、自定义逻辑或无法无损表达的 VE 显示只读诊断，可继续使用文本编辑；图形配置不重写这些内容。VE 编辑器与图形草稿同时有未保存改动时要求先处理冲突；磁盘文件或工程目标已变化时拒绝旧草稿提交。
 
-1. 在新建工程时选中 AG32VF303CCT6，再勾选 Verilog 逻辑模式。未勾选的工程保持 MCU 开发流程；已有工程不会被自动切换。启用后生成 `logic/user_logic.v`、`logic/pins.ve` 和目录内说明。
-2. 先编辑 `logic/pins.ve`。按开发板原理图指定 MCU 功能、逻辑信号与 LQFP48 引脚的关系；同一引脚出现多种映射时，需按 AGM 复用规则核对。模板故意不预设物理引脚。
-3. 在 **AGM AgRV SDK / PlatformIO 配套工程**中同步 `logic/pins.ve`，再运行厂商的 **Prepare LOGIC**；StudioX 工程没有该任务。本机 AGM SDK 的 `platformio.ini` 使用以下字段。示例假设将映射文件复制到配套工程根目录，名为 `pins.ve`：
+内置及外部 Agent 可调用 `ag32_pin_plan_read` 获取真实引脚与功能目录，调用 `ag32_pin_plan_apply` 提交完整分配和时钟。读取免写授权；应用需要 FileWrite 授权，并核对源文件 SHA-256、工程身份及未保存修改。成功响应提供写入路径，供编辑器实时同步。
 
-   ```ini
-   [setup_logic]
-   logic_ve = pins.ve
-   logic_device = AGRV2KL48
-   ip_name = user_logic
-   logic_dir = logic
-   ```
+## 基础 MCU 引脚映射
 
-   每次修改 StudioX 工程中的 `logic/pins.ve` 后，都要同步配套工程的 `pins.ve`。较旧的 AGM 网页将 `logic_ve`、`logic_device` 分别写作 `board_logic.ve`、`board_logic.device`；应以已安装 SDK 的配置格式为准。
-4. 核对 Prepare LOGIC 生成的顶层与自定义模块接口，再编辑或合并 `logic/user_logic.v` 的端口和实现。自动生成的顶层文件会随 `.ve` 改动重新生成，不要手工维护。`.ve` 变化后重新运行 Prepare LOGIC，并把新增接口合并到用户模块；厂商工具可能生成 `_tmpl.v` 供合并。
-5. 用 Quartus II Full 对厂商工程中的 Verilog 编译和转换，得到 `.vo`；再用 Supra 将 `.vo` 编译为逻辑 `.bin`。将配套工程生成的 `pins.bin` 复制到 StudioX 工程的 `logic/pins.bin`，核对容量和诊断。
-6. 按厂商的独立 Upload LOGIC 流程将逻辑镜像写入逻辑区域，并在连接目标板前核对器件、封装、引脚和 Flash 布局。MCU 固件仍通过 StudioX 原有构建和下载操作处理。
+基础映射使用内置的 AGM VE 转换器和 Supra，从厂商默认 MCU 逻辑网表生成独立 BIN，**不需要外部 Quartus，也不需要编写 Verilog**。MCU GCC、基础映射工具各自锁定：`agm.agrv` 用于 C 固件，`agm.pin-mapping/1.0.0`、编译器标识 `agm.ve` 用于 `.ve`。内置工具保留厂商版本来源、许可证与 SHA-256，不以用户脚本替代默认网表。
 
-`.ve` 有三类映射，分别是 MCU 功能到封装引脚、逻辑信号到封装引脚、MCU 功能到逻辑信号。逻辑信号到外部引脚的方向为 `INPUT`、`OUTPUT` 或 `INOUT`。例如 `LED_OUT PIN_32:OUTPUT` 仅说明文件格式，`PIN_32` 是否可用必须以实际 LQFP48 板卡和器件资料核对，不应直接复制到项目。
+普通工程的 `logic/pins.ve` 是可编辑配置文件，初始内容只有说明与注释示例，不猜测开发板引脚或晶振。用户按原理图填写 MCU 功能与封装引脚，例如：
+
+```text
+# C 中仍操作 GPIO4 / GPIO_BIT4；此处根据实际接线选一个封装脚。
+GPIO4_4 PIN_21
+```
+
+将该行改为 `GPIO4_4 PIN_2` 会改变物理连接，C 代码不用随之改成另一个内部 GPIO。应确认二号脚是该封装可使用的用户 IO、电气连接正确，而且实际观察电路已接到二号脚。固定电源、地、配置等引脚不能当作通用 IO。厂商允许部分输入、输出外设共享一个功能行，但 GPIO 与该行的外设有复用关系，必须同时核对固件中的 AF 设置。
+
+StudioX 基础模式已经接入普通 **编译 / 下载**，无需来回复制配置到 PlatformIO：
+
+1. 新建已支持型号的普通工程后打开 `logic/pins.ve`；已有工程先点击左侧功能栏的 **AG32 引脚分配**，在页面选择 **启用基础映射**，原 `.ve` 会保留。
+2. 在同一页面选择 **配置 Supra 许可**，导入本人已有、适用于本机的厂商 `license.txt`。无需安装外部 Quartus；许可有效性由 Supra 实际编译检查。
+3. 编写 C 代码，按实际连线填写 `.ve`，保存全部文件。只有注释或时钟配置的骨架不能作为可下载映射；不能在基础模式加入自定义 IP 连线或 `ASSIGN` 逻辑。
+4. 按 **F7 / 顶部编译**，IDE 先编译 MCU 固件，再用内置转换器和 Supra 生成 `.build/ag32-mapping/pins.bin`。两步都成功才建立完整 MCU 构建凭据。
+5. 点击顶部 **下载**。IDE 保存并编译后，弹出随主题显示的下载确认窗口，展示 MCU 应用和映射镜像的完整地址、大小、SHA-256 与合并布局散列，长内容可以滚动查看；当前编辑标签保持不变。用户确认后才连接探针，分别写入、分别回读校验，最后复位运行新映射。取消、关闭弹窗、停止操作、关闭主窗口或工程上下文失效均不会批准下载；确认结束后关闭弹窗，不在配置页留下审批卡。
+6. 观察实际连接到所选封装脚的 LED 或外设。开始硬件调试时，IDE 另外校验板上映射 BIN 与当前 `.ve` 构建产物一致；不会在调试附加时隐式下载。
+
+映射镜像仍是独立产物；如果绕过这个双镜像流程、只用外部工具下载 MCU BIN，不会更新旧映射。每次 `.ve` 修改都应重新构建，源码、工具和镜像均以内容散列校验，不用文件时间戳证明旧镜像有效。
+
+### 烧录器选择
+
+AG32VF303CCT6 可在工具栏选择 **DAP-Link（CMSIS-DAP）** 或 **J-Link（V9 及以上）**，MCU 固件和 VE 映射共用所选探针与序列号，默认速度 1000 kHz。旧工程中的 `agm-blaster` 设置按 CMSIS-DAP 兼容读取，不改写工程的器件包锁定。
+
+两种探针都使用内置 AGM 专用 OpenOCD 的 SWD 通路。[AGM 指南](https://www.ag32mcu.com/dev-docs/doc_ag32_vscode_start/) 提供两者的下载与调试步骤；[SEGGER V9 规格](https://kb.segger.com/J-Link_BASE_V9) 确认其具备 SWD 接口。J-Link 在 Windows 上需要可供 OpenOCD 访问的 USB 驱动，IDE 不自动替换驱动。当前 J-Link 完成厂商依据核对和离线目标脚本解析，实板验收仍只有已记录的 CMSIS-DAP 路径。其它六款 AG32 的下载身份限制保持有效。
+
+### 本机 Supra 许可
+
+Supra 的 `license.txt` 是厂商节点授权数据，**不随 StudioX 工具发行、不放进工程或 GitHub，也不记录许可内容**。导入后存储在当前用户的 `%LOCALAPPDATA%/MCUStudioX/licenses/ag32-pin-mapping/`，构建时只在该私有目录的临时运行环境组合许可与已锁定工具资源，结束后清理临时副本。发行包只带工具、资源与开源许可声明；换一台电脑须配置那台电脑自己的有效厂商许可。
+
+已有 AG32 工程不会自动改写。可显式启用基础映射：应用服务 `ProjectService.EnableAg32PinMappingAsync` 验证当前器件元数据后保存 `pinMapping`。原来存在的 `logic/pins.ve` 保留全部原始字节；不存在时才创建注释骨架。无需重新创建工程、覆盖 SDK 或复制原来的 `platformio.ini`。已有自定义 Verilog 模式不能由此操作隐式切换到基础默认网表。
+
+### 时钟配置
+
+`HSECLK`、`SYSCLK`、`BUSCLK` 等字段交给已锁定的厂商 VE 转换器处理，编辑器原样保存；不存在字段时不由 IDE 填入猜测值。当前已锁定转换器默认 HSE 为 8 MHz、SYSCLK 为 100 MHz，未指定 BUSCLK 时使用 SYSCLK；这是厂商源码默认，不证明开发板采用了 8 MHz 晶振。外部晶振值和频率组合需要按实际板卡与当前 SDK 支持范围填写；BUSCLK 必须能由 SYSCLK 分频得到，PLL 输入与输出必须能满足转换器的 VCO 规则，非法组合保留厂商原始诊断并停止构建。映射镜像中的时钟配置必须与 MCU 固件里的频率宏、启动等待和外设分频相匹配，避免引脚迁移时顺带更改系统频率。
+
+## 自定义 Verilog 联合构建
+
+自定义模式已经接入顶部 **编译 / F7**：MCU GCC 编译 → VE 生成顶层 → 内置 AGM 原生 mapper 综合 → Supra 布局布线 → 时序报告与位流。整个流程不需要外部 Quartus；Supra 仍使用本机用户目录中的有效厂商许可。只有两部分都成功才建立完整构建凭据。
+
+1. 创建 AG32 工程并勾选 Verilog 逻辑模式，编辑 `logic/user_logic.v` 与 `logic/pins.ve`。VE 可以定义 MCU 功能到逻辑信号、逻辑信号到封装脚等连接；模板不猜测实际接线。
+2. 点击左侧 **AG32 引脚分配**，打开 **联合构建与仿真**。联合构建配置包含设计源文件、包含目录、宏及附加 SDC，均为工程相对路径。配置保存到 `.studiox/ag32-logic-build.json`。testbench 不应加入硬件综合源文件。
+3. 配置本机 Supra 许可后按 F7。每次在 `.build/ag32-logic/<运行编号>/` 使用独立源码快照，生成顶层、接口模板、VQM、布局后的 Verilog、未压缩 `pins.bin` 和完整工具日志。VE 的接口变化后须按生成模板合并用户模块端口；构建不覆盖原始 Verilog。
+4. 时钟 SDC 从实际 VE 转换结果生成，再合并配置中的附加 SDC。`setup.rpt`、`hold.rpt`、`fmax.rpt`、`coverage.rpt` 保存厂商原始静态时序结果，在联合构建配置中选择报告并点击“打开时序报告”查看。构建成功表示位流生成成功，不自动证明所有时序路径已约束或收敛；须同时检查违例及覆盖率。
+5. 顶部下载重新联合构建，弹窗显示两段镜像的地址、大小、SHA-256 和布局散列。确认后分别写入、分别校验，再复位运行。源码、SDC、工具锁定或产物变化会拒绝旧下载凭据；调试附加同样校验逻辑镜像，不隐式下载。
+
+256 KiB Flash 型号保留前 156 KiB 给 MCU，逻辑地址为 `0x80027000`；1 MiB 型号保留前 924 KiB，逻辑地址为 `0x800E7000`。末尾 100 KiB 保留未压缩逻辑配置；禁止由工程设置改变此布局或选项字节。当前实板下载身份检查只开放已验证的 AG32VF303CCT6，其它型号不能据此宣称实板验收。
+
+## RTL 波形仿真
+
+在 **联合构建与仿真 → 工程配置与 testbench → RTL 仿真** 中指定设计源文件、testbench 文件、顶层模块、包含目录、宏、最大模拟时间（ns）与进程超时（秒）。点击 **保存并运行 RTL 仿真**，内置 Icarus Verilog 编译并执行 testbench，界面显示真实 VCD 波形。
+
+- **新建 testbench 模板**只创建新文件，不覆盖现有代码。模板包含一个待替换的失败断言；用户需要实例化 DUT、连接端口、编写时钟/复位/数据激励及检查条件。所有断言完成后调用 `$finish`。
+- 支持数字标量、总线、层级名、未知态 X 和高阻态 Z；可筛选、缩放及点击定位时间光标。按住左键可连续拖动蓝色光标，时间和各信号值同步刷新，松开后保留位置；拖出范围时限制在起止时间。密集跳变聚合绘制，放大后展开；原始 VCD 保留完整事件。
+- 支持 `#delay` 与当前 Icarus 前端可执行的 Verilog / SystemVerilog。需要厂商 IP 仿真模型时，须自行加入设计依赖；不会把缺失模型当作已验证逻辑。
+- `$fatal`、编译失败、超时及运行中输入变化都返回失败。顶部停止取消进程。达到模拟时间上限会明确警告，不能把它当作 testbench 已执行全部断言。
+- `.studiox/hdl-simulation.json` 保存配置；`.build/hdl-simulation/<运行编号>/` 保存输入快照、编译产物、`simulation.log`、`wave.vcd` 和结果索引。编辑源码或配置后，界面标记历史波形。
+- VCD 最大 32 MiB、2048 条信号、一百万次变化；界面最多显示 128 条匹配信号。过限返回明确诊断，可缩短模拟时间或缩小 testbench。
+
+**本次实现 RTL 事件仿真和布局布线后的静态时序报告，尚未实现带 SDF 的布局后延时仿真。** 目前内置 Supra 的已核实命令不提供 `write_sdf`；不能用 RTL 的 `#delay` 或静态 Fmax 代替物理时序仿真。后续需要完成厂商延时导出、对应仿真单元库和 SDF 反标校验。
+
+Agent 共用应用服务：`project_build` 联合编译 MCU 与 FPGA，`ag32_logic_workflow_settings` 读取或保存配置（写入需要 FileWrite 授权），`ag32_logic_simulate` 执行 RTL testbench（Build 授权）并返回 VCD、原始日志、信号列表和警告。仿真不建立硬件会话。
+
+开发环境使用 `tools/Prepare-HdlWorkflowRuntime.ps1 -SupraDirectory <已有 Supra> -IcarusDirectory <已有 Icarus>` 整理已核实工具；最终程序使用内置工具集，不从用户 PATH 查找。mapper、仿真器、资源文件均有 SHA-256 索引，Supra 私人许可不会进入工具树。
 
 ## 验收边界
 
-- 创建工程时，只有 AG32VF303CCT6 显示该模式；默认关闭。未启用时不生成逻辑子工程，也不要求 Quartus II / Supra。
+- 七款型号的新模板默认生成基础 `logic/pins.ve`，不猜测板级映射，不要求 Quartus。自定义 Verilog 可选项默认关闭。
+- 旧工程不自动生成或启用映射；显式启用保留既有 `.ve` 的 BOM、编码、换行、注释和全部配置，不覆盖 MCU 源码与 SDK。
 - 启用后，工程元数据持久记录该选择；重新打开工程仍能找到 `.ve` 与 Verilog 文件。含空格和中文的工程路径应可用。
-- IDE 指引仅检查可执行文件是否存在，不能证明工具版本、器件库或许可可用。厂商构建失败时应查看其原始诊断，不能把 MCU 构建成功当作逻辑构建成功。
-- 静态检查拒绝超出 `PIN_1`–`PIN_48` 的编号；重复映射会提示人工核对，因为部分输入/输出复用可能合法。仍需对照板级资料核查固定功能、电气约束及复用冲突。
-- `.ve` 或 Verilog 改动后，旧逻辑镜像的修改时间会触发重新构建提示，但时间戳不足以证明镜像与源码一致。下载前需确认目标型号、逻辑地址 `0x80027000` 和镜像不越过 `0x80040000`，保留 MCU 应用区与选项字节。
+- 构建使用内置工具及内容指纹；厂商失败、未分配 IO、镜像越界会拒绝下载凭据。MCU 编译成功不能替代逻辑构建成功。
+- 静态检查使用准确封装范围及厂商可分配脚表；不能将 48 脚器件的编号沿用到 32、64 或 100 脚器件。文本模式的复杂复用仍需人工核对；图形模式只接受可无损表达和验证的基础分配。
+- `.ve`、器件、工具或固件改动后，旧构建凭据失效。内容散列用于核对镜像与源码，文件时间戳不能代替这一检查。
+- 当前仅 AG32VF303CCT6 保留已核实的硬件下载和调试身份检查。新增六款可以创建工程、编译和生成图形约束，硬件入口在完成各自实板身份验证前拒绝操作，不复用 CCT6 的探针配置。
 - 软件构建成功不代表实板验收。实际下载、引脚电气行为和 MCU 与逻辑通信需要在目标板上单独验证。
 
-离线工程验收可运行 `dotnet run --project tools/StudioX.DebugValidation -- --ag32-logic <AG32 包文件> <新的输出目录>`。它创建默认和启用模式两种工程，重新读取清单，检查 LQFP48 引脚边界和复用提示、非法器件组合及被篡改的 100 脚目标；不会启动逻辑工具或访问硬件。
+离线工程验收可运行 `dotnet run --project tools/StudioX.DebugValidation -- --ag32-logic <AG32 包文件> <新的输出目录>`。它创建默认基础映射和自定义模式两种工程，检查旧工程无隐式启用、显式启用保留原字节、幂等和取消、LQFP48 引脚边界及复用提示、非法器件/厂商/工具组合与被篡改的 100 脚目标；不会启动逻辑工具或访问硬件。
 
 ### VE 编辑器回归
 
@@ -50,9 +108,35 @@ AG32VF303CCT6 同时包含 MCU 和约 2K 逻辑单元（LE）。创建该型号�
 
 实际窗口回归可运行 `MCU StudioX.exe --preview-ve <输出目录> <现有工程目录> logic/pins.ve`。该模式只复制必要的小型工程文件，不复制 SDK 或编译链。它验证真实 VE 文本的深浅主题渲染、C/Verilog/VE 标签切换、编辑保存和重新打开，比较副本的编码、BOM、换行及全部配置字节，并核对真实文件的 SHA-256 未变。所有写操作发生在输出目录的夹具中，不启动逻辑工具或访问硬件。
 
+图形与 MCP 离线验收入口为 `tools/StudioX.Ag32PinPlanningValidation`：参数是工具集根目录、新输出目录和真实器件包 `manifest.json`。完整检查使用含 CCT6 的 VF303 包；其它包增加 `--profiles-only`，逐型号运行实际转换器。真实窗口入口为 `MCU StudioX.exe --preview-ag32-mapping <新输出目录> <CCT6 工程目录>`，覆盖图形保存、冲突着色与提示、保存全部、SDC 打开、编辑同步和下载确认弹窗。所有测试写入独立夹具，均不连接硬件。
+
+## Verilog 电路图预览
+
+AG32 的 **MCU+FPGA 自定义逻辑工程** 可从左侧 **AG32 引脚分配 → Verilog 电路图** 进入。点击 **生成电路图**，保存编辑器内容后，用内置 Yosys 0.61 处理实际 Verilog，显示优化后的 RTL 网表。普通 MCU 基础映射工程和其它系列隐藏此入口。
+
+- 支持组合逻辑、算术单元、MUX、寄存器、锁存器、存储器和子模块；总线按位连接，点击信号线可检查切片与扇出。
+- 双击子模块查看内部电路，使用“返回上层”或模块列表导航；点击元件后“定位源码”跳到真实 Verilog 行。优化掉的逻辑不会在网表中出现。
+- Ctrl + 滚轮或工具栏缩放，滚动条移动视图；当前模块可导出为独立 SVG。
+- 配置存放在 `.studiox/hdl-schematic.json`，可指定源文件、包含目录、宏、顶层模块和展开子模块。首次进入自动发现入口所在目录及子目录的 `.v/.sv`，请移除 testbench 并补齐实际依赖；来源路径均相对当前工程，不保存开发者工具路径。
+- `include` 与 `$readmemh/$readmemb` 的字面依赖使用快照内的相对路径；外部依赖应先放入工程，再配置包含目录。绝对路径及 `../` 引用明确报错。空格目录通过快照别名处理；支持的附加输入扩展名是 `.vh/.svh/.mem/.hex/.mif/.dat`。
+- 每次生成使用 `.build/hdl-schematic/<运行编号>/source` 快照，保存 `netlist.json`、`report.json`、`preview.ys`、`yosys.log` 和 `process.log`。记录输入 SHA-256、工具版本和结果时效；源码或配置变化提示重新生成，失败会清空当前图并保留原始诊断，可用顶部停止按钮取消。
+- 显式声明的厂商黑盒显示端口与黑盒标记，不能据此推断内部电路；未知模块直接报错。综合警告在界面提示，详细内容保留在日志。
+
+该入口提供 **RTL 电路结构预览**，不生成 AGM 位流，不估算物理 LE 占用，不执行布局布线、时序分析或波形仿真。Verilog-2005 与部分 SystemVerilog 以所锁定 Yosys 前端的实际支持为准；完整 SystemVerilog、VHDL 和厂商加密 IP 不在本次范围内。实际 FPGA 镜像由顶部联合构建的厂商原生工具流程生成。
+
+Yosys 运行时位于 `runtime/hdl/yosys`，发行构建自动包含它；预览无需用户安装 Quartus、Node 或配置 Supra 许可。开发环境用 `tools/Prepare-HdlRuntime.ps1 -YosysExecutable <已有 yosys.exe>` 从已核验本机分发包整理，保留 ISC 许可、来源、版本与 SHA-256。IDE 启动综合前校验哈希，不复制厂商私人许可。参考 [Digital IDE 网表功能](https://nc-ai.cn/en/article/x29n1v76/) 与 [Yosys 上游](https://github.com/YosysHQ/yosys)，图形显示由 StudioX 的 C# / WPF 实现。
+
+Agent 共用应用服务：`ag32_logic_schematic_settings` 只读配置，`ag32_logic_schematic_generate` 通过已有 Build 授权流程生成网表和 SVG，返回模块、端口、警告及原始日志路径；不获取下载授权。
+
+软件验证：`dotnet run --project tools/StudioX.HdlValidation -- <源码根目录> <验证输出目录> <现有 CCT6 工程>` 创建独立测试夹具；`MCU StudioX.exe --preview-hdl <界面输出目录> <上述 fixture>` 验证真实窗口、综合按钮、层级、源码跳转和深浅主题。测试不连接硬件。
+
 ## 厂商资料
 
+2026-09-28 已使用 AG32VF303CCT6 实板完成同源 Verilog 的 MCU↔FPGA 内部回环，并在 IDE 生成对应 RTL 图。硬件位流由本机 Supra 2026.03 原生流程生成，本次没有调用 Quartus；完整证据及未覆盖范围见 本机保存的实板验收记录（不公开原始硬件信息）。后续已接入 IDE 联合构建、双镜像下载及 RTL 仿真，验收见 [0.2.5.1 验证范围](RELEASE-0.2.5.1.md#使用与验证范围)。
+
+- [AG32 参考手册，2026-06-01](https://www.agm-micro.com/upload/userfiles/files/AG32%20MCU%20Reference%20Manual%2820260601%E4%BF%AE%E8%AE%A2%E7%89%88%EF%BC%89.pdf)：当前七款订货型号、容量和封装。
+- [AG32VH 系列应用指南](https://www.ag32mcu.com/wp-content/uploads/2025/06/MANUAL_AG32VH_HyperRAM.pdf)：VH 逻辑目标、HyperRAM 和保留引脚。
 - [AG32 下 FPGA/CPLD 使用入门](https://www.ag32mcu.com/dev-docs/doc_ag32_fpga_cpld_start/)：MCU 与逻辑独立构建和下载、Quartus II Full / Supra 流程。
 - [AGRV2K 逻辑设置](https://www.ag32mcu.com/dev-docs/doc_ag32_logic_setup/)：48 脚器件选择、`.ve` 映射、默认逻辑区与自定义模块生成。
 
-本机 AGM SDK 中可找到 `tool-agrv_logic` 的 Supra、转换及下载工具；仅找到文件不代表已验证其授权或完整综合。当前开发环境尚未完成 Quartus II 加 Supra 的端到端逻辑构建和目标板下载验收。
+基础映射的内置工具来自本机 AGM SDK 的 `tool-agrv_logic`，运行原始转换和 Supra 编译，保留原始厂商诊断。自定义 Quartus II 综合与任意板级连线不属于基础映射的软件验收；实际下载、电气行为和用户外设配置仍须在准确目标板上验证。

@@ -60,6 +60,12 @@ public sealed partial class DebugSessionService
                     await current.SendAsync(command, token);
                 }
             }
+            if (preparation.PinMapping is { } mapping)
+            {
+                await VerifyImageAsync(current, PinMappingVerifyCommand(mapping),
+                    preparation with { ImageByteCount = mapping.VerificationBytes }, token);
+                Trace("板上引脚映射镜像与当前 .ve 构建产物完整校验一致；未下载映射。");
+            }
             var sources = await current.SendAsync("-file-list-exec-source-files", token);
             if (sources.Get("files")?.Values.Any() != true)
             {

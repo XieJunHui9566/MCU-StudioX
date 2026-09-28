@@ -1,0 +1,15 @@
+{
+  "formatVersion": 1,
+  "apiVersion": 2,
+  "id": "sample.cpp-overview",
+  "version": "1.0.0",
+  "displayName": "C++ 工程概览",
+  "kind": "process",
+  "entryAssembly": "",
+  "entryType": "",
+  "entryExecutable": "studiox-cpp-overview.exe",
+  "arguments": [],
+  "capabilities": ["commands", "panels", "agentTools"],
+  "hostTools": ["project_info"],
+  "sha256": {}
+}

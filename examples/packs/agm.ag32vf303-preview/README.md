@@ -1,4 +1,6 @@
-# AG32VF303CCT6 临时测试包
+# AG32VF303CCT6 历史验收夹具
+
+本目录保留 `0.1.1` 单型号 manifest、模板和已经核实的 OpenOCD 目标，供历史验收复现及当前系列生成器复用。它不是当前器件包生成配方，不再生成或分发旧版本包。当前四个子系列、七款精确型号及重建入口见 [AG32 系列器件包](../agm.ag32-series/README.md)。
 
 包 ID：`studiox.preview.ag32vf303`，版本 `0.1.1`，StudioX Pack 格式 1。仅提供一个明确型号 AG32VF303CCT6，不枚举未核实的其它型号。
 
@@ -11,11 +13,11 @@
 
 两个模板不配置 LED、串口或其它板级引脚。模拟数值不是真实传感器数据。
 
-## 可选 Verilog 逻辑模式
+## 基础引脚映射与可选 Verilog
 
-创建 AG32VF303CCT6 工程时可单独启用 Verilog 逻辑模式，默认关闭。该模式面向本型号的 `AGRV2KL48` 逻辑器件；启用后才需要维护 `.ve` 引脚映射和自定义 Verilog。引脚位置须按实际 LQFP48 板卡核对，不能复制 100 脚示例的映射。
+所有 AG32VF303CCT6 模板默认生成 `logic/pins.ve`，将 MCU 内部 GPIO、外设功能绑定到真实 LQFP48 封装引脚；目标固定为 `AGRV2KL48`。初始映射只含注释，须按真实板卡填写，不能复制 100 脚示例。基础模式用内置 AGM VE / Supra 构建和下载独立镜像，无需 Quartus。旧工程须显式启用，已存在的 `.ve` 保留原字节。
 
-**逻辑开发需用户另行准备 Quartus II Full 与 AGM Supra。** 先将 `logic/pins.ve` 同步到 AGM AgRV SDK / PlatformIO 配套工程，按本机 SDK 的 `[setup_logic]` 配置 `logic_ve`、`logic_device = AGRV2KL48`、`ip_name`、`logic_dir` 并执行 Prepare LOGIC，再将生成接口与 `user_logic.v` 对齐；StudioX 当前没有 Prepare LOGIC 任务。之后 Quartus II 编译 Verilog 并转换出 `.vo`，Supra 再生成逻辑 `.bin`，按厂商的独立逻辑下载流程写入芯片。StudioX 当前提供构建和下载指引，不自动执行这两套软件或烧录逻辑区。内置 AgRV GCC 和普通“下载固件”按钮只处理 MCU 应用。软件版本、工作步骤和验收范围见 [AG32 Verilog 逻辑模式](../../../docs/AG32_LOGIC_MODE.md)。
+可选自定义 Verilog 模式默认关闭；启用后额外创建 `logic/user_logic.v`，这部分**仍需外部 Quartus II Full 与 AGM Supra 综合**。先在 AGM 配套工程按 `[setup_logic]` 配置 `logic_ve`、`logic_device = AGRV2KL48`、`ip_name`、`logic_dir` 并执行 Prepare LOGIC，再将生成接口与自定义 Verilog 对齐。StudioX 基础映射流程拒绝自定义模块，不能用默认网表代替用户设计。内置 AgRV GCC 只处理 MCU 应用；映射与 MCU 固件是分别构建和下载的产物，改变 `.ve` 后只下载 MCU 固件不会更新引脚。详见 [AG32 基础引脚映射与自定义逻辑](../../../docs/AG32_LOGIC_MODE.md)。
 
 新建工程采用分层 CMake：根 `CMakeLists.txt` 用于添加用户文件，`device/CMakeLists.txt` 管理 SDK 和芯片参数，`device/platform.cmake` 管理固定环境/产物规则。内部配置由 IDE 的工程生成器产生，在 IDE 中只读。详见 [工程分层](../../../docs/PROJECT_LAYOUT.md)。
 
@@ -25,7 +27,7 @@
 
 器件物理 Flash 为 256 KiB，RAM 为 128 KiB。本模板链接区域只使用 Flash 前 156 KiB，保留末尾 100 KiB 逻辑区域，与先前确认的 AG32 布局一致。编译参数记录 RV32IM AFC / ilp32f 的 AgRV ABI；工具集标识为 `agm.agrv` / `1.0.0`，编译器标识 `agrv-gcc-11.1.0`。StudioX 已内置这套专用工具，可按 F7 编译。
 
-第三方源码保留原版权声明，来源信息见 `vendor/framework-agrv_sdk.json`。本包是利用本机 SDK 制作的临时开发材料，未作为公共发行包发布。最小模板已用内置 AgRV GCC 在隔离目录编译生成 ELF/BIN/HEX/MAP；随后按用户授权完成实板烧录、回读和心跳验证。逻辑区、选项字节保持不变。0.1.1 新增 IDE 下载与调试配置；本次调试适配只完成离线检查，尚未用实板验收。旧 0.1.0 工程不会自动获得硬件配置，需导入新包并新建工程。
+第三方源码保留原版权声明，来源信息见 `vendor/framework-agrv_sdk.json`。此处记录最初使用本机 SDK 制作的单型号开发材料：最小模板已用内置 AgRV GCC 在隔离目录编译生成 ELF/BIN/HEX/MAP；随后按用户授权完成实板烧录、回读和心跳验证，逻辑区、选项字节保持不变。`0.1.1` 加入下载与调试配置后的后续实板结论见 [AG32 IDE 调试验收](../../../docs/AG32-IDE-DEBUG-ACCEPTANCE-20260923.md)。这些记录不扩大为其它型号的硬件验收。
 
 ## 下载与调试
 
@@ -33,10 +35,10 @@
 
 当前仅支持前 156 KiB 应用 / 后 100 KiB 未压缩逻辑的已核实布局。不同逻辑布局、错误芯片或读保护状态会拒绝继续，不解除保护、不修改选项字节。详见 [调试配置来源](debug/provenance.md)。
 
-## 重建
+## 当前生成入口
 
 ```powershell
-.\tools\New-Ag32PreviewPack.ps1 -SdkDirectory '<本机 AgRV SDK 目录>'
+python tools/New-Ag32Packs.py --sdk-directory '<本机 AgRV SDK 目录>' --platform-directory '<本机 AgRV 平台目录>' --output '<新输出目录>' --cli '<已编译 StudioX.Cli.dll>'
 ```
 
-脚本输出 `.mcupack`，不自动导入、不创建工程、不执行工具链或烧录。输出文件已存在时拒绝覆盖。SDK 和链接文件生成在 `.artifacts` 下，不将厂商代码复制进仓库源文件。
+该命令生成当前四个子系列的新格式 `.mcupack`，并保留来源和文件 SHA-256。输出目录必须不存在；它不自动导入、创建工程、执行 Supra 或烧录。旧 `New-Ag32PreviewPack.ps1` 只报告迁移说明并停止，不再写包。完整参数及离线准备方式见 [系列配方](../agm.ag32-series/README.md)。

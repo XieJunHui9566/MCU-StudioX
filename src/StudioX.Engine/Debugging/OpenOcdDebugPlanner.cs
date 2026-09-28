@@ -9,6 +9,7 @@ public static class OpenOcdDebugPlanner
 {
     public static DebugProbeDefinition ResolveProbe(DownloadConfiguration configuration)
     {
+        configuration = Ag32ProbeConfiguration.Normalize(configuration);
         var target = ResolveTarget(configuration);
         if (target.IsRp2350 && (configuration.Options.ProbeId != "cmsis-dap" || configuration.OpenOcd.Probes.Count != 1))
         {
@@ -20,9 +21,9 @@ public static class OpenOcdDebugPlanner
         {
             throw new StudioXException("DEBUG_CONFIG", "RP2350 调试需要器件包内匹配的板型与 Flash 配置。");
         }
-        if (target.IsAg32 && (configuration.Options.ProbeId != "agm-blaster" || configuration.OpenOcd.Probes.Count != 1))
+        if (target.IsAg32 && configuration.Options.ProbeId is not ("cmsis-dap" or "jlink"))
         {
-            throw new StudioXException("DEBUG_PROBE", "AG32VF303 当前仅适配官方 AGM BLASTER 的 DAP-Link 模式。");
+            throw new StudioXException("DEBUG_PROBE", "AG32VF303 调试请选择 DAP 或 J-Link（V9 及以上）。");
         }
         if (target.IsWch && (configuration.Options.ProbeId != "wch-link" || configuration.OpenOcd.Probes.Count != 1))
         {
@@ -47,13 +48,13 @@ public static class OpenOcdDebugPlanner
                 DisplayName = "WCH-Link / WCH-LinkE"
             };
         }
-        if (probe.Transport != "swd" || probe.InterfaceScript != $"interface/{(target.IsAg32 ? "cmsis-dap" : probe.Id)}.cfg")
+        if (probe.Transport != "swd" || probe.InterfaceScript != $"interface/{probe.Id}.cfg")
         {
             throw new StudioXException("DEBUG_CONFIG", "当前调试需要所选烧录器对应的 OpenOCD 接口脚本及 SWD 配置。");
         }
         return probe with
         {
-            DisplayName = target.IsAg32 ? "AGM BLASTER（官方）" : probe.Id == "cmsis-dap" ? "DAP-Link (CMSIS-DAP)" : "ST-Link"
+            DisplayName = probe.Id == "cmsis-dap" ? "DAP-Link (CMSIS-DAP)" : probe.Id == "jlink" ? "J-Link（V9 及以上）" : "ST-Link"
         };
     }
 
@@ -63,6 +64,7 @@ public static class OpenOcdDebugPlanner
 
     public static OpenOcdDebugPlan Create(string project, DownloadConfiguration configuration, ResolvedToolset tools, string elf, int port = 3333)
     {
+        configuration = Ag32ProbeConfiguration.Normalize(configuration);
         var probe = ResolveProbe(configuration);
         var profile = ResolveTarget(configuration);
         if (port is < 1024 or > 65535 || configuration.Options.SpeedKhz is < 100 or > 15000)

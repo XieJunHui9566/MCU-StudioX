@@ -9,7 +9,7 @@ internal static class AiWorkspaceChangePolicy
     public static bool MayChangeWorkspace(AiToolCall call)
     {
         if (call.Name is "project_edit_file" or "project_patch_file" or "project_create_file" or
-            "project_create_directory" or "external_project_copy")
+            "project_create_directory" or "external_project_copy" or "ag32_pin_mapping_enable" or "ag32_pin_plan_apply")
         {
             return true;
         }

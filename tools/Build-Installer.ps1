@@ -10,10 +10,8 @@ if (!$ReleaseVersion)
 {
     $ReleaseVersion = ([xml](Get-Content -LiteralPath (Join-Path $projectRoot 'Directory.Build.props') -Raw)).Project.PropertyGroup.Version
 }
-if ($ReleaseVersion -notmatch '^\d+\.\d+\.\d+$')
-{
-    throw 'ReleaseVersion must be x.y.z.'
-}
+. (Join-Path $PSScriptRoot 'Release-Version.ps1')
+$releaseIdentity = Get-StudioXReleaseVersion $ReleaseVersion
 if (!$OutputDirectory)
 {
     $OutputDirectory = Join-Path $projectRoot "artifacts/releases/$ReleaseVersion"
@@ -40,7 +38,7 @@ if (!$PayloadDirectory)
 $payload = [IO.Path]::GetFullPath($PayloadDirectory)
 $release = Get-Content -LiteralPath (Join-Path $payload 'release.json') -Raw | ConvertFrom-Json
 $executable = Join-Path $payload 'MCU StudioX.exe'
-if ($release.version -ne $ReleaseVersion -or (Get-Item -LiteralPath $executable).VersionInfo.FileVersion -ne "$ReleaseVersion.0")
+if ($release.version -ne $ReleaseVersion -or (Get-Item -LiteralPath $executable).VersionInfo.FileVersion -ne $releaseIdentity.FileVersion)
 {
     throw 'Payload and installer versions do not match.'
 }
@@ -79,7 +77,7 @@ $hashes | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath (Join-Path $payload
 $script = Join-Path $PSScriptRoot 'installer/StudioX.iss'
 $log = Join-Path $output 'installer-build.log'
 [IO.File]::WriteAllText($log, '')
-& $CompilerPath --quiet-progress "--define=AppVersion=$ReleaseVersion" "--define=PayloadDirectory=$payload" "--output-dir=$output" $script 2>&1 | Tee-Object -FilePath $log
+& $CompilerPath --quiet-progress "--define=AppVersion=$ReleaseVersion" "--define=AppFileVersion=$($releaseIdentity.FileVersion)" "--define=PayloadDirectory=$payload" "--output-dir=$output" $script 2>&1 | Tee-Object -FilePath $log
 if ($LASTEXITCODE -ne 0)
 {
     throw 'Installer compilation failed; see installer-build.log.'

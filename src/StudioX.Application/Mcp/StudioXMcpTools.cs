@@ -9,16 +9,28 @@ public sealed class StudioXMcpTools : IAsyncDisposable
 {
     private readonly McpSessionContext context;
     private readonly IReadOnlyList<StudioXMcpToolProvider> providers;
+    private readonly IStudioXMcpAuthorizer authorizer;
+    private readonly Func<Task<bool>>? hasUnsavedDocuments;
+    private readonly bool includePlugins;
+    private readonly SemaphoreSlim pluginGate = new(1, 1);
+    private PluginMcpIntegration? plugins;
     private int disposed;
 
     public StudioXMcpTools(WorkbenchService services, string project, IStudioXMcpAuthorizer authorizer,
-        Func<Task<bool>>? hasUnsavedDocuments = null, WebResearchService? webResearch = null)
+        Func<Task<bool>>? hasUnsavedDocuments = null, WebResearchService? webResearch = null,
+        bool includePlugins = true)
     {
+        this.authorizer = authorizer;
+        this.hasUnsavedDocuments = hasUnsavedDocuments;
+        this.includePlugins = includePlugins;
         context = new McpSessionContext(services, project, authorizer, hasUnsavedDocuments, webResearch);
         providers =
         [
             new WorkspaceMcpTools(context),
             new BuildMcpTools(context),
+            new Ag32PinMappingMcpTools(context),
+            new HdlSchematicMcpTools(context),
+            new HdlWorkflowMcpTools(context),
             new GitMcpTools(context),
             new ExternalProjectMcpTools(context),
             new ExternalProjectCopyMcpTools(context),
@@ -32,12 +44,32 @@ public sealed class StudioXMcpTools : IAsyncDisposable
             new PdfMcpTools(context),
             new QmdMcpTools(context),
             new MicrochipMcpTools(context),
+            new EspressifKnowledgeMcpTools(context),
             new WebMcpTools(context)
         ];
     }
 
     public WorkbenchService Services => context.Services;
     public string Project => context.Project;
+
+    public async Task InitializePluginsAsync(CancellationToken token = default)
+    {
+        if (!includePlugins)
+        {
+            return;
+        }
+        await pluginGate.WaitAsync(token).ConfigureAwait(false);
+        try
+        {
+            ObjectDisposedException.ThrowIf(Volatile.Read(ref disposed) != 0, this);
+            plugins ??= await PluginMcpIntegration.CreateAsync(Services, Project, authorizer,
+                hasUnsavedDocuments, token).ConfigureAwait(false);
+        }
+        finally
+        {
+            pluginGate.Release();
+        }
+    }
 
     public IReadOnlyList<McpServerTool> CreateToolCollection()
     {
@@ -46,6 +78,7 @@ public sealed class StudioXMcpTools : IAsyncDisposable
             .GetMethods(BindingFlags.Instance | BindingFlags.Public)
             .Where(method => method.GetCustomAttribute<McpServerToolAttribute>() is not null)
             .Select(method => WrapToolErrors(provider, method)))
+            .Concat(plugins?.Tools ?? [])
             .OrderBy(tool => tool.ProtocolTool.Name, StringComparer.Ordinal)
             .ToArray();
         // 名称重复会使两个客户端的发现结果不确定，必须在启动会话前拒绝。
@@ -79,6 +112,22 @@ public sealed class StudioXMcpTools : IAsyncDisposable
             return;
         }
         List<Exception> errors = [];
+        await pluginGate.WaitAsync().ConfigureAwait(false);
+        try
+        {
+            if (plugins is not null)
+            {
+                await plugins.DisposeAsync().ConfigureAwait(false);
+            }
+        }
+        catch (Exception error)
+        {
+            errors.Add(error);
+        }
+        finally
+        {
+            pluginGate.Release();
+        }
         foreach (var provider in providers.OfType<IAsyncDisposable>())
         {
             try

@@ -1,0 +1,15 @@
+{
+  "formatVersion": 1,
+  "apiVersion": 2,
+  "id": "sample.rust-overview",
+  "version": "1.0.0",
+  "displayName": "Rust 工程概览",
+  "kind": "process",
+  "entryAssembly": "",
+  "entryType": "",
+  "entryExecutable": "studiox-rust-overview.exe",
+  "arguments": [],
+  "capabilities": ["commands", "panels", "agentTools"],
+  "hostTools": ["project_info"],
+  "sha256": {}
+}

@@ -1,0 +1,254 @@
+<UserControl
+  x:Class="StudioX.Desktop.Ag32PinPlanningView"
+  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:local="clr-namespace:StudioX.Desktop">
+  <StackPanel>
+    <TextBlock
+      Text="图形化引脚与时钟配置"
+      FontSize="20"
+      FontWeight="SemiBold"
+      Margin="0,8,0,8" />
+    <TextBlock
+      x:Name="PackageText"
+      Foreground="{DynamicResource Muted}"
+      TextWrapping="Wrap"
+      Margin="0,0,0,12" />
+    <WrapPanel>
+      <Button
+        x:Name="SavePlanButton"
+        Content="保存并生成约束"
+        Style="{DynamicResource PrimaryButton}"
+        Click="Save_Click"
+        Margin="0,0,8,12" />
+      <Button
+        x:Name="ReloadPlanButton"
+        Content="重新读取 .ve"
+        ToolTip="放弃尚未保存的图形配置，重新读取磁盘文件"
+        Click="Reload_Click"
+        Margin="0,0,0,12" />
+    </WrapPanel>
+    <TabControl>
+      <TabItem
+        Header="引脚分配">
+        <Grid
+          Margin="8,12">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition
+              Width="3*" />
+            <ColumnDefinition
+              Width="2*" />
+          </Grid.ColumnDefinitions>
+          <StackPanel>
+            <ScrollViewer
+              Height="580"
+              HorizontalScrollBarVisibility="Auto"
+              VerticalScrollBarVisibility="Auto">
+              <Viewbox
+                Height="{Binding Value, ElementName=DiagramZoom}"
+                Width="{Binding Value, ElementName=DiagramZoom}"
+                Stretch="Uniform">
+                <local:Ag32PackageDiagram
+                  x:Name="PackageDiagram" />
+              </Viewbox>
+            </ScrollViewer>
+            <DockPanel
+              Margin="0,8,12,0">
+              <TextBlock
+                Text="封装图缩放"
+                VerticalAlignment="Center"
+                Margin="0,0,12,0" />
+              <Slider
+                x:Name="DiagramZoom"
+                Minimum="400"
+                Maximum="1200"
+                Value="560"
+                SmallChange="30"
+                LargeChange="120"
+                ToolTip="放大后可滚动查看引脚；左键点击引脚打开功能菜单" />
+            </DockPanel>
+            <TextBlock
+              Text="顶视示意图 · 灰色：空闲 · 绿色：已分配 · 红色：冲突 · 蓝色边框：当前选择"
+              Foreground="{DynamicResource Muted}"
+              TextWrapping="Wrap"
+              Margin="0,8,12,0" />
+          </StackPanel>
+          <StackPanel
+            Grid.Column="1"
+            Margin="16,0,0,0">
+            <TextBlock
+              Text="当前引脚"
+              FontWeight="SemiBold" />
+            <TextBlock
+              x:Name="PinDetails"
+              Foreground="{DynamicResource Muted}"
+              TextWrapping="Wrap"
+              Margin="0,8,0,10" />
+            <TextBlock
+              Text="左键点击封装引脚，从菜单选择功能或清除分配。菜单内可搜索 GPIO、UART、SPI 等功能。"
+              Foreground="{DynamicResource Muted}"
+              TextWrapping="Wrap"
+              Margin="0,0,0,18" />
+            <TextBlock
+              x:Name="ConflictStatus"
+              Visibility="Collapsed"
+              Foreground="{DynamicResource ErrorColor}"
+              TextWrapping="Wrap"
+              Margin="0,4,0,10" />
+            <TextBlock
+              Text="已分配功能"
+              FontWeight="SemiBold"
+              Margin="0,0,0,8" />
+            <DataGrid
+              x:Name="AssignmentsGrid"
+              AutoGenerateColumns="False"
+              IsReadOnly="True"
+              CanUserAddRows="False"
+              SelectionMode="Single"
+              SelectionChanged="Assignment_Changed"
+              Background="Transparent"
+              Foreground="{DynamicResource Text}"
+              BorderBrush="{DynamicResource Border}"
+              RowBackground="Transparent"
+              AlternatingRowBackground="{DynamicResource Surface}"
+              GridLinesVisibility="None"
+              HeadersVisibility="Column"
+              MinHeight="150"
+              MaxHeight="250"
+              Margin="0,4,0,0">
+              <DataGrid.ColumnHeaderStyle>
+                <Style
+                  TargetType="DataGridColumnHeader">
+                  <Setter
+                    Property="Background"
+                    Value="{DynamicResource Panel}" />
+                  <Setter
+                    Property="Foreground"
+                    Value="{DynamicResource Text}" />
+                  <Setter
+                    Property="Padding"
+                    Value="8,6" />
+                  <Setter
+                    Property="BorderBrush"
+                    Value="{DynamicResource Border}" />
+                  <Setter
+                    Property="BorderThickness"
+                    Value="0,0,0,1" />
+                </Style>
+              </DataGrid.ColumnHeaderStyle>
+              <DataGrid.CellStyle>
+                <Style
+                  TargetType="DataGridCell">
+                  <Setter
+                    Property="Foreground"
+                    Value="{DynamicResource Text}" />
+                  <Setter
+                    Property="Background"
+                    Value="Transparent" />
+                  <Setter
+                    Property="Padding"
+                    Value="8,4" />
+                  <Setter
+                    Property="BorderThickness"
+                    Value="0" />
+                  <Style.Triggers>
+                    <Trigger
+                      Property="IsSelected"
+                      Value="True">
+                      <Setter
+                        Property="Background"
+                        Value="{DynamicResource Accent}" />
+                      <Setter
+                        Property="Foreground"
+                        Value="{DynamicResource OnAccent}" />
+                    </Trigger>
+                  </Style.Triggers>
+                </Style>
+              </DataGrid.CellStyle>
+              <DataGrid.Columns>
+                <DataGridTextColumn
+                  Header="内部功能"
+                  Binding="{Binding Function}"
+                  Width="*" />
+                <DataGridTextColumn
+                  Header="封装脚"
+                  Binding="{Binding PinNumber}"
+                  Width="70" />
+              </DataGrid.Columns>
+            </DataGrid>
+          </StackPanel>
+        </Grid>
+      </TabItem>
+      <TabItem
+        Header="时钟 / 时序">
+        <StackPanel
+          Margin="16">
+          <TextBlock
+            Text="单位为 MHz。留空表示保留厂商的未显式配置状态；实际频率、PLL 与时序由锁定的转换器校验。配置必须与板上晶振及 C 固件一致。"
+            TextWrapping="Wrap"
+            Foreground="{DynamicResource Muted}"
+            Margin="0,0,0,16" />
+          <TextBlock
+            Text="HSECLK · 外部输入时钟" />
+          <TextBox
+            x:Name="HseClock"
+            TextChanged="Clock_Changed"
+            Margin="0,6,0,12" />
+          <TextBlock
+            Text="SYSCLK · 系统时钟" />
+          <TextBox
+            x:Name="SysClock"
+            TextChanged="Clock_Changed"
+            Margin="0,6,0,12" />
+          <TextBlock
+            Text="BUSCLK · 总线时钟" />
+          <TextBox
+            x:Name="BusClock"
+            TextChanged="Clock_Changed"
+            Margin="0,6,0,12" />
+          <TextBlock
+            Text="保存时生成厂商 VEX 引脚约束数据与 SDC 输入时钟约束。顶部编译会生成最终 ASF、映射镜像，并核对实际 PLL 和时钟连接。"
+            TextWrapping="Wrap"
+            Foreground="{DynamicResource Muted}" />
+        </StackPanel>
+      </TabItem>
+      <TabItem
+        Header="约束文件">
+        <StackPanel
+          Margin="16">
+          <TextBlock
+            Text="先保存并生成约束，再查看实际厂商输出。图形配置写入原 .ve，已有注释与未修改的配置由服务保留。"
+            TextWrapping="Wrap"
+            Foreground="{DynamicResource Muted}"
+            Margin="0,0,0,12" />
+          <TextBox
+            x:Name="ConstraintDetails"
+            IsReadOnly="True"
+            TextWrapping="Wrap"
+            Background="Transparent"
+            BorderThickness="0"
+            MinHeight="80" />
+          <WrapPanel>
+            <Button
+              x:Name="VexButton"
+              Content="打开引脚约束数据"
+              IsEnabled="False"
+              Click="Vex_Click"
+              Margin="0,8,8,8" />
+            <Button
+              x:Name="SdcButton"
+              Content="打开时序约束 SDC"
+              IsEnabled="False"
+              Click="Sdc_Click"
+              Margin="0,8,0,8" />
+          </WrapPanel>
+        </StackPanel>
+      </TabItem>
+    </TabControl>
+    <TextBlock
+      x:Name="PlannerStatus"
+      TextWrapping="Wrap"
+      Foreground="{DynamicResource Muted}"
+      Margin="0,12,0,8" />
+  </StackPanel>
+</UserControl>

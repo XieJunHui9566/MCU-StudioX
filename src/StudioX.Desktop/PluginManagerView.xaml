@@ -1,0 +1,154 @@
+<UserControl
+  x:Class="StudioX.Desktop.PluginManagerView"
+  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  Background="Transparent">
+  <StackPanel>
+    <TextBlock
+      Text="工作台插件"
+      FontSize="21"
+      FontWeight="SemiBold" />
+    <TextBlock
+      Text="插件具有当前用户权限。导入只安装；点击启用即允许运行插件。工程写入、构建和设备操作仍需逐次确认。"
+      TextWrapping="Wrap"
+      Foreground="{DynamicResource Muted}"
+      Margin="0,8,0,14" />
+    <WrapPanel>
+      <Button
+        x:Name="ImportButton"
+        Content="导入 .studioxplugin…"
+        Click="Import_Click"
+        Margin="0,0,8,8" />
+      <Button
+        x:Name="RefreshButton"
+        Content="刷新"
+        Click="Refresh_Click"
+        Margin="0,0,8,8" />
+      <Button
+        x:Name="CancelButton"
+        Content="取消操作"
+        Click="Cancel_Click"
+        IsEnabled="False"
+        Margin="0,0,8,8" />
+    </WrapPanel>
+    <ItemsControl
+      x:Name="CatalogList">
+      <ItemsControl.ItemTemplate>
+        <DataTemplate>
+          <Border
+            Background="Transparent"
+            BorderBrush="{DynamicResource Border}"
+            BorderThickness="0,0,0,1"
+            Padding="0,12">
+            <Grid>
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition
+                  Width="*" />
+                <ColumnDefinition
+                  Width="Auto" />
+              </Grid.ColumnDefinitions>
+              <StackPanel
+                Margin="0,0,12,0">
+                <TextBlock
+                  Text="{Binding DisplayName}"
+                  FontWeight="SemiBold"
+                  TextWrapping="Wrap" />
+                <TextBlock
+                  Text="{Binding IdentityText}"
+                  Foreground="{DynamicResource Muted}"
+                  FontSize="11"
+                  TextWrapping="Wrap"
+                  Margin="0,5,0,0" />
+                <TextBlock
+                  Text="{Binding CapabilityText}"
+                  Foreground="{DynamicResource Muted}"
+                  FontSize="11"
+                  TextWrapping="Wrap"
+                  Margin="0,3,0,0" />
+                <TextBlock
+                  Text="{Binding StateText}"
+                  Foreground="{DynamicResource Accent}"
+                  FontSize="12"
+                  TextWrapping="Wrap"
+                  Margin="0,5,0,0" />
+              </StackPanel>
+              <StackPanel
+                Grid.Column="1"
+                VerticalAlignment="Center">
+                <Button
+                  Content="{Binding ToggleText}"
+                  IsEnabled="{Binding CanToggle}"
+                  Tag="{Binding}"
+                  Click="Toggle_Click"
+                  Margin="0,0,0,6" />
+                <Button
+                  Content="卸载"
+                  IsEnabled="{Binding CanUninstall}"
+                  Tag="{Binding}"
+                  Click="Uninstall_Click" />
+              </StackPanel>
+            </Grid>
+          </Border>
+        </DataTemplate>
+      </ItemsControl.ItemTemplate>
+    </ItemsControl>
+    <TextBlock
+      x:Name="EmptyHint"
+      Text="未安装工作台插件。"
+      Foreground="{DynamicResource Muted}"
+      Margin="0,8,0,0" />
+    <TextBlock
+      x:Name="OperationStatus"
+      Foreground="{DynamicResource Muted}"
+      TextWrapping="Wrap"
+      Margin="0,10,0,0" />
+    <StackPanel
+      x:Name="ApprovalHost"
+      Margin="0,10,0,0" />
+    <TextBlock
+      Text="插件命令"
+      Style="{DynamicResource SectionLabel}"
+      Margin="0,20,0,8" />
+    <TextBox
+      x:Name="CommandFilter"
+      ToolTip="筛选插件命令 · Ctrl+Shift+P"
+      MaxLength="120"
+      TextChanged="CommandFilter_TextChanged"
+      Margin="0,0,0,8" />
+    <WrapPanel
+      x:Name="CommandsHost" />
+    <WrapPanel
+      Margin="0,4,0,4">
+      <TextBlock
+        x:Name="CommandStatus"
+        Foreground="{DynamicResource Muted}"
+        VerticalAlignment="Center"
+        Margin="0,0,10,0" />
+      <Button
+        x:Name="CancelCommandButton"
+        Content="取消插件命令"
+        Click="CancelCommand_Click"
+        Visibility="Collapsed" />
+    </WrapPanel>
+    <TextBlock
+      x:Name="WorkspaceHint"
+      Text="打开工程后加载已启用插件的命令与面板。"
+      Foreground="{DynamicResource Muted}"
+      TextWrapping="Wrap"
+      Margin="0,6,0,8" />
+    <StackPanel
+      x:Name="PanelsHost" />
+    <Expander
+      Header="插件日志与诊断"
+      Margin="0,16,0,0">
+      <TextBox
+        x:Name="DiagnosticLog"
+        IsReadOnly="True"
+        Background="Transparent"
+        MaxHeight="220"
+        MinHeight="70"
+        TextWrapping="Wrap"
+        VerticalScrollBarVisibility="Auto" />
+    </Expander>
+  </StackPanel>
+</UserControl>

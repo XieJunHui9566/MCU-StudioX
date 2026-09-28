@@ -101,6 +101,47 @@
         HorizontalAlignment="Left"
         Margin="0,12,0,0" />
       <TextBlock
+        Text="乐鑫官方资料"
+        FontSize="16"
+        FontWeight="SemiBold"
+        Margin="0,22,0,0" />
+      <TextBlock
+        Text="组件库可直接查询；文档库需在浏览器登录 GitHub 或微信。文档库主要提供最新版资料，Agent 会核对工程的 IDF 版本。"
+        Foreground="{DynamicResource Muted}"
+        FontSize="11"
+        TextWrapping="Wrap"
+        Margin="0,7,0,0" />
+      <TextBlock
+        x:Name="EspressifState"
+        Foreground="{DynamicResource Muted}"
+        FontSize="11"
+        TextWrapping="Wrap"
+        Margin="0,10,0,0" />
+      <WrapPanel
+        Margin="0,12,0,0">
+        <Button
+          x:Name="ConnectEspressifButton"
+          Content="连接乐鑫文档"
+          Click="ConnectEspressif_Click"
+          Margin="0,0,8,8" />
+        <Button
+          x:Name="DisconnectEspressifButton"
+          Content="断开连接"
+          Click="DisconnectEspressif_Click"
+          Margin="0,0,8,8" />
+        <Button
+          x:Name="CancelEspressifButton"
+          Content="取消连接"
+          Click="CancelEspressif_Click"
+          Visibility="Collapsed"
+          Margin="0,0,0,8" />
+      </WrapPanel>
+      <TextBlock
+        Text="授权凭据仅保存在当前 Windows 用户的加密存储中。查询只发送公开检索词，不发送工程源码或模型 API Key。"
+        Foreground="{DynamicResource Muted}"
+        FontSize="11"
+        TextWrapping="Wrap" />
+      <TextBlock
         x:Name="ErrorText"
         Foreground="#E87979"
         TextWrapping="Wrap"

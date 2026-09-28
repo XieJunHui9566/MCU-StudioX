@@ -374,18 +374,13 @@
                 IsEnabled="False"
                 Click="DownloadSettings_Click" />
               <MenuItem
-                x:Name="Ag32LogicMenu"
-                Header="AG32 逻辑模式…"
-                Visibility="Collapsed"
-                Click="Ag32Logic_Click" />
-              <MenuItem
                 x:Name="BuildLogicButton"
-                Header="AG32 逻辑构建指引…"
+                Header="编译 AG32 固件与逻辑"
                 Visibility="Collapsed"
                 Click="BuildLogic_Click" />
               <MenuItem
                 x:Name="DownloadLogicButton"
-                Header="AG32 逻辑下载指引…"
+                Header="下载 AG32 固件与逻辑"
                 Visibility="Collapsed"
                 Click="DownloadLogic_Click" />
             </MenuItem>
@@ -397,9 +392,6 @@
                 Header="启动 / 结束调试"
                 InputGestureText="Ctrl+F5"
                 Click="DebugStart_Click" />
-              <MenuItem
-                Header="打开 F407 离线调试示例"
-                Click="DebugExample_Click" />
               <Separator />
               <MenuItem
                 x:Name="DebugContinueMenu"
@@ -626,7 +618,7 @@
                 Margin="10,0,7,0" />
               <ComboBox
                 x:Name="DownloadProbePicker"
-                Width="174"
+                Width="210"
                 Height="28"
                 MinHeight="28"
                 Padding="8,3"
@@ -700,6 +692,10 @@
                     VerticalAlignment="Center" />
                 </StackPanel>
               </Button>
+              <WrapPanel
+                x:Name="PluginToolbar"
+                VerticalAlignment="Center"
+                Margin="8,0,0,0" />
             </StackPanel>
           </DockPanel>
         </Border>
@@ -927,6 +923,16 @@
                   Click="DevicesAndTemplates_Click">
                   <local:Icon
                     Kind="chip" />
+                </Button>
+                <Button
+                  x:Name="Ag32PinMappingRailButton"
+                  Style="{StaticResource RailButton}"
+                  ToolTip="AG32 引脚分配"
+                  AutomationProperties.Name="AG32 引脚分配"
+                  Visibility="Collapsed"
+                  Click="Ag32PinMappingRail_Click">
+                  <local:Icon
+                    Kind="pin-map" />
                 </Button>
                 <Button
                   Style="{StaticResource RailButton}"
@@ -1496,7 +1502,7 @@
                                 <TextBlock
                                   Text="扩展工作台" />
                                 <TextBlock
-                                  Text="管理数据解码插件与内置工具"
+                                  Text="管理工作台插件、AI 技能与内置工具"
                                   Foreground="{DynamicResource Muted}"
                                   FontSize="12"
                                   Margin="0,5,0,0" />
@@ -2668,7 +2674,7 @@
                               Foreground="{DynamicResource Muted}"
                               Margin="22,7,0,0" />
                             <TextBlock
-                              Text="需要 Quartus II Full 与 Supra（Supra 通常随 AgRV SDK 提供）。先用 AgRV SDK 的 Prepare LOGIC 从 .ve 生成顶层和工程，再由 Quartus II 编译成 .vo、Supra 转换为逻辑 .bin。逻辑下载需对应厂商工具与烧录器，且与 MCU 固件分开。"
+                              Text="顶部编译会联合生成 MCU 固件与 FPGA 位流，使用内置原生综合和 Supra 布局布线工具。Supra 需配置本机有效许可。下载前核对两段镜像；可在 AG32 页面配置源文件、SDC 和 RTL 波形仿真。"
                               TextWrapping="Wrap"
                               Foreground="{DynamicResource Muted}"
                               Margin="22,7,0,0"
@@ -2793,6 +2799,31 @@
                 </Grid>
               </TabItem>
               <TabItem
+                Header="AG32 引脚映射"
+                x:Name="Ag32PinMappingTab"
+                Visibility="Collapsed">
+                <Border
+                  Background="{DynamicResource EditorSurface}">
+                  <local:Ag32PinMappingView
+                    WorkflowRequested="OpenHdlWorkflow_Click"
+                    SchematicRequested="OpenHdlSchematic_Click"
+                    x:Name="Ag32PinMapping"
+                    EnableRequested="EnableAg32PinMapping_Click"
+                    OpenRequested="OpenAg32PinMapping_Click"
+                    LicenseRequested="ConfigureAg32PinMappingLicense_Click"
+                    DownloadToolsRequested="OpenAg32SupraDownload_Click"
+                    LicenseGuideRequested="OpenAg32SupraLicenseGuide_Click" />
+                </Border>
+              </TabItem>
+              <TabItem Header="Verilog 电路图" x:Name="HdlSchematicTab" Visibility="Collapsed">
+                <Border Background="{DynamicResource EditorSurface}">
+                  <local:HdlSchematicView x:Name="HdlSchematic" />
+                </Border>
+              </TabItem>
+              <TabItem Header="逻辑构建与仿真" x:Name="HdlWorkflowTab" Visibility="Collapsed">
+                <Border Background="{DynamicResource EditorSurface}"><local:HdlWorkflowView x:Name="HdlWorkflow" /></Border>
+              </TabItem>
+              <TabItem
                 Header="插件与工具集"
                 x:Name="ExtensionsTab"
                 Visibility="Collapsed">
@@ -2802,15 +2833,18 @@
                     VerticalScrollBarVisibility="Auto">
                     <StackPanel
                       Margin="32,28"
-                      MaxWidth="760">
+                      MaxWidth="1100">
                       <TextBlock
                         Text="插件与工具集"
                         FontSize="23"
                         FontWeight="SemiBold" />
                       <TextBlock
-                        Text="管理工作台的开发组件与数据解码扩展。"
+                        Text="管理工作台插件、AI 技能与内置开发工具。"
                         Foreground="{DynamicResource Muted}"
                         Margin="0,8,0,16" />
+                      <local:PluginManagerView
+                        x:Name="PluginManager"
+                        Margin="0,0,0,26" />
                       <TextBlock
                         Text="内置工具"
                         Style="{StaticResource SectionLabel}" />
@@ -2825,7 +2859,7 @@
                         MinHeight="80"
                         TextWrapping="Wrap" />
                       <TextBlock
-                        Text="工程按器件包自动选择工具集。F7 编译；支持下载的器件包可选择 ST-Link、CMSIS-DAP 或 J-Link。已收录的 STM32F1/F4 型号可选择 ST-Link 或 DAP-Link，通过 OpenOCD 调试。AG32VF303 新版包支持官方 AGM BLASTER；也可选择 F407 离线示例预览操作。"
+                        Text="工程按器件包自动选择工具集。F7 编译；支持下载的器件包可选择 ST-Link、CMSIS-DAP 或 J-Link。已收录的 STM32F1/F4 型号可选择 ST-Link 或 DAP-Link，通过 OpenOCD 调试。AG32 使用 DAP-Link 或 J-Link（V9 及以上）。"
                         TextWrapping="Wrap"
                         Foreground="{DynamicResource Muted}"
                         Margin="0,12,0,0" />

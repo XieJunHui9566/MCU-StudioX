@@ -32,6 +32,8 @@ internal sealed class WorkspaceMcpTools(McpSessionContext context) : StudioXMcpT
             manifest.CompilerId,
             manifest.ToolsetId,
             manifest.ToolsetVersion,
+            ag32PinMapping = manifest.PinMapping,
+            ag32CustomLogic = manifest.Logic,
             espressif = manifest.Espressif,
             // 模组存储与芯片目标分别记录，Agent 不能把通用 SoC 标识当成已选板卡的容量。
             espressifModule = manifest.Espressif is null ? null

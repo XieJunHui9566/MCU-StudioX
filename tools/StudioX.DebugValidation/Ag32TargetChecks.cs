@@ -49,7 +49,8 @@ internal static class Ag32TargetChecks
                 Check(session.Watches.SequenceEqual(["$pc"]), "AG32 default watch avoids F407 simulation symbols");
             }
             var config = (await downloads.ConfigurationAsync(project))!;
-            Check(config.Options.ProbeId == "agm-blaster" && config.OpenOcd.Probes.Count == 1 && config.OpenOcd.ApplicationFlashBytes == 0x27000, "Official probe and app boundary");
+            Check(config.Options.ProbeId == "cmsis-dap" && config.OpenOcd.Probes.Select(probe => probe.Id).SequenceEqual(["cmsis-dap", "jlink"]) &&
+                config.OpenOcd.ApplicationFlashBytes == 0x27000, "DAP / J-Link probes and app boundary");
             Check((await builds.BuildAsync(project)).Success, "AG32 build: " + template.Id);
             var prepared = await HardwareDebugPreparer.PrepareAsync(project, downloads);
             var target = OpenOcdDebugPlanner.ResolveTarget(config);
@@ -59,7 +60,11 @@ internal static class Ag32TargetChecks
             Check(plan.OpenOcdArguments.Any(c => c.Contains("studiox_ag32_detach", StringComparison.Ordinal)) && plan.OpenOcdArguments.All(c => !c.Contains("cortex_m", StringComparison.Ordinal)), "No Cortex-M commands sent to RISC-V");
             Check(plan.InitializeCommands.Any(c => c.Contains("verify_image", StringComparison.Ordinal)) && plan.InitializeCommands.All(c => !c.Contains("target-download", StringComparison.Ordinal)), "Verify before attaching without implicit download");
             Check(plan.OpenOcdArguments.Contains("$_TARGETNAME configure -work-area-size 0 -work-area-backup 1"), "No live RAM checksum workspace");
-            foreach (var probe in new[] { "cmsis-dap", "stlink", "jlink" })
+            foreach (var probe in new[] { "agm-blaster", "cmsis-dap", "jlink" })
+            {
+                Check(OpenOcdDebugPlanner.ResolveProbe(config with { Options = new(probe, 1000) }).Transport == "swd", "AG32 SWD probe accepted: " + probe);
+            }
+            foreach (var probe in new[] { "stlink" })
             {
                 await Reject(() => { OpenOcdDebugPlanner.ResolveProbe(config with { Options = new(probe, 1000) }); return Task.CompletedTask; }, "DEBUG_PROBE");
             }
