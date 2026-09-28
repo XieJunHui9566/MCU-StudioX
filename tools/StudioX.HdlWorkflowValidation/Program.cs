@@ -21,6 +21,11 @@ foreach (var file in Directory.EnumerateFiles(Path.Combine(original, "device"), 
     Directory.CreateDirectory(Path.GetDirectoryName(target)!);
     File.Copy(file, target, true);
 }
+if (args.Length == 4 && args[3] == "--gpio-electrical")
+{
+    // 在隔离夹具的自定义逻辑旁增加独立 GPIO，验证两类逻辑共享的电气约束流程。
+    await File.AppendAllTextAsync(Path.Combine(root, "logic/pins.ve"), "\nGPIO9_0 PIN_2 #GPIO_EXT #@StudioX:GPIO pull=UP output=OPEN_DRAIN\n");
+}
 var catalog = new ToolsetCatalog(Path.Combine(repository, "artifacts/tool-runtime/toolsets"));
 var native = new Ag32NativeBuildService(catalog);
 var settings = new Ag32NativeBuildSettings(1, ["logic/user_logic.v", "logic/logic_unit.v"], ["logic"], [], ["logic/user.sdc"]);

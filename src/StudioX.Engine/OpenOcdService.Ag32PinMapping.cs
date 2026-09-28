@@ -13,7 +13,7 @@ public sealed partial class OpenOcdService
             return null;
         }
         RequirePinMappingTarget(configuration);
-        _ = Ag32PinMappingTargetScript.RequireCompatible(root);
+        _ = Ag32PinMappingTargetScript.RequireCompatible(root, configuration.OpenOcd.TargetScript);
         var mapping = project.Logic is not null
             ? await new Hdl.Ag32NativeBuildService(catalog).RequireImageAsync(root, token)
             : await new Ag32PinMappingBuildService(catalog).RequireImageAsync(root, token);
@@ -42,7 +42,7 @@ public sealed partial class OpenOcdService
         {
             throw new StudioXException("AG32_MAPPING_LAYOUT", "AG32 下载布局必须为前 156 KiB MCU 应用和末尾 100 KiB 基础映射。");
         }
-        var target = Ag32PinMappingTargetScript.RequireCompatible(projectDirectory);
+        var target = Ag32PinMappingTargetScript.RequireCompatible(projectDirectory, configuration.OpenOcd.TargetScript);
         var arguments = CreateArguments(projectDirectory, configuration with
         {
             TargetScriptText = target
@@ -68,7 +68,8 @@ public sealed partial class OpenOcdService
     {
         if (!Ag32ProbeConfiguration.IsSupported(configuration.Device) || configuration.Device.FlashOrigin != 0x80000000 ||
             configuration.Device.FlashBytes != 0x40000 || configuration.OpenOcd.ApplicationFlashBytes != 0x27000 ||
-            configuration.TargetScriptText is not null || configuration.OpenOcd.TargetScript != "debug/ag32vf303.cfg" ||
+            configuration.TargetScriptText is not null || !Ag32PinMappingTargetScript.IsSupportedPath(configuration.OpenOcd.TargetScript) ||
+            configuration.OpenOcd.TargetScript != configuration.Device.OpenOcd!.TargetScript ||
             configuration.OpenOcd.Probes.Count is < 1 or > 2 || !configuration.OpenOcd.Probes.All(Ag32ProbeConfiguration.IsSupportedProbe))
         {
             throw new StudioXException("AG32_MAPPING_TARGET", "基础映射下载需要匹配器件包的 AG32VF303CCT6、DAP / J-Link SWD 和固定未压缩逻辑布局。");

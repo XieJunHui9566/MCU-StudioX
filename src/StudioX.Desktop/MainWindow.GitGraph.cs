@@ -95,9 +95,14 @@ public partial class MainWindow
             WindowProjectTitle.Text = project.Name;
             Title = project.Name + " — MCU StudioX";
             PopulateProjectTree(project.Name);
-            BuildConfiguration.Text = project.Name + " · " + (project.CubeMx?.ConfigurePreset ?? project.CubeMx?.BuildType ?? "Debug");
-            DeviceLabel.Text = "器件 / " + project.DeviceId;
-            ToolsetLabel.Text = $"工具集 / {project.ToolsetId} {project.ToolsetVersion}";
+            BuildConfiguration.Text = project.Kind == ProjectKind.Zephyr
+                ? project.Name + " · Zephyr 实验模式"
+                : project.Name + " · " + (project.CubeMx?.ConfigurePreset ?? project.CubeMx?.BuildType ?? "Debug");
+            DeviceLabel.Text = project.Kind == ProjectKind.Zephyr
+                ? "板级目标 / " + project.Zephyr!.BoardTarget : "器件 / " + project.DeviceId;
+            ToolsetLabel.Text = project.Kind == ProjectKind.Zephyr
+                ? "Zephyr " + project.Zephyr!.ZephyrVersion + " · 实验模式"
+                : $"工具集 / {project.ToolsetId} {project.ToolsetVersion}";
             await services.Debugger.OpenProjectAsync(directory, token);
             if (!IsCurrentProject())
             {
@@ -132,7 +137,10 @@ public partial class MainWindow
             {
                 return;
             }
-            await services.Intelligence.StartAsync(directory, token);
+            if (currentProjectManifest?.Kind != ProjectKind.Zephyr)
+            {
+                await services.Intelligence.StartAsync(directory, token);
+            }
             if (!IsCurrentProject())
             {
                 return;

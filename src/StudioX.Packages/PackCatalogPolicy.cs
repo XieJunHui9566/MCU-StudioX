@@ -6,7 +6,8 @@ public static class PackCatalogPolicy
     public static bool Supersedes(PackManifest newer, PackManifest older) =>
         newer.Id == older.Id && PackVersion.Compare(newer.Version, older.Version) > 0 &&
         older.Devices.All(oldDevice => newer.Devices.Any(newDevice => newDevice.Id == oldDevice.Id &&
-            oldDevice.Templates.All(oldTemplate => newDevice.Templates.Any(newTemplate => newTemplate.Id == oldTemplate.Id))));
+            oldDevice.Templates.All(oldTemplate => newDevice.Templates.Any(newTemplate => newTemplate.Id == oldTemplate.Id ||
+                newTemplate.ReplacesTemplates?.Contains(oldTemplate.Id, StringComparer.Ordinal) == true))));
 
     public static IReadOnlyList<InstalledPack> SelectCurrentVersions(IEnumerable<InstalledPack> catalog)
     {

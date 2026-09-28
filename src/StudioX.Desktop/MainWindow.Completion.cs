@@ -46,12 +46,13 @@ public partial class MainWindow
         signatureWindow?.Close();
     }
     private bool IsCMakeDocument => activeDocument is not null && CMakeAssistanceService.Supports(activeDocument.RelativePath);
+    private bool IsPythonDocument => activeDocument is not null && PythonAssistanceService.Supports(activeDocument.RelativePath);
     private bool CanAssist => !closing && !SourceEditor.IsReadOnly && activeDocument is not null &&
-        (IsCMakeDocument || CodeIntelligenceService.Supports(activeDocument.RelativePath)) && WorkspaceTabs.SelectedItem == EditorTab;
+        (IsCMakeDocument || IsPythonDocument || CodeIntelligenceService.Supports(activeDocument.RelativePath)) && WorkspaceTabs.SelectedItem == EditorTab;
     private bool IsCodeContext()
     {
-        // CMake 引号内仍需补全变量和路径，由语言服务判断注释与括号字符串。
-        if (IsCMakeDocument)
+        // 离线语言服务根据完整缓冲区判断上下文，包含 CMake 引号和 Python 三引号。
+        if (IsCMakeDocument || IsPythonDocument)
         {
             return true;
         }
@@ -79,6 +80,22 @@ public partial class MainWindow
             return;
         }
         var character = e.Text[0];
+        if (IsPythonDocument)
+        {
+            if (character is '(' or ',' or ')' or '=')
+            {
+                QueueAssistance(signature: true);
+            }
+            else if (char.IsLetterOrDigit(character) || character is '_' or '.')
+            {
+                QueueAssistance(signature: false);
+            }
+            else
+            {
+                CloseCodeAssistance();
+            }
+            return;
+        }
         if (IsCMakeDocument)
         {
             if (character == ')')
@@ -158,7 +175,8 @@ public partial class MainWindow
             return;
         }
         var cmake = IsCMakeDocument;
-        if (!cmake && !services.Intelligence.IsReady)
+        var python = IsPythonDocument;
+        if (!cmake && !python && !services.Intelligence.IsReady)
         {
             if (manual)
             {
@@ -185,6 +203,29 @@ public partial class MainWindow
                 }
                 bool Current() => !cancellation.IsCancellationRequested && revision == assistRevision && CanAssist &&
                     SourceEditor.Document == document && SourceEditor.CaretOffset == offset && document.Text == text;
+                if (python)
+                {
+                    var result = await services.Python.GetAsync(path, text, offset, cancellation.Token, currentProjectManifest?.MicroPython);
+                    if (!Current())
+                    {
+                        return;
+                    }
+                    completionWindow?.Close();
+                    signatureWindow?.Close();
+                    if (!signature && result.Suggestions.Count > 0)
+                    {
+                        ShowCompletions(result.Suggestions, text, offset, result.Signature);
+                    }
+                    else if (result.Signature is not null)
+                    {
+                        ShowSignature(result.Signature);
+                    }
+                    else if (manual)
+                    {
+                        Status.Text = text.Length > 1024 * 1024 ? "Python 离线提示最多处理 1,048,576 个字符。" : "当前位置没有 Python 离线提示。";
+                    }
+                    return;
+                }
                 if (cmake)
                 {
                     var result = await services.CMake.GetAsync(projectDirectory, path, text, offset, cancellation.Token);

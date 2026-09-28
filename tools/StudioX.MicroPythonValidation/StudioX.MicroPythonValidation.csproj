@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/StudioX.Application/StudioX.Application.csproj" />
+    <None Include="device_worker.py" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

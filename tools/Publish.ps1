@@ -309,22 +309,29 @@ foreach ($catalog in @(@{ source = 'Puya-0.1.1'; vendor = 'Puya' }, @{ source = 
         }
     }
 }
-$rpIndex = Get-Content -LiteralPath (Join-Path $preparedPacks 'RP2350-0.1.0-verified/index.json') -Raw | ConvertFrom-Json
-$rpSource = Join-Path $preparedPacks "RP2350-0.1.0-verified/$($rpIndex.file)"
-if ([IO.Path]::GetFileName($rpIndex.file) -ne $rpIndex.file -or
-    [IO.Path]::GetExtension($rpIndex.file) -ne '.mcupack' -or
-    (Get-FileHash -LiteralPath $rpSource -Algorithm SHA256).Hash -ne $rpIndex.sha256)
+foreach ($rpCatalog in @(
+    @{ directory = 'RaspberryPi-MicroPython-0.2.0/RP2040-0.2.0'; id = 'raspberrypi.rp2040' },
+    @{ directory = 'RaspberryPi-MicroPython-0.2.0/RP2350-0.2.0'; id = 'raspberrypi.rp2350' }
+))
 {
-    throw 'RP2350 pack path or hash mismatch.'
-}
-$rpRelative = "Raspberry-Pi/$($rpIndex.file)"
-[IO.Directory]::CreateDirectory((Join-Path $packOutput 'Raspberry-Pi')) | Out-Null
-Copy-Item -LiteralPath $rpSource -Destination (Join-Path $packOutput $rpRelative)
-$releasedPacks += @{ file =$rpRelative;
-    id                    ='raspberrypi.rp2350';
-    version               ='0.1.0';
-    sha256                =$rpIndex.sha256;
-    devices               =$rpIndex.devices
+    $rpRoot = Join-Path $preparedPacks $rpCatalog.directory
+    $rpIndex = Get-Content -LiteralPath (Join-Path $rpRoot 'index.json') -Raw | ConvertFrom-Json
+    $rpSource = Join-Path $rpRoot $rpIndex.file
+    if ([IO.Path]::GetFileName($rpIndex.file) -ne $rpIndex.file -or
+        $rpIndex.file -ne "$($rpCatalog.id)-0.2.0.mcupack" -or
+        (Get-FileHash -LiteralPath $rpSource -Algorithm SHA256).Hash -ne $rpIndex.sha256)
+    {
+        throw "Raspberry Pi pack path or hash mismatch: $($rpCatalog.id)"
+    }
+    $rpRelative = "Raspberry-Pi/$($rpIndex.file)"
+    [IO.Directory]::CreateDirectory((Join-Path $packOutput 'Raspberry-Pi')) | Out-Null
+    Copy-Item -LiteralPath $rpSource -Destination (Join-Path $packOutput $rpRelative)
+    $releasedPacks += @{ file =$rpRelative;
+        id                    =$rpCatalog.id;
+        version               ='0.2.0';
+        sha256                =$rpIndex.sha256;
+        devices               =$rpIndex.devices
+    }
 }
 $releasedPacks | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath (Join-Path $packOutput 'index.json') -Encoding utf8
 $guide = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'installer/使用说明.txt') -Raw

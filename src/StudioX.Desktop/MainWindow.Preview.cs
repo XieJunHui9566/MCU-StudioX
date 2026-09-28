@@ -14,7 +14,7 @@ public partial class MainWindow
     {
         foreach (var dark in new[] { true, false })
         {
-            foreach (var language in new[] { "C", "C++", "CMake", "Assembly", "Linker", "JSON", "XML", "Verilog", "AGM Pin Map" })
+            foreach (var language in new[] { "C", "C++", "CMake", "Assembly", "Linker", "Devicetree", "JSON", "XML", "Verilog", "AGM Pin Map" })
             {
                 _ = CodeLanguage.Get(language, dark);
             }

@@ -10,7 +10,7 @@ using StudioX.Packages;
 public sealed class Ag32PinPlanService(ToolsetCatalog tools)
 {
     private static readonly ConcurrentDictionary<string, SemaphoreSlim> Gates = new(StringComparer.OrdinalIgnoreCase);
-    private static readonly HashSet<string> PreviewFiles = ["pins.ve", "pins.hx", "pins.vx", "pins.vex", "studiox-clocks.sdc", "converter.log"];
+    private static readonly HashSet<string> PreviewFiles = ["pins.ve", "pins.hx", "pins.vx", "pins.vex", "studiox-clocks.sdc", "studiox-gpio.asf", "converter.log"];
 
     public Task<Ag32PinPlanSnapshot> ReadAsync(string projectDirectory, CancellationToken cancellationToken = default)
         => Task.Run(async () => (await ReadContextAsync(Path.GetFullPath(projectDirectory), cancellationToken)).Snapshot, cancellationToken);
@@ -35,7 +35,6 @@ public sealed class Ag32PinPlanService(ToolsetCatalog tools)
         var gate = Gates.GetOrAdd(root, _ => new SemaphoreSlim(1, 1));
         await gate.WaitAsync(token);
         string? staging = null;
-        string? temporarySource = null;
         try
         {
             var context = await ReadContextAsync(root, token);
@@ -77,7 +76,8 @@ public sealed class Ag32PinPlanService(ToolsetCatalog tools)
                 throw new StudioXException("AG32_PIN_PLAN_CONVERTER", "厂商转换未通过，VE 保持不变：\n" + diagnostics);
             }
             VerifyVex(await File.ReadAllTextAsync(PathBoundary.Resolve(staging, "pins.vex"), token), assignments);
-            await Ag32PinMappingClockVerification.CreateSdcAsync(staging, token);
+            await Ag32GpioElectrical.CreateAsync(staging, source, token);
+            await Ag32PinMappingClockVerification.CreateSdcAsync(staging, token, basicMapping: true);
             // 复用工具锁的身份验证，防止验证期间被替换的转换器生成可接受的预览。
             var afterTools = await tools.ResolveAsync(context.Settings.ToolsetId, context.Settings.ToolsetVersion, context.Settings.CompilerId, token);
             if (afterTools.Fingerprint != context.Tools.Fingerprint)
@@ -92,13 +92,10 @@ public sealed class Ag32PinPlanService(ToolsetCatalog tools)
             {
                 throw new StudioXException("AG32_PIN_PLAN_STALE", "工程目标在保存期间发生变化，请重新加载图形规划。");
             }
-            temporarySource = PathBoundary.Resolve(root, snapshot.SourcePath + ".tmp-" + Guid.NewGuid().ToString("N"));
-            await File.WriteAllBytesAsync(temporarySource, source, token);
-            RequireHash(Hash(await ReadSourceAsync(path, token)), expectedHash);
-            // 相邻临时文件以一次替换提交，取消和转换失败不会留下半个配置文件。
-            token.ThrowIfCancellationRequested();
-            File.Move(temporarySource, path, overwrite: true);
-            temporarySource = null;
+            var previousSource = await ReadSourceAsync(path, token);
+            RequireHash(Hash(previousSource), expectedHash);
+            var generated = Ag32SystemSupport.Render(source, await File.ReadAllTextAsync(PathBoundary.Resolve(staging, "pins.hx"), token), snapshot.Functions);
+            await Ag32SystemSupport.WriteAsync(root, generated, snapshot.SourcePath, previousSource, source, token);
             var resultSnapshot = snapshot with
             {
                 SourceSha256 = Hash(source),
@@ -123,10 +120,6 @@ public sealed class Ag32PinPlanService(ToolsetCatalog tools)
         }
         finally
         {
-            if (temporarySource is not null && File.Exists(temporarySource))
-            {
-                File.Delete(temporarySource);
-            }
             if (staging is not null && Directory.Exists(staging))
             {
                 RemovePreview(staging);

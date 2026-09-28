@@ -1,0 +1,105 @@
+/*
+ * Copyright (c) 2020 Intel Corporation
+ *
+ * 正点原子探索者 V3.5 实验板：引脚取自文件名 V3.5、页内标注 V3.4 的原理图。
+ * 目前仅 LED0/PF9 在所测 V3.5 实板通过核验，其它连接仍待核对。
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/f4/stm32f407Xg.dtsi>
+#include <st/f4/stm32f407z(e-g)tx-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "Alientek Explorer STM32F407ZG V3.5 (Experimental)";
+	compatible = "alientek,explorer-stm32f407zg";
+
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,dtcm = &ccm0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+			gpios = <&gpiof 9 GPIO_ACTIVE_LOW>;
+			label = "LED0";
+		};
+
+		led1: led_1 {
+			gpios = <&gpiof 10 GPIO_ACTIVE_LOW>;
+			label = "LED1";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		key0: key_0 {
+			gpios = <&gpioe 4 GPIO_ACTIVE_LOW>;
+			label = "KEY0";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		key1: key_1 {
+			gpios = <&gpioe 3 GPIO_ACTIVE_LOW>;
+			label = "KEY1";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+
+		key2: key_2 {
+			gpios = <&gpioe 2 GPIO_ACTIVE_LOW>;
+			label = "KEY2";
+			zephyr,code = <INPUT_KEY_2>;
+		};
+
+		key_up: key_up {
+			gpios = <&gpioa 0 GPIO_ACTIVE_HIGH>;
+			label = "WK_UP";
+			zephyr,code = <INPUT_KEY_UP>;
+		};
+	};
+
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+		sw0 = &key0;
+		sw1 = &key1;
+		sw2 = &key2;
+		sw3 = &key_up;
+	};
+};
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(8)>;
+	status = "okay";
+};
+
+&pll {
+	div-m = <8>;
+	mul-n = <336>;
+	div-p = <2>;
+	div-q = <7>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(168)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <4>;
+	apb2-prescaler = <2>;
+};
+
+&usart1 {
+	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};

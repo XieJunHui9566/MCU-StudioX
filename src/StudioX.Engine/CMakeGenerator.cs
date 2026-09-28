@@ -117,6 +117,10 @@ public static class CMakeGenerator
             text.AppendLine("file(RELATIVE_PATH _studiox_linker \"${CMAKE_BINARY_DIR}\" " + Quote(DevicePath(d.LinkerScript), generated: true) + ")");
             Append("target_link_options", d.CpuFlags.Concat(d.LinkOptions).Select(Checked).Append("-T${_studiox_linker}"), generated: true);
         }
+        if (plan.Project.PinMapping is not null && Ag32DeviceCatalog.Find(plan.Project.DeviceId) is not null)
+        {
+            text.AppendLine(Ag32SystemSupport.CMakeBlock);
+        }
         return text.ToString();
 
         void Append(string command, IEnumerable<string> values, bool generated = false)

@@ -22,6 +22,8 @@ public partial class App : System.Windows.Application
         var editorPreview = e.Args is ["--preview-editor", _, _];
         var completionPreview = e.Args is ["--preview-completion", _, _];
         var cmakePreview = e.Args is ["--preview-cmake", _, _];
+        var pythonPreview = e.Args is ["--preview-python", _];
+        var microPythonPreview = e.Args is ["--preview-micropython", _, _, _];
         var documentsPreview = e.Args is ["--preview-documents", _, _];
         var vePreview = e.Args is ["--preview-ve", _, _, _];
         var ag32MappingPreview = e.Args is ["--preview-ag32-mapping", _, _];
@@ -46,9 +48,11 @@ public partial class App : System.Windows.Application
         var importPerformancePreview = e.Args is ["--preview-import-performance", _, _];
         var stm32Preview = e.Args is ["--preview-stm32", _, _] or ["--preview-stm32", _, _, _];
         var rp2350Preview = e.Args is ["--preview-rp2350", _, _];
+        var rp2040Preview = e.Args is ["--preview-rp2040", _, _];
         var lvglPreview = e.Args is ["--preview-lvgl-ui", _, _];
         var lvglSetupPreview = e.Args is ["--preview-lvgl-setup", _, _, _, _];
-        var anyPreview = hdlWorkflowPreview || hdlPreview || ag32MappingPreview || pluginsPreview || preview || windowLayoutPreview || editorPreview || completionPreview || cmakePreview || documentsPreview || vePreview || navigationPreview || explorerPreview || buildPreview || buildMemoryPreview || editingPreview || bracketsPreview || stm32Preview || rp2350Preview || projectPreview || cubeMxPreview || importPerformancePreview || downloadPreview || espressifPreview || espressifModulePreview || debugPreview || rtosPreview || packCatalogPreview || breakpointsPreview || lvglPreview || lvglSetupPreview;
+        var zephyrDevicetreePreview = e.Args is ["--preview-zephyr-devicetree", _, _];
+        var anyPreview = microPythonPreview || pythonPreview || hdlWorkflowPreview || hdlPreview || ag32MappingPreview || pluginsPreview || preview || windowLayoutPreview || editorPreview || completionPreview || cmakePreview || documentsPreview || vePreview || navigationPreview || explorerPreview || buildPreview || buildMemoryPreview || editingPreview || bracketsPreview || stm32Preview || rp2350Preview || rp2040Preview || projectPreview || cubeMxPreview || importPerformancePreview || downloadPreview || espressifPreview || espressifModulePreview || debugPreview || rtosPreview || packCatalogPreview || breakpointsPreview || lvglPreview || lvglSetupPreview || zephyrDevicetreePreview;
         var data = (showDebugDemo || showBreakpointsDemo) && e.Args.Length == 3 ? Path.GetFullPath(e.Args[2]) : smoke || anyPreview ? Path.Combine(Path.GetFullPath(e.Args[1]), "user-data") :
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MCUStudioX");
         var services = new WorkbenchService(Path.Combine(AppContext.BaseDirectory, "runtime"), data);
@@ -161,6 +165,10 @@ public partial class App : System.Windows.Application
                 {
                     await window.RenderRp2350PreviewAsync(directory, Path.GetFullPath(e.Args[2]));
                 }
+                else if (rp2040Preview)
+                {
+                    await window.RenderRp2040PreviewAsync(directory, Path.GetFullPath(e.Args[2]));
+                }
                 else if (buildPreview)
                 {
                     await window.RenderBuildPreviewAsync(directory, Path.GetFullPath(e.Args[2]));
@@ -177,6 +185,14 @@ public partial class App : System.Windows.Application
                 {
                     await window.RenderDocumentsPreviewAsync(directory, Path.GetFullPath(e.Args[2]));
                 }
+                else if (microPythonPreview)
+                {
+                    await window.RenderMicroPythonPreviewAsync(directory, Path.GetFullPath(e.Args[2]), Path.GetFullPath(e.Args[3]));
+                }
+                else if (pythonPreview)
+                {
+                    await window.RenderPythonPreviewAsync(directory);
+                }
                 else if (cmakePreview)
                 {
                     await window.RenderCMakePreviewAsync(directory, Path.GetFullPath(e.Args[2]));
@@ -188,6 +204,10 @@ public partial class App : System.Windows.Application
                 else if (editorPreview)
                 {
                     await window.RenderEditorPreviewAsync(directory, Path.GetFullPath(e.Args[2]));
+                }
+                else if (zephyrDevicetreePreview)
+                {
+                    await window.RenderZephyrDevicetreePreviewAsync(directory, Path.GetFullPath(e.Args[2]));
                 }
                 else
                 {

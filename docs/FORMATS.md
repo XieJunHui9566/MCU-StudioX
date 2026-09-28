@@ -12,6 +12,8 @@ ZIP 的根包含 `manifest.json`、`files.sha256.json` 与器件资源。索引�
 - 器件：明确型号 id、displayName、architecture（arm/riscv）、flashOrigin/flashBytes、ramOrigin/ramBytes。
 - 构建：toolsetId/toolsetVersion/compilerId、cpuFlags、defines、includeDirectories、sources、linkerScript、compileOptions、linkOptions。
 - 模板：id、displayName、description、entryFile；入口固定生成 `src/main.c`。可选 `build` 叠加 defines/includeDirectories/sources/compileOptions/linkOptions；构建和语言服务采用同一解析结果。可选 `files` 将用户目标相对路径映射到包内源文件，只允许 `src/`、`include/`，不能覆盖 main.c 或工程元数据。
+- AGM 模板可选 `ag32Sources: { pinMapFile, verilogFile, entryFile?, build? }`，仅在用户创建工程时勾选特殊模式才启用。前两者复制到 `logic/pins.ve` 和 `logic/user_logic.v`，可选入口替换初始 `src/main.c`，可选 `build` 叠加同格式构建参数；所有来源仍受包边界校验。未提供则沿用逻辑编辑骨架。模板不能强制勾选或禁用特殊模式。
+- 模板可选 `replacesTemplates` 声明明确合并的旧模板 ID，不能与本版任何模板 ID 重复。仅用于新版同 ID 包的选择器替代判断，不重写或迁移已建工程的模板与资源。
 - 下载：器件可选 `openOcd`，含包内 `targetScript` 和 `probes`。每项定义 id/displayName/interfaceScript/transport/defaultSpeedKhz，接口脚本相对内置 OpenOCD 的脚本目录。目标脚本必须提供 `studiox_check_target`，身份检查通过之后才允许写入。
 - 应用范围：`openOcd.applicationFlashBytes` 可选，必须大于 0 且不超过 `flashBytes`。BIN 大小及 ELF 物理装载段限制在 `[flashOrigin, flashOrigin + applicationFlashBytes)`；省略时沿用物理 Flash 范围。AG32 用于保留逻辑区，目标脚本还需检查实际选项字节布局，不能仅靠主机清单推断安全范围。
 
@@ -20,6 +22,10 @@ ZIP 的根包含 `manifest.json`、`files.sha256.json` 与器件资源。索引�
 仓库布局：`<user-data>/packs/<id>/<version>/payload`，旁边是安装记录与内容索引。相同版本不同内容拒绝覆盖。选择器使用轻量目录，只读取安装记录、索引及清单并核对索引摘要、清单 SHA-256 和目录身份，不遍历 SDK。创建工程前重新完整校验选中的包（包括文件集合、全部文件哈希及资源定义），拒绝选择后被替换的内容；`ListAsync` 仍保留完整校验语义。导入校验保持不变。完整性哈希不是发布签名。
 
 ## 工程
+
+MicroPython 模板在普通格式 1 器件包的模板项中声明 `microPython: { board, version }`。当前仅接受与 RP2040-PICO / RP2350A-PICO2 对应的 RPI_PICO / RPI_PICO2、1.29.0。它不能同时声明 C 构建覆盖或 Espressif 示例；入口必须是 `.py`。其附加用户文件允许 `boot.py`、`README.md` 和 `lib/*.py`，路径仍经过包边界校验。
+
+选择这类模板后，工程 `kind` 为 `MicroPython`，入口为 `main.py`，工具集与编译器字段为空，并保存明确的 `microPython` 配置。工程仅复制身份清单和所选脚本；打开时校验板型、版本、模板与 `device/manifest.json` 一致。C 编译、OpenOCD 和 GDB 后端拒绝这种类型。原 `Pack`、CubeMX、Zephyr 工程不得夹带 MicroPython 配置。
 
 `.studiox/project.json` 保存格式 1、工程名、芯片包 ID/版本/内容哈希、明确选择的芯片/模板和工具集 ID/版本/compilerId。复制器件资源到 `device/`，模板入口放入 `src/main.c`，生成用户可维护的 `CMakeLists.txt`。
 

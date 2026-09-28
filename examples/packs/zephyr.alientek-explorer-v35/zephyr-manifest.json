@@ -1,0 +1,40 @@
+{
+  "schema": "studiox.zephyr-pack",
+  "formatVersion": 1,
+  "id": "zephyr.alientek-explorer-v35",
+  "version": "0.1.1",
+  "displayName": "正点原子探索者 STM32F407ZG V3.5 · Zephyr 实验模式",
+  "vendor": "Alientek",
+  "zephyrVersion": "4.4.2",
+  "experimental": true,
+  "boards": [
+    {
+      "id": "alientek_explorer_f407zg_v35",
+      "displayName": "探索者 V3.5 / STM32F407ZGT6（实验）",
+      "soc": "stm32f407xx",
+      "boardTarget": "alientek_explorer_f407zg",
+      "boardRevision": "V3.5",
+      "documentationNote": "用户确认实物为 V3.5；所给 EXPLORER_V3.5.pdf 的六页标题栏均标 Revision V3.4。LED0/PF9 已经实板闪烁与寄存器验证，其他引脚连接仍待核验。",
+      "templates": [
+        {
+          "id": "blinky",
+          "displayName": "LED 闪烁（实验）",
+          "description": "Zephyr 4.4.2 的最小 GPIO 应用；使用板载 PF9 LED0。",
+          "files": {
+            "CMakeLists.txt": "templates/blinky/CMakeLists.txt",
+            "prj.conf": "templates/blinky/prj.conf",
+            "src/main.c": "templates/blinky/src/main.c",
+            "README.md": "templates/blinky/README.md",
+            "LICENSE": "templates/blinky/LICENSE",
+            "boards/others/alientek_explorer_f407zg/board.yml": "templates/blinky/boards/others/alientek_explorer_f407zg/board.yml",
+            "boards/others/alientek_explorer_f407zg/Kconfig.alientek_explorer_f407zg": "templates/blinky/boards/others/alientek_explorer_f407zg/Kconfig.alientek_explorer_f407zg",
+            "boards/others/alientek_explorer_f407zg/alientek_explorer_f407zg.dts": "templates/blinky/boards/others/alientek_explorer_f407zg/alientek_explorer_f407zg.dts",
+            "boards/others/alientek_explorer_f407zg/alientek_explorer_f407zg_defconfig": "templates/blinky/boards/others/alientek_explorer_f407zg/alientek_explorer_f407zg_defconfig",
+            "boards/others/alientek_explorer_f407zg/board.cmake": "templates/blinky/boards/others/alientek_explorer_f407zg/board.cmake",
+            "boards/others/alientek_explorer_f407zg/support/openocd.cfg": "templates/blinky/boards/others/alientek_explorer_f407zg/support/openocd.cfg"
+          }
+        }
+      ]
+    }
+  ]
+}

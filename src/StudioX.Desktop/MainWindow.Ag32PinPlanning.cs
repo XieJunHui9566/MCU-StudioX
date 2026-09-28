@@ -75,12 +75,17 @@ public partial class MainWindow
             {
                 return;
             }
-            if (FindEditor(snapshot.SourcePath) is { } editor)
+            foreach (var relative in new[] { snapshot.SourcePath, Ag32SystemSupport.HeaderPath, Ag32SystemSupport.SourcePath, CMakeGenerator.DeviceListPath })
             {
-                EditorSynchronizer.Apply(editor, await services.Files.ReadAsync(root, snapshot.SourcePath, token));
+                if (FindEditor(relative) is { } editor)
+                {
+                    EditorSynchronizer.Apply(editor, await services.Files.ReadAsync(root, relative, token));
+                }
             }
             RefreshProjectTree();
             view.ShowResult(result);
+            try { await services.Intelligence.StartAsync(root, token); }
+            catch (Exception error) when (error is not OperationCanceledException) { Log("系统代码已生成，语言服务刷新失败：" + error); }
             await RefreshAg32PinMappingStatusAsync(token);
             Status.Text = "AG32 图形配置已保存并生成约束；顶部编译将重新生成映射镜像。";
             if (!string.IsNullOrWhiteSpace(result.ConverterDiagnostics))

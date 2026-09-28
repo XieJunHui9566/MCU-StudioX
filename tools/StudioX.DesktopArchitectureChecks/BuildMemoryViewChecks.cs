@@ -2,6 +2,7 @@ using System.Collections;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using StudioX.Desktop;
 using StudioX.Engine;
 
@@ -51,6 +52,47 @@ internal static class BuildMemoryViewChecks
             "普通 MCU 的真实起始地址与容量超限提示保留");
         check((Visibility)target.GetType().GetProperty("DetailsVisibility")!.GetValue(target)! == Visibility.Collapsed,
             "普通 MCU 继续直接显示链接区域，不新增详细分组入口");
+        view.SetReport(new([], "Supra 统计", new(3, 2112, "Supra · Route Design Statistics")));
+        object LogicRow()
+        {
+            var onlyTarget = ((ItemsControl)view.FindName("Targets")).ItemsSource.Cast<object>().Single();
+            return ((IEnumerable)onlyTarget.GetType().GetProperty("Regions")!.GetValue(onlyTarget)!).Cast<object>().Single();
+        }
+        var logic = LogicRow();
+        check(Text(logic, "SizeText") == "3 / 2,112 个" && Text(logic, "Percentage") == "0.14%" &&
+            view.RegionCount == 0 && view.LogicResourceCount == 1, "FPGA 数量使用单元与真实百分比，不混入字节统计");
+        view.SetReport(new([], "Supra 统计", new(0, 2112, "Supra")));
+        check(Text(LogicRow(), "Percentage") == "0%", "真实零占用显示 0%");
+        view.SetReport(new([], "Supra 统计", LogicDiagnostic: "缺少统计，请重新编译。"));
+        check(Text(LogicRow(), "Percentage") == "—" && Text(LogicRow(), "SizeText").Contains("未知", StringComparison.Ordinal),
+            "缺少统计显示未知，不伪造零占用");
+        view.SetMessage("编译失败");
+        check(view.LogicResourceCount == 0 && ((ItemsControl)view.FindName("Targets")).Items.Count == 0,
+            "失败或关闭工程清除旧 FPGA 占用");
+    }
+    internal static void Render(BuildMemoryReport report, string directory)
+    {
+        Directory.CreateDirectory(directory);
+        foreach (var light in new[] { false, true })
+        {
+            var view = new BuildMemoryView { Width = 240, Height = 375, FontFamily = new("Segoe UI") };
+            view.Resources["Text"] = light ? Brushes.Black : Brushes.WhiteSmoke;
+            view.Resources["Muted"] = light ? Brushes.DimGray : Brushes.LightGray;
+            view.Resources["Border"] = light ? Brushes.LightGray : Brushes.DimGray;
+            view.Resources["HoverSurface"] = Brushes.Transparent;
+            view.Background = new SolidColorBrush(light ? Color.FromRgb(245, 245, 245) : Color.FromRgb(37, 38, 42));
+            view.SetReport(report);
+            view.Measure(new Size(view.Width, view.Height));
+            view.Arrange(new Rect(0, 0, view.Width, view.Height));
+            view.UpdateLayout();
+            var bitmap = new RenderTargetBitmap((int)view.Width, (int)view.Height, 96, 96, PixelFormats.Pbgra32);
+            bitmap.Render(view);
+            var encoder = new PngBitmapEncoder();
+            encoder.Frames.Add(BitmapFrame.Create(bitmap));
+            using var file = File.Create(Path.Combine(directory, light ? "logic-light.png" : "logic-dark.png"));
+            encoder.Save(file);
+        }
+        Console.WriteLine($"Rendered actual logic usage: {report.LogicUsage!.Used}/{report.LogicUsage.Capacity}");
     }
     private static IEnumerable<DependencyObject> Descendants(DependencyObject root)
     {

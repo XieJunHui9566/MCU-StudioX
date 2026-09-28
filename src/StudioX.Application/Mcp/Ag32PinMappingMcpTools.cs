@@ -73,7 +73,7 @@ internal sealed class Ag32PinMappingMcpTools(McpSessionContext context) : Studio
     }
 
     [McpServerTool(Name = "ag32_pin_plan_apply")]
-    [Description("逐次授权后按当前源 SHA-256 保存 AG32 图形规划并生成实际厂商 VEX/SDC 约束。assignments_json 为完整映射数组，例如 [{\"function\":\"GPIO4_4\",\"pinNumber\":21}]；时钟单位 MHz，null 表示未显式指定。校验引脚、功能复用及厂商转换，保留注释和未知配置行，失败不覆盖 VE。不运行 Supra，不烧录；正式映射镜像仍由 project_build 生成。")]
+    [Description("逐次授权后按当前源 SHA-256 保存 AG32 图形规划、命名与电气注释、StudioX_System.h/.c 及 VEX/SDC/ASF 约束。assignments_json 为完整映射数组，例如 [{\"function\":\"GPIO4_4\",\"pinNumber\":2,\"name\":\"LED1\",\"direction\":\"OUTPUT\",\"pull\":\"UP\",\"outputType\":\"OPEN_DRAIN\"}]；GPIO pull 为 NONE/UP/DOWN，outputType 为 PUSH_PULL/OPEN_DRAIN，默认无上下拉和推挽，输入不可设开漏。name 可省略，时钟单位 MHz，null 表示未显式指定。校验引脚、名称、功能复用及厂商转换，保留原注释，不覆盖用户主函数或被手动修改的系统文件。不运行 Supra，不烧录；电气属性需 project_build 生成映射镜像再下载生效。")]
     public async Task<string> ApplyPlanAsync(string expected_source_sha256, string assignments_json,
         decimal? hse_mhz = null, decimal? sys_mhz = null, decimal? bus_mhz = null,
         CancellationToken cancellationToken = default)
@@ -103,11 +103,11 @@ internal sealed class Ag32PinMappingMcpTools(McpSessionContext context) : Studio
         var snapshot = await Services.Ag32PinPlanning.ReadAsync(Project, cancellationToken).ConfigureAwait(false);
         var summary = $"保存 {snapshot.DeviceId} 的 {assignments.Length} 项引脚分配到 {snapshot.SourcePath}；"
             + $"当前 VE SHA-256：{expected_source_sha256}。\n"
-            + string.Join("\n", assignments.Select(item => $"{item.Function} → PIN_{item.PinNumber}"))
+            + string.Join("\n", assignments.Select(item => $"{item.Function} → PIN_{item.PinNumber} · 名称 {item.Name ?? "未命名"}"))
             + $"\nHSECLK={hse_mhz?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "未显式配置"} MHz，"
             + $"SYSCLK={sys_mhz?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "未显式配置"} MHz，"
             + $"BUSCLK={bus_mhz?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "未显式配置"} MHz。"
-            + "\n先校验厂商转换，再保存并生成约束；不会连接或写入芯片。";
+            + "\n先校验厂商转换，再同步保存 VE 命名注释、StudioX_System.h/.c 与约束；不会连接或写入芯片。";
         await RequireApprovalAsync("ag32_pin_plan_apply", summary, StudioXMcpPermission.FileWrite, cancellationToken)
             .ConfigureAwait(false);
         await RequireSavedDocumentsAsync().ConfigureAwait(false);
@@ -125,6 +125,7 @@ internal sealed class Ag32PinMappingMcpTools(McpSessionContext context) : Studio
             result.Snapshot,
             result.VexPath,
             result.SdcPath,
+            generatedFiles = new[] { Ag32SystemSupport.HeaderPath, Ag32SystemSupport.SourcePath },
             converterDiagnostics = LimitOutput(result.ConverterDiagnostics),
             hardwareConnected = false
         }, JsonStore.Options);

@@ -5,7 +5,6 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using ICSharpCode.AvalonEdit.Editing;
-using ICSharpCode.AvalonEdit.Search;
 using StudioX.Application;
 
 public partial class MainWindow
@@ -44,7 +43,7 @@ public partial class MainWindow
             margin.Margin = new Thickness(2, 0, 10, 0);
         }
         SourceEditor.TextArea.Caret.PositionChanged += (_, _) => UpdateEditorPosition();
-        SearchPanel.Install(SourceEditor);
+        InitializeFindReplace();
         InitializeDiagnostics();
         InitializeEditingActions();
         InitializeCodeAssistance();

@@ -7,7 +7,7 @@ using StudioX.Foundation;
 public sealed class BuildMemoryService(ToolsetCatalog? toolsets = null)
 {
     internal const string SnapshotPath = ".build/studiox-memory.json";
-    private const int AnalysisVersion = 5;
+    private const int AnalysisVersion = 6;
     public Task<BuildMemoryReport> ReadAsync(string directory, CancellationToken token = default) =>
         Task.Run(() => ReadCoreAsync(Path.GetFullPath(directory), token), token);
 
@@ -16,6 +16,14 @@ public sealed class BuildMemoryService(ToolsetCatalog? toolsets = null)
         try
         {
             var project = await ProjectService.ReadAsync(root, token);
+            if (project.Kind == ProjectKind.MicroPython)
+            {
+                return new([], "MicroPython 脚本工程不生成本机 ELF；内存信息可在 REPL 中查询 gc.mem_free()。");
+            }
+            if (project.Kind == ProjectKind.Zephyr)
+            {
+                return new([], "Zephyr 实验工程运行时尚未准备，暂无构建内存统计。");
+            }
             var snapshotPath = PathBoundary.Resolve(root, SnapshotPath);
             ResolvedToolset? nativeTools = null;
             string? sourceStamp = null;
@@ -125,10 +133,23 @@ public sealed class BuildMemoryService(ToolsetCatalog? toolsets = null)
             var report = new BuildMemoryReport(targets, targets.Count == 0 ? "没有可分析的 ELF 构建产物。"
                 : project.Espressif is null ? "上次成功构建 · 非运行时峰值"
                 : "SDK 静态内存统计 · 共享 RAM 按厂商规则归并，Flash 容量未知；非运行时堆/栈峰值");
+            if (Ag32DeviceCatalog.Find(project.DeviceId)?.CanMap == true && (project.PinMapping is not null || project.Logic is not null))
+            {
+                try
+                {
+                    var usage = await Ag32LogicUsageAnalyzer.AnalyzeAsync(Path.Combine(root, ".build", "studiox-build.log"), token);
+                    report = report with { LogicUsage = usage, LogicDiagnostic = usage is null ? "未取得 Supra 逻辑单元统计，请重新编译。" : null };
+                }
+                catch (Exception ex) when (IsAnalysisError(ex))
+                {
+                    report = report with { LogicDiagnostic = "逻辑单元统计不可用：" + ex.Message };
+                }
+            }
             if (targets.Count > 0 && targets.All(target => target.Diagnostic is null))
             {
                 try
                 {
+                    // 逻辑统计与 ELF/MAP 同属这次成功联合构建；配置 CMake 会重写日志，因此缓存不绑定日志时间戳。
                     await JsonStore.WriteAsync(snapshotPath, new MemorySnapshot(project, report, inputs.ToArray(), AnalysisVersion,
                         nativeTools?.Fingerprint, sourceStamp), token);
                 }

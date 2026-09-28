@@ -1,0 +1,45 @@
+// AGM VE 转换器接口：内部 GPIO 回环，不连接外部封装脚。
+module user_logic (
+    output tri0 logic_rx_in,
+    input logic_rx_out_data,
+    input logic_rx_out_en,
+    output tri0 logic_tx_in,
+    input logic_tx_out_data,
+    input logic_tx_out_en,
+    input sys_clock,
+    input bus_clock,
+    input resetn,
+    input stop,
+    input [1:0] mem_ahb_htrans,
+    input mem_ahb_hready,
+    input mem_ahb_hwrite,
+    input [31:0] mem_ahb_haddr,
+    input [2:0] mem_ahb_hsize,
+    input [2:0] mem_ahb_hburst,
+    input [31:0] mem_ahb_hwdata,
+    output tri1 mem_ahb_hreadyout,
+    output tri0 mem_ahb_hresp,
+    output tri0 [31:0] mem_ahb_hrdata,
+    output tri0 slave_ahb_hsel,
+    output tri1 slave_ahb_hready,
+    input slave_ahb_hreadyout,
+    output tri0 [1:0] slave_ahb_htrans,
+    output tri0 [2:0] slave_ahb_hsize,
+    output tri0 [2:0] slave_ahb_hburst,
+    output tri0 slave_ahb_hwrite,
+    output tri0 [31:0] slave_ahb_haddr,
+    output tri0 [31:0] slave_ahb_hwdata,
+    input slave_ahb_hresp,
+    input [31:0] slave_ahb_hrdata,
+    output tri0 [3:0] ext_dma_DMACBREQ,
+    output tri0 [3:0] ext_dma_DMACLBREQ,
+    output tri0 [3:0] ext_dma_DMACSREQ,
+    output tri0 [3:0] ext_dma_DMACLSREQ,
+    input [3:0] ext_dma_DMACCLR,
+    input [3:0] ext_dma_DMACTC,
+    output tri0 [3:0] local_int
+);
+    assign mem_ahb_hreadyout = 1'b1;
+    assign slave_ahb_hready = 1'b1;
+    assign logic_rx_in = resetn & logic_tx_out_en & logic_tx_out_data;
+endmodule

@@ -105,8 +105,25 @@ catch (StudioXException) { }
 Check(!File.Exists(Path.Combine(root, ".build", "studiox-memory.json")) && (await service.ReadAsync(root)).Targets.Count == 0,
     "failed build invalidates previous snapshot");
 
+await Ag32LogicUsageChecks.RunAsync(root, project, Check);
+
 for (var i = 1; i < args.Length; i += 2)
 {
+    if (args[i] == "--supra-log")
+    {
+        var usage = await Ag32LogicUsageAnalyzer.AnalyzeAsync(args[i + 1]);
+        Check(usage is not null, "real Supra log: " + args[i + 1]);
+        Console.WriteLine($"Logic: {usage!.Used}/{usage.Capacity} ({usage.Percent:F2}%) from {usage.Source}");
+        await JsonStore.WriteAsync(Path.Combine(root, $"actual-logic-{i}.json"), usage);
+        continue;
+    }
+    if (args[i] == "--project-report")
+    {
+        var actualReport = await service.ReadAsync(args[i + 1]);
+        Check(actualReport.LogicUsage is not null && actualReport.Targets.Count > 0, "real AG32 combined resource report: " + args[i + 1]);
+        await JsonStore.WriteAsync(Path.Combine(root, $"actual-report-{i}.json"), actualReport);
+        continue;
+    }
     var actual = await BuildMemoryAnalyzer.AnalyzeAsync(args[i], args[i + 1]);
     Console.WriteLine(Path.GetFileName(args[i]) + ": " + string.Join(", ", actual.Select(r => $"{r.Name} {r.Used}/{r.Capacity} B ({r.Percent:F2}%)")));
     await JsonStore.WriteAsync(Path.Combine(root, $"actual-{i}.json"), actual);

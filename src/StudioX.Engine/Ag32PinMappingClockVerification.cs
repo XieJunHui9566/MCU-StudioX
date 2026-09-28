@@ -11,10 +11,14 @@ internal static class Ag32PinMappingClockVerification
 {
     private const string SdcRelativePath = "studiox-clocks.sdc";
 
-    internal static async Task CreateSdcAsync(string build, CancellationToken token)
+    internal static async Task CreateSdcAsync(string build, CancellationToken token, bool basicMapping = false)
     {
         var header = await ReadAsync(build, "pins.hx", token);
         var text = RenderSdc(header);
+        if (basicMapping)
+        {
+            text += Ag32PinMappingTimingConstraints.Render(header, await ReadAsync(build, "pins.vx", token));
+        }
         await File.WriteAllTextAsync(PathBoundary.Resolve(build, SdcRelativePath), text, token);
     }
 
@@ -61,7 +65,7 @@ internal static class Ag32PinMappingClockVerification
         // CLKIN_FREQ 是时序注解，不是 PLL 硬件位字段；布局器可移除它，数字分频参数须逐项保留。
         var header = await ReadAsync(build, "pins.hx", token);
         var sdc = await ReadAsync(build, SdcRelativePath, token);
-        if (sdc != RenderSdc(header))
+        if (sdc != RenderSdc(header) + Ag32PinMappingTimingConstraints.Render(header, source))
         {
             throw Error("实际输入时序约束与厂商生成的频率头文件不一致。");
         }

@@ -19,10 +19,12 @@ internal static class CodeLanguage
             ".cpp" or ".cc" or ".cxx" or ".hpp" or ".hh" or ".hxx" => "C++",
             ".s" or ".asm" => "Assembly",
             ".ld" or ".lds" => "Linker",
+            ".dts" or ".dtsi" or ".overlay" => "Devicetree",
             ".json" => "JSON",
             ".xml" or ".svd" => "XML",
             ".v" or ".sv" => "Verilog",
             ".ve" => "AGM Pin Map",
+            ".py" or ".pyw" or ".pyi" => "Python",
             _ => "Text"
         };
     }
@@ -72,6 +74,23 @@ internal static class CodeLanguage
             rules.Add(Span("Comment", "<!--", "-->", true), Span("String", "\"", "\"", true), Span("String", "'", "'", true));
             rules.Add(Rule("Keyword", @"</?[\w:.-]+|/?>"), Rule("Variable", @"[\w:.-]+(?=\s*=)"));
         }
+        else if (language == "Python")
+        {
+            // 三引号规则必须先于普通引号；XSHD 的 # 必须转义，防止零长度匹配。
+            const string prefix = @"(?i:\b(?:br|rb|fr|rf|tr|rt|r|u|b|f|t))?";
+            rules.Add(Span("String", prefix + "\"\"\"", "\"\"\"", true, true),
+                Span("String", prefix + "'''", "'''", true, true),
+                Span("String", prefix + "\"", "\"", escapes: true),
+                Span("String", prefix + "'", "'", escapes: true),
+                Span("Comment", @"\#", "$"));
+            Keywords("Keyword", "False None True and as assert async await break class continue def del elif else except finally for from global if import in is lambda nonlocal not or pass raise return try while with yield");
+            rules.Add(Rule("Keyword", @"\b(?:match|case)(?=\s+.+:)|\btype(?=\s+\w+\s*(?:\[|=))"),
+                Rule("Macro", @"@[\p{L}_][\w.]*"),
+                Rule("Number", @"\b0[xX][\da-fA-F_]+\b|\b0[bB][01_]+\b|\b0[oO][0-7_]+\b|(?<!\w)(?:[0-9][0-9_]*(?:\.[0-9_]*)?|\.[0-9][0-9_]*)(?:[eE][+-]?[0-9][0-9_]*)?[jJ]?(?!\w)"),
+                Rule("Function", @"\b[\p{L}_]\w*(?=\s*\()"),
+                Rule("Variable", @"\b[\p{L}_]\w*\b"),
+                Rule("Punctuation", @"[{}\[\]();,.+*/%=!&|<>?:~^@-]"));
+        }
         else if (language == "AGM Pin Map")
         {
             // XSHD 使用 IgnorePatternWhitespace；未转义的 # 会成为正则注释并匹配零字符。
@@ -79,6 +98,19 @@ internal static class CodeLanguage
             Keywords("Keyword", "SYSCLK BUSCLK HSECLK INPUT OUTPUT INOUT");
             rules.Add(Rule("Type", @"\bPIN_[0-9]+\b"), Rule("Keyword", @":(?:INPUT|OUTPUT|INOUT)\b"),
                 Rule("Number", @"\b[0-9]+\b"), Rule("Variable", @"\b[A-Za-z_]\w*(?:\[[0-9]+\])?\b"));
+        }
+        else if (language == "Devicetree")
+        {
+            rules.Add(Span("Comment", @"/\*", @"\*/", true), Span("Comment", "//", "$"),
+                Span("String", "\"", "\"", escapes: true));
+            rules.Add(Rule("Macro", @"^\s*\#[ \t]*[A-Za-z_]\w*"),
+                Rule("Keyword", @"/(?:dts-v1|plugin|delete-node|delete-property|omit-if-no-ref|memreserve)/"),
+                Rule("Type", @"&[A-Za-z_][\w-]*"),
+                Rule("Function", @"\b[A-Za-z_][\w-]*(?=\s*:)"),
+                Rule("Variable", @"(?:\b[A-Za-z_][\w,#+.-]*|\#[A-Za-z_][\w,-]*)(?=\s*(?:=|;))"),
+                Rule("Number", @"\b(?:0[xX][\da-fA-F]+|[0-9]+)\b"),
+                Rule("Macro", @"\b[A-Z_][A-Z_0-9]*\b"),
+                Rule("Punctuation", @"[{}\[\]();,.+*/%=!&|<>?:~-]"));
         }
         else
         {

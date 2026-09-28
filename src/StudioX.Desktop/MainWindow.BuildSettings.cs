@@ -140,7 +140,7 @@ public partial class MainWindow
         {
             return;
         }
-        var enabled = projectDirectory is not null && loadedBuildSettings is not null && !projectActionsBusy && !services.Debugger.IsActive;
+        var enabled = projectDirectory is not null && !IsZephyrProject && !IsMicroPythonProject && loadedBuildSettings is not null && !projectActionsBusy && !services.Debugger.IsActive;
         BuildSettingsEditor.IsEnabled = enabled;
         if (!TrySelectedBuildSettings(out var selected, out var error))
         {

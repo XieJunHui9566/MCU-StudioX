@@ -50,6 +50,10 @@ public sealed partial class CodeIntelligenceService(string runtimeDirectory, str
             version = 0;
             projectRoot = Path.GetFullPath(directory);
             var project = await ProjectService.ReadAsync(projectRoot, token).ConfigureAwait(false);
+            if (project.Kind == ProjectKind.MicroPython)
+            {
+                throw MicroPythonProject.NativeOperationUnavailable();
+            }
             importedCommands.Clear();
             espressifAnalysis = project.Espressif is not null;
             StatusDescription = "C/C++ 代码提示已就绪";
@@ -72,8 +76,12 @@ public sealed partial class CodeIntelligenceService(string runtimeDirectory, str
             else
             {
                 var pack = await JsonStore.ReadAsync<PackManifest>(PathBoundary.Resolve(projectRoot, "device/manifest.json"), token).ConfigureAwait(false);
-                var device = TemplateResolver.Resolve(pack.Devices.Single(d => d.Id == project.DeviceId), project.TemplateId);
+                var device = TemplateResolver.Resolve(pack.Devices.Single(d => d.Id == project.DeviceId), project.TemplateId, project.Logic is not null);
                 flags = CreateFlags(device);
+                if (project.PinMapping is not null && Ag32DeviceCatalog.Find(project.DeviceId) is not null)
+                {
+                    flags = [.. flags, "-I" + PathBoundary.Resolve(projectRoot, "device/studiox").Replace('\\', '/')];
+                }
             }
             compilerHeaders = espressifProfile?.HeaderRoot;
             var compilerTriple = project.CompilerId switch

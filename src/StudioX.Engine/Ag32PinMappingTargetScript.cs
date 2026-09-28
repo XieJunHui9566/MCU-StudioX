@@ -14,9 +14,16 @@ public static class Ag32PinMappingTargetScript
         return Normalize(reader.ReadToEnd());
     });
 
-    public static string RequireCompatible(string projectDirectory)
+    // 新系列包按完整料号命名；仅兼容同一已验证目标的两个路径，仍核对全部脚本内容。
+    public static bool IsSupportedPath(string path) => path is "debug/ag32vf303.cfg" or "debug/ag32vf303cct6.cfg";
+
+    public static string RequireCompatible(string projectDirectory, string targetScript = "debug/ag32vf303.cfg")
     {
-        var path = PathBoundary.Resolve(projectDirectory, "device/debug/ag32vf303.cfg");
+        if (!IsSupportedPath(targetScript))
+        {
+            throw new StudioXException("AG32_MAPPING_CONFIG", "AG32 下载检查脚本路径不属于已验证的 AG32VF303CCT6 器件包。");
+        }
+        var path = PathBoundary.Resolve(projectDirectory, "device/" + targetScript);
         if (!File.Exists(path) || new FileInfo(path).Length > 64 * 1024 ||
             !string.Equals(Normalize(File.ReadAllText(path)), Canonical.Value, StringComparison.Ordinal))
         {

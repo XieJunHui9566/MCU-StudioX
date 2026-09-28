@@ -183,7 +183,7 @@ public partial class MainWindow
         }
         var debug = services.Debugger;
         var idle = !projectActionsBusy;
-        var sourceDebugUnsupported = IsStcSdccProject || IsEspressifProject;
+        var sourceDebugUnsupported = IsStcSdccProject || IsEspressifProject || IsZephyrProject || IsMicroPythonProject;
         DebugTopMenu.Visibility = DebugStartButton.Visibility = sourceDebugUnsupported ? Visibility.Collapsed : Visibility.Visible;
         if (debugMargin is not null)
         {
@@ -209,7 +209,7 @@ public partial class MainWindow
         }
         DebugRunToMenu.IsEnabled = stopped;
         var available = projectDirectory is not null && idle && !debug.IsActive;
-        BuildButton.IsEnabled = BuildMenu.IsEnabled = available;
+        BuildButton.IsEnabled = BuildMenu.IsEnabled = available && !IsZephyrProject && !IsMicroPythonProject;
         DownloadButton.IsEnabled = DownloadMenu.IsEnabled = available && supportsDownload;
         DownloadProbePicker.IsEnabled = DownloadSettingsButton.IsEnabled = DownloadSettingsMenu.IsEnabled = available && supportsDownload;
         UpdateBuildSettingsControls();
@@ -379,7 +379,7 @@ public partial class MainWindow
             await RunAsync(token => services.Debugger.ChangeBreakpointAsync(point.Id, !point.Enabled, token));
         }
     }
-    private bool CanEditBreakpoints => !IsStcSdccProject && !IsEspressifProject && projectDirectory is not null && activeDocument is not null && WorkspaceTabs.SelectedItem == activeEditor?.Tab &&
+    private bool CanEditBreakpoints => !IsStcSdccProject && !IsEspressifProject && !IsZephyrProject && !IsMicroPythonProject && projectDirectory is not null && activeDocument is not null && WorkspaceTabs.SelectedItem == activeEditor?.Tab &&
         !Path.IsPathRooted(activeDocument.RelativePath) && CodeLanguage.ForFile(activeDocument.RelativePath) is "C" or "C++" &&
         services.Debugger.State is DebugState.Disconnected or DebugState.Stopped or DebugState.Faulted;
     private async Task NavigateSelectedDebugFrameAsync()

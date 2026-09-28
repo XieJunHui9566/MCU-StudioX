@@ -12,16 +12,18 @@ public partial class BuildMemoryView : UserControl
     {
         get; private set;
     }
+    internal int LogicResourceCount { get; private set; }
     public void SetMessage(string message)
     {
         Targets.ItemsSource = null;
         RegionCount = 0;
+        LogicResourceCount = 0;
         AnalysisStatus.Text = message;
     }
     public void SetReport(BuildMemoryReport report)
     {
         RegionCount = report.Targets.Sum(target => target.Regions.Count);
-        Targets.ItemsSource = report.Targets.Select(target => new
+        var targets = report.Targets.Select(target => new
         {
             Title = target.Name + (string.IsNullOrEmpty(target.Configuration) ? "" : $" [{target.Configuration}]"),
             Description = target.BuiltAtUtc == DateTime.MinValue ? target.Name :
@@ -33,9 +35,36 @@ public partial class BuildMemoryView : UserControl
             Regions = VisibleRegions(target.Regions).Select(ProjectRegion).ToArray(),
             Details = target.Regions.Select(ProjectRegion).ToArray(),
             DetailsVisibility = IsSdkReport(target.Regions) ? System.Windows.Visibility.Visible : System.Windows.Visibility.Collapsed
-        }).ToArray();
+        }).ToList();
+        LogicResourceCount = report.LogicUsage is not null || report.LogicDiagnostic is not null ? 1 : 0;
+        if (LogicResourceCount > 0)
+        {
+            targets.Add(new
+            {
+                Title = "FPGA",
+                Description = "上次成功联合构建的逻辑单元占用，来源：Supra。",
+                Diagnostic = report.LogicDiagnostic,
+                Regions = new[] { ProjectLogic(report.LogicUsage) },
+                Details = Array.Empty<object>(),
+                DetailsVisibility = System.Windows.Visibility.Collapsed
+            });
+        }
+        Targets.ItemsSource = targets;
         AnalysisStatus.Text = report.Message;
     }
+    private static object ProjectLogic(BuildLogicUsage? usage) => new
+    {
+        Name = "逻辑单元 (LE)",
+        Percentage = usage is null ? "—" : usage.Percent.ToString("0.##", CultureInfo.InvariantCulture) + "%",
+        BarPercent = Math.Clamp(usage?.Percent ?? 0, 0, 100),
+        Fill = new SolidColorBrush(usage is null ? Color.FromRgb(114, 124, 139) :
+            usage.Percent >= 95 ? Color.FromRgb(206, 85, 85) : usage.Percent >= 80 ? Color.FromRgb(191, 140, 53) : Color.FromRgb(44, 154, 98)),
+        SizeText = usage is null ? "占用未知 / 容量未知" : $"{usage.Used.ToString("N0", CultureInfo.InvariantCulture)} / {usage.Capacity.ToString("N0", CultureInfo.InvariantCulture)} 个",
+        Description = usage is null ? "尚未取得有效的逻辑资源统计。" :
+            $"逻辑单元 · {usage.Source}\n已用：{usage.Used:N0} 个 / 总量：{usage.Capacity:N0} 个\n" +
+            (usage.Used > usage.Capacity ? $"超出容量：{usage.Used - usage.Capacity:N0} 个" : $"剩余：{usage.Capacity - usage.Used:N0} 个") +
+            "\nLUT 与寄存器可以共享逻辑单元；此处不合计两者，也不按位流字节数估算。"
+    };
     private static bool IsSdkReport(IReadOnlyList<BuildMemoryRegion> regions) => regions.Count > 0 && regions.All(region => region.IsLogical);
     private static IReadOnlyList<BuildMemoryRegion> VisibleRegions(IReadOnlyList<BuildMemoryRegion> regions)
     {

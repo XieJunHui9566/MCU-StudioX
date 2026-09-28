@@ -53,9 +53,9 @@ public sealed partial class ProjectFileService
         {
             throw new StudioXException("EDITOR_BINARY", "此文件是二进制文件，无法作为源代码打开。");
         }
-        var managed = CMakeGenerator.IsManagedFile(relativePath, text);
+        var managed = CMakeGenerator.IsManagedFile(relativePath, text) || Ag32SystemSupport.IsManagedFile(relativePath, text);
         return new(relativePath, text, encoding, Convert.ToHexString(SHA256.HashData(bytes)), managed || (File.GetAttributes(path) & FileAttributes.ReadOnly) != 0,
-            managed ? "只读 · 器件支持配置；用户配置请修改根目录 CMakeLists.txt" : null);
+            managed ? "只读 · 系统生成文件；AG32 引脚和时钟请通过引脚分配页面修改，构建配置请修改根目录 CMakeLists.txt" : null);
     }
 
     public async Task<SourceDocument> SaveAsync(string project, SourceDocument document, string text, CancellationToken token = default)

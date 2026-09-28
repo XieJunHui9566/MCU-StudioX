@@ -47,9 +47,15 @@ public partial class MainWindow
         ProjectLabel.Text = directory;
         WindowProjectTitle.Text = project.Name;
         Title = project.Name + " — MCU StudioX";
-        BuildConfiguration.Text = project.Name + " · " + (project.CubeMx?.ConfigurePreset ?? project.CubeMx?.BuildType ?? "Debug");
-        DeviceLabel.Text = "器件 / " + project.DeviceId;
-        ToolsetLabel.Text = $"工具集 / {project.ToolsetId} {project.ToolsetVersion}";
+        BuildConfiguration.Text = project.Kind == ProjectKind.Zephyr
+            ? project.Name + " · Zephyr 实验模式"
+            : project.Name + " · " + (project.CubeMx?.ConfigurePreset ?? project.CubeMx?.BuildType ?? "Debug");
+        DeviceLabel.Text = project.Kind == ProjectKind.Zephyr
+            ? "板级目标 / " + project.Zephyr!.BoardTarget
+            : "器件 / " + project.DeviceId;
+        ToolsetLabel.Text = project.Kind == ProjectKind.Zephyr
+            ? "Zephyr " + project.Zephyr!.ZephyrVersion + " · 实验模式"
+            : $"工具集 / {project.ToolsetId} {project.ToolsetVersion}";
         ApplyDownloadConfiguration(await services.Downloads.ConfigurationAsync(directory, token));
         if (source is not null)
         {
@@ -62,10 +68,41 @@ public partial class MainWindow
         // 首次挂入编辑器会触发布局与语法渲染，先处理输入和这一帧，再展开工程树，避免累计成一次长停顿。
         await Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Background);
         PopulateProjectTree(project.Name);
-        await RefreshBuildMemoryAsync(directory, token);
+        if (project.Kind == ProjectKind.MicroPython)
+        {
+            BuildConfiguration.Text = project.Name + " · MicroPython";
+            ToolsetLabel.Text = "MicroPython " + project.MicroPython!.Version + " · " + project.MicroPython.Board;
+            BuildMemory.SetMessage("脚本在板上解释器中运行；请使用 MicroPython 页面。");
+            MicroPythonPanel.SetProject(directory, project.MicroPython);
+            await services.RecentProjects.RememberAsync(project.Name, directory, token);
+            await RefreshRecentAsync(token);
+            Status.Text = "已打开 " + project.Name + " · MicroPython 编辑已就绪；点击顶部下载按钮选择串口并下载脚本。";
+            return;
+        }
+        MicroPythonPanel.SetProject(null, null);
+        if (project.Kind != ProjectKind.Zephyr)
+        {
+            await RefreshBuildMemoryAsync(directory, token);
+        }
         await services.RecentProjects.RememberAsync(project.Name, directory, token);
         await RefreshRecentAsync(token);
         await ReloadPluginWorkspaceAsync(token);
+        if (project.Kind == ProjectKind.Zephyr)
+        {
+            BuildMemory.SetMessage("Zephyr 实验模式：板级构建尚待验证。");
+            var boardDts = await services.ZephyrProjects.FindBoardDevicetreeAsync(directory, project, token);
+            ZephyrDeviceTreeButton.IsEnabled = boardDts is not null;
+            if (boardDts is not null)
+            {
+                await ShowZephyrBoardDevicetreeAsync(boardDts, token);
+            }
+            else
+            {
+                Status.Text = "已打开 " + project.Name + " · Zephyr 实验模式；此工程没有板级 DTS 源文件。";
+            }
+            QueueOutlineRefresh(clear: true);
+            return;
+        }
         Status.Text = "正在准备代码提示…";
         try
         {
@@ -140,6 +177,8 @@ public partial class MainWindow
             EditorBreadcrumb.Text = "";
             EditorBreadcrumb.ToolTip = null;
             EditorLanguage.Text = "";
+            StatusLanguage.Text = "";
+            StatusEncoding.Text = "";
             EditorPosition.Text = "";
             BuildLog.Clear();
             UpdateProjectActions(busy: false);
@@ -169,11 +208,16 @@ public partial class MainWindow
     {
         projectActionsBusy = busy;
         var available = projectDirectory is not null && !busy;
-        BuildButton.IsEnabled = BuildMenu.IsEnabled = available;
+        BuildButton.IsEnabled = BuildMenu.IsEnabled = available && !IsZephyrProject && !IsMicroPythonProject;
         CloseProjectMenu.IsEnabled = CloseProjectButton.IsEnabled = available;
-        DownloadButton.IsEnabled = DownloadMenu.IsEnabled = available && supportsDownload;
-        DownloadProbePicker.IsEnabled = available && supportsDownload && !IsStcSdccProject && !IsEspressifProject;
+        DownloadButton.IsEnabled = DownloadMenu.IsEnabled = available && supportsDownload && (!IsMicroPythonProject || !MicroPythonPanel.IsBusy);
+        MicroPythonRunButton.Visibility = IsMicroPythonProject ? Visibility.Visible : Visibility.Collapsed;
+        MicroPythonRunButton.IsEnabled = available && IsMicroPythonProject && !MicroPythonPanel.IsBusy;
+        MicroPythonRunLabel.Text = MicroPythonPanel.IsScriptRunning ? "运行中…" : "开始运行";
+        DownloadProbePicker.IsEnabled = available && supportsDownload && !IsStcSdccProject && !IsEspressifProject && !IsZephyrProject && !IsMicroPythonProject;
         DownloadSettingsButton.IsEnabled = DownloadSettingsMenu.IsEnabled = available && supportsDownload;
+        CancelButton.IsEnabled = !GitGraph.IsMutating && (operationCancellation is not null ||
+            IsMicroPythonProject && (MicroPythonPanel.IsBusy || services.MicroPython.IsConnected));
         UpdateStcIspControls();
         UpdateDebugControls();
         RefreshAg32LogicUi(currentProjectManifest, busy);

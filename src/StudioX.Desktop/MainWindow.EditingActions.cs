@@ -6,7 +6,7 @@ using ICSharpCode.AvalonEdit.Document;
 public partial class MainWindow
 {
     private bool CanEditSource => activeEditor is not null && WorkspaceTabs.SelectedItem == EditorTab && !SourceEditor.IsReadOnly;
-    private string? CommentPrefix => CodeLanguage.ForFile(activeDocument?.RelativePath ?? "") switch { "C" or "C++" or "Verilog" => "//", "CMake" or "AGM Pin Map" => "#", _ => null };
+    private string? CommentPrefix => CodeLanguage.ForFile(activeDocument?.RelativePath ?? "") switch { "C" or "C++" or "Verilog" or "Devicetree" => "//", "CMake" or "AGM Pin Map" or "Python" => "#", _ => null };
 
     private void InitializeEditingActions()
     {

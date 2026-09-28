@@ -23,7 +23,8 @@ internal static class Ag32ProbeConfiguration
     {
         if (!IsSupported(configuration.Device)) { return configuration; }
         var definition = configuration.OpenOcd;
-        if (definition.TargetScript != "debug/ag32vf303.cfg" || definition.ApplicationFlashBytes != 0x27000 ||
+        if (!Ag32PinMappingTargetScript.IsSupportedPath(definition.TargetScript) ||
+            definition.TargetScript != configuration.Device.OpenOcd!.TargetScript || definition.ApplicationFlashBytes != 0x27000 ||
             definition.Probes.Count == 0 || !definition.Probes.All(IsSupportedProbe) ||
             definition.Probes.Select(probe => probe.Id == "agm-blaster" ? "cmsis-dap" : probe.Id).Distinct(StringComparer.Ordinal).Count() != definition.Probes.Count)
         {

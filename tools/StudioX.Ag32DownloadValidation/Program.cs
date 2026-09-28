@@ -8,6 +8,17 @@ if (args is ["--connection-recovery", var sourceProject, var validationOutput])
 {
     return await ConnectionRecoveryChecks.RunAsync(sourceProject, validationOutput);
 }
+if (args is ["--preview-existing", var existingProject, var existingRuntime, var previewOutput])
+{
+    return await ExistingProjectChecks.RunAsync(existingProject, existingRuntime, previewOutput);
+}
+if (args is ["--build-existing", var buildProject, var buildRuntime, var buildOutput])
+{
+    var build = await new BuildService(new ToolsetCatalog(Path.Combine(Path.GetFullPath(buildRuntime), "toolsets"))).BuildAsync(buildProject);
+    await File.WriteAllTextAsync(Path.GetFullPath(buildOutput) + ".build.log", build.Log);
+    if (!build.Success) { throw new InvalidOperationException("Existing project build failed: " + build.LogPath); }
+    return await ExistingProjectChecks.RunAsync(buildProject, buildRuntime, buildOutput);
+}
 
 // 本程序只生成工程、真实离线编译和准备命令；所有拒绝测试必须发生在硬件进程启动之前。
 if (args.Length != 3) { throw new ArgumentException("Usage: <AG32 mcupack> <runtime directory> <new output directory>"); }
@@ -46,10 +57,10 @@ Check(command.IndexOf("studiox_check_target", StringComparison.Ordinal) < comman
 var hardwarePreparation = await HardwareDebugPreparer.PrepareAsync(project, downloads);
 Check(hardwarePreparation.PinMapping is not null && File.Exists(hardwarePreparation.PinMapping.Path),
     "debug preparation includes the exact mapping snapshot for read-only verification");
-Check(hardwarePreparation.Configuration.TargetScriptText == Ag32PinMappingTargetScript.RequireCompatible(project) &&
+Check(hardwarePreparation.Configuration.TargetScriptText == Ag32PinMappingTargetScript.RequireCompatible(project, configuration.OpenOcd.TargetScript) &&
     prepared.Arguments.Contains(hardwarePreparation.Configuration.TargetScriptText),
     "download and debug execute embedded identity, protection and logic-layout guards");
-var targetFile = Path.Combine(project, "device", "debug", "ag32vf303.cfg");
+var targetFile = Path.Combine(project, "device", configuration.OpenOcd.TargetScript);
 var targetText = await File.ReadAllTextAsync(targetFile);
 await File.WriteAllTextAsync(targetFile, targetText + "\nproc studiox_check_target {} {}\n");
 await Reject(() => downloads.PreviewAsync(project, configuration.Options), "edited target guards are rejected before hardware access");

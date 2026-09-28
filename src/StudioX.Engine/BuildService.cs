@@ -23,6 +23,14 @@ public sealed partial class BuildService(ToolsetCatalog catalog, string? ag32Map
         {
             var root = Path.GetFullPath(directory);
             var project = await ProjectService.ReadAsync(root, token);
+            if (project.Kind == ProjectKind.MicroPython)
+            {
+                throw MicroPythonProject.NativeOperationUnavailable();
+            }
+            if (project.Kind == ProjectKind.Zephyr)
+            {
+                throw ZephyrProjectService.RuntimeUnavailable();
+            }
             settings.ValidateFor(project);
             (await StcCodeRomLimit.ReadAsync(root, project, token))?.Validate(settings.CodeRomSizeBytes);
             if (await ProjectBuildSettings.ReadAsync(root, token) == settings)
@@ -54,6 +62,15 @@ public sealed partial class BuildService(ToolsetCatalog catalog, string? ag32Map
         try
         {
             var root = Path.GetFullPath(projectDirectory);
+            var project = await ProjectService.ReadAsync(root, cancellationToken);
+            if (project.Kind == ProjectKind.MicroPython)
+            {
+                throw MicroPythonProject.NativeOperationUnavailable();
+            }
+            if (project.Kind == ProjectKind.Zephyr)
+            {
+                throw ZephyrProjectService.RuntimeUnavailable();
+            }
             if (!configureOnly)
             {
                 var memorySnapshot = PathBoundary.Resolve(root, BuildMemoryService.SnapshotPath);
@@ -68,8 +85,8 @@ public sealed partial class BuildService(ToolsetCatalog catalog, string? ag32Map
             {
                 File.Delete(receiptPath);
             }
-            var project = await ProjectService.ReadAsync(root, cancellationToken);
             if (project.Logic is not null) Hdl.Ag32NativeBuildService.Invalidate(root);
+            await new Ag32SystemGenerationService(catalog).PrepareAsync(root, project, cancellationToken);
             if (!configureOnly && project.PinMapping is not null && project.Logic is null)
             {
                 Ag32PinMappingBuildService.Invalidate(root);

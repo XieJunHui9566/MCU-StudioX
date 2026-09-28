@@ -25,8 +25,10 @@ public sealed class WorkbenchService : IAsyncDisposable
         GitHubAccounts = new GitHubAccountService(GitHubAuthentication, GitHubProfiles);
         GitHubPullRequests = new GitHubPullRequestService(GitHubAuthentication);
         Projects = new ProjectService(Git.InitializeAsync);
+        ZephyrProjects = new ZephyrProjectService(Git.InitializeAsync);
         Terminal = new Terminal.ProjectTerminalService(Git);
         Packs = new PackRepository(Path.Combine(DataDirectory, "packs"));
+        ZephyrPacks = new ZephyrPackRepository(Path.Combine(DataDirectory, "zephyr-packs"));
         RemotePacks = new GitHubPackSyncService(Packs);
         Toolsets = new ToolsetCatalog(Path.Combine(RuntimeDirectory, "toolsets"));
         ToolInventory = new ToolInventoryService(Toolsets);
@@ -58,6 +60,7 @@ public sealed class WorkbenchService : IAsyncDisposable
         AiChat = new AiChatClient(AiCredentials);
         Intelligence = new CodeIntelligenceService(RuntimeDirectory, DataDirectory);
         Serial = new Serial.SerialTerminalService(Devices, DataDirectory, scriptHostExecutable: Path.Combine(RuntimeDirectory, "plugin-host", "StudioX.PluginHost.exe"));
+        MicroPython = new MicroPython.MicroPythonSessionService(Devices);
         SerialPlot = new SerialPlot.SerialPlotService(Devices, DataDirectory);
         Plugins = new PluginClient(Path.Combine(RuntimeDirectory, "plugin-host", "StudioX.PluginHost.exe"));
         PluginManager = new PluginManagerService(RuntimeDirectory, DataDirectory);
@@ -77,6 +80,8 @@ public sealed class WorkbenchService : IAsyncDisposable
     {
         get;
     }
+    public ZephyrPackRepository ZephyrPacks { get; }
+    public ZephyrProjectService ZephyrProjects { get; }
     public GitHubPackSyncService RemotePacks
     {
         get;
@@ -223,6 +228,9 @@ public sealed class WorkbenchService : IAsyncDisposable
         get;
     }
     public CMakeAssistanceService CMake { get; } = new();
+    public PythonAssistanceService Python { get; } = new();
+    public PythonNavigationService PythonNavigation { get; } = new();
+    public MicroPython.MicroPythonSessionService MicroPython { get; }
     public PluginClient Plugins
     {
         get;
@@ -247,6 +255,7 @@ public sealed class WorkbenchService : IAsyncDisposable
         await cleanup.RunAsync(Simulation.DisposeAsync);
         await cleanup.RunAsync(SerialPlot.DisposeAsync);
         await cleanup.RunAsync(Serial.DisposeAsync);
+        await cleanup.RunAsync(MicroPython.DisposeAsync);
         await cleanup.RunAsync(Debugger.DisposeAsync);
         await cleanup.RunAsync(Intelligence.DisposeAsync);
         // 先释放各用例自己的会话，再关闭所有设备，避免观察者收到已释放对象。

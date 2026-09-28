@@ -81,6 +81,32 @@ public static partial class PackValidator
                     throw new StudioXException("PACK_TEMPLATE", "模板 ID 重复。");
                 }
                 RequireFile(root, template.EntryFile);
+                if (template.Ag32Sources is not null && (manifest.Vendor != "AGM" || device.Architecture != "riscv" ||
+                    device.ToolsetId != "agm.agrv" || template.MicroPython is not null || template.EspressifExample is not null))
+                {
+                    throw new StudioXException("PACK_AG32_TEMPLATE", "AG32 模式模板需要 AGM RISC-V 器件配置。");
+                }
+                if (template.Ag32Sources is { } ag32Sources)
+                {
+                    RequireFile(root, ag32Sources.PinMapFile);
+                    RequireFile(root, ag32Sources.VerilogFile);
+                    if (ag32Sources.EntryFile is { } entryFile) RequireFile(root, entryFile);
+                }
+                foreach (var replaced in template.ReplacesTemplates ?? [])
+                {
+                    Token(replaced);
+                    if (device.Templates.Any(item => item.Id.Equals(replaced, StringComparison.OrdinalIgnoreCase)))
+                        throw new StudioXException("PACK_TEMPLATE", "被合并的旧模板不能同时作为当前模板提供。");
+                }
+                if (template.MicroPython is { } microPython)
+                {
+                    microPython.Validate(device.Id);
+                    if (device.Architecture != "arm" || template.Build is not null || template.EspressifExample is not null ||
+                        device.Espressif is not null || !template.EntryFile.EndsWith(".py", StringComparison.Ordinal))
+                    {
+                        throw new StudioXException("PACK_MICROPYTHON", "MicroPython 模板不能包含 C 构建覆盖或其他 SDK 模式。");
+                    }
+                }
                 if (template.EspressifExample is { } example)
                 {
                     if (device.Espressif is null)
@@ -92,7 +118,7 @@ public static partial class PackValidator
                     RequireFile(root, example.ExampleDirectory + "/LICENSE");
                     RequireFile(root, example.ExampleDirectory + "/template-source.json");
                 }
-                if (template.Build is { } build)
+                foreach (var build in new[] { template.Build, template.Ag32Sources?.Build }.OfType<TemplateBuild>())
                 {
                     if (build.Defines is null || build.IncludeDirectories is null || build.Sources is null || build.CompileOptions is null || build.LinkOptions is null)
                     {
@@ -119,13 +145,18 @@ public static partial class PackValidator
                 }
                 if (template.Files is not null)
                 {
-                    var destinations = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "src/main.c" };
+                    var destinations = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { template.MicroPython is null ? "src/main.c" : "main.py" };
                     foreach (var (destination, source) in template.Files)
                     {
                         _ = PathBoundary.Resolve(root, destination);
-                        if (!(destination.StartsWith("src/", StringComparison.Ordinal) || destination.StartsWith("include/", StringComparison.Ordinal)) || !destinations.Add(destination))
+                        var allowed = template.MicroPython is not null
+                            ? destination is "boot.py" or "README.md" || destination.StartsWith("lib/", StringComparison.Ordinal) && destination.EndsWith(".py", StringComparison.Ordinal)
+                            : destination.StartsWith("src/", StringComparison.Ordinal) || destination.StartsWith("include/", StringComparison.Ordinal);
+                        if (!allowed || !destinations.Add(destination))
                         {
-                            throw new StudioXException("PACK_TEMPLATE_FILE", "模板用户文件必须放在 src/ 或 include/ 中，且不能重名。");
+                            throw new StudioXException("PACK_TEMPLATE_FILE", template.MicroPython is null
+                                ? "模板用户文件必须放在 src/ 或 include/ 中，且不能重名。"
+                                : "MicroPython 附加文件只允许 boot.py、README.md 或 lib/ 下的 .py 文件，且不能重名。");
                         }
                         RequireFile(root, source);
                     }

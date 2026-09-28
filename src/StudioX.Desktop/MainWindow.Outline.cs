@@ -56,28 +56,34 @@ public partial class MainWindow
         }
         OutlineFileName.Text = activeDocument is { } source ? Path.GetFileName(source.RelativePath) : "";
         OutlineFileName.ToolTip = activeDocument?.RelativePath;
+        var devicetree = CodeLanguage.ForFile(activeDocument?.RelativePath ?? "") == "Devicetree";
+        OutlineSearchHint.Text = devicetree ? "搜索节点 / 属性…" : "搜索函数 / 全局变量…";
+        OutlineSearch.ToolTip = devicetree ? "筛选当前设备树源文件中的节点和属性" : "筛选函数、全局变量和类型；展开函数查看局部变量";
+        AutomationProperties.SetName(OutlineSearch, devicetree ? "搜索设备树节点或属性" : "搜索函数或全局变量");
+        AutomationProperties.SetName(OutlineTree, devicetree ? "当前设备树源文件节点与属性" : "当前文件函数与变量");
         if (closing || activeDocument is null || WorkspaceTabs.SelectedItem != EditorTab || OutlinePanel.Visibility != Visibility.Visible)
         {
-            OutlineStatus.Text = "打开 C/C++ 文件查看结构";
+            OutlineStatus.Text = "打开源码文件查看结构";
             return;
         }
-        if (!CodeIntelligenceService.Supports(activeDocument.RelativePath))
+        if (!devicetree && !CodeIntelligenceService.Supports(activeDocument.RelativePath))
         {
             OutlineStatus.Text = "当前文件类型暂不提供函数与变量列表";
             return;
         }
-        if (!services.Intelligence.IsReady)
+        if (!devicetree && !services.Intelligence.IsReady)
         {
             OutlineStatus.Text = "语言服务尚未就绪";
             return;
         }
-        OutlineStatus.Text = "正在更新文件结构…";
+        OutlineStatus.Text = devicetree ? "正在读取当前 DTS 源文件节点…" : "正在更新文件结构…";
         outlineTimer.Start();
     }
 
     private async Task RefreshOutlineAsync()
     {
-        if (closing || activeEditor is not { } session || !services.Intelligence.IsReady || WorkspaceTabs.SelectedItem != session.Tab)
+        if (closing || activeEditor is not { } session || WorkspaceTabs.SelectedItem != session.Tab ||
+            (CodeLanguage.ForFile(session.Source.RelativePath) != "Devicetree" && !services.Intelligence.IsReady))
         {
             return;
         }
@@ -85,7 +91,8 @@ public partial class MainWindow
         var document = session.Buffer;
         var text = document.Text;
         var path = session.Source.RelativePath;
-        var snapshots = CaptureCodeDocuments();
+        var devicetree = CodeLanguage.ForFile(path) == "Devicetree";
+        CodeDocumentSnapshot[] snapshots = devicetree ? [] : CaptureCodeDocuments();
         var cancellation = new CancellationTokenSource();
         outlineCancellation = cancellation;
         bool Current() => !closing && !cancellation.IsCancellationRequested && revision == outlineRevision &&
@@ -93,7 +100,9 @@ public partial class MainWindow
         try
         {
             // 解析和语言请求都在后台；过期返回不能覆盖已切换文件或更新后的缓冲区。
-            var symbols = await Task.Run(() => services.Intelligence.DocumentSymbolsAsync(path, text, cancellation.Token, snapshots), cancellation.Token);
+            var symbols = devicetree
+                ? await Task.Run(() => DevicetreeOutlineParser.Parse(text, cancellation.Token), cancellation.Token)
+                : await Task.Run(() => services.Intelligence.DocumentSymbolsAsync(path, text, cancellation.Token, snapshots), cancellation.Token);
             if (!Current())
             {
                 return;
@@ -135,6 +144,7 @@ public partial class MainWindow
     private void RenderOutline()
     {
         var query = OutlineSearch.Text.Trim();
+        var devicetree = CodeLanguage.ForFile(activeDocument?.RelativePath ?? "") == "Devicetree";
         var expanded = new HashSet<string>();
         void Remember(ItemsControl parent)
         {
@@ -151,7 +161,8 @@ public partial class MainWindow
         OutlineTree.Items.Clear();
         var displayed = 0;
         var truncated = false;
-        foreach (var (label, group) in new[] { ("函数", 0), ("变量", 1), ("类型与其他", 2) })
+        var groups = devicetree ? new[] { ("节点", 2), ("属性", 1) } : new[] { ("函数", 0), ("变量", 1), ("类型与其他", 2) };
+        foreach (var (label, group) in groups)
         {
             var root = new TreeViewItem { IsExpanded = true, Focusable = false };
             foreach (var symbol in outlineSymbols.Where(s => OutlineGroup(s.Kind) == group))
@@ -169,8 +180,11 @@ public partial class MainWindow
             OutlineTree.Items.Add(root);
         }
         OutlineStatus.ToolTip = null;
-        OutlineStatus.Text = displayed == 0 ? (query.Length > 0 ? "没有匹配的函数或变量" : "当前文件没有可显示的声明") :
-            $"{displayed} 个符号 · 单击跳转" + (activeEditor?.IsDirty == true ? " · 含未保存修改" : "") + (truncated ? " · 仅显示前 3000 项" : "");
+        OutlineStatus.Text = displayed == 0
+            ? query.Length > 0 ? (devicetree ? "没有匹配的节点或属性" : "没有匹配的函数或变量") :
+                (devicetree ? "当前源文件没有可显示的设备树节点" : "当前文件没有可显示的声明")
+            : $"{displayed} 个{(devicetree ? "节点/属性" : "符号")} · 单击跳转" +
+                (activeEditor?.IsDirty == true ? " · 含未保存修改" : "") + (truncated ? " · 仅显示前 3000 项" : "");
 
         TreeViewItem? MakeItem(CodeDocumentSymbol symbol, string parentKey, bool include)
         {
@@ -209,14 +223,17 @@ public partial class MainWindow
             item.Header = row;
             item.ToolTip = $"{kind}  {symbol.Name}" + (symbol.Detail.Length > 0 ? "\n" + symbol.Detail : "") + $"\n第 {symbol.SelectionRange.Start.Line + 1} 行";
             AutomationProperties.SetName(item, $"{kind} {symbol.Name}，第 {symbol.SelectionRange.Start.Line + 1} 行");
-            item.IsExpanded = (symbol.Kind is not (6 or 9 or 12) && query.Length > 0) || expanded.Contains(key);
+            item.IsExpanded = (devicetree && parentKey.Length == 0) ||
+                (symbol.Kind is not (6 or 9 or 12) && query.Length > 0) || expanded.Contains(key);
             return item;
         }
     }
 
-    private static int OutlineGroup(int kind) => kind is 6 or 9 or 12 ? 0 : kind is 7 or 8 or 13 or 14 ? 1 : 2;
+    private static int OutlineGroup(int kind) => kind is 6 or 9 or 12 ? 0 : kind is 7 or 8 or 13 or 14 or 256 ? 1 : 2;
     private static (string Glyph, string Color, string Kind) OutlineStyle(int kind) => kind switch
     {
+        255 => ("N", "#63BC92", "节点"),
+        256 => ("p", "#58B9D8", "属性"),
         6 or 9 or 12 => ("f", "#D5A859", "函数"),
         7 or 8 => ("m", "#58B9D8", "成员变量"),
         13 => ("v", "#62A2F5", "变量"),

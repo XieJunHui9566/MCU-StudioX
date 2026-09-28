@@ -1,8 +1,21 @@
 # MCU StudioX
 
-MCU StudioX 是 Windows x64 单片机 IDE。当前源码版本为 **0.2.5.1 预览版**，使用 C#、.NET 10 和 WPF 构建。
+MCU StudioX 是 Windows x64 单片机 IDE。当前源码版本为 **0.2.5.2 预览版**，使用 C#、.NET 10 和 WPF 构建。
 
 IDE 提供 C/C++ 编辑与代码提示、CMake 工程构建、器件包导入、固件下载与调试界面、串口工具、Git 图谱，以及带 MCP 工具的 AI 助手。器件能力取决于具体 `.mcupack`、工具链和硬件；尚未通过实板验证的型号不应视为已完成下载或调试适配。经过许可审查的部分器件包见 [MCU-StudioX-MCUPacks](https://github.com/XieJunHui9566/MCU-StudioX-MCUPacks)。
+
+## 2026-09-29 更新
+
+- **AG32 系统层与 FreeRTOS**：统一外设头文件、自动延时、命名引脚与 GPIO 电气配置；普通 MCU 模板通过特殊模式复选框进入 MCU + FPGA。
+- **Python / MicroPython**：补全、定义跳转、引用查找、查找替换；RP2040 / RP2350 的 C SDK 与 MicroPython 模板；顶部下载、串口 REPL 和运行按钮。
+- **构建与下载**：显示逻辑单元占用，简化 AG32 联合下载操作。
+
+详细改动与验证范围见 [2026-09-29 发行说明](docs/RELEASE-0.2.5.2.md)。
+
+![MicroPython 下载与运行](docs/screenshots/micropython-run-0.2.5.2.png)
+
+![AG32 FreeRTOS 特殊模式](docs/screenshots/ag32-freertos-0.2.5.2.png)
+
 
 ## 0.2.5.1 更新
 
@@ -42,7 +55,7 @@ IDE 提供 C/C++ 编辑与代码提示、CMake 工程构建、器件包导入、
 
 ## 安装包
 
-[下载 MCU StudioX 0.2.5.1 Windows x64 安装包](https://github.com/XieJunHui9566/MCU-StudioX/releases/tag/v0.2.5.1)。Release 同时提供新功能说明、SHA-256 校验文件和对应源码。安装包包含内置 SDK、工具链和当前器件包；不需要另装 .NET。安装程序为未签名预览版。
+[下载 MCU StudioX 0.2.5.2 Windows x64 安装包](https://github.com/XieJunHui9566/MCU-StudioX/releases/tag/v0.2.5.2)。Release 同时提供新功能说明、SHA-256 校验文件和对应源码。安装包包含内置 SDK、工具链和当前器件包；不需要另装 .NET。安装程序为未签名预览版。
 
 旧版网盘链接仍保留：[百度网盘 MCUStdioX](https://pan.baidu.com/s/5fh5exaJIgC6ThwSS_IdDOA)。该链接由维护者单独更新，不代表本次 0.2.5.1 安装包。
 

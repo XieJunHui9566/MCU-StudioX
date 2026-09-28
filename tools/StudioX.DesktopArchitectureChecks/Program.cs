@@ -12,8 +12,15 @@ internal static class Program
     private static int checks;
 
     [STAThread]
-    private static void Main()
+    private static void Main(string[] args)
     {
+        if (args is ["--render-memory", var project, var output])
+        {
+            var report = new StudioX.Engine.BuildMemoryService().ReadAsync(project).GetAwaiter().GetResult();
+            if (report.LogicUsage is null || report.Targets.Count == 0) { throw new InvalidOperationException("需要成功联合构建的 AG32 工程。"); }
+            BuildMemoryViewChecks.Render(report, output);
+            return;
+        }
         SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext());
         CodeHighlightingChecks.Run(Check);
         SafeTextEditorChecks.Run(Check);

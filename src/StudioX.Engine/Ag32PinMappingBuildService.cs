@@ -101,7 +101,8 @@ public sealed partial class Ag32PinMappingBuildService(ToolsetCatalog catalog, s
                     ExitCode = 1
                 }, []);
             }
-            await Ag32PinMappingClockVerification.CreateSdcAsync(build, token);
+            await Ag32PinMappingClockVerification.CreateSdcAsync(build, token, basicMapping: true);
+            await Ag32GpioElectrical.CreateAsync(build, source, token);
             privateRun = await PreparePrivateRuntimeAsync(tools, token);
             // Supra 将 ALTA_HOME 写入 Tcl source 表达式，Windows 反斜杠会变成转义字符。
             environment["ALTA_HOME"] = privateRun.Replace((char)92, '/');
@@ -110,7 +111,7 @@ public sealed partial class Ag32PinMappingBuildService(ToolsetCatalog catalog, s
                 "-X", "set LOGIC_TYPE VX", "-X", "set LOGIC_DB logic_db", "-X", "set LOGIC_DEVICE " + settings.TargetDevice,
                 "-X", "set LOGIC_DESIGN pins", "-X", "set LOGIC_TOPPIN false", "-X", "set LOGIC_DIR .",
                 "-X", "set LOGIC_VX pins.vx", "-X", "set VEX_FILE pins.vex", "-X", "set LOGIC_BIN pins.bin",
-                "-X", "set BOARD_ASF {}", "-X", "set BOARD_PRE {}", "-X", "set BOARD_POST {}",
+                "-X", "set BOARD_ASF studiox-gpio.asf", "-X", "set BOARD_PRE {}", "-X", "set BOARD_POST {}",
                 "-X", "set IP_ASF {}", "-X", "set IP_PRE {}", "-X", "set IP_POST {}",
                 "-X", "set DESIGN_ASF {}", "-X", "set DESIGN_PRE {}", "-X", "set DESIGN_POST {}",
                 "-X", "set IP_SDC studiox-clocks.sdc", "-X", "set LOGIC_COMPRESS false",
@@ -130,6 +131,8 @@ public sealed partial class Ag32PinMappingBuildService(ToolsetCatalog catalog, s
                 }, []);
             }
             var routing = await Ag32PinMappingRouting.VerifyAsync(build, source, token);
+            await routing.Timing.ExportAsync(build, token);
+            output?.Report(routing.Timing.Summary + "\n");
             foreach (var mapping in routing.Mappings)
             {
                 log.AppendLine("[实际物理布线] " + mapping);
@@ -152,10 +155,13 @@ public sealed partial class Ag32PinMappingBuildService(ToolsetCatalog catalog, s
             await using var image = File.OpenRead(imagePath);
             var imageHash = Convert.ToHexString(await SHA256.HashDataAsync(image, token));
             var receipt = new Ag32PinMappingReceipt(2, settings, sourceHash, tools.Fingerprint, imageHash, image.Length,
-                routing.VexSha256, routing.IoAsfSha256, routing.RoutedSha256, routing.VxSha256, routing.HeaderSha256, routing.SdcSha256);
+                routing.VexSha256, routing.IoAsfSha256, routing.RoutedSha256, routing.VxSha256, routing.HeaderSha256, routing.SdcSha256, routing.Timing.Sha256);
             await JsonStore.WriteAsync(PathBoundary.Resolve(root, Ag32PinMappingReceipt.RelativePath), receipt, token);
             log.AppendLine($"映射构建成功：{image.Length:N0} 字节；镜像 SHA-256 {imageHash}");
-            return await FinishAsync(supra, [imagePath, PathBoundary.Resolve(build, "pins.hx"), PathBoundary.Resolve(build, "pins.vex")]);
+            return await FinishAsync(supra, [imagePath, PathBoundary.Resolve(build, "pins.hx"), PathBoundary.Resolve(build, "pins.vex"),
+                PathBoundary.Resolve(build, Ag32GpioElectrical.FileName),
+                PathBoundary.Resolve(build, "studiox-clocks.sdc"), PathBoundary.Resolve(build, "studiox-timing.json"),
+                PathBoundary.Resolve(build, "coverage.rpt"), PathBoundary.Resolve(build, "setup_summary.rpt"), PathBoundary.Resolve(build, "hold_summary.rpt")]);
         }
         catch (Exception ex)
         {
@@ -233,7 +239,8 @@ public sealed partial class Ag32PinMappingBuildService(ToolsetCatalog catalog, s
         var routing = await Ag32PinMappingRouting.VerifyAsync(PathBoundary.Resolve(root, ".build/ag32-mapping"),
             await Ag32PinMappingValidation.ReadSourceAsync(root, settings, assignablePins, profile, token), token);
         if (routing.VexSha256 != receipt.VexSha256 || routing.IoAsfSha256 != receipt.IoAsfSha256 || routing.RoutedSha256 != receipt.RoutedSha256 ||
-            routing.VxSha256 != receipt.VxSha256 || routing.HeaderSha256 != receipt.HeaderSha256 || routing.SdcSha256 != receipt.SdcSha256)
+            routing.VxSha256 != receipt.VxSha256 || routing.HeaderSha256 != receipt.HeaderSha256 || routing.SdcSha256 != receipt.SdcSha256 ||
+            routing.Timing.Sha256 != receipt.TimingSha256)
         {
             throw new StudioXException("AG32_MAPPING_ROUTING", "物理引脚分配证据与构建凭据不符，请重新编译。");
         }
@@ -261,7 +268,10 @@ public sealed partial class Ag32PinMappingBuildService(ToolsetCatalog catalog, s
 
     public static void Invalidate(string projectDirectory)
     {
-        foreach (var relative in new[] { Ag32PinMappingReceipt.RelativePath, Ag32PinMappingReceipt.ImageRelativePath })
+        // 原始厂商报告保留用于排错；失效后移除上一次成功构建导出的摘要，避免展示旧的正余量。
+        foreach (var relative in new[] { Ag32PinMappingReceipt.RelativePath, Ag32PinMappingReceipt.ImageRelativePath,
+            ".build/ag32-mapping/studiox-timing.json", ".build/ag32-mapping/coverage.rpt",
+            ".build/ag32-mapping/setup_summary.rpt", ".build/ag32-mapping/hold_summary.rpt" })
         {
             var path = PathBoundary.Resolve(projectDirectory, relative);
             if (File.Exists(path))

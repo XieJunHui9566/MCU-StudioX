@@ -68,6 +68,8 @@ public sealed partial class Ag32NativeBuildService(ToolsetCatalog catalog, strin
             await RunAsync(native.Tool("mapper"), new[] { "-TQ", "-L", "mapper.log", "-c", "map.tcl", "pins.v" }
                 .Concat(settings.Sources.Select(file => "source/" + file)).ToArray(), "Verilog 原生综合", ToolsetEnvironment.Create(native));
             await Ag32PinMappingClockVerification.CreateSdcAsync(run, token);
+            var veSource = await File.ReadAllBytesAsync(Path.Combine(run, "pins.ve"), token);
+            await Ag32GpioElectrical.CreateAsync(run, veSource, token);
             foreach (var file in settings.SdcFiles)
                 await File.AppendAllTextAsync(Path.Combine(run, "studiox-clocks.sdc"), "\n" + await File.ReadAllTextAsync(PathBoundary.Resolve(source, file), token), token);
             privateRuntime = await licensing.PreparePrivateRuntimeAsync(tools, token);
@@ -78,6 +80,8 @@ public sealed partial class Ag32NativeBuildService(ToolsetCatalog catalog, strin
             var diagnostic = await File.ReadAllTextAsync(Path.Combine(run, "supra.log"), token);
             if (Regex.IsMatch(diagnostic, @"(?im)^\s*(Error:|Fatal:|Warn: IO .*not assigned)"))
                 throw new StudioXException("AG32_LOGIC_ROUTE", "厂商报告错误或未分配 IO，拒绝产生下载凭据。日志：" + logPath);
+            await Ag32GpioElectrical.VerifyAsync(run, veSource, await File.ReadAllTextAsync(Path.Combine(run, "pins.vex"), token),
+                await File.ReadAllTextAsync(Path.Combine(run, "pins_routed.v"), token), token);
             var image = Path.Combine(run, "pins.bin");
             if (!File.Exists(image) || new FileInfo(image).Length is <= 0 or > 102400)
                 throw new StudioXException("AG32_LOGIC_IMAGE", "位流为空或超过 100 KiB 保留逻辑区。");
@@ -92,7 +96,7 @@ public sealed partial class Ag32NativeBuildService(ToolsetCatalog catalog, strin
                 (await catalog.ResolveAsync("agm.pin-mapping", "1.0.0", "agm.ve", token)).Fingerprint != tools.Fingerprint)
                 throw new StudioXException("AG32_LOGIC_CHANGED", "构建期间源码集合或工具发生变化，请重新编译。");
             var artifacts = new Dictionary<string, string>();
-            foreach (var name in new[] { "pins.bin", "pins.v", "pins.hx", "pins.vex", "pins.vqm", "pins_routed.v", "studiox-clocks.sdc", "setup.rpt", "hold.rpt", "fmax.rpt", "coverage.rpt" })
+            foreach (var name in new[] { "pins.bin", "pins.v", "pins.hx", "pins.vex", "pins.vqm", "pins_routed.v", "studiox-clocks.sdc", "studiox-gpio.asf", "setup.rpt", "hold.rpt", "fmax.rpt", "coverage.rpt" })
             {
                 var file = Path.Combine(run, name);
                 artifacts[Path.GetRelativePath(root, file).Replace('\\', '/')] = await HashAsync(file, token);

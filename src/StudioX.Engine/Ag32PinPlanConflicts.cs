@@ -12,6 +12,21 @@ public static class Ag32PinPlanConflicts
         var conflicts = new List<Ag32PinPlanConflict>();
         var entries = assignments.Where(item => item is not null && !string.IsNullOrEmpty(item.Function)).ToArray();
         var known = functions.ToDictionary(function => function.Name, StringComparer.Ordinal);
+        var generatedNames = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var entry in entries.Where(item => !Ag32GpioElectrical.IsValid(item)))
+        {
+            conflicts.Add(new("Electrical", $"PIN_{entry.PinNumber} 的 GPIO 电气配置无效；上下拉与输出类型只适用于 GPIO，输入方向不能使用开漏输出。",
+                [entry.PinNumber], [entry.Function]));
+        }
+        foreach (var entry in entries.Where(item => item.Name is not null))
+        {
+            if (!Ag32SystemSupport.IsValidName(entry.Name!) ||
+                new[] { "", "_Port", "_Bit", "_Pin", "_Clock" }.Any(suffix => !generatedNames.Add(entry.Name + suffix)))
+            {
+                conflicts.Add(new("Name", $"PIN_{entry.PinNumber} 的名称 {entry.Name} 无效、重复或与生成符号冲突；请使用唯一的英文字母、数字和下划线名称。",
+                    [entry.PinNumber], [entry.Function]));
+            }
+        }
         foreach (var group in entries.GroupBy(item => item.Function, StringComparer.Ordinal).Where(group => group.Count() > 1))
         {
             var pins = PinNumbers(group);

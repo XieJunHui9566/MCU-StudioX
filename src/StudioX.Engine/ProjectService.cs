@@ -14,6 +14,8 @@ public sealed partial class ProjectService(Func<string, CancellationToken, Task>
         {
             throw new StudioXException("PROJECT_TEMPLATE", "请选择明确的模板。");
         }
+        var selectedTemplate = device.Templates.Single(template => template.Id == templateId);
+        // 特殊模式只由创建选项开启，模板资源不能替用户勾选或锁定模式。
         if (enableAg32Logic && !IsAg32LogicDevice(pack, deviceId))
         {
             throw new StudioXException("PROJECT_LOGIC_DEVICE", "逻辑/Verilog 特殊模式需要已核实型号、封装和逻辑保留区的 AGM 器件包。");
@@ -23,12 +25,21 @@ public sealed partial class ProjectService(Func<string, CancellationToken, Task>
         var pinMapping = ag32 is not null ? new Ag32PinMappingProjectSettings(ag32.TargetDevice) : null;
         var espressif = device.Espressif is { } profile
             ? new EspressifProjectSettings(profile.Framework, profile.Target, profile.SdkVersion) : null;
-        var selectedTemplate = device.Templates.Single(template => template.Id == templateId);
+        if (selectedTemplate.MicroPython is { } microPython)
+        {
+            microPython.Validate(deviceId);
+            if (enableAg32Logic)
+            {
+                throw new StudioXException("PROJECT_MICROPYTHON", "MicroPython 工程不使用 AG32 逻辑模式。");
+            }
+            return new(new ProjectManifest(1, name, pack.Manifest.Id, pack.Manifest.Version, pack.ContentHash,
+                deviceId, templateId, "", "", "", ProjectKind.MicroPython, EntryFile: "main.py", MicroPython: microPython), device);
+        }
         var entryFile = selectedTemplate.EspressifExample is { } example
             ? selectedTemplate.EntryFile[(example.ExampleDirectory.TrimEnd('/').Length + 1)..] : null;
         return new BuildPlan(new ProjectManifest(1, name, pack.Manifest.Id, pack.Manifest.Version, pack.ContentHash,
             deviceId, templateId, device.ToolsetId, device.ToolsetVersion, device.CompilerId, Logic: logic, Espressif: espressif, EntryFile: entryFile,
-            PinMapping: pinMapping), TemplateResolver.Resolve(device, templateId));
+            PinMapping: pinMapping), TemplateResolver.Resolve(device, templateId, enableAg32Logic));
     }
 
     public static bool IsAg32LogicDevice(InstalledPack pack, string deviceId)
@@ -56,6 +67,17 @@ public sealed partial class ProjectService(Func<string, CancellationToken, Task>
         try
         {
             Directory.CreateDirectory(staging);
+            if (plan.Project.Kind == ProjectKind.MicroPython)
+            {
+                await MicroPythonProject.WriteAsync(pack, plan, staging, cancellationToken);
+                if (initializeRepository is not null)
+                {
+                    await initializeRepository(staging, cancellationToken);
+                }
+                cancellationToken.ThrowIfCancellationRequested();
+                Directory.Move(staging, target);
+                return plan.Project;
+            }
             foreach (var source in Directory.EnumerateFiles(pack.RootDirectory, "*", SearchOption.AllDirectories))
             {
                 cancellationToken.ThrowIfCancellationRequested();
@@ -76,7 +98,8 @@ public sealed partial class ProjectService(Func<string, CancellationToken, Task>
             if (template.EspressifExample is null)
             {
                 Directory.CreateDirectory(Path.Combine(staging, "src"));
-                File.Copy(PathBoundary.Resolve(pack.RootDirectory, template.EntryFile), Path.Combine(staging, "src", "main.c"));
+                var entry = plan.Project.Logic is not null ? template.Ag32Sources?.EntryFile ?? template.EntryFile : template.EntryFile;
+                File.Copy(PathBoundary.Resolve(pack.RootDirectory, entry), Path.Combine(staging, "src", "main.c"));
             }
             Directory.CreateDirectory(Path.Combine(staging, "include"));
             if (template.Files is not null)
@@ -99,8 +122,38 @@ public sealed partial class ProjectService(Func<string, CancellationToken, Task>
             if (plan.Project.Logic is { } logic)
             {
                 await WriteAg32LogicScaffoldAsync(staging, plan.Project.DeviceId, logic, cancellationToken);
+                if (template.Ag32Sources is { } ag32Sources)
+                {
+                    File.Copy(PathBoundary.Resolve(pack.RootDirectory, ag32Sources.PinMapFile), PathBoundary.Resolve(staging, logic.PinMapFile), overwrite: true);
+                    File.Copy(PathBoundary.Resolve(pack.RootDirectory, ag32Sources.VerilogFile), PathBoundary.Resolve(staging, logic.VerilogFile), overwrite: true);
+                    await File.AppendAllTextAsync(Path.Combine(staging, "logic", "README.md"),
+                        "\n此模板已提供可综合的内部 GPIO4_0 → FPGA → GPIO4_1 回环，不占用封装脚。可在此基础上编辑 user_logic.v 和 pins.ve；FreeRTOS 运行在 MCU，逻辑电路独立运行。\n", cancellationToken);
+                }
             }
             await JsonStore.WriteAsync(Path.Combine(staging, ".studiox", "project.json"), plan.Project, cancellationToken);
+            if (plan.Project.PinMapping is { } systemMapping)
+            {
+                var ve = await File.ReadAllBytesAsync(PathBoundary.Resolve(staging, systemMapping.PinMapFile), cancellationToken);
+                await Ag32SystemSupport.WriteAsync(staging, Ag32SystemSupport.Render(ve, null, []), systemMapping.PinMapFile, ve, null, cancellationToken);
+                // 只创建新工程入口；已有工程保存配置时不触碰用户 main.c。
+                if (plan.Project.TemplateId == "minimal")
+                {
+                    await File.WriteAllTextAsync(Path.Combine(staging, "src", "main.c"), """
+                    #include "StudioX_System.h"
+
+                    volatile uint32_t app_heartbeat = 0;
+
+                    int main(void)
+                    {
+                        for (;;)
+                        {
+                            ++app_heartbeat;
+                            Delay_1ms();
+                        }
+                    }
+                    """ + "\n", cancellationToken);
+                }
+            }
             if (plan.Project.Espressif is not null)
             {
                 await EspressifProjectScaffold.WriteAsync(staging, plan, cancellationToken);
@@ -147,9 +200,23 @@ public sealed partial class ProjectService(Func<string, CancellationToken, Task>
         {
             throw new StudioXException("PROJECT_FORMAT", "不支持的工程格式。");
         }
+        if (project.Kind == ProjectKind.MicroPython)
+        {
+            await MicroPythonProject.ValidateAsync(directory, project, cancellationToken);
+            return project;
+        }
+        if (project.MicroPython is not null)
+        {
+            throw new StudioXException("PROJECT_MICROPYTHON", "MicroPython 配置与工程类型不一致。");
+        }
         if (project.Kind == ProjectKind.CubeMx)
         {
             CubeMxImportService.Validate(directory, project);
+        }
+        else if (project.Kind == ProjectKind.Zephyr)
+        {
+            await ZephyrProjectSettings.ValidateAsync(directory, project, cancellationToken);
+            return project;
         }
         else if (project.Kind != ProjectKind.Pack || project.CubeMx is not null)
         {
@@ -192,7 +259,7 @@ public sealed partial class ProjectService(Func<string, CancellationToken, Task>
             $"此目录独立于 `src/main.c` 的 MCU 固件。`user_logic.v` 只是编辑起点，不能直接综合下载；`pins.ve` 用于定义逻辑信号、MCU 功能与物理引脚的映射。当前目标为 {profile.DeviceId} 的 {profile.TargetDevice}（{profile.PackageName}）。\n\n" +
             "在 AG32 页面配置源文件、包含目录、宏和附加 SDC。顶部编译 / F7 联合运行 MCU GCC、VE 转换、内置原生 mapper 和 Supra 布局布线，生成两段独立镜像。无需外部 Quartus；Supra 许可须导入本机用户目录。\n\n" +
             "构建设置在 `.studiox/ag32-logic-build.json`，源文件路径相对工程。顶层 pins.v 和接口模板生成在 `.build/ag32-logic/<运行编号>/`；按模板核对 user_logic 的接口，不手工维护生成的顶层。失败保留原始日志，成功才建立可下载凭据。\n\n" +
-            "顶部下载先构建，再展示 MCU 与逻辑两段镜像的地址和 SHA-256。确认后分别写入校验、复位运行，不修改选项字节。当前实板身份检查仅开放已验证的 CCT6。\n\n" +
+            "顶部下载先构建，在日志中展示 MCU 与逻辑两段镜像的地址和 SHA-256，再分别写入校验、复位运行。当前实板身份检查仅开放已验证的 CCT6。\n\n" +
             "RTL 仿真在 AG32 页面配置 testbench；内置 Icarus 输出可缩放、筛选的 VCD 数字波形，支持 #delay、断言和 X/Z。仿真设置在 `.studiox/hdl-simulation.json`。新建模板需要连接 DUT 并添加激励和断言；当前不包含 SDF 布局后延时仿真。\n\n" +
             "配置 `pins.ve` 前请检查板级原理图、封装引脚和 MCU 外设复用。这里未预设任何物理引脚。\n", token);
     }

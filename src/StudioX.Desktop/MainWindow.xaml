@@ -319,6 +319,10 @@
                 InputGestureText="Ctrl+/"
                 Command="local:SourceCommands.ToggleComment"
                 CommandTarget="{Binding ElementName=SourceEditor}" />
+              <Separator />
+              <MenuItem Header="查找…" InputGestureText="Ctrl+F" Command="local:SourceCommands.Find" />
+              <MenuItem Header="替换…" InputGestureText="Ctrl+H" Command="local:SourceCommands.Replace" />
+              <MenuItem Header="全部替换（当前文件）…" Command="local:SourceCommands.ReplaceAll" />
             </MenuItem>
             <MenuItem
               Header="视图(_V)">
@@ -657,6 +661,19 @@
                   <TextBlock
                     Text="下载"
                     VerticalAlignment="Center" />
+                </StackPanel>
+              </Button>
+              <Button
+                x:Name="MicroPythonRunButton"
+                Style="{StaticResource LabeledToolButton}"
+                Visibility="Collapsed"
+                IsEnabled="False"
+                ToolTip="运行板上已下载的 MicroPython 脚本；修改代码后请先下载"
+                Click="MicroPythonRun_Click"
+                AutomationProperties.Name="开始运行">
+                <StackPanel Orientation="Horizontal">
+                  <local:Icon Kind="play" Foreground="{DynamicResource RunColor}" Margin="0,0,6,0" />
+                  <TextBlock x:Name="MicroPythonRunLabel" Text="开始运行" VerticalAlignment="Center" />
                 </StackPanel>
               </Button>
               <Button
@@ -1004,8 +1021,24 @@
                   </DockPanel>
                   <Grid
                     Grid.Row="1">
+                    <Grid.RowDefinitions>
+                      <RowDefinition Height="Auto" />
+                      <RowDefinition />
+                    </Grid.RowDefinitions>
+                    <Button
+                      x:Name="ZephyrDeviceTreeButton"
+                      Grid.Row="0"
+                      Style="{StaticResource LinkButton}"
+                      Content="设备树 · 板级 DTS（实验）"
+                      ToolTip="打开工程内的板级设备树源文件；合成后的 zephyr.dts 需要先通过 west 构建。"
+                      AutomationProperties.Name="打开 Zephyr 板级设备树源文件"
+                      Visibility="Collapsed"
+                      IsEnabled="False"
+                      Margin="12,2,8,2"
+                      Click="ZephyrDeviceTree_Click" />
                     <StackPanel
                       x:Name="EmptyProject"
+                      Grid.Row="1"
                       Margin="18,24,18,0">
                       <local:Icon
                         Kind="folder"
@@ -1037,6 +1070,7 @@
                     </StackPanel>
                     <TreeView
                       x:Name="ProjectTree"
+                      Grid.Row="1"
                       Visibility="Collapsed"
                       Margin="6"
                       MouseDoubleClick="ProjectTree_DoubleClick"
@@ -1547,6 +1581,7 @@
                   <Grid.RowDefinitions>
                     <RowDefinition
                       Height="30" />
+                    <RowDefinition Height="Auto" />
                     <RowDefinition />
                     <RowDefinition
                       Height="25" />
@@ -1611,8 +1646,30 @@
                         VerticalAlignment="Center" />
                     </DockPanel>
                   </Border>
+                  <Border x:Name="FindPanel" Grid.Row="1" Visibility="Collapsed" Background="{DynamicResource ToolSurface}"
+                    BorderBrush="{DynamicResource Border}" BorderThickness="0,0,0,1" Padding="10,8" PreviewKeyDown="Search_KeyDown">
+                    <StackPanel>
+                      <WrapPanel>
+                        <TextBlock Text="查找" VerticalAlignment="Center" Margin="0,0,8,6" />
+                        <TextBox x:Name="FindText" Width="240" TextChanged="Search_Changed" Margin="0,0,8,6" AutomationProperties.Name="查找文本" />
+                        <Button Content="上一个" Click="FindPrevious_Click" ToolTip="Shift+F3" Margin="0,0,6,6" />
+                        <Button Content="下一个" Click="FindNext_Click" ToolTip="F3" Margin="0,0,10,6" />
+                        <CheckBox x:Name="FindCase" Content="大小写" Checked="Search_Changed" Unchecked="Search_Changed" Margin="0,0,10,6" VerticalAlignment="Center" />
+                        <CheckBox x:Name="FindWord" Content="全词" Checked="Search_Changed" Unchecked="Search_Changed" Margin="0,0,10,6" VerticalAlignment="Center" />
+                        <CheckBox x:Name="FindRegex" Content="正则" Checked="Search_Changed" Unchecked="Search_Changed" Margin="0,0,10,6" VerticalAlignment="Center" />
+                        <Button Content="关闭" Click="CloseFind_Click" ToolTip="Esc" Margin="0,0,0,6" />
+                      </WrapPanel>
+                      <WrapPanel x:Name="ReplaceRow" Visibility="Collapsed">
+                        <TextBlock Text="替换" VerticalAlignment="Center" Margin="0,0,8,6" />
+                        <TextBox x:Name="ReplaceText" Width="240" Margin="0,0,8,6" ToolTip="正则模式支持 $1、${name} 分组；普通模式按原文替换" AutomationProperties.Name="替换文本" />
+                        <Button x:Name="ReplaceOneButton" Content="替换当前" Click="ReplaceOne_Click" Margin="0,0,6,6" />
+                        <Button x:Name="ReplaceAllButton" Content="全部替换（当前文件）" Click="ReplaceAll_Click" Margin="0,0,0,6" />
+                      </WrapPanel>
+                      <TextBlock x:Name="FindStatus" Text="当前文件 · 输入查找内容" TextWrapping="Wrap" Foreground="{DynamicResource Muted}" />
+                    </StackPanel>
+                  </Border>
                   <Grid
-                    Grid.Row="1">
+                    Grid.Row="2">
                     <Grid.ColumnDefinitions>
                       <ColumnDefinition
                         Width="*"
@@ -1701,6 +1758,7 @@
                             AutomationProperties.Name="搜索函数或全局变量"
                             TextChanged="OutlineSearch_TextChanged" />
                           <TextBlock
+                            x:Name="OutlineSearchHint"
                             Text="搜索函数 / 全局变量…"
                             Foreground="{DynamicResource Muted}"
                             Margin="7,0"
@@ -1882,7 +1940,7 @@
                     </Border>
                   </Grid>
                   <Border
-                    Grid.Row="2"
+                    Grid.Row="3"
                     BorderBrush="{DynamicResource Border}"
                     BorderThickness="0,1,0,0"
                     Padding="14,3">
@@ -2289,6 +2347,7 @@
                             </StackPanel>
                           </Border>
                           <Border
+                            x:Name="BuildSettingsCard"
                             VerticalAlignment="Top"
                             Background="{DynamicResource Panel}"
                             BorderBrush="{DynamicResource Border}"
@@ -2483,10 +2542,15 @@
                           Text="选择器件厂商，再选择器件包、芯片型号与起始模板。"
                           Foreground="{DynamicResource Muted}"
                           Margin="0,8,0,20" />
-                        <Button
-                          Content="导入 .mcupack…"
-                          HorizontalAlignment="Left"
-                          Click="ImportPack_Click" />
+                        <WrapPanel>
+                          <Button
+                            Content="导入 .mcupack…"
+                            Click="ImportPack_Click" />
+                          <Button
+                            Content="Zephyr 实验模式…"
+                            Margin="10,0,0,0"
+                            Click="ZephyrExperimental_Click" />
+                        </WrapPanel>
                         <Grid>
                           <Grid.ColumnDefinitions>
                             <ColumnDefinition
@@ -2670,11 +2734,12 @@
                               FontWeight="SemiBold"
                               AutomationProperties.Name="启用 AG32 逻辑 Verilog 特殊模式" />
                             <TextBlock
-                              Text="AG32VF303CCT6 · 2K 逻辑单元 · AGRV2KL48 / LQFP48"
+                              x:Name="Ag32LogicDeviceHint"
                               Foreground="{DynamicResource Muted}"
                               Margin="22,7,0,0" />
                             <TextBlock
-                              Text="顶部编译会联合生成 MCU 固件与 FPGA 位流，使用内置原生综合和 Supra 布局布线工具。Supra 需配置本机有效许可。下载前核对两段镜像；可在 AG32 页面配置源文件、SDC 和 RTL 波形仿真。"
+                              x:Name="Ag32LogicModeDescription"
+                              Text="顶部编译会联合生成 MCU 固件与 FPGA 位流，使用内置原生综合和 Supra 布局布线工具。Supra 需配置本机有效许可。点击下载后写入并校验两段镜像；可在 AG32 页面配置源文件、SDC 和 RTL 波形仿真。"
                               TextWrapping="Wrap"
                               Foreground="{DynamicResource Muted}"
                               Margin="22,7,0,0"
@@ -2745,6 +2810,23 @@
                 Visibility="Collapsed">
                 <local:SerialTerminalView
                   x:Name="SerialView" />
+              </TabItem>
+              <TabItem Header="MicroPython 下载 / REPL" x:Name="MicroPythonTab" Visibility="Collapsed">
+                <local:MicroPythonView x:Name="MicroPythonPanel" />
+              </TabItem>
+              <TabItem Header="Python 引用" x:Name="PythonReferencesTab" Visibility="Collapsed">
+                <Grid Background="{DynamicResource EditorSurface}" Margin="12">
+                  <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
+                  <TextBlock x:Name="PythonReferencesStatus" Margin="0,0,0,10" TextWrapping="Wrap" />
+                  <DataGrid x:Name="PythonReferences" Grid.Row="1" IsReadOnly="True" AutoGenerateColumns="False"
+                    CanUserAddRows="False" MouseDoubleClick="PythonReference_DoubleClick">
+                    <DataGrid.Columns>
+                      <DataGridTextColumn Header="文件" Binding="{Binding File}" Width="*" />
+                      <DataGridTextColumn Header="行" Binding="{Binding Line}" Width="80" />
+                      <DataGridTextColumn Header="列" Binding="{Binding Column}" Width="80" />
+                    </DataGrid.Columns>
+                  </DataGrid>
+                </Grid>
               </TabItem>
               <TabItem
                 Header="波形演示"
@@ -3640,12 +3722,12 @@
               Orientation="Horizontal"
               VerticalAlignment="Center">
               <TextBlock
-                Text="C / C++"
+                x:Name="StatusLanguage"
                 FontSize="11"
                 Foreground="{DynamicResource Muted}"
                 Margin="16,0" />
               <TextBlock
-                Text="UTF-8"
+                x:Name="StatusEncoding"
                 FontSize="11"
                 Foreground="{DynamicResource Muted}"
                 Margin="12,0" />

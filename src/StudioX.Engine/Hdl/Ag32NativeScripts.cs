@@ -13,6 +13,7 @@ internal static class Ag32NativeScripts
         alta::convert_pio_settings_cmd pins.vex "" alta_db/alta0.asf alta_db/alta0.apf alta_db/alta0.aqf
         read_design_and_pack -top pins -type vqm -ve pins.vex -sdc studiox-clocks.sdc -gclk_level 2 pins.vqm
         set_mode -skew basic -effort high -fitting auto -fitter full
+        source studiox-gpio.asf
         place_pseudo -user_io -place_io -place_pll -place_gclk -warn_io
         place_and_route_design -quiet -retry 3
         report_timing -setup -brief -file setup.rpt

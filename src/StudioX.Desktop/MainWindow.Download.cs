@@ -14,7 +14,7 @@ public partial class MainWindow
     private void ApplyDownloadConfiguration(DownloadConfiguration? configuration)
     {
         // STC 使用串口 ISP；OpenOCD 烧录器列表与其互不通用。
-        if (IsStcSdccProject || IsEspressifProject)
+        if (IsStcSdccProject || IsEspressifProject || IsZephyrProject || IsMicroPythonProject)
         {
             configuration = null;
         }
@@ -22,16 +22,21 @@ public partial class MainWindow
         try
         {
             downloadConfiguration = configuration;
-            supportsDownload = IsStcSdccProject || IsEspressifProject || configuration is not null;
-            DownloadProbeLabel.Visibility = DownloadProbePicker.Visibility = IsStcSdccProject || IsEspressifProject ? Visibility.Collapsed : Visibility.Visible;
+            supportsDownload = !IsZephyrProject && (IsMicroPythonProject || IsStcSdccProject || IsEspressifProject || configuration is not null);
+            DownloadProbeLabel.Visibility = DownloadProbePicker.Visibility = IsStcSdccProject || IsEspressifProject || IsZephyrProject || IsMicroPythonProject ? Visibility.Collapsed : Visibility.Visible;
             DownloadProbePicker.ItemsSource = configuration?.OpenOcd.Probes;
             DownloadProbePicker.SelectedValue = configuration?.Options.ProbeId;
             var probe = configuration?.OpenOcd.Probes.Single(p => p.Id == configuration.Options.ProbeId);
-            DownloadButton.ToolTip = IsEspressifProject ? "保存、使用内置 SDK 编译并预检多映像布局；确认目标与 COM 端口后下载" :
+            DownloadMenu.Header = IsMicroPythonProject ? "下载 MicroPython 脚本" : "下载固件";
+            DownloadButton.ToolTip = IsMicroPythonProject ? "保存并下载 MicroPython 脚本；首次使用请在下载页面选择 USB 串口。连接会中断板上程序。" :
+                IsZephyrProject ? "Zephyr 实验模式：当前尚未开放板级下载，请勿使用裸机后端。" :
+                IsEspressifProject ? "保存、使用内置 SDK 编译并预检多映像布局；确认目标与 COM 端口后下载" :
                 IsStcSdccProject ? "保存、编译并通过 STC 串口 ISP 下载；请先在工程设置中配置 COM 口和时钟" :
                 configuration is null ? "当前器件尚未提供匹配的下载配置" :
                 $"保存、编译并下载 · {probe!.DisplayName} · {configuration.Options.SpeedKhz} kHz";
-            DownloadSettingsButton.ToolTip = IsEspressifProject ? "ESP 下载设置：COM 端口与波特率" :
+            DownloadSettingsButton.ToolTip = IsMicroPythonProject ? "MicroPython 串口、脚本与 REPL" :
+                IsZephyrProject ? "Zephyr 实验模式：调试器配置尚待板级验证。" :
+                IsEspressifProject ? "ESP 下载设置：COM 端口与波特率" :
                 IsStcSdccProject ? "STC 串口、时钟与下载设置" : "下载设置：速度与序列号";
             DownloadProbePicker.ToolTip = configuration is null ? "打开工程后选择该器件支持的烧录器" :
                 $"{configuration.Device.Id} · {probe!.DisplayName} · {probe.Transport.ToUpperInvariant()} · {configuration.Options.SpeedKhz} kHz\n选择按当前工程保存；速度与序列号可在下载设置中修改。";
@@ -68,6 +73,11 @@ public partial class MainWindow
     private async void DownloadSettings_Click(object sender, RoutedEventArgs e) => await RunAsync(async token =>
     {
         var root = RequireProject();
+        if (IsMicroPythonProject)
+        {
+            ShowDocument(MicroPythonTab);
+            return;
+        }
         if (IsEspressifProject)
         {
             await ShowEspressifDownloadSettingsAsync(root, token);
@@ -107,6 +117,11 @@ public partial class MainWindow
     {
         EnsureNoActiveDebug();
         var root = RequireProject();
+        if (IsMicroPythonProject)
+        {
+            await DownloadMicroPythonAsync(root, token);
+            return;
+        }
         if (IsEspressifProject)
         {
             await DownloadEspressifAsync(root, token);
@@ -159,17 +174,16 @@ public partial class MainWindow
                     + "\n\n" + string.Join("\n\n", preview.Images.Select(image =>
                         $"{image.Role}：{image.RelativePath}\n地址：0x{image.Address:X8} · {image.Bytes} 字节\nSHA-256：{image.Sha256}"))
                     + $"\n\n布局 SHA-256：{preview.ApprovalSha256}\n\n将按两个镜像范围擦写、分别校验并复位运行；不修改选项字节。";
-                Status.Text = "请在下载确认窗口核对固件与映射两个镜像。";
-                if (!await Ag32PinMapping.ConfirmDownloadAsync(details,
-                    () => !closing && !closed && projectDirectory == root, token))
+                Log(details);
+                token.ThrowIfCancellationRequested();
+                if (closing || closed || projectDirectory != root)
                 {
-                    Status.Text = "已取消 AG32 下载，未连接烧录器。";
                     return;
                 }
                 EnsureNoActiveDebug();
                 if (editorDocuments.Any(document => document.IsDirty))
                 {
-                    Status.Text = "审批期间出现未保存的编辑。请保存后重新编译并核对下载计划。";
+                    Status.Text = "编译期间出现未保存的编辑。请保存后重新下载。";
                     Log(Status.Text);
                     return;
                 }

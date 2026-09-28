@@ -13,7 +13,7 @@ using StudioX.Foundation;
 
 public partial class MainWindow
 {
-    /// <summary>隔离副本验证图形转换、编辑同步与审批卡；不启动 Supra 或硬件进程。</summary>
+    /// <summary>隔离副本验证图形转换与编辑同步；不启动 Supra 或硬件进程。</summary>
     public async Task RenderAg32MappingPreviewAsync(string directory, string sourceProject)
     {
         var sourceManifest = await ProjectService.ReadAsync(sourceProject);
@@ -57,20 +57,6 @@ public partial class MainWindow
         {
             UpdateLayout();
             await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
-        }
-        async Task<Ag32DownloadConfirmationWindow> WaitForDownloadDialogAsync()
-        {
-            var deadline = DateTime.UtcNow.AddSeconds(5);
-            while (Ag32PinMapping.ActiveDownloadConfirmation is not { IsVisible: true })
-            {
-                if (DateTime.UtcNow >= deadline)
-                {
-                    throw new InvalidOperationException("下载确认弹窗没有打开。");
-                }
-                await Task.Delay(20);
-            }
-            await LayoutAsync();
-            return Ag32PinMapping.ActiveDownloadConfirmation!;
         }
         await OpenProjectAsync(fixture, CancellationToken.None);
         try
@@ -166,11 +152,44 @@ public partial class MainWindow
             await ChooseAsync(OpenPinMenu(21).ResetItem);
             Check(planner.SavePlanButton.IsEnabled && planner.ConflictStatus.Visibility == Visibility.Collapsed &&
                 planner.GetAssignments().Single().PinNumber == 2, "移除旧分配后消除冲突并恢复保存");
+            planner.AssignmentsGrid.SelectedItem = planner.GetAssignments().Single();
+            planner.PinName.Text = "LED1";
+            planner.PinDirection.SelectedValue = "OUTPUT";
+            planner.PinPull.SelectedValue = "UP";
+            planner.PinOutputType.SelectedValue = "OPEN_DRAIN";
+            Check(planner.GetAssignments().Single() is { Pull: "UP", OutputType: "OPEN_DRAIN" } && planner.HasChanges,
+                "上拉与开漏进入同一图形草稿");
+            planner.PinDirection.SelectedValue = "INPUT";
+            Check(!planner.PinOutputType.IsEnabled && planner.PinPull.IsEnabled &&
+                planner.GetAssignments().Single() is { Pull: "UP", OutputType: "PUSH_PULL" }, "输入保留上拉且不启用开漏输出");
+            planner.PinDirection.SelectedValue = "OUTPUT";
+            planner.PinOutputType.SelectedValue = "OPEN_DRAIN";
+            planner.SetBusy(true);
+            Check(!planner.PinPull.IsEnabled && !planner.PinOutputType.IsEnabled, "构建忙碌时禁用电气属性编辑");
+            planner.SetBusy(false);
+            Check(planner.GetAssignments().Single() is { Name: "LED1", Direction: "OUTPUT" } && planner.SavePlanButton.IsEnabled,
+                "引脚名称及 GPIO 输出方向进入同一图形草稿");
             planner.SavePlanButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             await pendingOperation;
             Check(!planner.HasChanges && planner.Snapshot!.Assignments.Single().PinNumber == 2 &&
                 activeEditor!.Buffer.Text.Contains("GPIO4_4 PIN_2", StringComparison.Ordinal) && !activeEditor.IsDirty,
                 "图形保存生成实际约束并立即同步已打开的 VE 编辑器");
+            Check(activeEditor!.Buffer.Text.Contains("GPIO4_4 PIN_2:OUTPUT #LED1", StringComparison.Ordinal) &&
+                (await services.Files.ReadAsync(fixture, Ag32SystemSupport.HeaderPath)).Text.Contains("#define LED1_Port GPIO4", StringComparison.Ordinal) &&
+                (await services.Files.ReadAsync(fixture, Ag32SystemSupport.SourcePath)).IsReadOnly,
+                "VE 命名注释和受管系统头文件 / 实现同步生成");
+            planner.AssignmentsGrid.SelectedItem = planner.GetAssignments().Single();
+            Check(planner.PinPull.SelectedValue as string == "UP" && planner.PinOutputType.SelectedValue as string == "OPEN_DRAIN" &&
+                (await services.Ag32PinPlanning.ReadAsync(fixture)).Assignments.Single() is { Pull: "UP", OutputType: "OPEN_DRAIN" },
+                "电气设置保存后重新选择及从磁盘读取均恢复");
+            await LayoutAsync();
+            planner.PinOutputType.BringIntoView();
+            await LayoutAsync();
+            Render(this, Path.Combine(directory, "named-pin-system.png"));
+            var electricalBounds = planner.PinOutputType.TransformToAncestor(Ag32PinMapping)
+                .TransformBounds(new Rect(planner.PinOutputType.RenderSize));
+            Check(electricalBounds.Top >= 0 && electricalBounds.Bottom <= Ag32PinMapping.ActualHeight,
+                "GPIO 电气选项可滚动到当前可见区域，控件完整显示");
             Check(planner.SdcButton.IsEnabled && planner.VexButton.IsEnabled &&
                 planner.ConstraintDetails.Text.Contains("studiox-clocks.sdc", StringComparison.Ordinal),
                 "保存后可查看厂商引脚约束与时钟 SDC");
@@ -314,37 +333,7 @@ public partial class MainWindow
                 themedMenu.UpdateLayout();
                 Render(themedMenu, Path.Combine(directory, "pin-menu-filtered-" + theme.Id + ".png"));
                 themedMenu.IsOpen = false;
-                var details = "离线审批显示验收，不执行下载。\n\napplication：.build/firmware.bin\n地址：0x80000000 · 4096 字节\nSHA-256：" + new string('A', 64)
-                    + "\n\npin-mapping：.build/ag32-pin-mapping/pins.bin\n地址：0x80027000 · 102400 字节\nSHA-256：" + new string('B', 64);
-                var pending = Ag32PinMapping.ConfirmDownloadAsync(details, () => true, CancellationToken.None);
-                var dialog = await WaitForDownloadDialogAsync();
-                Check(dialog.Owner == this && dialog.DetailsText.Text == details, "双镜像弹窗完整显示并关联主窗口 " + theme.Id);
-                Render(dialog, Path.Combine(directory, "mapping-approval-" + theme.Id + ".png"));
-                dialog.CancelButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-                Check(!await pending && Ag32PinMapping.ActiveDownloadConfirmation is null && !dialog.IsVisible,
-                    "取消后关闭弹窗并清理引用 " + theme.Id);
             }
-            // 从源码标签下载同样应弹窗，不依赖映射页是否选中。
-            ShowDocument(activeEditor!.Tab);
-            var previousTab = WorkspaceTabs.SelectedItem;
-            var approved = Ag32PinMapping.ConfirmDownloadAsync("离线批准验收，不执行工具。", () => true, CancellationToken.None);
-            var approveDialog = await WaitForDownloadDialogAsync();
-            Check(approveDialog.Owner == this && WorkspaceTabs.SelectedItem == previousTab, "源码页直接弹窗且保留当前标签");
-            approveDialog.ConfirmButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-            Check(await approved && Ag32PinMapping.ActiveDownloadConfirmation is null, "批准后关闭弹窗");
-            var dismissed = Ag32PinMapping.ConfirmDownloadAsync("关闭窗口验收。", () => true, CancellationToken.None);
-            (await WaitForDownloadDialogAsync()).Close();
-            Check(!await dismissed && Ag32PinMapping.ActiveDownloadConfirmation is null, "窗口关闭按取消处理");
-            using var cancellation = new CancellationTokenSource();
-            var cancelled = Ag32PinMapping.ConfirmDownloadAsync("取消等待验收。", () => true, cancellation.Token);
-            await WaitForDownloadDialogAsync();
-            cancellation.Cancel();
-            Check(!await cancelled && Ag32PinMapping.ActiveDownloadConfirmation is null, "停止等待关闭弹窗");
-            var isCurrent = true;
-            var stale = Ag32PinMapping.ConfirmDownloadAsync("工程切换验收。", () => isCurrent, CancellationToken.None);
-            await WaitForDownloadDialogAsync();
-            isCurrent = false;
-            Check(!await stale && Ag32PinMapping.ActiveDownloadConfirmation is null, "工程失效关闭弹窗并拒绝旧请求");
             await CloseProjectAsync(CancellationToken.None);
             Check(Ag32PinMappingTab.Visibility == Visibility.Collapsed && Ag32PinMappingRailButton.Visibility == Visibility.Collapsed,
                 "关闭工程清理映射入口");

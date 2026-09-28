@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: alientek_explorer_f407zg
+  full_name: Alientek Explorer STM32F407ZG V3.5 (Experimental)
+  vendor: others
+  socs:
+    - name: stm32f407xx

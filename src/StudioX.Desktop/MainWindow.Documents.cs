@@ -137,6 +137,8 @@ public partial class MainWindow
             EditorBreadcrumb.Text = document.RelativePath.Replace("/", "  ›  ");
             EditorBreadcrumb.ToolTip = document.RelativePath;
             EditorLanguage.Text = $"{CodeLanguage.ForFile(document.RelativePath)}    ·    {document.Encoding.WebName.ToUpperInvariant()}    ·    {(session.Buffer.Text.Contains("\r\n") ? "CRLF" : "LF")}" + (document.IsReadOnly ? "    ·    " + (document.ReadOnlyReason ?? "只读") : "");
+            StatusLanguage.Text = IsMicroPythonProject && CodeLanguage.ForFile(document.RelativePath) == "Python" ? "MicroPython" : CodeLanguage.ForFile(document.RelativePath);
+            StatusEncoding.Text = document.Encoding.WebName.ToUpperInvariant();
             ApplyEditorTheme();
             UpdateEditorPosition();
             RefreshDiagnosticMarkers();
@@ -287,6 +289,10 @@ public partial class MainWindow
             if (tab == SerialTab)
             {
                 await SerialView.CloseSessionAsync();
+            }
+            if (tab == MicroPythonTab)
+            {
+                await MicroPythonPanel.StopAsync();
             }
             if (tab == SerialPlotTab)
             {

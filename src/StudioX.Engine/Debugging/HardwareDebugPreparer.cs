@@ -9,6 +9,14 @@ public static class HardwareDebugPreparer
         => Task.Run(async () =>
         {
             var root = Path.GetFullPath(project);
+            if ((await ProjectService.ReadAsync(root, token)).Kind == ProjectKind.MicroPython)
+            {
+                throw MicroPythonProject.NativeOperationUnavailable();
+            }
+            if ((await ProjectService.ReadAsync(root, token)).Kind == ProjectKind.Zephyr)
+            {
+                throw ZephyrProjectService.RuntimeUnavailable();
+            }
             if ((await ProjectBuildSettings.ReadAsync(root, token)).DebugInfo == CompilerDebugInfo.None)
             {
                 throw new StudioXException("DEBUG_SYMBOLS", "当前工程选择了 -g0，不生成调试信息。请在工程编译参数中选择 -g2 或 -g3，重新编译并下载后调试。");
@@ -18,7 +26,7 @@ public static class HardwareDebugPreparer
             var prepared = await downloads.PrepareAsync(root, configuration.Options, token);
             if (prepared.Images.Any(snapshot => snapshot.Preview.Role == "pin-mapping"))
             {
-                configuration = configuration with { TargetScriptText = Ag32PinMappingTargetScript.RequireCompatible(root) };
+                configuration = configuration with { TargetScriptText = Ag32PinMappingTargetScript.RequireCompatible(root, configuration.OpenOcd.TargetScript) };
             }
             var receipt = await JsonStore.ReadAsync<BuildReceipt>(PathBoundary.Resolve(root, BuildReceipt.RelativePath), token);
             if (receipt.SourceStamp is null || receipt.SourceStamp != await DebugSourceStamp.ComputeAsync(root, token))

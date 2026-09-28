@@ -14,6 +14,10 @@ public sealed partial class OpenOcdService(ToolsetCatalog catalog)
     public async Task<DownloadConfiguration?> ConfigurationAsync(string projectDirectory, CancellationToken token = default)
     {
         var project = await ProjectService.ReadAsync(projectDirectory, token);
+        if (project.Kind is ProjectKind.Zephyr or ProjectKind.MicroPython)
+        {
+            return null;
+        }
         DownloadConfiguration configuration;
         if (project.Kind == ProjectKind.CubeMx)
         {
@@ -58,6 +62,10 @@ public sealed partial class OpenOcdService(ToolsetCatalog catalog)
 
     public async Task SaveOptionsAsync(string projectDirectory, DownloadOptions options, CancellationToken token = default)
     {
+        if ((await ProjectService.ReadAsync(projectDirectory, token)).Kind == ProjectKind.Zephyr)
+        {
+            throw ZephyrProjectService.RuntimeUnavailable();
+        }
         var configuration = await ConfigurationAsync(projectDirectory, token) ?? throw Unsupported();
         options = Ag32ProbeConfiguration.NormalizeOptions(configuration.Device, options);
         Validate(configuration.OpenOcd, options);
@@ -85,6 +93,10 @@ public sealed partial class OpenOcdService(ToolsetCatalog catalog)
     {
         var root = Path.GetFullPath(projectDirectory);
         var project = await ProjectService.ReadAsync(root, token);
+        if (project.Kind is ProjectKind.Zephyr or ProjectKind.MicroPython)
+        {
+            throw ZephyrProjectService.RuntimeUnavailable();
+        }
         var configuration = await ConfigurationAsync(root, token) ?? throw Unsupported();
         options = Ag32ProbeConfiguration.NormalizeOptions(configuration.Device, options);
         Validate(configuration.OpenOcd, options);

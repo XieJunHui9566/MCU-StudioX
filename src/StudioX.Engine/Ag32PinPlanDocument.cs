@@ -62,12 +62,18 @@ internal sealed class Ag32PinPlanDocument
             }
             else if (assignment.Success && int.TryParse(assignment.Groups[2].Value, out var pin))
             {
+                var electrical = Ag32GpioElectrical.ReadOptions(original);
                 mapping = new(assignment.Groups[1].Value, pin,
-                    assignment.Groups[3].Success ? assignment.Groups[3].Value : null);
+                    assignment.Groups[3].Success ? assignment.Groups[3].Value : null,
+                    ReadName(original), electrical.Pull, electrical.OutputType);
             }
             else if (content.Length != 0 && !IsPreservedSetting(content))
             {
                 Diagnostics.Add($"第 {number} 行：包含自定义或复杂 VE 配置；请在文本编辑器处理，图形规划只读。");
+            }
+            if (mapping is null && original.Contains(Ag32GpioElectrical.Marker, StringComparison.Ordinal))
+            {
+                throw new StudioXException("AG32_GPIO_OPTIONS", $"第 {number} 行的电气配置需绑定一个简单 GPIO 到 PIN 的映射。");
             }
             parsed.Add(new(original, match.Groups[2].Value, mapping, clockName));
         }
@@ -103,7 +109,7 @@ internal sealed class Ag32PinPlanDocument
                 }
                 if (index < 0)
                 {
-                    result.Append(CommentOnly(line.Text)).Append(line.Ending);
+                    result.Append(CommentOnly(RemoveName(Ag32GpioElectrical.RemoveOptions(line.Text)))).Append(line.Ending);
                     continue;
                 }
                 var value = remaining[index];
@@ -114,7 +120,7 @@ internal sealed class Ag32PinPlanDocument
                 }
                 else
                 {
-                    result.Append(ReplaceContent(line.Text, RenderAssignment(value)));
+                    result.Append(Ag32GpioElectrical.WithOptions(WithName(ReplaceContent(RemoveName(Ag32GpioElectrical.RemoveOptions(line.Text)), RenderAssignment(value)), value.Name), value));
                 }
             }
             else if (line.Clock is { } name)
@@ -148,7 +154,7 @@ internal sealed class Ag32PinPlanDocument
         }
         foreach (var mapping in remaining)
         {
-            AppendLine(RenderAssignment(mapping));
+            AppendLine(Ag32GpioElectrical.WithOptions(WithName(RenderAssignment(mapping), mapping.Name), mapping));
         }
         foreach (var (name, value) in clockValues)
         {
@@ -171,6 +177,26 @@ internal sealed class Ag32PinPlanDocument
     }
 
     private static string Number(decimal value) => value.ToString("0.############################", CultureInfo.InvariantCulture);
+
+    private static string? ReadName(string line)
+    {
+        var comment = line.IndexOf('#');
+        if (comment < 0) { return null; }
+        var name = Regex.Match(line[comment..], @"^#([A-Za-z][A-Za-z0-9_]*)(?=\s*(?:#|$))", RegexOptions.CultureInvariant);
+        return name.Success ? name.Groups[1].Value : null;
+    }
+
+    private static string RemoveName(string line)
+    {
+        var name = ReadName(line);
+        return name is null ? line : line.Remove(line.IndexOf('#'), name.Length + 1).TrimEnd();
+    }
+    private static string WithName(string line, string? name)
+    {
+        if (string.IsNullOrEmpty(name)) { return line; }
+        var comment = line.IndexOf('#');
+        return comment < 0 ? line.TrimEnd() + " #" + name : line.Insert(comment, "#" + name + " ");
+    }
 
     private static bool IsPreservedSetting(string content)
     {

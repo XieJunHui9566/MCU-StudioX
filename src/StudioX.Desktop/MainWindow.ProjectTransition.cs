@@ -5,6 +5,10 @@ public partial class MainWindow
     private ProjectTransitionCoordinator CreateProjectTransitionCoordinator() => new(
         stopAgentAsync: async () =>
         {
+            await MicroPythonPanel.StopAsync();
+            MicroPythonPanel.SetProject(null, null);
+            PythonReferences.ItemsSource = null;
+            PythonReferencesTab.Visibility = System.Windows.Visibility.Collapsed;
             await StopPluginWorkspaceAsync();
             aiCancellation?.Cancel();
             await DisposeAiMcpSessionAsync();

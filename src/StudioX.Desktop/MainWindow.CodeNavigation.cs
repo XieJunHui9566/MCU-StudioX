@@ -23,9 +23,11 @@ public partial class MainWindow
     private readonly List<NavigationPoint> navigationBack = [];
     private readonly List<NavigationPoint> navigationForward = [];
     private sealed record NavigationPoint(string Path, TextAnchor Anchor, CodePosition Position, double Vertical, double Horizontal);
-    private bool CanNavigateCode => !closing && activeDocument is not null && WorkspaceTabs.SelectedItem == EditorTab && CodeIntelligenceService.Supports(activeDocument.RelativePath);
+    private bool CanNavigateCode => !closing && projectDirectory is not null && activeDocument is not null && WorkspaceTabs.SelectedItem == EditorTab &&
+        (CodeIntelligenceService.Supports(activeDocument.RelativePath) || IsPythonDocument);
+    private bool NavigationReady => IsPythonDocument || services.Intelligence.IsReady;
 
-    private CodeDocumentSnapshot[] CaptureCodeDocuments() => editorDocuments.Where(session => CodeIntelligenceService.Supports(session.Source.RelativePath))
+    private CodeDocumentSnapshot[] CaptureCodeDocuments() => editorDocuments.Where(session => CodeIntelligenceService.Supports(session.Source.RelativePath) || PythonAssistanceService.Supports(session.Source.RelativePath))
         .Select(session => new CodeDocumentSnapshot(session.Source.RelativePath, session.Buffer.Text)).ToArray();
 
     private void InitializeCodeNavigation()
@@ -69,14 +71,17 @@ public partial class MainWindow
         sourceContextMenu = menu;
         var definition = new MenuItem { Header = "转到定义", InputGestureText = "F12" };
         var declaration = new MenuItem { Header = "转到声明", InputGestureText = "Ctrl+F12" };
+        var references = new MenuItem { Header = "查找引用", InputGestureText = "Shift+F12" };
         var back = new MenuItem { Header = "返回上一个位置", InputGestureText = "Alt+←" };
         var forward = new MenuItem { Header = "前进到下一个位置", InputGestureText = "Alt+→" };
         definition.Click += (_, _) => QueueCodeNavigation(declaration: false, contextOffset);
         declaration.Click += (_, _) => QueueCodeNavigation(declaration: true, contextOffset);
+        references.Click += (_, _) => QueuePythonReferences(contextOffset);
         back.Click += async (_, _) => await RunAsync(_ => TravelNavigationAsync(backwards: true));
         forward.Click += async (_, _) => await RunAsync(_ => TravelNavigationAsync(backwards: false));
         menu.Items.Add(definition);
         menu.Items.Add(declaration);
+        menu.Items.Add(references);
         menu.Items.Add(new Separator());
         menu.Items.Add(back);
         menu.Items.Add(forward);
@@ -87,6 +92,10 @@ public partial class MainWindow
         }
         menu.Items.Add(new Separator());
         menu.Items.Add(new MenuItem { Header = "切换行注释", InputGestureText = "Ctrl+/", Command = SourceCommands.ToggleComment, CommandTarget = this });
+        menu.Items.Add(new Separator());
+        menu.Items.Add(new MenuItem { Header = "查找…", InputGestureText = "Ctrl+F", Command = SourceCommands.Find, CommandTarget = this });
+        menu.Items.Add(new MenuItem { Header = "替换…", InputGestureText = "Ctrl+H", Command = SourceCommands.Replace, CommandTarget = this });
+        menu.Items.Add(new MenuItem { Header = "全部替换（当前文件）…", Command = SourceCommands.ReplaceAll, CommandTarget = this });
         menu.Opened += (_, _) =>
         {
             HideSymbolHover();
@@ -94,7 +103,8 @@ public partial class MainWindow
             {
                 contextOffset = SourceEditor.CaretOffset;
             }
-            definition.IsEnabled = declaration.IsEnabled = CanNavigateCode && services.Intelligence.IsReady && contextOffset is { } offset && IsSymbolContext(offset);
+            definition.IsEnabled = declaration.IsEnabled = CanNavigateCode && NavigationReady && contextOffset is { } offset && IsSymbolContext(offset);
+            references.IsEnabled = definition.IsEnabled && IsPythonDocument;
             back.IsEnabled = navigationBack.Count > 0;
             forward.IsEnabled = navigationForward.Count > 0;
         };
@@ -241,7 +251,7 @@ public partial class MainWindow
         {
             return;
         }
-        if (!services.Intelligence.IsReady)
+        if (!NavigationReady)
         {
             Status.Text = "跳转服务尚未就绪。";
             return;
@@ -252,12 +262,17 @@ public partial class MainWindow
         var text = document.Text;
         var path = activeDocument!.RelativePath;
         var documents = CaptureCodeDocuments();
+        var python = IsPythonDocument;
+        var root = projectDirectory!;
+        var profile = currentProjectManifest?.MicroPython;
         navigationTask = FetchAsync();
         async Task FetchAsync()
         {
             try
             {
-                var locations = await services.Intelligence.NavigateAsync(path, text, offset, declaration, cancellation.Token, documents);
+                var locations = python
+                    ? await services.PythonNavigation.FindAsync(root, path, text, offset, false, documents, profile, cancellation.Token)
+                    : await services.Intelligence.NavigateAsync(path, text, offset, declaration, cancellation.Token, documents);
                 if (cancellation.IsCancellationRequested || SourceEditor.Document != document || document.Text != text || !CanNavigateCode)
                 {
                     return;
@@ -312,7 +327,7 @@ public partial class MainWindow
     private async Task JumpToCodeAsync(CodeLocation location, CancellationToken token)
     {
         var existing = FindEditor(location.DocumentPath);
-        var source = existing?.Source ?? await services.Intelligence.ReadNavigationDocumentAsync(location, token);
+        var source = existing?.Source ?? await ReadCodeLocationAsync(location, token);
         token.ThrowIfCancellationRequested();
         var text = existing?.Buffer.Text ?? source.Text;
         var start = CodePositions.ToOffset(text, location.Range.Start);
@@ -350,7 +365,7 @@ public partial class MainWindow
         var point = from[^1];
         var origin = CaptureNavigationPoint();
         var existing = FindEditor(point.Path);
-        var source = existing?.Source ?? await services.Intelligence.ReadNavigationDocumentAsync(new(point.Path, new(point.Position, point.Position), point.Path));
+        var source = existing?.Source ?? await ReadCodeLocationAsync(new(point.Path, new(point.Position, point.Position), point.Path), CancellationToken.None);
         var buffer = existing?.Buffer ?? new TextDocument(source.Text);
         var line = buffer.GetLineByNumber(Math.Clamp(point.Position.Line + 1, 1, buffer.LineCount));
         var offset = existing is not null && point.Anchor.Document == existing.Buffer && !point.Anchor.IsDeleted ? point.Anchor.Offset :

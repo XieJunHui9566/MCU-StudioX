@@ -8,13 +8,14 @@ import json
 from pathlib import Path
 import re
 import subprocess
+import Ag32RtosTemplates
 
 
 PACKS = {
-    "AG32VF303": ("studiox.preview.ag32vf303", "0.1.3"),
-    "AG32VF407": ("agm.ag32vf407", "0.1.1"),
-    "AG32VH303": ("agm.ag32vh303", "0.1.1"),
-    "AG32VH407": ("agm.ag32vh407", "0.1.1"),
+    "AG32VF303": ("studiox.preview.ag32vf303", "0.1.5"),
+    "AG32VF407": ("agm.ag32vf407", "0.1.3"),
+    "AG32VH303": ("agm.ag32vh303", "0.1.3"),
+    "AG32VH407": ("agm.ag32vh407", "0.1.3"),
 }
 FLASH_ORIGIN = 0x80000000
 RAM_ORIGIN = 0x20000000
@@ -195,7 +196,7 @@ def make_device(device: dict, stage: Path, verified_target: bytes) -> dict:
                 "description": "内存中生成数据，可查看注释、函数和数据结构，不依赖板级外设。",
                 "entryFile": "templates/editor-demo/main.c",
             },
-        ],
+        ] + Ag32RtosTemplates.templates(),
     }
 
 
@@ -207,6 +208,7 @@ def stage_pack(
     sdk: Path,
     sources: dict[str, bytes],
     provenance: dict,
+    rtos_files: dict,
 ) -> tuple[Path, dict]:
     pack_id, version = PACKS[series]
     stage = output / "source" / pack_id
@@ -227,6 +229,12 @@ def stage_pack(
         (preview / "templates/editor-demo/main.c").read_bytes(),
     )
     write(stage, "README.md", (recipe / "README.md").read_bytes())
+    for name, data in rtos_files.items():
+        write(stage, "sdk/freertos/" + name, data)
+    write(stage, "vendor/licenses/FreeRTOS-LICENSE.md", rtos_files["LICENSE.md"])
+    for source in sorted((recipe / "freertos").iterdir()):
+        if source.suffix in (".c", ".h", ".ve", ".v"):
+            write(stage, "templates/freertos/" + source.name, source.read_bytes())
 
     details = dict(provenance)
     details["devices"] = devices
@@ -268,6 +276,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--sdk-directory", required=True, type=Path)
     parser.add_argument("--platform-directory", required=True, type=Path)
+    parser.add_argument("--freertos-directory", required=True, type=Path)
     parser.add_argument("--output", required=True, type=Path, help="不存在的新输出目录")
     parser.add_argument("--cli", type=Path, help="已编译 StudioX.Cli.dll；打包时必须显式提供")
     parser.add_argument("--stage-only", action="store_true")
@@ -289,12 +298,13 @@ def main() -> None:
     sdk = args.sdk_directory.resolve()
     platform = args.platform_directory.resolve()
     sources, provenance = read_sources(sdk, platform, catalog)
+    rtos_files, provenance["freeRtos"] = Ag32RtosTemplates.prepare(args.freertos_directory.resolve(), recipe)
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=False)
     index = []
     for series in PACKS:
         selected = [device for device in devices if device["series"] == series]
-        stage, manifest = stage_pack(series, selected, output, recipe, sdk, sources, provenance)
+        stage, manifest = stage_pack(series, selected, output, recipe, sdk, sources, provenance, rtos_files)
         entry = {
             "id": manifest["id"],
             "version": manifest["version"],

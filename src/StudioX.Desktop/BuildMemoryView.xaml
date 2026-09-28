@@ -116,7 +116,7 @@
       <ScrollViewer
         VerticalScrollBarVisibility="Auto"
         HorizontalScrollBarVisibility="Disabled"
-        MaxHeight="270"
+        MaxHeight="320"
         Margin="8,8,0,0">
         <StackPanel>
           <ItemsControl
@@ -228,7 +228,17 @@
                     Text="{Binding Diagnostic}"
                     Foreground="{DynamicResource Muted}"
                     FontSize="11"
-                    TextWrapping="Wrap" />
+                    TextWrapping="Wrap">
+                    <TextBlock.Style>
+                      <Style TargetType="TextBlock">
+                        <Style.Triggers>
+                          <DataTrigger Binding="{Binding Diagnostic}" Value="{x:Null}">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                          </DataTrigger>
+                        </Style.Triggers>
+                      </Style>
+                    </TextBlock.Style>
+                  </TextBlock>
                 </StackPanel>
               </DataTemplate>
             </ItemsControl.ItemTemplate>

@@ -35,19 +35,19 @@ function Get-Ag32ReleasePacks([string]$CatalogRoot)
 {
     $expected = @{
         'studiox.preview.ag32vf303' = @{
-            version = '0.1.3'
+            version = '0.1.5'
             devices = @('AG32VF303KCU6', 'AG32VF303CCT6', 'AG32VF303VCT6')
         }
         'agm.ag32vf407' = @{
-            version = '0.1.1'
+            version = '0.1.3'
             devices = @('AG32VF407RGT6', 'AG32VF407VGT6')
         }
         'agm.ag32vh303' = @{
-            version = '0.1.1'
+            version = '0.1.3'
             devices = @('AG32VH303RCT6')
         }
         'agm.ag32vh407' = @{
-            version = '0.1.1'
+            version = '0.1.3'
             devices = @('AG32VH407VGT6')
         }
     }

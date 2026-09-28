@@ -14,7 +14,8 @@ public sealed record DebugTargetProfile(string DeviceId, string Core, bool HasFp
             device.ToolsetId == "agm.agrv" && device.ToolsetVersion == "1.0.0" && device.CompilerId == "agrv-gcc-11.1.0" &&
             device.FlashOrigin == 0x80000000 && device.FlashBytes == 0x40000 &&
             device.RamOrigin == 0x20000000 && device.RamBytes == 0x20000 &&
-            device.OpenOcd is { ApplicationFlashBytes: 0x27000, TargetScript: "debug/ag32vf303.cfg" })
+            device.OpenOcd is { ApplicationFlashBytes: 0x27000 } openOcd &&
+            Ag32PinMappingTargetScript.IsSupportedPath(openOcd.TargetScript))
         {
             return new(device.Id, "AgRV · RV32", true);
         }

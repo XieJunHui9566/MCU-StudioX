@@ -25,10 +25,13 @@ public partial class MainWindow
     {
         currentProjectManifest = project;
         projectDetailsRevision++;
+        ZephyrDeviceTreeButton.Visibility = project?.Kind == ProjectKind.Zephyr ? Visibility.Visible : Visibility.Collapsed;
+        ZephyrDeviceTreeButton.IsEnabled = false;
         NewProjectPanel.Visibility = project is null ? Visibility.Visible : Visibility.Collapsed;
         NewProjectPanel.IsEnabled = project is null;
         ProjectDetailsPanel.Visibility = project is null ? Visibility.Collapsed : Visibility.Visible;
         ProjectDetailsPanel.DataContext = null;
+        BuildSettingsCard.Visibility = project?.Kind is ProjectKind.Zephyr or ProjectKind.MicroPython ? Visibility.Collapsed : Visibility.Visible;
         loadedBuildSettings = null;
         stcCodeRomLimit = null;
         ConfigureBuildSettingsForProject();
@@ -49,20 +52,49 @@ public partial class MainWindow
         NewProjectPanel.IsEnabled = false;
         ProjectDetailsPanel.Visibility = Visibility.Visible;
         CurrentProjectName.Text = project.Name;
-        CurrentProjectDeviceId.Text = project.DeviceId;
+        CurrentProjectDeviceId.Text = project.Kind == ProjectKind.Zephyr
+            ? project.Zephyr!.BoardTarget : project.DeviceId;
         CurrentProjectTemplateId.Text = project.Kind == ProjectKind.CubeMx ? "CubeMX 导入" : project.TemplateId;
-        CurrentProjectDescriptionHeading.Text = project.Kind == ProjectKind.CubeMx ? "工程来源说明" : "模板默认配置（创建时）";
-        TemplateDefaultsNote.Visibility = project.Kind == ProjectKind.CubeMx ? Visibility.Collapsed : Visibility.Visible;
+        CurrentProjectDescriptionHeading.Text = project.Kind switch
+        {
+            ProjectKind.CubeMx => "工程来源说明",
+            ProjectKind.Zephyr => "Zephyr 实验板级配置（创建时）",
+            _ => "模板默认配置（创建时）"
+        };
+        TemplateDefaultsNote.Visibility = project.Kind is ProjectKind.CubeMx or ProjectKind.Zephyr or ProjectKind.MicroPython
+            ? Visibility.Collapsed : Visibility.Visible;
         CurrentProjectPackVersion.Text = project.Kind == ProjectKind.CubeMx ? "不适用" : project.PackVersion;
-        CurrentProjectToolset.Text = $"{project.ToolsetId} {project.ToolsetVersion} · {project.CompilerId}";
+        CurrentProjectToolset.Text = project.Kind == ProjectKind.Zephyr
+            ? $"Zephyr {project.Zephyr!.ZephyrVersion} · 实验模式 · {project.Zephyr.BoardTarget}"
+            : $"{project.ToolsetId} {project.ToolsetVersion} · {project.CompilerId}";
         ApplyProjectDetails(ProjectDeviceInfo.Recorded(project));
         loadedBuildSettings = null;
         stcCodeRomLimit = null;
-        BuildSettingsStatus.Text = "正在读取编译参数…";
+        BuildSettingsStatus.Text = project.Kind == ProjectKind.Zephyr
+            ? "Zephyr 实验模式由 Kconfig、Devicetree 与 west 管理；当前未启用板级构建。"
+            : "正在读取编译参数…";
         UpdateBuildSettingsControls();
         ConfigureEspressifModuleForProject();
         ShowDocument(PackagesTab);
         var details = await ProjectDeviceInfo.ReadAsync(directory, project);
+        if (project.Kind == ProjectKind.MicroPython)
+        {
+            CurrentProjectToolset.Text = $"MicroPython {project.MicroPython!.Version} · {project.MicroPython.Board}";
+            BuildSettingsStatus.Text = "MicroPython 脚本不使用 GCC 编译参数；请通过 MicroPython 页面上传。";
+            if (revision == projectDetailsRevision && projectDirectory == directory && !closing)
+            {
+                ApplyProjectDetails(details);
+            }
+            return;
+        }
+        if (project.Kind == ProjectKind.Zephyr)
+        {
+            if (revision == projectDetailsRevision && projectDirectory == directory && !closing)
+            {
+                ApplyProjectDetails(details);
+            }
+            return;
+        }
         var settings = await services.Builds.LoadSettingsAsync(directory);
         var romLimit = await services.Builds.ReadStcCodeRomLimitAsync(directory);
         // 工程切换、关闭或窗口关闭期间完成的旧读取不能覆盖新页面。

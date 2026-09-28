@@ -85,12 +85,12 @@ public sealed class Ag32LogicWorkflowService
             if (File.Exists(verilog) && info.LastWriteTimeUtc < File.GetLastWriteTimeUtc(verilog) ||
                 File.Exists(pinMap) && info.LastWriteTimeUtc < File.GetLastWriteTimeUtc(pinMap))
             {
-                notes.Add("逻辑 BIN 的修改时间早于源码或 VE；请重新执行 Quartus II 和 Supra 编译。");
+                notes.Add("逻辑 BIN 的修改时间早于源码或 VE；请通过顶部“编译 / F7”重新执行 MCU 与 FPGA 联合构建。");
             }
         }
         else
         {
-            notes.Add("尚未找到逻辑 BIN；Quartus II 生成 VO 后，需要用 Supra 编译，并将产物放在 logic/pins.bin。");
+            notes.Add("尚未找到逻辑 BIN；请通过顶部“编译 / F7”使用内置工具完成 MCU 与 FPGA 联合构建。");
         }
 
         return new(root, logic, verilog, pinMap, binary, assignedPins.Count, binaryBytes,

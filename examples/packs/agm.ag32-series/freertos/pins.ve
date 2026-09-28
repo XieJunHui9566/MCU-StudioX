@@ -1,0 +1,4 @@
+# FreeRTOS + FPGA 内部回环：不占用封装脚，不假设外部晶振或板级 LED。
+# 系统默认 HSI 10 MHz；更改时钟请使用引脚规划器。
+GPIO4_0 logic_tx
+GPIO4_1 logic_rx

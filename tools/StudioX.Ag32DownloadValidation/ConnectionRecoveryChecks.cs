@@ -14,9 +14,9 @@ internal static class ConnectionRecoveryChecks
         var checks = new List<string>();
         var configuration = await new OpenOcdService(new ToolsetCatalog(root)).ConfigurationAsync(sourceProject)
             ?? throw new InvalidOperationException("An AG32 mapping project is required.");
-        var target = Ag32PinMappingTargetScript.RequireCompatible(sourceProject);
+        var target = Ag32PinMappingTargetScript.RequireCompatible(sourceProject, configuration.OpenOcd.TargetScript);
         Directory.CreateDirectory(Path.Combine(root, "device", "debug"));
-        await File.WriteAllTextAsync(Path.Combine(root, "device", "debug", "ag32vf303.cfg"), target);
+        await File.WriteAllTextAsync(Path.Combine(root, "device", configuration.OpenOcd.TargetScript), target);
         Directory.CreateDirectory(Path.Combine(root, "scripts", "interface"));
         await File.WriteAllTextAsync(Path.Combine(root, "scripts", "interface", "cmsis-dap.cfg"), "# offline fixture\n");
         await File.WriteAllTextAsync(Path.Combine(root, "scripts", "interface", "jlink.cfg"), "# offline fixture\n");
@@ -53,6 +53,51 @@ internal static class ConnectionRecoveryChecks
             jlinkPlan.OpenOcdArguments.Any(value => value.Contains("studiox_ag32_detach", StringComparison.Ordinal)) &&
             jlinkPlan.OpenOcdArguments.All(value => !value.Contains("cortex_m", StringComparison.Ordinal)),
             "J-Link debug preserves AG32 target checks and RISC-V detach behavior");
+        foreach (var script in new[] { "debug/ag32vf303.cfg", "debug/ag32vf303cct6.cfg" })
+        {
+            var definition = configuration.OpenOcd with { TargetScript = script };
+            var compatible = configuration with { Device = configuration.Device with { OpenOcd = definition }, OpenOcd = definition };
+            var scriptFile = Path.Combine(root, "device", script);
+            await File.WriteAllTextAsync(scriptFile, target);
+            Check(DebugTargetProfile.Find(compatible.Device)?.IsAg32 == true, "verified target profile accepts " + script);
+            foreach (var probeId in new[] { "cmsis-dap", "jlink", "agm-blaster" })
+            {
+                var selected = compatible with { Options = options with { ProbeId = probeId } };
+                var mappingArguments = OpenOcdService.CreatePinMappingArguments(root, selected, selected.Options, toolset, images);
+                Check(mappingArguments.Contains(target) && mappingArguments[^1] == command &&
+                    OpenOcdDebugPlanner.ResolveProbe(selected).Transport == "swd",
+                    script + " retains embedded guards and debug probe selection: " + probeId);
+            }
+            await File.WriteAllTextAsync(scriptFile, target + "\nproc studiox_check_target {} {}\n");
+            Reject(() => OpenOcdService.CreatePinMappingArguments(root, compatible, options, toolset, images),
+                "modified script is rejected at declared path: " + script);
+            File.Delete(scriptFile);
+            Reject(() => OpenOcdService.CreatePinMappingArguments(root, compatible, options, toolset, images),
+                "missing declared script never falls back to another path: " + script);
+            await File.WriteAllTextAsync(scriptFile, target);
+        }
+        foreach (var script in new[] { "debug/ag32vf303kcu6.cfg", "debug/custom.cfg", "../ag32vf303cct6.cfg" })
+        {
+            var definition = configuration.OpenOcd with { TargetScript = script };
+            var invalid = configuration with { Device = configuration.Device with { OpenOcd = definition }, OpenOcd = definition };
+            Check(DebugTargetProfile.Find(invalid.Device) is null, "unverified script never enables debug: " + script);
+            Reject(() => OpenOcdService.CreatePinMappingArguments(root, invalid, options, toolset, images),
+                "unverified script never enables mapping download: " + script);
+        }
+        var otherScript = configuration.OpenOcd.TargetScript == "debug/ag32vf303.cfg"
+            ? "debug/ag32vf303cct6.cfg" : "debug/ag32vf303.cfg";
+        Reject(() => OpenOcdService.CreatePinMappingArguments(root, configuration with
+        {
+            OpenOcd = configuration.OpenOcd with { TargetScript = otherScript }
+        }, options, toolset, images), "download configuration cannot substitute another path for the pack declaration");
+        Reject(() => OpenOcdService.CreatePinMappingArguments(root, configuration with
+        {
+            Device = configuration.Device with { Id = "AG32VF303KCU6" }
+        }, options, toolset, images), "compatible script names do not enable an unverified chip model");
+        Reject(() => OpenOcdService.CreatePinMappingArguments(root, configuration with
+        {
+            Device = configuration.Device with { FlashBytes = 0x100000 }
+        }, options, toolset, images), "compatible script names do not relax physical Flash capacity checks");
         Reject(() => OpenOcdService.CreatePinMappingArguments(root, configuration with
         {
             Device = configuration.Device with { ToolsetVersion = "unverified" }

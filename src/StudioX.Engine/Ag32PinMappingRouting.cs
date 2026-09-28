@@ -7,7 +7,7 @@ using StudioX.Foundation;
 
 /// <summary>网表中的实例名字不能证明封装布线；必须核对布局器输出的真实 IO 分配。</summary>
 internal sealed record Ag32PinMappingRouting(string VexSha256, string IoAsfSha256, string RoutedSha256, string VxSha256,
-    string HeaderSha256, string SdcSha256, string[] Mappings)
+    string HeaderSha256, string SdcSha256, Ag32PinMappingTimingReport Timing, string[] Mappings)
 {
     internal static async Task<Ag32PinMappingRouting> VerifyAsync(string build, byte[] source, CancellationToken token)
     {
@@ -55,9 +55,11 @@ internal sealed record Ag32PinMappingRouting(string VexSha256, string IoAsfSha25
         {
             throw new StudioXException("AG32_MAPPING_ROUTING", "布局器生成了未经 VEX 约束的额外封装 GPIO 分配。");
         }
+        await Ag32GpioElectrical.VerifyAsync(build, source, vex.Text, routed.Text, token);
         var clocks = await Ag32PinMappingClockVerification.VerifyAsync(build, token);
-        return new(vex.Hash, io.Hash, routed.Hash, netlist.Hash, header.Hash, sdc.Hash,
-            expected.Select(mapping => mapping.Port + " → " + mapping.Pin).Concat(clocks).ToArray());
+        var timing = await Ag32PinMappingTimingReport.ReadAsync(build, token);
+        return new(vex.Hash, io.Hash, routed.Hash, netlist.Hash, header.Hash, sdc.Hash, timing,
+            expected.Select(mapping => mapping.Port + " → " + mapping.Pin).Concat(clocks).Append(timing.Summary).ToArray());
 
         async Task<(string Text, string Hash)> ReadAsync(string relative)
         {

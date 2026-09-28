@@ -95,6 +95,36 @@
               Foreground="{DynamicResource ErrorColor}"
               TextWrapping="Wrap"
               Margin="0,4,0,10" />
+            <TextBlock Text="引脚名称 / GPIO 方向" FontWeight="SemiBold" />
+            <WrapPanel Margin="0,6,0,8">
+              <TextBox x:Name="PinName" Width="125" Margin="0,0,8,6" TextChanged="PinName_Changed"
+                       ToolTip="例如 LED1：生成 #LED1 注释及 LED1_Port / LED1_Bit。留空可清除名称。" />
+              <ComboBox x:Name="PinDirection" Width="135" SelectedValuePath="Tag" SelectionChanged="PinDirection_Changed" Margin="0,0,0,6">
+                <ComboBoxItem Content="不初始化方向" Tag="" />
+                <ComboBoxItem Content="输入" Tag="INPUT" />
+                <ComboBoxItem Content="输出（初始低）" Tag="OUTPUT" />
+              </ComboBox>
+            </WrapPanel>
+            <TextBlock Text="GPIO 电气配置" FontWeight="SemiBold" Margin="0,0,0,6" />
+            <WrapPanel Margin="0,0,0,8">
+              <StackPanel Width="150" Margin="0,0,8,6">
+                <TextBlock Text="上下拉" Foreground="{DynamicResource Muted}" Margin="0,0,0,4" />
+                <ComboBox x:Name="PinPull" SelectedValuePath="Tag" SelectionChanged="PinDirection_Changed">
+                  <ComboBoxItem Content="浮空（无上下拉）" Tag="NONE" />
+                  <ComboBoxItem Content="上拉" Tag="UP" />
+                  <ComboBoxItem Content="下拉" Tag="DOWN" />
+                </ComboBox>
+              </StackPanel>
+              <StackPanel Width="135" Margin="0,0,0,6">
+                <TextBlock Text="输出类型" Foreground="{DynamicResource Muted}" Margin="0,0,0,4" />
+                <ComboBox x:Name="PinOutputType" SelectedValuePath="Tag" SelectionChanged="PinDirection_Changed">
+                  <ComboBoxItem Content="推挽" Tag="PUSH_PULL" />
+                  <ComboBoxItem Content="开漏" Tag="OPEN_DRAIN" />
+                </ComboBox>
+              </StackPanel>
+            </WrapPanel>
+            <TextBlock Text="保存同步生成 StudioX_System.h / .c；方向由系统代码初始化，上下拉与输出类型随映射镜像下载后生效。" TextWrapping="Wrap"
+                       Foreground="{DynamicResource Muted}" Margin="0,0,0,8" />
             <TextBlock
               Text="已分配功能"
               FontWeight="SemiBold"
@@ -166,6 +196,7 @@
                 </Style>
               </DataGrid.CellStyle>
               <DataGrid.Columns>
+                <DataGridTextColumn Header="名称" Binding="{Binding Name}" Width="80" />
                 <DataGridTextColumn
                   Header="内部功能"
                   Binding="{Binding Function}"

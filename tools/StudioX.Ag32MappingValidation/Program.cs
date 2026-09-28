@@ -3,6 +3,18 @@ using StudioX.Engine;
 using StudioX.Foundation;
 using StudioX.Packages;
 
+if (args is ["--rtos-templates", var rtosTools, var rtosOutput, var rtosPacks])
+{
+    await RtosTemplateChecks.RunAsync(rtosTools, rtosOutput, rtosPacks);
+    return;
+}
+
+if (args is ["--gpio-electrical", var gpioTools, var gpioOutput, var gpioPack])
+{
+    await GpioElectricalChecks.RunAsync(gpioTools, gpioOutput, gpioPack);
+    return;
+}
+
 if (args.Length is < 3 or > 4) { throw new ArgumentException("Usage: <toolset root> <new validation output directory> <AG32 mcupack> [private license directory]"); }
 var toolsets = Path.GetFullPath(args[0]);
 var output = Path.GetFullPath(args[1]);
@@ -36,6 +48,32 @@ await File.WriteAllTextAsync(source, "SYSCLK 200\nBUSCLK 100\nHSECLK 8\nGPIO4_4 
 var first = await service.BuildAsync(root);
 Check(first.Success && first.ExitCode == 0, "Real VE converter and Supra compile PIN_21 without Quartus");
 var firstImage = await service.ValidateBuiltAsync(root);
+var timingPath = Path.Combine(root, ".build/ag32-mapping/studiox-timing.json");
+using (var timing = System.Text.Json.JsonDocument.Parse(await File.ReadAllTextAsync(timingPath)))
+{
+    Check(timing.RootElement.GetProperty("covered").GetInt32() == timing.RootElement.GetProperty("total").GetInt32() &&
+        timing.RootElement.GetProperty("worstSetupSlackNs").GetDecimal() >= 0,
+        "Actual bidirectional GPIO and internal clock paths have full coverage and nonnegative setup slack");
+}
+Check(!first.Log.Contains("Warn:", StringComparison.Ordinal), "Real GPIO mapping compilation has no Supra warnings");
+var setupPath = Path.Combine(root, ".build/ag32-mapping/logic_db/setup_summary.rpt.gz");
+var setupBytes = await File.ReadAllBytesAsync(setupPath);
+string setupText;
+using (var stream = new System.IO.Compression.GZipStream(new MemoryStream(setupBytes), System.IO.Compression.CompressionMode.Decompress))
+using (var reader = new StreamReader(stream)) { setupText = await reader.ReadToEndAsync(); }
+async Task ReplaceSetup(string value)
+{
+    await using var file = File.Create(setupPath);
+    await using var gzip = new System.IO.Compression.GZipStream(file, System.IO.Compression.CompressionLevel.Optimal);
+    await gzip.WriteAsync(System.Text.Encoding.UTF8.GetBytes(value));
+}
+await ReplaceSetup(System.Text.RegularExpressions.Regex.Replace(setupText, @"(?m)^(Setup\s+)[0-9.]+,", "${1}-0.001,"));
+await Reject(() => service.ValidateBuiltAsync(root), "AG32_MAPPING_TIMING", "Negative timing slack cannot be accepted even with a successful old tool exit code");
+await ReplaceSetup(setupText + "\n# modified evidence\n");
+await Reject(() => service.ValidateBuiltAsync(root), "AG32_MAPPING_ROUTING", "Timing evidence is bound to the downloadable image receipt");
+await File.WriteAllBytesAsync(setupPath, setupBytes);
+File.Copy(timingPath, Path.Combine(output, "pin21-timing.json"));
+File.Copy(Path.Combine(root, ".build/ag32-mapping/coverage.rpt"), Path.Combine(output, "pin21-coverage.rpt"));
 var actualIoPath = Path.Combine(root, ".build/ag32-mapping/logic_db/io.asf");
 var actualRoutedPath = Path.Combine(root, ".build/ag32-mapping/pins_routed.v");
 Check((await File.ReadAllTextAsync(actualIoPath)).Contains("set_location_assignment -to GPIO4_4 PIN_21"), "Supra final IO placement binds GPIO4_4 to PIN_21");
@@ -76,6 +114,11 @@ await Reject(async () => await service.ValidateBuiltAsync(root), "AG32_MAPPING_S
 await File.WriteAllTextAsync(receiptPath, receiptText);
 var actualSdcPath = Path.Combine(root, ".build/ag32-mapping/studiox-clocks.sdc");
 var sdcText = await File.ReadAllTextAsync(actualSdcPath);
+Check(sdcText.Contains("get_pins -exact {rv32|gpio4_io_in[4]}") && sdcText.Contains("get_pins -exact {rv32|gpio4_io_out_data[4]}") &&
+    !sdcText.Contains("set_false_path", StringComparison.Ordinal), "Exact input/output GPIO endpoints receive measurable budgets without blanket false paths");
+await File.WriteAllTextAsync(actualSdcPath, sdcText.Replace("] 10\n", "] 1000\n", StringComparison.Ordinal));
+await Reject(() => service.ValidateBuiltAsync(root), "AG32_MAPPING_CLOCK", "Relaxed generated routing budgets are rejected");
+await File.WriteAllTextAsync(actualSdcPath, sdcText);
 Check(sdcText.Contains("create_clock -name PIN_HSE -period 125 "), "HSE 8 MHz receives accurate 125 ns input timing");
 await File.WriteAllTextAsync(actualSdcPath, sdcText.Replace("PIN_HSE -period 125", "PIN_HSE -period 50", StringComparison.Ordinal));
 await Reject(async () => await service.ValidateBuiltAsync(root), "AG32_MAPPING_CLOCK", "Incorrect 20 MHz input timing rejected");
@@ -90,11 +133,17 @@ await File.WriteAllTextAsync(source, "SYSCLK 160\nBUSCLK 80\nHSECLK 8\nGPIO4_4 P
 var clock160 = await service.BuildAsync(root);
 Check(clock160.Success && clock160.Log.Contains("50 项数字位参数"), "160/80 MHz design preserves all 50 final PLL divider fields");
 Check((await File.ReadAllTextAsync(Path.Combine(root, ".build/ag32-mapping/pins.hx"))).Contains("BOARD_PLL_FREQUENCY 160000000"), "Generated clock target follows explicit VE frequency");
+var clock160Sdc = await File.ReadAllTextAsync(actualSdcPath);
+Check(clock160Sdc.Contains("] 12.5\n") && clock160Sdc.Contains("] 6.25\n"), "160/80 MHz automatically regenerates 6.25/12.5 ns routing budgets");
 foreach (var (path, name) in new[] { (actualRoutedPath, "clock160-routed.v"), (actualSdcPath, "clock160.sdc"),
     (Path.Combine(root, ".build/ag32-mapping/pins.hx"), "clock160.hx"), (clock160.LogPath, "clock160-build.log") })
 {
     File.Copy(path, Path.Combine(output, name));
 }
+await File.WriteAllTextAsync(source, "SYSCLK 248\nBUSCLK 248\nHSECLK 8\nGPIO4_4 PIN_2\n");
+await Reject(() => service.BuildAsync(root), "AG32_MAPPING_TIMING", "Actual Supra negative slack at a tight routing budget prevents a successful build receipt");
+Check(!File.Exists(secondImage.Path), "Timing failure leaves no downloadable mapping image");
+Check(!File.Exists(timingPath), "Timing failure removes the previous successful timing summary while preserving raw diagnostics");
 var noLicense = new Ag32PinMappingBuildService(catalog, Path.Combine(Path.GetTempPath(), "StudioX-mapping-validation-no-license-" + Guid.NewGuid().ToString("N")));
 await Reject(async () => await noLicense.BuildAsync(root), "AG32_MAPPING_LICENSE", "Missing license reports cause and invalidates old receipt");
 Check(!File.Exists(secondImage.Path), "Failed mapping build removes obsolete BIN");

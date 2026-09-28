@@ -39,6 +39,9 @@ public partial class MainWindow : Window
         InitializeHdlSchematic();
         InitializeHdlWorkflow();
         SerialView.Attach(services.Serial);
+        MicroPythonPanel.Attach(services.MicroPython, services.Files);
+        MicroPythonPanel.DownloadRequested = () => RunAsync(token => DownloadMicroPythonAsync(RequireProject(), token));
+        MicroPythonPanel.StateChanged += () => UpdateProjectActions(projectActionsBusy);
         SerialPlotView.Attach(services.SerialPlot);
         ProjectTerminal.Attach(services.Terminal);
         GitGraph.Attach(services.GitGraph);
@@ -377,10 +380,17 @@ public partial class MainWindow : Window
         {
             Ag32LogicModeCheckBox.IsChecked = false;
         }
+        Ag32LogicModeCheckBox.IsEnabled = show;
+        if (show && DevicePicker.SelectedItem is DeviceDefinition selectedDevice && Ag32DeviceCatalog.Find(selectedDevice.Id) is { } profile)
+        {
+            Ag32LogicDeviceHint.Text = $"{profile.DeviceId} · {profile.TargetDevice} / {profile.PackageName}";
+            Ag32LogicModeDescription.Text = "默认创建普通 MCU 工程；勾选后，在所选模板基础上加入 FPGA 逻辑。顶部编译联合生成 MCU 固件与 FPGA 位流，使用内置原生综合和 Supra 布局布线工具。Supra 需配置本机有效许可。";
+        }
         Ag32LogicModePanel.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
     }
     private void TemplatePicker_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
+        UpdateAg32LogicModeOption();
         if (CreateProjectButton is not null)
         {
             CreateProjectButton.IsEnabled = TemplatePicker.SelectedItem is ProjectTemplate;
@@ -468,7 +478,7 @@ public partial class MainWindow : Window
         Log(report.Summary);
         Status.Text = report.Summary;
     });
-    private void Cancel_Click(object sender, RoutedEventArgs e)
+    private async void Cancel_Click(object sender, RoutedEventArgs e)
     {
         if (GitGraph.IsMutating)
         {
@@ -476,6 +486,18 @@ public partial class MainWindow : Window
             return;
         }
         operationCancellation?.Cancel();
+        if (IsMicroPythonProject)
+        {
+            try
+            {
+                await MicroPythonPanel.StopAsync();
+            }
+            catch (Exception ex)
+            {
+                Log(ex.ToString());
+                Status.Text = ex.Message;
+            }
+        }
     }
 
     private async void Decode_Click(object sender, RoutedEventArgs e) => await RunAsync(async token =>
@@ -513,7 +535,7 @@ public partial class MainWindow : Window
             Status.Text = ex is StudioXException studio ? studio.Code + "：" + studio.Message : ex.Message;
             Log(ex.ToString());
         }
-        finally { operationCancellation.Dispose(); operationCancellation = null; UpdateProjectActions(busy: false); CancelButton.IsEnabled = false; }
+        finally { operationCancellation.Dispose(); operationCancellation = null; UpdateProjectActions(busy: false); }
     }
     private void Log(string text)
     {
@@ -578,6 +600,7 @@ public partial class MainWindow : Window
             await PluginManager.ShutdownAsync();
             await DisposeAiMcpSessionAsync();
             await SerialView.ShutdownAsync();
+            await MicroPythonPanel.StopAsync();
             await SerialPlotView.ShutdownAsync();
             await LvglPreview.ShutdownAsync();
             await ProjectTerminal.ShutdownAsync();

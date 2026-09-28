@@ -99,6 +99,10 @@ public partial class Ag32PinPlanningView : UserControl
         }
         var editable = !value && Snapshot?.CanEdit == true;
         HseClock.IsEnabled = SysClock.IsEnabled = BusClock.IsEnabled = editable;
+        PinName.IsEnabled = editable && assignments.Any(item => item.PinNumber == selectedPin);
+        PinDirection.IsEnabled = PinName.IsEnabled && assignments.Any(item => item.PinNumber == selectedPin && item.Function.StartsWith("GPIO", StringComparison.Ordinal));
+        PinPull.IsEnabled = PinDirection.IsEnabled;
+        PinOutputType.IsEnabled = PinDirection.IsEnabled && assignments.FirstOrDefault(item => item.PinNumber == selectedPin)?.Direction != "INPUT";
         PackageDiagram.IsEnabled = !value;
         SavePlanButton.IsEnabled = editable && conflicts.Length == 0;
         ReloadPlanButton.IsEnabled = !value;
@@ -130,9 +134,9 @@ public partial class Ag32PinPlanningView : UserControl
         SetSnapshot(result.Snapshot);
         vexPath = result.VexPath;
         sdcPath = result.SdcPath;
-        ConstraintDetails.Text = $"VE：{result.Snapshot.SourcePath}\n引脚约束数据：{result.VexPath}\n时钟约束：{result.SdcPath}\n\n最终 ASF 和映射镜像由顶部编译生成。";
+        ConstraintDetails.Text = $"VE：{result.Snapshot.SourcePath}\n系统头文件：{Ag32SystemSupport.HeaderPath}\n系统实现：{Ag32SystemSupport.SourcePath}\n引脚约束数据：{result.VexPath}\n时钟约束：{result.SdcPath}\n\n最终 ASF 和映射镜像由顶部编译生成。";
         VexButton.IsEnabled = SdcButton.IsEnabled = true;
-        PlannerStatus.Text = "图形配置已保存，厂商转换与约束生成成功；尚未编译或烧录映射镜像。";
+        PlannerStatus.Text = "已保存名称注释、系统代码和约束；主函数引用 StudioX_System.h 即可使用，顶部编译生成映射镜像。";
     }
 
     public void ShowFailure(string message) => PlannerStatus.Text = message;
@@ -201,7 +205,7 @@ public partial class Ag32PinPlanningView : UserControl
         }
         if (function is not null)
         {
-            var added = new Ag32PinAssignment(function.Name, pin.Number);
+            var added = new Ag32PinAssignment(function.Name, pin.Number, Name: previous.FirstOrDefault()?.Name);
             assignments.Add(added);
             AssignmentsGrid.SelectedItem = added;
         }
@@ -223,7 +227,7 @@ public partial class Ag32PinPlanningView : UserControl
             + string.Join("\n", conflicts.Select(conflict => conflict.Message));
         ConflictStatus.Visibility = conflicts.Length == 0 ? Visibility.Collapsed : Visibility.Visible;
         PackageDiagram.SetPins(Snapshot.Pins.Select(pin => new Ag32PackagePinVisual(pin.Number, pin.CanAssign,
-            string.Join(", ", assignments.Where(item => item.PinNumber == pin.Number).Select(item => item.Function)),
+            string.Join(", ", assignments.Where(item => item.PinNumber == pin.Number).Select(item => item.Name is { } name ? name + " · " + item.Function : item.Function)),
             ConflictForPin(pin.Number))).ToArray(),
             selectedPin);
         SetBusy(busy);
@@ -248,6 +252,19 @@ public partial class Ag32PinPlanningView : UserControl
 
     private void UpdatePinDetails()
     {
+        if (PinName is null) { return; }
+        var wasLoading = loading;
+        loading = true;
+        var selected = assignments.FirstOrDefault(item => item.PinNumber == selectedPin);
+        PinName.Text = selected?.Name ?? "";
+        PinDirection.SelectedValue = selected?.Direction is "INPUT" or "OUTPUT" ? selected.Direction : "";
+        PinPull.SelectedValue = selected?.Pull ?? "NONE";
+        PinOutputType.SelectedValue = selected?.OutputType ?? "PUSH_PULL";
+        PinName.IsEnabled = !busy && Snapshot?.CanEdit == true && selected is not null;
+        PinDirection.IsEnabled = PinName.IsEnabled && selected!.Function.StartsWith("GPIO", StringComparison.Ordinal);
+        PinPull.IsEnabled = PinDirection.IsEnabled;
+        PinOutputType.IsEnabled = PinDirection.IsEnabled && selected?.Direction != "INPUT";
+        loading = wasLoading;
         var pin = Snapshot?.Pins.FirstOrDefault(pin => pin.Number == selectedPin);
         var functions = string.Join(", ", assignments.Where(item => item.PinNumber == pin?.Number).Select(item => item.Function));
         PinDetails.Text = pin is null ? "左键点击左侧引脚，选择功能。"
@@ -267,6 +284,26 @@ public partial class Ag32PinPlanningView : UserControl
     }
 
     private void Clock_Changed(object sender, TextChangedEventArgs e) => MarkChanged();
+    private void PinName_Changed(object sender, TextChangedEventArgs e) => ChangePinDetails();
+    private void PinDirection_Changed(object sender, SelectionChangedEventArgs e) => ChangePinDetails();
+    private void ChangePinDetails()
+    {
+        if (loading || busy || Snapshot?.CanEdit != true || assignments.FirstOrDefault(item => item.PinNumber == selectedPin) is not { } old) { return; }
+        var name = PinName.Text.Trim();
+        var direction = PinDirection.SelectedValue as string;
+        var gpio = old.Function.StartsWith("GPIO", StringComparison.Ordinal);
+        var updated = old with { Name = name.Length == 0 ? null : name,
+            Direction = gpio ? string.IsNullOrEmpty(direction) ? null : direction : old.Direction,
+            Pull = gpio ? PinPull.SelectedValue as string ?? "NONE" : old.Pull,
+            OutputType = gpio ? direction == "INPUT" ? "PUSH_PULL" : PinOutputType.SelectedValue as string ?? "PUSH_PULL" : old.OutputType };
+        if (updated == old) { return; }
+        loading = true;
+        assignments[assignments.IndexOf(old)] = updated;
+        AssignmentsGrid.SelectedItem = updated;
+        loading = false;
+        MarkChanged();
+        UpdateDiagram();
+    }
     private void Save_Click(object sender, RoutedEventArgs e)
     {
         if (!busy && Snapshot?.CanEdit == true && conflicts.Length == 0)

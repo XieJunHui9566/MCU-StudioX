@@ -193,7 +193,28 @@ public partial class MainWindow
         {
             return;
         }
-        if (e.Key == Key.F12 && (Keyboard.Modifiers == ModifierKeys.None || Keyboard.Modifiers == ModifierKeys.Control))
+        if (CanFindSource && Keyboard.Modifiers == ModifierKeys.Control && e.Key is Key.F or Key.H)
+        {
+            ShowFindReplace(e.Key == Key.H);
+            e.Handled = true;
+            return;
+        }
+        if (CanFindSource && e.Key == Key.F3 && Keyboard.Modifiers is ModifierKeys.None or ModifierKeys.Shift)
+        {
+            if (FindPanel.Visibility != Visibility.Visible)
+            {
+                ShowFindReplace(false);
+            }
+            FindMatch(Keyboard.Modifiers == ModifierKeys.Shift);
+            e.Handled = true;
+            return;
+        }
+        if (e.Key == Key.F12 && Keyboard.Modifiers == ModifierKeys.Shift && IsPythonDocument)
+        {
+            QueuePythonReferences();
+            e.Handled = true;
+        }
+        else if (e.Key == Key.F12 && (Keyboard.Modifiers == ModifierKeys.None || Keyboard.Modifiers == ModifierKeys.Control))
         {
             QueueCodeNavigation(Keyboard.Modifiers == ModifierKeys.Control);
             e.Handled = true;
