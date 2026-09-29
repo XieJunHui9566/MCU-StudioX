@@ -227,7 +227,7 @@ public partial class Ag32PinPlanningView : UserControl
             + string.Join("\n", conflicts.Select(conflict => conflict.Message));
         ConflictStatus.Visibility = conflicts.Length == 0 ? Visibility.Collapsed : Visibility.Visible;
         PackageDiagram.SetPins(Snapshot.Pins.Select(pin => new Ag32PackagePinVisual(pin.Number, pin.CanAssign,
-            string.Join(", ", assignments.Where(item => item.PinNumber == pin.Number).Select(item => item.Name is { } name ? name + " · " + item.Function : item.Function)),
+            string.Join(", ", assignments.Where(item => item.PinNumber == pin.Number).Select(item => item.Name is { } name ? name + " · " + Ag32PinFunctionLabels.Compact(item.Function) : Ag32PinFunctionLabels.Compact(item.Function))),
             ConflictForPin(pin.Number))).ToArray(),
             selectedPin);
         SetBusy(busy);
@@ -266,10 +266,11 @@ public partial class Ag32PinPlanningView : UserControl
         PinOutputType.IsEnabled = PinDirection.IsEnabled && selected?.Direction != "INPUT";
         loading = wasLoading;
         var pin = Snapshot?.Pins.FirstOrDefault(pin => pin.Number == selectedPin);
-        var functions = string.Join(", ", assignments.Where(item => item.PinNumber == pin?.Number).Select(item => item.Function));
+        var functions = string.Join(", ", assignments.Where(item => item.PinNumber == pin?.Number).Select(item => Ag32PinFunctionLabels.Display(item.Function)));
         PinDetails.Text = pin is null ? "左键点击左侧引脚，选择功能。"
             : !pin.CanAssign ? $"PIN_{pin.Number} · 固定 / 不可映射"
             : $"PIN_{pin.Number} · " + (functions.Length == 0 ? "空闲" : functions);
+        PinDetails.ToolTip = selected is null ? null : Ag32PinFunctionLabels.Description(selected.Function);
     }
 
     private void Assignment_Changed(object sender, SelectionChangedEventArgs e)

@@ -1,6 +1,7 @@
 namespace StudioX.Desktop;
 
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Threading;
 using StudioX.Application;
 using StudioX.Engine.Debugging;
@@ -56,6 +57,25 @@ public partial class MainWindow
         Check(RegistersTab.Visibility == Visibility.Visible && DebugTab.Visibility == Visibility.Visible, "Debug tabs should appear after starting");
         Check(DebugContinueButton.IsEnabled && !DebugPauseButton.IsEnabled && !BuildButton.IsEnabled && !DownloadButton.IsEnabled, "Stopped controls");
         Check(SourceEditor.IsReadOnly && RegisterGrid.Items.Count == 56 && debugMargin!.ExecutionLine == F407DebugExample.Entry, "Editor lock, registers or execution arrow");
+        Check(diagnosticsPausedForDebug && services.Intelligence.DiagnosticsSuspended && !diagnosticDebounce.IsEnabled, "Debug suspends live diagnostics and pending timer");
+        QueueLiveDiagnostics();
+        RefreshDiagnosticMarkers();
+        Check(!diagnosticDebounce.IsEnabled && diagnosticRenderer!.Markers.Count == 0 && !TryShowDiagnosticHover(new Point(10, 10)), "Debug source navigation cannot restart live diagnostics or error hover");
+        var requestedLine = F407DebugExample.Entry - 1;
+        await ToggleBreakpointAsync(requestedLine);
+        await Settle();
+        var relocated = services.Debugger.Breakpoints.Single(b => b.Line == requestedLine);
+        Check(relocated.BoundLocation?.Line == F407DebugExample.Entry && debugMargin!.RelocatedRequests.Single().Line == requestedLine &&
+            debugMargin.Breakpoints.Any(b => b.Id == relocated.Id && b.Line == F407DebugExample.Entry), "Relocation shows both requested and actual breakpoint positions");
+        var breakpointTable = (DataGrid)DebugTools.FindName("Breakpoints");
+        Check(breakpointTable.Items.Cast<BreakpointRow>().Single(b => b.Id == relocated.Id).RequestedLocation.EndsWith(":" + requestedLine, StringComparison.Ordinal), "Breakpoint table retains requested source location");
+        DebugTools.ShowBreakpoints();
+        UpdateLayout();
+        await Settle();
+        Render(this, Path.Combine(directory, "relocated-breakpoint.png"));
+        await ToggleBreakpointAsync(requestedLine);
+        await Settle();
+        Check(debugMargin!.RelocatedRequests.Count == 0 && !services.Debugger.Breakpoints.Any(b => b.Id == relocated.Id), "Clicking requested line removes the same relocated breakpoint");
         DebugContinue_Click(this, new RoutedEventArgs());
         await pendingOperation;
         await WaitStopped();
@@ -120,6 +140,7 @@ public partial class MainWindow
         Check(services.Debugger.State == DebugState.Running && Status.Text == services.Debugger.Reason && DebugStateText.Text == Status.Text,
             "Running state must reach both debug toolbar and bottom status");
         Check(!DebugTools.CanReadDisassembly && DebugTools.DisassemblyCurrentAddress is null && DebugTools.DisassemblyStatus.Contains("上次暂停快照", StringComparison.Ordinal), "Running disassembly must be read-disabled and visibly stale");
+        Check(diagnosticsPausedForDebug && services.Intelligence.DiagnosticsSuspended, "Live diagnostics remain suspended while running");
         DebugPause_Click(this, new RoutedEventArgs());
         await pendingOperation;
         await WaitStopped();
@@ -131,6 +152,7 @@ public partial class MainWindow
         Check(!SourceEditor.IsReadOnly && BuildButton.IsEnabled && debugMargin.ExecutionLine is null && RegisterGrid.Items.Count == 0, "End debugging restores edit/build and clears snapshots");
         Check(RegistersTab.Visibility == Visibility.Collapsed && DebugTab.Visibility == Visibility.Collapsed && LeftToolTabs.SelectedIndex == 0 && BottomTabs.SelectedIndex == 0, "Debug tabs should hide after stopping");
         Check(DebugTools.DisassemblyInstructionCount == 0 && !DebugTools.CanReadDisassembly, "Stopping must clear disassembly");
+        Check(!diagnosticsPausedForDebug && !services.Intelligence.DiagnosticsSuspended, "Stopping debug resumes realtime diagnostics");
         var point = services.Debugger.Breakpoints.Single();
         SourceEditor.Document.Insert(0, "// anchor test\n");
         await PersistBreakpointLinesAsync();

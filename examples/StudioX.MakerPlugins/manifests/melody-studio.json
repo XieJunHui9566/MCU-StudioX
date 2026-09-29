@@ -1,0 +1,9 @@
+{
+  "formatVersion":1,"apiVersion":2,"id":"studiox.melody-studio","version":"1.0.0",
+  "displayName":"蜂鸣器旋律工坊","description":"音符、节拍、休止符转换为无源蜂鸣器的 C 频率表。",
+  "kind":"dotnet","entryAssembly":"StudioX.MakerPlugins.dll","entryType":"StudioX.MakerPlugins.MelodyStudioPlugin",
+  "capabilities":["commands","panels","agentTools"],"hostTools":[],
+  "activity":{"version":1,"title":"蜂鸣器旋律工坊","tooltip":"音高时间线与 PWM 曲谱生成",
+    "icon":{"strokes":[[9,18,9,5,20,3,20,16],[9,8,20,6],[9,18,7,21,3,21,2,19,4,17,8,17,9,18],[20,16,18,19,14,19,13,17,15,15,19,15,20,16]]}},
+  "sha256":{}
+}

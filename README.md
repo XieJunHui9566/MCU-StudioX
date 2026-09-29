@@ -4,6 +4,17 @@ MCU StudioX 是面向多系列 MCU 的 Windows x64 重型 IDE，强调开箱即�
 
 IDE 提供 C/C++ 编辑与代码提示、CMake 工程构建、器件包导入、固件下载与调试界面、串口工具、Git 图谱，以及带 MCP 工具的 AI 助手。器件能力取决于具体 `.mcupack`、工具链和硬件；尚未通过实板验证的型号不应视为已完成下载或调试适配。经过许可审查的部分器件包见 [MCU-StudioX-MCUPacks](https://github.com/XieJunHui9566/MCU-StudioX-MCUPacks)。
 
+## 0.2.5.3 同版本修复版（2026-09-29）
+
+- 调试期间暂停实时纠错，避免 clangd 错误浮窗干扰暂停、单步与断点操作，退出调试后恢复。
+- 区分用户设置的断点行与调试器实际绑定行，正确显示行号、标记和状态。
+- 明确 AG32 引脚映射中的 VCC/GND 是固定高/低电平功能。
+- 修复插件入口、紧凑布局与表单刷新后的导出内容；入口和图标由通用插件声明接口提供。
+- 本次安装包不捆绑插件。8 款官方插件可在[独立仓库](https://github.com/XieJunHui9566/MCU-StudioX-Plugins)下载。
+
+产品版本仍为 **0.2.5.3**。见[修复说明](docs/RELEASE-0.2.5.3-FIXES.md)与[安装包](https://github.com/XieJunHui9566/MCU-StudioX/releases/tag/v0.2.5.3-fixes-20260929)。
+
+
 ## 0.2.5.3 更新
 
 - **OpenOCD 变量绘图**：无需串口输出，通过当前调试探针连接绘制全局变量曲线，支持多通道、缩放、采样统计和 CSV 导出。

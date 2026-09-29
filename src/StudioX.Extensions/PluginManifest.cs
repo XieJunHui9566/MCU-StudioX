@@ -20,7 +20,8 @@ public sealed record PluginManifest(
     string? EntryExecutable = null,
     string[]? Arguments = null,
     string[]? HostTools = null,
-    string? Description = null)
+    string? Description = null,
+    PluginActivityDefinition? Activity = null)
 {
     /// <summary>校验清单、入口及目录中的全部文件；旧 decode API 1 保留其明确契约。</summary>
     public static async Task<PluginManifest> ReadAsync(string manifestPath, CancellationToken cancellationToken = default)
@@ -45,12 +46,14 @@ public sealed record PluginManifest(
         PackValidator.Token(manifest.Id);
         PackValidator.Version(manifest.Version);
         if (string.IsNullOrWhiteSpace(manifest.DisplayName) || manifest.DisplayName.Length > 256 ||
-            manifest.Description?.Length > 8192 || manifest.Sha256 is null || manifest.Sha256.Count is 0 or > 4096 ||
+            manifest.Description?.Length > 8192 ||
+            manifest.Sha256 is null || manifest.Sha256.Count is 0 or > 4096 ||
             manifest.Capabilities is null || manifest.Capabilities.Length is 0 or > 7 ||
             manifest.Capabilities.Distinct(StringComparer.Ordinal).Count() != manifest.Capabilities.Length)
         {
             throw new StudioXException("PLUGIN_MANIFEST", "插件名称、能力或文件索引无效。");
         }
+        manifest.Activity?.Validate();
         var supported = manifest.ApiVersion == 1 ? new[] { "decode" } : manifest.ApiVersion == 2 ? ["commands", "panels", "agentTools"] : ["commands", "panels", "agentTools", "settings", "events", "languages", "debugAdapters"];
         if (manifest.Capabilities.Any(capability => !supported.Contains(capability, StringComparer.Ordinal)) ||
             (manifest.ApiVersion == 1 && (manifest.Capabilities is not ["decode"] || manifest.Kind != "dotnet")))

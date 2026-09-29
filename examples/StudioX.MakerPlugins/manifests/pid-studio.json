@@ -1,0 +1,9 @@
+{
+  "formatVersion":1,"apiVersion":2,"id":"studiox.pid-studio","version":"1.0.0",
+  "displayName":"PID 调参沙盒","description":"一阶/二阶闭环、限幅、抗饱和、微分滤波、延迟、噪声、扰动与 C 控制器。",
+  "kind":"dotnet","entryAssembly":"StudioX.MakerPlugins.dll","entryType":"StudioX.MakerPlugins.PidStudioPlugin",
+  "capabilities":["commands","panels","agentTools"],"hostTools":[],
+  "activity":{"version":1,"title":"PID 调参沙盒","tooltip":"离线 PID 调参、响应指标和 C 代码",
+    "icon":{"strokes":[[3,3,3,21,22,21],[3,18,5,18,7,9,9,5,11,6,13,12,15,11,17,8,19,9,22,9],[5,9,6,9],[10,9,11,9],[20,4,20,2],[18,3,22,3]]}},
+  "sha256":{}
+}

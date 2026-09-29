@@ -84,6 +84,7 @@ public partial class MainWindow
         {
             return;
         }
+        RefreshPluginActivitySelection();
         CloseCodeAssistance();
         var tabs = (TabControl)e.Source;
         if (tabs.SelectedItem is TabItem { Tag: EditorDocumentSession session })

@@ -955,6 +955,7 @@
                     Kind="settings" />
                 </Button>
               </StackPanel>
+              <ScrollViewer VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Disabled" CanContentScroll="False">
               <StackPanel>
                 <Button
                   Style="{StaticResource RailButton}"
@@ -1012,7 +1013,9 @@
                   <local:Icon
                     Kind="plug" />
                 </Button>
+                <StackPanel x:Name="PluginActivityRail" />
               </StackPanel>
+              </ScrollViewer>
             </DockPanel>
           </Border>
           <Border

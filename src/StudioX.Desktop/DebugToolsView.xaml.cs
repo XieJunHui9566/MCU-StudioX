@@ -32,7 +32,7 @@ public partial class DebugToolsView : UserControl
             !b.Enabled ? "已禁用" : b.Message ?? "等待调试绑定", b.Kind, b.Rule, b.HitCount,
             $"请求 {b.File}:{b.Line}" + (b.BoundLocation is { } location ? $"\n实际 {location.File}:{location.Line}" : "") +
             $"\n{b.Rule}\n已到达 {b.HitCount} 次，剩余跳过 {b.IgnoreRemaining} 次" +
-            (b.LogMessage is null ? "" : "\n日志：" + b.LogMessage) + "\n" + b.Message)).ToArray();
+            (b.LogMessage is null ? "" : "\n日志：" + b.LogMessage) + "\n" + b.Message, $"{b.File}:{b.Line}")).ToArray();
         Breakpoints.ItemsSource = rows;
         Breakpoints.SelectedItem = rows.FirstOrDefault(b => b.Id == selected);
         EnableBreakpoint.IsEnabled = DeleteBreakpoint.IsEnabled = state is DebugState.Disconnected or DebugState.Stopped or DebugState.Faulted;

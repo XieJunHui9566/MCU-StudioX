@@ -1,0 +1,9 @@
+{
+  "formatVersion":1,"apiVersion":2,"id":"studiox.debounce-studio","version":"1.0.0",
+  "displayName":"按键消抖实验室","description":"原始开关抖动、确认事件和无阻塞消抖 C 状态机。",
+  "kind":"dotnet","entryAssembly":"StudioX.MakerPlugins.dll","entryType":"StudioX.MakerPlugins.DebounceStudioPlugin",
+  "capabilities":["commands","panels","agentTools"],"hostTools":[],
+  "activity":{"version":1,"title":"按键消抖实验室","tooltip":"稳定计时 / 增减计数消抖对比",
+    "icon":{"strokes":[[2,7,5,7,5,3,7,3,7,7,9,7,9,3,11,3,11,7,13,7,13,3,22,3],[2,20,13,20,13,14,22,14],[17,9,17,12],[15,10,17,12,19,10]]}},
+  "sha256":{}
+}

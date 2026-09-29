@@ -13,13 +13,27 @@ public partial class MainWindow
     private CancellationTokenSource? liveDiagnosticCancellation;
     private Task liveDiagnosticTask = Task.CompletedTask;
     private EditorProblemRow[] problemRows = [];
+    private bool diagnosticsPausedForDebug;
+
+    private void UpdateDebugDiagnosticState()
+    {
+        var paused = services.Debugger.IsActive;
+        if (diagnosticsPausedForDebug == paused) return;
+        diagnosticsPausedForDebug = paused;
+        diagnosticDebounce.Stop();
+        liveDiagnosticCancellation?.Cancel();
+        services.Intelligence.SetDiagnosticsSuspended(paused);
+        HideSymbolHover();
+        RefreshDiagnosticMarkers();
+        if (!paused) QueueLiveDiagnostics();
+    }
 
     private void InitializeLiveDiagnostics()
     {
         diagnosticDebounce.Tick += (_, _) =>
         {
             diagnosticDebounce.Stop();
-            if (projectDirectory is null || !services.Intelligence.IsReady || activeDocument is null || !CodeIntelligenceService.Supports(activeDocument.RelativePath) || closing)
+            if (services.Debugger.IsActive || diagnosticsPausedForDebug || projectDirectory is null || !services.Intelligence.IsReady || activeDocument is null || !CodeIntelligenceService.Supports(activeDocument.RelativePath) || closing)
             {
                 return;
             }
@@ -55,7 +69,7 @@ public partial class MainWindow
     {
         diagnosticDebounce.Stop();
         liveDiagnosticCancellation?.Cancel();
-        if (!closing && !changingEditor)
+        if (!closing && !changingEditor && !services.Debugger.IsActive && !diagnosticsPausedForDebug)
         {
             diagnosticDebounce.Start();
         }
@@ -64,7 +78,7 @@ public partial class MainWindow
     {
         var rows = new List<EditorProblemRow>();
         var liveFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var batch in services.Intelligence.GetDiagnostics())
+        foreach (var batch in services.Debugger.IsActive || diagnosticsPausedForDebug ? [] : services.Intelligence.GetDiagnostics())
         {
             if (batch.Project != projectDirectory || FindEditor(batch.Path)?.Buffer.Text != batch.Text)
             {

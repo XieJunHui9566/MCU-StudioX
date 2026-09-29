@@ -132,6 +132,7 @@ public partial class MainWindow
         }
         var debug = services.Debugger;
         var state = debug.State;
+        UpdateDebugDiagnosticState();
         if (!debug.IsActive)
         {
             if (RegistersTab.Visibility == Visibility.Visible || DebugTab.Visibility == Visibility.Visible)
@@ -365,6 +366,11 @@ public partial class MainWindow
                 await services.Debugger.ToggleBreakpointAsync(file, line, token);
             }
             RefreshDebugUi();
+            if (existing is null && services.Debugger.Breakpoints.FirstOrDefault(b => b.File.Equals(file, StringComparison.OrdinalIgnoreCase) && b.Line == line) is { BoundLocation: { } location } &&
+                (!location.File.Equals(file, StringComparison.OrdinalIgnoreCase) || location.Line != line))
+            {
+                Status.Text = $"断点请求 {file}:{line}，实际绑定 {location.File}:{location.Line}；请求处显示空心标记。逐行调试可使用 -O0 / -g3 重新编译下载。";
+            }
         });
     }
     private async void DebugEnableBreakpoint_Click(object sender, RoutedEventArgs e)
@@ -458,6 +464,9 @@ public partial class MainWindow
         }
         var path = activeDocument?.RelativePath;
         var debug = services.Debugger;
+        debugMargin.RelocatedRequests = debug.Breakpoints.Where(b => b.File.Equals(path, StringComparison.OrdinalIgnoreCase) &&
+            b.BoundLocation is { } bound && (!bound.File.Equals(b.File, StringComparison.OrdinalIgnoreCase) || bound.Line != b.Line))
+            .Select(b => b with { Line = debugAnchors.TryGetValue(b.Id, out var anchor) && !anchor.Anchor.IsDeleted ? anchor.Anchor.Line : b.Line }).ToArray();
         debugMargin.Breakpoints = debug.Breakpoints.Where(b => (b.BoundLocation?.File ?? b.File).Equals(path, StringComparison.OrdinalIgnoreCase)).Select(b =>
             b with
             {

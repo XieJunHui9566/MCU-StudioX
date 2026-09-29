@@ -2,6 +2,7 @@ param(
     [string]$ReleaseVersion,
     [string]$PayloadDirectory,
     [string]$OutputDirectory,
+    [switch]$ExcludePlugins,
     [string]$CompilerPath = (Join-Path $PSScriptRoot '../.artifacts/installer-tools/InnoSetup-7.1.0/ISCC.exe')
 )
 $ErrorActionPreference = 'Stop'
@@ -33,9 +34,12 @@ if ($LASTEXITCODE -ne 0 -or "$compilerVersion" -notmatch '7\.1\.0')
 if (!$PayloadDirectory)
 {
     $PayloadDirectory = Join-Path $projectRoot ('.artifacts/installer-payload-' + $ReleaseVersion + '-' + [Guid]::NewGuid().ToString('N'))
-    & (Join-Path $PSScriptRoot 'Publish.ps1') -OutputDirectory $PayloadDirectory -ReleaseVersion $ReleaseVersion
+    & (Join-Path $PSScriptRoot 'Publish.ps1') -OutputDirectory $PayloadDirectory -ReleaseVersion $ReleaseVersion -ExcludePlugins:$ExcludePlugins
 }
 $payload = [IO.Path]::GetFullPath($PayloadDirectory)
+if ($ExcludePlugins -and (Test-Path -LiteralPath (Join-Path $payload 'runtime/plugins'))) {
+    throw 'This installer was requested without bundled plugins; prepare a plugin-free payload.'
+}
 $release = Get-Content -LiteralPath (Join-Path $payload 'release.json') -Raw | ConvertFrom-Json
 $executable = Join-Path $payload 'MCU StudioX.exe'
 if ($release.version -ne $ReleaseVersion -or (Get-Item -LiteralPath $executable).VersionInfo.FileVersion -ne $releaseIdentity.FileVersion)

@@ -105,6 +105,27 @@ StudioX.Cli.exe plugin remove <runtime目录> <用户数据目录> <插件id>
 
 ## 声明式命令与面板
 
+插件在清单中声明可选的 `activity` 即可在左侧竖栏注册独立入口，点击打开自身的标签页。名称、提示和图案都来自插件包，宿主没有插件 ID 或图标目录白名单；添加新的插件不需要修改、编译 IDE。标签关闭只隐藏页面并保留本次会话输入；禁用、崩溃或结束工程会话时移除入口和页面。未声明入口的插件保持原有行为，面板仍显示在插件管理页。无面板插件使用通用提示页，原命令面板入口继续可用。
+
+有面板插件的 `tools` / `palette` 命令会打开所属插件页面，便于查看计算结果；编辑器和工程上下文命令保留原有页面焦点。
+
+`activity.version` 当前为 1。`title` 可省略，默认使用 `displayName`，指定时为 1–80 字符且不含控制字符；`tooltip` 可省略，最长 1024 字符。`icon.strokes` 是 24×24 坐标系的折线数组，每条为 `[x1,y1,x2,y2,...]`：1–32 条，每条 2–128 个点，总计最多 1024 个点，坐标为 0–24 的有限数值。闭合图案重复起点；省略 `icon` 使用通用插头。图标自动随主题、选中状态和 DPI 变色缩放，竖栏支持滚动。该接口仅解析数值数据，不执行 XAML、SVG 文档或插件 UI 代码。
+
+```json
+"activity": {
+  "version": 1,
+  "title": "我的工具",
+  "tooltip": "插件自己的说明",
+  "icon": { "strokes": [[3,12,12,3,21,12,12,21,3,12]] }
+}
+```
+
+清单格式仍为 1，API 2 / 3 插件均可声明此入口；旧宿主忽略此可选字段、继续显示原扩展面板。四个实验室插件的完整声明在 `examples/StudioX.LabPlugins/manifests/`，不在 IDE 的图标表或 C# 功能分支中。打包 CLI 必须为支持 `activity` 的构建，否则旧工具重新序列化清单时会丢弃该字段；构建脚本会检查这一点。
+
+可直接构建的四个实验插件见 [实验室插件](../examples/StudioX.LabPlugins/README.md)：位运算、协议校验、波形和像素图案。使用 `tools/Build-LabPlugins.ps1 -OutputDirectory <new-directory>` 生成四个独立 `.studioxplugin` 归档。它们不声明宿主工具，不读写工程或设备，也不依赖系统安装的 Python/Node。
+
+第二批 [创客插件](../examples/StudioX.MakerPlugins/README.md) 提供 RGB 灯效、蜂鸣器旋律、PID 调参沙盒和按键消抖。PID 包含分页面板、对象/延迟/扰动/噪声、抗饱和与微分滤波、指标、基线比较及 C 控制器。使用 `tools/Build-MakerPlugins.ps1` 和已有打包 CLI 独立交付，不重新编译 IDE。
+
 命令字段为 `id`、`title`、`placement` 和可选 `shortcut`。主要位置为 `palette`、`toolbar`、`editorContext`、`projectContext`；也接受 `tools`、`project`、`editor`、`status` 别名。与 IDE 保留快捷键或其他插件冲突时，宿主拒绝该快捷键并记录诊断，命令仍可通过管理页执行。
 
 面板字段为 `id`、`title`、`widgets`。控件字段为 `id`、`kind`、`label`，可选 `value`、`commandId`、`columns`、`children`。发布更新只能更新已声明面板，不能增加新的 Agent 工具定义。按钮及表单只能引用已声明命令。

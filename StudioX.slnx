@@ -24,6 +24,7 @@
   </Folder>
   <Folder
     Name="/examples/">
+    <Project Path="examples/StudioX.LabPlugins/StudioX.LabPlugins.csproj" />
     <Project
       Path="examples/StudioX.SampleDecoder/StudioX.SampleDecoder.csproj" />
     <Project
@@ -36,6 +37,7 @@
   </Folder>
   <Folder
     Name="/validation/">
+    <Project Path="tools/StudioX.LabPluginsValidation/StudioX.LabPluginsValidation.csproj" />
     <Project Path="tools/StudioX.OpenOcdPlotChecks/StudioX.OpenOcdPlotChecks.csproj" />
     <Project
       Path="tools/StudioX.AgentWorkspaceValidation/StudioX.AgentWorkspaceValidation.csproj" />

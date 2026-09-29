@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <ExistingHostDirectory>$(MSBuildThisFileDirectory)../../artifacts/build/plugin-labs/bin/StudioX.Desktop/release_win-x64</ExistingHostDirectory>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../examples/StudioX.MakerPlugins/StudioX.MakerPlugins.csproj" />
+    <!-- 使用已交付的宿主服务程序集验收新插件，不重新构建 IDE。 -->
+    <Reference Include="StudioX.Application"><HintPath>$(ExistingHostDirectory)/StudioX.Application.dll</HintPath></Reference>
+    <Reference Include="StudioX.Extensions"><HintPath>$(ExistingHostDirectory)/StudioX.Extensions.dll</HintPath></Reference>
+    <Reference Include="StudioX.Foundation"><HintPath>$(ExistingHostDirectory)/StudioX.Foundation.dll</HintPath></Reference>
+    <Reference Include="StudioX.Engine"><HintPath>$(ExistingHostDirectory)/StudioX.Engine.dll</HintPath></Reference>
+    <Reference Include="StudioX.Packages"><HintPath>$(ExistingHostDirectory)/StudioX.Packages.dll</HintPath></Reference>
+    <Reference Include="StudioX.Devices"><HintPath>$(ExistingHostDirectory)/StudioX.Devices.dll</HintPath></Reference>
+  </ItemGroup>
+</Project>

@@ -1,6 +1,6 @@
 # Windows 安装与升级
 
-版本从 `Directory.Build.props` 读取；独立 IDE 当前源码与安装器目标版本为 **0.2.5.2**，可覆盖升级首版 0.1.0，与旧 VS Code 插件的 0.17 分开。关于窗口、欢迎页、状态栏、EXE 文件版本和安装器版本保持一致。
+版本从 `Directory.Build.props` 读取；独立 IDE 当前源码与安装器目标版本为 **0.2.5.3**，可覆盖升级首版 0.1.0，与旧 VS Code 插件的 0.17 分开。关于窗口、欢迎页、状态栏、EXE 文件版本和安装器版本保持一致。
 
 ## 构建
 
@@ -12,9 +12,11 @@
 
 构建器固定使用 Inno Setup 7.1.0 x64，准备脚本检查下载 SHA-256 和 Pyrsys B.V. 的有效数字签名。只在开发机器准备安装编译器；最终用户不需要 Inno Setup、.NET、VS Code 或开发工具环境。
 
-`Build-Installer.ps1` 调用自包含发布、检查工具和器件包、生成逐文件 SHA-256，再压缩为单个 EXE。默认输出 `artifacts/releases/<version>/`，包括安装器、SHA256SUMS.txt、使用说明、release.json 和单独的 device-packs。已成功发行的目录不允许覆盖；修复后递增产品版本再构建。
+`Build-Installer.ps1` 调用自包含发布、检查工具和器件包、生成逐文件 SHA-256，再压缩为单个 EXE。默认输出 `artifacts/releases/<version>/`，包括安装器、SHA256SUMS.txt、使用说明、release.json 和单独的 device-packs。已成功发行的目录不允许覆盖。用户明确要求同版本修复发布时，保持产品版本，使用新的输出目录和 Git 发布标签记录修复源码，不移动已有标签。
 
-下一次发行先递增 `Directory.Build.props` 的三段数字版本或四段修订版本。`Publish.ps1 -ReleaseVersion` 仅用于明确的发行构建；工具集、器件包和插件版本分别管理，不随 IDE 版本强行改变。不要修改已经发行的工具集版本内容，因为工程会锁定其指纹。
+只有用户明确要求升级时才修改 `Directory.Build.props` 的产品版本。`Publish.ps1 -ReleaseVersion` 仅用于明确的发行构建；工具集、器件包和插件版本分别管理，不随 IDE 版本强行改变。不要修改已经发行的工具集版本内容，因为工程会锁定其指纹。
+
+`Publish.ps1` 和 `Build-Installer.ps1` 支持 `-ExcludePlugins`：不构建或附带示例插件，保留插件宿主与通用扩展接口。已有 Payload 使用该参数时安装构建器会拒绝带有 `runtime/plugins` 的目录。安装器不会安装、更新或删除用户数据目录中的插件。
 
 ## 安装语义
 

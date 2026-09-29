@@ -12,6 +12,7 @@ using StudioX.Engine.Debugging;
 public sealed class DebugMargin : AbstractMargin, IBackgroundRenderer
 {
     public IReadOnlyList<SourceBreakpoint> Breakpoints { get; set; } = [];
+    public IReadOnlyList<SourceBreakpoint> RelocatedRequests { get; set; } = [];
     public int? ExecutionLine
     {
         get; set;
@@ -65,6 +66,14 @@ public sealed class DebugMargin : AbstractMargin, IBackgroundRenderer
             var line = visual.FirstDocumentLine.LineNumber;
             var y = visual.VisualTop - view.VerticalOffset + visual.Height / 2;
             var bp = Breakpoints.FirstOrDefault(b => b.Line >= line && b.Line <= visual.LastDocumentLine.LineNumber);
+            if (RelocatedRequests.Any(b => b.Line >= line && b.Line <= visual.LastDocumentLine.LineNumber))
+            {
+                // 空心琥珀标记保留用户请求位置；实心断点仍表示 GDB 实际绑定的指令。
+                var pen = new Pen(Brushes.Orange, 1.6);
+                dc.DrawEllipse(null, pen, new Point(10, y), 5.5, 5.5);
+                dc.DrawLine(pen, new Point(8, y - 2.5), new Point(11, y));
+                dc.DrawLine(pen, new Point(11, y), new Point(8, y + 2.5));
+            }
             if (bp is not null)
             {
                 var color = new SolidColorBrush(bp.LogMessage is not null ? Color.FromRgb(65, 164, 244) : bp.Temporary || bp.SessionOnly ? Color.FromRgb(239, 170, 66) : Color.FromRgb(242, 89, 100));
@@ -151,8 +160,11 @@ public sealed class DebugMargin : AbstractMargin, IBackgroundRenderer
             return;
         }
         var line = view.GetVisualLineFromVisualTop(e.GetPosition(this).Y + view.VerticalOffset)?.FirstDocumentLine.LineNumber;
-        var point = Breakpoints.FirstOrDefault(b => b.Line == line);
-        ToolTip = point is null ? "单击设置断点；右键设置条件、日志或临时断点" : $"{point.Kind}断点 · 第 {point.Line} 行\n{point.Rule}\n已到达 {point.HitCount} 次，剩余跳过 {point.IgnoreRemaining} 次\n{point.Message}";
+        var point = RelocatedRequests.FirstOrDefault(b => b.Line == line) ?? Breakpoints.FirstOrDefault(b => b.Line == line);
+        var request = point is null ? null : RelocatedRequests.FirstOrDefault(b => b.Id == point.Id);
+        ToolTip = point is null ? "单击设置断点；右键设置条件、日志或临时断点" : request is not null
+            ? $"断点请求：{request.File}:{request.Line}\n实际绑定：{request.BoundLocation!.File}:{request.BoundLocation.Line}\n该行没有独立可执行指令，可能受优化或内联影响。\n逐行调试可选择编译设置 -O0 / -g3，重新编译并下载后调试。\n点击请求标记或实际标记均可删除此断点。"
+            : $"{point.Kind}断点 · 第 {point.Line} 行\n{point.Rule}\n已到达 {point.HitCount} 次，剩余跳过 {point.IgnoreRemaining} 次\n{point.Message}";
     }
     public void Draw(TextView textView, DrawingContext dc)
     {

@@ -1,4 +1,4 @@
-param([string]$OutputDirectory, [string]$RuntimeAssetsDirectory, [string]$ReleaseVersion, [string]$BuildArtifactsDirectory)
+param([string]$OutputDirectory, [string]$RuntimeAssetsDirectory, [string]$ReleaseVersion, [string]$BuildArtifactsDirectory, [switch]$ExcludePlugins)
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
 if (!$ReleaseVersion)
@@ -121,6 +121,7 @@ if ($LASTEXITCODE -ne 0)
 {
     throw 'MCP host publish failed.'
 }
+if (!$ExcludePlugins) {
 $sampleArguments = @()
 $sampleAssembly = Join-Path $projectRoot 'examples/StudioX.SampleDecoder/bin/Release/net10.0/StudioX.SampleDecoder.dll'
 if ($BuildArtifactsDirectory)
@@ -167,6 +168,11 @@ foreach ($workspaceFile in Get-ChildItem -LiteralPath $workspacePlugin -File -Re
 }
 $workspaceManifest.sha256 = $workspaceHashes
 $workspaceManifest | ConvertTo-Json -Depth 16 | Set-Content -LiteralPath (Join-Path $workspacePlugin 'plugin.json') -Encoding utf8
+}
+elseif (Test-Path -LiteralPath (Join-Path $runtime 'plugins')) {
+    # 排除模式必须在生成前生效，不能靠删去已安装用户插件实现。
+    throw 'Plugin-free publication unexpectedly contains bundled plugins.'
+}
 # 工具资源由 Desktop 的 Content 项统一复制，开发运行与便携发行使用同一布局。
 Copy-Item -LiteralPath (Join-Path $projectRoot 'README.md') -Destination $output
 $publicDocs = Join-Path $output 'docs'
@@ -343,6 +349,7 @@ $guide.Replace('{{VERSION}}', $ReleaseVersion) | Set-Content -LiteralPath (Join-
     platform             ='win-x64';
     updateMode           ='installer';
     userDataDirectory    ='%LOCALAPPDATA%\MCUStudioX';
-    devicePacksDirectory ='device-packs'
+    devicePacksDirectory ='device-packs';
+    bundledPlugins       = !$ExcludePlugins.IsPresent
 } | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $output 'release.json') -Encoding utf8
 Write-Output $output

@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType></PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../examples/StudioX.LabPlugins/StudioX.LabPlugins.csproj" />
+    <ProjectReference Include="../../src/StudioX.Application/StudioX.Application.csproj" />
+  </ItemGroup>
+</Project>

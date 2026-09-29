@@ -168,6 +168,17 @@ for (var attempt = 0; attempt < 50 && !intelligence.GetDiagnostics().Any(b => b.
 Check(intelligence.GetDiagnostics().Any(b => b.Path == "src/main.c" && b.Text == broken && b.Items.Any(d => d.Message.Contains("unknown_symbol", StringComparison.Ordinal))), "real-time diagnostics arrive for unsaved broken text");
 await intelligence.DocumentSymbolsAsync("src/other.c", other, documents: brokenWorkspace);
 Check(intelligence.GetDiagnostics().Any(b => b.Path == "src/main.c" && b.Items.Any(d => d.Message.Contains("unknown_symbol", StringComparison.Ordinal))), "refreshing another file does not erase current live error");
+intelligence.SetDiagnosticsSuspended(true);
+Check(intelligence.DiagnosticsSuspended && intelligence.GetDiagnostics().Count == 0, "debug suspension clears existing live diagnostics");
+await intelligence.SynchronizeDiagnosticsAsync("src/main.c", broken, brokenWorkspace);
+await intelligence.DocumentSymbolsAsync("src/main.c", broken + "\n", documents: [new("src/main.c", broken + "\n")]);
+await Task.Delay(250);
+Check(intelligence.GetDiagnostics().Count == 0, "navigation and late clangd publications cannot restore diagnostics during debug");
+intelligence.SetDiagnosticsSuspended(false);
+Check(intelligence.GetDiagnostics().Count == 0, "resuming does not revive stale cached diagnostics");
+await intelligence.SynchronizeDiagnosticsAsync("src/main.c", broken, brokenWorkspace);
+for (var attempt = 0; attempt < 50 && !intelligence.GetDiagnostics().Any(b => b.Text == broken && b.Items.Any(d => d.Message.Contains("unknown_symbol", StringComparison.Ordinal))); attempt++) { await Task.Delay(100); }
+Check(!intelligence.DiagnosticsSuspended && intelligence.GetDiagnostics().Any(b => b.Text == broken && b.Items.Any(d => d.Message.Contains("unknown_symbol", StringComparison.Ordinal))), "diagnostics resume by reparsing unchanged source after debug");
 await intelligence.SynchronizeDiagnosticsAsync("src/main.c", main, [new("src/main.c", main)]);
 for (var attempt = 0; attempt < 50 && !intelligence.GetDiagnostics().Any(b => b.Path == "src/main.c" && b.Text == main); attempt++) { await Task.Delay(100); }
 Check(intelligence.GetDiagnostics().Where(b => b.Path == "src/main.c").All(b => b.Text == main && b.Items.All(d => d.Severity != 1)), "fixed text clears earlier version diagnostics");

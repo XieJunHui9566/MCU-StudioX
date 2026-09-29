@@ -148,7 +148,8 @@ public partial class MainWindow
             }
             PluginManager.WorkspaceHint.Text = workspace.Contributions.Count == 0
                 ? "没有运行中的通用插件；可安装后显式启用。"
-                : $"已加载 {workspace.Contributions.Count} 个插件；进程随当前工程会话结束。";
+                : $"已加载 {workspace.Contributions.Count} 个插件；" + (pluginActivities.Count > 0
+                    ? $"其中 {pluginActivities.Count} 个在左侧注册了独立入口。" : "面板显示在此页面。");
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested)
         {
@@ -195,6 +196,7 @@ public partial class MainWindow
     {
         foreach (var active in contributions)
         {
+            AddPluginActivity(active);
             foreach (var definition in active.Contribution.Commands)
             {
                 var command = new PluginUiCommand(
@@ -286,6 +288,13 @@ public partial class MainWindow
         {
             return;
         }
+        // 从管理页或命令面板调用时展示结果页面；编辑器和工程上下文命令保留原有焦点。
+        if (pluginActivities.TryGetValue(pluginId, out var activity) && workspace.Contributions.Any(active =>
+            active.Id == pluginId && active.Contribution.Panels.Length > 0 && active.Contribution.Commands.Any(command =>
+                command.Id == commandId && command.Placement is "tools" or "palette")))
+        {
+            ShowDocument(activity.Tab);
+        }
         using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(pluginWorkspaceCancellation.Token);
         pluginInvocationCancellation = cancellation;
         RefreshPluginCommandState();
@@ -352,9 +361,10 @@ public partial class MainWindow
                         }
                         foreach (var key in pluginPanels.Keys.Where(key => key.StartsWith(update.PluginId + "/", StringComparison.Ordinal)).ToArray())
                         {
-                            PluginManager.PanelsHost.Children.Remove(pluginPanels[key].Host);
+                            if (pluginPanels[key].Host.Parent is Panel parent) { parent.Children.Remove(pluginPanels[key].Host); }
                             pluginPanels.Remove(key);
                         }
+                        RemovePluginActivity(update.PluginId);
                         RefreshPluginCommandState();
                         if (pluginBroker is { } broker)
                         {
@@ -406,7 +416,8 @@ public partial class MainWindow
             var pluginId = key[..key.IndexOf('/')];
             existing = (new PluginPanelRenderer((command, arguments) => InvokePluginCommandAsync(pluginId, command, arguments), PluginManager.Log), new ContentControl());
             pluginPanels.Add(key, existing);
-            PluginManager.PanelsHost.Children.Add(existing.Host);
+            var body = pluginActivities.TryGetValue(pluginId, out var activity) ? activity.Body : PluginManager.PanelsHost;
+            body.Children.Add(existing.Host);
         }
         existing.Host.Content = existing.Renderer.Render(panel);
         existing.Renderer.SetEnabled(CanRunPluginCommand);
@@ -548,6 +559,7 @@ public partial class MainWindow
         pluginContextItems.Clear();
         pluginCommands.Clear();
         pluginPanels.Clear();
+        ClearPluginActivities();
         lock (pluginEventLock)
         {
             pluginPendingPanels.Clear();

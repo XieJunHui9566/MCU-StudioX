@@ -1,0 +1,22 @@
+{
+  "formatVersion": 1,
+  "apiVersion": 2,
+  "id": "studiox.pixel-lab",
+  "version": "1.0.0",
+  "displayName": "像素图案工坊",
+  "description": "生成 OLED 单色点阵，支持反色与翻转。",
+  "kind": "dotnet",
+  "entryAssembly": "StudioX.LabPlugins.dll",
+  "entryType": "StudioX.LabPlugins.PixelLabPlugin",
+  "capabilities": ["commands", "panels", "agentTools"],
+  "hostTools": [],
+  "activity": {
+    "version": 1,
+    "title": "像素图案工坊",
+    "icon": { "strokes": [
+      [3,3,9,3,9,9,3,9,3,3], [15,3,21,3,21,9,15,9,15,3],
+      [9,9,15,9,15,15,9,15,9,9], [3,15,9,15,9,21,3,21,3,15], [15,15,21,15,21,21,15,21,15,15]
+    ] }
+  },
+  "sha256": {}
+}

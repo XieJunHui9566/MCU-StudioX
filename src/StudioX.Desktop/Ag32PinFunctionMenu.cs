@@ -45,7 +45,7 @@ internal sealed class Ag32PinFunctionMenu : ContextMenu
             var elsewhere = occupied.Where(assignment => assignment.PinNumber != pin.Number).Select(assignment => $"PIN_{assignment.PinNumber}").ToArray();
             // 使用 TextBlock 保留 GPIO 名称中的下划线，避免被菜单访问键语法吞掉。
             var header = new StackPanel();
-            header.Children.Add(new TextBlock { Text = function.Name, FontWeight = current ? FontWeights.SemiBold : FontWeights.Normal });
+            header.Children.Add(new TextBlock { Text = Ag32PinFunctionLabels.Display(function.Name), FontWeight = current ? FontWeights.SemiBold : FontWeights.Normal });
             if (current || elsewhere.Length != 0)
             {
                 var note = new TextBlock
@@ -62,6 +62,7 @@ internal sealed class Ag32PinFunctionMenu : ContextMenu
                 Tag = function,
                 Padding = new Thickness(10, 4, 10, 4),
                 ToolTip = $"{function.Name} · {function.Direction}\n内部资源：{function.SharedGpio ?? "独立功能"}"
+                    + (Ag32PinFunctionLabels.Description(function.Name) is { } description ? "\n" + description : "")
                     + (elsewhere.Length == 0 ? "" : "\n再次分配后会显示冲突，需要移除重复分配。")
             };
             item.Click += (_, _) => Select(function, choose);
@@ -103,7 +104,7 @@ internal sealed class Ag32PinFunctionMenu : ContextMenu
         var query = SearchBox.Text.Trim();
         foreach (var item in functionItems)
         {
-            item.Visibility = ((Ag32PinFunction)item.Tag).Name.Contains(query, StringComparison.OrdinalIgnoreCase)
+            item.Visibility = Ag32PinFunctionLabels.Display(((Ag32PinFunction)item.Tag).Name).Contains(query, StringComparison.OrdinalIgnoreCase)
                 ? Visibility.Visible : Visibility.Collapsed;
         }
         emptyItem.Visibility = functionItems.Any(item => item.Visibility == Visibility.Visible) ? Visibility.Collapsed : Visibility.Visible;
