@@ -1,4 +1,4 @@
-param([string]$OutputDirectory, [string]$BuildArtifactsDirectory)
+param([string]$OutputDirectory, [string]$BuildArtifactsDirectory, [switch]$Development)
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
 if (!$OutputDirectory)
@@ -15,7 +15,8 @@ if (!$BuildArtifactsDirectory)
     $BuildArtifactsDirectory = Join-Path $pluginOutput 'build'
 }
 $buildArguments = @('--artifacts-path', [IO.Path]::GetFullPath($BuildArtifactsDirectory))
-$publishDirectory = Join-Path $pluginOutput 'studiox.workspace-overview'
+$pluginId = if ($Development) { 'studiox.development' } else { 'studiox.workspace-overview' }
+$publishDirectory = Join-Path $pluginOutput $pluginId
 & dotnet publish (Join-Path $projectRoot 'examples/StudioX.SamplePlugin/StudioX.SamplePlugin.csproj') -c Release --self-contained false -o $publishDirectory @buildArguments
 if ($LASTEXITCODE -ne 0)
 {
@@ -23,13 +24,14 @@ if ($LASTEXITCODE -ne 0)
 }
 # 共享契约由宿主提供；归档只包含插件自身的发布文件，避免私有契约类型副本。
 Get-ChildItem -LiteralPath $publishDirectory -File | Where-Object { $_.Name -like 'StudioX.Extensions.Abstractions.*' -or $_.Extension -eq '.pdb' } | Remove-Item
-Copy-Item -LiteralPath (Join-Path $projectRoot 'examples/StudioX.SamplePlugin/plugin.template.json') -Destination (Join-Path $publishDirectory 'plugin.json')
+$template = if ($Development) { 'development.template.json' } else { 'plugin.template.json' }
+Copy-Item -LiteralPath (Join-Path $projectRoot "examples/StudioX.SamplePlugin/$template") -Destination (Join-Path $publishDirectory 'plugin.json')
 & dotnet pack (Join-Path $projectRoot 'src/StudioX.Extensions.Abstractions/StudioX.Extensions.Abstractions.csproj') -c Release -o (Join-Path $pluginOutput 'nuget') @buildArguments
 if ($LASTEXITCODE -ne 0)
 {
     throw 'Plugin SDK package build failed.'
 }
-& dotnet run --project (Join-Path $projectRoot 'src/StudioX.Cli/StudioX.Cli.csproj') -c Release @buildArguments -- plugin pack $publishDirectory (Join-Path $pluginOutput 'studiox.workspace-overview-1.0.0.studioxplugin')
+& dotnet run --project (Join-Path $projectRoot 'src/StudioX.Cli/StudioX.Cli.csproj') -c Release @buildArguments -- plugin pack $publishDirectory (Join-Path $pluginOutput "$pluginId-1.0.0.studioxplugin")
 if ($LASTEXITCODE -ne 0)
 {
     throw 'Plugin archive validation failed.'

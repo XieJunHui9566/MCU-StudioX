@@ -14,7 +14,14 @@ public partial class App : System.Windows.Application
         base.OnStartup(e);
         WindowMouseWheel.Install();
         installationMutex = new Mutex(false, "MCUStudioX.Desktop.InstallLock");
+        var showProductivity = e.Args is ["--show-ide-next", _, _];
+        var showAgentWorkspace = e.Args is ["--show-agent-workspace", _, _];
+        var agentWorkspacePreview = e.Args is ["--preview-agent-workspace", _, _];
+        var productivityPreview = e.Args is ["--preview-ide-next", _, _] or ["--preview-ide-next-recovery", _, _];
         var smoke = e.Args is ["--smoke", _];
+        var diagnosticsPreview = e.Args is ["--preview-diagnostics", _];
+        var openOcdPlotPreview = e.Args is ["--preview-openocd-plot", _];
+        var workspaceEditingPreview = e.Args is ["--preview-workspace-editor", _, _] or ["--preview-editor-recovery", _, _];
         var showDebugDemo = e.Args is ["--show-debug-demo", _] or ["--show-debug-demo", _, _];
         var showBreakpointsDemo = e.Args is ["--show-breakpoints-demo", _] or ["--show-breakpoints-demo", _, _];
         var preview = e.Args is ["--preview-ui", _];
@@ -52,8 +59,9 @@ public partial class App : System.Windows.Application
         var lvglPreview = e.Args is ["--preview-lvgl-ui", _, _];
         var lvglSetupPreview = e.Args is ["--preview-lvgl-setup", _, _, _, _];
         var zephyrDevicetreePreview = e.Args is ["--preview-zephyr-devicetree", _, _];
-        var anyPreview = microPythonPreview || pythonPreview || hdlWorkflowPreview || hdlPreview || ag32MappingPreview || pluginsPreview || preview || windowLayoutPreview || editorPreview || completionPreview || cmakePreview || documentsPreview || vePreview || navigationPreview || explorerPreview || buildPreview || buildMemoryPreview || editingPreview || bracketsPreview || stm32Preview || rp2350Preview || rp2040Preview || projectPreview || cubeMxPreview || importPerformancePreview || downloadPreview || espressifPreview || espressifModulePreview || debugPreview || rtosPreview || packCatalogPreview || breakpointsPreview || lvglPreview || lvglSetupPreview || zephyrDevicetreePreview;
-        var data = (showDebugDemo || showBreakpointsDemo) && e.Args.Length == 3 ? Path.GetFullPath(e.Args[2]) : smoke || anyPreview ? Path.Combine(Path.GetFullPath(e.Args[1]), "user-data") :
+        var anyPreview = productivityPreview || workspaceEditingPreview || microPythonPreview || pythonPreview || hdlWorkflowPreview || hdlPreview || ag32MappingPreview || pluginsPreview || preview || windowLayoutPreview || editorPreview || completionPreview || cmakePreview || documentsPreview || vePreview || navigationPreview || explorerPreview || buildPreview || buildMemoryPreview || editingPreview || bracketsPreview || stm32Preview || rp2350Preview || rp2040Preview || projectPreview || cubeMxPreview || importPerformancePreview || downloadPreview || espressifPreview || espressifModulePreview || debugPreview || rtosPreview || packCatalogPreview || breakpointsPreview || lvglPreview || lvglSetupPreview || zephyrDevicetreePreview;
+        anyPreview |= agentWorkspacePreview || diagnosticsPreview || openOcdPlotPreview;
+        var data = (showAgentWorkspace || showProductivity || showDebugDemo || showBreakpointsDemo) && e.Args.Length == 3 ? Path.GetFullPath(e.Args[2]) : smoke || anyPreview ? Path.Combine(Path.GetFullPath(e.Args[1]), "user-data") :
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MCUStudioX");
         var services = new WorkbenchService(Path.Combine(AppContext.BaseDirectory, "runtime"), data);
         var window = new MainWindow(services);
@@ -66,14 +74,34 @@ public partial class App : System.Windows.Application
             window.Left = -20000;
         }
         window.Show();
-        await window.InitializeAsync(loadGitHubAccounts: !smoke && !anyPreview);
+        await window.InitializeAsync(loadGitHubAccounts: !smoke && !anyPreview && !showProductivity && !showAgentWorkspace);
         if (anyPreview)
         {
             var directory = Path.GetFullPath(e.Args[1]);
             Directory.CreateDirectory(directory);
             try
             {
-                if (hdlWorkflowPreview)
+                if (openOcdPlotPreview)
+                {
+                    await window.RenderOpenOcdPlotPreviewAsync(directory);
+                }
+                else if (diagnosticsPreview)
+                {
+                    await window.RenderDiagnosticsPreviewAsync(directory);
+                }
+                else if (agentWorkspacePreview)
+                {
+                    await window.RenderAgentWorkspacePreviewAsync(directory, Path.GetFullPath(e.Args[2]));
+                }
+                else if (productivityPreview)
+                {
+                    await window.RenderProductivityPreviewAsync(directory, Path.GetFullPath(e.Args[2]), e.Args[0] == "--preview-ide-next-recovery");
+                }
+                else if (workspaceEditingPreview)
+                {
+                    await window.RenderWorkspaceEditingPreviewAsync(directory, Path.GetFullPath(e.Args[2]), e.Args[0] == "--preview-editor-recovery");
+                }
+                else if (hdlWorkflowPreview)
                 {
                     await window.RenderHdlWorkflowPreviewAsync(directory, Path.GetFullPath(e.Args[2]));
                 }
@@ -220,6 +248,16 @@ public partial class App : System.Windows.Application
         }
         if (!smoke)
         {
+            if (showAgentWorkspace)
+            {
+                await window.ShowAgentWorkspacePreviewAsync(Path.GetFullPath(e.Args[1]));
+                return;
+            }
+            if (showProductivity)
+            {
+                await window.ShowProductivityWorkspaceAsync(Path.GetFullPath(e.Args[1]));
+                return;
+            }
             if (showDebugDemo || showBreakpointsDemo)
             {
                 if (showBreakpointsDemo)
@@ -242,7 +280,11 @@ public partial class App : System.Windows.Application
                 }
                 return;
             }
-            if (e.Args is ["--new-project"])
+            if (e.Args.Length == 0)
+            {
+                await window.RestoreLastEditorSessionAsync();
+            }
+            else if (e.Args is ["--new-project"])
             {
                 await window.ShowNewProjectAsync();
             }

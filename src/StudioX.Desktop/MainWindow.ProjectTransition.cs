@@ -31,6 +31,8 @@ public partial class MainWindow
 
     private async Task StopProjectEditorAsync(CancellationToken token)
     {
+        await StopLiveDiagnosticsAsync();
+        ClearWorkspaceEditing();
         CloseCodeAssistance();
         if (sourceContextMenu is not null)
         {

@@ -266,6 +266,7 @@ public partial class MainWindow
         try
         {
             await services.Intelligence.StartAsync(RequireProject(), token);
+            QueueLiveDiagnostics();
             QueueOutlineRefresh(clear: true);
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }

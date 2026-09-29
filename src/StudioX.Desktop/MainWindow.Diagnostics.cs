@@ -3,7 +3,6 @@ namespace StudioX.Desktop;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
-using System.Windows.Media;
 using StudioX.Application;
 
 public partial class MainWindow
@@ -21,7 +20,7 @@ public partial class MainWindow
     {
         diagnosticRevision++;
         buildDiagnostics.Clear();
-        diagnosticRenderer?.Set([]);
+        RefreshDiagnosticMarkers();
         HideSymbolHover();
     }
     private async Task PublishBuildDiagnosticsAsync(string directory, string log, long revision, CancellationToken token)
@@ -56,12 +55,20 @@ public partial class MainWindow
     }
     private void RefreshDiagnosticMarkers()
     {
-        diagnosticRenderer?.Set(activeEditor is { } editor && buildDiagnostics.TryGetValue(editor.Source.RelativePath, out var entry) && entry.Text == editor.Buffer.Text
-            ? entry.Items.Select(item => EditorDiagnosticRenderer.Locate(editor.Buffer, item)).OfType<EditorDiagnostic>().ToArray() : []);
+        var current = CurrentProblems();
+        if (!problemRows.SequenceEqual(current))
+        {
+            problemRows = current;
+            ProblemsGrid.ItemsSource = current;
+            ProblemsTab.Header = $"问题 ({current.Length})";
+        }
+        diagnosticRenderer?.Set(activeEditor is { } editor ? current.Where(r => r.File.Equals(editor.Source.RelativePath, StringComparison.OrdinalIgnoreCase))
+            .Select(r => r.Offset is { } offset ? new EditorDiagnostic(r.Diagnostic, offset, Math.Min(r.Length, Math.Max(0, editor.Buffer.TextLength - offset))) : EditorDiagnosticRenderer.Locate(editor.Buffer, r.Diagnostic))
+            .OfType<EditorDiagnostic>().ToArray() : []);
     }
     private bool TryShowDiagnosticHover(Point point)
     {
-        if (activeEditor is null || WorkspaceTabs.SelectedItem != EditorTab || diagnosticRenderer is null)
+        if (activeEditor is null || !IsActiveSourceTab || diagnosticRenderer is null)
         {
             return false;
         }
@@ -92,8 +99,13 @@ public partial class MainWindow
         foreach (var marker in matches)
         {
             var diagnostic = marker.Diagnostic;
-            body.Children.Add(new TextBlock { Text = diagnostic.IsWarning ? "编译警告" : "编译错误", Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString(diagnostic.IsWarning ? "#E8B85B" : "#FF6475")), FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 3, 0, 5) });
-            body.Children.Add(new TextBlock { Text = diagnostic.Message, TextWrapping = TextWrapping.Wrap });
+            var severity = new TextBlock { Text = diagnostic.IsWarning ? "警告 Warning" : "错误 Error", FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 3, 0, 5) };
+            severity.SetResourceReference(TextBlock.ForegroundProperty, diagnostic.IsWarning ? "DiagnosticWarning" : "DiagnosticError");
+            body.Children.Add(severity);
+            body.Children.Add(new TextBlock { Text = DiagnosticText.ChineseSummary(diagnostic.Message), TextWrapping = TextWrapping.Wrap });
+            var original = new TextBlock { Text = diagnostic.Message, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 3, 0, 0) };
+            original.SetResourceReference(TextBlock.ForegroundProperty, "Muted");
+            body.Children.Add(original);
             var location = new TextBlock { Text = $"{diagnostic.RelativePath}:{diagnostic.Line}" + (diagnostic.Column > 0 ? $":{diagnostic.Column}" : ""), Margin = new Thickness(0, 5, 0, 3), FontSize = 11 };
             location.SetResourceReference(TextBlock.ForegroundProperty, "Muted");
             body.Children.Add(location);

@@ -79,6 +79,16 @@ public sealed partial class DebugSessionService
                 breakpoints[i] = await BindAsync(breakpoints[i], token);
             }
             Snapshot = NormalizeSnapshot(await current.ReadAsync(watches, 0, token));
+            // 只有映像校验通过后才发布只读采样入口；地址随会话失效。
+            var header = new byte[6];
+            using (var elfStream = File.OpenRead(preparation.Elf)) { await elfStream.ReadExactlyAsync(header, token); }
+            if (!header.AsSpan(0, 4).SequenceEqual(new byte[] { 0x7f, 0x45, 0x4c, 0x46 }) || header[5] is not (1 or 2))
+            { throw Error("ELF 字节序无效。"); }
+            plotLittleEndian = header[5] == 1;
+            plotRamOrigin = preparation.Configuration.Device.RamOrigin;
+            plotRamBytes = preparation.Configuration.Device.RamBytes;
+            plotTransport = transport;
+            PlotSessionId = Guid.NewGuid();
             Trace("实机会话：" + HardwareTargetName + "。板上映像与当前 ELF 校验一致；未下载。日志：" + SessionLogPath);
             SetState(DebugState.Stopped, "已连接并暂停 · 实机固件校验通过");
         }

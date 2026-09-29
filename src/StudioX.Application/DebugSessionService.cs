@@ -431,6 +431,8 @@ public sealed partial class DebugSessionService(string dataDirectory) : IAsyncDi
     }
     private async Task ReleaseAdapterAsync()
     {
+        plotTransport = null;
+        PlotSessionId = Guid.Empty;
         var previous = adapter;
         adapter = null;
         bound.Clear();

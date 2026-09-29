@@ -14,7 +14,14 @@ public partial class MainWindow
     private void ShowDocument(TabItem tab)
     {
         tab.Visibility = Visibility.Visible;
-        WorkspaceTabs.SelectedItem = tab;
+        if (tab.Tag is EditorDocumentSession target)
+        {
+            DocumentTabs(target).SelectedItem = tab;
+        }
+        else
+        {
+            WorkspaceTabs.SelectedItem = tab;
+        }
         if (tab.Tag is EditorDocumentSession session)
         {
             ActivateEditor(session);
@@ -41,6 +48,7 @@ public partial class MainWindow
     });
     private void Lab_Click(object sender, RoutedEventArgs e) => ShowDocument(LabTab);
     private void SerialPlot_Click(object sender, RoutedEventArgs e) => ShowDocument(SerialPlotTab);
+    private void OpenOcdPlot_Click(object sender, RoutedEventArgs e) => ShowDocument(OpenOcdPlotTab);
     private void Serial_Click(object sender, RoutedEventArgs e) => ShowDocument(SerialTab);
     private void Extensions_Click(object sender, RoutedEventArgs e) => ShowDocument(ExtensionsTab);
     private void ShowBuildLog_Click(object sender, RoutedEventArgs e) => ShowBottom(0);
@@ -199,6 +207,18 @@ public partial class MainWindow
             e.Handled = true;
             return;
         }
+        if (projectDirectory is not null && Keyboard.Modifiers == (ModifierKeys.Control | ModifierKeys.Shift) && e.Key is Key.F or Key.H)
+        {
+            ShowWorkspaceSearch(e.Key == Key.H);
+            e.Handled = true;
+            return;
+        }
+        if (SourceEditor.IsKeyboardFocusWithin && CanEditSource && !IsPythonDocument && Keyboard.Modifiers == ModifierKeys.None && e.Key == Key.F2)
+        {
+            QueueRenameSymbol();
+            e.Handled = true;
+            return;
+        }
         if (CanFindSource && e.Key == Key.F3 && Keyboard.Modifiers is ModifierKeys.None or ModifierKeys.Shift)
         {
             if (FindPanel.Visibility != Visibility.Visible)
@@ -209,7 +229,7 @@ public partial class MainWindow
             e.Handled = true;
             return;
         }
-        if (e.Key == Key.F12 && Keyboard.Modifiers == ModifierKeys.Shift && IsPythonDocument)
+        if (e.Key == Key.F12 && Keyboard.Modifiers == ModifierKeys.Shift && CanNavigateCode)
         {
             QueuePythonReferences();
             e.Handled = true;

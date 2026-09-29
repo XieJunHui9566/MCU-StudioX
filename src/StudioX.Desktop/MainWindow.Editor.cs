@@ -52,6 +52,9 @@ public partial class MainWindow
         InitializeOutline();
         InitializeExplorer();
         InitializeDebugger();
+        InitializeWorkspaceEditing();
+        InitializeLiveDiagnostics();
+        InitializeEditorRecovery();
         ApplyEditorSettings(editorSettings);
     }
     private void ApplyEditorSettings(EditorSettings settings)
@@ -138,6 +141,7 @@ public partial class MainWindow
     }
     private void SourceEditor_TextChanged(object? sender, EventArgs e)
     {
+        QueueLiveDiagnostics();
         CancelCodeRequest();
         CancelSymbolRequests();
         DebugSourceChanged();

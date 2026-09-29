@@ -20,12 +20,21 @@ public partial class MainWindow
     private string outlineText = "";
     private IReadOnlyList<CodeDocumentSymbol> outlineSymbols = [];
     private double savedOutlineWidth = 270;
+    private bool outlinePreferred = true;
     private readonly HashSet<CancellationTokenSource> outlineDetailRequests = [];
 
     private void InitializeOutline()
     {
         outlineTimer.Tick += (_, _) => { outlineTimer.Stop(); outlineTask = RefreshOutlineAsync(); };
         SourceEditor.IsVisibleChanged += (_, _) => QueueOutlineRefresh(clear: true);
+        EditorSurface.SizeChanged += (_, _) =>
+        {
+            var visible = outlinePreferred && EditorSurface.ActualWidth >= 650;
+            if (visible != (OutlinePanel.Visibility == Visibility.Visible))
+            {
+                SetOutlineVisible(visible, false);
+            }
+        };
     }
 
     private void CancelOutline()
@@ -61,7 +70,7 @@ public partial class MainWindow
         OutlineSearch.ToolTip = devicetree ? "筛选当前设备树源文件中的节点和属性" : "筛选函数、全局变量和类型；展开函数查看局部变量";
         AutomationProperties.SetName(OutlineSearch, devicetree ? "搜索设备树节点或属性" : "搜索函数或全局变量");
         AutomationProperties.SetName(OutlineTree, devicetree ? "当前设备树源文件节点与属性" : "当前文件函数与变量");
-        if (closing || activeDocument is null || WorkspaceTabs.SelectedItem != EditorTab || OutlinePanel.Visibility != Visibility.Visible)
+        if (closing || activeDocument is null || !IsActiveSourceTab || OutlinePanel.Visibility != Visibility.Visible)
         {
             OutlineStatus.Text = "打开源码文件查看结构";
             return;
@@ -82,7 +91,7 @@ public partial class MainWindow
 
     private async Task RefreshOutlineAsync()
     {
-        if (closing || activeEditor is not { } session || WorkspaceTabs.SelectedItem != session.Tab ||
+        if (closing || activeEditor is not { } session || DocumentTabs(session).SelectedItem != session.Tab ||
             (CodeLanguage.ForFile(session.Source.RelativePath) != "Devicetree" && !services.Intelligence.IsReady))
         {
             return;
@@ -338,8 +347,12 @@ public partial class MainWindow
         SetOutlineVisible(OutlinePanel.Visibility != Visibility.Visible);
     }
 
-    private void SetOutlineVisible(bool visible)
+    private void SetOutlineVisible(bool visible, bool remember = true)
     {
+        if (remember)
+        {
+            outlinePreferred = visible;
+        }
         var hide = !visible;
         if (hide)
         {

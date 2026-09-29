@@ -5,6 +5,7 @@
   xmlns:local="clr-namespace:StudioX.Desktop"
   xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
   xmlns:editor="http://icsharpcode.net/sharpdevelop/avalonedit"
+  xmlns:system="clr-namespace:System;assembly=System.Runtime"
   Title="MCU StudioX"
   Icon="Assets/StudioX.ico"
   Style="{StaticResource {x:Type Window}}"
@@ -237,6 +238,7 @@
           Grid.Row="1"
           Background="{DynamicResource ChromeSurface}">
           <Menu
+            x:Name="MainCommandMenu"
             Margin="5,0">
             <MenuItem
               Header="文件(_F)">
@@ -287,6 +289,7 @@
                 Click="Close_Click" />
             </MenuItem>
             <MenuItem
+              x:Name="EditorMenu"
               Header="编辑(_E)">
               <MenuItem
                 Header="撤销"
@@ -320,12 +323,37 @@
                 Command="local:SourceCommands.ToggleComment"
                 CommandTarget="{Binding ElementName=SourceEditor}" />
               <Separator />
-              <MenuItem Header="查找…" InputGestureText="Ctrl+F" Command="local:SourceCommands.Find" />
-              <MenuItem Header="替换…" InputGestureText="Ctrl+H" Command="local:SourceCommands.Replace" />
-              <MenuItem Header="全部替换（当前文件）…" Command="local:SourceCommands.ReplaceAll" />
+              <MenuItem
+                Header="查找…"
+                InputGestureText="Ctrl+F"
+                Command="local:SourceCommands.Find" />
+              <MenuItem
+                Header="替换…"
+                InputGestureText="Ctrl+H"
+                Command="local:SourceCommands.Replace" />
+              <MenuItem
+                Header="全部替换（当前文件）…"
+                Command="local:SourceCommands.ReplaceAll" />
+              <Separator />
+              <MenuItem
+                Header="在工程中查找…"
+                InputGestureText="Ctrl+Shift+F"
+                Command="local:SourceCommands.WorkspaceFind" />
+              <MenuItem
+                Header="在工程中替换…"
+                InputGestureText="Ctrl+Shift+H"
+                Command="local:SourceCommands.WorkspaceReplace" />
+              <MenuItem
+                Header="重命名 C/C++ 符号…"
+                InputGestureText="F2"
+                Command="local:SourceCommands.RenameSymbol" />
             </MenuItem>
             <MenuItem
+              x:Name="WorkspaceViewMenu"
               Header="视图(_V)">
+              <MenuItem
+                Header="问题列表"
+                Click="ShowProblems_Click" />
               <MenuItem
                 Header="欢迎页"
                 Click="Welcome_Click" />
@@ -455,8 +483,10 @@
                 Header="FreeRTOS 状态"
                 Click="ShowFreeRtos_Click"
                 IsEnabled="False" />
+              <MenuItem Header="OpenOCD 变量绘图" Click="OpenOcdPlot_Click" />
             </MenuItem>
             <MenuItem
+              x:Name="ToolsRootMenu"
               Header="工具(_T)">
               <MenuItem
                 Header="工程终端"
@@ -494,6 +524,7 @@
                 Click="VerifyTools_Click" />
             </MenuItem>
             <MenuItem
+              x:Name="HelpRootMenu"
               Header="帮助(_H)">
               <MenuItem
                 Header="快速开始"
@@ -671,9 +702,16 @@
                 ToolTip="运行板上已下载的 MicroPython 脚本；修改代码后请先下载"
                 Click="MicroPythonRun_Click"
                 AutomationProperties.Name="开始运行">
-                <StackPanel Orientation="Horizontal">
-                  <local:Icon Kind="play" Foreground="{DynamicResource RunColor}" Margin="0,0,6,0" />
-                  <TextBlock x:Name="MicroPythonRunLabel" Text="开始运行" VerticalAlignment="Center" />
+                <StackPanel
+                  Orientation="Horizontal">
+                  <local:Icon
+                    Kind="play"
+                    Foreground="{DynamicResource RunColor}"
+                    Margin="0,0,6,0" />
+                  <TextBlock
+                    x:Name="MicroPythonRunLabel"
+                    Text="开始运行"
+                    VerticalAlignment="Center" />
                 </StackPanel>
               </Button>
               <Button
@@ -1022,7 +1060,8 @@
                   <Grid
                     Grid.Row="1">
                     <Grid.RowDefinitions>
-                      <RowDefinition Height="Auto" />
+                      <RowDefinition
+                        Height="Auto" />
                       <RowDefinition />
                     </Grid.RowDefinitions>
                     <Button
@@ -1581,7 +1620,8 @@
                   <Grid.RowDefinitions>
                     <RowDefinition
                       Height="30" />
-                    <RowDefinition Height="Auto" />
+                    <RowDefinition
+                      Height="Auto" />
                     <RowDefinition />
                     <RowDefinition
                       Height="25" />
@@ -1646,26 +1686,93 @@
                         VerticalAlignment="Center" />
                     </DockPanel>
                   </Border>
-                  <Border x:Name="FindPanel" Grid.Row="1" Visibility="Collapsed" Background="{DynamicResource ToolSurface}"
-                    BorderBrush="{DynamicResource Border}" BorderThickness="0,0,0,1" Padding="10,8" PreviewKeyDown="Search_KeyDown">
+                  <Border
+                    x:Name="FindPanel"
+                    Grid.Row="1"
+                    Visibility="Collapsed"
+                    Background="{DynamicResource ToolSurface}"
+                    BorderBrush="{DynamicResource Border}"
+                    BorderThickness="0,0,0,1"
+                    Padding="10,8"
+                    PreviewKeyDown="Search_KeyDown">
                     <StackPanel>
                       <WrapPanel>
-                        <TextBlock Text="查找" VerticalAlignment="Center" Margin="0,0,8,6" />
-                        <TextBox x:Name="FindText" Width="240" TextChanged="Search_Changed" Margin="0,0,8,6" AutomationProperties.Name="查找文本" />
-                        <Button Content="上一个" Click="FindPrevious_Click" ToolTip="Shift+F3" Margin="0,0,6,6" />
-                        <Button Content="下一个" Click="FindNext_Click" ToolTip="F3" Margin="0,0,10,6" />
-                        <CheckBox x:Name="FindCase" Content="大小写" Checked="Search_Changed" Unchecked="Search_Changed" Margin="0,0,10,6" VerticalAlignment="Center" />
-                        <CheckBox x:Name="FindWord" Content="全词" Checked="Search_Changed" Unchecked="Search_Changed" Margin="0,0,10,6" VerticalAlignment="Center" />
-                        <CheckBox x:Name="FindRegex" Content="正则" Checked="Search_Changed" Unchecked="Search_Changed" Margin="0,0,10,6" VerticalAlignment="Center" />
-                        <Button Content="关闭" Click="CloseFind_Click" ToolTip="Esc" Margin="0,0,0,6" />
+                        <TextBlock
+                          Text="查找"
+                          VerticalAlignment="Center"
+                          Margin="0,0,8,6" />
+                        <TextBox
+                          x:Name="FindText"
+                          Width="240"
+                          TextChanged="Search_Changed"
+                          Margin="0,0,8,6"
+                          AutomationProperties.Name="查找文本" />
+                        <Button
+                          Content="上一个"
+                          Click="FindPrevious_Click"
+                          ToolTip="Shift+F3"
+                          Margin="0,0,6,6" />
+                        <Button
+                          Content="下一个"
+                          Click="FindNext_Click"
+                          ToolTip="F3"
+                          Margin="0,0,10,6" />
+                        <CheckBox
+                          x:Name="FindCase"
+                          Content="大小写"
+                          Checked="Search_Changed"
+                          Unchecked="Search_Changed"
+                          Margin="0,0,10,6"
+                          VerticalAlignment="Center" />
+                        <CheckBox
+                          x:Name="FindWord"
+                          Content="全词"
+                          Checked="Search_Changed"
+                          Unchecked="Search_Changed"
+                          Margin="0,0,10,6"
+                          VerticalAlignment="Center" />
+                        <CheckBox
+                          x:Name="FindRegex"
+                          Content="正则"
+                          Checked="Search_Changed"
+                          Unchecked="Search_Changed"
+                          Margin="0,0,10,6"
+                          VerticalAlignment="Center" />
+                        <Button
+                          Content="关闭"
+                          Click="CloseFind_Click"
+                          ToolTip="Esc"
+                          Margin="0,0,0,6" />
                       </WrapPanel>
-                      <WrapPanel x:Name="ReplaceRow" Visibility="Collapsed">
-                        <TextBlock Text="替换" VerticalAlignment="Center" Margin="0,0,8,6" />
-                        <TextBox x:Name="ReplaceText" Width="240" Margin="0,0,8,6" ToolTip="正则模式支持 $1、${name} 分组；普通模式按原文替换" AutomationProperties.Name="替换文本" />
-                        <Button x:Name="ReplaceOneButton" Content="替换当前" Click="ReplaceOne_Click" Margin="0,0,6,6" />
-                        <Button x:Name="ReplaceAllButton" Content="全部替换（当前文件）" Click="ReplaceAll_Click" Margin="0,0,0,6" />
+                      <WrapPanel
+                        x:Name="ReplaceRow"
+                        Visibility="Collapsed">
+                        <TextBlock
+                          Text="替换"
+                          VerticalAlignment="Center"
+                          Margin="0,0,8,6" />
+                        <TextBox
+                          x:Name="ReplaceText"
+                          Width="240"
+                          Margin="0,0,8,6"
+                          ToolTip="正则模式支持 $1、${name} 分组；普通模式按原文替换"
+                          AutomationProperties.Name="替换文本" />
+                        <Button
+                          x:Name="ReplaceOneButton"
+                          Content="替换当前"
+                          Click="ReplaceOne_Click"
+                          Margin="0,0,6,6" />
+                        <Button
+                          x:Name="ReplaceAllButton"
+                          Content="全部替换（当前文件）"
+                          Click="ReplaceAll_Click"
+                          Margin="0,0,0,6" />
                       </WrapPanel>
-                      <TextBlock x:Name="FindStatus" Text="当前文件 · 输入查找内容" TextWrapping="Wrap" Foreground="{DynamicResource Muted}" />
+                      <TextBlock
+                        x:Name="FindStatus"
+                        Text="当前文件 · 输入查找内容"
+                        TextWrapping="Wrap"
+                        Foreground="{DynamicResource Muted}" />
                     </StackPanel>
                   </Border>
                   <Grid
@@ -2804,6 +2911,9 @@
                 <local:SerialPlotView
                   x:Name="SerialPlotView" />
               </TabItem>
+              <TabItem Header="OpenOCD 绘图" x:Name="OpenOcdPlotTab" Visibility="Collapsed">
+                <local:OpenOcdPlotView x:Name="OpenOcdPlotPanel" />
+              </TabItem>
               <TabItem
                 Header="串口终端"
                 x:Name="SerialTab"
@@ -2811,22 +2921,60 @@
                 <local:SerialTerminalView
                   x:Name="SerialView" />
               </TabItem>
-              <TabItem Header="MicroPython 下载 / REPL" x:Name="MicroPythonTab" Visibility="Collapsed">
-                <local:MicroPythonView x:Name="MicroPythonPanel" />
+              <TabItem
+                Header="MicroPython 下载 / REPL"
+                x:Name="MicroPythonTab"
+                Visibility="Collapsed">
+                <local:MicroPythonView
+                  x:Name="MicroPythonPanel" />
               </TabItem>
-              <TabItem Header="Python 引用" x:Name="PythonReferencesTab" Visibility="Collapsed">
-                <Grid Background="{DynamicResource EditorSurface}" Margin="12">
-                  <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
-                  <TextBlock x:Name="PythonReferencesStatus" Margin="0,0,0,10" TextWrapping="Wrap" />
-                  <DataGrid x:Name="PythonReferences" Grid.Row="1" IsReadOnly="True" AutoGenerateColumns="False"
-                    CanUserAddRows="False" MouseDoubleClick="PythonReference_DoubleClick">
+              <TabItem
+                Header="Python 引用"
+                x:Name="PythonReferencesTab"
+                Visibility="Collapsed">
+                <Grid
+                  Background="{DynamicResource EditorSurface}"
+                  Margin="12">
+                  <Grid.RowDefinitions>
+                    <RowDefinition
+                      Height="Auto" />
+                    <RowDefinition
+                      Height="*" />
+                  </Grid.RowDefinitions>
+                  <TextBlock
+                    x:Name="PythonReferencesStatus"
+                    Margin="0,0,0,10"
+                    TextWrapping="Wrap" />
+                  <DataGrid
+                    x:Name="PythonReferences"
+                    Grid.Row="1"
+                    IsReadOnly="True"
+                    AutoGenerateColumns="False"
+                    CanUserAddRows="False"
+                    MouseDoubleClick="PythonReference_DoubleClick">
                     <DataGrid.Columns>
-                      <DataGridTextColumn Header="文件" Binding="{Binding File}" Width="*" />
-                      <DataGridTextColumn Header="行" Binding="{Binding Line}" Width="80" />
-                      <DataGridTextColumn Header="列" Binding="{Binding Column}" Width="80" />
+                      <DataGridTextColumn
+                        Header="文件"
+                        Binding="{Binding File}"
+                        Width="*" />
+                      <DataGridTextColumn
+                        Header="行"
+                        Binding="{Binding Line}"
+                        Width="80" />
+                      <DataGridTextColumn
+                        Header="列"
+                        Binding="{Binding Column}"
+                        Width="80" />
                     </DataGrid.Columns>
                   </DataGrid>
                 </Grid>
+              </TabItem>
+              <TabItem
+                Header="工程搜索 / 修改预览"
+                x:Name="WorkspaceSearchTab"
+                Visibility="Collapsed">
+                <local:WorkspaceSearchView
+                  x:Name="WorkspaceSearch" />
               </TabItem>
               <TabItem
                 Header="波形演示"
@@ -2897,13 +3045,25 @@
                     LicenseGuideRequested="OpenAg32SupraLicenseGuide_Click" />
                 </Border>
               </TabItem>
-              <TabItem Header="Verilog 电路图" x:Name="HdlSchematicTab" Visibility="Collapsed">
-                <Border Background="{DynamicResource EditorSurface}">
-                  <local:HdlSchematicView x:Name="HdlSchematic" />
+              <TabItem
+                Header="Verilog 电路图"
+                x:Name="HdlSchematicTab"
+                Visibility="Collapsed">
+                <Border
+                  Background="{DynamicResource EditorSurface}">
+                  <local:HdlSchematicView
+                    x:Name="HdlSchematic" />
                 </Border>
               </TabItem>
-              <TabItem Header="逻辑构建与仿真" x:Name="HdlWorkflowTab" Visibility="Collapsed">
-                <Border Background="{DynamicResource EditorSurface}"><local:HdlWorkflowView x:Name="HdlWorkflow" /></Border>
+              <TabItem
+                Header="逻辑构建与仿真"
+                x:Name="HdlWorkflowTab"
+                Visibility="Collapsed">
+                <Border
+                  Background="{DynamicResource EditorSurface}">
+                  <local:HdlWorkflowView
+                    x:Name="HdlWorkflow" />
+                </Border>
               </TabItem>
               <TabItem
                 Header="插件与工具集"
@@ -3103,6 +3263,68 @@
                   GotFocus="ProjectTerminalTab_GotFocus">
                   <local:ProjectTerminalView
                     x:Name="ProjectTerminal" />
+                </TabItem>
+                <TabItem
+                  x:Name="ProblemsTab"
+                  Header="问题 (0)">
+                  <DataGrid
+                    x:Name="ProblemsGrid"
+                    Style="{StaticResource DebugGrid}"
+                    RowHeight="{x:Static system:Double.NaN}"
+                    MinRowHeight="56"
+                    FontFamily="Segoe UI, Microsoft YaHei UI"
+                    IsReadOnly="True"
+                    AutoGenerateColumns="False"
+                    CanUserAddRows="False"
+                    MouseDoubleClick="Problem_DoubleClick">
+                    <DataGrid.Columns>
+                      <DataGridTemplateColumn
+                        Header="级别"
+                        SortMemberPath="Diagnostic.IsWarning"
+                        ClipboardContentBinding="{Binding Severity}"
+                        Width="130">
+                        <DataGridTemplateColumn.CellTemplate>
+                          <DataTemplate>
+                            <Border Style="{StaticResource ProblemBadge}">
+                              <TextBlock Text="{Binding Severity}" Style="{StaticResource ProblemSeverity}" />
+                            </Border>
+                          </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                      </DataGridTemplateColumn>
+                      <DataGridTextColumn
+                        Header="来源"
+                        Binding="{Binding Origin}"
+                        Width="100" />
+                      <DataGridTextColumn
+                        Header="文件"
+                        Binding="{Binding File}"
+                        Width="220" />
+                      <DataGridTextColumn
+                        Header="行"
+                        Binding="{Binding Line}"
+                        Width="55" />
+                      <DataGridTextColumn
+                        Header="列"
+                        Binding="{Binding Column}"
+                        Width="55" />
+                      <DataGridTemplateColumn
+                        Header="说明 / Description"
+                        SortMemberPath="Message"
+                        ClipboardContentBinding="{Binding BilingualMessage}"
+                        MinWidth="240"
+                        Width="*">
+                        <DataGridTemplateColumn.CellTemplate>
+                          <DataTemplate>
+                            <StackPanel Margin="6,5" ToolTip="{Binding BilingualMessage}">
+                              <TextBlock Text="{Binding ChineseMessage}" TextWrapping="Wrap" />
+                              <TextBlock Text="{Binding Message}" TextWrapping="Wrap"
+                                         Foreground="{DynamicResource Muted}" Margin="0,3,0,0" />
+                            </StackPanel>
+                          </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                      </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                  </DataGrid>
                 </TabItem>
               </TabControl>
               <Button
@@ -3396,15 +3618,43 @@
                   HorizontalAlignment="Center"
                   VerticalAlignment="Center" />
               </Grid>
-              <TextBlock
-                Grid.Row="2"
-                x:Name="AiStatus"
-                Visibility="Collapsed"
-                Text="打开工程后可以提问。工程文本会发送到所配置的 API 服务。"
-                Foreground="{DynamicResource Muted}"
-                TextWrapping="Wrap"
-                Margin="0,8,0,8"
-                FontSize="11" />
+              <StackPanel
+                Grid.Row="2">
+                <DockPanel
+                  Margin="0,8,0,4">
+                  <Button
+                    DockPanel.Dock="Right"
+                    Content="AI 修改"
+                    Click="AgentChanges_Click"
+                    Margin="8,0,0,0" />
+                  <ComboBox
+                    x:Name="AgentAccessPicker"
+                    SelectionChanged="AgentAccess_Changed"
+                    SelectedIndex="0"
+                    AutomationProperties.Name="Agent 授权模式">
+                    <ComboBoxItem
+                      Content="逐次确认" />
+                    <ComboBoxItem
+                      Content="全面授权" />
+                    <ComboBoxItem
+                      Content="完全访问" />
+                  </ComboBox>
+                </DockPanel>
+                <TextBlock
+                  x:Name="AgentAccessHint"
+                  Text="修改和有副作用的操作逐次确认。"
+                  TextWrapping="Wrap"
+                  Foreground="{DynamicResource Muted}"
+                  FontSize="10" />
+                <TextBlock
+                  x:Name="AiStatus"
+                  Visibility="Collapsed"
+                  Text="打开工程后可以提问。工程文本会发送到所配置的 API 服务。"
+                  Foreground="{DynamicResource Muted}"
+                  TextWrapping="Wrap"
+                  Margin="0,8,0,8"
+                  FontSize="11" />
+              </StackPanel>
               <Grid
                 x:Name="AiPromptPanel"
                 Grid.Row="3"

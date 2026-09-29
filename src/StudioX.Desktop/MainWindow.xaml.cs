@@ -43,6 +43,7 @@ public partial class MainWindow : Window
         MicroPythonPanel.DownloadRequested = () => RunAsync(token => DownloadMicroPythonAsync(RequireProject(), token));
         MicroPythonPanel.StateChanged += () => UpdateProjectActions(projectActionsBusy);
         SerialPlotView.Attach(services.SerialPlot);
+        OpenOcdPlotPanel.Attach(services.OpenOcdPlot);
         ProjectTerminal.Attach(services.Terminal);
         GitGraph.Attach(services.GitGraph);
         GitGraph.LogDiagnostic = Log;
@@ -60,11 +61,22 @@ public partial class MainWindow : Window
         GitHubWorkspace.OpenClonedRepositoryAsync = OpenClonedGitHubRepositoryAsync;
         InitializeEditor();
         InitializePlugins();
+        InitializeSplitEditors();
+        InitializeProductivity();
         Activated += (_, _) => QueueRecentPrune();
     }
 
     public async Task InitializeAsync(bool loadGitHubAccounts = true)
     {
+        editorPersistenceEnabled = loadGitHubAccounts;
+        if (loadGitHubAccounts)
+        {
+            try
+            {
+                await LoadWorkbenchLayoutAsync();
+            }
+            catch (Exception ex) { Log("布局恢复失败：" + ex); }
+        }
         await RunAsync(async token =>
         {
             // 首页记录与器件仓库无关，优先显示；不扫描工程目录或校验所有 SDK。
@@ -114,10 +126,12 @@ public partial class MainWindow : Window
         }
         System.Windows.Application.Current.Resources[SystemColors.ControlBrushKey] = System.Windows.Application.Current.Resources["Surface"];
         currentTheme = theme;
+        DiagnosticPalette.Apply(theme);
         RefreshSurfaceBrushes();
         ApplyEditorTheme();
         Plot.InvalidateVisual();
         SerialPlotView.RefreshTheme();
+        OpenOcdPlotPanel.RefreshTheme();
     }
     private async Task RefreshPacksAsync(CancellationToken token, bool preserveSelection = false)
     {
@@ -534,6 +548,7 @@ public partial class MainWindow : Window
         {
             Status.Text = ex is StudioXException studio ? studio.Code + "：" + studio.Message : ex.Message;
             Log(ex.ToString());
+            ShowTroubleshooting(ex.ToString());
         }
         finally { operationCancellation.Dispose(); operationCancellation = null; UpdateProjectActions(busy: false); }
     }
@@ -577,6 +592,11 @@ public partial class MainWindow : Window
             await pendingOperation;
             await StopPackSyncAsync();
             await pendingZoomSave;
+            try
+            {
+                await agentAccessSaveTask;
+            }
+            catch (Exception ex) { Log("保存 Agent 授权模式：" + ex); }
             breakpointSaveTimer.Stop();
             await PersistBreakpointLinesAsync();
             await services.Debugger.StopAsync();
@@ -585,14 +605,24 @@ public partial class MainWindow : Window
             await assistTask;
             await outlineTask;
             await Task.WhenAll(hoverTask, navigationTask);
-            if (!await ConfirmDocumentsAsync())
+            await StopLiveDiagnosticsAsync();
+            if (!await ConfirmDocumentsAsync(retainEditorDrafts: editorPersistenceEnabled))
             {
                 closing = false;
                 IsEnabled = true;
                 QueueOutlineRefresh();
+                QueueLiveDiagnostics();
                 await ReloadPluginWorkspaceAsync(CancellationToken.None);
                 return;
             }
+            await editorCheckpointTask;
+            if (editorPersistenceEnabled)
+            {
+                await services.WorkbenchLayout.SaveAsync(CaptureWorkbenchLayout());
+            }
+            await PersistEditorCheckpointAsync();
+            editorCheckpointTimer.Stop();
+            diagnosticPoll.Stop();
             documentAccepted = true;
             pluginUiTimer.Stop();
             services.PluginManager.Changed -= PluginCatalog_Changed;
@@ -602,6 +632,7 @@ public partial class MainWindow : Window
             await SerialView.ShutdownAsync();
             await MicroPythonPanel.StopAsync();
             await SerialPlotView.ShutdownAsync();
+            await OpenOcdPlotPanel.CloseSessionAsync();
             await LvglPreview.ShutdownAsync();
             await ProjectTerminal.ShutdownAsync();
             BackgroundVideo.Close();
@@ -616,6 +647,7 @@ public partial class MainWindow : Window
                 closing = false;
                 IsEnabled = true;
                 QueueOutlineRefresh();
+                QueueLiveDiagnostics();
                 Status.Text = "未能保存修改，窗口保持打开。";
                 await ReloadPluginWorkspaceAsync(CancellationToken.None);
             }

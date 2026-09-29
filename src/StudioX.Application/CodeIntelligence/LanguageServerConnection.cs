@@ -17,10 +17,13 @@ internal sealed class LanguageServerConnection : IAsyncDisposable
     private readonly Task errors;
     private int nextId;
     private int disposed;
+    private readonly Action<string, JsonElement>? notification;
     public bool IsRunning => !process.HasExited && !reader.IsCompleted;
 
-    public LanguageServerConnection(string executable, string workingDirectory, string cacheDirectory, Action<string> log)
+    public LanguageServerConnection(string executable, string workingDirectory, string cacheDirectory, Action<string> log,
+        Action<string, JsonElement>? notification = null)
     {
+        this.notification = notification;
         var start = new ProcessStartInfo(executable)
         {
             WorkingDirectory = workingDirectory,
@@ -188,6 +191,10 @@ internal sealed class LanguageServerConnection : IAsyncDisposable
                             message = "Unsupported client method"
                         }
                     }, lifetime.Token).ConfigureAwait(false);
+                }
+                else if (message.TryGetProperty("method", out var method) && message.TryGetProperty("params", out var parameters))
+                {
+                    notification?.Invoke(method.GetString() ?? "", parameters);
                 }
             }
         }

@@ -41,15 +41,14 @@ public partial class MainWindow
         services.PluginManager.Changed += PluginCatalog_Changed;
         var palette = new PluginUiCommand(() =>
         {
-            ShowDocument(ExtensionsTab);
-            PluginManager.FocusCommandFilter();
-            return Task.CompletedTask;
+            return ShowPaletteAsync();
         }, () => !closing && !closed);
         InputBindings.Add(new KeyBinding(palette, new KeyGesture(Key.P, ModifierKeys.Control | ModifierKeys.Shift)));
         pluginUiTimer.Tick += (_, _) =>
         {
             RefreshPluginCommandState();
             FlushPluginPanels();
+            FlushPluginDocumentEvents();
             RefreshPluginCatalogIfChanged();
         };
         pluginUiTimer.Start();
@@ -138,6 +137,7 @@ public partial class MainWindow
             pluginWorkspace = workspace;
             workspace.Changed += PluginWorkspace_Changed;
             AddPluginContributions(workspace.Contributions);
+            await InitializePluginProductivityAsync(workspace, cancellation.Token);
             foreach (var (key, panel) in workspace.LatestPanels)
             {
                 UpdatePluginPanel(key, panel);
@@ -480,6 +480,19 @@ public partial class MainWindow
 
     private async Task StopPluginWorkspaceCoreAsync()
     {
+        if (pluginWorkspace is { } previous)
+        {
+            using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+            try
+            {
+                await previous.PublishWorkspaceEventAsync("project.closing", new
+                {
+                    project = Path.GetFileName(previous.Project)
+                }, deadline.Token);
+            }
+            catch (Exception error) { PluginManager.Log(error.ToString()); }
+        }
+        pendingDocumentEvents.Clear();
         pluginGeneration++;
         pluginWorkspaceCancellation?.Cancel();
         pluginInvocationCancellation?.Cancel();

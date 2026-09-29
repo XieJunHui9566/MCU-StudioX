@@ -23,7 +23,7 @@ public partial class MainWindow
     private readonly List<NavigationPoint> navigationBack = [];
     private readonly List<NavigationPoint> navigationForward = [];
     private sealed record NavigationPoint(string Path, TextAnchor Anchor, CodePosition Position, double Vertical, double Horizontal);
-    private bool CanNavigateCode => !closing && projectDirectory is not null && activeDocument is not null && WorkspaceTabs.SelectedItem == EditorTab &&
+    private bool CanNavigateCode => !closing && projectDirectory is not null && activeDocument is not null && IsActiveSourceTab &&
         (CodeIntelligenceService.Supports(activeDocument.RelativePath) || IsPythonDocument);
     private bool NavigationReady => IsPythonDocument || services.Intelligence.IsReady;
 
@@ -77,11 +77,14 @@ public partial class MainWindow
         definition.Click += (_, _) => QueueCodeNavigation(declaration: false, contextOffset);
         declaration.Click += (_, _) => QueueCodeNavigation(declaration: true, contextOffset);
         references.Click += (_, _) => QueuePythonReferences(contextOffset);
+        var rename = new MenuItem { Header = "重命名符号…", InputGestureText = "F2" };
+        rename.Click += (_, _) => QueueRenameSymbol(contextOffset);
         back.Click += async (_, _) => await RunAsync(_ => TravelNavigationAsync(backwards: true));
         forward.Click += async (_, _) => await RunAsync(_ => TravelNavigationAsync(backwards: false));
         menu.Items.Add(definition);
         menu.Items.Add(declaration);
         menu.Items.Add(references);
+        menu.Items.Add(rename);
         menu.Items.Add(new Separator());
         menu.Items.Add(back);
         menu.Items.Add(forward);
@@ -104,7 +107,8 @@ public partial class MainWindow
                 contextOffset = SourceEditor.CaretOffset;
             }
             definition.IsEnabled = declaration.IsEnabled = CanNavigateCode && NavigationReady && contextOffset is { } offset && IsSymbolContext(offset);
-            references.IsEnabled = definition.IsEnabled && IsPythonDocument;
+            references.IsEnabled = definition.IsEnabled;
+            rename.IsEnabled = definition.IsEnabled && !IsPythonDocument && activeDocument?.IsReadOnly == false && !services.Debugger.IsActive;
             back.IsEnabled = navigationBack.Count > 0;
             forward.IsEnabled = navigationForward.Count > 0;
         };
@@ -308,7 +312,7 @@ public partial class MainWindow
 
     private NavigationPoint? CaptureNavigationPoint()
     {
-        if (activeDocument is null || WorkspaceTabs.SelectedItem != EditorTab)
+        if (activeDocument is null || !IsActiveSourceTab)
         {
             return null;
         }

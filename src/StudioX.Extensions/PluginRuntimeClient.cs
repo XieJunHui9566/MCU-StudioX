@@ -98,9 +98,9 @@ public sealed class PluginRuntimeClient : IAsyncDisposable
     {
         var fullManifestPath = Path.GetFullPath(manifestPath);
         var manifest = await PluginManifest.ReadAsync(fullManifestPath, cancellationToken).ConfigureAwait(false);
-        if (manifest.ApiVersion != 2)
+        if (manifest.ApiVersion is not (2 or 3))
         {
-            throw new StudioXException("PLUGIN_API", "通用插件会话需要 API 2；API 1 不自动迁移。");
+            throw new StudioXException("PLUGIN_API", "通用插件会话需要 API 2 或 3；API 1 不自动迁移。");
         }
         var root = Path.GetDirectoryName(fullManifestPath)!;
         var executable = manifest.Kind == "process" ? PathBoundary.Resolve(root, manifest.EntryExecutable!) : Path.GetFullPath(hostExecutable);
@@ -144,14 +144,18 @@ public sealed class PluginRuntimeClient : IAsyncDisposable
                 throw new StudioXException("PLUGIN_START", "无法启动插件宿主。");
             }
             client = new PluginRuntimeClient(child, callHost, onEvent);
-            var described = await client.connection.RequestAsync("describe", JsonSerializer.SerializeToElement(new { }),
+            var described = await client.connection.RequestAsync("describe", JsonSerializer.SerializeToElement(new
+            {
+            }),
                 TimeSpan.FromSeconds(15), cancellationToken).ConfigureAwait(false);
             client.Contribution = described.Deserialize<PluginContribution>(JsonStore.Options)
                 ?? throw new StudioXException("PLUGIN_CONTRIBUTION", "插件未提供贡献。");
             ValidateBasicContribution(client.Contribution, manifest);
             validateContribution(client.Contribution);
             client.hostCallsAllowed = true;
-            _ = await client.connection.RequestAsync("activate", JsonSerializer.SerializeToElement(new { }),
+            _ = await client.connection.RequestAsync("activate", JsonSerializer.SerializeToElement(new
+            {
+            }),
                 TimeSpan.FromSeconds(30), cancellationToken).ConfigureAwait(false);
             using var eventDeadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             eventDeadline.CancelAfter(TimeSpan.FromSeconds(5));
@@ -185,16 +189,34 @@ public sealed class PluginRuntimeClient : IAsyncDisposable
         {
             throw new StudioXException("PLUGIN_REENTRANT", "主机工具回调不能重新调用当前插件。");
         }
-        if (kind is not ("command" or "agentTool") || string.IsNullOrWhiteSpace(id) || id.Length > 256)
+        if (kind is not ("command" or "agentTool" or "event" or "language" or "debugAdapter") || string.IsNullOrWhiteSpace(id) || id.Length > 256)
         {
             throw new StudioXException("PLUGIN_INVOKE", "插件调用种类或 ID 无效。");
+        }
+        var declared = kind switch
+        {
+            "command" => Contribution.Commands.Any(c => c.Id == id),
+            "agentTool" => Contribution.AgentTools.Any(c => c.Id == id),
+            "event" => Contribution.Events.Contains(id, StringComparer.Ordinal),
+            "language" => Contribution.Languages.Any(c => c.Id == id),
+            "debugAdapter" => Contribution.DebugAdapters.Any(c => c.Id == id),
+            _ => false
+        };
+        if (!declared)
+        {
+            throw new StudioXException("PLUGIN_INVOKE_ID", "插件未声明此调用：" + kind + "/" + id);
         }
         await invocationGate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             ObjectDisposedException.ThrowIf(disposed != 0, this);
             // 完整构建可能包含多个五分钟工具阶段；插件 RPC 不应先于应用工具截断它。
-            return await connection.RequestAsync("invoke", JsonSerializer.SerializeToElement(new { kind, id, arguments }),
+            return await connection.RequestAsync("invoke", JsonSerializer.SerializeToElement(new
+            {
+                kind,
+                id,
+                arguments
+            }),
                 TimeSpan.FromMinutes(15), cancellationToken).ConfigureAwait(false);
         }
         finally
@@ -215,7 +237,9 @@ public sealed class PluginRuntimeClient : IAsyncDisposable
             if (!connection.Completion.IsCompleted && !process.HasExited)
             {
                 using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(2));
-                _ = await connection.RequestAsync("deactivate", JsonSerializer.SerializeToElement(new { }),
+                _ = await connection.RequestAsync("deactivate", JsonSerializer.SerializeToElement(new
+                {
+                }),
                     TimeSpan.FromSeconds(2), deadline.Token).ConfigureAwait(false);
             }
         }
@@ -239,6 +263,17 @@ public sealed class PluginRuntimeClient : IAsyncDisposable
 
     private static void ValidateBasicContribution(PluginContribution contribution, PluginManifest manifest)
     {
+        if (contribution.Settings is null || contribution.Events is null || contribution.Languages is null || contribution.DebugAdapters is null)
+        {
+            throw new StudioXException("PLUGIN_CONTRIBUTION", "插件扩展贡献不能为空。");
+        }
+        foreach (var (name, count, maximum) in new[] { ("settings", contribution.Settings.Length, 64), ("events", contribution.Events.Length, 7), ("languages", contribution.Languages.Length, 16), ("debugAdapters", contribution.DebugAdapters.Length, 16) })
+        {
+            if (count > maximum || count > 0 && (manifest.ApiVersion != 3 || !manifest.Capabilities.Contains(name, StringComparer.Ordinal)))
+            {
+                throw new StudioXException("PLUGIN_CONTRIBUTION", "插件 API 3 贡献超限或未声明能力：" + name);
+            }
+        }
         if (contribution.Commands is null || contribution.Panels is null || contribution.AgentTools is null ||
             contribution.Commands.Length > 256 || contribution.Panels.Length > 64 || contribution.AgentTools.Length > 256 ||
             (contribution.Commands.Length > 0 && !manifest.Capabilities.Contains("commands", StringComparer.Ordinal)) ||

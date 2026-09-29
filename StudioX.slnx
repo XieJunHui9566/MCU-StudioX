@@ -30,11 +30,22 @@
       Path="examples/StudioX.SamplePlugin/StudioX.SamplePlugin.csproj" />
   </Folder>
   <Folder
+    Name="/tools/">
+    <Project
+      Path="tools/StudioX.ProductivityValidation/StudioX.ProductivityValidation.csproj" />
+  </Folder>
+  <Folder
     Name="/validation/">
+    <Project Path="tools/StudioX.OpenOcdPlotChecks/StudioX.OpenOcdPlotChecks.csproj" />
+    <Project
+      Path="tools/StudioX.AgentWorkspaceValidation/StudioX.AgentWorkspaceValidation.csproj" />
     <Project
       Path="tools/StudioX.Ag32PinPlanningValidation/StudioX.Ag32PinPlanningValidation.csproj" />
     <Project
       Path="tools/StudioX.HdlValidation/StudioX.HdlValidation.csproj" />
-    <Project Path="tools/StudioX.HdlWorkflowValidation/StudioX.HdlWorkflowValidation.csproj" />
+    <Project
+      Path="tools/StudioX.HdlWorkflowValidation/StudioX.HdlWorkflowValidation.csproj" />
+    <Project
+      Path="tools/StudioX.WorkspaceEditingValidation/StudioX.WorkspaceEditingValidation.csproj" />
   </Folder>
 </Solution>

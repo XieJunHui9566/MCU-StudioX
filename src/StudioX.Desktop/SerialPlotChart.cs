@@ -23,6 +23,9 @@ public sealed class SerialPlotChart : FrameworkElement
     public bool[] VisibleChannels { get; } = Enumerable.Repeat(true, 16).ToArray();
     public bool Follow { get; set; } = true;
     public bool AutoY { get; set; } = true;
+    public string EmptyMessage { get; set; } = "等待数值数据，例如 4095,1024 + 换行";
+    public Brush[] Palette { get; set; } = ChannelBrushes;
+    internal int VisibleSampleCount => samples.Count(sample => sample.Seconds >= time.Start && sample.Seconds <= time.End);
     public event Action? ViewChanged;
     private Rect Area => new(82, 28, Math.Max(1, ActualWidth - 104), Math.Max(1, ActualHeight - 82));
     public SerialPlotChart()
@@ -241,12 +244,12 @@ public sealed class SerialPlotChart : FrameworkElement
                 }
             }
             geometry.Freeze();
-            dc.DrawGeometry(null, new Pen(ChannelBrushes[c], 1.5), geometry);
+            dc.DrawGeometry(null, new Pen(Palette[c], 1.5), geometry);
             if (points.Count is > 0 and < 100)
             {
                 foreach (var p in points)
                 {
-                    dc.DrawEllipse(ChannelBrushes[c], null, new(X(p.Seconds), Y(p.Value)), 2, 2);
+                    dc.DrawEllipse(Palette[c], null, new(X(p.Seconds), Y(p.Value)), 2, 2);
                 }
             }
         }
@@ -262,7 +265,7 @@ public sealed class SerialPlotChart : FrameworkElement
         dc.Pop();
         if (samples.Length == 0)
         {
-            Text(dc, "等待数值数据，例如 4095,1024 + 换行", new(a.Left + 24, a.Top + 28), muted, 14);
+            Text(dc, EmptyMessage, new(a.Left + 24, a.Top + 28), muted, 14);
         }
     }
 }

@@ -26,7 +26,7 @@ public partial class MainWindow
         await projectTransitions.StopCurrentAsync(token);
         // 官方 SDK 示例保留原文件名和目录；由创建记录指定入口，旧工程继续使用原有默认位置。
         var mainPath = project.EntryFile ?? (project.Kind == ProjectKind.CubeMx ? "Core/Src/main.c" : "src/main.c");
-        var source = services.Files.FileExists(directory, mainPath)
+        var source = !restoringEditorSession && services.Files.FileExists(directory, mainPath)
             ? await services.Files.ReadAsync(directory, mainPath, token)
             : null;
         ClearEditorDocuments();
@@ -113,6 +113,7 @@ public partial class MainWindow
             }
             Status.Text = "正在准备代码索引与提示…";
             await services.Intelligence.StartAsync(directory, token);
+            QueueLiveDiagnostics();
             Status.Text = IsStcSdccProject ? "已打开 " + project.Name + " · 通用 C 代码提示已就绪；8051 扩展语义以 SDCC 编译为准"
                 : "已打开 " + project.Name + " · " + services.Intelligence.StatusDescription;
             QueueOutlineRefresh(clear: true);

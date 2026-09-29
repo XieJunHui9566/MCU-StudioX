@@ -9,7 +9,7 @@ internal sealed class McpSessionContext
     private readonly Func<Task<bool>>? hasUnsavedDocuments;
 
     internal McpSessionContext(WorkbenchService services, string project, IStudioXMcpAuthorizer authorizer,
-        Func<Task<bool>>? hasUnsavedDocuments, WebResearchService? webResearch)
+        Func<Task<bool>>? hasUnsavedDocuments, WebResearchService? webResearch, Editing.AgentEditorSession? agentEditor = null)
     {
         Services = services ?? throw new ArgumentNullException(nameof(services));
         if (string.IsNullOrWhiteSpace(project) || !Path.IsPathFullyQualified(project))
@@ -19,6 +19,7 @@ internal sealed class McpSessionContext
         Project = Path.TrimEndingDirectorySeparator(Path.GetFullPath(project));
         this.authorizer = authorizer ?? throw new ArgumentNullException(nameof(authorizer));
         this.hasUnsavedDocuments = hasUnsavedDocuments;
+        AgentEditor = agentEditor;
         WebResearch = webResearch ?? services.WebResearch;
         Workspace = new McpWorkspaceAccess(Project);
         Debug = new McpDebugAccess(services.Debugger, Project);
@@ -26,6 +27,10 @@ internal sealed class McpSessionContext
     }
 
     internal WorkbenchService Services
+    {
+        get;
+    }
+    internal Editing.AgentEditorSession? AgentEditor
     {
         get;
     }

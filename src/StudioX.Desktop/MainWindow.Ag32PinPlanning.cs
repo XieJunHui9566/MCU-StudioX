@@ -84,7 +84,11 @@ public partial class MainWindow
             }
             RefreshProjectTree();
             view.ShowResult(result);
-            try { await services.Intelligence.StartAsync(root, token); }
+            try
+            {
+                await services.Intelligence.StartAsync(root, token);
+                QueueLiveDiagnostics();
+            }
             catch (Exception error) when (error is not OperationCanceledException) { Log("系统代码已生成，语言服务刷新失败：" + error); }
             await RefreshAg32PinMappingStatusAsync(token);
             Status.Text = "AG32 图形配置已保存并生成约束；顶部编译将重新生成映射镜像。";

@@ -40,8 +40,10 @@ public sealed partial class CodeIntelligenceService
                     }
                 }, token).ConfigureAwait(false);
                 synchronizedDocuments.Remove(uri);
+                CloseDiagnosticDocument(uri);
                 documentsNeedingReparse.Remove(uri);
                 documentsNeedingReparse.UnionWith(synchronizedDocuments.Keys);
+                InvalidateDependentDiagnostics(uri);
             }
         }
         // clangd 不会因为另一个标签中的头文件改变而立即重建当前文件的 AST。

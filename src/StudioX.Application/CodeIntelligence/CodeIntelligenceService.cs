@@ -40,6 +40,10 @@ public sealed partial class CodeIntelligenceService(string runtimeDirectory, str
         await gate.WaitAsync(token).ConfigureAwait(false);
         try
         {
+            var generation = Interlocked.Increment(ref languageGeneration);
+            diagnosticDocuments.Clear();
+            diagnosticBatches.Clear();
+            invalidatedDiagnostics.Clear();
             if (connection is { } previous)
             {
                 connection = null;
@@ -115,6 +119,7 @@ public sealed partial class CodeIntelligenceService(string runtimeDirectory, str
                 : project.Kind == ProjectKind.CubeMx
                 ? await CreateImportedDatabaseAsync(cache, token).ConfigureAwait(false)
                 : await CreateNavigationDatabaseAsync(cache, token).ConfigureAwait(false);
+            var diagnosticRoot = projectRoot;
             var server = new LanguageServerConnection(executable, projectRoot, cache, line =>
             {
                 log.Enqueue(line);
@@ -122,7 +127,7 @@ public sealed partial class CodeIntelligenceService(string runtimeDirectory, str
                 {
                     log.TryDequeue(out _);
                 }
-            });
+            }, (method, parameters) => ReceiveDiagnostics(generation, diagnosticRoot, method, parameters));
             try
             {
                 var initialization = await server.RequestAsync("initialize", new
@@ -142,6 +147,24 @@ public sealed partial class CodeIntelligenceService(string runtimeDirectory, str
                         },
                         textDocument = new
                         {
+                            codeAction = new
+                            {
+                                codeActionLiteralSupport = new
+                                {
+                                    codeActionKind = new
+                                    {
+                                        valueSet = new[] { "quickfix" }
+                                    }
+                                }
+                            },
+                            publishDiagnostics = new
+                            {
+                                versionSupport = true
+                            },
+                            rename = new
+                            {
+                                prepareSupport = true
+                            },
                             hover = new
                             {
                                 contentFormat = new[] { "plaintext" }
@@ -259,10 +282,12 @@ public sealed partial class CodeIntelligenceService(string runtimeDirectory, str
         if (!synchronizedDocuments.TryGetValue(uri, out var previousText) || previousText != text)
         {
             documentsNeedingReparse.UnionWith(synchronizedDocuments.Keys.Where(other => !other.Equals(uri, StringComparison.OrdinalIgnoreCase)));
+            InvalidateDependentDiagnostics(uri);
         }
         forceReparse |= documentsNeedingReparse.Contains(uri);
         if (forceReparse && synchronizedDocuments.ContainsKey(uri))
         {
+            CloseDiagnosticDocument(uri);
             // didChange 的异步 preamble 更新可能短暂复用旧 AST；重开引用方后等待首轮解析。
             await server.NotifyAsync("textDocument/didClose", new
             {
@@ -291,7 +316,7 @@ public sealed partial class CodeIntelligenceService(string runtimeDirectory, str
                 {
                     uri,
                     languageId = cpp ? "cpp" : "c",
-                    version = ++version,
+                    version = TrackDiagnosticText(uri, text),
                     text
                 }
             }, token).ConfigureAwait(false);
@@ -313,7 +338,7 @@ public sealed partial class CodeIntelligenceService(string runtimeDirectory, str
                 textDocument = new
                 {
                     uri,
-                    version = ++version
+                    version = TrackDiagnosticText(uri, text)
                 },
                 contentChanges = new[] { new { text } }
             }, token).ConfigureAwait(false);
@@ -454,6 +479,10 @@ public sealed partial class CodeIntelligenceService(string runtimeDirectory, str
         await gate.WaitAsync().ConfigureAwait(false);
         try
         {
+            Interlocked.Increment(ref languageGeneration);
+            diagnosticDocuments.Clear();
+            diagnosticBatches.Clear();
+            invalidatedDiagnostics.Clear();
             var previous = connection;
             connection = null;
             projectRoot = "";

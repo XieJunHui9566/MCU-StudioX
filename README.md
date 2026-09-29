@@ -1,8 +1,22 @@
 # MCU StudioX
 
-MCU StudioX 是 Windows x64 单片机 IDE。当前源码版本为 **0.2.5.2 预览版**，使用 C#、.NET 10 和 WPF 构建。
+MCU StudioX 是面向多系列 MCU 的 Windows x64 重型 IDE，强调开箱即用、新手友好、插件扩展及独立工具环境。当前源码版本为 **0.2.5.3 预览版**，使用 C#、.NET 10 和 WPF 构建。
 
 IDE 提供 C/C++ 编辑与代码提示、CMake 工程构建、器件包导入、固件下载与调试界面、串口工具、Git 图谱，以及带 MCP 工具的 AI 助手。器件能力取决于具体 `.mcupack`、工具链和硬件；尚未通过实板验证的型号不应视为已完成下载或调试适配。经过许可审查的部分器件包见 [MCU-StudioX-MCUPacks](https://github.com/XieJunHui9566/MCU-StudioX-MCUPacks)。
+
+## 0.2.5.3 更新
+
+- **OpenOCD 变量绘图**：无需串口输出，通过当前调试探针连接绘制全局变量曲线，支持多通道、缩放、采样统计和 CSV 导出。
+- **双语诊断**：中文释义与工具原文同时显示，红色错误和琥珀色警告适配深浅主题。
+- **编辑工作区**：工程搜索替换、C/C++ 引用与重命名、格式化与修复、分组编辑、本地历史和重启草稿恢复。
+- **Agent**：读取未保存内容、跨文件修改预览与任务撤销；新增全面授权和完全访问模式，保留目标与文件校验。
+
+详细说明及验证边界见 [0.2.5.3 更新说明](docs/RELEASE-0.2.5.3.md)。OpenOCD 绘图目前完成离线验证，尚未完成实板采样验收。
+
+![OpenOCD 变量绘图，离线模拟](docs/screenshots/openocd-plot-0.2.5.3.png)
+
+![双语错误与警告](docs/screenshots/diagnostics-0.2.5.3.png)
+
 
 ## 2026-09-29 更新
 
@@ -47,7 +61,7 @@ IDE 提供 C/C++ 编辑与代码提示、CMake 工程构建、器件包导入、
 
 ## AI 助手与 MCP
 
-0.2.3 源码接入工程对话、历史对话、运行中追加提示、模型思考强度与上下文/缓存用量显示。Agent 通过同一套 MCP 工具读取和修改当前工程、编译、操作 Git、调试、烧录、收发串口与绘图；外部客户端也可连接 `StudioX.Cli mcp`。读取外部示例目录须经会话授权，写入、硬件连接和下载等操作仍需逐次确认。Skill 提供构建修复、器件资料、调试串口与 MCU 代码风格指导。`pdf_list`、`pdf_inspect`、`pdf_page` 可读取工程或已授权目录中的数据手册与原理图，并将页面局部图像交给支持视觉输入的模型。详见 [AI/MCP 说明](docs/AI_AGENT.md)与[外部客户端说明](docs/AI_MCP_EXTERNAL.md)。
+0.2.3 源码接入工程对话、历史对话、运行中追加提示、模型思考强度与上下文/缓存用量显示。Agent 通过同一套 MCP 工具读取和修改当前工程、编译、操作 Git、调试、烧录、收发串口与绘图；外部客户端也可连接 `StudioX.Cli mcp`。桌面端按工程选择逐次确认、全面授权或完全访问；外部 MCP 仍采用逐次确认。所有模式保留目标身份、固件哈希和文件冲突校验。Skill 提供构建修复、器件资料、调试串口与 MCU 代码风格指导。`pdf_list`、`pdf_inspect`、`pdf_page` 可读取工程或已授权目录中的数据手册与原理图，并将页面局部图像交给支持视觉输入的模型。详见 [AI/MCP 说明](docs/AI_AGENT.md)与[外部客户端说明](docs/AI_MCP_EXTERNAL.md)。
 
 ## 在线器件包同步
 
@@ -55,7 +69,7 @@ IDE 提供 C/C++ 编辑与代码提示、CMake 工程构建、器件包导入、
 
 ## 安装包
 
-[下载 MCU StudioX 0.2.5.2 Windows x64 安装包](https://github.com/XieJunHui9566/MCU-StudioX/releases/tag/v0.2.5.2)。Release 同时提供新功能说明、SHA-256 校验文件和对应源码。安装包包含内置 SDK、工具链和当前器件包；不需要另装 .NET。安装程序为未签名预览版。
+[下载 MCU StudioX 0.2.5.3 Windows x64 安装包](https://github.com/XieJunHui9566/MCU-StudioX/releases/tag/v0.2.5.3)。Release 同时提供新功能说明、SHA-256 校验文件和对应源码。安装包包含内置 SDK、工具链和当前器件包；不需要另装 .NET。安装程序为未签名预览版。
 
 旧版网盘链接仍保留：[百度网盘 MCUStdioX](https://pan.baidu.com/s/5fh5exaJIgC6ThwSS_IdDOA)。该链接由维护者单独更新，不代表本次 0.2.5.1 安装包。
 

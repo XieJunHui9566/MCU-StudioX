@@ -1,5 +1,87 @@
 [
   {
+    "name": "ag32_logic_schematic_generate",
+    "title": null,
+    "description": "\u6388\u6743\u6784\u5EFA\u540E\u7528\u5185\u7F6E Yosys \u7EFC\u5408\u5F53\u524D AG32 \u81EA\u5B9A\u4E49 Verilog\uFF0C\u751F\u6210 RTL \u7F51\u8868\u3001SVG \u7535\u8DEF\u56FE\u548C\u539F\u59CB\u65E5\u5FD7\u3002\u4F7F\u7528\u5DE5\u7A0B\u7684 hdl-schematic.json \u6216\u81EA\u52A8\u53D1\u73B0\u914D\u7F6E\uFF1B\u53EF\u8986\u76D6\u9876\u5C42\u6A21\u5757\u53CA\u5C55\u5F00\u9009\u62E9\u3002\u4EC5\u751F\u6210\u9884\u89C8\uFF0C\u4E0D\u4EE3\u8868 FPGA \u5E03\u5C40\u5E03\u7EBF\u3001\u65F6\u5E8F\u6216\u786C\u4EF6\u9A8C\u6536\uFF0C\u4E0D\u4E0B\u8F7D\u3002\u8FD4\u56DE\u6240\u6709\u6A21\u5757\u53CA\u5143\u4EF6\u7EDF\u8BA1\u548C\u5DE5\u4EF6\u8DEF\u5F84\uFF0C\u8BE6\u7EC6\u7AEF\u53E3\u4E0E\u4FE1\u53F7\u8FDE\u63A5\u53EF\u8BFB\u53D6 netlist.json\u3002",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "top_module": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "flatten": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "default": null
+        }
+      }
+    },
+    "outputSchema": null,
+    "annotations": null,
+    "icons": null,
+    "_meta": null
+  },
+  {
+    "name": "ag32_logic_schematic_settings",
+    "title": null,
+    "description": "\u8BFB\u53D6\u5F53\u524D AG32 MCU\u002BFPGA \u5DE5\u7A0B\u7684 Verilog \u7535\u8DEF\u9884\u89C8\u914D\u7F6E\uFF1A\u6E90\u6587\u4EF6\u3001\u5305\u542B\u76EE\u5F55\u3001\u5B8F\u3001\u9876\u5C42\u6A21\u5757\u548C\u662F\u5426\u5C55\u5F00\u5B50\u6A21\u5757\u3002\u53EA\u8BFB\uFF0C\u4E0D\u6267\u884C\u7EFC\u5408\u6216\u8FDE\u63A5\u786C\u4EF6\u3002",
+    "inputSchema": {
+      "type": "object",
+      "properties": {}
+    },
+    "outputSchema": null,
+    "annotations": null,
+    "icons": null,
+    "_meta": null
+  },
+  {
+    "name": "ag32_logic_simulate",
+    "title": null,
+    "description": "\u4F7F\u7528\u5185\u7F6E Icarus Verilog \u8FD0\u884C\u5DE5\u7A0B\u914D\u7F6E\u7684 RTL testbench\uFF0C\u8FD4\u56DE VCD\u3001\u539F\u59CB\u65E5\u5FD7\u3001\u65F6\u95F4\u5355\u4F4D\u53CA\u4FE1\u53F7\u5217\u8868\u3002\u652F\u6301 #delay \u548C\u6570\u5B57 X/Z\uFF1B\u4E0D\u662F\u786C\u4EF6\u91C7\u6837\u6216\u5E26 SDF \u7684\u5E03\u5C40\u540E\u65F6\u5E8F\u4EFF\u771F\u3002\u9700\u8981 Build \u6388\u6743\uFF0C\u4E0D\u4E0B\u8F7D\u3002\u65AD\u8A00\u5931\u8D25\u3001\u8D85\u65F6\u3001\u8F93\u5165\u53D8\u5316\u5747\u62A5\u9519\u3002",
+    "inputSchema": {
+      "type": "object",
+      "properties": {}
+    },
+    "outputSchema": null,
+    "annotations": null,
+    "icons": null,
+    "_meta": null
+  },
+  {
+    "name": "ag32_logic_workflow_settings",
+    "title": null,
+    "description": "\u8BFB\u53D6 AG32 \u81EA\u5B9A\u4E49\u903B\u8F91\u6784\u5EFA\u4E0E RTL \u4EFF\u771F\u914D\u7F6E\u3002\u53EF\u63D0\u4F9B build_json \u6216 simulation_json \u4FDD\u5B58\u5B8C\u6574\u914D\u7F6E\uFF08\u9700\u8981 FileWrite \u6388\u6743\uFF09\u3002\u6E90\u7801\u3001\u5305\u542B\u76EE\u5F55\u548C SDC \u5747\u4E3A\u5DE5\u7A0B\u76F8\u5BF9\u8DEF\u5F84\u3002project_build \u4F1A\u8054\u5408\u7F16\u8BD1 MCU \u4E0E FPGA\uFF1B\u914D\u7F6E\u4FDD\u5B58\u672C\u8EAB\u4E0D\u6784\u5EFA\u6216\u4E0B\u8F7D\u3002",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "build_json": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "simulation_json": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        }
+      }
+    },
+    "outputSchema": null,
+    "annotations": null,
+    "icons": null,
+    "_meta": null
+  },
+  {
     "name": "ag32_pin_mapping_build",
     "title": null,
     "description": "\u9010\u6B21\u6388\u6743\u540E\u4F7F\u7528\u5185\u7F6E AGM VE/Supra \u5DE5\u5177\u7F16\u8BD1\u5F53\u524D\u57FA\u7840 .ve \u6620\u5C04\u5E76\u751F\u6210\u903B\u8F91 BIN\uFF1B\u65E0\u9700 Quartus\uFF0C\u9700\u8981\u672C\u673A\u6709\u6548 Supra \u5382\u5546\u8BB8\u53EF\u3002\u4FDD\u7559\u539F\u59CB\u8BCA\u65AD\uFF0C\u4E0D\u8FDE\u63A5\u786C\u4EF6\u3002\u666E\u901A project_build \u4E5F\u4F1A\u8054\u52A8\u7F16\u8BD1\u6620\u5C04\u3002",
@@ -15,7 +97,7 @@
   {
     "name": "ag32_pin_mapping_enable",
     "title": null,
-    "description": "\u9010\u6B21\u6388\u6743\u540E\u4E3A\u73B0\u6709 AG32VF303CCT6 \u5DE5\u7A0B\u542F\u7528\u57FA\u7840 .ve \u6620\u5C04\uFF1B\u4FDD\u7559\u5DF2\u6709 logic/pins.ve\uFF0C\u7F3A\u5931\u65F6\u5EFA\u7ACB\u6A21\u677F\u3002\u4E0D\u628A\u81EA\u5B9A\u4E49 Verilog \u5DE5\u7A0B\u8F6C\u6362\u4E3A\u57FA\u7840\u6620\u5C04\uFF0C\u4E0D\u70E7\u5F55\u3002",
+    "description": "\u9010\u6B21\u6388\u6743\u540E\u4E3A\u5DF2\u9002\u914D\u7684 AGM AG32 \u5DE5\u7A0B\u542F\u7528\u57FA\u7840 .ve \u6620\u5C04\uFF1B\u6309\u51C6\u786E\u578B\u53F7\u9009\u62E9\u903B\u8F91\u76EE\u6807\uFF0C\u4FDD\u7559\u5DF2\u6709 logic/pins.ve\uFF0C\u7F3A\u5931\u65F6\u5EFA\u7ACB\u6A21\u677F\u3002\u4E0D\u628A\u81EA\u5B9A\u4E49 Verilog \u5DE5\u7A0B\u8F6C\u6362\u4E3A\u57FA\u7840\u6620\u5C04\uFF0C\u4E0D\u70E7\u5F55\u3002",
     "inputSchema": {
       "type": "object",
       "properties": {}
@@ -29,6 +111,64 @@
     "name": "ag32_pin_mapping_status",
     "title": null,
     "description": "\u8BFB\u53D6 AG32 \u57FA\u7840 .ve \u6620\u5C04\u72B6\u6001\u3001\u6E90\u6587\u4EF6\u3001\u903B\u8F91\u955C\u50CF\u53CA\u6784\u5EFA\u51ED\u636E\u662F\u5426\u4ECD\u6709\u6548\uFF1B\u4E0D\u7F16\u8BD1\u3001\u4E0D\u8FDE\u63A5\u786C\u4EF6\u3002\u81EA\u5B9A\u4E49 Verilog \u6A21\u5F0F\u8FD4\u56DE\u5916\u90E8\u7EFC\u5408\u8BCA\u65AD\u3002",
+    "inputSchema": {
+      "type": "object",
+      "properties": {}
+    },
+    "outputSchema": null,
+    "annotations": null,
+    "icons": null,
+    "_meta": null
+  },
+  {
+    "name": "ag32_pin_plan_apply",
+    "title": null,
+    "description": "\u9010\u6B21\u6388\u6743\u540E\u6309\u5F53\u524D\u6E90 SHA-256 \u4FDD\u5B58 AG32 \u56FE\u5F62\u89C4\u5212\u3001\u547D\u540D\u4E0E\u7535\u6C14\u6CE8\u91CA\u3001StudioX_System.h/.c \u53CA VEX/SDC/ASF \u7EA6\u675F\u3002assignments_json \u4E3A\u5B8C\u6574\u6620\u5C04\u6570\u7EC4\uFF0C\u4F8B\u5982 [{\u0022function\u0022:\u0022GPIO4_4\u0022,\u0022pinNumber\u0022:2,\u0022name\u0022:\u0022LED1\u0022,\u0022direction\u0022:\u0022OUTPUT\u0022,\u0022pull\u0022:\u0022UP\u0022,\u0022outputType\u0022:\u0022OPEN_DRAIN\u0022}]\uFF1BGPIO pull \u4E3A NONE/UP/DOWN\uFF0CoutputType \u4E3A PUSH_PULL/OPEN_DRAIN\uFF0C\u9ED8\u8BA4\u65E0\u4E0A\u4E0B\u62C9\u548C\u63A8\u633D\uFF0C\u8F93\u5165\u4E0D\u53EF\u8BBE\u5F00\u6F0F\u3002name \u53EF\u7701\u7565\uFF0C\u65F6\u949F\u5355\u4F4D MHz\uFF0Cnull \u8868\u793A\u672A\u663E\u5F0F\u6307\u5B9A\u3002\u6821\u9A8C\u5F15\u811A\u3001\u540D\u79F0\u3001\u529F\u80FD\u590D\u7528\u53CA\u5382\u5546\u8F6C\u6362\uFF0C\u4FDD\u7559\u539F\u6CE8\u91CA\uFF0C\u4E0D\u8986\u76D6\u7528\u6237\u4E3B\u51FD\u6570\u6216\u88AB\u624B\u52A8\u4FEE\u6539\u7684\u7CFB\u7EDF\u6587\u4EF6\u3002\u4E0D\u8FD0\u884C Supra\uFF0C\u4E0D\u70E7\u5F55\uFF1B\u7535\u6C14\u5C5E\u6027\u9700 project_build \u751F\u6210\u6620\u5C04\u955C\u50CF\u518D\u4E0B\u8F7D\u751F\u6548\u3002",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "expected_source_sha256": {
+          "type": "string"
+        },
+        "assignments_json": {
+          "type": "string"
+        },
+        "hse_mhz": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "default": null
+        },
+        "sys_mhz": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "default": null
+        },
+        "bus_mhz": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "expected_source_sha256",
+        "assignments_json"
+      ]
+    },
+    "outputSchema": null,
+    "annotations": null,
+    "icons": null,
+    "_meta": null
+  },
+  {
+    "name": "ag32_pin_plan_read",
+    "title": null,
+    "description": "\u8BFB\u53D6\u5F53\u524D AG32 \u56FE\u5F62\u5F15\u811A\u89C4\u5212\uFF1A\u51C6\u786E\u5C01\u88C5\u7684\u5168\u90E8\u5F15\u811A\u3001\u5382\u5546\u53EF\u6620\u5C04\u529F\u80FD\u53CA\u590D\u7528\u8D44\u6E90\u3001VE \u6620\u5C04\u3001\u663E\u5F0F HSECLK/SYSCLK/BUSCLK\uFF08MHz\uFF09\u548C\u6E90\u6587\u4EF6 SHA-256\u3002\u590D\u6742 VE \u8FD4\u56DE\u53EA\u8BFB\u8BCA\u65AD\u3002\u4E0D\u8FDE\u63A5\u786C\u4EF6\uFF0C\u4E0D\u6539\u6587\u4EF6\u3002",
     "inputSchema": {
       "type": "object",
       "properties": {}

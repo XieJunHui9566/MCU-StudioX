@@ -19,6 +19,24 @@ public sealed class GdbProcessTransport : IGdbMiTransport
     private readonly StreamWriter log;
     private readonly object logSync = new();
     private readonly TaskCompletionSource ready = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    private readonly TaskCompletionSource tclReady = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    private OpenOcdMemoryClient? memoryClient;
+    private int tclPort;
+    public async Task<byte[]> ReadPlotMemoryAsync(uint address, int count, CancellationToken token)
+    {
+        ObjectDisposedException.ThrowIf(disposed != 0, this);
+        if (closing || faulted != 0) { throw new IOException("调试会话已结束。"); }
+        // 只有绘图时才打开 Tcl socket；老工具不提供 RPC 时不影响普通源码调试。
+        try { await tclReady.Task.WaitAsync(TimeSpan.FromSeconds(2), token); }
+        catch (TimeoutException ex) { throw new StudioXException("OPENOCD_PLOT_UNAVAILABLE", "本次 OpenOCD 未确认 Tcl 采样端口，请查看调试日志；普通源码调试仍可使用。", ex); }
+        if (memoryClient is null)
+        {
+            var connection = new OpenOcdMemoryClient();
+            try { await connection.ConnectAsync(tclPort, token); memoryClient = connection; }
+            catch { await connection.DisposeAsync(); throw; }
+        }
+        return await memoryClient.ReadAsync(address, count, token);
+    }
     private readonly TaskCompletionSource detached = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private Process? openocd, gdb;
     private long logCharacters;
@@ -45,9 +63,14 @@ public sealed class GdbProcessTransport : IGdbMiTransport
         var listener = new TcpListener(IPAddress.Loopback, 0);
         listener.Start();
         var port = ((IPEndPoint)listener.LocalEndpoint).Port;
+        var tclListener = new TcpListener(IPAddress.Loopback, 0);
+        tclListener.Start();
+        var tclPort = ((IPEndPoint)tclListener.LocalEndpoint).Port;
         listener.Stop();
-        var plan = OpenOcdDebugPlanner.Create(preparation.ProjectDirectory, preparation.Configuration, preparation.Tools, preparation.Elf, port);
+        tclListener.Stop();
+        var plan = OpenOcdDebugPlanner.Create(preparation.ProjectDirectory, preparation.Configuration, preparation.Tools, preparation.Elf, port, tclPort);
         var transport = new GdbProcessTransport(preparation.LogPath);
+        transport.tclPort = tclPort;
         try
         {
             transport.openocd = transport.Launch(plan.OpenOcd, plan.OpenOcdArguments, preparation);
@@ -112,6 +135,10 @@ public sealed class GdbProcessTransport : IGdbMiTransport
                 if (channel == "OpenOCD" && line.Contains($"Listening on port {port} for gdb connections", StringComparison.Ordinal))
                 {
                     ready.TrySetResult();
+                }
+                if (channel == "OpenOCD" && line.Contains($"Listening on port {tclPort} for tcl connections", StringComparison.Ordinal))
+                {
+                    tclReady.TrySetResult();
                 }
                 if (channel == "OpenOCD" && line.Contains("STUDIOX_DETACHED_RUNNING", StringComparison.Ordinal))
                 {
@@ -234,6 +261,7 @@ public sealed class GdbProcessTransport : IGdbMiTransport
     }
     public async ValueTask DisposeAsync()
     {
+        if (memoryClient is not null) { await memoryClient.DisposeAsync(); memoryClient = null; }
         Exception? detachFailure = null;
         // 先停止命令、移除断点并 detach；结束调试后目标恢复运行。
         if (disposed == 0 && faulted == 0 && targetConnected)

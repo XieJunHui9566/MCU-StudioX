@@ -10,7 +10,7 @@ internal static class McpWorkspacePathPolicy
     private static readonly HashSet<string> McpSourceExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
         ".c", ".h", ".cc", ".cpp", ".cxx", ".hpp", ".s", ".asm", ".cmake", ".ld",
-        ".v", ".vh", ".ve", ".sv", ".svh"
+        ".v", ".vh", ".ve", ".sv", ".svh", ".py", ".pyi"
     };
     private static readonly HashSet<string> McpExcludedDirectories = new(StringComparer.OrdinalIgnoreCase)
     {

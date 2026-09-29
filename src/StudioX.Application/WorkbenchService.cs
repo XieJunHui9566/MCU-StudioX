@@ -18,6 +18,10 @@ public sealed class WorkbenchService : IAsyncDisposable
     {
         RuntimeDirectory = Path.GetFullPath(runtimeDirectory);
         DataDirectory = Path.GetFullPath(dataDirectory);
+        LocalHistory = new Editing.LocalHistoryService(DataDirectory);
+        Files = new ProjectFileService(LocalHistory);
+        WorkspaceDiscovery = new Editing.WorkspaceDiscoveryService(Files);
+        WorkbenchLayout = new Editing.WorkbenchLayoutService(DataDirectory);
         Git = new GitRepositoryService(RuntimeDirectory);
         GitGraph = new GitGraphService(Git);
         GitHubAuthentication = new GitHubAuthenticationService(Git);
@@ -32,6 +36,7 @@ public sealed class WorkbenchService : IAsyncDisposable
         RemotePacks = new GitHubPackSyncService(Packs);
         Toolsets = new ToolsetCatalog(Path.Combine(RuntimeDirectory, "toolsets"));
         ToolInventory = new ToolInventoryService(Toolsets);
+        ToolEnvironment = new ToolEnvironmentService(Toolsets);
         Builds = new BuildService(Toolsets, Path.Combine(DataDirectory, "licenses", "ag32-pin-mapping"));
         BuildMemory = new BuildMemoryService(Toolsets);
         LvglPreview = new Lvgl.LvglPreviewService(Toolsets, DataDirectory);
@@ -45,10 +50,14 @@ public sealed class WorkbenchService : IAsyncDisposable
         EspressifDownloads = new EspressifDownloadService(new EspressifFlashService(Toolsets), Devices);
         StcIsp = new StcIspService(Toolsets, RuntimeDirectory, DataDirectory);
         Debugger = new DebugSessionService(DataDirectory);
+        OpenOcdPlot = new OpenOcdPlot.OpenOcdPlotService(Debugger);
+        Debugger.Changed += OpenOcdPlot.StopIfSessionEnded;
         Themes = new ThemeService(DataDirectory);
         Appearance = new AppearanceService(DataDirectory);
         RecentProjects = new RecentProjectService(DataDirectory);
         EditorSettings = new EditorSettingsService(DataDirectory);
+        EditorSessions = new Editing.EditorSessionStore(DataDirectory);
+        WorkspaceEdits = new Editing.WorkspaceEditService(Files);
         AiSettings = new AiSettingsService(DataDirectory);
         AiSkills = new AiSkillService(DataDirectory, RuntimeDirectory);
         AiConversations = new AiConversationStore(DataDirectory);
@@ -64,14 +73,33 @@ public sealed class WorkbenchService : IAsyncDisposable
         SerialPlot = new SerialPlot.SerialPlotService(Devices, DataDirectory);
         Plugins = new PluginClient(Path.Combine(RuntimeDirectory, "plugin-host", "StudioX.PluginHost.exe"));
         PluginManager = new PluginManagerService(RuntimeDirectory, DataDirectory);
+        PluginSettings = new PluginSettingsService(DataDirectory);
         Simulation = new SimulationLabService(Devices);
     }
     public string RuntimeDirectory
     {
         get;
     }
-    public HdlSchematicService HdlSchematic { get; }
-    public HdlWorkflowService HdlWorkflow { get; }
+    public PluginSettingsService PluginSettings
+    {
+        get;
+    }
+    public Editing.EditorSessionStore EditorSessions
+    {
+        get;
+    }
+    public Editing.WorkspaceEditService WorkspaceEdits
+    {
+        get;
+    }
+    public HdlSchematicService HdlSchematic
+    {
+        get;
+    }
+    public HdlWorkflowService HdlWorkflow
+    {
+        get;
+    }
     public string DataDirectory
     {
         get;
@@ -80,8 +108,14 @@ public sealed class WorkbenchService : IAsyncDisposable
     {
         get;
     }
-    public ZephyrPackRepository ZephyrPacks { get; }
-    public ZephyrProjectService ZephyrProjects { get; }
+    public ZephyrPackRepository ZephyrPacks
+    {
+        get;
+    }
+    public ZephyrProjectService ZephyrProjects
+    {
+        get;
+    }
     public GitHubPackSyncService RemotePacks
     {
         get;
@@ -138,9 +172,18 @@ public sealed class WorkbenchService : IAsyncDisposable
     {
         get;
     }
-    public BuildMemoryService BuildMemory { get; }
-    public Ag32PinMappingBuildService Ag32PinMapping { get; }
-    public Ag32PinPlanningService Ag32PinPlanning { get; }
+    public BuildMemoryService BuildMemory
+    {
+        get;
+    }
+    public Ag32PinMappingBuildService Ag32PinMapping
+    {
+        get;
+    }
+    public Ag32PinPlanningService Ag32PinPlanning
+    {
+        get;
+    }
     public CubeMxImportService CubeMx
     {
         get;
@@ -161,6 +204,7 @@ public sealed class WorkbenchService : IAsyncDisposable
     {
         get;
     }
+    public OpenOcdPlot.OpenOcdPlotService OpenOcdPlot { get; }
     public DeviceHub Devices { get; } = new();
     public SimulationLabService Simulation
     {
@@ -186,7 +230,26 @@ public sealed class WorkbenchService : IAsyncDisposable
     {
         get;
     }
-    public ProjectFileService Files { get; } = new();
+    public ProjectFileService Files
+    {
+        get;
+    }
+    public Editing.LocalHistoryService LocalHistory
+    {
+        get;
+    }
+    public Editing.WorkspaceDiscoveryService WorkspaceDiscovery
+    {
+        get;
+    }
+    public Editing.WorkbenchLayoutService WorkbenchLayout
+    {
+        get;
+    }
+    public ToolEnvironmentService ToolEnvironment
+    {
+        get;
+    }
     public EditorSettingsService EditorSettings
     {
         get;
@@ -215,8 +278,14 @@ public sealed class WorkbenchService : IAsyncDisposable
     {
         get;
     }
-    public EspressifDocumentationService EspressifDocumentation { get; }
-    public EspressifComponentRegistryService EspressifComponents { get; }
+    public EspressifDocumentationService EspressifDocumentation
+    {
+        get;
+    }
+    public EspressifComponentRegistryService EspressifComponents
+    {
+        get;
+    }
     public AiChatClient AiChat
     {
         get;
@@ -230,12 +299,18 @@ public sealed class WorkbenchService : IAsyncDisposable
     public CMakeAssistanceService CMake { get; } = new();
     public PythonAssistanceService Python { get; } = new();
     public PythonNavigationService PythonNavigation { get; } = new();
-    public MicroPython.MicroPythonSessionService MicroPython { get; }
+    public MicroPython.MicroPythonSessionService MicroPython
+    {
+        get;
+    }
     public PluginClient Plugins
     {
         get;
     }
-    public PluginManagerService PluginManager { get; }
+    public PluginManagerService PluginManager
+    {
+        get;
+    }
     public IEnumerable<string> PluginManifests => Directory.Exists(Path.Combine(RuntimeDirectory, "plugins"))
         ? Directory.EnumerateFiles(Path.Combine(RuntimeDirectory, "plugins"), "plugin.json", SearchOption.AllDirectories) : [];
     public static Task<string> ReadMainAsync(string project, CancellationToken token = default) => File.ReadAllTextAsync(Path.Combine(project, "src", "main.c"), token);
@@ -243,6 +318,7 @@ public sealed class WorkbenchService : IAsyncDisposable
     public async ValueTask DisposeAsync()
     {
         var cleanup = new ResourceCleanup();
+        cleanup.Run(EditorSessions.Dispose);
         await cleanup.RunAsync(PluginManager.DisposeAsync);
         cleanup.Run(AiChat.Dispose);
         cleanup.Run(RemotePacks.Dispose);
@@ -256,6 +332,7 @@ public sealed class WorkbenchService : IAsyncDisposable
         await cleanup.RunAsync(SerialPlot.DisposeAsync);
         await cleanup.RunAsync(Serial.DisposeAsync);
         await cleanup.RunAsync(MicroPython.DisposeAsync);
+        await cleanup.RunAsync(OpenOcdPlot.DisposeAsync);
         await cleanup.RunAsync(Debugger.DisposeAsync);
         await cleanup.RunAsync(Intelligence.DisposeAsync);
         // 先释放各用例自己的会话，再关闭所有设备，避免观察者收到已释放对象。

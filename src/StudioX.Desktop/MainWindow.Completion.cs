@@ -47,8 +47,9 @@ public partial class MainWindow
     }
     private bool IsCMakeDocument => activeDocument is not null && CMakeAssistanceService.Supports(activeDocument.RelativePath);
     private bool IsPythonDocument => activeDocument is not null && PythonAssistanceService.Supports(activeDocument.RelativePath);
+    private bool IsPluginLanguage => activeDocument is not null && pluginWorkspace?.SupportsLanguage(activeDocument.RelativePath) == true;
     private bool CanAssist => !closing && !SourceEditor.IsReadOnly && activeDocument is not null &&
-        (IsCMakeDocument || IsPythonDocument || CodeIntelligenceService.Supports(activeDocument.RelativePath)) && WorkspaceTabs.SelectedItem == EditorTab;
+        (IsCMakeDocument || IsPythonDocument || IsPluginLanguage || CodeIntelligenceService.Supports(activeDocument.RelativePath)) && IsActiveSourceTab;
     private bool IsCodeContext()
     {
         // 离线语言服务根据完整缓冲区判断上下文，包含 CMake 引号和 Python 三引号。
@@ -174,9 +175,10 @@ public partial class MainWindow
         {
             return;
         }
+        var pluginLanguage = IsPluginLanguage && !IsPythonDocument && !IsCMakeDocument && !CodeIntelligenceService.Supports(activeDocument!.RelativePath);
         var cmake = IsCMakeDocument;
         var python = IsPythonDocument;
-        if (!cmake && !python && !services.Intelligence.IsReady)
+        if (!cmake && !python && !pluginLanguage && !services.Intelligence.IsReady)
         {
             if (manual)
             {
@@ -203,6 +205,15 @@ public partial class MainWindow
                 }
                 bool Current() => !cancellation.IsCancellationRequested && revision == assistRevision && CanAssist &&
                     SourceEditor.Document == document && SourceEditor.CaretOffset == offset && document.Text == text;
+                if (pluginLanguage && pluginWorkspace is { } workspace)
+                {
+                    var results = await workspace.CompleteAsync(new("completion", path, text, offset, revision), cancellation.Token);
+                    if (Current() && workspace == pluginWorkspace)
+                    {
+                        ShowCompletions(results.Select(r => new CodeSuggestion(r.Label, r.InsertText, r.Label, r.Detail, "插件语言扩展", 1, null, r.Label)).ToArray(), text, offset);
+                    }
+                    return;
+                }
                 if (python)
                 {
                     var result = await services.Python.GetAsync(path, text, offset, cancellation.Token, currentProjectManifest?.MicroPython);

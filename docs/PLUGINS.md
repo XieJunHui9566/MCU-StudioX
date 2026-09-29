@@ -228,3 +228,23 @@ Python 清单示意：
 - [C++ 原生示例](../examples/plugins/process-demo/cpp/main.cpp)，开发依赖本地 `nlohmann_json` 3.11 及 C++20。
 
 Rust/C++ 模板演示短时只读请求及双向取消处理；当前仓库未将 Rust/C++ 编译器与开发依赖自动分发。实际编译需要开发者已有本机工具链；其源码示例不能作为某台实机或每个语言工具链已经验收的证据。
+
+
+## API 3：设置与开发扩展
+
+API 1 解码和 API 2 通用插件继续可用；`PluginContribution` 的原三参数构造保持不变。新能力显式使用 `apiVersion: 3`，清单格式仍为 1，stdio 包络的 `protocolVersion` 仍为 2。API 3 在既有命令、面板、Agent 工具之外增加以下可选数组，并要求清单声明对应能力：
+
+| 贡献 / 能力 | 约束与调用 |
+|---|---|
+| `settings` | 最多 64 个 string / boolean / integer 设置；声明默认值、说明及整数范围，宿主生成设置页面 |
+| `events` | `project.opened`、`project.closing`、`document.opened`、`document.changed`、`document.saved`、`document.closed`、`settings.changed` |
+| `languages` | 最多 16 个语言定义及后缀；`invoke(kind: language, id: providerId)` 收到 `PluginLanguageRequest` |
+| `debugAdapters` | 最多 16 个调试快照视图；`invoke(kind: debugAdapter, id: adapterId)` 收到宿主当前状态与快照，返回无动作的 `PluginPanelDefinition` |
+
+设置保存在独立用户目录 `plugin-settings/<id>.json`，安装升级不会覆盖；保存前校验字段、类型与范围。若订阅 `settings.changed`，启动及保存后收到有效设置对象。文档事件只发送相对路径、是否未保存与字符数，连续变化按文件合并；读取正文继续走已有编辑器宿主工具。工程事件、补全及调试快照调用有短超时，停止插件撤销在途调用。通用命令的既有操作授权没有改变。
+
+语言补全请求含 `operation: completion`、`path`、`text`、`offset` 和 `revision`，位置为 UTF-16。正文最多 256 Ki 字符，返回最多 256 个 `PluginCompletion`（label、insertText、detail）。桌面在自定义文件后缀上接入 Ctrl+Space 及输入补全，丢弃过期编辑结果；已有 C/C++、Python、CMake 服务保持优先。此接口当前没有宣称提供自定义语言诊断、语义重命名或完整 LSP。
+
+调试扩展入口是“工具 → 调试快照扩展”，用于显示暂停快照、寄存器或自定义解释。它不启动连接，不持有设备，不提供任意 DAP 连接器、烧录器驱动或绕过会话授权的发送入口；独立插件进程仍不是权限沙箱。
+
+实际 C# 示例为 `examples/StudioX.SamplePlugin/DevelopmentToolsPlugin.cs`，配套 `development.template.json`，包含可修改的问候语、事件计数、`.sxdemo` 补全和调试快照概览。使用 `tools/Build-PluginSample.ps1 -Development -OutputDirectory <new-directory>` 构建归档；不加 `-Development` 仍构建原 API 2 工程概览示例。插件安装和启用沿用原有界面流程。

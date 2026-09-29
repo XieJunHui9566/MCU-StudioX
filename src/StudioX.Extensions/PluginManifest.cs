@@ -38,7 +38,7 @@ public sealed record PluginManifest(
         RejectDuplicateProperties(document.RootElement);
         var manifest = document.RootElement.Deserialize<PluginManifest>(JsonStore.Options)
             ?? throw new StudioXException("PLUGIN_MANIFEST", "插件清单为空。");
-        if (manifest.FormatVersion != 1 || manifest.ApiVersion is not (1 or 2))
+        if (manifest.FormatVersion != 1 || manifest.ApiVersion is not (1 or 2 or 3))
         {
             throw new StudioXException("PLUGIN_API", "插件 API 或清单版本不兼容。");
         }
@@ -46,12 +46,12 @@ public sealed record PluginManifest(
         PackValidator.Version(manifest.Version);
         if (string.IsNullOrWhiteSpace(manifest.DisplayName) || manifest.DisplayName.Length > 256 ||
             manifest.Description?.Length > 8192 || manifest.Sha256 is null || manifest.Sha256.Count is 0 or > 4096 ||
-            manifest.Capabilities is null || manifest.Capabilities.Length is 0 or > 4 ||
+            manifest.Capabilities is null || manifest.Capabilities.Length is 0 or > 7 ||
             manifest.Capabilities.Distinct(StringComparer.Ordinal).Count() != manifest.Capabilities.Length)
         {
             throw new StudioXException("PLUGIN_MANIFEST", "插件名称、能力或文件索引无效。");
         }
-        var supported = manifest.ApiVersion == 1 ? new[] { "decode" } : ["commands", "panels", "agentTools"];
+        var supported = manifest.ApiVersion == 1 ? new[] { "decode" } : manifest.ApiVersion == 2 ? ["commands", "panels", "agentTools"] : ["commands", "panels", "agentTools", "settings", "events", "languages", "debugAdapters"];
         if (manifest.Capabilities.Any(capability => !supported.Contains(capability, StringComparer.Ordinal)) ||
             (manifest.ApiVersion == 1 && (manifest.Capabilities is not ["decode"] || manifest.Kind != "dotnet")))
         {
@@ -83,7 +83,7 @@ public sealed record PluginManifest(
             }
             entryRelative = manifest.EntryAssembly;
         }
-        else if (manifest.Kind == "process" && manifest.ApiVersion == 2)
+        else if (manifest.Kind == "process" && manifest.ApiVersion is 2 or 3)
         {
             if (string.IsNullOrWhiteSpace(manifest.EntryExecutable) ||
                 !manifest.EntryExecutable.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))

@@ -47,6 +47,7 @@ public partial class MainWindow
 
     private void AttachTabMouseActions(TabItem tab)
     {
+        AttachEditorDrag(tab);
         tab.PreviewMouseDown += async (_, e) =>
         {
             if (e.ChangedButton != MouseButton.Middle)
@@ -67,23 +68,25 @@ public partial class MainWindow
         label.Children.Add(new FileIcon { FileName = source.RelativePath, Width = 19, Height = 19, Margin = new Thickness(0, 0, 7, 0), VerticalAlignment = VerticalAlignment.Center });
         label.Children.Add(session.Label);
         session.Tab.Header = CreateTabHeader(session.Tab, label);
-        session.Changed = (_, _) => { UpdateEditorHeader(session); ClearBuildDiagnostics(); CommandManager.InvalidateRequerySuggested(); };
+        session.Changed = (_, _) => { UpdateEditorHeader(session); QueuePluginDocumentEvent("document.changed", session); ClearBuildDiagnostics(); agentEditorSession?.InvalidateValidation(); QueueLiveDiagnostics(); CommandManager.InvalidateRequerySuggested(); };
         session.Buffer.TextChanged += session.Changed;
         editorDocuments.Add(session);
-        WorkspaceTabs.Items.Insert(editorDocuments.Count, session.Tab);
+        WorkspaceTabs.Items.Insert(editorDocuments.Count(e => e.Group == 0), session.Tab);
         AttachTabMouseActions(session.Tab);
         UpdateEditorHeaders();
+        QueuePluginDocumentEvent("document.opened", session);
         return session;
     }
 
     private void WorkspaceTabs_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (e.Source != WorkspaceTabs || changingEditor)
+        if (e.Source != WorkspaceTabs && e.Source != secondaryTabs || changingEditor)
         {
             return;
         }
         CloseCodeAssistance();
-        if (WorkspaceTabs.SelectedItem is TabItem { Tag: EditorDocumentSession session })
+        var tabs = (TabControl)e.Source;
+        if (tabs.SelectedItem is TabItem { Tag: EditorDocumentSession session })
         {
             ActivateEditor(session);
         }
@@ -91,9 +94,9 @@ public partial class MainWindow
         {
             CaptureEditorView();
         }
-        if (WorkspaceTabs.SelectedItem is TabItem selected)
+        if (tabs.SelectedItem is TabItem selected)
         {
-            _ = Dispatcher.BeginInvoke(() => { if (WorkspaceTabs.SelectedItem == selected) { selected.BringIntoView(); } }, DispatcherPriority.Loaded);
+            _ = Dispatcher.BeginInvoke(() => { if (tabs.SelectedItem == selected) { selected.BringIntoView(); } }, DispatcherPriority.Loaded);
         }
     }
 
@@ -114,6 +117,7 @@ public partial class MainWindow
     {
         if (activeEditor == session && SourceEditor.Document == session.Buffer)
         {
+            RefreshSplitMirror();
             SourceEditor.Focus();
             return;
         }
@@ -127,6 +131,11 @@ public partial class MainWindow
                 activeEditor.Tab.Content = null;
             }
             activeEditor = session;
+            if (mirroredSession == session)
+            {
+                session.Tab.Content = null;
+                mirroredSession = null;
+            }
             session.Tab.Content = EditorSurface;
             SourceEditor.Document = session.Buffer;
             SourceEditor.IsReadOnly = session.Source.IsReadOnly || services.Debugger.IsActive;
@@ -149,7 +158,7 @@ public partial class MainWindow
             // 文档挂入选中标签后才有正确的滚动范围；过期的恢复任务不可影响后切换的文件。
             _ = Dispatcher.BeginInvoke(() =>
             {
-                if (revision != editorViewRevision || activeEditor != session || WorkspaceTabs.SelectedItem != session.Tab)
+                if (revision != editorViewRevision || activeEditor != session || DocumentTabs(session).SelectedItem != session.Tab)
                 {
                     return;
                 }
@@ -159,7 +168,9 @@ public partial class MainWindow
             }, DispatcherPriority.Loaded);
         }
         finally { changingEditor = false; }
+        RefreshSplitMirror();
         QueueOutlineRefresh(clear: true);
+        QueueLiveDiagnostics();
     }
 
     private void UpdateEditorHeaders()
@@ -188,6 +199,7 @@ public partial class MainWindow
         // 保存的是捕获的标签及其文本快照，异步期间切换文件不会写错文件。
         var text = session.Buffer.Text;
         session.Source = await services.Files.SaveAsync(directory, session.Source, text, token);
+        QueuePluginDocumentEvent("document.saved", session);
         UpdateEditorHeader(session);
         await PersistBreakpointLinesAsync();
     }
@@ -235,7 +247,7 @@ public partial class MainWindow
         }
         return true;
     }
-    private async Task<bool> ConfirmDocumentsAsync(Func<SourceDocument, MessageBoxResult>? decide = null)
+    private async Task<bool> ConfirmDocumentsAsync(Func<SourceDocument, MessageBoxResult>? decide = null, bool retainEditorDrafts = false)
     {
         var wasEnabled = WorkspaceTabs.IsEnabled;
         WorkspaceTabs.IsEnabled = false;
@@ -255,7 +267,7 @@ public partial class MainWindow
                     await SaveAg32PinPlanAsync(RequireProject(), CancellationToken.None);
                 }
             }
-            foreach (var session in editorDocuments.ToArray())
+            foreach (var session in retainEditorDrafts ? Array.Empty<EditorDocumentSession>() : editorDocuments.ToArray())
             {
                 if (!await ConfirmEditorAsync(session, decide))
                 {
@@ -275,7 +287,7 @@ public partial class MainWindow
             {
                 return;
             }
-            var selected = WorkspaceTabs.SelectedItem == tab;
+            var selected = DocumentTabs(session).SelectedItem == tab;
             var index = editorDocuments.IndexOf(session);
             var neighbor = editorDocuments.Count > 1 ? editorDocuments[index > 0 ? index - 1 : 1].Tab : null;
             RemoveEditor(session);
@@ -283,6 +295,9 @@ public partial class MainWindow
             {
                 ShowDocument(neighbor ?? WelcomeTab);
             }
+            // 显式关闭标签后的现场立即持久化，防止下次恢复重新出现已放弃的草稿。
+            await editorCheckpointTask;
+            await PersistEditorCheckpointAsync();
         }
         else
         {
@@ -298,6 +313,7 @@ public partial class MainWindow
             {
                 await SerialPlotView.CloseSessionAsync();
             }
+            if (tab == OpenOcdPlotTab) { await OpenOcdPlotPanel.CloseSessionAsync(); }
             var selected = WorkspaceTabs.SelectedItem == tab;
             tab.Visibility = Visibility.Collapsed;
             if (selected)
@@ -308,6 +324,7 @@ public partial class MainWindow
     }
     private void RemoveEditor(EditorDocumentSession session)
     {
+        QueuePluginDocumentEvent("document.closed", session);
         var wasChanging = changingEditor;
         changingEditor = true;
         try
@@ -327,14 +344,25 @@ public partial class MainWindow
                 session.Buffer.TextChanged -= session.Changed;
             }
             editorDocuments.Remove(session);
-            WorkspaceTabs.Items.Remove(session.Tab);
+            session.Tab.Content = null;
+            DocumentTabs(session).Items.Remove(session.Tab);
+            if (mirroredSession == session)
+            {
+                mirroredSession = null;
+                mirrorEditor.Document = new TextDocument();
+            }
+            UpdateSplitVisibility();
             UpdateEditorHeaders();
         }
         finally { changingEditor = wasChanging; }
-        if (!changingEditor && WorkspaceTabs.SelectedItem is TabItem { Tag: EditorDocumentSession selected })
+        var selected = (DocumentTabs(session).SelectedItem as TabItem)?.Tag as EditorDocumentSession
+            ?? (WorkspaceTabs.SelectedItem as TabItem)?.Tag as EditorDocumentSession
+            ?? (secondaryTabs?.SelectedItem as TabItem)?.Tag as EditorDocumentSession;
+        if (!changingEditor && activeEditor is null && selected is not null)
         {
             ActivateEditor(selected);
         }
+        RefreshSplitMirror();
     }
     private void ClearEditorDocuments()
     {
@@ -354,7 +382,7 @@ public partial class MainWindow
     }
     private async void CloseDocument_Click(object sender, RoutedEventArgs e)
     {
-        if (WorkspaceTabs.SelectedItem is TabItem tab)
+        if ((activeEditor is not null && SourceEditor.IsKeyboardFocusWithin ? activeEditor.Tab : WorkspaceTabs.SelectedItem) is TabItem tab)
         {
             await RunAsync(_ => CloseWorkspaceTabAsync(tab));
         }
@@ -365,7 +393,7 @@ public partial class MainWindow
         {
             return;
         }
-        var index = editorDocuments.FindIndex(session => session.Tab == WorkspaceTabs.SelectedItem);
+        var index = activeEditor is null ? -1 : editorDocuments.IndexOf(activeEditor);
         var next = index < 0 ? (backwards ? editorDocuments.Count - 1 : 0) : (index + (backwards ? -1 : 1) + editorDocuments.Count) % editorDocuments.Count;
         ShowDocument(editorDocuments[next].Tab);
     }

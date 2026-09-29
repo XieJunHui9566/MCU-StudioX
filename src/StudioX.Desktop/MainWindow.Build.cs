@@ -36,6 +36,7 @@ public partial class MainWindow
                     try
                     {
                         await services.Intelligence.StartAsync(directory, token);
+                        QueueLiveDiagnostics();
                         Log(services.Intelligence.StatusDescription);
                         QueueOutlineRefresh(clear: true);
                     }
@@ -49,6 +50,7 @@ public partial class MainWindow
             else
             {
                 BuildMemory.SetMessage("编译失败，暂无本次占用数据。");
+                ShowTroubleshooting(report.Log);
             }
             if (currentProjectManifest?.PinMapping is not null && currentProjectManifest.Logic is null &&
                 string.Equals(projectDirectory, directory, StringComparison.OrdinalIgnoreCase))

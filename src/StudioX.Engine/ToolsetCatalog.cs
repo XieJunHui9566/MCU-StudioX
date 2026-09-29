@@ -148,8 +148,25 @@ public sealed class ToolsetCatalog(string rootDirectory)
         verified[root] = new(fingerprint, after);
         return new ResolvedToolset(manifest, root, fingerprint);
     }
-    public IEnumerable<string> ManifestPaths() => Directory.Exists(RootDirectory)
-        ? Directory.EnumerateFiles(RootDirectory, "toolset.json", SearchOption.AllDirectories) : [];
+    public IEnumerable<string> ManifestPaths()
+    {
+        if (!Directory.Exists(RootDirectory))
+        {
+            yield break;
+        }
+        // 只枚举约定的 ID/版本层级；备份、修复临时目录和 SDK 内的同名文件不是已安装工具集。
+        foreach (var id in Directory.EnumerateDirectories(RootDirectory).Where(p => !Path.GetFileName(p).StartsWith('.') && (File.GetAttributes(p) & FileAttributes.ReparsePoint) == 0))
+        {
+            foreach (var version in Directory.EnumerateDirectories(id).Where(p => !Path.GetFileName(p).StartsWith('.') && (File.GetAttributes(p) & FileAttributes.ReparsePoint) == 0))
+            {
+                var manifest = Path.Combine(version, "toolset.json");
+                if (File.Exists(manifest))
+                {
+                    yield return manifest;
+                }
+            }
+        }
+    }
 
     private static bool IsGdbPythonCache(string path, IReadOnlyDictionary<string, string> indexed)
     {

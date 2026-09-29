@@ -62,12 +62,12 @@ public static class OpenOcdDebugPlanner
         DebugTargetProfile.Find(configuration.Device) ?? throw new StudioXException("DEBUG_TARGET",
             "当前调试支持已收录的 STM32F1/F4、AG32VF303、CH32V203 / V307、CH592 / CH595 和 RP2350；需要对应新版器件包、工具集和存储布局。当前器件：" + configuration.Device.Id);
 
-    public static OpenOcdDebugPlan Create(string project, DownloadConfiguration configuration, ResolvedToolset tools, string elf, int port = 3333)
+    public static OpenOcdDebugPlan Create(string project, DownloadConfiguration configuration, ResolvedToolset tools, string elf, int port = 3333, int? tclPort = null)
     {
         configuration = Ag32ProbeConfiguration.Normalize(configuration);
         var probe = ResolveProbe(configuration);
         var profile = ResolveTarget(configuration);
-        if (port is < 1024 or > 65535 || configuration.Options.SpeedKhz is < 100 or > 15000)
+        if (port is < 1024 or > 65535 || tclPort is < 1024 or > 65535 || tclPort == port || configuration.Options.SpeedKhz is < 100 or > 15000)
         {
             throw new StudioXException("DEBUG_OPTIONS", "调试端口或接口速度不合法。");
         }
@@ -86,7 +86,9 @@ public static class OpenOcdDebugPlanner
         {
             throw new StudioXException("DEBUG_CONFIG", "缺少 OpenOCD 目标配置。");
         }
-        var openocd = new List<string> { "-s", scripts, "-c", "bindto 127.0.0.1", "-c", (profile.IsWch ? "gdb_port " : "gdb port ") + port.ToString(CultureInfo.InvariantCulture), "-c", profile.IsWch ? "tcl_port disabled" : "tcl port disabled", "-c", profile.IsWch ? "telnet_port disabled" : "telnet port disabled", "-f", interfaceFile, "-c", "transport select " + probe.Transport };
+        var openocd = new List<string> { "-s", scripts, "-c", "bindto 127.0.0.1", "-c", (profile.IsWch ? "gdb_port " : "gdb port ") + port.ToString(CultureInfo.InvariantCulture),
+            "-c", (profile.IsWch ? "tcl_port " : "tcl port ") + (tclPort?.ToString(CultureInfo.InvariantCulture) ?? "disabled"),
+            "-c", profile.IsWch ? "telnet_port disabled" : "telnet port disabled", "-f", interfaceFile, "-c", "transport select " + probe.Transport };
         // CMSIS-DAP 保留 OpenOCD 默认 auto 后端，兼容 v2 USB bulk 与 v1 HID；不固定 USB VID/PID。
         if (configuration.Options.Serial is { Length: > 0 } serial)
         {
@@ -103,6 +105,7 @@ public static class OpenOcdDebugPlanner
         // 调试校验走主机读回比较，不向目标 RAM 放置校验算法。
         // 沁恒脚本的 TAP 为 wch_riscv.cpu，实际 target 名称还带 .0。
         var targetName = profile.IsWch ? "$_TARGETNAME.0" : "$_TARGETNAME";
+        if (tclPort is not null) { openocd.AddRange(["-c", "set studiox_plot_target " + targetName]); }
         // RP2350 的 GDB 内存映射会先探测 QSPI，须暂时保留带备份的工作区；完成身份检查后再禁用。
         openocd.AddRange(["-c", targetName + (profile.IsRp2350 ? " configure -work-area-backup 1" : " configure -work-area-size 0 -work-area-backup 1")]);
         // detach 的 GDB 成功响应不等同于目标已运行；由 OpenOCD 明确检查并回报。

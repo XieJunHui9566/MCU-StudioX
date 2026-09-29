@@ -20,6 +20,7 @@ public static partial class PluginContributionValidator
         RequireCapability(manifest, "commands", contribution.Commands.Length);
         RequireCapability(manifest, "panels", contribution.Panels.Length);
         RequireCapability(manifest, "agentTools", contribution.AgentTools.Length);
+        ValidateProductivity(manifest, contribution);
         var commands = new HashSet<string>(StringComparer.Ordinal);
         foreach (var command in contribution.Commands)
         {

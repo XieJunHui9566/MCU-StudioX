@@ -1,0 +1,14 @@
+{
+  "formatVersion": 1,
+  "apiVersion": 3,
+  "id": "studiox.development",
+  "version": "1.0.0",
+  "displayName": "开发扩展示例",
+  "description": "设置、工程/文档事件、.sxdemo 语言补全和只读调试快照扩展。",
+  "kind": "dotnet",
+  "entryAssembly": "StudioX.SamplePlugin.dll",
+  "entryType": "StudioX.SamplePlugin.DevelopmentToolsPlugin",
+  "capabilities": ["commands", "settings", "events", "languages", "debugAdapters"],
+  "hostTools": [],
+  "sha256": {}
+}

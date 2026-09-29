@@ -154,7 +154,7 @@ public sealed class PluginManagerService : IAsyncDisposable
             session = new PluginWorkspaceSession(Path.GetFullPath(absoluteProject), FindHostExecutable(), broker);
             sessions.RemoveWhere(item => item.IsDisposed);
             sessions.Add(session);
-            await session.StartAsync(catalog.Where(entry => entry.Enabled && entry.Manifest?.ApiVersion == 2),
+            await session.StartAsync(catalog.Where(entry => entry.Enabled && entry.Manifest?.ApiVersion is 2 or 3),
                 cancellationToken).ConfigureAwait(false);
             return session;
         }

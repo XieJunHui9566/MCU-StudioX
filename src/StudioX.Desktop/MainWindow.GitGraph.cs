@@ -140,6 +140,7 @@ public partial class MainWindow
             if (currentProjectManifest?.Kind != ProjectKind.Zephyr)
             {
                 await services.Intelligence.StartAsync(directory, token);
+                QueueLiveDiagnostics();
             }
             if (!IsCurrentProject())
             {

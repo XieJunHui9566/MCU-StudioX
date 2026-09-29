@@ -20,24 +20,54 @@ internal sealed class BuildMcpTools(McpSessionContext context) : StudioXMcpToolP
         {
             throw new StudioXException("MCP_BUILD_ACTION", "构建动作只能是 build 或 configure。");
         }
+        if (Context.AgentEditor is { } editor)
+        {
+            await editor.SaveForBuildAsync(cancellationToken).ConfigureAwait(false);
+        }
         await RequireSavedDocumentsAsync().ConfigureAwait(false);
         await RequireApprovalAsync("project_build", action == "build"
                 ? "使用当前工程锁定的内置工具链编译固件。"
                 : "使用当前工程锁定的内置工具链配置 CMake。",
             StudioXMcpPermission.Build, cancellationToken).ConfigureAwait(false);
-        var report = action == "build"
-            ? await Services.Builds.BuildAsync(Project, cancellationToken: cancellationToken).ConfigureAwait(false)
-            : await Services.Builds.ConfigureAsync(Project, cancellationToken: cancellationToken).ConfigureAwait(false);
-        return JsonSerializer.Serialize(new
+        await RequireSavedDocumentsAsync().ConfigureAwait(false);
+        var snapshot = Context.AgentEditor is { } beforeEditor ? await beforeEditor.SnapshotAsync(cancellationToken) : null;
+        try
         {
-            action,
-            report.Success,
-            report.ExitCode,
-            report.TimedOut,
-            artifacts = report.Artifacts.Take(12),
-            report.LogPath,
-            log = LimitOutput(report.Log, 12_000)
-        });
+            var report = action == "build"
+                ? await Services.Builds.BuildAsync(Project, cancellationToken: cancellationToken).ConfigureAwait(false)
+                : await Services.Builds.ConfigureAsync(Project, cancellationToken: cancellationToken).ConfigureAwait(false);
+            var stale = false;
+            if (Context.AgentEditor is { } completedEditor && snapshot is not null)
+            {
+                var after = await completedEditor.SnapshotAsync(cancellationToken);
+                stale = after.Documents.Any(d => d.Text != d.Source.Text) || snapshot.Documents.Any(d =>
+                    after.Documents.FirstOrDefault(a => a.Source.RelativePath.Equals(d.Source.RelativePath, StringComparison.OrdinalIgnoreCase)) is { } current && current.Text != d.Text);
+                if (action == "build")
+                {
+                    completedEditor.RecordValidation(report.Success, stale);
+                }
+            }
+            return JsonSerializer.Serialize(new
+            {
+                action,
+                report.Success,
+                report.ExitCode,
+                report.TimedOut,
+                stale,
+                evidence = action == "build" ? "内置工具链编译；未连接或验证硬件" : "CMake 配置；尚未编译或验证硬件",
+                artifacts = report.Artifacts.Take(12),
+                report.LogPath,
+                log = LimitOutput(report.Log, 12_000)
+            });
+        }
+        catch
+        {
+            if (action == "build")
+            {
+                Context.AgentEditor?.RecordValidation(false, false);
+            }
+            throw;
+        }
     }
 
     [McpServerTool(Name = "project_build_log")]

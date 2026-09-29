@@ -23,7 +23,7 @@ public partial class MainWindow
     {
         CloseCodeAssistance();
         var offset = at ?? SourceEditor.CaretOffset;
-        if (!CanNavigateCode || !IsPythonDocument || !IsSymbolContext(offset))
+        if (!CanNavigateCode || !NavigationReady || !IsSymbolContext(offset))
         {
             return;
         }
@@ -35,18 +35,22 @@ public partial class MainWindow
         var snapshots = CaptureCodeDocuments();
         var root = RequireProject();
         var profile = currentProjectManifest?.MicroPython;
+        var python = IsPythonDocument;
         navigationTask = FindAsync();
         async Task FindAsync()
         {
             try
             {
-                var locations = await services.PythonNavigation.FindAsync(root, path, text, offset, true, snapshots, profile, cancellation.Token);
+                var locations = python
+                    ? await services.PythonNavigation.FindAsync(root, path, text, offset, true, snapshots, profile, cancellation.Token)
+                    : await services.Intelligence.ReferencesAsync(path, text, offset, snapshots, cancellation.Token);
                 if (cancellation.IsCancellationRequested || SourceEditor.Document != document || document.Text != text || projectDirectory != root)
                 {
                     return;
                 }
                 PythonReferences.ItemsSource = locations.Select(item => new PythonReferenceRow(item)).ToArray();
-                PythonReferencesStatus.Text = $"找到 {locations.Count} 处（含定义和导入）· 双击定位 · 结果基于查找时的编辑快照";
+                PythonReferencesTab.Header = CreateTabHeader(PythonReferencesTab, new System.Windows.Controls.TextBlock { Text = python ? "Python 引用" : "C/C++ 引用" });
+                PythonReferencesStatus.Text = $"找到 {locations.Count} 处（{(python ? "含定义和导入" : "含声明和定义")}）· 双击定位 · 结果基于查找时的编辑快照";
                 ShowDocument(PythonReferencesTab);
             }
             catch (OperationCanceledException) when (cancellation.IsCancellationRequested) { }

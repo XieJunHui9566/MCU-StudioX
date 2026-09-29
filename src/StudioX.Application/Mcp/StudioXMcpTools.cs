@@ -18,12 +18,12 @@ public sealed class StudioXMcpTools : IAsyncDisposable
 
     public StudioXMcpTools(WorkbenchService services, string project, IStudioXMcpAuthorizer authorizer,
         Func<Task<bool>>? hasUnsavedDocuments = null, WebResearchService? webResearch = null,
-        bool includePlugins = true)
+        bool includePlugins = true, Editing.AgentEditorSession? agentEditor = null)
     {
         this.authorizer = authorizer;
         this.hasUnsavedDocuments = hasUnsavedDocuments;
         this.includePlugins = includePlugins;
-        context = new McpSessionContext(services, project, authorizer, hasUnsavedDocuments, webResearch);
+        context = new McpSessionContext(services, project, authorizer, hasUnsavedDocuments, webResearch, agentEditor);
         providers =
         [
             new WorkspaceMcpTools(context),
@@ -47,6 +47,10 @@ public sealed class StudioXMcpTools : IAsyncDisposable
             new EspressifKnowledgeMcpTools(context),
             new WebMcpTools(context)
         ];
+        if (agentEditor is not null)
+        {
+            providers = [.. providers, new AgentEditorMcpTools(context)];
+        }
     }
 
     public WorkbenchService Services => context.Services;

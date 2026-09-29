@@ -41,7 +41,8 @@ public partial class MainWindow
         var authorizer = new DesktopMcpAuthorizer(this, candidate =>
             !closing && !closed && string.Equals(projectDirectory, candidate, StringComparison.OrdinalIgnoreCase),
             (request, approvalToken) => RequestAiMcpApprovalAsync(request, generation, approvalToken));
-        var tools = new StudioXMcpTools(services, project, authorizer, AiHasUnsavedDocumentsAsync);
+        agentEditorSession = CreateAgentEditorSession(project, generation, authorizer);
+        var tools = new StudioXMcpTools(services, project, authorizer, AiHasUnsavedDocumentsAsync, agentEditor: agentEditorSession);
         try
         {
             return await StudioXMcpSession.CreateAsync(tools, token);
@@ -60,7 +61,11 @@ public partial class MainWindow
     private bool HasUnsavedAiProjectChanges() => editorDocuments.Any(session => session.IsDirty) ||
         (ag32PinPlanProject == projectDirectory && Ag32PinMapping.Planner.HasChanges);
 
-    private void QueueAiMcpSessionDisposal() => aiMcpCoordinator?.QueueDisposal();
+    private void QueueAiMcpSessionDisposal()
+    {
+        aiMcpCoordinator?.QueueDisposal();
+        ClearAgentWorkspace();
+    }
 
     private async Task DisposeAiMcpSessionAsync()
     {
@@ -94,7 +99,10 @@ public partial class MainWindow
             await aiThinkingSaveTask;
             var settings = await services.AiSettings.LoadAsync();
             var dialog = new AiSettingsWindow(services.AiSettings, services.AiCredentials, services.WebCredentials, settings,
-                services.EspressifDocumentation) { Owner = this };
+                services.EspressifDocumentation)
+            {
+                Owner = this
+            };
             dialog.ShowDialog();
             await RefreshAiConfigurationAsync();
         }
@@ -246,11 +254,6 @@ public partial class MainWindow
             AiStatus.Text = "请先创建或打开工程。";
             return;
         }
-        if (editorDocuments.Any(session => session.IsDirty))
-        {
-            AiStatus.Text = "编辑器中有未保存的文件。请先保存，使 AI 读取到当前代码。";
-            return;
-        }
         var prompt = AiPromptInput.Text.Trim();
         if (prompt.Length == 0)
         {
@@ -329,6 +332,7 @@ public partial class MainWindow
         try
         {
             var mcpSession = await GetAiMcpSessionAsync(project, generation, cancellation.Token);
+            agentEditorSession?.BeginTask(prompt);
             var agent = services.CreateAiAgent(settings, mcpSession);
             SetAiActivityStatus("工程工具已就绪，正在请求模型…");
             var sendTask = agent.SendAsync(project, prompt, AiConversations.History, cancellation.Token, AiActivity.Progress,
@@ -453,6 +457,10 @@ public partial class MainWindow
                 UpdateAiSteeringBanner();
             }
             UpdateAiConversationButtons();
+            if (agentEditorSession is { } finishedSession)
+            {
+                agentChangesView?.Refresh(finishedSession);
+            }
         }
     }
 
@@ -642,13 +650,14 @@ public partial class MainWindow
             adjusting ? "运行中调整方向" : "发送 AI 消息");
         AiPromptInput.ToolTip = adjusting
             ? "运行中输入提示，点击发送后会在下次模型请求前应用"
-            : "向 AI 助手提问；工程修改会逐次请求授权";
+            : "向 AI 助手提问；可读取未保存代码，操作按当前授权模式执行";
     }
 
     private async Task LoadAiConversationsForProjectAsync(string project, int generation)
     {
         try
         {
+            await LoadAgentAccessAsync(project, generation);
             if (!await AiConversations.LoadAsync(project, generation))
             {
                 return;

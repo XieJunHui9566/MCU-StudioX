@@ -5,7 +5,7 @@ using System.Text;
 using StudioX.Engine;
 using StudioX.Foundation;
 
-public sealed partial class ProjectFileService
+public sealed partial class ProjectFileService(Editing.LocalHistoryService? history = null)
 {
     public IReadOnlyList<ProjectEntry> List(string project, string relativeDirectory = "")
     {
@@ -67,21 +67,39 @@ public sealed partial class ProjectFileService
         var path = PathBoundary.Resolve(project, document.RelativePath);
         var bytes = document.Encoding.GetPreamble().Concat(document.Encoding.GetBytes(text)).ToArray();
         var temporary = path + ".tmp-" + Guid.NewGuid().ToString("N");
+        if (history is not null)
+        {
+            await history.CaptureAsync(project, document.RelativePath, document.Text, "保存前", token);
+        }
         try
         {
-            await File.WriteAllBytesAsync(temporary, bytes, token);
-            var disk = await File.ReadAllBytesAsync(path, token);
-            if (Convert.ToHexString(SHA256.HashData(disk)) != document.DiskHash)
+            if (document.IsMissing)
             {
-                throw new StudioXException("EDITOR_FILE_CHANGED", "磁盘文件已被其他程序修改，未覆盖。请保留当前修改后重新打开文件。");
+                Directory.CreateDirectory(Path.GetDirectoryName(path)!);
             }
-            token.ThrowIfCancellationRequested();
-            File.Move(temporary, path, overwrite: true);
+            await File.WriteAllBytesAsync(temporary, bytes, token);
+            if (document.IsMissing)
+            {
+                token.ThrowIfCancellationRequested();
+                // 恢复已删除文件只能创建，不能覆盖在恢复期间重新出现的文件。
+                File.Move(temporary, path, overwrite: false);
+            }
+            else
+            {
+                var disk = await File.ReadAllBytesAsync(path, token);
+                if (Convert.ToHexString(SHA256.HashData(disk)) != document.DiskHash)
+                {
+                    throw new StudioXException("EDITOR_FILE_CHANGED", "磁盘文件已被其他程序修改，未覆盖。请保留当前修改后重新打开文件。");
+                }
+                token.ThrowIfCancellationRequested();
+                File.Move(temporary, path, overwrite: true);
+            }
         }
         finally { if (File.Exists(temporary)) { File.Delete(temporary); } }
         return document with
         {
             Text = text,
+            IsMissing = false,
             DiskHash = Convert.ToHexString(SHA256.HashData(bytes))
         };
     }

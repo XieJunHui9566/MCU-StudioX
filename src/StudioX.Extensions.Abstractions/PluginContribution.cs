@@ -4,4 +4,10 @@ namespace StudioX.Extensions.Abstractions;
 public sealed record PluginContribution(
     PluginCommandDefinition[] Commands,
     PluginPanelDefinition[] Panels,
-    PluginAgentToolDefinition[] AgentTools);
+    PluginAgentToolDefinition[] AgentTools)
+{
+    public PluginSettingDefinition[] Settings { get; init; } = [];
+    public string[] Events { get; init; } = [];
+    public PluginLanguageDefinition[] Languages { get; init; } = [];
+    public PluginDebugAdapterDefinition[] DebugAdapters { get; init; } = [];
+}

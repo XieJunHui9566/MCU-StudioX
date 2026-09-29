@@ -7,7 +7,7 @@ using StudioX.Extensions.Abstractions;
 using StudioX.Foundation;
 
 /// <summary>拥有一个工作区内的插件宿主；停用先撤销回调资格，再终止子进程。</summary>
-public sealed class PluginWorkspaceSession : IAsyncDisposable
+public sealed partial class PluginWorkspaceSession : IAsyncDisposable
 {
     private static readonly JsonSerializerOptions PanelOptions = new(JsonStore.Options)
     {
@@ -30,7 +30,10 @@ public sealed class PluginWorkspaceSession : IAsyncDisposable
         this.broker = broker;
     }
 
-    public string Project { get; }
+    public string Project
+    {
+        get;
+    }
 
     public IReadOnlyList<PluginActiveContribution> Contributions
     {
@@ -161,6 +164,9 @@ public sealed class PluginWorkspaceSession : IAsyncDisposable
             {
                 "command" => active.Contribution.Commands.Any(command => command.Id == id),
                 "agentTool" => active.Contribution.AgentTools.Any(tool => tool.Id == id),
+                "event" => active.Contribution.Events.Contains(id, StringComparer.Ordinal),
+                "language" => active.Contribution.Languages.Any(item => item.Id == id),
+                "debugAdapter" => active.Contribution.DebugAdapters.Any(item => item.Id == id),
                 _ => throw new StudioXException("PLUGIN_INVOKE_KIND", "未知插件调用类型：" + kind)
             };
             if (!declared)
@@ -220,7 +226,10 @@ public sealed class PluginWorkspaceSession : IAsyncDisposable
                 AddDiagnostic(id, active.Client.Diagnostics);
             }
         }
-        Raise(new(id, "stopped", JsonSerializer.SerializeToElement(new { reason = "插件会话已停止" }, JsonStore.Options)));
+        Raise(new(id, "stopped", JsonSerializer.SerializeToElement(new
+        {
+            reason = "插件会话已停止"
+        }, JsonStore.Options)));
     }
 
     public async ValueTask DisposeAsync()
@@ -404,7 +413,13 @@ public sealed class PluginWorkspaceSession : IAsyncDisposable
         public string? Fingerprint { get; } = fingerprint;
         public CancellationTokenSource Lifetime { get; } = new();
         public bool Running { get; set; } = true;
-        public PluginRuntimeClient? Client { get; set; }
-        public PluginContribution? Contribution { get; set; }
+        public PluginRuntimeClient? Client
+        {
+            get; set;
+        }
+        public PluginContribution? Contribution
+        {
+            get; set;
+        }
     }
 }

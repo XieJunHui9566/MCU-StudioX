@@ -22,9 +22,9 @@ internal static class ExtensionHost
         try
         {
             var manifest = await PluginManifest.ReadAsync(manifestPath).ConfigureAwait(false);
-            if (manifest.ApiVersion != 2 || manifest.Kind != "dotnet")
+            if (manifest.ApiVersion is not (2 or 3) || manifest.Kind != "dotnet")
             {
-                throw new StudioXException("PLUGIN_API", ".NET 通用宿主仅接受明确的 API 2 .NET 插件。");
+                throw new StudioXException("PLUGIN_API", ".NET 通用宿主仅接受明确的 API 2/3 .NET 插件。");
             }
             var assemblyPath = PathBoundary.Resolve(Path.GetDirectoryName(Path.GetFullPath(manifestPath))!, manifest.EntryAssembly);
             var context = new ExtensionLoadContext(assemblyPath);
@@ -56,7 +56,10 @@ internal static class ExtensionHost
                             }
                             await plugin.ActivateAsync(new HostBridge(connection!), token).ConfigureAwait(false);
                             active = true;
-                            return JsonSerializer.SerializeToElement(new { active = true });
+                            return JsonSerializer.SerializeToElement(new
+                            {
+                                active = true
+                            });
                         case "invoke":
                             if (!active)
                             {
@@ -70,7 +73,10 @@ internal static class ExtensionHost
                                 active = false;
                                 await plugin.DeactivateAsync(token).ConfigureAwait(false);
                             }
-                            return JsonSerializer.SerializeToElement(new { active = false });
+                            return JsonSerializer.SerializeToElement(new
+                            {
+                                active = false
+                            });
                         default:
                             throw new StudioXException("PLUGIN_METHOD", $"未知插件请求：{method}");
                     }
@@ -114,7 +120,11 @@ internal static class ExtensionHost
     {
         public Task<JsonElement> CallAsync(string tool, JsonElement arguments, CancellationToken cancellationToken)
         {
-            return connection.RequestAsync("hostCall", JsonSerializer.SerializeToElement(new { tool, arguments }),
+            return connection.RequestAsync("hostCall", JsonSerializer.SerializeToElement(new
+            {
+                tool,
+                arguments
+            }),
                 TimeSpan.FromMinutes(15), cancellationToken);
         }
 
@@ -125,7 +135,11 @@ internal static class ExtensionHost
 
         public Task LogAsync(string level, string message, CancellationToken cancellationToken)
         {
-            return connection.PublishAsync("log", JsonSerializer.SerializeToElement(new { level, message }), cancellationToken);
+            return connection.PublishAsync("log", JsonSerializer.SerializeToElement(new
+            {
+                level,
+                message
+            }), cancellationToken);
         }
     }
 

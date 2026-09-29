@@ -11,6 +11,9 @@
 | AI 活动和授权 | `AiActivityPresenter`、`AiApprovalPresenter`、`AiTranscriptRenderer`、`AiTurnDetailRenderer` 分别呈现进度、临时审批、气泡和历史详情 |
 | 上下文和实际缓存量 | `Desktop/AiUsageMeterPresenter.cs` 展示 API 返回字段，缺失值保留未知 |
 | 实时文件刷新 | `Desktop/EditorDocumentSynchronizer.cs` 是磁盘内容应用入口；主窗口同步标签、语言服务和界面视图 |
+| 工程搜索与修改 | `Application/Editing/WorkspaceEditService.cs` 生成并校验完整计划；`Desktop/WorkspaceSearchView` 显示预览，主窗口应用可撤销缓冲区修改 |
+| 实时诊断与语义重构 | `Application/CodeIntelligence` 管 LSP 和版本快照；Desktop 将当前诊断显示为波浪线、问题和引用列表 |
+| 编辑现场恢复 | `Application/Editing/EditorSessionStore.cs` 持有实例租约并原子保存草稿；主窗口捕获与恢复标签、选区和滚动 |
 | 模型协议 | `Application/AiChatClient.cs` 管 HTTP 和凭据；请求编码、响应解析、SSE 与工具增量分别有独立实现 |
 | Agent 循环 | `Application/AiAgentService.cs` 调度模型与 MCP，`AiAgentService.Context.cs` 管消息保留与回收；公开协议类型分文件 |
 | MCP 工具发现 | `Application/Mcp/StudioXMcpTools.cs` 组合内置工具组和固定的插件贡献快照，排序注册和清理 |

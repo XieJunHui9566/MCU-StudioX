@@ -18,7 +18,7 @@ public partial class MainWindow
         {
             return false;
         }
-        return ProjectTerminal?.HandleMouseWheel(hit, delta, control) == true || SerialPlotView?.HandlePlotMouseWheel(hit, delta, control) == true || SerialView?.HandleReceiveMouseWheel(hit, delta, control) == true ||
+        return ProjectTerminal?.HandleMouseWheel(hit, delta, control) == true || OpenOcdPlotPanel?.HandlePlotMouseWheel(hit, delta, control) == true || SerialPlotView?.HandlePlotMouseWheel(hit, delta, control) == true || SerialView?.HandleReceiveMouseWheel(hit, delta, control) == true ||
             ApplyWheelZoom(FindZoomTarget(hit), delta, control);
     }
     private FrameworkElement? FindZoomTarget(DependencyObject? element)

@@ -379,7 +379,7 @@ public partial class MainWindow
             await RunAsync(token => services.Debugger.ChangeBreakpointAsync(point.Id, !point.Enabled, token));
         }
     }
-    private bool CanEditBreakpoints => !IsStcSdccProject && !IsEspressifProject && !IsZephyrProject && !IsMicroPythonProject && projectDirectory is not null && activeDocument is not null && WorkspaceTabs.SelectedItem == activeEditor?.Tab &&
+    private bool CanEditBreakpoints => !IsStcSdccProject && !IsEspressifProject && !IsZephyrProject && !IsMicroPythonProject && projectDirectory is not null && activeDocument is not null && IsActiveSourceTab &&
         !Path.IsPathRooted(activeDocument.RelativePath) && CodeLanguage.ForFile(activeDocument.RelativePath) is "C" or "C++" &&
         services.Debugger.State is DebugState.Disconnected or DebugState.Stopped or DebugState.Faulted;
     private async Task NavigateSelectedDebugFrameAsync()

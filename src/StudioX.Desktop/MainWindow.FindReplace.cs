@@ -6,7 +6,7 @@ using StudioX.Application;
 
 public partial class MainWindow
 {
-    private bool CanFindSource => activeDocument is not null && WorkspaceTabs.SelectedItem == EditorTab;
+    private bool CanFindSource => activeDocument is not null && IsActiveSourceTab;
     private bool updatingFind;
     private TextSearchOptions SearchOptions => new(FindText.Text, FindCase.IsChecked == true, FindWord.IsChecked == true, FindRegex.IsChecked == true);
 
