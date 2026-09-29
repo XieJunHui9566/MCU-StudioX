@@ -8,8 +8,8 @@ internal sealed record ManufacturerOption(string Id, string DisplayName, string 
 {
     public string Description => DisplayName == EnglishName ? DisplayName : $"{DisplayName} · {EnglishName}";
     public string Monogram => Id.Length <= 3 ? Id.ToUpperInvariant() : Id[..2].ToUpperInvariant();
-    // 官方横版标识需要保留字标的可读宽度，其他厂商延续原有布局。
-    public double LogoFrameWidth => Id.Equals("Espressif", StringComparison.OrdinalIgnoreCase) ? 80 : 48;
+    // 根据标识比例为横版字标留出空间，新增厂商不再需要单独修改界面布局。
+    public double LogoFrameWidth => Logo is { Height: > 0 } && Logo.Width / Logo.Height > 2 ? 80 : 48;
 
     public static ManufacturerOption FromId(string id)
     {
@@ -32,6 +32,43 @@ internal sealed record ManufacturerOption(string Id, string DisplayName, string 
         if (id.Equals("GigaDevice", StringComparison.OrdinalIgnoreCase))
         {
             return new(id, "兆易创新", "GigaDevice", LoadLogo("gigadevice.png"));
+        }
+        if (id.Equals("ArteryTek", StringComparison.OrdinalIgnoreCase))
+        {
+            return new(id, "雅特力科技", "ArteryTek", LoadLogo("artery.png"));
+        }
+        if (id.Equals("Geehy", StringComparison.OrdinalIgnoreCase))
+        {
+            return new(id, "极海半导体", "Geehy", LoadLogo("geehy.png"));
+        }
+        if (id.Equals("HDSC", StringComparison.OrdinalIgnoreCase))
+        {
+            return new(id, "华大半导体", "HDSC", LoadLogo("hdsc.png"));
+        }
+        if (id.Equals("Microchip", StringComparison.OrdinalIgnoreCase))
+        {
+            return new(id, "微芯科技", "Microchip", LoadLogo("microchip.ico"));
+        }
+        if (id.Equals("MindMotion", StringComparison.OrdinalIgnoreCase))
+        {
+            return new(id, "灵动微电子", "MindMotion", LoadLogo("mindmotion.png"));
+        }
+        if (id.Equals("Nordic Semiconductor", StringComparison.OrdinalIgnoreCase) ||
+            id.Equals("NordicSemiconductor", StringComparison.OrdinalIgnoreCase))
+        {
+            return new(id, "Nordic Semiconductor", "Nordic Semiconductor", LoadLogo("nordic.png"));
+        }
+        if (id.Equals("NSING", StringComparison.OrdinalIgnoreCase))
+        {
+            return new(id, "NSING", "NSING Technologies", LoadLogo("nsing.png"));
+        }
+        if (id.Equals("Nuvoton", StringComparison.OrdinalIgnoreCase))
+        {
+            return new(id, "新唐科技", "Nuvoton", LoadLogo("nuvoton.png"));
+        }
+        if (id.Equals("NXP", StringComparison.OrdinalIgnoreCase))
+        {
+            return new(id, "恩智浦", "NXP", LoadLogo("nxp.png"));
         }
         if (id.Equals("STC", StringComparison.OrdinalIgnoreCase) ||
             id.Equals("STC / 宏晶科技", StringComparison.OrdinalIgnoreCase))

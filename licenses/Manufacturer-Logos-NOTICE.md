@@ -64,3 +64,71 @@ without recoloring; format conversions are noted below. Retrieved 2026-09-21 unl
 - SVG SHA-256: `1be429cb09fbd7df2fc4f91f00a73e80f9edf2c5be2a60ba7a8f7ae2795f0cc0`
 - WPF geometry SHA-256: `beaa7bd6d5512d32da901dd55ea28e6c0ed0c70b93fb2c75f0e6c810f21f3e1f`
 - All Espressif's logos are trademarks of Espressif Systems (Shanghai) Co., Ltd.
+
+## ArteryTek / 雅特力科技
+
+- Asset: `Assets/Manufacturers/artery.png`
+- Source: https://www.arterytek.com/images/logo_m.png (official website mobile header)
+- Reference: https://www.arterytek.com/en/index.jsp
+- Retrieved: 2026-09-30; original PNG bytes, no conversion or recoloring
+- SHA-256: `99f4378e421ea8f167ca25a22bb16f725f04abb131bfae141353148aea8f9c25`
+
+## Geehy / 极海半导体
+
+- Asset: `Assets/Manufacturers/geehy.png`
+- Source: https://global.geehy.com/assets/web4/images/public/logo.png (official website header)
+- Retrieved: 2026-09-30; original PNG bytes, no conversion or recoloring
+- SHA-256: `cadae4bd70220b9817e4381090458fa3091803673b7854ee0d864b9e359d4492`
+
+## HDSC / 华大半导体
+
+- Asset: `Assets/Manufacturers/hdsc.png`
+- Source: https://static2.17youhui.com.cn/uploads/sites/60/2024/06/aebecfab6488a25c8d2495bdf4d3cdba.png (official website icon hosted on its linked CDN)
+- Reference: https://www.hdsc.com.cn/
+- Retrieved: 2026-09-30; original PNG bytes, no conversion or recoloring
+- SHA-256: `864d19632cbf60068de508773801b80768b1616b5cfcd56d164aa31910a15a70`
+
+## Microchip / 微芯科技
+
+- Asset: `Assets/Manufacturers/microchip.ico`
+- Source: https://packs.download.microchip.com/favicon.ico (official CMSIS-Pack repository icon)
+- Reference: https://packs.download.microchip.com/
+- Retrieved: 2026-09-30; original ICO bytes, no conversion or recoloring
+- SHA-256: `bcf3a9bf84240703b82c14a90e54beef92c1237e7d3d08ed74080b6b540fc5c7`
+
+## MindMotion / 灵动微电子
+
+- Asset: `Assets/Manufacturers/mindmotion.png`
+- Source: https://www.mindmotion.com.cn/uploadfiles/logo.png?bG9nby5wbmc= (official website header)
+- Retrieved: 2026-09-30; original PNG bytes, no conversion or recoloring
+- SHA-256: `312bfa2b558364161db35f38adf7ded073dda795c20244883c6a6653f4250c55`
+
+## Nordic Semiconductor
+
+- Asset: `Assets/Manufacturers/nordic.png`
+- Source: https://github.com/nrfconnect/sdk-nrf/blob/main/doc/_doxygen/logo.png (Nordic's official nRF Connect SDK documentation)
+- Download: https://raw.githubusercontent.com/nrfconnect/sdk-nrf/main/doc/_doxygen/logo.png
+- Retrieved: 2026-09-30; original PNG bytes, no conversion or recoloring
+- SHA-256: `bbb56e5cb220558fd906f4cfce19312fd244340d86bd3d60610e1cc2bb2beb29`
+
+## NSING Technologies
+
+- Asset: `Assets/Manufacturers/nsing.png`
+- Source: https://nsing.com.sg/dist/images/logo2.png (official website header for a light background)
+- Retrieved: 2026-09-30; original PNG bytes, no conversion or recoloring
+- SHA-256: `5219ac2f0cddbd16e8e5000010bdd5d8815c6f36408dfd143b69541faa804564`
+
+## Nuvoton / 新唐科技
+
+- Asset: `Assets/Manufacturers/nuvoton.png`
+- Source: https://www.nuvoton.com/export/system/modules/com.thesys.project.nuvoton/resources/images/logo.png (official website header)
+- Retrieved: 2026-09-30; original PNG bytes, no conversion or recoloring
+- SHA-256: `739114f8c58c962f7fe80d08833ed6256e9b6c5f316b30b30b150465214fc871`
+
+## NXP / 恩智浦
+
+- Asset: `Assets/Manufacturers/nxp.png`
+- Source: https://github.com/nxp-mcuxpresso/mcux-sdk/blob/main/docs/nxp_logo_small.png (NXP's official MCUXpresso SDK documentation)
+- Download: https://raw.githubusercontent.com/nxp-mcuxpresso/mcux-sdk/main/docs/nxp_logo_small.png
+- Retrieved: 2026-09-30; original PNG bytes, no conversion or recoloring
+- SHA-256: `4f509d2812abe0312eb51f071e063e38bdcbd585f22abae2a229f73871276259`
