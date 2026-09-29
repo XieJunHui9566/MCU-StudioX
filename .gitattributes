@@ -12,3 +12,5 @@
 *.h text eol=lf
 .editorconfig text eol=lf
 *.md text eol=lf
+# AGM 原始驱动/IP 按字节核验，不能在提交或检出时转换换行。
+src/StudioX.Engine/Resources/Ag32/Peripherals/* -text -whitespace

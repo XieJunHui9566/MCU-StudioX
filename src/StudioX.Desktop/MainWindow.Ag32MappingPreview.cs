@@ -94,6 +94,40 @@ public partial class MainWindow
             var planner = Ag32PinMapping.Planner;
             Check(planner.Visibility == Visibility.Visible && planner.Snapshot is { CanEdit: true, Pins.Length: 48 },
                 "AG32 映射页加载真实 48 脚图形与厂商功能目录");
+            planner.PlannerTabs.SelectedIndex = 0;
+            planner.AnalogEnabled.IsChecked = true;
+            planner.AnalogChannels.Text = "0,4";
+            planner.AnalogDac0.IsChecked = true;
+            Check(planner.HasChanges && planner.GetAnalog() == new Ag32AnalogSettings(true, 17, true),
+                "模拟配置控件生成 ADC 通道与 DAC 选项");
+            planner.AnalogChannels.Text = "16";
+            Check(!planner.SavePlanButton.IsEnabled, "非法 ADC 通道立即禁止保存");
+            planner.AnalogChannels.Text = "0,4";
+            planner.SavePlanButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            await pendingOperation;
+            Check(!planner.HasChanges && planner.Snapshot?.Analog == new Ag32AnalogSettings(true, 17, true) &&
+                File.ReadAllText(PathBoundary.Resolve(fixture, "logic/pins.ve")).Contains("#@StudioX:ANALOG adc=0x0011 dac=1 cmp=0", StringComparison.Ordinal),
+                "模拟配置通过实际保存入口写入 VE 并回读");
+            Check(File.ReadAllText(PathBoundary.Resolve(fixture, Ag32SystemSupport.HeaderPath)).Contains("STUDIOX_ANALOG_ENABLED 1", StringComparison.Ordinal) &&
+                planner.AnalogPinDetails.Text.Contains("PIN_14", StringComparison.Ordinal), "统一头文件启用模拟 API，页面显示当前封装固定引脚");
+            await LayoutAsync();
+            Width = 1380;
+            Height = 1080;
+            planner.BringIntoView();
+            await LayoutAsync();
+            Render(this, Path.Combine(directory, "analog-configuration.png"));
+            planner.PlannerTabs.SelectedIndex = 1;
+            planner.PackageDiagram.Children.OfType<Button>().Single(button => Equals(button.Tag, 10))
+                .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Check(planner.ActivePinMenu is null && planner.PinDetails.Text.Contains("模拟外设已预留", StringComparison.Ordinal),
+                "预留的模拟引脚不能再被菜单分配为数字功能");
+            planner.AnalogEnabled.IsChecked = false;
+            planner.SavePlanButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            await pendingOperation;
+            Check(!planner.HasChanges && !planner.Snapshot!.Analog!.Enabled &&
+                !File.ReadAllText(PathBoundary.Resolve(fixture, "logic/pins.ve")).Contains("#@StudioX:ANALOG", StringComparison.Ordinal),
+                "关闭模拟配置移除标记并释放引脚");
+            await LayoutAsync();
             Ag32PinFunctionMenu OpenPinMenu(int number)
             {
                 planner.PackageDiagram.Children.OfType<Button>().Single(button => Equals(button.Tag, number))
@@ -116,6 +150,7 @@ public partial class MainWindow
             pinMenu.IsOpen = false;
             // WPF 在弹出层完成关闭后发出 Closed，等待输入队列清理引用。
             await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);
+            for (var attempt = 0; attempt < 20 && planner.ActivePinMenu is not null; attempt++) await Task.Delay(50);
             Check(planner.ActivePinMenu is null && !planner.HasChanges, "关闭菜单不创建脏草稿");
             pinMenu = OpenPinMenu(2);
             pinMenu.SearchBox.Text = "gpio4_4";

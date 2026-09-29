@@ -17,7 +17,8 @@ internal static class Ag32PinMappingClockVerification
         var text = RenderSdc(header);
         if (basicMapping)
         {
-            text += Ag32PinMappingTimingConstraints.Render(header, await ReadAsync(build, "pins.vx", token));
+            var netlist = await ReadAsync(build, "pins.vx", token);
+            text += Ag32PinMappingTimingConstraints.Render(header, netlist) + Ag32PeripheralSupport.AnalogSdc(netlist);
         }
         await File.WriteAllTextAsync(PathBoundary.Resolve(build, SdcRelativePath), text, token);
     }
@@ -28,7 +29,9 @@ internal static class Ag32PinMappingClockVerification
         var routed = await ReadAsync(build, "pins_routed.v", token);
         var sourceParameters = PllParameters(source);
         var routedParameters = PllParameters(routed);
-        var sourceCells = ClockCells(source);
+        // 模块内的 IP 时钟单元会被布局器展开、合并；基础 MCU 时钟核对只针对顶层。
+        var topEnd = source.IndexOf("endmodule", StringComparison.Ordinal);
+        var sourceCells = ClockCells(topEnd >= 0 ? source[..topEnd] : source);
         var routedCells = ClockCells(routed);
         var sourcePll = sourceCells.ContainsKey("alta_pllve:pll_inst");
         var routedPll = routedCells.ContainsKey("alta_pllve:pll_inst");
@@ -65,7 +68,7 @@ internal static class Ag32PinMappingClockVerification
         // CLKIN_FREQ 是时序注解，不是 PLL 硬件位字段；布局器可移除它，数字分频参数须逐项保留。
         var header = await ReadAsync(build, "pins.hx", token);
         var sdc = await ReadAsync(build, SdcRelativePath, token);
-        if (sdc != RenderSdc(header) + Ag32PinMappingTimingConstraints.Render(header, source))
+        if (sdc != RenderSdc(header) + Ag32PinMappingTimingConstraints.Render(header, source) + Ag32PeripheralSupport.AnalogSdc(source))
         {
             throw Error("实际输入时序约束与厂商生成的频率头文件不一致。");
         }

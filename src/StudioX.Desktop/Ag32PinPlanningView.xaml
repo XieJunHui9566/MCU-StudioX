@@ -28,7 +28,25 @@
         Click="Reload_Click"
         Margin="0,0,0,12" />
     </WrapPanel>
-    <TabControl>
+    <TextBlock x:Name="ConflictStatus" Visibility="Collapsed" Foreground="{DynamicResource ErrorColor}" TextWrapping="Wrap" Margin="0,4,0,10" />
+    <TabControl x:Name="PlannerTabs" SelectedIndex="1">
+      <TabItem Header="ADC / DAC / 比较器">
+        <StackPanel Margin="16">
+          <CheckBox x:Name="AnalogEnabled" Content="启用 ADC / DAC / CMP（官方模拟 IP）" Checked="Analog_Changed" Unchecked="Analog_Changed" Margin="0,0,0,12" />
+          <TextBlock Text="启用后随顶部编译、下载生成配套逻辑镜像。模拟引脚固定，下面选择需要预留的通道，不能与数字功能同时占用。" TextWrapping="Wrap" Margin="0,0,0,12" />
+          <TextBlock Text="ADC 外部通道（逗号分隔，例如 0,1,4；留空仅使用内部通道）" />
+          <TextBox x:Name="AnalogChannels" TextChanged="AnalogText_Changed" Margin="0,6,0,12" MaxWidth="480" HorizontalAlignment="Left" MinWidth="260" />
+          <WrapPanel>
+            <CheckBox x:Name="AnalogDac0" Content="DAC0" Checked="Analog_Changed" Unchecked="Analog_Changed" Margin="0,0,24,12" />
+            <CheckBox x:Name="AnalogDac1" Content="DAC1" Checked="Analog_Changed" Unchecked="Analog_Changed" Margin="0,0,24,12" />
+            <CheckBox x:Name="AnalogComparator" Content="CMP 比较器（预留输入脚）" Checked="Analog_Changed" Unchecked="Analog_Changed" Margin="0,0,0,12" />
+          </WrapPanel>
+          <ScrollViewer MaxHeight="190" VerticalScrollBarVisibility="Auto" Margin="0,0,0,12">
+            <TextBlock x:Name="AnalogPinDetails" TextWrapping="Wrap" />
+          </ScrollViewer>
+          <TextBlock Text="主程序仅需包含 StudioX_System.h。可调用 StudioX_ADC_Read / StudioX_DAC_Write，也保留原厂 ADC_*、DAC_*、CMP_* 与 DMA 接口。DAC 输出在代码使能后开始；勾选配置本身不会输出电压。ADC2 与 DAC1 共用一个 DMA 请求，不能同时用于 DMA。" TextWrapping="Wrap" Foreground="{DynamicResource Muted}" />
+        </StackPanel>
+      </TabItem>
       <TabItem
         Header="引脚分配">
         <Grid
@@ -89,12 +107,6 @@
               Foreground="{DynamicResource Muted}"
               TextWrapping="Wrap"
               Margin="0,0,0,18" />
-            <TextBlock
-              x:Name="ConflictStatus"
-              Visibility="Collapsed"
-              Foreground="{DynamicResource ErrorColor}"
-              TextWrapping="Wrap"
-              Margin="0,4,0,10" />
             <TextBlock Text="引脚名称 / GPIO 方向" FontWeight="SemiBold" />
             <WrapPanel Margin="0,6,0,8">
               <TextBox x:Name="PinName" Width="125" Margin="0,0,8,6" TextChanged="PinName_Changed"

@@ -5,7 +5,7 @@
 __attribute__((weak)) SYS_ClocksTypeDef SYS_Clocks = {
     .HSI_FREQUENCY = STUDIOX_HSI_HZ,
     .HSE_FREQUENCY = STUDIOX_HSE_HZ,
-    .PLL_FREQUENCY = STUDIOX_SYSCLK_HZ,
+    .PLL_FREQUENCY = STUDIOX_PLL_HZ,
     .EXT_FREQUENCY = BOARD_EXT_FREQUENCY
 };
 
@@ -68,6 +68,63 @@ void Delay_ms(uint32_t milliseconds)
 
 void Delay_1ms(void) { Delay_ms(1u); }
 
+#if STUDIOX_ANALOG_ENABLED
+uint32_t StudioX_AnalogClockHz(void)
+{
+    /* 显式 BUSCLK 来自独立 PLL 输出；不能用 MCU 的 PBUS_DIVIDER 推算它。 */
+    if ((STUDIOX_ANALOG_SEPARATE_BUS || (SYS->CLK_CNTL & SYS_CLK_SOURCE_MASK) == SYS_CLK_SOURCE_PLL) &&
+        (SYS->CLK_CNTL & (SYS_CLK_PLL_ON | SYS_CLK_PLL_RDY)) != (SYS_CLK_PLL_ON | SYS_CLK_PLL_RDY))
+        return 0u;
+    return STUDIOX_ANALOG_SEPARATE_BUS ? STUDIOX_ANALOG_BUS_HZ : StudioX_SystemClockHz();
+}
+
+StudioX_AnalogResult StudioX_ADC_Read(ADC_TypeDef *adc, ADC_ChannelNumTypeDef channel,
+    uint32_t timeout_us, uint16_t *value)
+{
+    if ((adc != ADC0 && adc != ADC1 && adc != ADC2) || value == NULL || timeout_us == 0u ||
+        channel < ADC_CHANNEL0 || channel > ADC_CHANNEL16 ||
+        (channel == ADC_CHANNEL16 && adc != ADC1) ||
+        (channel != ADC_CHANNEL16 && !(STUDIOX_ADC_CHANNEL_MASK & (1u << (channel - ADC_CHANNEL0)))))
+        return STUDIOX_ANALOG_INVALID_ARGUMENT;
+    /* 时钟缺失时先退出，不能先访问未响应的逻辑总线再尝试软件超时。 */
+    const uint32_t bus_hz = StudioX_AnalogClockHz();
+    if (bus_hz == 0u) return STUDIOX_ANALOG_CLOCK_UNAVAILABLE;
+    if (ADC_GetStat(adc) & ADC_STAT_EN) return STUDIOX_ANALOG_BUSY;
+    /* 使用实际逻辑总线频率，SCLK 不高于 10 MHz（原厂要求小于 12 MHz）。 */
+    uint32_t divider = (bus_hz + 19999999u) / 20000000u;
+    if (divider == 0u || divider > 65536u) return STUDIOX_ANALOG_INVALID_ARGUMENT;
+    const uint64_t start = StudioX_Cycles();
+    const uint64_t timeout = ((uint64_t)StudioX_SystemClockHz() * timeout_us + 999999u) / 1000000u;
+    ADC_SetSeqLength(adc, ADC_SEQ_LENGTH1);
+    ADC_SetChannel(adc, channel);
+    /* 原厂 IP 的 EOC 在读 DATA 或向 STAT 写 0 时清除；START 本身不会清除旧结果。 */
+    adc->STAT = 0u;
+    ADC_Start(adc, divider - 1u);
+    while (!(ADC_GetStat(adc) & ADC_STAT_EOC))
+    {
+        if ((uint64_t)(StudioX_Cycles() - start) >= timeout)
+        {
+            ADC_Stop(adc);
+            return STUDIOX_ANALOG_TIMEOUT;
+        }
+    }
+    *value = (uint16_t)(ADC_GetData(adc) & ADC_MAX_VALUE);
+    return STUDIOX_ANALOG_OK;
+}
+
+StudioX_AnalogResult StudioX_DAC_Write(DAC_TypeDef *dac, uint16_t value)
+{
+    if (value > DAC_MAX_VALUE ||
+        !((dac == DAC0 && (STUDIOX_DAC_MASK & 1u)) || (dac == DAC1 && (STUDIOX_DAC_MASK & 2u))))
+        return STUDIOX_ANALOG_INVALID_ARGUMENT;
+    if (StudioX_AnalogClockHz() == 0u) return STUDIOX_ANALOG_CLOCK_UNAVAILABLE;
+    if (dac->CTRL & DAC_CTRL_DMAEN) return STUDIOX_ANALOG_BUSY;
+    DAC_SetData(dac, value);
+    DAC_Enable(dac);
+    return STUDIOX_ANALOG_OK;
+}
+#endif
+
 #if STUDIOX_CONFIGURE_PLL
 static bool StudioX_WaitReady(uint32_t flag)
 {
@@ -95,7 +152,7 @@ void StudioX_SystemInit(void)
     SYS->PBUS_DIVIDER = 0u;
     SYS_Clocks.HSI_FREQUENCY = STUDIOX_HSI_HZ;
     SYS_Clocks.HSE_FREQUENCY = STUDIOX_HSE_HZ;
-    SYS_Clocks.PLL_FREQUENCY = STUDIOX_SYSCLK_HZ;
+    SYS_Clocks.PLL_FREQUENCY = STUDIOX_PLL_HZ;
     StudioX_SystemStatus = STUDIOX_SYSTEM_OK;
 #if STUDIOX_CONFIGURE_PLL
     /* 与原厂 SYS_SetSclkAuto 相同，先设置 Flash 时钟分频，再提高 CPU 频率。 */

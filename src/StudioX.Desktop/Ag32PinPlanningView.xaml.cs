@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
+using StudioX.Application;
 using StudioX.Engine;
 using StudioX.Foundation;
 
@@ -62,6 +63,13 @@ public partial class Ag32PinPlanningView : UserControl
             HseClock.Text = ClockText(snapshot.Clocks.HseMhz);
             SysClock.Text = ClockText(snapshot.Clocks.SysMhz);
             BusClock.Text = ClockText(snapshot.Clocks.BusMhz);
+            var analog = snapshot.Analog ?? new();
+            AnalogEnabled.IsChecked = analog.Enabled;
+            AnalogChannels.Text = string.Join(",", Enumerable.Range(0, 16).Where(bit => (analog.AdcChannels & (1u << bit)) != 0));
+            AnalogDac0.IsChecked = analog.Dac0;
+            AnalogDac1.IsChecked = analog.Dac1;
+            AnalogComparator.IsChecked = analog.Comparator;
+            AnalogPinDetails.Text = string.Join("\n", Ag32PinPlanningService.GetAnalogPins(snapshot.DeviceId).Select(pin => $"PIN_{pin.Pin}: {pin.Functions.Replace("IO_", "", StringComparison.Ordinal)}"));
             var package = Ag32DeviceCatalog.Require(snapshot.DeviceId).PackageName;
             PackageText.Text = $"{snapshot.DeviceId} · {snapshot.TargetDevice} · {package} · 厂商可映射脚 {snapshot.Pins.Count(pin => pin.CanAssign)} 个";
             PackageDiagram.SetPackage(snapshot.DeviceId, package);
@@ -99,6 +107,8 @@ public partial class Ag32PinPlanningView : UserControl
         }
         var editable = !value && Snapshot?.CanEdit == true;
         HseClock.IsEnabled = SysClock.IsEnabled = BusClock.IsEnabled = editable;
+        AnalogEnabled.IsEnabled = editable;
+        AnalogChannels.IsEnabled = AnalogDac0.IsEnabled = AnalogDac1.IsEnabled = AnalogComparator.IsEnabled = editable && AnalogEnabled.IsChecked == true;
         PinName.IsEnabled = editable && assignments.Any(item => item.PinNumber == selectedPin);
         PinDirection.IsEnabled = PinName.IsEnabled && assignments.Any(item => item.PinNumber == selectedPin && item.Function.StartsWith("GPIO", StringComparison.Ordinal));
         PinPull.IsEnabled = PinDirection.IsEnabled;
@@ -123,6 +133,34 @@ public partial class Ag32PinPlanningView : UserControl
     }
 
     public Ag32PinAssignment[] GetAssignments() => assignments.ToArray();
+
+    public Ag32AnalogSettings GetAnalog()
+    {
+        if (AnalogEnabled.IsChecked != true) return new();
+        uint channels = 0;
+        foreach (var part in AnalogChannels.Text.Split([',', '，'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            if (!int.TryParse(part, NumberStyles.None, CultureInfo.InvariantCulture, out var bit) || bit is < 0 or > 15)
+                throw new StudioXException("AG32_ANALOG_CHANNEL", "ADC 通道请填写 0–15 的数字，用逗号分隔；实际可用通道见下方固定引脚表。");
+            channels |= 1u << bit;
+        }
+        var settings = new Ag32AnalogSettings(true, channels, AnalogDac0.IsChecked == true, AnalogDac1.IsChecked == true, AnalogComparator.IsChecked == true);
+        if (Snapshot is { } snapshot) Ag32PinPlanningService.ValidateAnalogSettings(snapshot.DeviceId, settings);
+        return settings;
+    }
+
+    private void Analog_Changed(object sender, RoutedEventArgs e)
+    {
+        if (loading || AnalogComparator is null) return;
+        MarkChanged();
+        UpdateDiagram();
+    }
+    private void AnalogText_Changed(object sender, TextChangedEventArgs e)
+    {
+        if (loading || AnalogComparator is null) return;
+        MarkChanged();
+        UpdateDiagram();
+    }
 
     public Ag32PinClockSettings GetClocks() => new(
         ParseClock(HseClock.Text, "HSECLK"),
@@ -153,6 +191,16 @@ public partial class Ag32PinPlanningView : UserControl
         UpdatePinDetails();
         var snapshot = Snapshot;
         var pin = snapshot.Pins.Single(pin => pin.Number == number);
+        try
+        {
+            var analogPin = Ag32PinPlanningService.GetReservedAnalogPins(snapshot.DeviceId, GetAnalog()).FirstOrDefault(item => item.Pin == number);
+            if (analogPin is not null && !assignments.Any(item => item.PinNumber == number))
+            {
+                PinDetails.Text = $"PIN_{number} · {analogPin.Functions} · 模拟外设已预留；在 ADC / DAC 页取消预留后可分配数字功能。";
+                return;
+            }
+        }
+        catch (StudioXException error) { PlannerStatus.Text = error.Message; return; }
         var anchor = PackageDiagram.Children.OfType<Button>().Single(button => Equals(button.Tag, number));
         var menuGeneration = pinMenuGeneration;
         var menu = new Ag32PinFunctionMenu(anchor, pin, snapshot.Functions, assignments, snapshot.CanEdit,
@@ -221,12 +269,21 @@ public partial class Ag32PinPlanningView : UserControl
             return;
         }
         conflicts = Ag32PinPlanConflicts.Find(assignments, Snapshot.Functions);
+        Ag32AnalogPin[] analogPins = [];
+        try
+        {
+            analogPins = Ag32PinPlanningService.GetReservedAnalogPins(Snapshot.DeviceId, GetAnalog());
+            conflicts = [.. conflicts, .. analogPins.Where(pin => assignments.Any(item => item.PinNumber == pin.Pin))
+                .Select(pin => new Ag32PinPlanConflict("analog", $"PIN_{pin.Pin} 的数字分配与 {pin.Functions} 冲突。", [pin.Pin], [pin.Functions]))];
+        }
+        catch (StudioXException error) { conflicts = [.. conflicts, new("analog", error.Message, [], [])]; }
         ConflictStatus.Text = conflicts.Length == 0 ? "" : (Snapshot.CanEdit
-            ? "引脚分配冲突，移除重复分配后才能保存：\n"
+            ? "配置冲突，修正后才能保存：\n"
             : "VE 包含分配冲突，请先在文本编辑器修正并重新读取：\n")
             + string.Join("\n", conflicts.Select(conflict => conflict.Message));
         ConflictStatus.Visibility = conflicts.Length == 0 ? Visibility.Collapsed : Visibility.Visible;
         PackageDiagram.SetPins(Snapshot.Pins.Select(pin => new Ag32PackagePinVisual(pin.Number, pin.CanAssign,
+            analogPins.FirstOrDefault(item => item.Pin == pin.Number)?.Functions.Replace("IO_", "", StringComparison.Ordinal) ??
             string.Join(", ", assignments.Where(item => item.PinNumber == pin.Number).Select(item => item.Name is { } name ? name + " · " + Ag32PinFunctionLabels.Compact(item.Function) : Ag32PinFunctionLabels.Compact(item.Function))),
             ConflictForPin(pin.Number))).ToArray(),
             selectedPin);

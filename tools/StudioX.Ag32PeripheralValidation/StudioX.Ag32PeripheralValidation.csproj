@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType></PropertyGroup>
+  <ItemGroup><ProjectReference Include="../../src/StudioX.Engine/StudioX.Engine.csproj" /></ItemGroup>
+  <ItemGroup>
+    <None Include="native/*" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../StudioX.Ag32SystemValidation/native/alta.h" Link="native/alta.h" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

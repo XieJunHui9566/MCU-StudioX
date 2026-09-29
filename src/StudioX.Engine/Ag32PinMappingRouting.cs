@@ -17,9 +17,10 @@ internal sealed record Ag32PinMappingRouting(string VexSha256, string IoAsfSha25
         var netlist = await ReadAsync("pins.vx");
         var header = await ReadAsync("pins.hx");
         var sdc = await ReadAsync("studiox-clocks.sdc");
+        Ag32PeripheralSupport.VerifyLogic(source, netlist.Text, routed.Text);
         var expected = Regex.Matches(vex.Text, @"^\s*(\S+)\s+(PIN_[0-9]+)(?:\s|$)", RegexOptions.Multiline | RegexOptions.CultureInvariant)
             .Select(match => (Port: match.Groups[1].Value, Pin: match.Groups[2].Value)).ToArray();
-        if (expected.Length == 0)
+        if (expected.Length == 0 && !Ag32PeripheralSupport.Read(source).Enabled)
         {
             throw new StudioXException("AG32_MAPPING_ROUTING", "转换器没有生成实际 GPIO 到封装引脚的 VEX 约束。");
         }

@@ -52,6 +52,9 @@ def read_sources(sdk: Path, platform: Path, catalog: dict) -> tuple[dict[str, by
     sources = {f"sdk/{name}": (sdk / name).read_bytes() for name in SDK_INPUTS}
     for source in sorted((sdk / "src").glob("*.h")):
         sources["sdk/src/" + source.name] = source.read_bytes()
+    for source in sorted((sdk / "src").glob("*.c")):
+        if source.name != "tiny-malloc.c":
+            sources["sdk/src/" + source.name] = source.read_bytes()
     if not any(name.startswith("sdk/src/") and name.endswith(".h") for name in sources):
         raise RuntimeError("SDK 没有外设头文件，不能生成器件包。")
     sources["platform/builder/common.py"] = (platform / "builder/common.py").read_bytes()
@@ -86,7 +89,8 @@ def read_sources(sdk: Path, platform: Path, catalog: dict) -> tuple[dict[str, by
         "transformations": [
             "保持厂商 C/H/S 原始字节。",
             "展开链接脚本 INCLUDE，将 FLASH_SIZE 限制为物理 Flash 减末尾未压缩逻辑区 100 KiB。",
-            "只复制工程编译必需头文件、启动文件、interrupt.c 和 SVD；不复制工具运行时或私人许可。",
+            "复制完整外设 C/H、启动文件和 SVD；不替换分配器，不复制工具运行时或私人许可。",
+            "interrupt.c 由包声明编译；其余驱动由 IDE 受管系统层按已校验 SDK 版本统一接入，避免重复定义。",
         ],
     }
     return sources, provenance
@@ -216,6 +220,8 @@ def stage_pack(
     for name, data in sources.items():
         if name.startswith("sdk/src/") and name.endswith(".h"):
             write(stage, "sdk/include/" + Path(name).name, data)
+        elif name.startswith("sdk/src/") and name.endswith(".c"):
+            write(stage, "sdk/src/" + Path(name).name, data)
     for name in ("crt.S", "syscalls.c", "agrv.h", "encoding.h"):
         write(stage, "sdk/startup/" + name, sources["sdk/misc/" + name])
     write(stage, "sdk/src/interrupt.c", sources["sdk/src/interrupt.c"])

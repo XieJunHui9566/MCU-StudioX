@@ -66,7 +66,7 @@ internal static class Ag32PinMappingValidation
                 hasMapping = true;
             }
         }
-        if (!hasMapping)
+        if (!hasMapping && !Ag32PeripheralSupport.Read(bytes).Enabled)
         {
             throw new StudioXException("AG32_MAPPING_EMPTY", "请先按真实接线填写 VE 封装引脚映射；只有注释或时钟配置的骨架不能作为可下载映射。");
         }

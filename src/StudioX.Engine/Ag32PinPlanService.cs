@@ -10,23 +10,29 @@ using StudioX.Packages;
 public sealed class Ag32PinPlanService(ToolsetCatalog tools)
 {
     private static readonly ConcurrentDictionary<string, SemaphoreSlim> Gates = new(StringComparer.OrdinalIgnoreCase);
-    private static readonly HashSet<string> PreviewFiles = ["pins.ve", "pins.hx", "pins.vx", "pins.vex", "studiox-clocks.sdc", "studiox-gpio.asf", "converter.log"];
+    private static readonly HashSet<string> PreviewFiles = ["pins.ve", "pins.hx", "pins.vx", "pins.vex", "studiox-clocks.sdc", "studiox-gpio.asf", "converter.log", "analog_ip.vx", "analog_ip.asf"];
 
     public Task<Ag32PinPlanSnapshot> ReadAsync(string projectDirectory, CancellationToken cancellationToken = default)
         => Task.Run(async () => (await ReadContextAsync(Path.GetFullPath(projectDirectory), cancellationToken)).Snapshot, cancellationToken);
 
     public Task<Ag32PinPlanResult> ApplyAsync(string projectDirectory, string expectedSourceSha256,
         IReadOnlyList<Ag32PinAssignment> assignments, Ag32PinClockSettings clocks, CancellationToken cancellationToken = default)
-        => Task.Run(() => ApplyCoreAsync(Path.GetFullPath(projectDirectory), expectedSourceSha256, null, assignments.ToArray(), clocks, cancellationToken), cancellationToken);
+        => Task.Run(() => ApplyCoreAsync(Path.GetFullPath(projectDirectory), expectedSourceSha256, null, assignments.ToArray(), clocks, null, cancellationToken), cancellationToken);
 
     /// <summary>界面草稿与审批绑定完整目标身份，VE 内容相同也不能跨型号提交。</summary>
     public Task<Ag32PinPlanResult> ApplyAsync(string projectDirectory, Ag32PinPlanSnapshot expectedSnapshot,
         IReadOnlyList<Ag32PinAssignment> assignments, Ag32PinClockSettings clocks, CancellationToken cancellationToken = default)
         => Task.Run(() => ApplyCoreAsync(Path.GetFullPath(projectDirectory), expectedSnapshot.SourceSha256,
-            expectedSnapshot, assignments.ToArray(), clocks, cancellationToken), cancellationToken);
+            expectedSnapshot, assignments.ToArray(), clocks, null, cancellationToken), cancellationToken);
+
+    public Task<Ag32PinPlanResult> ApplyAsync(string projectDirectory, Ag32PinPlanSnapshot expectedSnapshot,
+        IReadOnlyList<Ag32PinAssignment> assignments, Ag32PinClockSettings clocks, Ag32AnalogSettings analog,
+        CancellationToken cancellationToken = default)
+        => Task.Run(() => ApplyCoreAsync(Path.GetFullPath(projectDirectory), expectedSnapshot.SourceSha256,
+            expectedSnapshot, assignments.ToArray(), clocks, analog, cancellationToken), cancellationToken);
 
     private async Task<Ag32PinPlanResult> ApplyCoreAsync(string root, string expectedHash, Ag32PinPlanSnapshot? expectedSnapshot,
-        IReadOnlyList<Ag32PinAssignment> assignments, Ag32PinClockSettings clocks, CancellationToken token)
+        IReadOnlyList<Ag32PinAssignment> assignments, Ag32PinClockSettings clocks, Ag32AnalogSettings? analog, CancellationToken token)
     {
         if (expectedHash is null || !Regex.IsMatch(expectedHash, @"\A[0-9A-Fa-f]{64}\z", RegexOptions.CultureInvariant))
         {
@@ -51,7 +57,8 @@ public sealed class Ag32PinPlanService(ToolsetCatalog tools)
             }
             context.Catalog.Validate(assignments, clocks);
             ValidateDeviceClock(Ag32DeviceCatalog.Require(snapshot.DeviceId), clocks);
-            var source = context.Document.Render(assignments, clocks);
+            var source = Ag32PeripheralSupport.WithSettings(context.Document.Render(assignments, clocks), analog);
+            Ag32PeripheralSupport.Validate(snapshot.DeviceId, source, assignments);
             var candidate = new Ag32PinPlanDocument(source);
             if (!candidate.CanEdit)
             {
@@ -64,9 +71,10 @@ public sealed class Ag32PinPlanService(ToolsetCatalog tools)
             Directory.CreateDirectory(staging);
             // 转换器不接受 BOM；仅去掉验证副本的 BOM，保存源仍使用原始编码格式。
             await File.WriteAllBytesAsync(PathBoundary.Resolve(staging, "pins.ve"), source is [0xef, 0xbb, 0xbf, ..] ? source[3..] : source, token);
+            var macroArguments = await Ag32PeripheralSupport.PrepareLogicAsync(staging, source, token);
             var converter = await new ProcessRunner().RunAsync(new(context.Tools.Tool("python"),
                 ["-I", "-B", "-X", "utf8", context.Tools.Tool("converter"), "-d", snapshot.TargetDevice,
-                    "-c", "pins.hx", "pins.ve", "pins.vx", "-x", "pins.vex"], staging,
+                    .. macroArguments, "-c", "pins.hx", "pins.ve", "pins.vx", "-x", "pins.vex"], staging,
                 TimeSpan.FromMinutes(2), ToolsetEnvironment.Create(context.Tools),
                 RemoveEnvironment: ToolsetEnvironment.AmbientVariables.Append("ALTA_HOME").ToArray()), token);
             var diagnostics = converter.StandardOutput + converter.StandardError;
@@ -101,6 +109,7 @@ public sealed class Ag32PinPlanService(ToolsetCatalog tools)
                 SourceSha256 = Hash(source),
                 Assignments = candidate.Assignments,
                 Clocks = candidate.Clocks,
+                Analog = Ag32PeripheralSupport.Read(source),
                 Diagnostics = [],
                 CanEdit = true
             };
@@ -158,7 +167,8 @@ public sealed class Ag32PinPlanService(ToolsetCatalog tools)
             document.Diagnostics.Add(ex.Message + " 原文保留，图形规划只读。");
         }
         var snapshot = new Ag32PinPlanSnapshot(project.DeviceId, settings.TargetDevice, settings.PinMapFile, Hash(bytes),
-            catalog.Pins, catalog.Functions, document.Assignments, document.Clocks, document.Diagnostics.ToArray(), document.CanEdit);
+            catalog.Pins, catalog.Functions, document.Assignments, document.Clocks, document.Diagnostics.ToArray(), document.CanEdit,
+            Ag32PeripheralSupport.Read(bytes));
         return new(snapshot, document, catalog, resolved, settings);
     }
 

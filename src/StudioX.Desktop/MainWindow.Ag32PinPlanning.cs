@@ -70,7 +70,7 @@ public partial class MainWindow
         try
         {
             var result = await services.Ag32PinPlanning.ApplyAsync(root, snapshot,
-                view.GetAssignments(), view.GetClocks(), token);
+                view.GetAssignments(), view.GetClocks(), view.GetAnalog(), token);
             if (projectDirectory != root)
             {
                 return;

@@ -37,6 +37,7 @@
   </Folder>
   <Folder
     Name="/validation/">
+    <Project Path="tools/StudioX.Ag32PeripheralValidation/StudioX.Ag32PeripheralValidation.csproj" />
     <Project Path="tools/StudioX.LabPluginsValidation/StudioX.LabPluginsValidation.csproj" />
     <Project Path="tools/StudioX.OpenOcdPlotChecks/StudioX.OpenOcdPlotChecks.csproj" />
     <Project

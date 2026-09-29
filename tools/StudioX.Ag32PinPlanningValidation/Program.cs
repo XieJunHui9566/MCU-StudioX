@@ -15,6 +15,14 @@ var root = Path.Combine(output, "中文引脚工程 with spaces");
 Directory.CreateDirectory(Path.Combine(root, ".studiox"));
 Directory.CreateDirectory(Path.Combine(root, "device"));
 Directory.CreateDirectory(Path.Combine(root, "logic"));
+// 图形保存现会接入完整驱动，夹具必须携带对应 SDK，不能只伪造器件清单。
+var packDirectory = Path.GetDirectoryName(Path.GetFullPath(args[2]))!;
+foreach (var sourceHeader in Directory.GetFiles(Path.Combine(packDirectory, "sdk/include"), "*.h"))
+{
+    var headerDirectory = Path.Combine(root, "device/sdk/include");
+    Directory.CreateDirectory(headerDirectory);
+    File.Copy(sourceHeader, Path.Combine(headerDirectory, Path.GetFileName(sourceHeader)));
+}
 await JsonStore.WriteAsync(Path.Combine(root, "device/manifest.json"), pack);
 var project = new ProjectManifest(1, "pin_plan_test", pack.Id, pack.Version, "fixture", device.Id, "minimal",
     device.ToolsetId, device.ToolsetVersion, device.CompilerId, PinMapping: new(Ag32DeviceCatalog.Require(device.Id).TargetDevice));

@@ -4,6 +4,15 @@ MCU StudioX 是面向多系列 MCU 的 Windows x64 重型 IDE，强调开箱即�
 
 IDE 提供 C/C++ 编辑与代码提示、CMake 工程构建、器件包导入、固件下载与调试界面、串口工具、Git 图谱，以及带 MCP 工具的 AI 助手。器件能力取决于具体 `.mcupack`、工具链和硬件；尚未通过实板验证的型号不应视为已完成下载或调试适配。经过许可审查的部分器件包见 [MCU-StudioX-MCUPacks](https://github.com/XieJunHui9566/MCU-StudioX-MCUPacks)。
 
+## 0.2.5.3 AG32 外设补全（2026-09-30）
+
+- 统一系统头文件接入完整原厂外设驱动，补齐旧精简包的实现。
+- 普通 MCU / FreeRTOS 工程新增 ADC、DAC、CMP 配置和固定引脚冲突检查，顶部编译生成配套模拟逻辑镜像。
+- ADC/DAC 便捷接口包含时钟、参数、忙状态和超时检查。
+- 885 个接口在七款 AG32 上全部编译链接通过，七款模拟 IP 布局布线均无错误、无警告；本轮仅做离线验收。
+
+产品版本保持 **0.2.5.3**，安装包不捆绑插件。[更新说明与截图](docs/RELEASE-0.2.5.3-AG32.md) · [下载安装包与源码](https://github.com/XieJunHui9566/MCU-StudioX/releases/tag/v0.2.5.3-ag32-peripherals-20260930)。
+
 ## 0.2.5.3 同版本修复版（2026-09-29）
 
 - 调试期间暂停实时纠错，避免 clangd 错误浮窗干扰暂停、单步与断点操作，退出调试后恢复。

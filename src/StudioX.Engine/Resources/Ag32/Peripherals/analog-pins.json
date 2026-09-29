@@ -1,0 +1,214 @@
+{
+  "100": [
+    {
+      "pin": 15,
+      "functions": "IO_ADC_IN10"
+    },
+    {
+      "pin": 16,
+      "functions": "IO_ADC_IN11"
+    },
+    {
+      "pin": 17,
+      "functions": "IO_ADC_IN12"
+    },
+    {
+      "pin": 18,
+      "functions": "IO_ADC_IN13"
+    },
+    {
+      "pin": 23,
+      "functions": "IO_WKUP_ADC_IN0_CMP_PA0"
+    },
+    {
+      "pin": 24,
+      "functions": "IO_ADC_IN1_CMP_PA1"
+    },
+    {
+      "pin": 25,
+      "functions": "IO_ADC_IN2_CMP_PA2"
+    },
+    {
+      "pin": 26,
+      "functions": "IO_ADC_IN3_CMP_PA3"
+    },
+    {
+      "pin": 29,
+      "functions": "IO_ADC_IN4_CMP_PA4_DAC0"
+    },
+    {
+      "pin": 30,
+      "functions": "IO_ADC_IN5_CMP_PA5_DAC1"
+    },
+    {
+      "pin": 31,
+      "functions": "IO_ADC_IN6"
+    },
+    {
+      "pin": 32,
+      "functions": "IO_ADC_IN7"
+    },
+    {
+      "pin": 33,
+      "functions": "IO_ADC_IN14"
+    },
+    {
+      "pin": 34,
+      "functions": "IO_ADC_IN15"
+    },
+    {
+      "pin": 35,
+      "functions": "IO_ADC_IN8"
+    },
+    {
+      "pin": 36,
+      "functions": "IO_ADC_IN9"
+    }
+  ],
+  "64": [
+    {
+      "pin": 8,
+      "functions": "IO_ADC_IN10"
+    },
+    {
+      "pin": 9,
+      "functions": "IO_ADC_IN11"
+    },
+    {
+      "pin": 10,
+      "functions": "IO_ADC_IN12"
+    },
+    {
+      "pin": 11,
+      "functions": "IO_ADC_IN13"
+    },
+    {
+      "pin": 14,
+      "functions": "IO_WKUP_ADC_IN0_CMP_PA0"
+    },
+    {
+      "pin": 15,
+      "functions": "IO_ADC_IN1_CMP_PA1"
+    },
+    {
+      "pin": 16,
+      "functions": "IO_ADC_IN2_CMP_PA2"
+    },
+    {
+      "pin": 17,
+      "functions": "IO_ADC_IN3_CMP_PA3"
+    },
+    {
+      "pin": 20,
+      "functions": "IO_ADC_IN4_CMP_PA4_DAC0"
+    },
+    {
+      "pin": 21,
+      "functions": "IO_ADC_IN5_CMP_PA5_DAC1"
+    },
+    {
+      "pin": 22,
+      "functions": "IO_ADC_IN6"
+    },
+    {
+      "pin": 23,
+      "functions": "IO_ADC_IN7"
+    },
+    {
+      "pin": 24,
+      "functions": "IO_ADC_IN14"
+    },
+    {
+      "pin": 25,
+      "functions": "IO_ADC_IN15"
+    },
+    {
+      "pin": 26,
+      "functions": "IO_ADC_IN8"
+    },
+    {
+      "pin": 27,
+      "functions": "IO_ADC_IN9"
+    }
+  ],
+  "48": [
+    {
+      "pin": 10,
+      "functions": "IO_WKUP_ADC_IN0_CMP_PA0"
+    },
+    {
+      "pin": 11,
+      "functions": "IO_ADC_IN1_CMP_PA1"
+    },
+    {
+      "pin": 12,
+      "functions": "IO_ADC_IN2_CMP_PA2"
+    },
+    {
+      "pin": 13,
+      "functions": "IO_ADC_IN3_CMP_PA3"
+    },
+    {
+      "pin": 14,
+      "functions": "IO_ADC_IN4_CMP_PA4_DAC0"
+    },
+    {
+      "pin": 15,
+      "functions": "IO_ADC_IN5_CMP_PA5_DAC1"
+    },
+    {
+      "pin": 16,
+      "functions": "IO_ADC_IN6"
+    },
+    {
+      "pin": 17,
+      "functions": "IO_ADC_IN7"
+    },
+    {
+      "pin": 18,
+      "functions": "IO_ADC_IN8"
+    },
+    {
+      "pin": 19,
+      "functions": "IO_ADC_IN9"
+    }
+  ],
+  "32": [
+    {
+      "pin": 5,
+      "functions": "IO_ADC_IN12"
+    },
+    {
+      "pin": 7,
+      "functions": "IO_WKUP_ADC_IN0_CMP_PA0"
+    },
+    {
+      "pin": 8,
+      "functions": "IO_ADC_IN1_CMP_PA1"
+    },
+    {
+      "pin": 9,
+      "functions": "IO_ADC_IN2_CMP_PA2"
+    },
+    {
+      "pin": 10,
+      "functions": "IO_ADC_IN3_CMP_PA3"
+    },
+    {
+      "pin": 11,
+      "functions": "IO_ADC_IN4_CMP_PA4_DAC0"
+    },
+    {
+      "pin": 12,
+      "functions": "IO_ADC_IN5_CMP_PA5_DAC1"
+    },
+    {
+      "pin": 13,
+      "functions": "IO_ADC_IN6"
+    },
+    {
+      "pin": 14,
+      "functions": "IO_ADC_IN7"
+    }
+  ]
+}

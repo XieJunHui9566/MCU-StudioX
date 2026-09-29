@@ -18,10 +18,19 @@ public static class Ag32SystemSupport
         target_sources(studiox_device INTERFACE "${CMAKE_CURRENT_LIST_DIR}/studiox/StudioX_System.c")
         target_include_directories(studiox_device INTERFACE "${CMAKE_CURRENT_LIST_DIR}/studiox")
         """;
+    private const string PeripheralCMake = """
+        # StudioX AG32 complete peripheral drivers v1
+        file(GLOB STUDIOX_AG32_DRIVERS CONFIGURE_DEPENDS "${CMAKE_CURRENT_LIST_DIR}/studiox/vendor/*.c")
+        target_sources(studiox_device INTERFACE ${STUDIOX_AG32_DRIVERS})
+        target_include_directories(studiox_device SYSTEM INTERFACE "${CMAKE_CURRENT_LIST_DIR}/studiox/vendor")
+        target_compile_definitions(studiox_device INTERFACE AGM_BOARD_INFO_H="StudioX_Board.h")
+        """;
 
     public static bool IsManagedFile(string path, string text) =>
-        (path.Equals(HeaderPath, StringComparison.OrdinalIgnoreCase) || path.Equals(SourcePath, StringComparison.OrdinalIgnoreCase)) &&
-        text.StartsWith(Marker, StringComparison.Ordinal);
+        ((path.Equals(HeaderPath, StringComparison.OrdinalIgnoreCase) || path.Equals(SourcePath, StringComparison.OrdinalIgnoreCase) ||
+          path.Equals("device/studiox/StudioX_Board.h", StringComparison.OrdinalIgnoreCase)) && text.StartsWith(Marker, StringComparison.Ordinal)) ||
+        (path.StartsWith(Ag32PeripheralSupport.VendorPath, StringComparison.OrdinalIgnoreCase) &&
+         Ag32PeripheralSupport.Drivers().TryGetValue(path, out var raw) && Encoding.UTF8.GetString(raw) == text);
 
     internal static bool IsValidName(string name) =>
         Regex.IsMatch(name, @"\A[A-Za-z][A-Za-z0-9_]{0,47}\z", RegexOptions.CultureInvariant) &&
@@ -56,6 +65,7 @@ public static class Ag32SystemSupport
         var hsi = Frequency("HSI", 10_000_000);
         var hse = Frequency("HSE", 8_000_000);
         var sys = configured ? Frequency("PLL", 0) : hsi;
+        var pll = Frequency("PLL", 100_000_000);
         var bus = configured ? Frequency("BUS", 0) : hsi;
         if (configured && (sys % bus != 0 || sys / bus > 256 ||
             !Regex.IsMatch(vendorHeader!, @"(?m)^#define BOARD_PLL_CLKIN\s+PIN_HSE\s*$", RegexOptions.CultureInvariant)))
@@ -63,11 +73,24 @@ public static class Ag32SystemSupport
             throw new StudioXException("AG32_SYSTEM_CLOCK", "当前自动系统初始化仅支持已校验的 HSE→PLL 和整数总线分频；此时钟配置不能自动生成。");
         }
         var config = $"#define STUDIOX_HSI_HZ {hsi}u\n#define STUDIOX_HSE_HZ {hse}u\n#define STUDIOX_SYSCLK_HZ {sys}u\n#define STUDIOX_BUSCLK_HZ {bus}u\n#define STUDIOX_CONFIGURE_PLL {(configured ? 1 : 0)}\n";
+        var analog = Ag32PeripheralSupport.Read(ve);
+        config += $"#define STUDIOX_PLL_HZ {pll}u\n";
+        config += $"#define STUDIOX_ANALOG_SEPARATE_BUS {(document.Clocks.BusMhz is not null ? 1 : 0)}\n#define STUDIOX_ANALOG_BUS_HZ {Frequency("BUS", hsi)}u\n";
+        config += $"#define STUDIOX_ANALOG_ENABLED {(analog.Enabled ? 1 : 0)}\n#define STUDIOX_ADC_CHANNEL_MASK 0x{analog.AdcChannels:X4}u\n#define STUDIOX_DAC_MASK {((analog.Dac0 ? 1 : 0) | (analog.Dac1 ? 2 : 0))}u\n#define STUDIOX_CMP_ENABLED {(analog.Comparator ? 1 : 0)}\n";
         var pins = new StringBuilder();
         var objects = new StringBuilder();
         var init = new StringBuilder();
+        var enabledPeripherals = new HashSet<string>(StringComparer.Ordinal);
         foreach (var pin in document.Assignments)
         {
+            // 只打开已分配外设的时钟；不启动收发、不替用户决定波特率或启动看门狗。
+            var peripheral = Regex.Match(pin.Function, @"\A(UART[0-4]|SPI[01]|I2C[01]|CAN0|GPTIMER[0-4]|MAC0|USB0)_", RegexOptions.CultureInvariant);
+            if (peripheral.Success && enabledPeripherals.Add(peripheral.Groups[1].Value))
+            {
+                var module = peripheral.Groups[1].Value;
+                var clockBus = module is "MAC0" or "USB0" ? "AHB" : "APB";
+                init.AppendLine($"    SYS_Enable{clockBus}Clock({clockBus}_MASK_{module});");
+            }
             var gpio = Regex.Match(pin.Function, @"\AGPIO([0-9]+)_([0-7])\z", RegexOptions.CultureInvariant);
             var direct = gpio.Success;
             if (!direct)
@@ -97,18 +120,27 @@ public static class Ag32SystemSupport
                 if (pin.Direction == "OUTPUT") { init.AppendLine($"    GPIO_SetLow({port}, {bit});"); }
                 init.AppendLine($"    GPIO_Set{(pin.Direction == "OUTPUT" ? "Output" : "Input")}({port}, {bit});");
             }
+            else if (!direct && gpio.Success)
+            {
+                // 外设复用需切到硬件模式；只改本次已映射位，不误启用同组未分配 IO。
+                var port = "GPIO" + gpio.Groups[1].Value;
+                var bit = "GPIO_BIT" + gpio.Groups[2].Value;
+                init.AppendLine($"    SYS_EnableAPBClock(APB_MASK_{port});\n    GPIO_SetHardwareMode({port}, {bit});");
+            }
         }
-        return new(StringComparer.Ordinal)
-        {
-            [HeaderPath] = Encoding.UTF8.GetBytes(Resource("h").Replace("@@CONFIG@@", config).Replace("@@PINS@@", pins.ToString())),
-            [SourcePath] = Encoding.UTF8.GetBytes(Resource("c").Replace("@@PIN_OBJECTS@@", objects.ToString()).Replace("@@PIN_INIT@@", init.ToString()))
-        };
+        var result = Ag32PeripheralSupport.Drivers();
+        result[HeaderPath] = Encoding.UTF8.GetBytes(Resource("h").Replace("@@CONFIG@@", config).Replace("@@PINS@@", pins.ToString()));
+        result[SourcePath] = Encoding.UTF8.GetBytes(Resource("c").Replace("@@PIN_OBJECTS@@", objects.ToString()).Replace("@@PIN_INIT@@", init.ToString()));
+        result["device/studiox/StudioX_Board.h"] = Encoding.UTF8.GetBytes(Marker + " Generated clock metadata. */\n#pragma once\n" +
+            $"#define BOARD_HSI_FREQUENCY {hsi}u\n#define BOARD_HSE_FREQUENCY {hse}u\n#define BOARD_PLL_FREQUENCY {pll}u\n#define BOARD_BUS_FREQUENCY {bus}u\n");
+        return result;
     }
 
     internal static async Task WriteAsync(string root, Dictionary<string, byte[]> generated, string vePath, byte[] expectedVe,
         byte[]? newVe, CancellationToken token)
     {
         // 在任何写入之前检查所有受管文件；外部编辑不能被下一次图形保存静默覆盖。
+        Ag32PeripheralSupport.VerifySdk(root);
         var statePath = PathBoundary.Resolve(root, StatePath);
         var previous = File.Exists(statePath) ? await JsonStore.ReadAsync<Dictionary<string, string>>(statePath, token) : [];
         var before = new Dictionary<string, byte[]?>(StringComparer.Ordinal);
@@ -135,6 +167,14 @@ public static class Ag32SystemSupport
                     throw new StudioXException("AG32_SYSTEM_CMAKE", "器件 CMake 不属于系统管理，不能自动接入系统文件。");
                 }
                 updates[CMakeGenerator.DeviceListPath] = Encoding.UTF8.GetBytes(text + "\n" + CMakeBlock + "\n");
+                before[CMakeGenerator.DeviceListPath] = bytes;
+            }
+            if (!text.Contains(PeripheralCMake, StringComparison.Ordinal))
+            {
+                if (!CMakeGenerator.IsManagedFile(CMakeGenerator.DeviceListPath, text))
+                    throw new StudioXException("AG32_SYSTEM_CMAKE", "器件 CMake 不是受管文件，不能接入完整外设驱动。");
+                var current = updates.TryGetValue(CMakeGenerator.DeviceListPath, out var updated) ? Encoding.UTF8.GetString(updated) : text;
+                updates[CMakeGenerator.DeviceListPath] = Encoding.UTF8.GetBytes(current + "\n" + PeripheralCMake + "\n");
                 before[CMakeGenerator.DeviceListPath] = bytes;
             }
         }

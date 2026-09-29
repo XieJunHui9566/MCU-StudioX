@@ -1,0 +1,77 @@
+{
+  "sdk": {
+    "name": "framework-agrv_sdk",
+    "version": "1.0.0",
+    "description": "Software tools for developing on the AgRV Platform",
+    "keywords": [
+      "framework",
+      "sdk",
+      "risc-v",
+      "agrv",
+      "agm"
+    ]
+  },
+  "ips": {
+    "name": "framework-agrv_ips",
+    "version": "1.0.0",
+    "description": "IP resources for developing on the AgRV Platform",
+    "keywords": [
+      "framework",
+      "IP",
+      "risc-v",
+      "agrv",
+      "agm"
+    ]
+  },
+  "source": "https://github.com/agm/platform-agrv",
+  "documentation": "https://www.ag32mcu.com/dev-docs/doc_ag32_analog_code_analysis/",
+  "files": {
+    "can.c": "58d2538374cda617c3f8abc9cbdb85b907475cbeb15a76ee1cf172e9e49945c0",
+    "dmac.c": "708ef8647a8f18a6caa8aa8abf3993c437b1a93ff9954a13bd995c63b6db3883",
+    "fcb.c": "c7064218fe0380875573f75e0ff8b23b2673f56b3d952397a8fb487a74d5a482",
+    "flash.c": "f3b2dbb5af9c33317710b329578d2175d2b2dec988388c413af828d44a1e2950",
+    "gpio.c": "4dcefdd19d8d395f04bcb03cedebb54ab7d62b6db33fb3ee0a589eecbc5771de",
+    "gptimer.c": "def9253f47400012620a82a1888e60e2bf25a099c91039358a1c089db991bacc",
+    "i2c.c": "3aaffa97421da02e06d464b984a148708e878c8165e170013b6604028630f51f",
+    "mac.c": "57b028659444aedd6f5e4889712fdae0298f253f186d6beeb3941c6a5d12e6dc",
+    "rtc.c": "6804d2eb12b4a728f8e9bbacfbe5f705c6efe4f7a4d5329681dff0897db37484",
+    "spi.c": "80ed1ca2724e3080df28a9bffe7d47a0dde08ec78b5e1af37011cf668d86986d",
+    "system.c": "fd303083e058b3c4148de0d536e7db967927477d70daa2b1922ddcdb9b57463a",
+    "timer.c": "3db37dabab04519a6aebfdeb8957e2bb0aa785b40f2fc30a38f4cdd94158d780",
+    "uart.c": "71d6e61db74004827ab7dc9bba90649938a8cc753699dd5f70c6b3df762eda7b",
+    "usb.c": "bb1891531c8716719613292cd8b0d94a55d5568ac157a882394cc0f03c965107",
+    "util.c": "835348c48d9b7aa9ae89da95240cb7d2b169432ec36799d5459e4c7b6fd5b7a3",
+    "watchdog.c": "bf3006448c86562725aecbe1d65b5395825939d2e6132747d0b4fe66e180df9f",
+    "analog_ip.asf": "252db564fcc404e8341f1965264897ad50786e32a59dd4da7b76860c5087422f",
+    "analog_ip.h": "529ab29e0671999e854ba6bbc6bb700629e84002b8fbafdb98c3cda4911d2e12",
+    "analog_ip.sdc": "e766dddc1d3409189e117b120ec9930b5ea97f8a50ecf017fda4d4678327727b",
+    "analog_ip.vx": "71c283b2e86d5cb00ff001de378a9b184168ee8b3330910b635c3d7b6a350f1c",
+    "analog-pins.json": "1a040255e4cb07ca42c12201b57df59f7ba6289b737edaefbc7f128d108ab96c"
+  },
+  "sdkHeaders": {
+    "agrv2k_pins.h": "1fd988ce219efffcbef895a301b43287fac073876393a3cfdc2d214e2a837dad",
+    "alta.h": "f799fa520995b301ff27990940f2e54bf15027052d952c89c3bf6cd2176690f6",
+    "AltaRiscv.h": "491f7d22d38a5d76b322c9a4031f1d6a8257d0a9b408efd073b70dc8e7b3cb7b",
+    "can.h": "6b9dcffb4c9770bb18e902a8bfea5d20a468802b3e181fa8847afa020337cb76",
+    "crc.h": "6df20c7ce32e8989f715cf0a50aa499c6a6be59eb7bae8d738b6eb4de3496ee7",
+    "dmac.h": "0d89e2478309a2080aae2dd4fef7df9051995425366977bfcc03acbec755886a",
+    "fcb.h": "48a947ca8e231d3d1af44ef7053e84a3a141113cae42a2b90b96bf8640e3de03",
+    "flash.h": "2e23a39a3d7d8b2e2eab02c92216d7abcfea8612f0560cf0f839f5fe430928d9",
+    "gpio.h": "042b4bfb18c39deb13af24a2f99185b04be8ef804778525f37b36c1893efdab8",
+    "gptimer.h": "ccb714ae1c15173b15d752d334c346ad96db94df04b488f890337e7065e72cae",
+    "i2c.h": "d0362f46ee345944a4d3d35c58781607d9055dcb72fec38df46be4832bbd6bac",
+    "interrupt.h": "175430967f6d59c4f4f36b6e407bf227aa71e255124cb45d1f7b65748ff0464f",
+    "iwdg.h": "b1284d090453e929ed76793312cdf2125b4aeac014c62686ad5802740d8baab6",
+    "mac.h": "0a133c1f61a89b429e28aaf9bd512237532d9ff176fc33991c3b11cb2547d400",
+    "peripherals.h": "10f74cd8ff87f9af74e1190cfd29d12403e0322a9cd95fd5e4ee3dbee1488f82",
+    "rtc.h": "4630a2a032e4c9c6e04d2451b474f298c1abaadc2f45ae64b2a3463c3e966064",
+    "spi.h": "5204e0728b291330516cee206c7985613eb7871402129016c26ee0d29f0f0bf6",
+    "system.h": "1e2d30f10f30747d7546171241fdb4891cde83b3fcecbfe0b72388a82a49db0c",
+    "timer.h": "bc0bbf643712cd6d701eb06fa73023ef37ead83efb82a4e15c8e56650dfeaeec",
+    "uart.h": "784b4cb2940b18181f714fc4770465dab7be12e44fa0f578639ebf46f518bf04",
+    "usb.h": "5e24ba7bc51087ec79f0aeed34e9c21ef20fbc738daa349895cfbc592661649d",
+    "util.h": "4d82be15314b548fd73ca1ddf37a8fb7b2ebf3dc5aa8ab750e724c182c6998e6",
+    "watchdog.h": "6074755f74d7ebaf49d9ded49970a15e54124753921e1e0a03c20e18d59baa2b"
+  },
+  "pinoutSha256": "90e0be1539bf16f432ff6a6e22f93c4eeb685adf713464ca6b8e33ddcfd23bbc"
+}

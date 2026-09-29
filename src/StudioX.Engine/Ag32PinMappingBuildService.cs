@@ -70,6 +70,7 @@ public sealed partial class Ag32PinMappingBuildService(ToolsetCatalog catalog, s
             var pins = await Ag32PinPlanCatalog.ReadAsync(tools, settings.TargetDevice, profile.PinCount, root, token);
             var assignablePins = pins.Pins.Where(pin => pin.CanAssign).Select(pin => pin.Number).ToHashSet();
             var source = await Ag32PinMappingValidation.ReadSourceAsync(root, settings, assignablePins, profile, token);
+            Ag32PeripheralSupport.Validate(project.DeviceId, source, new Ag32PinPlanDocument(source).Assignments);
             var sourceHash = Hash(source);
             var locked = new ToolchainLock(1, settings.ToolsetId, settings.ToolsetVersion, tools.Fingerprint);
             var lockPath = PathBoundary.Resolve(root, Ag32PinMappingReceipt.LockRelativePath);
@@ -81,11 +82,12 @@ public sealed partial class Ag32PinMappingBuildService(ToolsetCatalog catalog, s
             // 构建固定输入快照；用户在编译期间修改 VE 不会混入正在生成的镜像。
             var converterSource = source is [0xef, 0xbb, 0xbf, ..] ? source[3..] : source;
             await File.WriteAllBytesAsync(PathBoundary.Resolve(build, "pins.ve"), converterSource, token);
+            var macroArguments = await Ag32PeripheralSupport.PrepareLogicAsync(build, source, token);
             var environment = ToolsetEnvironment.Create(tools);
             var removeEnvironment = ToolsetEnvironment.AmbientVariables.Append("ALTA_HOME").ToArray();
             progress?.Report("转换 VE 引脚与时钟配置…");
             var converter = await new ProcessRunner().RunAsync(new(tools.Tool("python"), ["-I", "-B", "-X", "utf8", tools.Tool("converter"),
-                "-d", settings.TargetDevice, "-c", "pins.hx", "pins.ve", "pins.vx", "-x", "pins.vex"], build,
+                "-d", settings.TargetDevice, .. macroArguments, "-c", "pins.hx", "pins.ve", "pins.vx", "-x", "pins.vex"], build,
                 TimeSpan.FromMinutes(2), environment, RemoveEnvironment: removeEnvironment, Output: output), token);
             AppendResult(log, "厂商 VE 转换", converter);
             if (!converter.Success)
@@ -112,7 +114,7 @@ public sealed partial class Ag32PinMappingBuildService(ToolsetCatalog catalog, s
                 "-X", "set LOGIC_DESIGN pins", "-X", "set LOGIC_TOPPIN false", "-X", "set LOGIC_DIR .",
                 "-X", "set LOGIC_VX pins.vx", "-X", "set VEX_FILE pins.vex", "-X", "set LOGIC_BIN pins.bin",
                 "-X", "set BOARD_ASF studiox-gpio.asf", "-X", "set BOARD_PRE {}", "-X", "set BOARD_POST {}",
-                "-X", "set IP_ASF {}", "-X", "set IP_PRE {}", "-X", "set IP_POST {}",
+                "-X", "set IP_ASF " + (macroArguments.Length == 0 ? "{}" : "analog_ip.asf"), "-X", "set IP_PRE {}", "-X", "set IP_POST {}",
                 "-X", "set DESIGN_ASF {}", "-X", "set DESIGN_PRE {}", "-X", "set DESIGN_POST {}",
                 "-X", "set IP_SDC studiox-clocks.sdc", "-X", "set LOGIC_COMPRESS false",
                 "-F", PathBoundary.Resolve(tools.ResourceDirectory("platform"), "gen_logic.tcl")],
