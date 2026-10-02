@@ -39,7 +39,7 @@ public partial class MainWindow
             SourceEditor.CaretOffset = 10;
             var origin = CaptureNavigationPoint()!;
             navigationBack.Add(origin);
-            var treeSource = FindProjectNode("src")!;
+            var treeSource = (await FindProjectNodeAsync("src"))!;
             treeSource.IsSelected = true;
             foreach (var theme in new[] { ThemeService.Dark, ThemeService.Light })
             {
@@ -68,10 +68,10 @@ public partial class MainWindow
             await RenameExplorerEntryCoreAsync(new("main.c", "Sources/main.c", false, false), "main.h", CancellationToken.None);
             Check(main.Label.Text.StartsWith("main.h", StringComparison.Ordinal) && EditorBreadcrumb.Text.Contains("main.h", StringComparison.Ordinal), "文件改名未同步标签/路径");
             await CreateExplorerEntryCoreAsync("Sources", "user.c", false, CancellationToken.None);
-            Check(activeDocument?.RelativePath == "Sources/user.c" && FindProjectNode("Sources/user.c")?.IsSelected == true, "新建文件未打开并选中");
+            Check(activeDocument?.RelativePath == "Sources/user.c" && (await FindProjectNodeAsync("Sources/user.c"))?.IsSelected == true, "新建文件未打开并选中");
             var copies = await services.Files.CopyEntriesAsync(fixture, "Sources", [Path.Combine(fixture, "Sources/user.c")]);
-            RefreshProjectTree(copies.Single());
-            Check(FindProjectNode("Sources/user - 副本.c")?.IsSelected == true, "粘贴未定位副本");
+            await RefreshProjectTreeAsync(copies.Single());
+            Check((await FindProjectNodeAsync("Sources/user - 副本.c"))?.IsSelected == true, "粘贴未定位副本");
             await CreateExplorerEntryCoreAsync("Sources", "include", true, CancellationToken.None);
             Check(Directory.Exists(Path.Combine(fixture, "Sources/include")), "新建文件夹失败");
             await Layout();

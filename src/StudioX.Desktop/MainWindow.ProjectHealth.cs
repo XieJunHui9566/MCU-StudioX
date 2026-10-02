@@ -45,6 +45,11 @@ public partial class MainWindow
                     "此项保留进入检查前的失败日志，不用它推断当前配置仍然失败。", topic, RawDiagnostic: diagnostic)).ToArray() };
             }
             projectHealthView.SetReport(report);
+            if (report.ProjectDirectory == projectDirectory)
+            {
+                guideHealthPassed = report.Errors == 0;
+                RefreshFirstProjectGuide();
+            }
             Status.Text = report.Summary;
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested)

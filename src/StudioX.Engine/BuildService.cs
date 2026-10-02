@@ -6,6 +6,18 @@ using StudioX.Foundation;
 public sealed partial class BuildService(ToolsetCatalog catalog, string? ag32MappingLicenseDirectory = null)
 {
     private readonly SemaphoreSlim gate = new(1, 1);
+    public bool IsBusy => gate.CurrentCount == 0;
+    public IDisposable AcquireMaintenance(CancellationToken token = default)
+    {
+        token.ThrowIfCancellationRequested();
+        if (!gate.Wait(0)) { throw new StudioXException("BUILD_BUSY", "构建或工程维护正在进行。"); }
+        return new MaintenanceLease(gate);
+    }
+    private sealed class MaintenanceLease(SemaphoreSlim gate) : IDisposable
+    {
+        private int released;
+        public void Dispose() { if (Interlocked.Exchange(ref released, 1) == 0) { gate.Release(); } }
+    }
     public Task<ProjectBuildSettings> LoadSettingsAsync(string directory, CancellationToken token = default) => ProjectBuildSettings.ReadAsync(directory, token);
     public async Task<StcCodeRomLimit?> ReadStcCodeRomLimitAsync(string directory, CancellationToken token = default)
     {

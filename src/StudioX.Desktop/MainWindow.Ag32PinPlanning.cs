@@ -97,7 +97,7 @@ public partial class MainWindow
                     EditorSynchronizer.Apply(editor, await services.Files.ReadAsync(root, relative, token));
                 }
             }
-            RefreshProjectTree();
+            await RefreshProjectTreeAsync(token: token);
             view.ShowResult(result);
             try
             {

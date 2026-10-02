@@ -42,7 +42,7 @@ public partial class MainWindow
         Add("复制相对路径", "", (entry, _) => { Clipboard.SetText(entry.RelativePath.Length == 0 ? "." : entry.RelativePath); return Task.CompletedTask; });
         Add("在资源管理器中显示", "", (entry, _) => { services.Files.ShowInExplorer(RequireProject(), entry.RelativePath); return Task.CompletedTask; });
         menu.Items.Add(new Separator());
-        Add("刷新", "F5", (entry, _) => { RefreshProjectTree(entry.RelativePath); return Task.CompletedTask; });
+        Add("刷新", "F5", (entry, token) => RefreshProjectTreeAsync(entry.RelativePath, token: token));
         menu.Opened += (_, _) =>
         {
             if (!explorerMouseContext)
@@ -121,17 +121,18 @@ public partial class MainWindow
         }
         return element as TreeViewItem;
     }
-    private Task OpenExplorerEntryAsync(ProjectEntry entry, CancellationToken token)
+    private async Task OpenExplorerEntryAsync(ProjectEntry entry, CancellationToken token)
     {
         if (!entry.IsDirectory)
         {
-            return OpenSourceAsync(entry.RelativePath, token);
+            await OpenSourceAsync(entry.RelativePath, token);
+            return;
         }
-        if (FindProjectNode(entry.RelativePath) is { } node)
+        if (await FindProjectNodeAsync(entry.RelativePath, token) is { } node)
         {
             node.IsExpanded = !node.IsExpanded;
+            if (node.IsExpanded) { await LoadChildrenAsync(node, token); }
         }
-        return Task.CompletedTask;
     }
     private void CopyExplorerEntry(ProjectEntry entry)
     {
@@ -155,7 +156,7 @@ public partial class MainWindow
     private async Task CreateExplorerEntryCoreAsync(string parent, string name, bool directory, CancellationToken token)
     {
         var path = await services.Files.CreateEntryAsync(RequireProject(), parent, name, directory, token);
-        RefreshProjectTree(path);
+        await RefreshProjectTreeAsync(path, token: token);
         if (!directory)
         {
             await OpenSourceAsync(path, token);
@@ -174,7 +175,7 @@ public partial class MainWindow
         }
         var sources = Clipboard.GetFileDropList().Cast<string>().ToArray();
         var paths = await services.Files.CopyEntriesAsync(RequireProject(), DestinationFolder(entry), sources, token);
-        RefreshProjectTree(paths.LastOrDefault());
+        await RefreshProjectTreeAsync(paths.LastOrDefault(), token: token);
         await RefreshExplorerLanguageAsync(token);
         Status.Text = $"已粘贴 {paths.Count} 项 · 同名文件保留为副本；C/C++ 源文件需加入 CMake" +
             (currentProjectManifest?.Logic is not null ? "，逻辑源文件需加入厂商逻辑工程" : "");
@@ -245,7 +246,7 @@ public partial class MainWindow
         }
         UpdateEditorHeaders();
         RefreshActiveEditorMetadata();
-        RefreshProjectTree(renamed, previous);
+        await RefreshProjectTreeAsync(renamed, previous, token);
         await RefreshExplorerLanguageAsync(token);
         Status.Text = "已重命名为 " + renamed + " · 请同步修改 CMake 和 #include 中引用的路径";
     }
@@ -272,7 +273,7 @@ public partial class MainWindow
         catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }
         catch (Exception ex) { Log(ex.ToString()); Log("文件操作已完成，语言服务刷新失败；重新打开工程可重试。"); }
     }
-    private TreeViewItem? FindProjectNode(string path)
+    private async Task<TreeViewItem?> FindProjectNodeAsync(string path, CancellationToken token = default)
     {
         if (ProjectTree.Items.Cast<object>().FirstOrDefault() is not TreeViewItem root)
         {
@@ -287,6 +288,7 @@ public partial class MainWindow
         foreach (var part in path.Split('/'))
         {
             node.IsExpanded = true;
+            await LoadChildrenAsync(node, token);
             accumulated = accumulated.Length == 0 ? part : accumulated + "/" + part;
             var child = node.Items.OfType<TreeViewItem>().FirstOrDefault(item => item.Tag is ProjectEntry entry && entry.RelativePath.Equals(accumulated, StringComparison.OrdinalIgnoreCase));
             if (child is null)
@@ -297,7 +299,7 @@ public partial class MainWindow
         }
         return node;
     }
-    private void RefreshProjectTree(string? selected = null, string? renamedFrom = null)
+    private async Task RefreshProjectTreeAsync(string? selected = null, string? renamedFrom = null, CancellationToken token = default)
     {
         selected ??= SelectedProjectEntry?.RelativePath ?? "";
         var expanded = new List<string>();
@@ -313,16 +315,17 @@ public partial class MainWindow
             }
         }
         Capture(ProjectTree);
-        PopulateProjectTree(WindowProjectTitle.Text, expandSource: false);
+        await PopulateProjectTreeAsync(WindowProjectTitle.Text, expandSource: false, token: token);
         foreach (var path in expanded.OrderBy(path => path.Length))
         {
             var adjusted = renamedFrom is not null && ProjectFileService.ContainsPath(renamedFrom, path) ? selected + path[renamedFrom.Length..] : path;
-            if (FindProjectNode(adjusted) is { } node)
+            if (await FindProjectNodeAsync(adjusted, token) is { } node)
             {
                 node.IsExpanded = true;
+                await LoadChildrenAsync(node, token);
             }
         }
-        if (FindProjectNode(selected) is { } target)
+        if (await FindProjectNodeAsync(selected, token) is { } target)
         {
             target.IsSelected = true;
             target.BringIntoView();

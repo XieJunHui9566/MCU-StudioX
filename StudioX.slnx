@@ -37,6 +37,8 @@
   </Folder>
   <Folder
     Name="/validation/">
+    <Project Path="tools/StudioX.LargeProjectValidation/StudioX.LargeProjectValidation.csproj" />
+    <Project Path="tools/StudioX.DebugPluginValidation/StudioX.DebugPluginValidation.csproj" />
     <Project Path="tools/StudioX.ProjectHealthValidation/StudioX.ProjectHealthValidation.csproj" />
     <Project Path="tools/StudioX.ToolManagementValidation/StudioX.ToolManagementValidation.csproj" />
     <Project Path="tools/StudioX.Ag32TimingValidation/StudioX.Ag32TimingValidation.csproj" />
@@ -53,5 +55,8 @@
       Path="tools/StudioX.HdlWorkflowValidation/StudioX.HdlWorkflowValidation.csproj" />
     <Project
       Path="tools/StudioX.WorkspaceEditingValidation/StudioX.WorkspaceEditingValidation.csproj" />
+  </Folder>
+  <Folder Name="/workflow-validation/">
+    <Project Path="tools/StudioX.ProductWorkflowValidation/StudioX.ProductWorkflowValidation.csproj" />
   </Folder>
 </Solution>

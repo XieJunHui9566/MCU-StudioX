@@ -7,14 +7,25 @@ using StudioX.Foundation;
 
 public sealed partial class ProjectFileService(Editing.LocalHistoryService? history = null)
 {
-    public IReadOnlyList<ProjectEntry> List(string project, string relativeDirectory = "")
+    public IReadOnlyList<ProjectEntry> List(string project, string relativeDirectory = "", CancellationToken token = default)
+        => Enumerate(project, relativeDirectory, token).OrderByDescending(item => item.IsDirectory)
+            .ThenBy(item => item.Name, StringComparer.OrdinalIgnoreCase).ToArray();
+
+    public Task<IReadOnlyList<ProjectEntry>> ListAsync(string project, string relativeDirectory = "", CancellationToken token = default)
+        => Task.Run(() => List(project, relativeDirectory, token), token);
+
+    // 递归发现只需逐项读取；不为每个目录排序，也不在大目录中延迟响应取消。
+    public IEnumerable<ProjectEntry> Enumerate(string project, string relativeDirectory = "", CancellationToken token = default)
     {
+        token.ThrowIfCancellationRequested();
         var directory = relativeDirectory.Length == 0 ? Path.GetFullPath(project) : PathBoundary.Resolve(project, relativeDirectory);
-        return new DirectoryInfo(directory).EnumerateFileSystemInfos()
-            .Where(item => item.Name != ".git" && !item.Name.StartsWith(".studiox-copy-", StringComparison.Ordinal) && !item.Name.StartsWith(".studiox-rename-", StringComparison.Ordinal))
-            .Select(item => new ProjectEntry(item.Name, Path.GetRelativePath(project, item.FullName).Replace('\\', '/'),
-                (item.Attributes & FileAttributes.Directory) != 0, (item.Attributes & FileAttributes.ReparsePoint) != 0))
-            .OrderByDescending(item => item.IsDirectory).ThenBy(item => item.Name, StringComparer.OrdinalIgnoreCase).ToArray();
+        foreach (var item in new DirectoryInfo(directory).EnumerateFileSystemInfos())
+        {
+            token.ThrowIfCancellationRequested();
+            if (item.Name == ".git" || item.Name.StartsWith(".studiox-copy-", StringComparison.Ordinal) || item.Name.StartsWith(".studiox-rename-", StringComparison.Ordinal)) { continue; }
+            yield return new(item.Name, Path.GetRelativePath(project, item.FullName).Replace('\\', '/'),
+                (item.Attributes & FileAttributes.Directory) != 0, (item.Attributes & FileAttributes.ReparsePoint) != 0);
+        }
     }
 
     public async Task<SourceDocument> ReadAsync(string project, string relativePath, CancellationToken token = default)

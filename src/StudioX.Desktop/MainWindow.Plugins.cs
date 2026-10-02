@@ -38,6 +38,8 @@ public partial class MainWindow
         PluginManager.Attach(services.PluginManager);
         PluginManager.WorkspaceChangedAsync = ReloadPluginWorkspaceAsync;
         PluginManager.CancelCommandRequested = () => pluginInvocationCancellation?.Cancel();
+        PluginManager.ShowSettingsRequestedAsync = id => ShowPluginSettingsAsync(id);
+        PluginManager.ShowDebugRequestedAsync = id => ShowPluginDebugAdaptersAsync(id);
         services.PluginManager.Changed += PluginCatalog_Changed;
         var palette = new PluginUiCommand(() =>
         {
@@ -137,6 +139,7 @@ public partial class MainWindow
             pluginWorkspace = workspace;
             workspace.Changed += PluginWorkspace_Changed;
             AddPluginContributions(workspace.Contributions);
+            RefreshPluginContributionActions();
             await InitializePluginProductivityAsync(workspace, cancellation.Token);
             foreach (var (key, panel) in workspace.LatestPanels)
             {
@@ -365,6 +368,7 @@ public partial class MainWindow
                             pluginPanels.Remove(key);
                         }
                         RemovePluginActivity(update.PluginId);
+                        RefreshPluginContributionActions();
                         RefreshPluginCommandState();
                         if (pluginBroker is { } broker)
                         {
@@ -466,7 +470,7 @@ public partial class MainWindow
         }
         if (IsCurrentPluginProject(project, generation))
         {
-            RefreshProjectTree();
+            await RefreshProjectTreeAsync();
             if (currentProjectManifest is not null && Ag32DeviceCatalog.Find(currentProjectManifest.DeviceId)?.CanMap == true)
             {
                 await RefreshAg32PinMappingStatusAsync(CancellationToken.None);
@@ -491,6 +495,7 @@ public partial class MainWindow
 
     private async Task StopPluginWorkspaceCoreAsync()
     {
+        await ClearPluginDebugViewsAsync();
         if (pluginWorkspace is { } previous)
         {
             using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(2));
@@ -509,6 +514,7 @@ public partial class MainWindow
         pluginInvocationCancellation?.Cancel();
         var workspace = pluginWorkspace;
         pluginWorkspace = null;
+        RefreshPluginContributionActions();
         if (workspace is not null)
         {
             workspace.Changed -= PluginWorkspace_Changed;

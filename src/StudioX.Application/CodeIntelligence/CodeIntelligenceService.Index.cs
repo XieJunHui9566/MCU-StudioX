@@ -29,7 +29,7 @@ public sealed partial class CodeIntelligenceService
                 log.Enqueue("工程较大，自动索引已达到范围上限；其他文件打开后仍可分析。");
                 break;
             }
-            foreach (var item in files.List(projectRoot, directory))
+            foreach (var item in files.Enumerate(projectRoot, directory, token))
             {
                 token.ThrowIfCancellationRequested();
                 if (entries.Count >= 5000)

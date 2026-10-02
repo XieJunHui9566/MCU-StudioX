@@ -3,7 +3,11 @@ namespace StudioX.Application.Editing;
 /// <summary>后台发现文件，跳过产物和链接；文件名搜索不读取源码内容。</summary>
 public sealed class WorkspaceDiscoveryService(ProjectFileService files)
 {
-    public Task<IReadOnlyList<string>> FilesAsync(string project, string query, CancellationToken token = default) => Task.Run<IReadOnlyList<string>>(() =>
+    public async Task<IReadOnlyList<string>> FilesAsync(string project, string query, CancellationToken token = default)
+        => await (await CreateIndexAsync(project, token).ConfigureAwait(false)).SearchAsync(query, token).ConfigureAwait(false);
+
+    /// <summary>快开窗口复用一次完整发现结果；重新打开窗口时重新发现，避免长期缓存漏掉外部修改。</summary>
+    public Task<WorkspaceFileIndex> CreateIndexAsync(string project, CancellationToken token = default) => Task.Run(() =>
     {
         var result = new List<string>();
         var pending = new Stack<string>();
@@ -17,7 +21,7 @@ public sealed class WorkspaceDiscoveryService(ProjectFileService files)
             {
                 throw new InvalidOperationException("目录过多，请缩小工程范围。");
             }
-            foreach (var entry in files.List(project, directory))
+            foreach (var entry in files.Enumerate(project, directory, token))
             {
                 if (entry.IsLink)
                 {
@@ -25,19 +29,16 @@ public sealed class WorkspaceDiscoveryService(ProjectFileService files)
                 }
                 if (entry.IsDirectory)
                 {
-                    if (!excluded.Contains(entry.Name))
+                    if (!excluded.Contains(entry.Name) && !entry.Name.StartsWith("cmake-build-", StringComparison.OrdinalIgnoreCase))
                     {
                         pending.Push(entry.RelativePath);
                     }
                     continue;
                 }
-                if (entry.RelativePath.Contains(query, StringComparison.OrdinalIgnoreCase))
-                {
-                    result.Add(entry.RelativePath);
-                }
+                if (result.Count >= 100000) { throw new InvalidOperationException("快速打开最多发现 100,000 个文件，请缩小工程范围。"); }
+                result.Add(entry.RelativePath);
             }
         }
-        return result.OrderBy(p => !Path.GetFileName(p).StartsWith(query, StringComparison.OrdinalIgnoreCase))
-            .ThenBy(p => p.Length).ThenBy(p => p, StringComparer.OrdinalIgnoreCase).Take(300).ToArray();
+        return new WorkspaceFileIndex(result.ToArray());
     }, token);
 }

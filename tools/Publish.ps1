@@ -1,10 +1,15 @@
-param([string]$OutputDirectory, [string]$RuntimeAssetsDirectory, [string]$ReleaseVersion, [string]$BuildArtifactsDirectory, [string]$DevicePackCatalogDirectory, [switch]$ExcludePlugins)
+param([string]$OutputDirectory, [string]$RuntimeAssetsDirectory, [string]$ReleaseVersion, [string]$BuildArtifactsDirectory, [string]$DevicePackCatalogDirectory, [switch]$ExcludePlugins, [ValidateSet('full','base')][string]$DistributionProfile='full', [string]$DistributionCatalogDirectory)
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
+if ($DistributionProfile -eq 'base') {
+    if (!$OutputDirectory) { throw 'Specify a new OutputDirectory for base publication.' }
+    & (Join-Path $PSScriptRoot 'Publish-Base.ps1') -OutputDirectory $OutputDirectory -ReleaseVersion $ReleaseVersion -BuildArtifactsDirectory $BuildArtifactsDirectory -DistributionCatalogDirectory $DistributionCatalogDirectory
+    return
+}
 if (!$ReleaseVersion)
 {
-    $properties = ([xml](Get-Content -LiteralPath (Join-Path $projectRoot 'Directory.Build.props') -Raw)).Project.PropertyGroup
-    $ReleaseVersion = if ($properties.ProductVersion) { $properties.ProductVersion } else { $properties.Version }
+    $properties = [xml](Get-Content -LiteralPath (Join-Path $projectRoot 'Directory.Build.props') -Raw)
+    $ReleaseVersion = $properties.SelectSingleNode('//ProductVersion').InnerText
 }
 . (Join-Path $PSScriptRoot 'Release-Version.ps1')
 $releaseIdentity = Get-StudioXReleaseVersion $ReleaseVersion
@@ -374,9 +379,11 @@ $guide.Replace('{{VERSION}}', $ReleaseVersion) | Set-Content -LiteralPath (Join-
     channel              ='preview';
     platform             ='win-x64';
     updateMode           ='installer';
+    distributionProfile  ='full';
     userDataDirectory    ='%LOCALAPPDATA%\MCUStudioX';
     devicePacksDirectory ='device-packs';
     bundledPlugins       = !$ExcludePlugins.IsPresent
     devicePackCatalogSha256 = (Get-FileHash -LiteralPath (Join-Path $packOutput 'index.json') -Algorithm SHA256).Hash.ToLowerInvariant()
 } | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $output 'release.json') -Encoding utf8
+if ($DistributionCatalogDirectory) { & (Join-Path $PSScriptRoot 'Copy-DistributionCatalog.ps1') -SourceDirectory $DistributionCatalogDirectory -OutputDirectory (Join-Path $output 'runtime/distribution') }
 Write-Output $output

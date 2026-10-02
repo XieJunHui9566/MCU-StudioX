@@ -19,7 +19,7 @@ public partial class MainWindow
             checks.Add(label);
         }
         var catalog = services.Help;
-        Check(catalog.Articles.Count == 32 && catalog.Categories.Count == 6, "32 complete offline topics in six categories");
+        Check(catalog.Articles.Count == 37 && catalog.Categories.Count == 6, "37 complete offline topics in six categories");
         foreach (var article in catalog.Articles)
         {
             Check(article.Markdown.Length > 400 && article.Markdown.Split('\n').Count(line => line.StartsWith("## ", StringComparison.Ordinal)) >= 4, article.Id + " has substantive instructions");
@@ -29,7 +29,7 @@ public partial class MainWindow
         Check(catalog.Search("ESP-IDF XTENSA_GNU_CONFIG").First().Id == "esp-idf-errors", "multi-term error search finds the ESP-IDF procedure");
         Check(catalog.Search("位与").First().Id == "programmer-assistant", "Chinese function search finds programmer assistant");
         Check(catalog.Search("CTRL+S").First().Id == "editor", "keyboard search ignores case");
-        Check(catalog.Search("", "调试与设备").Count == 5, "category filter shows only matching device topics");
+        Check(catalog.Search("", "调试与设备").Count == 6, "category filter shows only matching device topics including connection guidance");
         Check(catalog.Search("no_such_help_topic_917").Count == 0, "unknown terms have a real empty state");
         Check(catalog.DiagnosticTopic("CMake Error: git-data/head-ref") == "esp-idf-errors", "first-commit failure links to the correct article");
         Check(TroubleshootingService.Explain("target=esp32s3 undefined reference to uart_init").Title == "链接符号缺失或重复", "compiler target metadata does not masquerade as a hardware failure");

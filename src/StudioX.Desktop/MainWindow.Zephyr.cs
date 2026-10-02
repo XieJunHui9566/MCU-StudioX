@@ -26,7 +26,7 @@ public partial class MainWindow
 
     private async Task ShowZephyrBoardDevicetreeAsync(string relative, CancellationToken token)
     {
-        if (FindProjectNode(relative) is { } node)
+        if ((await FindProjectNodeAsync(relative, token)) is { } node)
         {
             node.IsSelected = true;
             // 只滚动到节点左侧，避免长 DTS 文件名把窄工程树横向推到末尾。

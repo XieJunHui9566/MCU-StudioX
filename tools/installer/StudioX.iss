@@ -8,6 +8,9 @@
 #ifndef AppFileVersion
   #define AppFileVersion AppVersion
 #endif
+#ifndef DistributionProfile
+  #define DistributionProfile "full"
+#endif
 #ifndef ProductId
   #define ProductId "{B8050FBC-2DE2-43F4-B839-F0E90522E671}"
 #endif
@@ -55,7 +58,16 @@ Compression=lzma2/normal
 SolidCompression=yes
 LZMANumBlockThreads=4
 LZMADictionarySize=32768
+#ifdef ValidationNoCompression
+; 完整 SDK 的未压缩数据超出单个 EXE 上限，仅隔离验收使用旁置数据文件。
+DiskSpanning=yes
+DiskSliceSize=max
+#endif
+#if DistributionProfile == "base"
+OutputBaseFilename=MCU-StudioX-{#AppVersion}-win-x64-Base-Setup
+#else
 OutputBaseFilename=MCU-StudioX-{#AppVersion}-win-x64-Setup
+#endif
 InfoBeforeFile=install-info.txt
 
 [Languages]

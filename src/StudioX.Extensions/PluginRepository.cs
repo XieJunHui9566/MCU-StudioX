@@ -46,7 +46,7 @@ public sealed class PluginRepository
         ImportAsync(archive, null, token);
 
     public async Task<InstalledPlugin> ImportAsync(string archive,
-        Func<PluginManifest, CancellationToken, Task>? beforePublish, CancellationToken token = default)
+        Func<PluginManifest, CancellationToken, Task>? beforePublish, CancellationToken token = default, bool allowDowngrade = false)
     {
         CheckAncestors(root);
         Directory.CreateDirectory(root);
@@ -67,7 +67,8 @@ public sealed class PluginRepository
                     throw new StudioXException("PLUGIN_ID", "已有安装目录与插件 ID 不一致。");
                 }
                 var comparison = PackVersion.Compare(manifest.Version, current.Version);
-                if (comparison < 0)
+                // 只有应用服务校验用户选择的回退归档后才可放行降级；内容校验与原子替换仍完全执行。
+                if (comparison < 0 && !allowDowngrade)
                 {
                     throw new StudioXException("PLUGIN_DOWNGRADE", "拒绝以旧版本覆盖插件。");
                 }

@@ -54,7 +54,7 @@ public sealed partial class PluginWorkspaceSession
         using var deadline = CancellationTokenSource.CreateLinkedTokenSource(token);
         deadline.CancelAfter(TimeSpan.FromSeconds(5));
         var response = await InvokeAsync(pluginId, "debugAdapter", adapterId, snapshot, deadline.Token);
-        var panel = response.Deserialize<PluginPanelDefinition>(JsonStore.Options) ?? throw new StudioXException("PLUGIN_DEBUG", "调试适配器返回为空。");
+        var panel = response.Deserialize<PluginPanelDefinition>(PanelOptions) ?? throw new StudioXException("PLUGIN_DEBUG", "调试适配器返回为空。");
         PluginContributionValidator.ValidatePanel(panel, new HashSet<string>());
         return panel;
     }

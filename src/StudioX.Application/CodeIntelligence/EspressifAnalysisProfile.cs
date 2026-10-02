@@ -6,6 +6,9 @@ using StudioX.Foundation;
 /// <summary>把原生 SDK 参数转换成语言服务参数；转换结果不参与真实编译或 ABI 验证。</summary>
 internal sealed record EspressifAnalysisProfile(string Target, string HeaderRoot, string[] Flags, string Description)
 {
+    // 语言提示只需要入口元数据；跳过大型发行哈希表，完整校验仍由工具目录服务负责。
+    private sealed record AnalysisTools(int FormatVersion, string Id, string Version, string Host, string CompilerId,
+        Dictionary<string, string> Executables, string? Purpose);
     public static bool IsXtensa(string target) => target is "esp32" or "esp32s3" or "esp8266";
 
     public static async Task<EspressifAnalysisProfile> ReadAsync(string runtime, string projectRoot,
@@ -13,12 +16,14 @@ internal sealed record EspressifAnalysisProfile(string Target, string HeaderRoot
     {
         var settings = project.Espressif!;
         var root = PathBoundary.Resolve(runtime, $"toolsets/{project.ToolsetId}/{project.ToolsetVersion}");
-        var manifest = await JsonStore.ReadAsync<ToolsetManifest>(Path.Combine(root, "toolset.json"), token).ConfigureAwait(false);
-        if (manifest.FormatVersion != 1 || manifest.Id != project.ToolsetId || manifest.Version != settings.SdkVersion ||
-            manifest.CompilerId != project.CompilerId || manifest.Purpose != settings.Framework)
+        var metadata = await JsonStore.ReadAsync<AnalysisTools>(Path.Combine(root, "toolset.json"), token).ConfigureAwait(false);
+        if (metadata.FormatVersion != 1 || metadata.Id != project.ToolsetId || metadata.Version != settings.SdkVersion ||
+            metadata.CompilerId != project.CompilerId || metadata.Purpose != settings.Framework || metadata.Host != "win-x64" || metadata.Executables is null)
         {
             throw new StudioXException("LANGUAGE_ESPRESSIF_RUNTIME", "SDK 头文件与工程锁定的 Espressif 工具集不一致。");
         }
+        var manifest = new ToolsetManifest(metadata.FormatVersion, metadata.Id, metadata.Version, metadata.Host,
+            metadata.CompilerId, metadata.Executables, [], Purpose: metadata.Purpose);
         // 这里只读取头文件，不执行 GCC 或 SDK 脚本；所有资源路径仍由工具集边界约束。
         var tools = new ResolvedToolset(manifest, root, "").ForEspressifTarget(settings.Target);
         var compilerRoot = Path.GetDirectoryName(Path.GetDirectoryName(tools.Tool("gcc")))!;

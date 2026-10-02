@@ -30,8 +30,16 @@ public partial class MainWindow
         Add(ToolsRootMenu, "工具环境管理…", "", () => !projectActionsBusy, ShowToolEnvironmentAsync);
         Add(ToolsRootMenu, "工具占用与升级管理…", "", () => !projectActionsBusy, () => ShowToolManagementAsync());
         Add(ToolsRootMenu, "工程健康检查…", "", () => !projectActionsBusy, () => ShowProjectHealthAsync());
-        Add(ToolsRootMenu, "插件设置…", "", () => pluginWorkspace is not null, ShowPluginSettingsAsync);
-        Add(ToolsRootMenu, "调试快照扩展…", "", () => pluginWorkspace is not null, ShowPluginDebugAdaptersAsync);
+        Add(DebugTopMenu, "固件故障分析…", "", () => !projectActionsBusy, ShowFaultAnalysisAsync);
+        Add(DebugTopMenu, "调试连接记录…", "", () => true, () =>
+        {
+            new DebugConnectionWindow(services.DebugLaunch, "最近一次连接与恢复记录", false, (_, _) => Task.CompletedTask, review: true) { Owner = this }.ShowDialog();
+            return Task.CompletedTask;
+        });
+        Add(ToolsRootMenu, "构建历史与对比…", "", () => projectDirectory is not null && !projectActionsBusy, ShowBuildHistoryAsync);
+        Add(ToolsRootMenu, "软件与组件分发…", "", () => !projectActionsBusy, ShowDistributionAsync);
+        Add(ToolsRootMenu, "插件设置…", "", () => pluginWorkspace is not null, () => ShowPluginSettingsAsync());
+        Add(ToolsRootMenu, "调试快照扩展…", "", () => pluginWorkspace is not null, () => ShowPluginDebugAdaptersAsync());
         Add(HelpRootMenu, "帮助手册…", "F1", () => true, () => ShowHelpAsync());
         Add(HelpRootMenu, "快捷键速查…", "", () => true, () => ShowHelpAsync("shortcuts"));
         Add(HelpRootMenu, "故障处理指南…", "", () => true, () => ShowHelpAsync("troubleshooting"));
@@ -108,13 +116,29 @@ public partial class MainWindow
         {
             return;
         }
+        using var discoveryLifetime = new CancellationTokenSource();
+        Task<WorkspaceFileIndex>? fileIndex = null;
         var picker = new QuickPickWindow(symbols ? "搜索工程符号" : "快速打开文件", async (query, token) => symbols
             ? (await services.Intelligence.SearchSymbolsAsync(query, token)).Select(l => new QuickPickItem(l.DisplayPath, $"第 {l.Range.Start.Line + 1} 行", l)).ToArray()
-            : (await services.WorkspaceDiscovery.FilesAsync(project, query, token)).Select(p => new QuickPickItem(Path.GetFileName(p), p, p)).ToArray())
+            : (await (await (fileIndex ??= services.WorkspaceDiscovery.CreateIndexAsync(project, discoveryLifetime.Token)).WaitAsync(token))
+                .SearchAsync(query, token)).Select(p => new QuickPickItem(Path.GetFileName(p), p, p)).ToArray())
         {
             Owner = this
         };
-        if (picker.ShowDialog() != true || project != projectDirectory)
+        bool accepted;
+        try { accepted = picker.ShowDialog() == true; }
+        finally
+        {
+            // 输入取消只撤销旧查询，关闭窗口才停止共享扫描；任务结束前不释放其取消源。
+            discoveryLifetime.Cancel();
+            if (fileIndex is not null)
+            {
+                try { await fileIndex; }
+                catch (OperationCanceledException) when (discoveryLifetime.IsCancellationRequested) { }
+                catch (Exception ex) { Log(ex.ToString()); }
+            }
+        }
+        if (!accepted || project != projectDirectory)
         {
             return;
         }

@@ -30,7 +30,7 @@ public partial class MainWindow
         await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
         Render(this, Path.Combine(directory, "welcome.png"));
         await OpenFromCommandLineAsync(fixture);
-        if (activeDocument?.RelativePath != "Core/Src/main.c" || !services.Intelligence.IsReady || !BuildButton.IsEnabled || !DownloadButton.IsEnabled || FindProjectNode("Core/Src")?.IsExpanded != true)
+        if (activeDocument?.RelativePath != "Core/Src/main.c" || !services.Intelligence.IsReady || !BuildButton.IsEnabled || !DownloadButton.IsEnabled || (await FindProjectNodeAsync("Core/Src"))?.IsExpanded != true)
         {
             throw new InvalidOperationException("Imported project did not open correctly: " + Status.Text);
         }

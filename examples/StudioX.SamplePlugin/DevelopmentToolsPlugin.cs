@@ -51,7 +51,8 @@ public sealed class DevelopmentToolsPlugin : IStudioXPlugin
         }
         if (kind == "debugAdapter" && id == "snapshot")
         {
-            return JsonSerializer.SerializeToElement(new PluginPanelDefinition("snapshot", "通用调试快照", [new("raw", "text", "宿主快照（不启动连接）", JsonSerializer.SerializeToElement(arguments.GetRawText()))]), new JsonSerializerOptions(JsonSerializerDefaults.Web));
+            cancellationToken.ThrowIfCancellationRequested();
+            return JsonSerializer.SerializeToElement(DebugSnapshotPanel.Create(arguments, showDetails), new JsonSerializerOptions(JsonSerializerDefaults.Web));
         }
         if (kind == "command" && id == "status")
         {

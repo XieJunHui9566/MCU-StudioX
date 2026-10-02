@@ -79,7 +79,7 @@ public partial class MainWindow
             if (copied || directoryCreated)
             {
                 // 目录与外部库可能包含二进制资源；刷新工程树和语言索引即可。
-                RefreshProjectTree(path);
+                await RefreshProjectTreeAsync(path);
                 Status.Text = copied ? $"AI 已复制 {path} 到工程，工程树已更新。"
                     : $"AI 已创建目录 {path}，工程树已更新。";
                 try
@@ -131,7 +131,7 @@ public partial class MainWindow
             ShowSource(disk);
         }
 
-        RefreshProjectTree(created ? path : null);
+        await RefreshProjectTreeAsync(created ? path : null);
         Status.Text = $"AI 已写入 {path}，编辑器和工程树已更新。";
         try
         {
@@ -182,7 +182,7 @@ public partial class MainWindow
         {
             return needsReview;
         }
-        RefreshProjectTree();
+        await RefreshProjectTreeAsync();
         try
         {
             await RefreshExplorerLanguageAsync(CancellationToken.None);

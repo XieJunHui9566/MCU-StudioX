@@ -3,6 +3,7 @@ param(
     [Parameter(Mandatory = $true)][string]$OutputDirectory,
     [string]$PreviousVersion = '0.1.0',
     [string]$PayloadDirectory,
+    [switch]$NoCompression,
     [string]$CompilerPath = (Join-Path $PSScriptRoot '../.artifacts/installer-tools/InnoSetup-7.1.0/ISCC.exe')
 )
 $ErrorActionPreference = 'Stop'
@@ -48,12 +49,14 @@ if (Test-Path -LiteralPath $registry)
     throw 'MCU StudioX is already installed for this user; do not alter an existing installation during validation.'
 }
 New-Item -ItemType Directory -Path $root | Out-Null
-@{ productId = $productId; isolated = [bool]$PayloadDirectory; shippingInstaller = $Installer; version = $releaseVersion } |
+@{ productId = $productId; isolated = [bool]$PayloadDirectory; shippingInstaller = $Installer; version = $releaseVersion; compressionDisabled = [bool]$NoCompression } |
     ConvertTo-Json | Set-Content -LiteralPath (Join-Path $root 'validation-identity.json') -Encoding utf8
 if ($PayloadDirectory)
 {
     $isolatedOutput = Join-Path $root 'isolated-installer'
-    & $CompilerPath --quiet-progress "--define=AppVersion=$releaseVersion" "--define=AppFileVersion=$($releaseIdentity.FileVersion)" "--define=PayloadDirectory=$PayloadDirectory" "--output-dir=$isolatedOutput" @compilerArguments (Join-Path $PSScriptRoot 'installer/StudioX.iss')
+    # 隔离验收可关闭压缩，避免重复压缩完整 SDK；正式发行仍使用默认压缩配置。
+    $compressionArguments = if ($NoCompression) { @('--no-compression', '--define=ValidationNoCompression=1') } else { @() }
+    & $CompilerPath --quiet-progress @compressionArguments "--define=AppVersion=$releaseVersion" "--define=AppFileVersion=$($releaseIdentity.FileVersion)" "--define=PayloadDirectory=$PayloadDirectory" "--output-dir=$isolatedOutput" @compilerArguments (Join-Path $PSScriptRoot 'installer/StudioX.iss')
     if ($LASTEXITCODE -ne 0) { throw 'Cannot compile the isolated full-payload installer.' }
     $Installer = Join-Path $isolatedOutput "MCU-StudioX-$releaseVersion-win-x64-Setup.exe"
 }

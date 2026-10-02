@@ -12,7 +12,7 @@
     <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
     <!-- 产品后缀用于发行修订；PE 文件与程序集版本必须保持四段数字。 -->
     <Version>0.2.5.4</Version>
-    <ProductVersion Condition="'$(ProductVersion)' == ''">0.2.5.4A</ProductVersion>
+    <ProductVersion Condition="'$(ProductVersion)' == ''">0.2.5.4B</ProductVersion>
     <InformationalVersion>$(ProductVersion)</InformationalVersion>
   </PropertyGroup>
   <ItemGroup>

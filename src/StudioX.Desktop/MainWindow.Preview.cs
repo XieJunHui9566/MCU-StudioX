@@ -20,24 +20,11 @@ public partial class MainWindow
             }
         }
         await OpenProjectAsync(project, CancellationToken.None);
-        var root = (System.Windows.Controls.TreeViewItem)ProjectTree.Items[0];
-        void Expand(System.Windows.Controls.TreeViewItem node, string path)
+        if (await FindProjectNodeAsync("device/sdk/startup") is { } startup)
         {
-            foreach (var child in node.Items.OfType<System.Windows.Controls.TreeViewItem>())
-            {
-                if (child.Tag is not ProjectEntry entry || !entry.IsDirectory || !path.StartsWith(entry.RelativePath, StringComparison.Ordinal))
-                {
-                    continue;
-                }
-                child.IsExpanded = true;
-                if (path != entry.RelativePath)
-                {
-                    Expand(child, path);
-                }
-                return;
-            }
+            startup.IsExpanded = true;
+            await LoadChildrenAsync(startup);
         }
-        Expand(root, "device/sdk/startup");
         foreach (var theme in new[] { ThemeService.Dark, ThemeService.Light })
         {
             ApplyTheme(theme);

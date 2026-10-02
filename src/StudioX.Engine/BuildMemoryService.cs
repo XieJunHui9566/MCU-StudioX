@@ -8,10 +8,10 @@ public sealed class BuildMemoryService(ToolsetCatalog? toolsets = null)
 {
     internal const string SnapshotPath = ".build/studiox-memory.json";
     private const int AnalysisVersion = 6;
-    public Task<BuildMemoryReport> ReadAsync(string directory, CancellationToken token = default) =>
-        Task.Run(() => ReadCoreAsync(Path.GetFullPath(directory), token), token);
+    public Task<BuildMemoryReport> ReadAsync(string directory, CancellationToken token = default, IProgress<string>? progress = null) =>
+        Task.Run(() => ReadCoreAsync(Path.GetFullPath(directory), token, progress), token);
 
-    private async Task<BuildMemoryReport> ReadCoreAsync(string root, CancellationToken token)
+    private async Task<BuildMemoryReport> ReadCoreAsync(string root, CancellationToken token, IProgress<string>? progress)
     {
         try
         {
@@ -24,13 +24,16 @@ public sealed class BuildMemoryService(ToolsetCatalog? toolsets = null)
             {
                 return new([], "Zephyr 实验工程运行时尚未准备，暂无构建内存统计。");
             }
+            // 没有构建记录和统计缓存时不启动整套 SDK 自检；已有缓存仍按原规则完整验证。
+            var receiptPath = PathBoundary.Resolve(root, BuildReceipt.RelativePath);
             var snapshotPath = PathBoundary.Resolve(root, SnapshotPath);
+            if (!File.Exists(receiptPath) && !File.Exists(snapshotPath)) { return new([], "编译成功后显示各存储区占用。"); }
             ResolvedToolset? nativeTools = null;
             string? sourceStamp = null;
             if (project.Espressif is not null)
             {
                 if (toolsets is null) { return new([], "SDK 内存统计尚未绑定内置工具目录。"); }
-                nativeTools = await toolsets.ResolveAsync(project.ToolsetId, project.ToolsetVersion, project.CompilerId, token);
+                nativeTools = await toolsets.ResolveAsync(project.ToolsetId, project.ToolsetVersion, project.CompilerId, token, progress: progress);
                 sourceStamp = await Debugging.DebugSourceStamp.ComputeAsync(root, token);
             }
             // 小型结果缓存只属于此次构建。仅配置 CMake 不清除它；实际编译开始时即清除，失败后不回显旧百分比。
@@ -44,16 +47,9 @@ public sealed class BuildMemoryService(ToolsetCatalog? toolsets = null)
                     return snapshot.Report;
                 }
             }
-            var receiptPath = PathBoundary.Resolve(root, BuildReceipt.RelativePath);
-            if (!File.Exists(receiptPath))
-            {
-                return new([], "编译成功后显示各存储区占用。");
-            }
+            if (!File.Exists(receiptPath)) { return new([], "编译成功后显示各存储区占用。"); }
             var receipt = await JsonStore.ReadAsync<BuildReceipt>(receiptPath, token);
-            if (receipt.Project != project)
-            {
-                return new([], "工程配置已变化，请重新编译。");
-            }
+            if (receipt.Project != project) { return new([], "工程配置已变化，请重新编译。"); }
             if (nativeTools is not null && (receipt.ToolFingerprint != nativeTools.Fingerprint || receipt.SourceStamp != sourceStamp))
             {
                 return new([], "工程源码、SDK 配置或工具集已变化，请重新编译后查看统计。");

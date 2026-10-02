@@ -15,12 +15,20 @@ using StudioX.Packages;
 public sealed class WorkbenchService : IAsyncDisposable
 {
     public Help.HelpContentService Help { get; } = new();
+    public Onboarding.FirstProjectGuideService FirstProjectGuide { get; }
     public Health.ProjectHealthService ProjectHealth { get; }
     public Tools.ToolManagementService ToolManagement { get; }
+    public DebugLaunchService DebugLaunch { get; }
+    public FaultAnalysisService Faults { get; }
+    public BuildHistoryService BuildHistory { get; }
+    public Distribution.DistributionService Distribution { get; }
+    public Components.ComponentService Components { get; }
     public WorkbenchService(string runtimeDirectory, string dataDirectory)
     {
         RuntimeDirectory = Path.GetFullPath(runtimeDirectory);
         DataDirectory = Path.GetFullPath(dataDirectory);
+        Distribution = new(DataDirectory);
+        FirstProjectGuide = new(DataDirectory);
         LocalHistory = new Editing.LocalHistoryService(DataDirectory);
         Files = new ProjectFileService(LocalHistory);
         WorkspaceDiscovery = new Editing.WorkspaceDiscoveryService(Files);
@@ -42,6 +50,7 @@ public sealed class WorkbenchService : IAsyncDisposable
         ToolEnvironment = new ToolEnvironmentService(Toolsets);
         Builds = new BuildService(Toolsets, Path.Combine(DataDirectory, "licenses", "ag32-pin-mapping"));
         BuildMemory = new BuildMemoryService(Toolsets);
+        BuildHistory = new(DataDirectory, BuildMemory);
         LvglPreview = new Lvgl.LvglPreviewService(Toolsets, DataDirectory);
         Ag32Logic = new Ag32LogicWorkflowService();
         HdlSchematic = new HdlSchematicService(RuntimeDirectory);
@@ -53,6 +62,9 @@ public sealed class WorkbenchService : IAsyncDisposable
         EspressifDownloads = new EspressifDownloadService(new EspressifFlashService(Toolsets), Devices);
         StcIsp = new StcIspService(Toolsets, RuntimeDirectory, DataDirectory);
         Debugger = new DebugSessionService(DataDirectory);
+        Components = new(() => Debugger.IsActive, Builds);
+        Faults = new(Toolsets, Debugger);
+        DebugLaunch = new(Debugger, Downloads);
         ProjectHealth = new Health.ProjectHealthService(Toolsets, Builds, () => Debugger.IsActive);
         OpenOcdPlot = new OpenOcdPlot.OpenOcdPlotService(Debugger);
         Debugger.Changed += OpenOcdPlot.StopIfSessionEnded;
@@ -324,6 +336,7 @@ public sealed class WorkbenchService : IAsyncDisposable
     {
         var cleanup = new ResourceCleanup();
         cleanup.Run(EditorSessions.Dispose);
+        cleanup.Run(Distribution.Dispose);
         await cleanup.RunAsync(PluginManager.DisposeAsync);
         cleanup.Run(AiChat.Dispose);
         cleanup.Run(RemotePacks.Dispose);

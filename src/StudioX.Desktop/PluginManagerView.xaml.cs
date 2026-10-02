@@ -14,6 +14,9 @@ public partial class PluginManagerView : UserControl
     private CancellationTokenSource? operation;
     private Task pendingOperation = Task.CompletedTask;
     private bool stopped;
+    private readonly HashSet<string> settingsPlugins = [], debugPlugins = [];
+    public Func<string, Task>? ShowSettingsRequestedAsync { get; set; }
+    public Func<string, Task>? ShowDebugRequestedAsync { get; set; }
     public Func<CancellationToken, Task>? WorkspaceChangedAsync
     {
         get; set;
@@ -46,10 +49,41 @@ public partial class PluginManagerView : UserControl
 
     private void ShowCatalog()
     {
-        CatalogList.ItemsSource = entries.Select(entry => new PluginCatalogRow(entry, operation is not null)).ToArray();
-        EmptyHint.Visibility = entries.Length == 0 ? Visibility.Visible : Visibility.Collapsed;
+        if (CatalogList is null || CatalogFilter is null || CapabilityFilter is null) { return; }
+        var query = CatalogFilter.Text.Trim();
+        var capability = (CapabilityFilter.SelectedItem as ComboBoxItem)?.Tag as string ?? "";
+        var rows = entries.Select(entry => new PluginCatalogRow(entry, operation is not null || stopped, settingsPlugins.Contains(entry.Id), debugPlugins.Contains(entry.Id)))
+            .Where(row => (capability.Length == 0 || row.Entry.Capabilities.Contains(capability)) &&
+                (row.DisplayName + " " + row.Entry.Id + " " + row.Description + " " + row.CapabilityText).Contains(query, StringComparison.OrdinalIgnoreCase)).ToArray();
+        CatalogList.ItemsSource = rows;
+        CatalogSummary.Text = $"显示 {rows.Length} / {entries.Length} 个插件";
+        EmptyHint.Text = entries.Length == 0 ? "未安装工作台插件。" : "没有匹配的插件，可清空筛选条件。";
+        EmptyHint.Visibility = rows.Length == 0 ? Visibility.Visible : Visibility.Collapsed;
         ImportButton.IsEnabled = RefreshButton.IsEnabled = operation is null && !stopped;
         CancelButton.IsEnabled = operation is not null;
+    }
+
+    public void SetContributions(IReadOnlyList<PluginActiveContribution> contributions, Func<string, bool> running)
+    {
+        settingsPlugins.Clear();
+        debugPlugins.Clear();
+        foreach (var plugin in contributions.Where(p => running(p.Id)))
+        {
+            if (plugin.Contribution.Settings.Length > 0) { settingsPlugins.Add(plugin.Id); }
+            if (plugin.Contribution.DebugAdapters.Length > 0) { debugPlugins.Add(plugin.Id); }
+        }
+        ShowCatalog();
+    }
+
+    private void CatalogFilter_TextChanged(object sender, TextChangedEventArgs e) => ShowCatalog();
+    private void CapabilityFilter_SelectionChanged(object sender, SelectionChangedEventArgs e) => ShowCatalog();
+    private async void Settings_Click(object sender, RoutedEventArgs e) => await ShowContributionAsync(sender, ShowSettingsRequestedAsync);
+    private async void Debug_Click(object sender, RoutedEventArgs e) => await ShowContributionAsync(sender, ShowDebugRequestedAsync);
+    private async Task ShowContributionAsync(object sender, Func<string, Task>? action)
+    {
+        if (operation is not null || stopped || action is null || (sender as Button)?.Tag is not PluginCatalogRow row) { return; }
+        try { await action(row.Entry.Id); }
+        catch (Exception error) { Log(error.ToString()); OperationStatus.Text = "插件入口打开失败：" + error.Message; }
     }
 
     private async void Import_Click(object sender, RoutedEventArgs e)

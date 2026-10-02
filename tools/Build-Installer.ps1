@@ -4,14 +4,16 @@ param(
     [string]$OutputDirectory,
     [string]$DevicePackCatalogDirectory,
     [switch]$ExcludePlugins,
+    [ValidateSet('full','base')][string]$DistributionProfile='full',
+    [string]$DistributionCatalogDirectory,
     [string]$CompilerPath = (Join-Path $PSScriptRoot '../.artifacts/installer-tools/InnoSetup-7.1.0/ISCC.exe')
 )
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
 if (!$ReleaseVersion)
 {
-    $properties = ([xml](Get-Content -LiteralPath (Join-Path $projectRoot 'Directory.Build.props') -Raw)).Project.PropertyGroup
-    $ReleaseVersion = if ($properties.ProductVersion) { $properties.ProductVersion } else { $properties.Version }
+    $properties = [xml](Get-Content -LiteralPath (Join-Path $projectRoot 'Directory.Build.props') -Raw)
+    $ReleaseVersion = $properties.SelectSingleNode('//ProductVersion').InnerText
 }
 . (Join-Path $PSScriptRoot 'Release-Version.ps1')
 $releaseIdentity = Get-StudioXReleaseVersion $ReleaseVersion
@@ -36,7 +38,7 @@ if ($LASTEXITCODE -ne 0 -or "$compilerVersion" -notmatch '7\.1\.0')
 if (!$PayloadDirectory)
 {
     $PayloadDirectory = Join-Path $projectRoot ('.artifacts/installer-payload-' + $ReleaseVersion + '-' + [Guid]::NewGuid().ToString('N'))
-    & (Join-Path $PSScriptRoot 'Publish.ps1') -OutputDirectory $PayloadDirectory -ReleaseVersion $ReleaseVersion -DevicePackCatalogDirectory $DevicePackCatalogDirectory -ExcludePlugins:$ExcludePlugins
+    & (Join-Path $PSScriptRoot 'Publish.ps1') -OutputDirectory $PayloadDirectory -ReleaseVersion $ReleaseVersion -DevicePackCatalogDirectory $DevicePackCatalogDirectory -ExcludePlugins:$ExcludePlugins -DistributionProfile $DistributionProfile -DistributionCatalogDirectory $DistributionCatalogDirectory
 }
 $payload = [IO.Path]::GetFullPath($PayloadDirectory)
 if ($ExcludePlugins -and (Test-Path -LiteralPath (Join-Path $payload 'runtime/plugins'))) {
@@ -48,7 +50,8 @@ if ($release.version -ne $ReleaseVersion -or (Get-Item -LiteralPath $executable)
 {
     throw 'Payload and installer versions do not match.'
 }
-foreach ($id in @('agm.agrv', 'arm.gnu', 'riscv.xpack', 'wch.riscv'))
+if (($release.distributionProfile -and $release.distributionProfile -ne $DistributionProfile) -or (!$release.distributionProfile -and $DistributionProfile -ne 'full')) { throw 'Payload distribution profile differs from the requested installer profile.' }
+foreach ($id in $(if ($DistributionProfile -eq 'full') { @('agm.agrv', 'arm.gnu', 'riscv.xpack', 'wch.riscv') } else { @() }))
 {
     if (!(Test-Path -LiteralPath (Join-Path $payload "runtime/toolsets/$id/1.0.0/toolset.json")))
     {
@@ -83,13 +86,13 @@ $hashes | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath (Join-Path $payload
 $script = Join-Path $PSScriptRoot 'installer/StudioX.iss'
 $log = Join-Path $output 'installer-build.log'
 [IO.File]::WriteAllText($log, '')
-& $CompilerPath --quiet-progress "--define=AppVersion=$ReleaseVersion" "--define=AppFileVersion=$($releaseIdentity.FileVersion)" "--define=PayloadDirectory=$payload" "--output-dir=$output" $script 2>&1 | Tee-Object -FilePath $log
+& $CompilerPath --quiet-progress "--define=AppVersion=$ReleaseVersion" "--define=AppFileVersion=$($releaseIdentity.FileVersion)" "--define=DistributionProfile=$DistributionProfile" "--define=PayloadDirectory=$payload" "--output-dir=$output" $script 2>&1 | Tee-Object -FilePath $log
 if ($LASTEXITCODE -ne 0)
 {
     throw 'Installer compilation failed; see installer-build.log.'
 }
 Add-Content -LiteralPath $log -Value "Inno Setup 7.1.0 compilation succeeded for MCU StudioX $ReleaseVersion."
-$setup = Join-Path $output "MCU-StudioX-$ReleaseVersion-win-x64-Setup.exe"
+$setup = Join-Path $output $(if ($DistributionProfile -eq 'base') { "MCU-StudioX-$ReleaseVersion-win-x64-Base-Setup.exe" } else { "MCU-StudioX-$ReleaseVersion-win-x64-Setup.exe" })
 if (!(Test-Path -LiteralPath $setup))
 {
     throw 'Compiler did not produce the installer.'

@@ -8,6 +8,7 @@ public sealed partial class CodeIntelligenceService
 {
     private sealed record ImportedAnalysis(string Directory, string File, string[] Arguments);
     private readonly Dictionary<string, ImportedAnalysis> importedCommands = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, ImportedAnalysis> inferredCommands = new(StringComparer.OrdinalIgnoreCase);
     private string AnalysisDirectory(string path) => ImportedCommand(path)?.Directory ?? projectRoot;
     private ImportedAnalysis? ImportedCommand(string path)
     {
@@ -19,9 +20,24 @@ public sealed partial class CodeIntelligenceService
         {
             return null;
         }
+        if (inferredCommands.TryGetValue(path, out var inferred)) { return inferred; }
         // 头文件沿用相邻翻译单元的宏和头文件路径，不给整个工程拼一套混合参数。
-        var source = importedCommands.Values.OrderByDescending(item => Path.GetFileNameWithoutExtension(item.File).Equals(Path.GetFileNameWithoutExtension(path), StringComparison.OrdinalIgnoreCase))
-            .ThenByDescending(item => CommonDirectoryLength(item.File, path)).First();
+        ImportedAnalysis? best = null;
+        var bestStem = false;
+        var bestDirectory = -1;
+        var stem = Path.GetFileNameWithoutExtension(path);
+        foreach (var candidate in importedCommands.Values)
+        {
+            var sameStem = Path.GetFileNameWithoutExtension(candidate.File).Equals(stem, StringComparison.OrdinalIgnoreCase);
+            var common = CommonDirectoryLength(candidate.File, path);
+            if (best is null || sameStem && !bestStem || sameStem == bestStem && common > bestDirectory)
+            {
+                best = candidate;
+                bestStem = sameStem;
+                bestDirectory = common;
+            }
+        }
+        var source = best!;
         var arguments = source.Arguments.Select(arg => arg.Equals(source.File, StringComparison.OrdinalIgnoreCase) ? path : arg).ToArray();
         if (espressifAnalysis)
         {
@@ -32,11 +48,15 @@ public sealed partial class CodeIntelligenceService
                 : argument).ToArray();
         }
         // 标准和 ABI 保留原工程设置，只纠正新打开文件的语言。
-        return source with
+        inferred = source with
         {
             File = path,
             Arguments = [arguments[0], "-x", IsCpp(path) ? "c++" : "c", .. arguments.Skip(1)]
         };
+        // 只缓存当前数据库的少量打开文件；工程重载清空，不能沿用旧分支的宏与包含路径。
+        if (inferredCommands.Count >= 1024) { inferredCommands.Clear(); }
+        inferredCommands[path] = inferred;
+        return inferred;
     }
     private static int CommonDirectoryLength(string left, string right)
     {

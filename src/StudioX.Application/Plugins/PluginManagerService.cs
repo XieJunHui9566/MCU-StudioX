@@ -1,6 +1,7 @@
 namespace StudioX.Application.Plugins;
 
 using System.Security.Cryptography;
+using System.IO.Compression;
 using System.Text.Json;
 using StudioX.Extensions;
 using StudioX.Foundation;
@@ -13,6 +14,7 @@ public sealed class PluginManagerService : IAsyncDisposable
     private readonly string bundledDirectory;
     private readonly string userDirectory;
     private readonly string settingsPath;
+    private readonly string rollbackDirectory;
     private readonly PluginRepository repository;
     private readonly SemaphoreSlim gate = new(1, 1);
     private readonly HashSet<PluginWorkspaceSession> sessions = [];
@@ -24,6 +26,7 @@ public sealed class PluginManagerService : IAsyncDisposable
         bundledDirectory = Path.Combine(this.runtimeDirectory, "plugins");
         userDirectory = Path.Combine(Path.GetFullPath(dataDirectory), "plugins");
         settingsPath = Path.Combine(Path.GetFullPath(dataDirectory), "plugins.json");
+        rollbackDirectory = Path.Combine(Path.GetFullPath(dataDirectory), "plugin-rollback");
         repository = new PluginRepository(userDirectory);
     }
 
@@ -43,7 +46,8 @@ public sealed class PluginManagerService : IAsyncDisposable
         }
     }
 
-    public async Task<PluginCatalogEntry> ImportAsync(string archive, CancellationToken cancellationToken = default)
+    public Task<PluginCatalogEntry> ImportAsync(string archive, CancellationToken cancellationToken = default) => ImportCoreAsync(archive, false, cancellationToken);
+    private async Task<PluginCatalogEntry> ImportCoreAsync(string archive, bool rollback, CancellationToken cancellationToken)
     {
         await gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         var changed = false;
@@ -54,17 +58,21 @@ public sealed class PluginManagerService : IAsyncDisposable
             var imported = await repository.ImportAsync(archive, async (manifest, token) =>
             {
                 var existing = catalog.FirstOrDefault(entry => entry.Id == manifest.Id && entry.Manifest is not null);
-                if (existing?.Manifest is { } current && PackVersion.Compare(manifest.Version, current.Version) < 0)
+                if (!rollback && existing?.Manifest is { } current && PackVersion.Compare(manifest.Version, current.Version) < 0)
                 {
                     throw new StudioXException("PLUGIN_DOWNGRADE", "已安装较高版本插件，拒绝用旧版本覆盖当前入口。");
                 }
                 // 仓储已完整校验 staging；撤销授权后才允许原子替换内容。
                 await StopPluginAsync(manifest.Id).ConfigureAwait(false);
+                if (existing is { Manifest: not null, CanEnable: true })
+                {
+                    await BackupAsync(existing, token).ConfigureAwait(false);
+                }
                 var settings = await ReadSettingsAsync(token).ConfigureAwait(false);
                 settings.Enabled.Remove(manifest.Id);
                 await JsonStore.WriteAsync(settingsPath, settings, token).ConfigureAwait(false);
                 changed = true;
-            }, cancellationToken).ConfigureAwait(false);
+            }, cancellationToken, allowDowngrade: rollback).ConfigureAwait(false);
             return (await ListCoreAsync(cancellationToken).ConfigureAwait(false)).Single(entry => entry.Id == imported.Manifest.Id);
         }
         finally
@@ -75,6 +83,52 @@ public sealed class PluginManagerService : IAsyncDisposable
                 Changed?.Invoke(this, EventArgs.Empty);
             }
         }
+    }
+
+    private async Task BackupAsync(PluginCatalogEntry entry, CancellationToken token)
+    {
+        var manifest = await PluginManifest.ReadAsync(entry.ManifestPath, token);
+        var fingerprint = await FingerprintAsync(entry.ManifestPath, token);
+        var parent = PathBoundary.Resolve(rollbackDirectory, manifest.Id);
+        Directory.CreateDirectory(parent);
+        var archive = PathBoundary.Resolve(parent, manifest.Version + "-" + fingerprint + ".studioxplugin");
+        if (File.Exists(archive)) { return; }
+        var temp = archive + ".partial";
+        try
+        {
+            ZipFile.CreateFromDirectory(Path.GetDirectoryName(entry.ManifestPath)!, temp, CompressionLevel.Optimal, false);
+            token.ThrowIfCancellationRequested();
+            File.Move(temp, archive);
+        }
+        finally { if (File.Exists(temp)) { File.Delete(temp); } }
+    }
+
+    public Task<IReadOnlyList<PluginRollbackVersion>> ListRollbackAsync(string id, CancellationToken token = default) => Task.Run<IReadOnlyList<PluginRollbackVersion>>(() =>
+    {
+        PackValidator.Token(id);
+        var parent = PathBoundary.Resolve(rollbackDirectory, id);
+        var result = new List<PluginRollbackVersion>();
+        if (!Directory.Exists(parent)) { return result; }
+        foreach (var file in Directory.EnumerateFiles(parent, "*.studioxplugin"))
+        {
+            token.ThrowIfCancellationRequested();
+            using var zip = ZipFile.OpenRead(file);
+            var entry = zip.GetEntry("plugin.json") ?? throw new StudioXException("PLUGIN_ROLLBACK", "回退归档缺少清单。");
+            if (entry.Length > 1024 * 1024) { throw new StudioXException("PLUGIN_ROLLBACK", "回退清单过大。"); }
+            using var reader = new StreamReader(entry.Open());
+            var manifest = JsonSerializer.Deserialize<PluginManifest>(reader.ReadToEnd(), JsonStore.Options) ?? throw new StudioXException("PLUGIN_ROLLBACK", "回退清单为空。");
+            if (manifest.Id != id) { throw new StudioXException("PLUGIN_ROLLBACK", "回退归档身份不一致。"); }
+            using var stream = File.OpenRead(file);
+            result.Add(new(id, manifest.Version, file, Convert.ToHexString(SHA256.HashData(stream))));
+        }
+        return result;
+    }, token);
+
+    public async Task<PluginCatalogEntry> RollbackAsync(PluginRollbackVersion version, CancellationToken token = default)
+    {
+        var fresh = (await ListRollbackAsync(version.Id, token)).SingleOrDefault(v => v.Archive == version.Archive && v.Sha256 == version.Sha256 && v.Version == version.Version)
+            ?? throw new StudioXException("PLUGIN_ROLLBACK_CHANGED", "回退归档已变化，请重新选择。");
+        return await ImportCoreAsync(fresh.Archive, true, token);
     }
 
     /// <summary>启用即信任当前校验内容以当前用户权限运行；宿主操作仍受应用授权约束。</summary>

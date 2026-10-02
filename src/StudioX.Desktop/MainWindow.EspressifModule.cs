@@ -242,7 +242,7 @@ public partial class MainWindow
                 Log("模组设置已落盘；编辑器存在未保存修改，保留缓冲区并等待用户核对。");
             }
         }
-        if (IsCurrentEspressifModuleProject(directory, revision)) { RefreshProjectTree(); }
+        if (IsCurrentEspressifModuleProject(directory, revision)) { await RefreshProjectTreeAsync(token: token); }
     }
 
     private void CancelEspressifModule_Click(object sender, RoutedEventArgs e)

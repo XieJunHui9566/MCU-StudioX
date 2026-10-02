@@ -20,6 +20,9 @@ public sealed class GdbProcessTransport : IGdbMiTransport
     private readonly StreamWriter log;
     private readonly object logSync = new();
     private readonly TaskCompletionSource ready = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    private readonly TaskCompletionSource resetReady = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    private bool waitingForReset;
+    private IProgress<DebugStartupProgress>? progress;
     private readonly TaskCompletionSource tclReady = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private OpenOcdMemoryClient? memoryClient;
     private int tclPort;
@@ -60,6 +63,7 @@ public sealed class GdbProcessTransport : IGdbMiTransport
     }
     public static async Task<(GdbProcessTransport Transport, OpenOcdDebugPlan Plan)> StartAsync(HardwareDebugPreparation preparation, CancellationToken token)
     {
+        preparation.Progress?.Report(new("probe", "取得探针所有权并启动 OpenOCD；不会复用其他会话。"));
         // 只连接本次进程实际声明成功监听的端口，绝不复用已运行的未知 GDB server。
         var listener = new TcpListener(IPAddress.Loopback, 0);
         listener.Start();
@@ -69,9 +73,11 @@ public sealed class GdbProcessTransport : IGdbMiTransport
         var tclPort = ((IPEndPoint)tclListener.LocalEndpoint).Port;
         listener.Stop();
         tclListener.Stop();
-        var plan = OpenOcdDebugPlanner.Create(preparation.ProjectDirectory, preparation.Configuration, preparation.Tools, preparation.Elf, port, tclPort);
+        var plan = OpenOcdDebugPlanner.Create(preparation.ProjectDirectory, preparation.Configuration, preparation.Tools, preparation.Elf, port, tclPort, preparation.ConnectUnderReset);
         var transport = new GdbProcessTransport(preparation.LogPath);
+        transport.progress = preparation.Progress;
         transport.tclPort = tclPort;
+        transport.waitingForReset = preparation.ConnectUnderReset;
         try
         {
             transport.openocd = transport.Launch(plan.OpenOcd, plan.OpenOcdArguments, preparation);
@@ -79,6 +85,9 @@ public sealed class GdbProcessTransport : IGdbMiTransport
             transport.readers.Add(transport.DrainAsync(transport.openocd.StandardError, "OpenOCD", port));
             transport.readers.Add(transport.ObserveExitAsync(transport.openocd, "OpenOCD"));
             await transport.ready.Task.WaitAsync(TimeSpan.FromSeconds(15), token);
+            if (preparation.ConnectUnderReset) { await transport.resetReady.Task.WaitAsync(TimeSpan.FromSeconds(15), token); }
+            preparation.Progress?.Report(new("probe", "本会话 OpenOCD 已监听独立端口。", true));
+            preparation.Progress?.Report(new("symbols", "启动 GDB 并加载本次构建的独立 ELF。"));
             transport.gdb = transport.Launch(plan.Gdb, plan.GdbArguments, preparation);
             transport.readers.Add(transport.DrainAsync(transport.gdb.StandardOutput, "GDB", port));
             transport.readers.Add(transport.DrainAsync(transport.gdb.StandardError, "GDB stderr", port));
@@ -135,6 +144,17 @@ public sealed class GdbProcessTransport : IGdbMiTransport
                     throw new IOException("调试器输出记录过长。");
                 }
                 WriteLog(channel + " < " + line);
+                if (channel == "OpenOCD" && (line.Contains("STLINK", StringComparison.Ordinal) || line.Contains("Examination succeed", StringComparison.Ordinal) || line.Contains("processor detected", StringComparison.Ordinal)))
+                {
+                    progress?.Report(new(line.Contains("STLINK", StringComparison.Ordinal) ? "probe" : "target", line));
+                }
+                if (channel == "OpenOCD" && line.Trim() == "STUDIOX_RESET_HALTED") { resetReady.TrySetResult(); }
+                if (channel == "OpenOCD" && OpenOcdDebugDiagnostics.TargetExaminationFailure(line) is { } examinationFailure)
+                {
+                    progress?.Report(new("target", line));
+                    // 有些 OpenOCD 在目标检查失败后仍监听 GDB；不能把端口当作连接成功。
+                    Fail(examinationFailure);
+                }
                 if (channel == "OpenOCD" && line.Contains($"Listening on port {port} for gdb connections", StringComparison.Ordinal))
                 {
                     ready.TrySetResult();
@@ -196,6 +216,7 @@ public sealed class GdbProcessTransport : IGdbMiTransport
         }
         WriteLog(exception.ToString());
         ready.TrySetException(exception);
+        if (waitingForReset) { resetReady.TrySetException(exception); }
         foreach (var (id, item) in pending)
         {
             if (pending.TryRemove(id, out _))
@@ -232,7 +253,9 @@ public sealed class GdbProcessTransport : IGdbMiTransport
                 await gdb.StandardInput.FlushAsync(token);
             }
             finally { writes.Release(); }
-            var result = await completion.Task.WaitAsync(TimeSpan.FromSeconds(20), token);
+            // 低速 SWD 的大映像主机读回比较可能超过普通 MI 命令时间，仍保持有界且可取消。
+            var timeout = command.Contains("monitor verify_image ", StringComparison.Ordinal) ? TimeSpan.FromMinutes(2) : TimeSpan.FromSeconds(20);
+            var result = await completion.Task.WaitAsync(timeout, token);
             if (command.Contains("-target-select ", StringComparison.Ordinal) && MiRecord.Parse(result).Class == "connected")
             {
                 targetConnected = true;
@@ -264,8 +287,10 @@ public sealed class GdbProcessTransport : IGdbMiTransport
     }
     public async ValueTask DisposeAsync()
     {
+        if (disposed == 0) { progress?.Report(new("restore", "结束本会话并检查目标恢复；不追加复位或下载。")); }
         if (memoryClient is not null) { await memoryClient.DisposeAsync(); memoryClient = null; }
         Exception? detachFailure = null;
+        var restoreConfirmed = false;
         // 先停止命令、移除断点并 detach；结束调试后目标恢复运行。
         if (disposed == 0 && faulted == 0 && targetConnected)
         {
@@ -286,6 +311,8 @@ public sealed class GdbProcessTransport : IGdbMiTransport
                 // extended-remote detach 保留 TCP；退出 GDB 后 OpenOCD 才触发 gdb-detach。
                 CheckResponse(await ExecuteAsync("2000000003-gdb-exit", timeout.Token));
                 await detached.Task.WaitAsync(timeout.Token);
+                restoreConfirmed = true;
+                progress?.Report(new("restored", "OpenOCD 已确认目标恢复运行。"));
                 targetConnected = false;
             }
             catch (Exception ex) { detachFailure = ex; WriteLog("结束会话未能确认目标恢复运行：" + ex.Message); }
@@ -329,8 +356,10 @@ public sealed class GdbProcessTransport : IGdbMiTransport
         }
         if (detachFailure is not null)
         {
+            progress?.Report(new("restore-failed", "探针已释放，但未确认目标恢复运行：" + detachFailure.Message));
             throw new StudioXException("DEBUG_DETACH", "调试进程和探针已释放，但未确认芯片恢复运行。请查看会话日志后重新连接。", detachFailure);
         }
+        if (!restoreConfirmed) { progress?.Report(new("restore-failed", "会话进程和探针已释放；没有取得目标恢复运行的确认，请查看原始日志。")); }
     }
     private static void CheckResponse(string text)
     {

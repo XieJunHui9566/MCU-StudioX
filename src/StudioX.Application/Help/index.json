@@ -30,5 +30,10 @@
   {"id":"serial-errors","category":"故障排查","title":"串口占用、乱码与绘图无数据","summary":"检查会话占用、串口参数、字符编码和完整数据组。","keywords":["port is busy","拒绝访问","乱码","COM","无数据"],"related":["serial","serial-plot","micropython"]},
   {"id":"debug-errors","category":"故障排查","title":"调试连接失败与断点不命中","summary":"核对目标、探针、连线、固件一致性与调试信息。","keywords":["connect","breakpoint","DAP","ST-Link","WCH-Link","GDB"],"related":["download","debugging","build-settings"]},
   {"id":"recovery","category":"故障排查","title":"保存冲突、恢复草稿与本地历史","summary":"保护当前编辑内容，处理外部改动，并从草稿或历史恢复。","keywords":["EDITOR_FILE_CHANGED","WORKSPACE_EDIT_STALE","恢复","丢失","权限"],"related":["editor","search-replace","git-terminal"]},
+  {"id":"debug-connection","category":"调试与设备","title":"调试连接向导与退出恢复","summary":"查看探针、目标、ELF 校验和暂停阶段，取消慢连接并核对退出恢复。","keywords":["ST-Link","复位连接","NRST","校验","取消","恢复运行"],"related":["debugging","debug-errors","fault-analysis"]},
+  {"id":"fault-analysis","category":"故障排查","title":"HardFault、ESP Panic 与离线转储","summary":"解码 Cortex-M 故障证据、定位回溯地址，导入 ESP Core Dump 并导出报告。","keywords":["CFSR","HFSR","BFAR","MMFAR","HardFault","Panic","Core Dump"],"related":["debug-connection","debugging","esp-idf"]},
+  {"id":"build-comparison","category":"编写与构建","title":"比较两次构建的体积与耗时","summary":"保存成功构建快照，对比存储区、符号和文件增长及 Ninja 步骤耗时。","keywords":["MAP","Flash","RAM","体积","基准","Ninja","编译耗时"],"related":["build","build-settings","project-layout"]},
+  {"id":"distribution","category":"扩展与工具","title":"安装精确版本工具和插件","summary":"读取离线或 HTTPS 目录，检查来源、签名和磁盘空间，安装并管理回退。","keywords":["基础版","完整版","更新","签名","许可证","回退","studioxtools"],"related":["tool-environment","plugins","components"]},
+  {"id":"components","category":"扩展与工具","title":"工程组件安装、锁定与回退","summary":"将可校验源码组件加入 CMake 或 ESP-IDF 工程，保留精确版本和变更历史。","keywords":["studioxcomponent","CMake","组件","REQUIRES","版本锁定","回退"],"related":["distribution","project-layout","esp-idf"]},
   {"id":"shortcuts","category":"快捷键","title":"快捷键速查","summary":"工程、编辑、搜索、导航、窗口与调试快捷键的分类清单。","keywords":["F1","F7","快捷键","键盘","热键"],"related":["workspace","editor","debugging"]}
 ]

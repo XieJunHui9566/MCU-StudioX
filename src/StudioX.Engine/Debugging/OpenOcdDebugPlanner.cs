@@ -62,11 +62,15 @@ public static class OpenOcdDebugPlanner
         DebugTargetProfile.Find(configuration.Device) ?? throw new StudioXException("DEBUG_TARGET",
             "当前调试支持已收录的 STM32F1/F4、AG32VF303、CH32V203 / V307、CH592 / CH595 和 RP2350；需要对应新版器件包、工具集和存储布局。当前器件：" + configuration.Device.Id);
 
-    public static OpenOcdDebugPlan Create(string project, DownloadConfiguration configuration, ResolvedToolset tools, string elf, int port = 3333, int? tclPort = null)
+    public static OpenOcdDebugPlan Create(string project, DownloadConfiguration configuration, ResolvedToolset tools, string elf, int port = 3333, int? tclPort = null, bool connectUnderReset = false)
     {
         configuration = Ag32ProbeConfiguration.Normalize(configuration);
         var probe = ResolveProbe(configuration);
         var profile = ResolveTarget(configuration);
+        if (connectUnderReset && (probe.Id != "stlink" || profile.IsAg32 || profile.IsWch || profile.IsRp2350))
+        {
+            throw new StudioXException("DEBUG_RESET_CONNECT", "显式复位连接当前仅支持 STM32 与 ST-Link，需要连接 NRST。");
+        }
         if (port is < 1024 or > 65535 || tclPort is < 1024 or > 65535 || tclPort == port || configuration.Options.SpeedKhz is < 100 or > 15000)
         {
             throw new StudioXException("DEBUG_OPTIONS", "调试端口或接口速度不合法。");
@@ -99,6 +103,7 @@ public static class OpenOcdDebugPlanner
             openocd.AddRange(["-c", "adapter serial " + TclQuote(serial)]);
         }
         openocd.AddRange(target is null ? ["-c", configuration.TargetScriptText!] : ["-f", target]);
+        if (connectUnderReset) { openocd.AddRange(["-c", "reset_config srst_only srst_nogate connect_assert_srst"]); }
         openocd.AddRange(["-c", "adapter speed " + configuration.Options.SpeedKhz.ToString(CultureInfo.InvariantCulture)]);
         openocd.AddRange(["-c", profile.IsWch ? "gdb_flash_program disable" : "gdb flash_program disable"]);
         // 附加正在运行的程序时，CRC 工作区会覆盖 SRAM 全局变量。
@@ -118,8 +123,10 @@ public static class OpenOcdDebugPlanner
         {
             openocd.AddRange(["-c", targetName + " configure -event gdb-detach { " + detach + "resume; poll; if {[[target current] curstate] ne \"running\"} { error \"Target did not resume\" }; echo STUDIOX_DETACHED_RUNNING }"]);
         }
+        // init 必须排在 Flash 写入禁用、工作区和退出行为声明之后；不自动重试复位。
+        if (connectUnderReset) { openocd.AddRange(["-c", "init; reset halt; echo STUDIOX_RESET_HALTED"]); }
         return new(tools.Tool("openocd"), openocd.ToArray(), tools.Tool("gdb"), ["--interpreter=mi2", "--nx", "--quiet"],
-            ["-gdb-set auto-load off", "-gdb-set mi-async on", "-gdb-set pagination off", "-gdb-set confirm off", "-gdb-set may-call-functions off",
+            ["-gdb-set auto-load off", "-gdb-set mi-async on", "-gdb-set pagination off", "-gdb-set confirm off", "-gdb-set may-call-functions off", "-gdb-set remotetimeout 60",
              // 不套用 F407 的比较器数量；OpenOCD 按实际目标资源插入，资源耗尽时保留原始诊断。
              "-gdb-set remote hardware-breakpoint-limit unlimited",
              .. (profile.IsWch ? new[] { "-gdb-set architecture riscv:rv32", "-gdb-set mem inaccessible-by-default off" } : Array.Empty<string>()),

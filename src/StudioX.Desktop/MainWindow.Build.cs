@@ -7,6 +7,7 @@ public partial class MainWindow
 {
     private async Task<BuildReport> BuildWithSummaryAsync(string directory, CancellationToken token)
     {
+        CancelBuildMemoryRefresh();
         ClearBuildDiagnostics();
         var revision = diagnosticRevision;
         try
@@ -16,6 +17,8 @@ public partial class MainWindow
             try { health = await services.ProjectHealth.InspectAsync(directory, progress: new Progress<string>(text => { if (checking) Status.Text = text; }), token: token); }
             finally { checking = false; }
             Log("编译前健康检查：" + health.Summary);
+            guideHealthPassed = health.Errors == 0;
+            RefreshFirstProjectGuide();
             if (!health.CanBuild)
             {
                 PresentBuildHealth(health);
@@ -24,9 +27,11 @@ public partial class MainWindow
             }
             await SaveHdlBuildSettingsAsync(token);
             BuildMemory.SetMessage("正在编译，完成后更新占用…");
+            var buildClock = System.Diagnostics.Stopwatch.StartNew();
             var report = await services.Builds.BuildAsync(directory,
                 new Progress<string>(text => { Status.Text = text; Log(text); }), token,
                 new Progress<string>(text => Log(text.TrimEnd('\r', '\n'))));
+            buildClock.Stop();
             // 等待 Progress 已投递的输出，避免工具尾部文本排到中文结论之后。
             await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Background);
             try
@@ -41,6 +46,8 @@ public partial class MainWindow
             if (report.Success)
             {
                 await RefreshBuildMemoryAsync(directory, token);
+                try { await services.BuildHistory.CaptureAsync(directory, buildClock.Elapsed.TotalSeconds, token); }
+                catch (Exception error) when (error is not OperationCanceledException) { Log("构建历史保存失败，原始编译结果保持有效：" + error); }
                 if (currentProjectManifest?.Espressif is not null &&
                     string.Equals(projectDirectory, directory, StringComparison.OrdinalIgnoreCase))
                 {

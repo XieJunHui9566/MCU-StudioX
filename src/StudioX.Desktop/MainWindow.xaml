@@ -526,6 +526,7 @@
             <MenuItem
               x:Name="HelpRootMenu"
               Header="帮助(_H)">
+              <MenuItem Header="第一个工程完整引导" Click="FirstProject_Click" />
               <MenuItem
                 Header="快速开始"
                 Click="QuickStart_Click" />
@@ -1112,6 +1113,9 @@
                     </StackPanel>
                     <TreeView
                       x:Name="ProjectTree"
+                      VirtualizingStackPanel.IsVirtualizing="True"
+                      VirtualizingStackPanel.VirtualizationMode="Standard"
+                      ScrollViewer.CanContentScroll="True"
                       Grid.Row="1"
                       Visibility="Collapsed"
                       Margin="6"
@@ -1272,6 +1276,7 @@
                               Content="打开工程…"
                               Click="OpenProject_Click"
                               Padding="18,10" />
+                            <Button Content="第一个工程引导" Click="FirstProject_Click" Margin="10,0,0,0" Padding="14,10" />
                             <Button
                               Style="{StaticResource LinkButton}"
                               Content="导入器件包"

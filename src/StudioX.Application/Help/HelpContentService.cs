@@ -16,6 +16,10 @@ public sealed class HelpContentService
     public string DiagnosticTopic(string diagnostic)
     {
         bool Has(params string[] terms) => terms.Any(term => diagnostic.Contains(term, StringComparison.OrdinalIgnoreCase));
+        if (Has("COMPONENT_")) return "components";
+        if (Has("CATALOG_", "DOWNLOAD_HASH", "DOWNLOAD_SIZE", "INSTALL_SPACE", "PLUGIN_ROLLBACK")) return "distribution";
+        if (Has("BUILD_HISTORY_", "BUILD_COMPARE_")) return "build-comparison";
+        if (Has("FAULT_", "HardFault", "Core Dump")) return "fault-analysis";
         if (Has("XTENSA_GNU_CONFIG", "dynconfig", "head-ref", "idf_py_", "ESPRESSIF_")) return "esp-idf-errors";
         if (Has("TOOLS_", "TOOLSET_", "TOOL_MISSING", "TOOL_HASH", "TOOL_RESOURCE", "TOOL_EXECUTE", "TOOLCHAIN_LOCK", "LANGUAGE_MISSING", "工具集缺失")) return "tool-environment";
         if (Has("HEALTH_CACHE_", "CMAKE_HOME_DIRECTORY", "CMakeCache.txt directory")) return "build-errors";

@@ -13,6 +13,7 @@ public partial class MainWindow
     private bool recentInitialized;
     private void ShowDocument(TabItem tab)
     {
+        if (ReferenceEquals(tab, firstProjectTab)) RefreshFirstProjectGuide();
         tab.Visibility = Visibility.Visible;
         if (tab.Tag is EditorDocumentSession target)
         {

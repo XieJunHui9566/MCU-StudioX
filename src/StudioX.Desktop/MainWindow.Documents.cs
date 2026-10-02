@@ -68,7 +68,7 @@ public partial class MainWindow
         label.Children.Add(new FileIcon { FileName = source.RelativePath, Width = 19, Height = 19, Margin = new Thickness(0, 0, 7, 0), VerticalAlignment = VerticalAlignment.Center });
         label.Children.Add(session.Label);
         session.Tab.Header = CreateTabHeader(session.Tab, label);
-        session.Changed = (_, _) => { UpdateEditorHeader(session); QueuePluginDocumentEvent("document.changed", session); ClearBuildDiagnostics(); agentEditorSession?.InvalidateValidation(); QueueLiveDiagnostics(); CommandManager.InvalidateRequerySuggested(); };
+        session.Changed = (_, _) => { UpdateEditorHeader(session); guideSaved = false; guideBuild = null; RefreshFirstProjectGuide(); QueuePluginDocumentEvent("document.changed", session); ClearBuildDiagnostics(); agentEditorSession?.InvalidateValidation(); QueueLiveDiagnostics(); CommandManager.InvalidateRequerySuggested(); };
         session.Buffer.TextChanged += session.Changed;
         editorDocuments.Add(session);
         WorkspaceTabs.Items.Insert(editorDocuments.Count(e => e.Group == 0), session.Tab);
@@ -97,6 +97,7 @@ public partial class MainWindow
         }
         if (tabs.SelectedItem is TabItem selected)
         {
+            if (ReferenceEquals(selected, firstProjectTab)) RefreshFirstProjectGuide();
             _ = Dispatcher.BeginInvoke(() => { if (tabs.SelectedItem == selected) { selected.BringIntoView(); } }, DispatcherPriority.Loaded);
         }
     }
@@ -200,6 +201,9 @@ public partial class MainWindow
         // 保存的是捕获的标签及其文本快照，异步期间切换文件不会写错文件。
         var text = session.Buffer.Text;
         session.Source = await services.Files.SaveAsync(directory, session.Source, text, token);
+        guideSaved = true;
+        guideBuild = null;
+        RefreshFirstProjectGuide();
         QueuePluginDocumentEvent("document.saved", session);
         UpdateEditorHeader(session);
         await PersistBreakpointLinesAsync();
@@ -282,6 +286,7 @@ public partial class MainWindow
 
     private async Task CloseWorkspaceTabAsync(TabItem tab, Func<SourceDocument, MessageBoxResult>? decide = null)
     {
+        if (await ClosePluginDebugViewAsync(tab)) { return; }
         if (tab.Tag is EditorDocumentSession session)
         {
             if (!editorDocuments.Contains(session) || !await ConfirmEditorAsync(session, decide))

@@ -81,6 +81,7 @@ public partial class MainWindow
         bool IsCurrentProject() => !token.IsCancellationRequested &&
             string.Equals(projectDirectory, directory, StringComparison.OrdinalIgnoreCase);
         // Git 可能改写代码与工程清单；丢弃已保存标签的旧快照，防止旧文本覆盖新分支。
+        CancelBuildMemoryRefresh();
         ClearEditorDocuments();
         BuildMemory.SetMessage("Git 更新了工作区；重新编译后显示当前分支的占用。");
         var manifestReady = true;
@@ -94,7 +95,7 @@ public partial class MainWindow
             SetProjectDetailsMode(project);
             WindowProjectTitle.Text = project.Name;
             Title = project.Name + " — MCU StudioX";
-            PopulateProjectTree(project.Name);
+            await PopulateProjectTreeAsync(project.Name, token: token);
             BuildConfiguration.Text = project.Kind == ProjectKind.Zephyr
                 ? project.Name + " · Zephyr 实验模式"
                 : project.Name + " · " + (project.CubeMx?.ConfigurePreset ?? project.CubeMx?.BuildType ?? "Debug");
@@ -123,7 +124,7 @@ public partial class MainWindow
                 return;
             }
             manifestReady = false;
-            PopulateProjectTree(WindowProjectTitle.Text);
+            await PopulateProjectTreeAsync(WindowProjectTitle.Text, token: token);
             Log("Git 更新后工程清单读取失败：" + ex);
         }
         try

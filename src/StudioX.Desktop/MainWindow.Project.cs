@@ -24,6 +24,7 @@ public partial class MainWindow
             return;
         }
         await projectTransitions.StopCurrentAsync(token);
+        CancelBuildMemoryRefresh();
         // 官方 SDK 示例保留原文件名和目录；由创建记录指定入口，旧工程继续使用原有默认位置。
         var mainPath = project.EntryFile ?? (project.Kind == ProjectKind.CubeMx ? "Core/Src/main.c" : "src/main.c");
         var source = !restoringEditorSession && services.Files.FileExists(directory, mainPath)
@@ -31,6 +32,7 @@ public partial class MainWindow
             : null;
         ClearEditorDocuments();
         projectDirectory = directory;
+        ResetFirstProjectEvidence();
         lastFailure = "";
         healthDirectory = directory;
         projectHealthView?.Invalidate();
@@ -70,7 +72,7 @@ public partial class MainWindow
         }
         // 首次挂入编辑器会触发布局与语法渲染，先处理输入和这一帧，再展开工程树，避免累计成一次长停顿。
         await Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Background);
-        PopulateProjectTree(project.Name);
+        await PopulateProjectTreeAsync(project.Name, token: token);
         if (project.Kind == ProjectKind.MicroPython)
         {
             BuildConfiguration.Text = project.Name + " · MicroPython";
@@ -85,7 +87,7 @@ public partial class MainWindow
         MicroPythonPanel.SetProject(null, null);
         if (project.Kind != ProjectKind.Zephyr)
         {
-            await RefreshBuildMemoryAsync(directory, token);
+            QueueBuildMemoryRefresh(directory);
         }
         await services.RecentProjects.RememberAsync(project.Name, directory, token);
         await RefreshRecentAsync(token);
@@ -152,8 +154,11 @@ public partial class MainWindow
         try
         {
             await projectTransitions.StopCurrentAsync(token);
+            CancelProjectTreeLoading();
+            CancelBuildMemoryRefresh();
             ClearEditorDocuments();
             projectDirectory = null;
+            ResetFirstProjectEvidence();
             LvglPreview.SetProject(null);
             ClearHdlSchematic();
             ResetAiForProjectChange();
@@ -220,7 +225,7 @@ public partial class MainWindow
         MicroPythonRunLabel.Text = MicroPythonPanel.IsScriptRunning ? "运行中…" : "开始运行";
         DownloadProbePicker.IsEnabled = available && supportsDownload && !IsStcSdccProject && !IsEspressifProject && !IsZephyrProject && !IsMicroPythonProject;
         DownloadSettingsButton.IsEnabled = DownloadSettingsMenu.IsEnabled = available && supportsDownload;
-        CancelButton.IsEnabled = !GitGraph.IsMutating && (operationCancellation is not null ||
+        CancelButton.IsEnabled = !GitGraph.IsMutating && (operationCancellation is not null || buildMemoryCancellation is not null ||
             IsMicroPythonProject && (MicroPythonPanel.IsBusy || services.MicroPython.IsConnected));
         UpdateStcIspControls();
         UpdateDebugControls();

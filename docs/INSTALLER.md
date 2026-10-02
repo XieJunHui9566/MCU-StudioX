@@ -1,6 +1,6 @@
 # Windows 安装与升级
 
-版本从 `Directory.Build.props` 的 `ProductVersion` 读取；独立 IDE 当前源码与安装器目标版本为 **0.2.5.4A**，可覆盖升级首版 0.1.0，与旧 VS Code 插件的 0.17 分开。关于窗口、欢迎页、状态栏和安装器显示相同产品版本；Windows 文件与程序集版本为 **0.2.5.4**，产品版本保留 `A` 修订后缀。
+版本从 `Directory.Build.props` 的 `ProductVersion` 读取；独立 IDE 当前源码与安装器目标版本为 **0.2.5.4B**，可覆盖升级 0.2.5.4A 及首版 0.1.0，与旧 VS Code 插件的 0.17 分开。关于窗口、欢迎页、状态栏和安装器显示相同产品版本；Windows 文件与程序集版本为 **0.2.5.4**，产品版本保留 `B` 修订后缀。
 
 ## 构建
 
@@ -19,6 +19,8 @@
 `Publish.ps1` 和 `Build-Installer.ps1` 支持 `-ExcludePlugins`：不构建或附带示例插件，保留插件宿主与通用扩展接口。已有 Payload 使用该参数时安装构建器会拒绝带有 `runtime/plugins` 的目录。安装器不会安装、更新或删除用户数据目录中的插件。
 
 ## 安装语义
+
+发布脚本支持 `-DistributionProfile full|base`，默认 full。base 保留自包含 IDE、clangd、Git 和插件宿主，不内置固件工具集和器件包；其安装器文件名含 `Base-Setup`，产品 AppId 和升级顺序保持相同。`-DistributionCatalogDirectory` 可带入校验过的离线工具/插件/组件目录；不会自动安装条目或启用插件。工具集通过“软件与组件分发”或离线 `.studioxtools` 按明确版本安装。流程及验证边界见 [产品工作流](PRODUCT_WORKFLOWS.md)。
 
 - Windows 10/11 x64，按当前用户安装；默认 `%LOCALAPPDATA%\Programs\MCU StudioX`，可选择位置。
 - 创建开始菜单的 IDE、器件包、使用说明和卸载入口，可选桌面快捷方式。
@@ -41,6 +43,8 @@
 `tools/Test-Installer.ps1 -Installer <setup.exe> -OutputDirectory <new-directory>` 使用同 AppId 的 0.1.0 模拟旧安装，验证覆盖升级、同版本修复、降级拒绝、运行中拒绝、目录更换拒绝、逐文件完整性、自包含桌面启动和卸载保留数据。目标版本从安装器读取，可用 `-PreviousVersion` 指定模拟旧版本。如果当前用户已经安装了正式产品，必须传入 `-PayloadDirectory <完整发行目录>`：测试以相同安装脚本及完整 Payload 编译唯一测试 AppId 的安装器，不修改正式安装和卸载项。无后缀、A..Z 按顺序排列，数字部分优先比较；字母版本额外验证相同数字版本的降级拦截。
 
 ## 分发状态
+
+完整 Payload 的隔离验收可加 `-NoCompression`，避免重复压缩 SDK；测试安装器使用旁置数据文件，仍验证相同安装逻辑和逐文件哈希，不能作为正式发行包上传。正式安装包保持默认压缩。旁置文件处理参照 [Inno Setup DiskSpanning](https://jrsoftware.org/ishelp/topic_setup_diskspanning.htm)。
 
 目前未配置产品代码签名证书，成品安装包为未签名文件；SHA-256 可检查传输完整性，不能代替发布者数字签名。
 

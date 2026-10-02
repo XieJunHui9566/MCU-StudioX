@@ -266,6 +266,12 @@ API 1 解码和 API 2 通用插件继续可用；`PluginContribution` 的原三�
 
 语言补全请求含 `operation: completion`、`path`、`text`、`offset` 和 `revision`，位置为 UTF-16。正文最多 256 Ki 字符，返回最多 256 个 `PluginCompletion`（label、insertText、detail）。桌面在自定义文件后缀上接入 Ctrl+Space 及输入补全，丢弃过期编辑结果；已有 C/C++、Python、CMake 服务保持优先。此接口当前没有宣称提供自定义语言诊断、语义重命名或完整 LSP。
 
-调试扩展入口是“工具 → 调试快照扩展”，用于显示暂停快照、寄存器或自定义解释。它不启动连接，不持有设备，不提供任意 DAP 连接器、烧录器驱动或绕过会话授权的发送入口；独立插件进程仍不是权限沙箱。
+调试扩展入口是插件管理页的“打开调试扩展”或“工具 → 调试快照扩展”。管理页可以按中文能力、名称、ID、说明搜索及筛选，运行成功的设置和调试贡献提供直接入口。
+
+每个 `(pluginId, adapterId)` 在当前工作区只有一个独立视图。暂停、单步、更新观察项和选择栈帧后自动刷新；运行、断开、切换工程立即清除结果。关闭标签释放订阅和后台解释，禁用/崩溃撤销结果，工作区结束移除相关标签。解释在后台串行处理，80 ms 合并连续刷新，队列最多保留一个最新请求；5 秒超时或原始异常显示在视图，暂停时可手动重试。迟到响应不能恢复过期面板。
+
+调试器在同一命令锁内捕获已有快照，不发送新的 MI 查询。API 3 原有 `state`、`hardware`、`snapshot` 字段保持，新宿主添加 `formatVersion: 1`、`revision`、`reason`。SDK `PluginDebugSnapshotRequest` 提供相同输入契约，`revision` 是视图请求版本，不是设备时钟；仅 `state: "Stopped"` 的 `snapshot` 含有效数据。状态不可用或工程不一致时快照为空。返回仍是纯数据 `PluginPanelDefinition`，未知字段、未声明命令和非法控件拒绝并保留诊断。
+
+它不启动连接，不持有设备，不提供任意 DAP 连接器、烧录器驱动或绕过会话授权的发送入口；独立插件进程仍不是权限沙箱。插件不得在解释函数中等待用户输入或发起目标控制。`DebugSnapshotPanel.cs` 示例将快照呈现为寄存器、调用栈、局部变量和观察项表格，不引用调试器实现或特定 MCU。
 
 实际 C# 示例为 `examples/StudioX.SamplePlugin/DevelopmentToolsPlugin.cs`，配套 `development.template.json`，包含可修改的问候语、事件计数、`.sxdemo` 补全和调试快照概览。使用 `tools/Build-PluginSample.ps1 -Development -OutputDirectory <new-directory>` 构建归档；不加 `-Development` 仍构建原 API 2 工程概览示例。插件安装和启用沿用原有界面流程。

@@ -154,38 +154,74 @@ public partial class MainWindow
             EditorPosition.Text = $"行 {SourceEditor.TextArea.Caret.Line}，列 {SourceEditor.TextArea.Caret.Column}";
         }
     }
-    private void PopulateProjectTree(string name, bool expandSource = true)
+    private async Task PopulateProjectTreeAsync(string name, bool expandSource = true, CancellationToken token = default)
     {
+        CancelProjectTreeLoading();
+        projectTreeCancellation = CancellationTokenSource.CreateLinkedTokenSource(token);
+        loadedProjectDirectories.Clear();
+        loadingProjectDirectories.Clear();
         ProjectTree.Items.Clear();
         var root = new TreeViewItem { Header = FileLabel(name, true), Tag = new ProjectEntry(name, "", true, false) };
-        LoadChildren(root);
         ProjectTree.Items.Add(root);
         root.IsExpanded = true;
+        ProjectTree.Visibility = Visibility.Visible;
+        EmptyProject.Visibility = Visibility.Collapsed;
+        await LoadChildrenAsync(root, token);
         foreach (var child in root.Items.OfType<TreeViewItem>())
         {
             if (expandSource && child.Tag is ProjectEntry { RelativePath: "src" })
             {
                 child.IsExpanded = true;
+                await LoadChildrenAsync(child, token);
             }
         }
-        if (expandSource && services.Files.FileExists(RequireProject(), "Core/Src/main.c") && FindProjectNode("Core/Src") is { } coreSource)
+        if (expandSource && services.Files.FileExists(RequireProject(), "Core/Src/main.c") && await FindProjectNodeAsync("Core/Src", token) is { } coreSource)
         {
             coreSource.IsExpanded = true;
+            await LoadChildrenAsync(coreSource, token);
         }
-        ProjectTree.Visibility = Visibility.Visible;
-        EmptyProject.Visibility = Visibility.Collapsed;
     }
-    private void LoadChildren(TreeViewItem parent)
+    private CancellationTokenSource? projectTreeCancellation;
+    private readonly HashSet<TreeViewItem> loadedProjectDirectories = [];
+    private readonly Dictionary<TreeViewItem, Task> loadingProjectDirectories = [];
+    private void CancelProjectTreeLoading()
+    {
+        projectTreeCancellation?.Cancel();
+        projectTreeCancellation?.Dispose();
+        projectTreeCancellation = null;
+    }
+    private Task LoadChildrenAsync(TreeViewItem parent, CancellationToken token = default)
+    {
+        if (loadedProjectDirectories.Contains(parent)) { return Task.CompletedTask; }
+        if (!loadingProjectDirectories.TryGetValue(parent, out var loading))
+        {
+            loading = LoadChildrenCoreAsync(parent, token);
+            loadingProjectDirectories[parent] = loading;
+        }
+        return loading.WaitAsync(token);
+    }
+    private async Task LoadChildrenCoreAsync(TreeViewItem parent, CancellationToken token)
     {
         if (parent.Tag is not ProjectEntry entry)
         {
             return;
         }
+        if (projectTreeCancellation is null || projectDirectory is not { } directory) { return; }
+        using var lifetime = CancellationTokenSource.CreateLinkedTokenSource(projectTreeCancellation.Token, token);
+        var stop = lifetime.Token;
         parent.Items.Clear();
+        var placeholder = new TreeViewItem { Header = "正在读取…", IsEnabled = false };
+        parent.Items.Add(placeholder);
         try
         {
-            foreach (var item in services.Files.List(RequireProject(), entry.RelativePath))
+            await Task.Yield();
+            var items = await services.Files.ListAsync(directory, entry.RelativePath, stop);
+            stop.ThrowIfCancellationRequested();
+            parent.Items.Clear();
+            var batch = System.Diagnostics.Stopwatch.StartNew();
+            foreach (var item in items)
             {
+                stop.ThrowIfCancellationRequested();
                 var deviceSupport = item.IsDirectory && item.RelativePath == "device";
                 var node = new TreeViewItem { Header = FileLabel(item.Name, item.IsDirectory, deviceSupport ? " · 器件支持" : ""), Tag = item, ToolTip = deviceSupport ? "厂商 SDK、寄存器定义、启动文件及内部构建配置；应用代码在 src 中维护。" : item.RelativePath, IsEnabled = !item.IsLink };
                 if (item.IsLink)
@@ -199,24 +235,41 @@ public partial class MainWindow
                     node.Collapsed += (_, e) => { if (e.OriginalSource == node) { SetFolderIcon(node, false); } };
                 }
                 parent.Items.Add(node);
+                // 大目录分批挂入节点，让输入和渲染在批次间得到调度；折叠后保留已加载的节点。
+                if (batch.ElapsedMilliseconds >= 8)
+                {
+                    await Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Background, stop);
+                    batch.Restart();
+                }
             }
+            loadedProjectDirectories.Add(parent);
+        }
+        catch (OperationCanceledException) when (stop.IsCancellationRequested)
+        {
+            parent.Items.Clear();
+            parent.Items.Add(new TreeViewItem { Header = "读取已取消（F5 重试）", IsEnabled = false });
+            throw;
         }
         catch (Exception ex)
         {
+            parent.Items.Clear();
             parent.Items.Add(new TreeViewItem { Header = "无法读取目录（F5 重试）", IsEnabled = false, ToolTip = ex.Message });
             Status.Text = ex.Message;
             Log(ex.ToString());
         }
-        SetFolderIcon(parent, true);
+        finally { loadingProjectDirectories.Remove(parent); }
+        SetFolderIcon(parent, parent.IsExpanded);
     }
-    private void Directory_Expanded(object sender, RoutedEventArgs e)
+    private async void Directory_Expanded(object sender, RoutedEventArgs e)
     {
         if (sender is not TreeViewItem node || e.OriginalSource != node)
         {
             return;
         }
-        LoadChildren(node);
         e.Handled = true;
+        SetFolderIcon(node, true);
+        try { await LoadChildrenAsync(node); }
+        catch (OperationCanceledException) { }
     }
     private static void SetFolderIcon(TreeViewItem node, bool expanded)
     {
@@ -245,8 +298,8 @@ public partial class MainWindow
     {
         if (e.Key == Key.F5 && projectDirectory is not null)
         {
-            RefreshProjectTree();
             e.Handled = true;
+            await RunAsync(token => RefreshProjectTreeAsync(token: token));
         }
         else if (e.Key == Key.Enter && ProjectTree.SelectedItem is TreeViewItem { Tag: ProjectEntry { IsLink: false } entry })
         {

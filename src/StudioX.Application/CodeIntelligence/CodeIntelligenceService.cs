@@ -59,6 +59,7 @@ public sealed partial class CodeIntelligenceService(string runtimeDirectory, str
                 throw MicroPythonProject.NativeOperationUnavailable();
             }
             importedCommands.Clear();
+            inferredCommands.Clear();
             espressifAnalysis = project.Espressif is not null;
             StatusDescription = "C/C++ 代码提示已就绪";
             EspressifAnalysisProfile? espressifProfile = null;

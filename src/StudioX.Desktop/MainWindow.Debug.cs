@@ -279,9 +279,16 @@ public partial class MainWindow
             return;
         }
         Status.Text = "准备实机调试：核对源码、ELF 与内置工具…";
-        var preparation = await HardwareDebugPreparer.PrepareAsync(RequireProject(), services.Downloads, token);
-        DebugTools.AppendOutput("会话日志：" + preparation.LogPath);
-        await services.Debugger.StartHardwareAsync(preparation, token);
+        var project = RequireProject();
+        var dialog = new DebugConnectionWindow(services.DebugLaunch, configuration.Device.Id + " · " + OpenOcdDebugPlanner.ResolveProbe(configuration).DisplayName,
+            OpenOcdDebugPlanner.ResolveProbe(configuration).Id == "stlink" && !OpenOcdDebugPlanner.ResolveTarget(configuration).IsWch,
+            async (reset, cancel) =>
+            {
+                using var linked = CancellationTokenSource.CreateLinkedTokenSource(token, cancel);
+                await services.DebugLaunch.StartAsync(project, reset, linked.Token);
+            }) { Owner = this };
+        dialog.ShowDialog();
+        if (services.Debugger.State != DebugState.Stopped) { return; }
         await NavigateSelectedDebugFrameAsync();
         Status.Text = services.Debugger.Reason;
     });

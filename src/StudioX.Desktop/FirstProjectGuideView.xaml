@@ -1,0 +1,38 @@
+<UserControl x:Class="StudioX.Desktop.FirstProjectGuideView"
+ xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+ <Grid Background="{DynamicResource EditorSurface}" Margin="22">
+  <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+  <StackPanel Margin="0,0,0,18">
+   <TextBlock Text="完成你的第一个工程" FontSize="26" FontWeight="SemiBold"/>
+   <TextBlock Text="从准确选择目标，到读懂第一次编译结果。操作后点击顶部“第一个工程引导”标签返回继续。" Foreground="{DynamicResource Muted}" TextWrapping="Wrap" Margin="0,8,0,0"/>
+   <TextBlock x:Name="ContextText" TextWrapping="Wrap" Foreground="{DynamicResource Muted}" Margin="0,8,0,0"/>
+  </StackPanel>
+  <Grid Grid.Row="1">
+   <Grid.ColumnDefinitions><ColumnDefinition Width="210"/><ColumnDefinition Width="20"/><ColumnDefinition/></Grid.ColumnDefinitions>
+   <ListBox x:Name="StepList" SelectionChanged="Step_Changed" ScrollViewer.HorizontalScrollBarVisibility="Disabled" Background="{DynamicResource Panel}" Foreground="{DynamicResource Text}" BorderBrush="{DynamicResource Border}">
+    <ListBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding}" TextWrapping="Wrap" Margin="4,9"/></DataTemplate></ListBox.ItemTemplate>
+   </ListBox>
+   <ScrollViewer Grid.Column="2" x:Name="BodyScroll" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+    <StackPanel Margin="4,0,14,14">
+     <TextBlock x:Name="StepTitle" FontSize="21" FontWeight="SemiBold" TextWrapping="Wrap"/>
+     <TextBlock x:Name="InstructionsText" TextWrapping="Wrap" LineHeight="25" Margin="0,16,0,18"/>
+     <Border Background="{DynamicResource Panel}" BorderBrush="{DynamicResource Border}" BorderThickness="1" Padding="14" CornerRadius="4">
+      <StackPanel><TextBlock Text="这一步应该看到" FontWeight="SemiBold"/><TextBlock x:Name="ExpectedText" TextWrapping="Wrap" LineHeight="24" Margin="0,8,0,0"/></StackPanel>
+     </Border>
+     <TextBlock Text="当前状态" FontWeight="SemiBold" Margin="0,18,0,6"/>
+     <TextBlock x:Name="EvidenceText" TextWrapping="Wrap" Foreground="{DynamicResource Muted}" LineHeight="23"/>
+     <WrapPanel x:Name="Actions" Margin="0,20,0,0">
+      <Button x:Name="ActionButton" Style="{StaticResource PrimaryButton}" Click="Action_Click" Margin="0,0,8,8"/>
+      <Button x:Name="SecondaryButton" Click="Secondary_Click" Margin="0,0,8,8"/>
+      <Button Content="详细操作与排错" Click="Help_Click" Margin="0,0,8,8"/>
+     </WrapPanel>
+     <TextBlock Text="引导不会自动连接设备或写入固件。健康检查和软件编译不能代替实板验证。" TextWrapping="Wrap" Foreground="{DynamicResource Muted}" FontSize="12" Margin="0,16,0,0"/>
+    </StackPanel>
+   </ScrollViewer>
+  </Grid>
+  <DockPanel Grid.Row="2" Margin="0,18,0,0">
+   <WrapPanel DockPanel.Dock="Right" HorizontalAlignment="Right"><Button x:Name="BackButton" Content="上一步" Click="Back_Click" Margin="0,0,8,0"/><Button x:Name="NextButton" Content="下一步" Click="Next_Click" Margin="0,0,8,0"/><Button Content="结束引导" Click="Finish_Click"/></WrapPanel>
+   <TextBlock x:Name="ProgressText" VerticalAlignment="Center" Foreground="{DynamicResource Muted}" TextWrapping="Wrap"/>
+  </DockPanel>
+ </Grid>
+</UserControl>

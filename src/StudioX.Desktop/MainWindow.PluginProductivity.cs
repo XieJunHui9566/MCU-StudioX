@@ -2,7 +2,6 @@ namespace StudioX.Desktop;
 
 using System.Text.Json;
 using System.Windows;
-using System.Windows.Controls;
 using StudioX.Application.Plugins;
 using StudioX.Foundation;
 
@@ -73,17 +72,24 @@ public partial class MainWindow
         catch (Exception ex) { PluginManager.Log(ex.ToString()); }
         finally { publishingDocumentEvents = false; }
     }
-    private async Task ShowPluginSettingsAsync()
+    private async Task ShowPluginSettingsAsync(string? pluginId = null)
     {
         if (pluginWorkspace is not { } workspace)
         {
             return;
         }
-        var choices = workspace.Contributions.Where(p => p.Contribution.Settings.Length > 0).ToArray();
-        var picker = new QuickPickWindow("插件设置", (q, _) => Task.FromResult<IReadOnlyList<QuickPickItem>>(choices.Where(p => p.Manifest.DisplayName.Contains(q, StringComparison.OrdinalIgnoreCase)).Select(p => new QuickPickItem(p.Manifest.DisplayName, p.Id, p)).ToArray())) { Owner = this };
-        if (picker.ShowDialog() != true || picker.Selected?.Value is not PluginActiveContribution plugin)
+        var choices = workspace.Contributions.Where(p => workspace.IsPluginRunning(p.Id) && p.Contribution.Settings.Length > 0 && (pluginId is null || p.Id == pluginId)).ToArray();
+        if (choices.Length == 0)
         {
+            Status.Text = "当前工程没有可用的插件设置；请先打开工程并启用具有设置能力的插件。";
             return;
+        }
+        var plugin = choices[0];
+        if (choices.Length > 1)
+        {
+            var picker = new QuickPickWindow("插件设置", (q, _) => Task.FromResult<IReadOnlyList<QuickPickItem>>(choices.Where(p => p.Manifest.DisplayName.Contains(q, StringComparison.OrdinalIgnoreCase)).Select(p => new QuickPickItem(p.Manifest.DisplayName, p.Id, p)).ToArray())) { Owner = this };
+            if (picker.ShowDialog() != true || picker.Selected?.Value is not PluginActiveContribution selected) { return; }
+            plugin = selected;
         }
         await RunAsync(async token =>
         {
@@ -98,33 +104,32 @@ public partial class MainWindow
             {
                 await workspace.InvokeAsync(plugin.Id, "event", "settings.changed", JsonSerializer.SerializeToElement(dialog.Values, JsonStore.Options), token);
             }
+            foreach (var item in pluginDebugViews.Where(p => p.Key.Plugin == plugin.Id).Select(p => p.Value)) { item.Session.Refresh(); }
             Status.Text = "插件设置已保存。";
         });
     }
-    private async Task ShowPluginDebugAdaptersAsync()
+    private async Task ShowPluginDebugAdaptersAsync(string? pluginId = null)
     {
         if (pluginWorkspace is not { } workspace)
         {
+            Status.Text = "请先打开工程，启用具有调试快照能力的插件。";
             return;
         }
-        var items = workspace.Contributions.SelectMany(p => p.Contribution.DebugAdapters.Select(a => new QuickPickItem(a.DisplayName, p.Id, (p.Id, a.Id)))).ToArray();
-        var picker = new QuickPickWindow("调试快照扩展", (q, _) => Task.FromResult<IReadOnlyList<QuickPickItem>>(items.Where(i => i.ToString().Contains(q, StringComparison.OrdinalIgnoreCase)).ToArray())) { Owner = this };
-        if (picker.ShowDialog() != true || picker.Selected?.Value is not ValueTuple<string, string> selected)
+        var items = workspace.Contributions.Where(p => workspace.IsPluginRunning(p.Id) && (pluginId is null || p.Id == pluginId))
+            .SelectMany(p => p.Contribution.DebugAdapters.Select(a => new QuickPickItem(a.DisplayName, p.Manifest.DisplayName + " · " + p.Id, (p.Id, a.Id)))).ToArray();
+        if (items.Length == 0)
         {
+            Status.Text = "当前没有运行中的调试快照扩展；可在插件管理页按“调试快照”筛选。";
+            ShowDocument(ExtensionsTab);
             return;
         }
-        await RunAsync(async token =>
+        var selected = (ValueTuple<string, string>)items[0].Value!;
+        if (items.Length > 1)
         {
-            var snapshot = JsonSerializer.SerializeToElement(new
-            {
-                state = services.Debugger.State,
-                hardware = services.Debugger.IsHardware,
-                snapshot = services.Debugger.Snapshot
-            }, JsonStore.Options);
-            var panel = await workspace.AdaptDebugSnapshotAsync(selected.Item1, selected.Item2, snapshot, token);
-            var renderer = new PluginPanelRenderer((_, _) => Task.CompletedTask, PluginManager.Log);
-            var tab = AddToolTab("调试快照 · " + panel.Title, new ScrollViewer { Content = renderer.Render(panel), VerticalScrollBarVisibility = ScrollBarVisibility.Auto });
-            ShowDocument(tab);
-        });
+            var picker = new QuickPickWindow("调试快照扩展", (q, _) => Task.FromResult<IReadOnlyList<QuickPickItem>>(items.Where(i => i.ToString().Contains(q, StringComparison.OrdinalIgnoreCase)).ToArray())) { Owner = this };
+            if (picker.ShowDialog() != true || picker.Selected?.Value is not ValueTuple<string, string> choice) { return; }
+            selected = choice;
+        }
+        await OpenPluginDebugViewAsync(selected.Item1, selected.Item2);
     }
 }

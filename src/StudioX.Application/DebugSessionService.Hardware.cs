@@ -53,11 +53,25 @@ public sealed partial class DebugSessionService
             {
                 if (command.Contains("monitor verify_image ", StringComparison.Ordinal))
                 {
+                    preparation.Progress?.Report(new("verify", "只读校验板上映像与 ELF；慢速 SWD 最多等待 2 分钟，可取消。"));
                     await VerifyImageAsync(current, command, preparation, token);
+                    preparation.Progress?.Report(new("verify", "板上映像与本次 ELF 完整校验一致。", true));
                 }
                 else
                 {
+                    if (command.Contains("monitor studiox_check_target", StringComparison.Ordinal))
+                    {
+                        preparation.Progress?.Report(new("target", "读取目标身份与容量，核对当前工程的精确型号。"));
+                    }
                     await current.SendAsync(command, token);
+                    if (command.StartsWith("-file-exec-and-symbols ", StringComparison.Ordinal))
+                    {
+                        preparation.Progress?.Report(new("symbols", "本次 ELF 已加载到 GDB。", true));
+                    }
+                    if (command.Contains("monitor studiox_check_target", StringComparison.Ordinal))
+                    {
+                        preparation.Progress?.Report(new("target", "目标身份与容量检查通过。", true));
+                    }
                 }
             }
             if (preparation.PinMapping is { } mapping)
@@ -66,6 +80,7 @@ public sealed partial class DebugSessionService
                     preparation with { ImageByteCount = mapping.VerificationBytes }, token);
                 Trace("板上引脚映射镜像与当前 .ve 构建产物完整校验一致；未下载映射。");
             }
+            preparation.Progress?.Report(new("snapshot", "映像一致性已通过，检查源码信息并读取暂停快照。"));
             var sources = await current.SendAsync("-file-list-exec-source-files", token);
             if (sources.Get("files")?.Values.Any() != true)
             {

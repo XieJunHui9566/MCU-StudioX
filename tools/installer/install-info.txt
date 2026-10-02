@@ -4,7 +4,7 @@ MCU StudioX · 独立单片机开发环境
 包含 .NET 桌面运行时、ARM GCC、RISC-V GCC、AGM AgRV 工具链、OpenOCD、CMake、Ninja、clangd 和 Git，无需另外配置 PATH 或安装 VS Code 插件。
 
 安装程序可选择安装位置，只为当前 Windows 用户安装。
-完整安装约占用 6.5 GB 磁盘空间；安装时还需要一定临时空间。
+安装所需空间以向导显示的当前载荷大小为准；安装时还需要额外临时空间。
 
 升级方法
 先保存工程并关闭 MCU StudioX，再运行新版安装包，使用原目录覆盖升级。

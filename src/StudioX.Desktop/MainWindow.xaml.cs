@@ -459,6 +459,8 @@ public partial class MainWindow : Window
         }
         var directory = RequireProject();
         await SaveEditorAsync(directory, session, token);
+        guideSaved = !session.IsDirty;
+        RefreshFirstProjectGuide();
         Status.Text = "已保存 " + session.Source.RelativePath;
     });
     private async void VerifyTools_Click(object sender, RoutedEventArgs e) => await RunAsync(async token =>
@@ -476,7 +478,11 @@ public partial class MainWindow : Window
         await SaveAllSourcesAsync(directory, token);
         ShowBottom(0);
         BuildLog.Clear();
+        guideBuild = null;
+        RefreshFirstProjectGuide();
         var report = await BuildWithSummaryAsync(directory, token);
+        guideBuild = report;
+        RefreshFirstProjectGuide();
         if (report.Success && (await ProjectService.ReadAsync(directory, token)).Kind == ProjectKind.CubeMx)
         {
             await RefreshExplorerLanguageAsync(token);
@@ -500,6 +506,7 @@ public partial class MainWindow : Window
             return;
         }
         operationCancellation?.Cancel();
+        buildMemoryCancellation?.Cancel();
         if (IsMicroPythonProject)
         {
             try
@@ -581,6 +588,8 @@ public partial class MainWindow : Window
         pluginInvocationCancellation?.Cancel();
         CancelOutline();
         CancelFreeRtosRead();
+        CancelProjectTreeLoading();
+        CancelBuildMemoryRefresh();
         CloseCodeAssistance();
         if (!GitGraph.IsMutating)
         {
@@ -590,6 +599,7 @@ public partial class MainWindow : Window
         try
         {
             await pendingOperation;
+            await buildMemoryRefreshTask;
             await StopPackSyncAsync();
             await pendingZoomSave;
             try

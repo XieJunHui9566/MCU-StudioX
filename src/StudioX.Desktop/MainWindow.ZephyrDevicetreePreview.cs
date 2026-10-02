@@ -19,7 +19,7 @@ public partial class MainWindow
             CodeLanguage.ForFile(relative) != "Devicetree" || SourceEditor.SyntaxHighlighting is null ||
             !SourceEditor.Text.Contains("/dts-v1/;", StringComparison.Ordinal) ||
             ZephyrDeviceTreeButton.Visibility != Visibility.Visible || !ZephyrDeviceTreeButton.IsEnabled ||
-            FindProjectNode(relative) is not { IsSelected: true })
+            (await FindProjectNodeAsync(relative)) is not { IsSelected: true })
         {
             throw new InvalidOperationException("Zephyr 工程没有自动显示可编辑的板级设备树源文件。");
         }

@@ -129,7 +129,7 @@ public partial class MainWindow
         {
             EditorSynchronizer.Apply(editor, await services.Files.ReadAsync(root, mappingPath, token));
         }
-        RefreshProjectTree();
+        await RefreshProjectTreeAsync(token: token);
         await RefreshAg32PinMappingStatusAsync(token);
         await OpenSourceAsync(mappingPath, token);
         Status.Text = "基础映射已启用，VE 已打开；普通编译和下载会处理映射镜像。";
