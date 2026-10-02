@@ -19,7 +19,7 @@ public partial class MainWindow
         projectHealthView = new ProjectHealthView
         {
             InspectRequested = deep => ShowProjectHealthAsync(deep), ChooseRequested = ChooseHealthProjectAsync,
-            ExportRequested = ExportHealthReportAsync, ToolsRequested = ShowToolEnvironmentAsync,
+            ExportRequested = ExportHealthReportAsync, ToolsRequested = () => ShowProjectToolsAsync(projectHealthView?.Report?.ProjectDirectory ?? projectDirectory),
             ActionRequested = RunHealthActionAsync, HelpRequested = id => ShowHelpAsync(id),
             CanAct = check => check.Action is HealthAction.None or HealthAction.Tools or HealthAction.ResetCache
                 || projectHealthView?.Report?.ProjectDirectory == projectDirectory && projectDirectory is not null
@@ -79,12 +79,7 @@ public partial class MainWindow
         if (check.Action == HealthAction.None) { await ShowHelpAsync(check.HelpTopic); return; }
         if (check.Action == HealthAction.Tools)
         {
-            await ShowToolEnvironmentForProjectAsync(projectHealthView?.Report?.ProjectDirectory ?? projectDirectory);
-            if (environmentGrid?.ItemsSource is System.Collections.IEnumerable entries && check.ToolsetId is not null)
-            {
-                var match = entries.OfType<StudioX.Application.ToolEnvironmentEntry>().FirstOrDefault(entry => entry.Id == check.ToolsetId && entry.Version == check.ToolsetVersion);
-                if (match is not null) { environmentGrid.SelectedItem = match; environmentGrid.ScrollIntoView(match); }
-            }
+            await ShowProjectToolsAsync(projectHealthView?.Report?.ProjectDirectory ?? projectDirectory);
             return;
         }
         var root = projectHealthView?.Report?.ProjectDirectory;

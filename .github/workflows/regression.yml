@@ -1,0 +1,33 @@
+name: Windows regression
+on:
+  pull_request:
+  push:
+    branches: [main, master, 'codex/**']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: regression-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  offline:
+    runs-on: windows-2025
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Build and validate without firmware SDK or hardware
+        shell: pwsh
+        run: ./tools/Test-Regression.ps1 -OutputDirectory "$env:RUNNER_TEMP/studiox-regression"
+      - name: Retain logs and UI captures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: regression-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/studiox-regression/*.json
+            ${{ runner.temp }}/studiox-regression/*.log
+            ${{ runner.temp }}/studiox-regression/ui
+          retention-days: 14

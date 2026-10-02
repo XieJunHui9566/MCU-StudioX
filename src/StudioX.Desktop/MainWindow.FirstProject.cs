@@ -64,7 +64,7 @@ public partial class MainWindow
     {
         switch (action)
         {
-            case "tools": await ShowToolEnvironmentAsync(); break;
+            case "tools": await ShowProjectToolsAsync(); break;
             case "create": await RunAsync(token => BeginNewProjectAsync(token)); break;
             case "open": OpenProject_Click(this, new RoutedEventArgs()); break;
             case "health":

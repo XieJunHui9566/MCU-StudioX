@@ -1,16 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <ExistingHostDirectory>$(MSBuildThisFileDirectory)../../artifacts/build/plugin-labs/bin/StudioX.Desktop/release_win-x64</ExistingHostDirectory>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../../examples/StudioX.MakerPlugins/StudioX.MakerPlugins.csproj" />
-    <!-- 使用已交付的宿主服务程序集验收新插件，不重新构建 IDE。 -->
-    <Reference Include="StudioX.Application"><HintPath>$(ExistingHostDirectory)/StudioX.Application.dll</HintPath></Reference>
-    <Reference Include="StudioX.Extensions"><HintPath>$(ExistingHostDirectory)/StudioX.Extensions.dll</HintPath></Reference>
-    <Reference Include="StudioX.Foundation"><HintPath>$(ExistingHostDirectory)/StudioX.Foundation.dll</HintPath></Reference>
-    <Reference Include="StudioX.Engine"><HintPath>$(ExistingHostDirectory)/StudioX.Engine.dll</HintPath></Reference>
-    <Reference Include="StudioX.Packages"><HintPath>$(ExistingHostDirectory)/StudioX.Packages.dll</HintPath></Reference>
-    <Reference Include="StudioX.Devices"><HintPath>$(ExistingHostDirectory)/StudioX.Devices.dll</HintPath></Reference>
+    <!-- 直接引用当前源码，清理中间构建后仍可独立还原与验证。 -->
+    <ProjectReference Include="../../src/StudioX.Application/StudioX.Application.csproj" />
   </ItemGroup>
 </Project>

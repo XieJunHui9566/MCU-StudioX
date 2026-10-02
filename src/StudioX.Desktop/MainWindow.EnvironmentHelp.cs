@@ -35,6 +35,7 @@ public partial class MainWindow
                 actions.Children.Add(button);
             }
             Button("刷新", () => ShowToolEnvironmentForProjectAsync(environmentProject));
+            Button("按工程准备工具", () => ShowProjectToolsAsync(environmentProject));
             Button("校验所选工具集", () => RunEnvironmentActionAsync("verify"));
             Button("导出离线工具包", () => RunEnvironmentActionAsync("export"));
             Button("从离线包修复", () => RunEnvironmentActionAsync("repair"));

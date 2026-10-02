@@ -19,7 +19,7 @@ public partial class MainWindow
             checks.Add(label);
         }
         var catalog = services.Help;
-        Check(catalog.Articles.Count == 37 && catalog.Categories.Count == 6, "37 complete offline topics in six categories");
+        Check(catalog.Articles.Count >= 38 && catalog.Categories.Count == 6 && catalog.Articles.Any(a => a.Id == "code-templates"), "complete offline topics in six categories include code templates");
         foreach (var article in catalog.Articles)
         {
             Check(article.Markdown.Length > 400 && article.Markdown.Split('\n').Count(line => line.StartsWith("## ", StringComparison.Ordinal)) >= 4, article.Id + " has substantive instructions");

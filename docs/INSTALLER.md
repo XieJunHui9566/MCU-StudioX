@@ -51,3 +51,7 @@
 现有 `runtime/THIRD-PARTY-NOTICES.txt` 明确记录：工具链来自本地既有发行副本，公开发行前还需要归档供应商的对应源码及再分发材料，尤其 AGM 修改版 GCC/OpenOCD。安装包保留现有许可证和来源记录，但制作安装器不等于补齐这些材料，也没有生成或冒充供应商源码承诺。正式对外分发前需补齐对应材料。
 
 安装器参考：[Inno Setup 官方下载](https://jrsoftware.org/isdl.php)、[升级时保留 AppId](https://jrsoftware.org/isfaq.php)、[AppMutex](https://jrsoftware.org/ishelp/topic_setup_appmutex.htm)。
+
+## 基础版首次工程
+
+基础版用户先从新建工程页导入或同步所需器件包，明确选型并创建工程，然后进入“工具 → 准备工程工具”安装工程锁定的工具集。发布流程可用 Publish-Base.ps1 准备基础 Payload；此入口不自动建立公共目录、下载 SDK 或升级 IDE。工作流和验证见 [按工程准备工具](ON_DEMAND_TOOLS.md)。

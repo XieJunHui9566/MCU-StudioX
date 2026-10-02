@@ -46,15 +46,25 @@ public partial class MainWindow
                     await services.Faults.ExportAsync(exported, dialog.FileName, token);
                 }
             }
-            else if (action is "import" or "dump")
+            else if (action is "import" or "dump" or "archive-dump")
             {
                 var dialog = new OpenFileDialog { Filter = action == "import" ? "故障报告|*.json" : "Base64 转储|*.b64;*.txt|ELF 转储|*.elf|原始转储|*.bin;*.raw" };
                 if (dialog.ShowDialog(this) != true)
                 {
                     return;
                 }
-                view.SetReport(action == "import" ? await services.Faults.ImportAsync(dialog.FileName, token)
-                    : await services.Faults.DecodeDumpAsync(RequireProject(), dialog.FileName, dialog.FilterIndex == 1 ? "b64" : dialog.FilterIndex == 2 ? "elf" : "raw", token));
+                if (action == "import") { view.SetReport(await services.Faults.ImportAsync(dialog.FileName, token)); }
+                else
+                {
+                    var type = dialog.FilterIndex == 1 ? "b64" : dialog.FilterIndex == 2 ? "elf" : "raw";
+                    if (action == "archive-dump")
+                    {
+                        var elf = new OpenFileDialog { Title = "选择故障固件对应的归档 ELF", Filter = "应用程序 ELF|*.elf" };
+                        if (elf.ShowDialog(this) != true) { return; }
+                        view.SetReport(await services.Faults.DecodeDumpAsync(RequireProject(), dialog.FileName, type, elf.FileName, token));
+                    }
+                    else { view.SetReport(await services.Faults.DecodeDumpAsync(RequireProject(), dialog.FileName, type, token)); }
+                }
             }
         }
         catch (Exception error) { view.SetDiagnostic(error.ToString()); throw; }

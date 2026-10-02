@@ -57,6 +57,8 @@
       Path="tools/StudioX.WorkspaceEditingValidation/StudioX.WorkspaceEditingValidation.csproj" />
   </Folder>
   <Folder Name="/workflow-validation/">
+    <Project Path="tools/StudioX.CodeTemplateValidation/StudioX.CodeTemplateValidation.csproj" />
+    <Project Path="tools/StudioX.FaultPeripheralValidation/StudioX.FaultPeripheralValidation.csproj" />
     <Project Path="tools/StudioX.ProductWorkflowValidation/StudioX.ProductWorkflowValidation.csproj" />
   </Folder>
 </Solution>

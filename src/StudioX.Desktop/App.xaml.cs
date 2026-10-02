@@ -21,6 +21,9 @@ public partial class App : System.Windows.Application
         var smoke = e.Args is ["--smoke", _];
         var helpPreview = e.Args is ["--preview-help", _];
         var firstProjectPreview = e.Args is ["--preview-first-project", _, _];
+        var projectToolsPreview = e.Args is ["--preview-project-tools", _, _, _];
+        var faultPeripheralsPreview = e.Args is ["--preview-fault-peripherals", _, _];
+        var codeTemplatesPreview = e.Args is ["--preview-code-templates", _];
         var projectHealthPreview = e.Args is ["--preview-project-health", _, _];
         var toolManagementPreview = e.Args is ["--preview-tool-management", _, _];
         var diagnosticsPreview = e.Args is ["--preview-diagnostics", _];
@@ -70,7 +73,9 @@ public partial class App : System.Windows.Application
         var zephyrDevicetreePreview = e.Args is ["--preview-zephyr-devicetree", _, _];
         var anyPreview = productivityPreview || workspaceEditingPreview || microPythonPreview || pythonPreview || hdlWorkflowPreview || hdlPreview || ag32MappingPreview || pluginsPreview || preview || windowLayoutPreview || editorPreview || completionPreview || cmakePreview || documentsPreview || vePreview || navigationPreview || explorerPreview || buildPreview || buildMemoryPreview || editingPreview || bracketsPreview || stm32Preview || rp2350Preview || rp2040Preview || projectPreview || cubeMxPreview || importPerformancePreview || downloadPreview || espressifPreview || espressifModulePreview || debugPreview || rtosPreview || packCatalogPreview || breakpointsPreview || lvglPreview || lvglSetupPreview || zephyrDevicetreePreview;
         anyPreview |= agentWorkspacePreview || diagnosticsPreview || openOcdPlotPreview || pluginLabsPreview || helpPreview || firstProjectPreview || projectHealthPreview || toolManagementPreview || largeProjectPreview || projectOpenPerformancePreview;
-        anyPreview |= debugPluginsPreview || productWorkflowsPreview;
+        anyPreview |= debugPluginsPreview || productWorkflowsPreview || projectToolsPreview;
+        anyPreview |= faultPeripheralsPreview;
+        anyPreview |= codeTemplatesPreview;
         var data = (showAgentWorkspace || showProductivity || showDebugDemo || showBreakpointsDemo) && e.Args.Length == 3 ? Path.GetFullPath(e.Args[2]) : smoke || anyPreview ? Path.Combine(Path.GetFullPath(e.Args[1]), "user-data") :
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MCUStudioX");
         var services = new WorkbenchService(Path.Combine(AppContext.BaseDirectory, "runtime"), data);
@@ -91,7 +96,19 @@ public partial class App : System.Windows.Application
             Directory.CreateDirectory(directory);
             try
             {
-                if (productWorkflowsPreview)
+                if (codeTemplatesPreview)
+                {
+                    await window.RenderCodeTemplatesPreviewAsync(directory);
+                }
+                else if (faultPeripheralsPreview)
+                {
+                    await window.RenderFaultPeripheralsPreviewAsync(directory, Path.GetFullPath(e.Args[2]));
+                }
+                else if (projectToolsPreview)
+                {
+                    await window.RenderProjectToolsPreviewAsync(directory, Path.GetFullPath(e.Args[2]), Path.GetFullPath(e.Args[3]));
+                }
+                else if (productWorkflowsPreview)
                 {
                     await window.RenderProductWorkflowsPreviewAsync(directory, Path.GetFullPath(e.Args[2]), Path.GetFullPath(e.Args[3]));
                 }

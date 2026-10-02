@@ -431,6 +431,7 @@ public sealed partial class DebugSessionService(string dataDirectory) : IAsyncDi
     }
     private async Task ReleaseAdapterAsync()
     {
+        peripheralDeviceId = null;
         plotTransport = null;
         PlotSessionId = Guid.Empty;
         var previous = adapter;
@@ -473,6 +474,7 @@ public sealed partial class DebugSessionService(string dataDirectory) : IAsyncDi
     private Task SaveAsync(CancellationToken token) => settingsPath is null ? Task.CompletedTask : JsonStore.WriteAsync(settingsPath, new DebugPreferences(1, breakpoints.Where(b => !b.SessionOnly).Select(Unbound).ToArray(), watches), token);
     private void SetState(DebugState state, string reason)
     {
+        PeripheralRevision++;
         State = state;
         Reason = reason;
         Changed?.Invoke();

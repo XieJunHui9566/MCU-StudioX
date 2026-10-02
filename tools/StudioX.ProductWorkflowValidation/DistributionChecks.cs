@@ -36,7 +36,7 @@ internal static class DistributionChecks
         using var corrupt = new DistributionService(Path.Combine(root, "corrupt-download"), new Handler(bytes, [9, 9, 9, 9]));
         var corruptListing = await corrupt.ReadAsync("https://example.test/catalog.json");
         await Reject(() => corrupt.DownloadAsync(corruptListing, corruptListing.Catalog.Entries.Single()), "DOWNLOAD_HASH", "corrupt downloaded bytes cannot become installed cache", check);
-        check(!Directory.EnumerateFiles(Path.Combine(root, "corrupt-download/distribution-cache")).Any(), "failed download removes its own partial file");
+        check(!Directory.EnumerateFiles(Path.Combine(root, "corrupt-download/distribution-cache")).Any(p => !p.EndsWith(".lock", StringComparison.Ordinal)), "hash failure removes untrusted content and resume state");
         var local = Path.Combine(root, "local-catalog.json");
         await File.WriteAllBytesAsync(local, JsonSerializer.SerializeToUtf8Bytes(new DistributionCatalog(1, "Fixture", [entry with { Archive = "../escape.studioxplugin" }]), JsonStore.Options));
         try { await service.ReadAsync(local); check(false, "local archive escape"); }

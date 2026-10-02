@@ -39,6 +39,7 @@ public sealed partial class DebugSessionService
             var probe = OpenOcdDebugPlanner.ResolveProbe(preparation.Configuration);
             HardwareTarget = OpenOcdDebugPlanner.ResolveTarget(preparation.Configuration);
             IsHardware = true;
+            peripheralDeviceId = preparation.Configuration.Device.Id;
             SessionLogPath = preparation.LogPath;
             HardwareTargetName = probe.DisplayName + " / " + preparation.Configuration.Device.Id;
             SetState(DebugState.Starting, "连接 " + probe.DisplayName + " / OpenOCD，核对板上固件…");

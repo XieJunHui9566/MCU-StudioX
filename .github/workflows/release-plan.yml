@@ -1,0 +1,38 @@
+name: Review release plan
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Exact existing product version
+        required: true
+      profile:
+        type: choice
+        options: [base, full]
+        default: base
+permissions:
+  contents: read
+jobs:
+  review:
+    runs-on: windows-2025
+    timeout-minutes: 25
+    env:
+      RELEASE_VERSION: ${{ inputs.version }}
+      RELEASE_PROFILE: ${{ inputs.profile }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - shell: pwsh
+        run: ./tools/Invoke-Release.ps1 -ReleaseVersion $env:RELEASE_VERSION -DistributionProfile $env:RELEASE_PROFILE -OutputDirectory "$env:RUNNER_TEMP/release-plan" -Stage Plan
+      - shell: pwsh
+        run: ./tools/Test-Regression.ps1 -OutputDirectory "$env:RUNNER_TEMP/release-regression"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: reviewed-release-evidence
+          path: |
+            ${{ runner.temp }}/release-plan
+            ${{ runner.temp }}/release-regression/*.json
+            ${{ runner.temp }}/release-regression/*.log
+            ${{ runner.temp }}/release-regression/ui

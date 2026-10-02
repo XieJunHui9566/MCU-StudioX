@@ -8,6 +8,7 @@ using System.Windows.Threading;
 using ICSharpCode.AvalonEdit.CodeCompletion;
 using ICSharpCode.AvalonEdit.Highlighting;
 using StudioX.Application.CodeIntelligence;
+using StudioX.Application.Editing;
 
 public partial class MainWindow
 {
@@ -171,14 +172,16 @@ public partial class MainWindow
     private void QueueAssistance(bool signature, bool manual = false)
     {
         CancelCodeRequest();
-        if (!CanAssist || !IsCodeContext())
+        var templateRequest = manual && !signature && CanEditSource && IsCodeContext();
+        if ((!CanAssist || !IsCodeContext()) && !templateRequest)
         {
             return;
         }
         var pluginLanguage = IsPluginLanguage && !IsPythonDocument && !IsCMakeDocument && !CodeIntelligenceService.Supports(activeDocument!.RelativePath);
         var cmake = IsCMakeDocument;
         var python = IsPythonDocument;
-        if (!cmake && !python && !pluginLanguage && !services.Intelligence.IsReady)
+        var languageReady = CanAssist && IsCodeContext() && (cmake || python || pluginLanguage || services.Intelligence.IsReady);
+        if (!languageReady && !templateRequest)
         {
             if (manual)
             {
@@ -203,14 +206,26 @@ public partial class MainWindow
                 {
                     await Task.Delay(160, cancellation.Token);
                 }
-                bool Current() => !cancellation.IsCancellationRequested && revision == assistRevision && CanAssist &&
+                bool Current() => !cancellation.IsCancellationRequested && revision == assistRevision && (CanAssist || templateRequest && CanEditSource) &&
                     SourceEditor.Document == document && SourceEditor.CaretOffset == offset && document.Text == text;
+                IReadOnlyList<CodeTemplateEntry> templates = [];
+                if (templateRequest)
+                {
+                    try
+                    {
+                        templates = await services.CodeTemplates.CompleteAsync(projectDirectory, CodeLanguage.ForFile(path), text, offset, cancellation.Token);
+                    }
+                    catch (OperationCanceledException) when (cancellation.IsCancellationRequested) { throw; }
+                    catch (Exception ex) { if (Current()) { Status.Text = "代码模板：" + ex.Message; } Log(ex.ToString()); }
+                    if (!Current()) { return; }
+                    if (!languageReady) { ShowCompletions([], text, offset, templates: templates); return; }
+                }
                 if (pluginLanguage && pluginWorkspace is { } workspace)
                 {
                     var results = await workspace.CompleteAsync(new("completion", path, text, offset, revision), cancellation.Token);
                     if (Current() && workspace == pluginWorkspace)
                     {
-                        ShowCompletions(results.Select(r => new CodeSuggestion(r.Label, r.InsertText, r.Label, r.Detail, "插件语言扩展", 1, null, r.Label)).ToArray(), text, offset);
+                        ShowCompletions(results.Select(r => new CodeSuggestion(r.Label, r.InsertText, r.Label, r.Detail, "插件语言扩展", 1, null, r.Label)).ToArray(), text, offset, templates: templates);
                     }
                     return;
                 }
@@ -223,9 +238,9 @@ public partial class MainWindow
                     }
                     completionWindow?.Close();
                     signatureWindow?.Close();
-                    if (!signature && result.Suggestions.Count > 0)
+                    if (!signature && (result.Suggestions.Count > 0 || templates.Count > 0))
                     {
-                        ShowCompletions(result.Suggestions, text, offset, result.Signature);
+                        ShowCompletions(result.Suggestions, text, offset, result.Signature, templates);
                     }
                     else if (result.Signature is not null)
                     {
@@ -246,9 +261,9 @@ public partial class MainWindow
                     }
                     completionWindow?.Close();
                     signatureWindow?.Close();
-                    if (!signature && result.Suggestions.Count > 0)
+                    if (!signature && (result.Suggestions.Count > 0 || templates.Count > 0))
                     {
-                        ShowCompletions(result.Suggestions, text, offset, result.Signature);
+                        ShowCompletions(result.Suggestions, text, offset, result.Signature, templates);
                     }
                     else if (result.Signature is not null)
                     {
@@ -284,8 +299,8 @@ public partial class MainWindow
                     {
                         return;
                     }
-                    ShowCompletions(results, text, offset);
-                    if (manual && results.Count == 0)
+                    ShowCompletions(results, text, offset, templates: templates);
+                    if (manual && results.Count == 0 && completionWindow is null)
                     {
                         Status.Text = "当前位置没有匹配的代码提示。";
                     }
@@ -314,11 +329,11 @@ public partial class MainWindow
             }
         }
     }
-    private void ShowCompletions(IReadOnlyList<CodeSuggestion> suggestions, string snapshot, int offset, CodeSignature? context = null)
+    private void ShowCompletions(IReadOnlyList<CodeSuggestion> suggestions, string snapshot, int offset, CodeSignature? context = null, IReadOnlyList<CodeTemplateEntry>? templates = null)
     {
         completionWindow?.Close();
         signatureWindow?.Close();
-        if (suggestions.Count == 0)
+        if (suggestions.Count == 0 && (templates is null || templates.Count == 0))
         {
             return;
         }
@@ -351,6 +366,7 @@ public partial class MainWindow
         window.Content = null;
         body.Children.Add(window.CompletionList);
         window.Content = body;
+        var templateMatches = (templates ?? []).Where(entry => entry.Template.Shortcut.StartsWith(snapshot[prefixStart..offset], StringComparison.OrdinalIgnoreCase)).ToArray();
         var priority = suggestions.Count;
         foreach (var suggestion in suggestions)
         {
@@ -394,6 +410,22 @@ public partial class MainWindow
                     var insertedRevision = assistRevision;
                     _ = Dispatcher.BeginInvoke(() => { if (insertedRevision == assistRevision) { QueueAssistance(signature: !IsCMakeDocument); } }, DispatcherPriority.Input);
                 }));
+        }
+        // 语言服务可能替换整个头文件路径；保留其原有范围，不让模板改变路径补全的行为。
+        if (window.StartOffset == prefixStart)
+        {
+            foreach (var entry in templateMatches)
+            {
+                window.CompletionList.CompletionData.Add(new CodeTemplateCompletionData(SourceEditor.Document, entry, prefixStart, offset, (start, length) =>
+                {
+                    var target = CaptureTemplateTarget(start, length);
+                    if (target is not null)
+                    {
+                        // 补全窗口先完成关闭，再弹出变量窗口，防止焦点移动丢失插入目标。
+                        _ = Dispatcher.BeginInvoke(() => InsertCodeTemplate(entry.Template, target), DispatcherPriority.Input);
+                    }
+                }));
+            }
         }
         if (window.CompletionList.CompletionData.Count == 0)
         {

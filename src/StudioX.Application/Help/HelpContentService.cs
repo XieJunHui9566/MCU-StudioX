@@ -16,6 +16,7 @@ public sealed class HelpContentService
     public string DiagnosticTopic(string diagnostic)
     {
         bool Has(params string[] terms) => terms.Any(term => diagnostic.Contains(term, StringComparison.OrdinalIgnoreCase));
+        if (Has("CODE_TEMPLATE_")) return "code-templates";
         if (Has("COMPONENT_")) return "components";
         if (Has("CATALOG_", "DOWNLOAD_HASH", "DOWNLOAD_SIZE", "INSTALL_SPACE", "PLUGIN_ROLLBACK")) return "distribution";
         if (Has("BUILD_HISTORY_", "BUILD_COMPARE_")) return "build-comparison";

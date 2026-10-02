@@ -3,6 +3,7 @@ namespace StudioX.ProductWorkflowValidation;
 using System.Text.RegularExpressions;
 using StudioX.Application;
 using StudioX.Application.Components;
+using StudioX.Application.Tools;
 using StudioX.Engine;
 using StudioX.Engine.Debugging;
 using StudioX.Foundation;
@@ -19,6 +20,8 @@ internal static class NativeChecks
         var project = Path.Combine(root, "native-project");
         await new ProjectService().CreateAsync(pack, device.Id, template.Id, "workflow-native", project);
         var catalog = new ToolsetCatalog(toolsets);
+        var preparation = new ProjectToolPreparationService(catalog, new ToolManagementService(catalog, packs, new RecentProjectService(root), root));
+        check((await preparation.InspectAsync(project)).Requirements.All(r => r.State == ProjectToolState.Installed), "generated F407 project recognizes installed tools without full SDK scan");
         var build = new BuildService(catalog);
         var history = new BuildHistoryService(Path.Combine(root, "native-data"), new(catalog));
         var baseline = await build.BuildAsync(project);

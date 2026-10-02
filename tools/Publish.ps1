@@ -12,6 +12,7 @@ if (!$ReleaseVersion)
     $ReleaseVersion = $properties.SelectSingleNode('//ProductVersion').InnerText
 }
 . (Join-Path $PSScriptRoot 'Release-Version.ps1')
+. (Join-Path $PSScriptRoot 'Release-Evidence.ps1')
 $releaseIdentity = Get-StudioXReleaseVersion $ReleaseVersion
 if (!$RuntimeAssetsDirectory)
 {
@@ -373,7 +374,10 @@ if ($DevicePackCatalogDirectory)
 $releasedPacks | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath (Join-Path $packOutput 'index.json') -Encoding utf8
 $guide = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'installer/使用说明.txt') -Raw
 $guide.Replace('{{VERSION}}', $ReleaseVersion) | Set-Content -LiteralPath (Join-Path $output '使用说明.txt') -Encoding utf8
+$sourceEvidence = Get-StudioXSourceEvidence $projectRoot
 @{ formatVersion         =1;
+    sourceCommit         =$sourceEvidence.sourceCommit;
+    sourceDirty          =$sourceEvidence.sourceDirty;
     product              ='MCU StudioX';
     version              =$ReleaseVersion;
     channel              ='preview';

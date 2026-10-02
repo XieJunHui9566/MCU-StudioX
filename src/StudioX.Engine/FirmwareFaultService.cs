@@ -5,7 +5,7 @@ using StudioX.Engine.Debugging;
 using StudioX.Foundation;
 
 /// <summary>使用工程锁定工具离线解析已有日志/转储，不连接设备。</summary>
-public sealed class FirmwareFaultService(ToolsetCatalog tools)
+public sealed partial class FirmwareFaultService(ToolsetCatalog tools)
 {
     private readonly ProcessRunner runner = new();
     private async Task<(ProjectManifest Project, ResolvedToolset Tools, string Elf, string Hash)> SymbolsAsync(string project, CancellationToken token)
@@ -72,32 +72,4 @@ public sealed class FirmwareFaultService(ToolsetCatalog tools)
             };
         }, token);
 
-    public Task<FaultAnalysisReport> DecodeCoreDumpAsync(string project, string dump, string type, CancellationToken token = default)
-        => Task.Run(async () =>
-        {
-            if (type is not ("b64" or "elf" or "raw"))
-            {
-                throw new ArgumentException("转储格式应为 b64、elf 或 raw。", nameof(type));
-            }
-            var file = Path.GetFullPath(dump);
-            if (new FileInfo(file).Length > 64 * 1024 * 1024)
-            {
-                throw new StudioXException("FAULT_DUMP_SIZE", "转储超过 64 MiB。");
-            }
-            var symbols = await SymbolsAsync(project, token);
-            var sdk = symbols.Project.Espressif ?? throw new StudioXException("FAULT_IDF", "Core Dump 解码需要 ESP-IDF 工程。");
-            if (sdk.Framework != "esp-idf")
-            {
-                throw new StudioXException("FAULT_IDF", "此解码入口仅支持 ESP-IDF。");
-            }
-            var environment = await EspressifBuildEnvironment.CreateAsync(project, symbols.Tools, sdk, token);
-            var result = await runner.RunAsync(new(symbols.Tools.Tool("python"), ["-m", "esp_coredump", "--chip", sdk.Target, "info_corefile", "--gdb", symbols.Tools.Tool("gdb"), "-t", type, "-c", file, symbols.Elf], project, TimeSpan.FromMinutes(2), environment, RemoveEnvironment: ToolsetEnvironment.AmbientVariables), token);
-            var output = result.StandardOutput + "\n" + result.StandardError;
-            if (result.ExitCode != 0 || result.TimedOut || result.OutputTruncated)
-            {
-                throw new StudioXException("FAULT_DUMP", "本地转储解析失败：\n" + output);
-            }
-            return new FaultAnalysisReport(new(1, symbols.Project.DeviceId, "导入的 ESP Core Dump；未连接设备", DateTimeOffset.UtcNow, null, null, null, null, null, null, output),
-                ["使用当前工程 ELF 解码；需要确认它与故障时的固件对应。", "原始转储文件未修改。"], [], output, symbols.Hash);
-        }, token);
 }

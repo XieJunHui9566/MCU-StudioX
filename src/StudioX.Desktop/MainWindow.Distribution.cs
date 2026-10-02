@@ -44,7 +44,7 @@ public partial class MainWindow
         }
         catch (Exception error) { distributionView!.SetDetail(error.ToString()); }
     }
-    private Task RunDistributionAsync(string action) => RunAsync(async token =>
+    private Task RunDistributionAsync(string action) => action == "required" ? ShowProjectToolsAsync() : RunAsync(async token =>
     {
         var view = distributionView!;
         try
@@ -78,12 +78,6 @@ public partial class MainWindow
             if (action == "load")
             {
                 view.SetListing(await services.Distribution.ReadAsync(view.Source.Trim(), distributionKey, token));
-                return;
-            }
-            if (action == "required")
-            {
-                var project = await ProjectService.ReadAsync(RequireProject(), token);
-                view.ShowRequired(project.ToolsetId, project.ToolsetVersion);
                 return;
             }
             if (action == "components")

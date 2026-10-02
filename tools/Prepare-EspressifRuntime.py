@@ -184,6 +184,10 @@ def main():
     for role, source in sources.items():
         print(f"Preparing shared {role}...", flush=True)
         copy_tree(source, output / role)
+    # CoreDump 分析使用与 IDF tools.json 对应的官方 GDB，不能回退到系统工具。
+    gdb_version = "16.3_20250913"
+    for folder, package in (("xtensa-gdb", "xtensa-esp-elf-gdb"), ("riscv-gdb", "riscv32-esp-elf-gdb")):
+        copy_tree(arguments.tools_root / package / gdb_version / package, output / folder)
     print("Preparing relocatable Python...", flush=True)
     prepare_python(
         arguments.tools_root / "idf-python" / "3.11.2",
@@ -206,6 +210,9 @@ def main():
         "cmake": "cmake/bin/cmake.exe",
         "ninja": "ninja/ninja.exe",
         "git": "git/cmd/git.exe",
+        "gdb-esp32": "xtensa-gdb/bin/xtensa-esp32-elf-gdb.exe",
+        "gdb-esp32s3": "xtensa-gdb/bin/xtensa-esp32s3-elf-gdb.exe",
+        "gdb-riscv": "riscv-gdb/bin/riscv32-esp-elf-gdb.exe",
     }
     for target, folder, prefix in (
         ("esp32", "xtensa", "xtensa-esp32-elf"),
@@ -260,6 +267,7 @@ def main():
             "cmake": "3.30.2",
             "ninja": "1.12.1",
             "esptool": esptool,
+            "gdb": gdb_version,
         },
         "resourceDirectories": {
             "idf": "sdk",

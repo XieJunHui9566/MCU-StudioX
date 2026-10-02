@@ -25,7 +25,7 @@ public sealed class FaultAnalysisView : UserControl
         top.Children.Add(new TextBlock { Text = "固件故障分析", FontSize = 22 });
         top.Children.Add(new TextBlock { Text = "粘贴 ESP Panic/回溯日志，或读取已暂停 Cortex-M3/M4/M7 的故障现场。地址定位使用当前工程 ELF，导入日志需自行确认固件对应。", TextWrapping = TextWrapping.Wrap, Margin = new(0, 8, 0, 8) });
         var buttons = new WrapPanel();
-        foreach (var (title, action) in new[] { ("分析日志", "analyze"), ("读取暂停现场", "read"), ("使用工程 ELF 定位", "locate"), ("导入 ESP 转储", "dump"), ("导入报告", "import"), ("导出报告", "export") })
+        foreach (var (title, action) in new[] { ("分析日志", "analyze"), ("读取暂停现场", "read"), ("使用工程 ELF 定位", "locate"), ("转储 + 工程 ELF", "dump"), ("转储 + 归档 ELF", "archive-dump"), ("导入报告", "import"), ("导出报告", "export") })
         {
             var button = new Button { Content = title, Margin = new(0, 0, 8, 8), Padding = new(10, 5, 10, 5) };
             button.Click += async (_, _) => { if (Requested is { } run) { await run(action); } };
@@ -43,5 +43,5 @@ public sealed class FaultAnalysisView : UserControl
         Report = report;
         output.Text = report.ToText();
     }
-    public void SetDiagnostic(string text) => output.Text = text;
+    public void SetDiagnostic(string text) { Report = null; output.Text = text; }
 }

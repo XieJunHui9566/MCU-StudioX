@@ -28,6 +28,7 @@ public partial class MainWindow
         Add(WorkspaceViewMenu, "移到另一编辑分组", "Ctrl+Alt+Right", () => activeEditor is not null, () => { MoveEditorGroup(activeEditor!, activeEditor!.Group == 0 ? 1 : 0); return Task.CompletedTask; });
         Add(WorkspaceViewMenu, "合并编辑分组", "", () => secondaryTabs?.Items.Count > 0, () => { MergeEditorGroups(); return Task.CompletedTask; });
         Add(ToolsRootMenu, "工具环境管理…", "", () => !projectActionsBusy, ShowToolEnvironmentAsync);
+        Add(ToolsRootMenu, "准备工程工具…", "", () => !projectActionsBusy, () => ShowProjectToolsAsync());
         Add(ToolsRootMenu, "工具占用与升级管理…", "", () => !projectActionsBusy, () => ShowToolManagementAsync());
         Add(ToolsRootMenu, "工程健康检查…", "", () => !projectActionsBusy, () => ShowProjectHealthAsync());
         Add(DebugTopMenu, "固件故障分析…", "", () => !projectActionsBusy, ShowFaultAnalysisAsync);
@@ -61,6 +62,7 @@ public partial class MainWindow
                 sourceContextMenu.Items.Add(new MenuItem { Header = item.Title, InputGestureText = item.Shortcut, Command = new PluginUiCommand(item.Execute, item.Enabled) });
             }
         }
+        InitializeCodeTemplates();
     }
     private Task PreviewFormatAsync(bool selection) => RunAsync(async token =>
     {

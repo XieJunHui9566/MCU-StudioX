@@ -9,7 +9,7 @@ using StudioX.Extensions;
 using StudioX.Packages;
 
 /// <summary>显式读取目录和校验下载；目录发布者声明与受信任密钥验证分别呈现。</summary>
-public sealed class DistributionService : IDisposable
+public sealed partial class DistributionService : IDisposable
 {
     private readonly HttpClient http;
     private readonly string cache;
@@ -81,54 +81,10 @@ public sealed class DistributionService : IDisposable
         { throw new StudioXException("CATALOG_IDENTITY", "插件归档与目录声明不一致。"); }
     }, token);
 
-    public async Task<string> DownloadAsync(DistributionListing listing, DistributionEntry entry, IProgress<string>? progress = null, CancellationToken token = default)
-    {
-        if (!listing.Catalog.Entries.Contains(entry)) { throw new StudioXException("CATALOG_SELECTION", "条目不属于当前目录快照。"); }
-        var extension = entry.Kind switch { "tool" => ".studioxtools", "plugin" => ".studioxplugin", _ => ".studioxcomponent" };
-        Directory.CreateDirectory(cache);
-        var destination = PathBoundary.Resolve(cache, entry.Sha256.ToUpperInvariant() + extension);
-        if (File.Exists(destination)) { await VerifyAsync(destination, entry, token); return destination; }
-        var temp = PathBoundary.Resolve(cache, Guid.NewGuid().ToString("N") + ".partial");
-        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(token);
-        timeout.CancelAfter(TimeSpan.FromMinutes(30));
-        HttpResponseMessage? response = null;
-        try
-        {
-            Stream source;
-            var online = Uri.TryCreate(listing.Source, UriKind.Absolute, out var baseUri) && baseUri.Scheme == "https";
-            var archiveUri = online ? new Uri(baseUri!, entry.Archive) : Uri.TryCreate(entry.Archive, UriKind.Absolute, out var absolute) && absolute.Scheme == "https" ? absolute : null;
-            if (archiveUri is not null)
-            {
-                ValidateUrl(archiveUri);
-                response = await http.GetAsync(archiveUri, HttpCompletionOption.ResponseHeadersRead, timeout.Token);
-                response.EnsureSuccessStatusCode();
-                if (response.Content.Headers.ContentLength is { } length && length != entry.DownloadBytes) { throw new StudioXException("DOWNLOAD_SIZE", "下载长度与目录不一致。"); }
-                source = await response.Content.ReadAsStreamAsync(timeout.Token);
-            }
-            else { source = File.OpenRead(PathBoundary.Resolve(Path.GetDirectoryName(listing.Source)!, entry.Archive)); }
-            await using (source)
-            await using (var file = new FileStream(temp, FileMode.CreateNew, FileAccess.Write, FileShare.None, 64 * 1024, true))
-            {
-                var buffer = new byte[64 * 1024];
-                long received = 0, lastProgress = 0;
-                while (await source.ReadAsync(buffer, timeout.Token) is var count && count > 0)
-                {
-                    received += count;
-                    if (received > entry.DownloadBytes) { throw new StudioXException("DOWNLOAD_SIZE", "下载超过目录声明的长度。"); }
-                    await file.WriteAsync(buffer.AsMemory(0, count), timeout.Token);
-                    if (received - lastProgress >= 1024 * 1024 || received == entry.DownloadBytes) { progress?.Report($"下载 {received:N0}/{entry.DownloadBytes:N0} 字节"); lastProgress = received; }
-                }
-            }
-            await VerifyAsync(temp, entry, timeout.Token);
-            File.Move(temp, destination);
-            return destination;
-        }
-        finally { response?.Dispose(); if (File.Exists(temp)) { File.Delete(temp); } }
-    }
     public static long RequiredFreeBytes(DistributionEntry entry) => checked(entry.DownloadBytes + 2 * entry.InstalledBytes);
     public IReadOnlyList<DistributionSpacePlan> SpacePlan(DistributionEntry entry, string installationDirectory)
     {
-        var groups = new[] { (Directory: cache, Bytes: entry.DownloadBytes), (Directory: Path.GetFullPath(installationDirectory), Bytes: checked(2 * entry.InstalledBytes)) }
+        var groups = new[] { (Directory: cache, Bytes: entry.DownloadBytes - DownloadState(entry).SavedBytes), (Directory: Path.GetFullPath(installationDirectory), Bytes: checked(2 * entry.InstalledBytes)) }
             .GroupBy(v => Path.GetPathRoot(v.Directory)!, StringComparer.OrdinalIgnoreCase);
         return groups.Select(g => new DistributionSpacePlan(g.Key, g.Sum(v => v.Bytes), new DriveInfo(g.Key).AvailableFreeSpace)).ToArray();
     }

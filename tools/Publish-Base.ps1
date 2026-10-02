@@ -2,6 +2,7 @@ param([Parameter(Mandatory)][string]$OutputDirectory, [string]$ReleaseVersion, [
 $ErrorActionPreference = 'Stop'
 $taskRoot = Split-Path -Parent $PSScriptRoot
 . (Join-Path $PSScriptRoot 'Release-Version.ps1')
+. (Join-Path $PSScriptRoot 'Release-Evidence.ps1')
 if (!$ReleaseVersion) {
     $taskProperties = [xml](Get-Content -LiteralPath (Join-Path $taskRoot 'Directory.Build.props') -Raw)
     $ReleaseVersion = $taskProperties.SelectSingleNode('//ProductVersion').InnerText
@@ -30,7 +31,8 @@ if (Test-Path -LiteralPath (Join-Path $taskOutput 'runtime/toolsets')) { throw '
 [IO.Directory]::CreateDirectory((Join-Path $taskOutput 'device-packs')) | Out-Null
 [IO.File]::WriteAllText((Join-Path $taskOutput 'device-packs/index.json'), '[]')
 $taskGuide = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'installer/使用说明.txt') -Raw
-($taskGuide.Replace('{{VERSION}}', $ReleaseVersion) + "`n基础版：从工具 → 软件与组件分发安装工程所需的工具集；也支持 .studioxtools 离线归档。`n") | Set-Content -LiteralPath (Join-Path $taskOutput '使用说明.txt') -Encoding utf8
-@{formatVersion=1;product='MCU StudioX';version=$ReleaseVersion;channel='preview';platform='win-x64';distributionProfile='base';updateMode='installer';userDataDirectory='%LOCALAPPDATA%\MCUStudioX';devicePacksDirectory='device-packs';bundledPlugins=$false;devicePackCatalogSha256=(Get-FileHash -LiteralPath (Join-Path $taskOutput 'device-packs/index.json') -Algorithm SHA256).Hash} | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $taskOutput 'release.json') -Encoding utf8
+($taskGuide.Replace('{{VERSION}}', $ReleaseVersion) + "`n基础版：先导入所需器件包并创建工程，从工具 → 准备工程工具安装工程锁定的工具集；支持继续下载和 .studioxtools 离线导入。`n") | Set-Content -LiteralPath (Join-Path $taskOutput '使用说明.txt') -Encoding utf8
+$taskSourceEvidence = Get-StudioXSourceEvidence $taskRoot
+@{formatVersion=1;sourceCommit=$taskSourceEvidence.sourceCommit;sourceDirty=$taskSourceEvidence.sourceDirty;product='MCU StudioX';version=$ReleaseVersion;channel='preview';platform='win-x64';distributionProfile='base';updateMode='installer';userDataDirectory='%LOCALAPPDATA%\MCUStudioX';devicePacksDirectory='device-packs';bundledPlugins=$false;devicePackCatalogSha256=(Get-FileHash -LiteralPath (Join-Path $taskOutput 'device-packs/index.json') -Algorithm SHA256).Hash} | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $taskOutput 'release.json') -Encoding utf8
 if ($DistributionCatalogDirectory) { & (Join-Path $PSScriptRoot 'Copy-DistributionCatalog.ps1') -SourceDirectory $DistributionCatalogDirectory -OutputDirectory (Join-Path $taskOutput 'runtime/distribution') }
 Write-Output $taskOutput

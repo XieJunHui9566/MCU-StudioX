@@ -484,6 +484,7 @@
                 Click="ShowFreeRtos_Click"
                 IsEnabled="False" />
               <MenuItem Header="OpenOCD 变量绘图" Click="OpenOcdPlot_Click" />
+              <MenuItem Header="外设寄存器（SVD）…" Click="ShowPeripherals_Click" />
             </MenuItem>
             <MenuItem
               x:Name="ToolsRootMenu"

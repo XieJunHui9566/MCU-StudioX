@@ -18,11 +18,14 @@ public sealed class WorkbenchService : IAsyncDisposable
     public Onboarding.FirstProjectGuideService FirstProjectGuide { get; }
     public Health.ProjectHealthService ProjectHealth { get; }
     public Tools.ToolManagementService ToolManagement { get; }
+    public Tools.ProjectToolPreparationService ProjectTools { get; }
     public DebugLaunchService DebugLaunch { get; }
     public FaultAnalysisService Faults { get; }
+    public Peripherals.PeripheralService Peripherals { get; }
     public BuildHistoryService BuildHistory { get; }
     public Distribution.DistributionService Distribution { get; }
     public Components.ComponentService Components { get; }
+    public Editing.CodeTemplateService CodeTemplates { get; }
     public WorkbenchService(string runtimeDirectory, string dataDirectory)
     {
         RuntimeDirectory = Path.GetFullPath(runtimeDirectory);
@@ -64,6 +67,7 @@ public sealed class WorkbenchService : IAsyncDisposable
         Debugger = new DebugSessionService(DataDirectory);
         Components = new(() => Debugger.IsActive, Builds);
         Faults = new(Toolsets, Debugger);
+        Peripherals = new(Debugger, DataDirectory);
         DebugLaunch = new(Debugger, Downloads);
         ProjectHealth = new Health.ProjectHealthService(Toolsets, Builds, () => Debugger.IsActive);
         OpenOcdPlot = new OpenOcdPlot.OpenOcdPlotService(Debugger);
@@ -72,7 +76,9 @@ public sealed class WorkbenchService : IAsyncDisposable
         Appearance = new AppearanceService(DataDirectory);
         RecentProjects = new RecentProjectService(DataDirectory);
         ToolManagement = new Tools.ToolManagementService(Toolsets, Packs, RecentProjects, DataDirectory, () => Debugger.IsActive);
+        ProjectTools = new(Toolsets, ToolManagement);
         EditorSettings = new EditorSettingsService(DataDirectory);
+        CodeTemplates = new(DataDirectory);
         EditorSessions = new Editing.EditorSessionStore(DataDirectory);
         WorkspaceEdits = new Editing.WorkspaceEditService(Files);
         AiSettings = new AiSettingsService(DataDirectory);
