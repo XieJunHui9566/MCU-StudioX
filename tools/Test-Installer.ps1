@@ -39,7 +39,7 @@ if ($PayloadDirectory)
         throw 'Validation payload and installer versions do not match.'
     }
     $productId = '{' + [Guid]::NewGuid().ToString().ToUpperInvariant() + '}'
-    $productMutex = 'MCUStudioX.Validation.' + $productId
+    $productMutex = 'MCUStudioX.Validation.' + $productId.Trim('{}')
     $compilerArguments = @("--define=ProductId=$productId", "--define=ProductMutex=$productMutex", "--define=InstallerMutex=$productMutex.Setup")
 }
 $registry = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\${productId}_is1"
