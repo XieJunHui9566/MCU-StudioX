@@ -196,14 +196,24 @@ public partial class MainWindow
         }
         ShowBottom(0);
         BuildLog.Clear();
-        var report = await services.Ag32PinMapping.BuildAsync(root,
-            new Progress<string>(text => { Status.Text = text; Log(text); }), token,
-            new Progress<string>(text => Log(text.TrimEnd('\r', '\n'))));
-        await Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Background);
-        Log("映射构建日志：" + report.LogPath);
-        Status.Text = report.Success ? "映射编译成功；尚未下载到芯片。" : "映射编译失败，请查看原始诊断。";
-        Log(Status.Text);
-        await RefreshAg32PinMappingStatusAsync(token);
+        try
+        {
+            var report = await services.Ag32PinMapping.BuildAsync(root,
+                new Progress<string>(text => { Status.Text = text; Log(text); }), token,
+                new Progress<string>(text => Log(text.TrimEnd('\r', '\n'))));
+            await Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Background);
+            Log("映射构建日志：" + report.LogPath);
+            Status.Text = report.Success ? "映射编译成功；尚未下载到芯片。" : "映射编译失败，请查看原始诊断。";
+            Log(Status.Text);
+        }
+        finally
+        {
+            if (projectDirectory == root)
+            {
+                try { await RefreshAg32PinMappingStatusAsync(CancellationToken.None); }
+                catch (Exception error) { Log("时序状态刷新失败：" + error); }
+            }
+        }
     });
 
     private void DownloadLogic_Click(object sender, RoutedEventArgs e) => Download_Click(sender, e);

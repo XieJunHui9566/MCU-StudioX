@@ -14,6 +14,7 @@ public sealed class ProcessRunner
         {
             throw new StudioXException("TOOL_MISSING", $"工具组件不存在：{request.Executable}");
         }
+        using var toolLease = ToolUsageLease.ForExecutable(request.Executable);
         var start = new ProcessStartInfo(request.Executable)
         {
             WorkingDirectory = request.WorkingDirectory,

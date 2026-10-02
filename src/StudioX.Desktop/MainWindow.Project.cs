@@ -31,6 +31,9 @@ public partial class MainWindow
             : null;
         ClearEditorDocuments();
         projectDirectory = directory;
+        lastFailure = "";
+        healthDirectory = directory;
+        projectHealthView?.Invalidate();
         LvglPreview.SetProject(directory);
         ClearHdlSchematic();
         ResetAiForProjectChange();

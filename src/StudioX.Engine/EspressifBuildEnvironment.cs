@@ -29,7 +29,7 @@ internal static class EspressifBuildEnvironment
         environment["PYTHONHOME"] = environment["IDF_PYTHON_ENV_PATH"];
         environment["IDF_TARGET"] = settings.Target;
         environment["ESP_IDF_VERSION"] = settings.Framework == "esp-idf" ? settings.SdkVersion : "3.4";
-        environment["PYTHON"] = EspressifNativePath.For(tools.Tool("python"));
+        environment["PYTHON"] = EspressifNativePath.ForExecutable(tools.Tool("python"));
         environment["PATH"] = string.Join(Path.PathSeparator, tools.Manifest.Executables.Keys
             .Select(role => EspressifNativePath.For(Path.GetDirectoryName(tools.Tool(role))!))
             .Distinct(StringComparer.OrdinalIgnoreCase).Append(Environment.GetFolderPath(Environment.SpecialFolder.System)));

@@ -116,6 +116,7 @@ public partial class MainWindow
             planner.BringIntoView();
             await LayoutAsync();
             Render(this, Path.Combine(directory, "analog-configuration.png"));
+            await ExerciseAg32TimingControlsAsync(directory, fixture, planner, Check, LayoutAsync);
             planner.PlannerTabs.SelectedIndex = 1;
             planner.PackageDiagram.Children.OfType<Button>().Single(button => Equals(button.Tag, 10))
                 .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));

@@ -1,9 +1,10 @@
-param([string]$OutputDirectory, [string]$RuntimeAssetsDirectory, [string]$ReleaseVersion, [string]$BuildArtifactsDirectory, [switch]$ExcludePlugins)
+param([string]$OutputDirectory, [string]$RuntimeAssetsDirectory, [string]$ReleaseVersion, [string]$BuildArtifactsDirectory, [string]$DevicePackCatalogDirectory, [switch]$ExcludePlugins)
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
 if (!$ReleaseVersion)
 {
-    $ReleaseVersion = ([xml](Get-Content -LiteralPath (Join-Path $projectRoot 'Directory.Build.props') -Raw)).Project.PropertyGroup.Version
+    $properties = ([xml](Get-Content -LiteralPath (Join-Path $projectRoot 'Directory.Build.props') -Raw)).Project.PropertyGroup
+    $ReleaseVersion = if ($properties.ProductVersion) { $properties.ProductVersion } else { $properties.Version }
 }
 . (Join-Path $PSScriptRoot 'Release-Version.ps1')
 $releaseIdentity = Get-StudioXReleaseVersion $ReleaseVersion
@@ -105,18 +106,18 @@ if (!(Test-Path -LiteralPath (Join-Path $projectRoot 'artifacts/git-runtime/git/
 {
     throw 'Prepare the bundled Git first: tools/Prepare-GitRuntime.ps1'
 }
-& dotnet publish (Join-Path $projectRoot 'src/StudioX.Desktop/StudioX.Desktop.csproj') -c Release -r win-x64 --self-contained true -o $output "-p:StudioXRuntimeAssetsDirectory=$assets" "-p:Version=$ReleaseVersion" -p:DebugType=None -p:DebugSymbols=false -p:IncludeSourceRevisionInInformationalVersion=false --nologo @buildArguments
+& dotnet publish (Join-Path $projectRoot 'src/StudioX.Desktop/StudioX.Desktop.csproj') -c Release -r win-x64 --self-contained true -o $output "-p:StudioXRuntimeAssetsDirectory=$assets" "-p:Version=$($releaseIdentity.FileVersion)" "-p:ProductVersion=$ReleaseVersion" -p:DebugType=None -p:DebugSymbols=false -p:IncludeSourceRevisionInInformationalVersion=false --nologo @buildArguments
 if ($LASTEXITCODE -ne 0)
 {
     throw 'Desktop publish failed.'
 }
 $runtime = Join-Path $output 'runtime'
-& dotnet publish (Join-Path $projectRoot 'src/StudioX.PluginHost/StudioX.PluginHost.csproj') -c Release -r win-x64 --self-contained true -o (Join-Path $runtime 'plugin-host') "-p:Version=$ReleaseVersion" -p:DebugType=None -p:DebugSymbols=false -p:IncludeSourceRevisionInInformationalVersion=false --nologo @buildArguments
+& dotnet publish (Join-Path $projectRoot 'src/StudioX.PluginHost/StudioX.PluginHost.csproj') -c Release -r win-x64 --self-contained true -o (Join-Path $runtime 'plugin-host') "-p:Version=$($releaseIdentity.FileVersion)" "-p:ProductVersion=$ReleaseVersion" -p:DebugType=None -p:DebugSymbols=false -p:IncludeSourceRevisionInInformationalVersion=false --nologo @buildArguments
 if ($LASTEXITCODE -ne 0)
 {
     throw 'Plugin host publish failed.'
 }
-& dotnet publish (Join-Path $projectRoot 'src/StudioX.Cli/StudioX.Cli.csproj') -c Release -r win-x64 --self-contained true -o (Join-Path $runtime 'mcp-host') "-p:Version=$ReleaseVersion" -p:DebugType=None -p:DebugSymbols=false -p:IncludeSourceRevisionInInformationalVersion=false --nologo @buildArguments
+& dotnet publish (Join-Path $projectRoot 'src/StudioX.Cli/StudioX.Cli.csproj') -c Release -r win-x64 --self-contained true -o (Join-Path $runtime 'mcp-host') "-p:Version=$($releaseIdentity.FileVersion)" "-p:ProductVersion=$ReleaseVersion" -p:DebugType=None -p:DebugSymbols=false -p:IncludeSourceRevisionInInformationalVersion=false --nologo @buildArguments
 if ($LASTEXITCODE -ne 0)
 {
     throw 'MCP host publish failed.'
@@ -339,6 +340,31 @@ foreach ($rpCatalog in @(
         devices               =$rpIndex.devices
     }
 }
+if ($DevicePackCatalogDirectory)
+{
+    # 对外发行可以指定已审核的固定目录，避免把本地候选包或旧修订带入公开安装包。
+    $catalogRoot = [IO.Path]::GetFullPath($DevicePackCatalogDirectory)
+    $catalogIndex = Join-Path $catalogRoot 'index.json'
+    $approved = @(Get-Content -LiteralPath $catalogIndex -Raw | ConvertFrom-Json)
+    if (!$approved.Count -or @($approved | Group-Object id | Where-Object Count -gt 1).Count) { throw 'Invalid release pack catalog.' }
+    $verified = @()
+    foreach ($entry in $approved)
+    {
+        if (!$entry.file -or $entry.file -match '(^|[\\/])\.\.([\\/]|$)|:|^[\\/]' -or [IO.Path]::GetExtension($entry.file) -ne '.mcupack') { throw 'Invalid release pack path.' }
+        $source = [IO.Path]::GetFullPath((Join-Path $catalogRoot $entry.file))
+        if (!$source.StartsWith($catalogRoot.TrimEnd('\') + '\', [StringComparison]::OrdinalIgnoreCase) -or
+            (Get-FileHash -LiteralPath $source -Algorithm SHA256).Hash -ne $entry.sha256) { throw "Release pack hash mismatch: $($entry.id)" }
+        $verified += @{ entry = $entry; source = $source }
+    }
+    foreach ($entry in $releasedPacks) { Remove-Item -LiteralPath (Join-Path $packOutput $entry.file) }
+    foreach ($item in $verified)
+    {
+        $target = Join-Path $packOutput $item.entry.file
+        [IO.Directory]::CreateDirectory([IO.Path]::GetDirectoryName($target)) | Out-Null
+        Copy-Item -LiteralPath $item.source -Destination $target
+    }
+    $releasedPacks = $approved
+}
 $releasedPacks | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath (Join-Path $packOutput 'index.json') -Encoding utf8
 $guide = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'installer/使用说明.txt') -Raw
 $guide.Replace('{{VERSION}}', $ReleaseVersion) | Set-Content -LiteralPath (Join-Path $output '使用说明.txt') -Encoding utf8
@@ -351,5 +377,6 @@ $guide.Replace('{{VERSION}}', $ReleaseVersion) | Set-Content -LiteralPath (Join-
     userDataDirectory    ='%LOCALAPPDATA%\MCUStudioX';
     devicePacksDirectory ='device-packs';
     bundledPlugins       = !$ExcludePlugins.IsPresent
+    devicePackCatalogSha256 = (Get-FileHash -LiteralPath (Join-Path $packOutput 'index.json') -Algorithm SHA256).Hash.ToLowerInvariant()
 } | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $output 'release.json') -Encoding utf8
 Write-Output $output

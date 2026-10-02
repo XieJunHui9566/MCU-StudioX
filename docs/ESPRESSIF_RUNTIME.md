@@ -24,6 +24,10 @@ ESP32 六个 0.1.1 器件包使用 IDF 自带的 `get-started/hello_world` 与 `
 
 原生工具运行目录必须能够表示为不含空格和非 ASCII 字符的 Windows 短路径；无法取得有效短名称时明确拒绝，避免配置成功但后续编译器处理路径失败。编辑器仍使用工程的原始规范路径。应用组件、图片、字体和预编译库应放在工程内；构建检查原生 CMake/Ninja 输入，工程外的未锁定输入不会获得下载凭据。
 
+Windows 下编译器只缩短目录，保留 `xtensa-esp32s3-elf-gcc.exe` 等完整文件名。Xtensa 启动器使用文件名选择动态配置，把整个可执行文件缩成 8.3 名称会使 `XTENSA_GNU_CONFIG` 与 `-dynconfig` 指向不同文件。构建在 `.build` 内生成 CMake 语言规则钩子，在编译器检测前绑定已锁定路径，并经 IDF 的 `EXTRA_CMAKE_ARGS` 传入 bootloader 子工程；SDK 源码和用户 CMake 不改写。构建策略修订进入缓存身份，旧原生缓存会重建；其他进程的 `XTENSA_GNU_CONFIG` 不继承。
+
+新建工程已初始化 Git 但尚无提交时，IDF 的旧版本探测模块会读取不存在的 `head-ref`。构建钩子在确认当前分支尚无引用时返回“无提交版本”状态，由 IDF 自己按原有优先级选择 `PROJECT_VER`、`version.txt`、`project(VERSION)` 或默认固件版本 `1`。不创建提交，不改写 Git 记录；用户提供的版本来源继续生效。
+
 ## 开发者准备
 
 普通用户使用完整发行目录。下列命令供开发者从已准备的完整 SDK 和工具构建共享资源，SDK 不复制到每个工程：
@@ -56,6 +60,8 @@ ESP8266 v3.4 的原生组件清单中，pthread 条件变量的强制链接符�
 发行小包使用 `artifacts/packs/Espressif-0.1.1/` 中七个 `.mcupack` 和 `index.json`，其中 ESP32 六包版本为 0.1.1，ESP8266 为未改变的 0.1.0；生成时的 `source/` 仅为工作目录，不复制到发行包。开发 bundle 位于 `artifacts/device-packs-development/`，用于本地构建时自动导入这七个包，不用于替代完整厂商发行索引。SDK 工具集由 Desktop 的运行资源规则共享；`Publish.ps1` 在发布前独立验证全部 SDK 文件哈希，以及包路径、版本、设备身份与来源摘要。新版模板使用独立的包版本，已安装旧包和用户既有工程不会被同版本覆盖。
 
 ## 离线验证
+
+`dotnet run --project tools/StudioX.EspressifBuildValidation -- <runtime> <ESP32-S3 工程> <新的输出目录> native-tools` 验证带空格目录、环境污染、C/C++/汇编及 bootloader 文件名、增量缓存、无首次提交的 Git 仓库、三种用户版本来源、工程输入保持一致和 SDK 全文件哈希；不连接硬件。
 
 ```powershell
 dotnet run --project tools/StudioX.EspressifValidation -- --official `

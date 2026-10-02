@@ -14,6 +14,7 @@ public sealed class GdbProcessTransport : IGdbMiTransport
     private readonly ConcurrentDictionary<int, TaskCompletionSource<string>> pending = new();
     private readonly SemaphoreSlim writes = new(1, 1);
     private readonly List<Task> readers = [];
+    private readonly List<ToolUsageLease> toolLeases = [];
     private readonly ProbeLease lease;
     private readonly DebugProcessJob job;
     private readonly StreamWriter log;
@@ -88,6 +89,8 @@ public sealed class GdbProcessTransport : IGdbMiTransport
     }
     private Process Launch(string executable, string[] arguments, HardwareDebugPreparation preparation)
     {
+        var toolLease = ToolUsageLease.ForExecutable(executable);
+        if (toolLease is not null) toolLeases.Add(toolLease);
         var start = new ProcessStartInfo(executable)
         {
             WorkingDirectory = preparation.ProjectDirectory,
@@ -322,7 +325,7 @@ public sealed class GdbProcessTransport : IGdbMiTransport
             {
                 await Task.WhenAll(readers);
             }
-            finally { gdb?.Dispose(); openocd?.Dispose(); try { lock (logSync) { log.Dispose(); } } finally { lease.Dispose(); } }
+            finally { gdb?.Dispose(); openocd?.Dispose(); try { lock (logSync) { log.Dispose(); } } finally { foreach (var toolLease in toolLeases) toolLease.Dispose(); lease.Dispose(); } }
         }
         if (detachFailure is not null)
         {

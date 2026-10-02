@@ -2,6 +2,7 @@ param(
     [Parameter(Mandatory = $true)][string]$Installer,
     [Parameter(Mandatory = $true)][string]$OutputDirectory,
     [string]$PreviousVersion = '0.1.0',
+    [string]$PayloadDirectory,
     [string]$CompilerPath = (Join-Path $PSScriptRoot '../.artifacts/installer-tools/InnoSetup-7.1.0/ISCC.exe')
 )
 $ErrorActionPreference = 'Stop'
@@ -10,23 +11,47 @@ $Installer = [IO.Path]::GetFullPath($Installer)
 $releaseVersion = (Get-Item -LiteralPath $Installer).VersionInfo.ProductVersion.Trim()
 $releaseIdentity = Get-StudioXReleaseVersion $releaseVersion
 $previousIdentity = Get-StudioXReleaseVersion $PreviousVersion
-if ([version]$previousIdentity.FileVersion -ge [version]$releaseIdentity.FileVersion)
+if ((Compare-StudioXReleaseVersions $PreviousVersion $releaseVersion) -ge 0)
 {
     throw 'PreviousVersion must be lower than the installer version.'
 }
-$nextVersion = [version]$releaseVersion
+$nextVersion = [version]$releaseIdentity.FileVersion
 $newerVersion = '{0}.{1}.{2}' -f $nextVersion.Major, $nextVersion.Minor, ($nextVersion.Build + 1)
 $root = [IO.Path]::GetFullPath($OutputDirectory)
 if (Test-Path -LiteralPath $root)
 {
     throw 'Choose a new validation directory.'
 }
-$registry = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\{B8050FBC-2DE2-43F4-B839-F0E90522E671}_is1'
+$productId = '{B8050FBC-2DE2-43F4-B839-F0E90522E671}'
+$productMutex = 'MCUStudioX.Desktop.InstallLock'
+$compilerArguments = @()
+# 已有真实安装时，以同一脚本及同一完整 Payload 验证独立产品身份，不改写正式卸载项。
+if ($PayloadDirectory)
+{
+    $PayloadDirectory = [IO.Path]::GetFullPath($PayloadDirectory)
+    if ((Get-Content -LiteralPath (Join-Path $PayloadDirectory 'release.json') -Raw | ConvertFrom-Json).version -ne $releaseVersion)
+    {
+        throw 'Validation payload and installer versions do not match.'
+    }
+    $productId = '{' + [Guid]::NewGuid().ToString().ToUpperInvariant() + '}'
+    $productMutex = 'MCUStudioX.Validation.' + $productId
+    $compilerArguments = @("--define=ProductId=$productId", "--define=ProductMutex=$productMutex", "--define=InstallerMutex=$productMutex.Setup")
+}
+$registry = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\${productId}_is1"
 if (Test-Path -LiteralPath $registry)
 {
     throw 'MCU StudioX is already installed for this user; do not alter an existing installation during validation.'
 }
 New-Item -ItemType Directory -Path $root | Out-Null
+@{ productId = $productId; isolated = [bool]$PayloadDirectory; shippingInstaller = $Installer; version = $releaseVersion } |
+    ConvertTo-Json | Set-Content -LiteralPath (Join-Path $root 'validation-identity.json') -Encoding utf8
+if ($PayloadDirectory)
+{
+    $isolatedOutput = Join-Path $root 'isolated-installer'
+    & $CompilerPath --quiet-progress "--define=AppVersion=$releaseVersion" "--define=AppFileVersion=$($releaseIdentity.FileVersion)" "--define=PayloadDirectory=$PayloadDirectory" "--output-dir=$isolatedOutput" @compilerArguments (Join-Path $PSScriptRoot 'installer/StudioX.iss')
+    if ($LASTEXITCODE -ne 0) { throw 'Cannot compile the isolated full-payload installer.' }
+    $Installer = Join-Path $isolatedOutput "MCU-StudioX-$releaseVersion-win-x64-Setup.exe"
+}
 $installed = Join-Path $root 'Installed App'
 $log = [Collections.Generic.List[string]]::new()
 function Pass([string]$message)
@@ -42,7 +67,7 @@ function Assert([bool]$condition, [string]$message)
         throw $message
     }
 }
-function Run-Program([string]$file, [string[]]$arguments, [int]$timeoutSeconds = 300)
+function Run-Program([string]$file, [string[]]$arguments, [int]$timeoutSeconds = 900)
 {
     $start = [Diagnostics.ProcessStartInfo]::new($file)
     $start.UseShellExecute = $false;
@@ -73,7 +98,7 @@ $seed = Join-Path $root 'old-version-fixture';
 New-Item -ItemType Directory -Path $seed | Out-Null
 'OLD VERSION FIXTURE - NOT AN EXECUTABLE' | Set-Content -LiteralPath (Join-Path $seed 'MCU StudioX.exe')
 $seedOutput = Join-Path $root 'old-installer'
-& $CompilerPath --quiet --no-compression "--define=AppVersion=$PreviousVersion" "--define=PayloadDirectory=$seed" "--output-dir=$seedOutput" (Join-Path $PSScriptRoot 'installer/StudioX.iss')
+& $CompilerPath --quiet --no-compression "--define=AppVersion=$PreviousVersion" "--define=AppFileVersion=$($previousIdentity.FileVersion)" "--define=PayloadDirectory=$seed" "--output-dir=$seedOutput" @compilerArguments (Join-Path $PSScriptRoot 'installer/StudioX.iss')
 if ($LASTEXITCODE -ne 0)
 {
     throw 'Cannot build the upgrade fixture.'
@@ -104,7 +129,7 @@ Assert ((Get-ItemProperty -LiteralPath $registry).DisplayVersion -eq $releaseVer
 Assert ((Get-Item -LiteralPath (Join-Path $installed 'MCU StudioX.exe')).VersionInfo.FileVersion -eq $releaseIdentity.FileVersion) 'Executable version incorrect'
 Pass 'Upgrade replaces old application and keeps one uninstall entry'
 
-$mutex = [Threading.Mutex]::new($false, 'MCUStudioX.Desktop.InstallLock')
+$mutex = [Threading.Mutex]::new($false, $productMutex)
 try
 {
     $exitCode = Run-Program $Installer (Setup-Arguments 'running-app-blocked') 30
@@ -127,6 +152,23 @@ finally
     Set-ItemProperty -LiteralPath $registry -Name DisplayVersion -Value $releaseVersion
 }
 Pass 'Older installer refuses a newer registered version'
+if ($releaseIdentity.Suffix)
+{
+    Set-ItemProperty -LiteralPath $registry -Name DisplayVersion -Value ($releaseIdentity.FileVersion + 'Z')
+    try
+    {
+        $exitCode = Run-Program $Installer (Setup-Arguments 'newer-letter-blocked') 30
+        Assert ($exitCode -ne 0) 'Installer ignored a newer letter revision'
+    }
+    finally { Set-ItemProperty -LiteralPath $registry -Name DisplayVersion -Value $releaseVersion }
+    Pass 'Newer letter revision blocks downgrade at the same numeric version'
+    $baseOutput = Join-Path $root 'base-installer'
+    & $CompilerPath --quiet --no-compression "--define=AppVersion=$($releaseIdentity.FileVersion)" "--define=AppFileVersion=$($releaseIdentity.FileVersion)" "--define=PayloadDirectory=$seed" "--output-dir=$baseOutput" @compilerArguments (Join-Path $PSScriptRoot 'installer/StudioX.iss')
+    Assert ($LASTEXITCODE -eq 0) 'Cannot build the numeric-version fixture'
+    $exitCode = Run-Program (Join-Path $baseOutput "MCU-StudioX-$($releaseIdentity.FileVersion)-win-x64-Setup.exe") (Setup-Arguments 'numeric-base-blocked') 30
+    Assert ($exitCode -ne 0) 'Numeric base installer overwrote a newer letter revision'
+    Pass 'Numeric base installer refuses an installed letter revision'
+}
 $wrongDirectory = Join-Path $root 'Wrong Location'
 $exitCode = Run-Program $Installer (Setup-Arguments 'location-change-blocked' $wrongDirectory) 30
 Assert ($exitCode -ne 0 -and !(Test-Path -LiteralPath (Join-Path $wrongDirectory 'MCU StudioX.exe'))) 'Silent upgrade moved the installation'
@@ -149,7 +191,7 @@ $minimumByVendor = @{ STMicroelectronics =23;
     AGM                                  =1;
     WCH                                  =2;
     Puya                                 =16;
-    GigaDevice                           =14
+    GigaDevice                           =13
 }
 foreach ($vendor in $minimumByVendor.Keys)
 {

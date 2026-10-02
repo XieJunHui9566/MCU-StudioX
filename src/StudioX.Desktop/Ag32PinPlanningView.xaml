@@ -28,6 +28,19 @@
         Click="Reload_Click"
         Margin="0,0,0,12" />
     </WrapPanel>
+    <Border x:Name="TimingBorder" BorderThickness="2,0,0,0" Padding="12,6" Margin="0,0,0,12" BorderBrush="{DynamicResource DiagnosticWarning}">
+      <StackPanel>
+        <TextBlock x:Name="TimingStateText" FontWeight="SemiBold" TextWrapping="Wrap" Foreground="{DynamicResource DiagnosticWarning}" />
+        <TextBlock x:Name="TimingSummaryText" TextWrapping="Wrap" Margin="0,5,0,0" />
+        <Expander x:Name="TimingDetails" Header="查看关键路径与原始报告" Foreground="{DynamicResource Text}" Margin="0,6,0,0">
+          <StackPanel>
+            <TextBlock x:Name="TimingPathText" TextWrapping="Wrap" Margin="0,6,0,6" />
+            <Button x:Name="TimingReportButton" Content="打开 Supra 原始时序报告" HorizontalAlignment="Left" Click="TimingReport_Click" IsEnabled="False" />
+            <TextBlock Text="正余量表示满足本次片内时序约束；未包含外部器件采样时序，也不代表实板验收。" TextWrapping="Wrap" Foreground="{DynamicResource Muted}" Margin="0,6,0,0" />
+          </StackPanel>
+        </Expander>
+      </StackPanel>
+    </Border>
     <TextBlock x:Name="ConflictStatus" Visibility="Collapsed" Foreground="{DynamicResource ErrorColor}" TextWrapping="Wrap" Margin="0,4,0,10" />
     <TabControl x:Name="PlannerTabs" SelectedIndex="1">
       <TabItem Header="ADC / DAC / 比较器">
@@ -249,6 +262,12 @@
             x:Name="BusClock"
             TextChanged="Clock_Changed"
             Margin="0,6,0,12" />
+          <TextBlock x:Name="ClockGuidanceText" TextWrapping="Wrap" Foreground="{DynamicResource DiagnosticWarning}" Margin="0,0,0,12" />
+          <TextBlock Text="模拟 IP 推荐组合（SYS / BUS）" Margin="0,0,0,6" />
+          <ComboBox x:Name="RecommendedClocks" DisplayMemberPath="Name" SelectionChanged="Recommendation_Changed" Margin="0,0,0,8" />
+          <Button x:Name="ApplyRecommendedClockButton" Content="应用推荐时钟并保存" HorizontalAlignment="Left" Click="ApplyRecommendedClock_Click"
+                  ToolTip="保留当前 HSE、引脚和模拟设置，保存整份图形草稿并重新生成系统层；仍需点击顶部编译验证实际时序。" Margin="0,0,0,8" />
+          <TextBlock x:Name="RecommendationDetails" TextWrapping="Wrap" Foreground="{DynamicResource Muted}" Margin="0,0,0,14" />
           <TextBlock
             Text="保存时生成厂商 VEX 引脚约束数据与 SDC 输入时钟约束。顶部编译会生成最终 ASF、映射镜像，并核对实际 PLL 和时钟连接。"
             TextWrapping="Wrap"

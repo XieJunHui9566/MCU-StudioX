@@ -38,6 +38,7 @@
       </WrapPanel>
       <Expander
         Header="工具、许可与构建状态"
+        Foreground="{DynamicResource Text}"
         Margin="0,8,0,8">
         <StackPanel>
           <TextBox

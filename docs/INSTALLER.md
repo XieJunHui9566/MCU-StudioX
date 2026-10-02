@@ -1,6 +1,6 @@
 # Windows 安装与升级
 
-版本从 `Directory.Build.props` 读取；独立 IDE 当前源码与安装器目标版本为 **0.2.5.3**，可覆盖升级首版 0.1.0，与旧 VS Code 插件的 0.17 分开。关于窗口、欢迎页、状态栏、EXE 文件版本和安装器版本保持一致。
+版本从 `Directory.Build.props` 的 `ProductVersion` 读取；独立 IDE 当前源码与安装器目标版本为 **0.2.5.4A**，可覆盖升级首版 0.1.0，与旧 VS Code 插件的 0.17 分开。关于窗口、欢迎页、状态栏和安装器显示相同产品版本；Windows 文件与程序集版本为 **0.2.5.4**，产品版本保留 `A` 修订后缀。
 
 ## 构建
 
@@ -38,7 +38,7 @@
 
 ## 验证
 
-`tools/Test-Installer.ps1 -Installer <setup.exe> -OutputDirectory <new-directory>` 使用同 AppId 的 0.1.0 模拟旧安装，验证覆盖升级、同版本修复、降级拒绝、运行中拒绝、目录更换拒绝、逐文件完整性、自包含桌面启动和卸载保留数据。目标版本从安装器读取，可用 `-PreviousVersion` 指定模拟旧版本。如果当前用户已经安装了正式产品，测试脚本会拒绝运行，以免覆盖真实安装。
+`tools/Test-Installer.ps1 -Installer <setup.exe> -OutputDirectory <new-directory>` 使用同 AppId 的 0.1.0 模拟旧安装，验证覆盖升级、同版本修复、降级拒绝、运行中拒绝、目录更换拒绝、逐文件完整性、自包含桌面启动和卸载保留数据。目标版本从安装器读取，可用 `-PreviousVersion` 指定模拟旧版本。如果当前用户已经安装了正式产品，必须传入 `-PayloadDirectory <完整发行目录>`：测试以相同安装脚本及完整 Payload 编译唯一测试 AppId 的安装器，不修改正式安装和卸载项。无后缀、A..Z 按顺序排列，数字部分优先比较；字母版本额外验证相同数字版本的降级拦截。
 
 ## 分发状态
 

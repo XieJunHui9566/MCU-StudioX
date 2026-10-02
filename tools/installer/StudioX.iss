@@ -8,16 +8,25 @@
 #ifndef AppFileVersion
   #define AppFileVersion AppVersion
 #endif
-#define ProductId "{B8050FBC-2DE2-43F4-B839-F0E90522E671}"
+#ifndef ProductId
+  #define ProductId "{B8050FBC-2DE2-43F4-B839-F0E90522E671}"
+#endif
+#ifndef ProductMutex
+  #define ProductMutex "MCUStudioX.Desktop.InstallLock"
+#endif
+#ifndef InstallerMutex
+  #define InstallerMutex "MCUStudioX.Setup"
+#endif
 
 [Setup]
-AppId={{B8050FBC-2DE2-43F4-B839-F0E90522E671}
+AppId={{#ProductId}
 AppName=MCU StudioX
 AppVersion={#AppVersion}
 AppVerName=MCU StudioX {#AppVersion}
 AppPublisher=MCU StudioX
 VersionInfoVersion={#AppFileVersion}
-VersionInfoProductVersion={#AppVersion}
+VersionInfoProductVersion={#AppFileVersion}
+VersionInfoProductTextVersion={#AppVersion}
 VersionInfoDescription=MCU StudioX 安装程序
 DefaultDirName={localappdata}\Programs\MCU StudioX
 DefaultGroupName=MCU StudioX
@@ -34,8 +43,8 @@ AllowNoIcons=yes
 UninstallDisplayName=MCU StudioX
 UninstallDisplayIcon={app}\MCU StudioX.exe
 SetupIconFile=..\..\src\StudioX.Desktop\Assets\StudioX.ico
-AppMutex=MCUStudioX.Desktop.InstallLock
-SetupMutex=MCUStudioX.Setup
+AppMutex={#ProductMutex}
+SetupMutex={#InstallerMutex}
 CloseApplications=no
 RestartApplications=no
 AlwaysRestart=no
@@ -73,6 +82,20 @@ Name: "{autodesktop}\MCU StudioX"; Filename: "{app}\MCU StudioX.exe"; WorkingDir
 Filename: "{app}\MCU StudioX.exe"; Description: "{cm:LaunchProgram,MCU StudioX}"; Flags: nowait postinstall skipifsilent
 
 [Code]
+function TakeRevisionSuffix(var Version: String): String;
+var
+    Last: String;
+begin
+    Result := '';
+    if Length(Version) = 0 then Exit;
+    Last := Copy(Version, Length(Version), 1);
+    if (Last >= 'A') and (Last <= 'Z') then
+    begin
+        Result := Last;
+        Delete(Version, Length(Version), 1);
+    end;
+end;
+
 function NextVersionPart(var Version: String): Integer;
 var
     Separator: Integer;
@@ -95,8 +118,12 @@ end;
 function CompareReleaseVersions(Left, Right: String): Integer;
 var
     I, A, B: Integer;
+    LeftSuffix, RightSuffix: String;
 begin
     Result := 0;
+    { 数字相同时按无后缀、A..Z 排序，避免把末段 4A 解析为零。 }
+    LeftSuffix := TakeRevisionSuffix(Left);
+    RightSuffix := TakeRevisionSuffix(Right);
     for I := 0 to 3 do
     begin
         A := NextVersionPart(Left);
@@ -112,6 +139,7 @@ begin
             Exit;
         end;
     end;
+    Result := CompareText(LeftSuffix, RightSuffix);
 end;
 
 function InitializeSetup(): Boolean;

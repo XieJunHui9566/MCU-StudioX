@@ -1,0 +1,19 @@
+# ESP-IDF 工程与模组配置
+
+## 核对 SDK 与 target
+工程信息和构建日志会显示框架、SDK 版本与 target，例如 `esp-idf 5.5.4 · target=esp32s3`。ESP32、S3、C3 等是不同目标，编译器和配置需匹配。ESP8266 使用独立 RTOS SDK，不能作为 ESP-IDF 5.5.4 的一个 target 直接套用。
+
+## 原生工程结构
+根配置包含 IDF 的 `project.cmake`，应用通常位于 `main/`；组件维护自己的 `idf_component_register`。`sdkconfig.defaults` 提供默认值，原生配置生成或使用 `sdkconfig`。StudioX 使用锁定 SDK 的原生 `idf.py`、CMake 与 Ninja，不要求安装全局 Python。
+
+## 设置 Flash 和 PSRAM
+1. 打开“工具 → 器件与模板”，找到 ESP 模组配置。
+2. 按模组完整标识选择预设，或者明确填写实际 Flash 容量、频率、PSRAM 类型和容量等。
+3. 核对摘要，保存配置后重新编译。
+4. 如果选择沿用原生配置，继续以已有 SDK 配置为准；不要根据开发板商品名猜 PSRAM。
+
+## 添加组件与编译
+把源码加入应用或新组件的注册列表。模板启用 `MINIMAL_BUILD` 时，要明确声明新增功能所需的组件依赖。保存后按 `F7`，配置成功将生成编译数据库，随后编译应用、bootloader 和分区表。SDK 头文件提示可在原生配置完成后获得更完整的信息。
+
+## 下载前检查
+核对实际芯片、COM 端口和 Flash 参数，使用当前工程生成的完整布局。ESP 下载时串口需可用；先断开占用同端口的串口终端或 MicroPython 会话。出现配置冲突、target 不匹配或缓存问题时，继续阅读“ESP-IDF 常见配置与编译故障”。

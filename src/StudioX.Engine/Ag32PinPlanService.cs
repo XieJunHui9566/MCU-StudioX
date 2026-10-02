@@ -157,17 +157,24 @@ public sealed class Ag32PinPlanService(ToolsetCatalog tools)
         }
         var catalog = await Ag32PinPlanCatalog.ReadAsync(resolved, settings.TargetDevice, profile.PinCount, root, token);
         var document = new Ag32PinPlanDocument(bytes);
+        string? clockDiagnostic = null;
         try
         {
             catalog.Validate(document.Assignments, document.Clocks);
             ValidateDeviceClock(profile, document.Clocks);
+        }
+        catch (StudioXException ex) when (ex.Code == "AG32_PIN_PLAN_CLOCK")
+        {
+            // 可完整表达的时钟数值允许在界面修复；保存仍必须通过全部时钟校验。
+            clockDiagnostic = ex.Message;
         }
         catch (StudioXException ex)
         {
             document.Diagnostics.Add(ex.Message + " 原文保留，图形规划只读。");
         }
         var snapshot = new Ag32PinPlanSnapshot(project.DeviceId, settings.TargetDevice, settings.PinMapFile, Hash(bytes),
-            catalog.Pins, catalog.Functions, document.Assignments, document.Clocks, document.Diagnostics.ToArray(), document.CanEdit,
+            catalog.Pins, catalog.Functions, document.Assignments, document.Clocks,
+            clockDiagnostic is null ? document.Diagnostics.ToArray() : [.. document.Diagnostics, clockDiagnostic], document.CanEdit,
             Ag32PeripheralSupport.Read(bytes));
         return new(snapshot, document, catalog, resolved, settings);
     }
@@ -208,11 +215,7 @@ public sealed class Ag32PinPlanService(ToolsetCatalog tools)
 
     private static void ValidateDeviceClock(Ag32DeviceProfile profile, Ag32PinClockSettings clocks)
     {
-        if (clocks.SysMhz > profile.MaximumSysClockMhz || clocks.BusMhz > profile.MaximumSysClockMhz)
-        {
-            throw new StudioXException("AG32_PIN_PLAN_CLOCK",
-                $"{profile.DeviceId} 的系统/总线时钟不能超过厂商手册核实的 {profile.MaximumSysClockMhz} MHz。");
-        }
+        Ag32ClockPolicy.RequireValid(profile.DeviceId, clocks);
     }
 
     private static void VerifyVex(string text, IReadOnlyList<Ag32PinAssignment> assignments)

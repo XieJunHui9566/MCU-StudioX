@@ -62,6 +62,7 @@ public sealed partial class Ag32PinMappingBuildService(ToolsetCatalog catalog, s
         {
             Directory.CreateDirectory(build);
             Invalidate(root);
+            Ag32TimingEvidence.Clear(root);
             var project = await ProjectService.ReadAsync(root, token);
             var settings = RequireSettings(project);
             var profile = await RequireDeviceIdentityAsync(root, project, token);
@@ -132,6 +133,9 @@ public sealed partial class Ag32PinMappingBuildService(ToolsetCatalog catalog, s
                     ExitCode = 1
                 }, []);
             }
+            // 先保留本次分析（包含负余量），随后仍由完整校验决定能否签发下载凭据。
+            var analysis = await Ag32PinMappingTimingReport.ReadAsync(build, token, requirePassing: false);
+            await Ag32TimingEvidence.WriteAsync(root, sourceHash, tools.Fingerprint, analysis, token);
             var routing = await Ag32PinMappingRouting.VerifyAsync(build, source, token);
             await routing.Timing.ExportAsync(build, token);
             output?.Report(routing.Timing.Summary + "\n");

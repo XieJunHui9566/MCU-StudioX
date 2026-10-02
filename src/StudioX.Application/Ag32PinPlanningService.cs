@@ -6,6 +6,15 @@ using StudioX.Engine;
 public sealed class Ag32PinPlanningService(ToolsetCatalog tools)
 {
     private readonly Ag32PinPlanService engine = new(tools);
+    private readonly Ag32TimingService timing = new(tools);
+
+    public Task<Ag32TimingStatus> ReadTimingAsync(string projectDirectory, CancellationToken token = default)
+        => timing.ReadAsync(projectDirectory, token);
+    public static string? ValidateClocks(string deviceId, Ag32PinClockSettings clocks) => Ag32ClockPolicy.Validate(deviceId, clocks);
+    public static string ClockGuidance(string deviceId, Ag32PinClockSettings clocks, Ag32AnalogSettings analog)
+        => Ag32ClockPolicy.Guidance(deviceId, clocks, analog);
+    public static Ag32ClockRecommendation[] ClockRecommendations(string deviceId, Ag32PinClockSettings clocks, Ag32AnalogSettings analog)
+        => Ag32ClockPolicy.Recommendations(deviceId, clocks, analog);
 
     public static Ag32AnalogPin[] GetAnalogPins(string deviceId) => Ag32PeripheralSupport.Pins(deviceId);
     public static Ag32AnalogPin[] GetReservedAnalogPins(string deviceId, Ag32AnalogSettings settings)

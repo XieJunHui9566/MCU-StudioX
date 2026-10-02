@@ -98,7 +98,15 @@ await Reject(async () => await Apply([new("GPIO7_6", 2), new("UART0_UARTTXD", 21
 await Reject(async () => await Apply([new("UART0_UARTTXD", 2, "INPUT")]), "AG32_PIN_PLAN_FUNCTION", "Peripheral wrong direction rejected");
 await Reject(async () => await Apply([new("GPIO4_4", 2)], new(-8, 200, 100)), "AG32_PIN_PLAN_CLOCK", "Negative external clock rejected");
 await Reject(async () => await Apply([new("GPIO4_4", 2)], new(8, 1000, 100)), "AG32_PIN_PLAN_CLOCK", "System clock above verified device limit rejected");
-await Reject(async () => await Apply([new("GPIO4_4", 2)], new(8, 200, 75)), "AG32_PIN_PLAN_CONVERTER", "Actual converter rejects incompatible BUSCLK");
+await Reject(async () => await Apply([new("GPIO4_4", 2)], new(8, 200, 75)), "AG32_PIN_PLAN_CLOCK", "Incompatible BUSCLK rejected before vendor conversion");
+var validClockSource = await File.ReadAllBytesAsync(source);
+await File.WriteAllBytesAsync(source, Bom("HSECLK 8\r\nSYSCLK 160\r\nBUSCLK 100\r\nGPIO4_4 PIN_2\r\n"));
+var invalidClockSnapshot = await service.ReadAsync(root);
+Check(invalidClockSnapshot.CanEdit && invalidClockSnapshot.Diagnostics.Any(item => item.Contains("整数分频", StringComparison.Ordinal)),
+    "Existing incompatible clock stays editable with a visible diagnostic");
+var repairedClock = await service.ApplyAsync(root, invalidClockSnapshot, invalidClockSnapshot.Assignments, new(8, 160, 80));
+Check(repairedClock.Snapshot.Clocks == new Ag32PinClockSettings(8, 160, 80), "Clock-only error can be repaired through normal graph save");
+await File.WriteAllBytesAsync(source, validClockSource);
 await File.AppendAllTextAsync(source, "# 文本编辑器的修改\r\n");
 await Reject(async () => await Apply([new("GPIO4_4", 21)]), "AG32_PIN_PLAN_STALE", "Stale graph cannot overwrite editor changes");
 await File.WriteAllBytesAsync(source, Bom("# 用户自定义行\r\nCUSTOM_LOGIC signal\r\nGPIO4_4 PIN_2\r\n"));

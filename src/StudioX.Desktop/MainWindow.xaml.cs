@@ -548,7 +548,7 @@ public partial class MainWindow : Window
         {
             Status.Text = ex is StudioXException studio ? studio.Code + "：" + studio.Message : ex.Message;
             Log(ex.ToString());
-            ShowTroubleshooting(ex.ToString());
+            ShowTroubleshooting(FailureDiagnostic(ex));
         }
         finally { operationCancellation.Dispose(); operationCancellation = null; UpdateProjectActions(busy: false); }
     }

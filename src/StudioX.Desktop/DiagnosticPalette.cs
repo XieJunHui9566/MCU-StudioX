@@ -12,6 +12,7 @@ internal static class DiagnosticPalette
         // 诊断色由主题明暗派生，不改变格式 1 主题的八色契约。
         Set("DiagnosticError", dark ? "#FF8894" : "#B42332");
         Set("DiagnosticWarning", dark ? "#F0C36B" : "#825500");
+        Set("DiagnosticSuccess", dark ? "#6EBB82" : "#256B3A");
         Set("DiagnosticErrorSurface", dark ? "#3B252B" : "#FDECEF");
         Set("DiagnosticWarningSurface", dark ? "#3A3020" : "#FFF3D6");
     }

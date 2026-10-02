@@ -1,0 +1,38 @@
+<UserControl x:Class="StudioX.Desktop.ProjectHealthView"
+ xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+ xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+ Background="{DynamicResource Surface}" Foreground="{DynamicResource Text}">
+ <Grid Margin="18,12">
+  <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="2*"/><RowDefinition Height="5"/><RowDefinition Height="3*"/></Grid.RowDefinitions>
+  <StackPanel>
+   <TextBlock Text="工程健康检查" FontSize="22" FontWeight="SemiBold"/>
+   <TextBlock x:Name="ProjectText" Text="打开工程或选择工程目录开始检查。" TextWrapping="Wrap" Foreground="{DynamicResource Muted}" Margin="0,6,0,0"/>
+   <WrapPanel x:Name="Toolbar" Margin="0,10,0,3">
+    <Button x:Name="RefreshButton" Content="快速检查" Click="Refresh_Click" Margin="0,0,8,5"/>
+    <Button x:Name="DeepButton" Content="深度工具检查" Click="Deep_Click" Margin="0,0,8,5" ToolTip="完整哈希校验锁定工具集，并运行固定 --version；大型 SDK 耗时较长，可用顶部停止按钮取消。"/>
+    <Button Content="选择工程检查…" Click="Choose_Click" Margin="0,0,8,5"/>
+    <Button x:Name="ExportButton" Content="导出检查报告…" Click="Export_Click" Margin="0,0,8,5" IsEnabled="False"/>
+    <Button Content="工具环境" Click="Tools_Click" Margin="0,0,8,5"/>
+   </WrapPanel>
+  </StackPanel>
+  <TextBlock x:Name="StatusText" Grid.Row="1" Text="检查不连接设备，不修改源码、SDK、sdkconfig 或工程锁定。" TextWrapping="Wrap" Margin="0,3,0,10"/>
+  <DataGrid x:Name="ChecksGrid" Grid.Row="2" Style="{DynamicResource DebugGrid}" AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Single" SelectionChanged="Selection_Changed"
+   EnableRowVirtualization="True" CanUserAddRows="False" FontFamily="Microsoft YaHei UI" FontSize="13" MinRowHeight="32" AutomationProperties.Name="工程健康检查结果">
+   <DataGrid.Resources><Style TargetType="TextBlock"><Setter Property="TextTrimming" Value="CharacterEllipsis"/><Setter Property="VerticalAlignment" Value="Center"/><Setter Property="ToolTip" Value="{Binding Detail}"/></Style></DataGrid.Resources>
+   <DataGrid.Columns>
+    <DataGridTextColumn Header="状态" Binding="{Binding StateText}" Width="74"/>
+    <DataGridTextColumn Header="检查项" Binding="{Binding Title}" Width="200"/>
+    <DataGridTextColumn Header="说明" Binding="{Binding SummaryDetail}" Width="*"/>
+   </DataGrid.Columns>
+  </DataGrid>
+  <GridSplitter Grid.Row="3" HorizontalAlignment="Stretch" Background="{DynamicResource Border}" Height="5"/>
+  <DockPanel Grid.Row="4" Margin="0,10,0,0">
+   <WrapPanel DockPanel.Dock="Bottom" Margin="0,8,0,0">
+    <Button x:Name="ActionButton" Content="处理所选问题" Click="Action_Click" Margin="0,0,8,4" IsEnabled="False"/>
+    <Button x:Name="HelpButton" Content="查看对应帮助" Click="Help_Click" Margin="0,0,8,4" IsEnabled="False"/>
+   </WrapPanel>
+   <TextBox x:Name="DetailText" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+    Background="{DynamicResource ToolSurface}" Foreground="{DynamicResource Text}" BorderBrush="{DynamicResource Border}" Padding="10" AutomationProperties.Name="检查详情与原始诊断"/>
+  </DockPanel>
+ </Grid>
+</UserControl>

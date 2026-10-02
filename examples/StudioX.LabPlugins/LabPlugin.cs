@@ -17,11 +17,11 @@ public abstract class LabPlugin : IStudioXPlugin
     protected abstract PluginPanelWidget[] Inputs(JsonElement values);
     public abstract LabResult Calculate(JsonElement values);
 
-    public PluginContribution Describe() => new(
+    public virtual PluginContribution Describe() => new(
         [new("open", "打开实验面板", "tools"), new("calculate", "计算 / 生成", "palette")],
         [Panel()], [new("calculate", Introduction + " 纯离线计算；返回结果与可复制数据，不操作文件或设备。省略字段时使用面板示例默认值。", Schema)]);
 
-    public async Task ActivateAsync(IPluginHost pluginHost, CancellationToken cancellationToken)
+    public virtual async Task ActivateAsync(IPluginHost pluginHost, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
         host = pluginHost;
@@ -29,7 +29,7 @@ public abstract class LabPlugin : IStudioXPlugin
         await host.PublishPanelAsync(Panel(), cancellationToken);
     }
 
-    public async Task<JsonElement> InvokeAsync(string kind, string id, JsonElement arguments, CancellationToken cancellationToken)
+    public virtual async Task<JsonElement> InvokeAsync(string kind, string id, JsonElement arguments, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
         var active = host ?? throw new InvalidOperationException("插件尚未激活。");
@@ -60,7 +60,7 @@ public abstract class LabPlugin : IStudioXPlugin
         }
     }
 
-    public Task DeactivateAsync(CancellationToken cancellationToken)
+    public virtual Task DeactivateAsync(CancellationToken cancellationToken)
     {
         host = null;
         return Task.CompletedTask;

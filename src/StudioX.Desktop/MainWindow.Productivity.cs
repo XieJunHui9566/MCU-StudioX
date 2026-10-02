@@ -28,9 +28,15 @@ public partial class MainWindow
         Add(WorkspaceViewMenu, "移到另一编辑分组", "Ctrl+Alt+Right", () => activeEditor is not null, () => { MoveEditorGroup(activeEditor!, activeEditor!.Group == 0 ? 1 : 0); return Task.CompletedTask; });
         Add(WorkspaceViewMenu, "合并编辑分组", "", () => secondaryTabs?.Items.Count > 0, () => { MergeEditorGroups(); return Task.CompletedTask; });
         Add(ToolsRootMenu, "工具环境管理…", "", () => !projectActionsBusy, ShowToolEnvironmentAsync);
+        Add(ToolsRootMenu, "工具占用与升级管理…", "", () => !projectActionsBusy, () => ShowToolManagementAsync());
+        Add(ToolsRootMenu, "工程健康检查…", "", () => !projectActionsBusy, () => ShowProjectHealthAsync());
         Add(ToolsRootMenu, "插件设置…", "", () => pluginWorkspace is not null, ShowPluginSettingsAsync);
         Add(ToolsRootMenu, "调试快照扩展…", "", () => pluginWorkspace is not null, ShowPluginDebugAdaptersAsync);
-        Add(HelpRootMenu, "故障处理指南…", "", () => true, ShowTroubleshootingAsync);
+        Add(HelpRootMenu, "帮助手册…", "F1", () => true, () => ShowHelpAsync());
+        Add(HelpRootMenu, "快捷键速查…", "", () => true, () => ShowHelpAsync("shortcuts"));
+        Add(HelpRootMenu, "故障处理指南…", "", () => true, () => ShowHelpAsync("troubleshooting"));
+        Add(HelpRootMenu, "工程健康检查…", "", () => !projectActionsBusy, () => ShowProjectHealthAsync());
+        InputBindings.Add(new KeyBinding(new PluginUiCommand(() => ShowHelpAsync(), () => true), new KeyGesture(Key.F1)));
         workbenchCommands.Add(new("在工程中查找", "Ctrl+Shift+F", () => projectDirectory is not null, () => { ShowWorkspaceSearch(false); return Task.CompletedTask; }));
         workbenchCommands.Add(new("保存全部文件", "Ctrl+Shift+S", () => projectDirectory is not null, () => RunAsync(t => SaveAllSourcesAsync(RequireProject(), t))));
         InputBindings.Add(new KeyBinding(new PluginUiCommand(() => ShowQuickOpenAsync(false), () => projectDirectory is not null), new KeyGesture(Key.P, ModifierKeys.Control)));

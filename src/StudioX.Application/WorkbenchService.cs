@@ -14,6 +14,9 @@ using StudioX.Packages;
 /// <summary>工作台的服务组合根；各服务拥有自己的业务状态和资源生命周期。</summary>
 public sealed class WorkbenchService : IAsyncDisposable
 {
+    public Help.HelpContentService Help { get; } = new();
+    public Health.ProjectHealthService ProjectHealth { get; }
+    public Tools.ToolManagementService ToolManagement { get; }
     public WorkbenchService(string runtimeDirectory, string dataDirectory)
     {
         RuntimeDirectory = Path.GetFullPath(runtimeDirectory);
@@ -50,11 +53,13 @@ public sealed class WorkbenchService : IAsyncDisposable
         EspressifDownloads = new EspressifDownloadService(new EspressifFlashService(Toolsets), Devices);
         StcIsp = new StcIspService(Toolsets, RuntimeDirectory, DataDirectory);
         Debugger = new DebugSessionService(DataDirectory);
+        ProjectHealth = new Health.ProjectHealthService(Toolsets, Builds, () => Debugger.IsActive);
         OpenOcdPlot = new OpenOcdPlot.OpenOcdPlotService(Debugger);
         Debugger.Changed += OpenOcdPlot.StopIfSessionEnded;
         Themes = new ThemeService(DataDirectory);
         Appearance = new AppearanceService(DataDirectory);
         RecentProjects = new RecentProjectService(DataDirectory);
+        ToolManagement = new Tools.ToolManagementService(Toolsets, Packs, RecentProjects, DataDirectory, () => Debugger.IsActive);
         EditorSettings = new EditorSettingsService(DataDirectory);
         EditorSessions = new Editing.EditorSessionStore(DataDirectory);
         WorkspaceEdits = new Editing.WorkspaceEditService(Files);

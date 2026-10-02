@@ -11,9 +11,14 @@ public partial class MainWindow
     private TabItem? troubleshootingTab;
     private DataGrid? environmentGrid;
     private TextBlock? environmentStatus;
+    private string? environmentProject;
     private string lastFailure = "";
-    private Task ShowToolEnvironmentAsync() => RunAsync(async token =>
+    private static string FailureDiagnostic(Exception error) => error is StudioX.Foundation.StudioXException studio
+        ? studio.Code + "\n" + error : error.ToString();
+    private Task ShowToolEnvironmentAsync() => ShowToolEnvironmentForProjectAsync(projectDirectory);
+    private Task ShowToolEnvironmentForProjectAsync(string? checkedProject) => RunAsync(async token =>
     {
+        environmentProject = checkedProject;
         if (environmentTab is null)
         {
             var root = new DockPanel { Margin = new(16) };
@@ -29,10 +34,11 @@ public partial class MainWindow
                 button.Click += async (_, _) => await action();
                 actions.Children.Add(button);
             }
-            Button("刷新", ShowToolEnvironmentAsync);
+            Button("刷新", () => ShowToolEnvironmentForProjectAsync(environmentProject));
             Button("校验所选工具集", () => RunEnvironmentActionAsync("verify"));
             Button("导出离线工具包", () => RunEnvironmentActionAsync("export"));
             Button("从离线包修复", () => RunEnvironmentActionAsync("repair"));
+            Button("占用与升级管理", () => ShowToolManagementAsync(environmentProject));
             environmentGrid = new DataGrid { AutoGenerateColumns = false, IsReadOnly = true };
             environmentGrid.SetResourceReference(StyleProperty, "DebugGrid");
             foreach (var (label, binding, width) in new[] { ("工具集", "Name", "*"), ("版本", "Version", "120"), ("工程需要", "RequiredText", "90"), ("占用空间", "SizeText", "110"), ("文件", "Files", "80"), ("状态", "Status", "190"), ("组件版本", "Components", "300") })
@@ -44,7 +50,7 @@ public partial class MainWindow
         }
         ShowDocument(environmentTab);
         environmentStatus!.Text = "正在读取版本、空间及工程主工具集依赖…";
-        environmentGrid!.ItemsSource = await services.ToolEnvironment.InspectAsync(projectDirectory, token);
+        environmentGrid!.ItemsSource = await services.ToolEnvironment.InspectAsync(checkedProject, token);
         environmentGrid.SelectedIndex = 0;
         environmentStatus.Text = "工具随 IDE 管理，不修改系统 PATH。工程需要列表示工程锁定的 MCU 与引脚映射工具集；修复严格匹配 ID 和版本，保留原工具备份。导出需要先校验完整性。";
     });
@@ -120,9 +126,15 @@ public partial class MainWindow
             categories.Children.Add(button);
         }
         header.Children.Add(categories);
-        var next = new Button { Content = advice.Action == "tools" ? "打开工具环境" : advice.Action == "problems" ? "查看问题列表" : advice.Action == "serial" ? "查看串口会话" : advice.Action == "history" ? "查看本地历史" : "查看构建日志", HorizontalAlignment = HorizontalAlignment.Left, Margin = new(0, 0, 0, 12) };
-        next.Click += async (_, _) => { if (advice.Action == "tools") { await ShowToolEnvironmentAsync(); } else if (advice.Action == "serial") { ShowDocument(SerialTab); } else if (advice.Action == "history") { await ShowLocalHistoryAsync(); } else { ShowBottom(advice.Action == "problems" ? 4 : 0); } };
+        var next = new Button { Content = advice.Action == "tool-management" ? "打开工具占用与升级管理" : advice.Action == "health" ? "检查工程配置缓存" : advice.Action == "tools" ? "打开工具环境" : advice.Action == "problems" ? "查看问题列表" : advice.Action == "serial" ? "查看串口会话" : advice.Action == "history" ? "查看本地历史" : "查看构建日志", HorizontalAlignment = HorizontalAlignment.Left, Margin = new(0, 0, 0, 12) };
+        next.Click += async (_, _) => { if (advice.Action == "tool-management") { await ShowToolManagementAsync(); } else if (advice.Action == "health") { await ShowProjectHealthAsync(diagnostic: diagnostic); } else if (advice.Action == "tools") { await ShowToolEnvironmentAsync(); } else if (advice.Action == "serial") { ShowDocument(SerialTab); } else if (advice.Action == "history") { await ShowLocalHistoryAsync(); } else { ShowBottom(advice.Action == "problems" ? 4 : 0); } };
         header.Children.Add(next);
+        var manual = new Button { Content = "查看完整故障处理手册", HorizontalAlignment = HorizontalAlignment.Left, Margin = new(0, 0, 0, 12) };
+        manual.Click += async (_, _) => await ShowHelpAsync(services.Help.DiagnosticTopic(category ?? diagnostic));
+        header.Children.Add(manual);
+        var health = new Button { Content = "检查工程并打开修复入口", HorizontalAlignment = HorizontalAlignment.Left, Margin = new(0, 0, 0, 12) };
+        health.Click += async (_, _) => await ShowProjectHealthAsync(diagnostic: diagnostic);
+        header.Children.Add(health);
         var raw = new TextBox { Text = diagnostic.Length == 0 ? "选择上方问题类别查看处理步骤。" : diagnostic, IsReadOnly = true, TextWrapping = TextWrapping.Wrap, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, FontFamily = new("Consolas") };
         System.Windows.Automation.AutomationProperties.SetName(raw, "原始诊断");
         root.Children.Add(raw);

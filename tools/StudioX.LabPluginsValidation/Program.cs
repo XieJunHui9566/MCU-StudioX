@@ -38,6 +38,7 @@ InvalidActivity(() => new PluginActivityIcon([[0,0,double.NaN,1]]).Validate(), "
 InvalidActivity(() => new PluginActivityIcon([[0,0,-1,1]]).Validate(), "reject coordinates outside viewport");
 InvalidActivity(() => new PluginActivityIcon(Enumerable.Repeat(new double[256],9).ToArray()).Validate(), "reject excessive vector complexity");
 var bits = new BitLabPlugin();
+await ProgrammerChecks.RunAsync(bits, Check, Invalid);
 var protocol = new ProtocolLabPlugin();
 var wave = new WaveLabPlugin();
 var pixel = new PixelLabPlugin();

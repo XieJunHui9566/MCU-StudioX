@@ -28,17 +28,18 @@ internal sealed class EspressifBuildBackend
             log.AppendLine($"{sdk.Framework} {sdk.SdkVersion} · target={sdk.Target}");
             log.AppendLine("工程编译参数：" + settings.SummaryFor(project));
             var module = await EspressifModuleConfiguration.ReadAsync(root, token);
-            var identity = new CacheIdentity(root, tools.RootDirectory, tools.Fingerprint, sdk, settings, module.Settings);
+            var identity = new CacheIdentity(root, tools.RootDirectory, tools.Fingerprint, sdk, settings, module.Settings, EspressifNativeTools.Revision);
             var moduleBase = await EspressifModuleSdkConfig.PrepareAsync(root, module, token);
             if (moduleBase is not null) { log.AppendLine("模块配置保留原生选项：" + Path.GetRelativePath(root, moduleBase)); }
             var environment = await EspressifBuildEnvironment.CreateAsync(root, tools, sdk, token);
             var nativeRoot = EspressifNativePath.For(root);
             var nativeBuild = EspressifNativePath.For(build);
-            var python = EspressifNativePath.For(tools.Tool("python"));
+            var python = EspressifNativePath.ForExecutable(tools.Tool("python"));
             var frontend = PathBoundary.Resolve(environment["IDF_PATH"], "tools/idf.py");
             var configure = new List<string> { frontend, "-C", nativeRoot, "-B", nativeBuild, "-G", "Ninja", "-D", "IDF_TARGET=" + sdk.Target,
                 "-D", "CMAKE_EXPORT_COMPILE_COMMANDS=ON", "-D", "CMAKE_MAKE_PROGRAM=" + CmakePath(EspressifNativePath.For(tools.Tool("ninja"))),
                 "-D", "PYTHON=" + CmakePath(python) };
+            configure.AddRange(await EspressifNativeTools.PrepareAsync(build, tools, sdk, token));
             if (module.Settings.HasOverrides)
             {
                 configure.AddRange(["-D", "SDKCONFIG=" + CmakePath(Path.Combine(nativeBuild, "studiox-module-sdkconfig"))]);
@@ -219,7 +220,7 @@ internal sealed class EspressifBuildBackend
         }
     }
     private sealed record CacheIdentity(string ProjectDirectory, string ToolsetDirectory, string Fingerprint,
-        EspressifProjectSettings Sdk, ProjectBuildSettings BuildSettings, EspressifModuleSettings ModuleSettings);
+        EspressifProjectSettings Sdk, ProjectBuildSettings BuildSettings, EspressifModuleSettings ModuleSettings, int NativeToolsRevision);
     private sealed class ToolOutput(Action<string> report) : IProgress<string>
     {
         public void Report(string value) => report(value);

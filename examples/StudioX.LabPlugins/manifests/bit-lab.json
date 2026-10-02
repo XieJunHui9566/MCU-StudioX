@@ -2,9 +2,9 @@
   "formatVersion": 1,
   "apiVersion": 2,
   "id": "studiox.bit-lab",
-  "version": "1.0.0",
-  "displayName": "位运算实验室",
-  "description": "拆解位域、掩码、大小端与有符号数值。",
+  "version": "1.0.2",
+  "displayName": "程序员助手",
+  "description": "程序员计算器：位与、位或、异或、取反、移位、整数表达式与 HEX/DEC/OCT/BIN 转换，保留位域与字节序工具。",
   "kind": "dotnet",
   "entryAssembly": "StudioX.LabPlugins.dll",
   "entryType": "StudioX.LabPlugins.BitLabPlugin",
@@ -12,7 +12,7 @@
   "hostTools": [],
   "activity": {
     "version": 1,
-    "title": "位运算实验室",
+    "title": "程序员助手",
     "icon": { "strokes": [
       [3,5,8,5,8,12,3,12,3,5], [13,5,16,3,16,12], [12,12,20,12],
       [3,17,3,21], [9,17,13,17,13,21,9,21,9,17], [19,17,19,21]

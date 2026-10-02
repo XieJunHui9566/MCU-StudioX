@@ -11,6 +11,17 @@ public partial class MainWindow
         var revision = diagnosticRevision;
         try
         {
+            StudioX.Application.Health.ProjectHealthReport health;
+            var checking = true;
+            try { health = await services.ProjectHealth.InspectAsync(directory, progress: new Progress<string>(text => { if (checking) Status.Text = text; }), token: token); }
+            finally { checking = false; }
+            Log("编译前健康检查：" + health.Summary);
+            if (!health.CanBuild)
+            {
+                PresentBuildHealth(health);
+                BuildMemory.SetMessage("工程检查未满足原生构建条件，请处理健康检查中的问题。");
+                return new BuildReport(false, health.ToText(), []);
+            }
             await SaveHdlBuildSettingsAsync(token);
             BuildMemory.SetMessage("正在编译，完成后更新占用…");
             var report = await services.Builds.BuildAsync(directory,
@@ -52,18 +63,6 @@ public partial class MainWindow
                 BuildMemory.SetMessage("编译失败，暂无本次占用数据。");
                 ShowTroubleshooting(report.Log);
             }
-            if (currentProjectManifest?.PinMapping is not null && currentProjectManifest.Logic is null &&
-                string.Equals(projectDirectory, directory, StringComparison.OrdinalIgnoreCase))
-            {
-                try
-                {
-                    await RefreshAg32PinMappingStatusAsync(token);
-                }
-                catch (Exception error) when (error is not OperationCanceledException)
-                {
-                    Log("AG32 映射状态刷新失败，原始编译结果仍保留：" + error);
-                }
-            }
             return report;
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested)
@@ -80,8 +79,17 @@ public partial class MainWindow
             BuildMemory.SetMessage("编译失败，暂无本次占用数据。");
             await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Background);
             Log(ex.ToString());
+            ShowTroubleshooting(FailureDiagnostic(ex));
             // 校验或启动异常没有工具退出码；保留完整诊断，让调用方最后统一输出失败结论。
             return new BuildReport(false, ex.ToString(), []);
+        }
+        finally
+        {
+            if (currentProjectManifest?.PinMapping is not null && currentProjectManifest.Logic is null && projectDirectory == directory)
+            {
+                try { await RefreshAg32PinMappingStatusAsync(CancellationToken.None); }
+                catch (Exception error) { Log("时序状态刷新失败，原始构建结果保留：" + error); }
+            }
         }
     }
 }

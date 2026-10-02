@@ -36,6 +36,7 @@ public partial class Ag32PinPlanningView : UserControl
     public event EventHandler? SaveRequested;
     public event EventHandler? ReloadRequested;
     public event EventHandler<string>? OpenConstraintRequested;
+    public event EventHandler<Ag32ClockRecommendation>? RecommendedClockRequested;
 
     public Ag32PinPlanSnapshot? Snapshot
     {
@@ -74,6 +75,8 @@ public partial class Ag32PinPlanningView : UserControl
             PackageText.Text = $"{snapshot.DeviceId} · {snapshot.TargetDevice} · {package} · 厂商可映射脚 {snapshot.Pins.Count(pin => pin.CanAssign)} 个";
             PackageDiagram.SetPackage(snapshot.DeviceId, package);
             HasChanges = false;
+            timing = null;
+            externalDraft = false;
             vexPath = sdcPath = null;
             ConstraintDetails.Text = "保存后显示实际生成的约束文件；这些预览文件不代表已编译或已烧录。";
             VexButton.IsEnabled = SdcButton.IsEnabled = false;
@@ -96,6 +99,7 @@ public partial class Ag32PinPlanningView : UserControl
         {
             loading = false;
         }
+        RefreshClockPresentation();
     }
 
     public void SetBusy(bool value)
@@ -114,8 +118,11 @@ public partial class Ag32PinPlanningView : UserControl
         PinPull.IsEnabled = PinDirection.IsEnabled;
         PinOutputType.IsEnabled = PinDirection.IsEnabled && assignments.FirstOrDefault(item => item.PinNumber == selectedPin)?.Direction != "INPUT";
         PackageDiagram.IsEnabled = !value;
-        SavePlanButton.IsEnabled = editable && conflicts.Length == 0;
+        SavePlanButton.IsEnabled = editable && conflicts.Length == 0 && clockError is null;
         ReloadPlanButton.IsEnabled = !value;
+        RecommendedClocks.IsEnabled = editable && RecommendedClocks.Items.Count != 0;
+        ApplyRecommendedClockButton.IsEnabled = editable && conflicts.Length == 0 && RecommendedClocks.SelectedItem is Ag32ClockRecommendation;
+        UpdateTimingPresentation();
     }
 
     public void Clear()
@@ -127,6 +134,9 @@ public partial class Ag32PinPlanningView : UserControl
         diagramPinCount = 0;
         assignments.Clear();
         conflicts = [];
+        timing = null;
+        clockError = null;
+        externalDraft = false;
         ConflictStatus.Text = "";
         ConflictStatus.Visibility = Visibility.Collapsed;
         Visibility = Visibility.Collapsed;
@@ -304,6 +314,7 @@ public partial class Ag32PinPlanningView : UserControl
             HasChanges = true;
             PlannerStatus.Text = "图形配置尚未保存。保存并生成约束后，顶部编译才会使用这些更改。";
             VexButton.IsEnabled = SdcButton.IsEnabled = false;
+            RefreshClockPresentation();
         }
     }
 
@@ -364,7 +375,7 @@ public partial class Ag32PinPlanningView : UserControl
     }
     private void Save_Click(object sender, RoutedEventArgs e)
     {
-        if (!busy && Snapshot?.CanEdit == true && conflicts.Length == 0)
+        if (!busy && Snapshot?.CanEdit == true && conflicts.Length == 0 && clockError is null)
         {
             SaveRequested?.Invoke(this, EventArgs.Empty);
         }
@@ -394,7 +405,7 @@ public partial class Ag32PinPlanningView : UserControl
         {
             return null;
         }
-        if (!decimal.TryParse(text.Trim(), NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var value) || value <= 0)
+        if (!decimal.TryParse(text.Trim(), NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var value) || value < 0 || value == 0 && field != "BUSCLK")
         {
             throw new StudioXException("AG32_PIN_PLAN_CLOCK", field + " 请填写正数 MHz，或留空沿用未显式配置状态。");
         }

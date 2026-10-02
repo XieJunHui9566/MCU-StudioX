@@ -23,6 +23,7 @@ public sealed class ToolsetCatalog(string rootDirectory)
         PackValidator.Token(id);
         PackValidator.Version(version);
         var root = PathBoundary.Resolve(RootDirectory, $"{id}/{version}");
+        using var toolLease = ToolUsageLease.Acquire(root);
         await verificationGate.WaitAsync(cancellationToken);
         try
         {

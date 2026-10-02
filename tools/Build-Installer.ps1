@@ -2,6 +2,7 @@ param(
     [string]$ReleaseVersion,
     [string]$PayloadDirectory,
     [string]$OutputDirectory,
+    [string]$DevicePackCatalogDirectory,
     [switch]$ExcludePlugins,
     [string]$CompilerPath = (Join-Path $PSScriptRoot '../.artifacts/installer-tools/InnoSetup-7.1.0/ISCC.exe')
 )
@@ -9,7 +10,8 @@ $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
 if (!$ReleaseVersion)
 {
-    $ReleaseVersion = ([xml](Get-Content -LiteralPath (Join-Path $projectRoot 'Directory.Build.props') -Raw)).Project.PropertyGroup.Version
+    $properties = ([xml](Get-Content -LiteralPath (Join-Path $projectRoot 'Directory.Build.props') -Raw)).Project.PropertyGroup
+    $ReleaseVersion = if ($properties.ProductVersion) { $properties.ProductVersion } else { $properties.Version }
 }
 . (Join-Path $PSScriptRoot 'Release-Version.ps1')
 $releaseIdentity = Get-StudioXReleaseVersion $ReleaseVersion
@@ -34,7 +36,7 @@ if ($LASTEXITCODE -ne 0 -or "$compilerVersion" -notmatch '7\.1\.0')
 if (!$PayloadDirectory)
 {
     $PayloadDirectory = Join-Path $projectRoot ('.artifacts/installer-payload-' + $ReleaseVersion + '-' + [Guid]::NewGuid().ToString('N'))
-    & (Join-Path $PSScriptRoot 'Publish.ps1') -OutputDirectory $PayloadDirectory -ReleaseVersion $ReleaseVersion -ExcludePlugins:$ExcludePlugins
+    & (Join-Path $PSScriptRoot 'Publish.ps1') -OutputDirectory $PayloadDirectory -ReleaseVersion $ReleaseVersion -DevicePackCatalogDirectory $DevicePackCatalogDirectory -ExcludePlugins:$ExcludePlugins
 }
 $payload = [IO.Path]::GetFullPath($PayloadDirectory)
 if ($ExcludePlugins -and (Test-Path -LiteralPath (Join-Path $payload 'runtime/plugins'))) {

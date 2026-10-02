@@ -1,8 +1,14 @@
 # MCU StudioX
 
-MCU StudioX 是面向多系列 MCU 的 Windows x64 重型 IDE，强调开箱即用、新手友好、插件扩展及独立工具环境。当前源码版本为 **0.2.5.3 预览版**，使用 C#、.NET 10 和 WPF 构建。
+MCU StudioX 是面向多系列 MCU 的 Windows x64 重型 IDE，强调开箱即用、新手友好、插件扩展及独立工具环境。当前源码版本为 **0.2.5.4A 预览版**，使用 C#、.NET 10 和 WPF 构建。
 
 IDE 提供 C/C++ 编辑与代码提示、CMake 工程构建、器件包导入、固件下载与调试界面、串口工具、Git 图谱，以及带 MCP 工具的 AI 助手。器件能力取决于具体 `.mcupack`、工具链和硬件；尚未通过实板验证的型号不应视为已完成下载或调试适配。经过许可审查的部分器件包见 [MCU-StudioX-MCUPacks](https://github.com/XieJunHui9566/MCU-StudioX-MCUPacks)。
+
+## 0.2.5.4A 更新
+
+新增工程健康检查与故障修复入口、工具占用与升级管理，完善 32 篇内置帮助，修复 ESP-IDF ESP32-S3 的 Xtensa 路径冲突。程序员助手插件支持位运算与进制转换，作为独立插件提供；安装包延续不捆绑插件的发行方式，保留用户已经安装的插件。
+
+[下载 0.2.5.4A 安装包与源码](https://github.com/XieJunHui9566/MCU-StudioX/releases/tag/v0.2.5.4A) · [更新说明](docs/RELEASE-0.2.5.4A.md)
 
 ## 0.2.5.3 AG32 外设补全（2026-09-30）
 

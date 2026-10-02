@@ -12,6 +12,7 @@ public partial class MainWindow
         Ag32PinMapping.Planner.ReloadRequested += ReloadAg32PinPlan_Click;
         Ag32PinMapping.Planner.SaveRequested += SaveAg32PinPlan_Click;
         Ag32PinMapping.Planner.OpenConstraintRequested += OpenAg32PinConstraint_Click;
+        Ag32PinMapping.Planner.RecommendedClockRequested += ApplyAg32RecommendedClock_Click;
     }
 
     private void ClearAg32PinPlan()
@@ -23,9 +24,13 @@ public partial class MainWindow
     private async Task RefreshAg32PinPlanAsync(string root, CancellationToken token, bool discardDraft = false)
     {
         var view = Ag32PinMapping.Planner;
+        var timing = await services.Ag32PinPlanning.ReadTimingAsync(root, token);
+        if (projectDirectory != root) return;
+        var hasUnsavedText = currentProjectManifest?.PinMapping is { } mapping && FindEditor(mapping.PinMapFile)?.IsDirty == true;
         if (!discardDraft && ag32PinPlanProject == root && view.HasChanges)
         {
             // 窗口激活与工具状态刷新不能丢弃尚未保存的图形草稿。
+            view.SetTiming(timing, hasUnsavedText);
             return;
         }
         var snapshot = await services.Ag32PinPlanning.ReadAsync(root, token);
@@ -37,11 +42,21 @@ public partial class MainWindow
             previous.SourceSha256 == snapshot.SourceSha256 && previous.SourcePath == snapshot.SourcePath &&
             previous.DeviceId == snapshot.DeviceId && previous.TargetDevice == snapshot.TargetDevice)
         {
+            view.SetTiming(timing, hasUnsavedText);
             return;
         }
         ag32PinPlanProject = root;
         view.SetSnapshot(snapshot);
+        view.SetTiming(timing, hasUnsavedText);
         view.SetBusy(projectActionsBusy);
+    }
+
+    private async void ApplyAg32RecommendedClock_Click(object? sender, Ag32ClockRecommendation recommendation)
+    {
+        // RunAsync 会切换忙碌状态；先把用户点击的组合写入草稿，保存仍走原有冲突/散列检查。
+        try { Ag32PinMapping.Planner.UseRecommendedClocks(recommendation); }
+        catch (StudioXException error) { Log(error.ToString()); Status.Text = error.Message; return; }
+        await RunAsync(async token => await SaveAg32PinPlanAsync(RequireProject(), token));
     }
 
     private async void ReloadAg32PinPlan_Click(object? sender, EventArgs e) => await RunAsync(async token =>
@@ -75,7 +90,7 @@ public partial class MainWindow
             {
                 return;
             }
-            foreach (var relative in new[] { snapshot.SourcePath, Ag32SystemSupport.HeaderPath, Ag32SystemSupport.SourcePath, CMakeGenerator.DeviceListPath })
+            foreach (var relative in new[] { snapshot.SourcePath, Ag32SystemSupport.HeaderPath, Ag32SystemSupport.SourcePath, "device/studiox/StudioX_Board.h", CMakeGenerator.DeviceListPath })
             {
                 if (FindEditor(relative) is { } editor)
                 {
@@ -107,7 +122,7 @@ public partial class MainWindow
     private async void OpenAg32PinConstraint_Click(object? sender, string relative) => await RunAsync(async token =>
     {
         var root = RequireProject();
-        if (ag32PinPlanProject != root || !relative.StartsWith(".build/ag32-pin-plan/", StringComparison.Ordinal))
+        if (ag32PinPlanProject != root || !(relative.StartsWith(".build/ag32-pin-plan/", StringComparison.Ordinal) || relative == ".build/ag32-mapping/logic_log.txt"))
         {
             throw new StudioXException("AG32_PIN_PLAN_PROJECT", "约束结果不属于当前引脚规划，请重新生成。");
         }

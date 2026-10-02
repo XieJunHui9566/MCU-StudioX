@@ -528,7 +528,7 @@
               Header="帮助(_H)">
               <MenuItem
                 Header="快速开始"
-                Click="Welcome_Click" />
+                Click="QuickStart_Click" />
               <MenuItem
                 Header="关于 MCU StudioX"
                 Click="About_Click" />

@@ -13,7 +13,11 @@ internal sealed record Ag32PinMappingTimingReport(string Sha256, int Covered, in
 {
     internal string Summary => $"时序覆盖：{Covered}/{Total} 条连接；片内预算最小建立余量 {Format(WorstSetupSlackNs)}，保持余量 {Format(WorstHoldSlackNs)}。外部器件采样时序未建模。";
 
-    internal static async Task<Ag32PinMappingTimingReport> ReadAsync(string build, CancellationToken token)
+    internal string? SetupPath => CriticalPath("setup_summary", "Setup");
+    internal string? HoldPath => CriticalPath("hold_summary", "Hold");
+    internal bool Failed => WorstSetupSlackNs < 0 || WorstHoldSlackNs < 0 || Covered != Total;
+
+    internal static async Task<Ag32PinMappingTimingReport> ReadAsync(string build, CancellationToken token, bool requirePassing = true)
     {
         var reports = new Dictionary<string, string>(StringComparer.Ordinal);
         using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
@@ -59,7 +63,11 @@ internal sealed record Ag32PinMappingTimingReport(string Sha256, int Covered, in
         {
             throw Error("已生成片内布线预算，但 Supra 没有返回对应的建立时序结果。");
         }
-        if (setup < 0 || hold < 0)
+        if (sdc.Contains("# AGM analog_ip:", StringComparison.Ordinal) && (setup is null || hold is null))
+            throw Error("模拟 IP 缺少可分析的建立或保持时序结果。");
+        if (requirePassing && covered != total)
+            throw Error($"Supra 时序约束未覆盖 {total - covered} 条连接；请完善约束后重新编译。");
+        if (requirePassing && (setup < 0 || hold < 0))
         {
             throw Error($"Supra 时序预算未满足：建立余量 {Format(setup)}，保持余量 {Format(hold)}；请调整频率或映射后重新编译。原始报告位于 {build}。");
         }
@@ -72,6 +80,11 @@ internal sealed record Ag32PinMappingTimingReport(string Sha256, int Covered, in
             return values.Length == 0 ? null : values.Min();
         }
     }
+
+    private string? CriticalPath(string report, string kind) => Regex.Matches(Reports[report],
+        @"(?m)^\s*" + kind + @"\s+(-?[0-9]+(?:\.[0-9]+)?),\s*([^\r\n]+)")
+        .Select(match => (Slack: decimal.Parse(match.Groups[1].Value, CultureInfo.InvariantCulture), Path: match.Groups[2].Value.Trim()))
+        .OrderBy(item => item.Slack).Select(item => item.Path).FirstOrDefault();
 
     internal async Task ExportAsync(string build, CancellationToken token)
     {

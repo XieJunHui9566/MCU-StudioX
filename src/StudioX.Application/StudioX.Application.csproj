@@ -1,6 +1,9 @@
 <Project
   Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
+    <EmbeddedResource Include="Help/index.json;Help/Articles/*.md" />
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference
       Include="ModelContextProtocol.Core" />
     <PackageReference
