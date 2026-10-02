@@ -8,7 +8,12 @@ param(
 $ErrorActionPreference = 'Stop'
 $Installer = [IO.Path]::GetFullPath($Installer)
 . (Join-Path $PSScriptRoot 'Release-Version.ps1')
-$releaseVersion = (Get-Item -LiteralPath $Installer).VersionInfo.ProductVersion.Trim()
+$releaseVersion = if ($PayloadDirectory)
+{
+    # 隔离安装器以完整 Payload 为版本来源；发行安装器仍可能处于压缩阶段。
+    (Get-Content -LiteralPath (Join-Path $PayloadDirectory 'release.json') -Raw | ConvertFrom-Json).version
+}
+else { (Get-Item -LiteralPath $Installer).VersionInfo.ProductVersion.Trim() }
 $releaseIdentity = Get-StudioXReleaseVersion $releaseVersion
 $previousIdentity = Get-StudioXReleaseVersion $PreviousVersion
 if ((Compare-StudioXReleaseVersions $PreviousVersion $releaseVersion) -ge 0)
