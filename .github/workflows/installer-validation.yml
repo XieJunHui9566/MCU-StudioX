@@ -1,0 +1,61 @@
+name: Windows shipping installer validation
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Existing release tag to validate
+        required: true
+        type: string
+permissions:
+  # 读取同仓库的发行草稿需要写权限；验收步骤只读取资产。
+  contents: write
+jobs:
+  full:
+    runs-on: windows-2025
+    timeout-minutes: 45
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GODEBUG: http2client=0
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.release_tag }}
+      - name: Download and bind the shipping full installer
+        shell: pwsh
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          $ErrorActionPreference='Stop'
+          $taskAssets=Join-Path $env:RUNNER_TEMP 'release-assets'
+          New-Item -ItemType Directory -Path $taskAssets | Out-Null
+          gh release download $env:RELEASE_TAG --repo $env:GITHUB_REPOSITORY --dir $taskAssets --pattern '*-win-x64-Setup.exe' --pattern 'artifact-records.json'
+          if($LASTEXITCODE -ne 0){throw 'Asset download failed.'}
+          $taskHead=(& git rev-parse HEAD).Trim()
+          $taskRecord=@(Get-Content (Join-Path $taskAssets 'artifact-records.json') -Raw | ConvertFrom-Json | Where-Object profile -eq 'full')
+          if($taskRecord.Count -ne 1 -or $taskRecord[0].sourceCommit -ne $taskHead){throw 'Release source binding mismatch.'}
+          $taskFile=Get-Item (Join-Path $taskAssets $taskRecord[0].installer)
+          if($taskFile.Length -ne $taskRecord[0].bytes -or (Get-FileHash $taskFile.FullName).Hash -ne $taskRecord[0].sha256){throw 'Shipping installer hash mismatch.'}
+          "INSTALLER_PATH=$($taskFile.FullName)" >> $env:GITHUB_ENV
+          @{sourceCommit=$taskHead;releaseTag=$env:RELEASE_TAG;installer=$taskFile.Name;bytes=$taskFile.Length;sha256=$taskRecord[0].sha256} |
+            ConvertTo-Json | Set-Content (Join-Path $env:RUNNER_TEMP 'shipping-identity.json')
+      - name: Prepare the pinned local installer compiler
+        shell: pwsh
+        run: ./tools/Prepare-InstallerCompiler.ps1
+      - name: Validate the actual compressed installer
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          ./tools/Test-Installer.ps1 -Installer $env:INSTALLER_PATH -PreviousVersion 0.2.5.4B -OutputDirectory (Join-Path $env:RUNNER_TEMP 'shipping-installer-validation')
+          if($LASTEXITCODE -ne 0){throw 'Shipping installation validation failed.'}
+      - name: Retain installation logs, file checks and UI captures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: full-shipping-installer-validation
+          path: |
+            ${{ runner.temp }}/shipping-identity.json
+            ${{ runner.temp }}/shipping-installer-validation/*.txt
+            ${{ runner.temp }}/shipping-installer-validation/*.json
+            ${{ runner.temp }}/shipping-installer-validation/*.log
+            ${{ runner.temp }}/shipping-installer-validation/installed-desktop-smoke
+          retention-days: 14
