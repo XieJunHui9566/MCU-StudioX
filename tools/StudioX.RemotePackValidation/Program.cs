@@ -127,6 +127,56 @@ using (var client = new HttpClient(olderHandler))
     }
 }
 
+var retainedFirst = first with { RetainVersion = true };
+var retainedLatest = latest with { RetainVersion = true };
+var retainedRepository = new PackRepository(Path.Combine(output, "retained-installed"));
+var retainedHandler = new ScriptedHandler(commit, MakeIndex(retainedFirst, retainedLatest), new Dictionary<string, byte[]>
+{
+    [first.Path] = first.Bytes,
+    [latest.Path] = latest.Bytes
+});
+using (var client = new HttpClient(retainedHandler))
+using (var sync = new GitHubPackSyncService(retainedRepository, client))
+{
+    var check = await sync.CheckForUpdatesAsync();
+    Require(check.UpToDate == 0 && check.Updates.Count == 2, "check exposes every explicitly retained version");
+    RequireMetadataOnlyRequests(retainedHandler.Requests, commit);
+    retainedHandler.Requests.Clear();
+    var result = await sync.SyncAsync();
+    Require(result.Imported == 2 && result.Failures.Count == 0, "retained versions import together despite descending order");
+    Require((await retainedRepository.ListCatalogAsync()).Select(pack => pack.Manifest.Version).ToHashSet().SetEquals(["1.0.0", "2.0.0"]),
+        "both supported identities remain installed");
+    Require(retainedHandler.Requests.Where(uri => uri.AbsolutePath.EndsWith(".mcupack", StringComparison.Ordinal)).Count() == 2,
+        "each retained identity downloads exactly once");
+    retainedHandler.Requests.Clear();
+    check = await sync.CheckForUpdatesAsync();
+    Require(check.UpToDate == 2 && check.Updates.Count == 0, "check compares retained exact identities");
+    RequireMetadataOnlyRequests(retainedHandler.Requests, commit);
+    retainedHandler.Requests.Clear();
+    result = await sync.SyncAsync();
+    Require(result.Imported == 0 && result.Skipped == 2 && result.Failures.Count == 0, "repeat retained sync is incremental");
+    Require(!retainedHandler.Requests.Any(uri => uri.AbsolutePath.EndsWith(".mcupack", StringComparison.Ordinal)),
+        "repeat retained sync does not download archives");
+    Console.WriteLine("PASS: explicitly retained versions coexist and repeat sync skips exact identities");
+}
+
+var missingOlderHandler = new ScriptedHandler(commit, MakeIndex(retainedFirst, latest),
+    new Dictionary<string, byte[]> { [first.Path] = first.Bytes });
+using (var client = new HttpClient(missingOlderHandler))
+using (var sync = new GitHubPackSyncService(newerRepository, client))
+{
+    var check = await sync.CheckForUpdatesAsync();
+    Require(check.UpToDate == 1 && check.Updates.Count == 1 && check.Updates[0] is { Version: "1.0.0", InstalledVersion: null },
+        "newer local version does not hide a missing retained SDK identity");
+    missingOlderHandler.Requests.Clear();
+    var result = await sync.SyncAsync();
+    Require(result.Imported == 1 && result.Skipped == 1 && result.Failures.Count == 0,
+        "missing retained version installs while ordinary newer local version is preserved");
+    Require((await newerRepository.ListCatalogAsync()).Select(pack => pack.Manifest.Version).ToHashSet().SetEquals(["1.0.0", "3.0.0"]),
+        "retained import does not replace the newer local pack");
+    Console.WriteLine("PASS: a missing retained version is acquired alongside a newer local version");
+}
+
 await File.WriteAllTextAsync(Path.Combine(output, "result.txt"), "PASS: remote pack validation\n");
 
 async Task<Fixture> CreatePackAsync(string version)
@@ -158,9 +208,10 @@ static byte[] MakeIndex(params Fixture[] entries) => JsonSerializer.SerializeToU
         id = entry.Id,
         version = entry.Version,
         sha256 = entry.Sha256,
-        size = entry.Size
+        size = entry.Size,
+        retainVersion = entry.RetainVersion
     }).ToArray()
-});
+}, new JsonSerializerOptions { DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault });
 
 static void Require(bool condition, string message)
 {
@@ -178,7 +229,8 @@ static void RequireMetadataOnlyRequests(IReadOnlyList<Uri> requests, string comm
         "check requests only commit and index metadata");
 }
 
-sealed record Fixture(string Path, string Id, string Version, string Sha256, long Size, string Archive, byte[] Bytes);
+sealed record Fixture(string Path, string Id, string Version, string Sha256, long Size, string Archive, byte[] Bytes,
+    bool RetainVersion = false);
 
 sealed class ScriptedHandler(string commit, byte[] index, IReadOnlyDictionary<string, byte[]> archives) : HttpMessageHandler
 {

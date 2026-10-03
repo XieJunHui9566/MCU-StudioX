@@ -1,5 +1,23 @@
 # Espressif 原生 SDK 器件包
 
+## 多版本 ESP-IDF 模板
+
+原有 5.5.4 / 0.1.1 包继续保留。在线器件包目录补充以下精确组合，每组均含六个独立目标包及 Hello World、FreeRTOS 两种官方模板：
+
+| IDF SDK / 开发环境组件 | 器件包版本 | 上游标签 |
+| --- | --- | --- |
+| 5.5.5 | 0.2.0 | v5.5.5 |
+| 6.0.3 | 0.3.0 | v6.0.3 |
+| 6.1.0 | 0.4.0 | v6.1 |
+
+`idf-template-sources-<SDK>.json` 固定各版本的上游提交、原始与 LF 规范化 SHA-256、目标支持文件及公开组件指纹。新包不复用其他 SDK 的示例，也不改变已有包或工程。使用对应官方源码和已构建 CLI 可重建，例如：
+
+```powershell
+python tools/New-EspressifPacks.py --output <新输出目录> --cli <StudioX.Cli.dll> --idf-root <官方 IDF 6.1 源码目录> --template-sources examples/packs/espressif/idf-template-sources-6.1.0.json --pack-version 0.4.0 --component-version 6.1.0 --idf-only
+```
+
+维护验证入口为 `tools/StudioX.EspressifPackSetValidation`：`inspect` 检查四 SDK 的 24 包导入、两模板生成和明确版本选择；指定 SDK 则使用已有隔离运行时编译该版本六目标的全部模板。验收不连接或烧录硬件。
+
 `tools/New-EspressifPacks.py` 生成七个独立 StudioX 格式 1 包：ESP32-WROOM-32、ESP32-P4、ESP32-S3、ESP32-C3、ESP32-C5、ESP32-C6 和 ESP8266。
 
 ESP32 目标锁定 ESP-IDF **5.5.4**；ESP8266 锁定独立 **ESP8266 RTOS SDK v3.4**（工程版本写为 `3.4.0`）。ESP8266 不属于 ESP-IDF 5.5.4 的支持目标。包只包含模板、目标元数据和来源记录，完整 SDK 与工具链使用 IDE 的共享运行时，不复制到每个工程。

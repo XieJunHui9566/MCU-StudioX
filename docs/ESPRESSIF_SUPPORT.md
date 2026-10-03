@@ -1,8 +1,12 @@
 # Espressif 原生 SDK 支持
 
+在线模板同时支持 IDF 5.5.4、5.5.5、6.0.3、6.1.0，分别锁定器件包 0.1.1、0.2.0、0.3.0、0.4.0 和同名精确开发环境组件版本。每个版本独立提供 ESP32-WROOM-32、P4、S3、C3、C5、C6 的 Hello World 与 FreeRTOS 模板；来源及重建方式见 [多版本模板](../examples/packs/espressif/README.md)。原有预置包和工程继续使用 5.5.4。
+
+支持 `retainVersion` 的联网同步会补齐目录明确保留的全部 SDK 组合。此前只获取最高包版本的 IDE，可从器件包仓库手动下载并导入所需 `.mcupack`，再在新建工程页明确选择对应 IDF；仅安装 `.mcutoolchain` 不会自动生成其他版本的模板。详见 [在线同步](REMOTE_PACKS.md)。
+
 ## SDK 与目标
 
-ESP32-WROOM-32、ESP32-P4、ESP32-S3、ESP32-C3、ESP32-C5、ESP32-C6 使用固定版本 **ESP-IDF 5.5.4**。ESP32-WROOM-32 是模块，原生 SDK 的目标为 `esp32`。工程保存 SDK 身份和目标，构建调用该 SDK 自带的 `idf.py`，由原生组件系统、Kconfig 和链接配置生成产物。
+默认预置的 ESP32-WROOM-32、ESP32-P4、ESP32-S3、ESP32-C3、ESP32-C5、ESP32-C6 包锁定 **ESP-IDF 5.5.4**；在线版本按前述 SDK 分别锁定。ESP32-WROOM-32 是模块，原生 SDK 的目标为 `esp32`。工程保存所选 SDK 身份和目标，构建调用该 SDK 自带的 `idf.py`，由原生组件系统、Kconfig 和链接配置生成产物。
 
 ESP8266 不属于 ESP-IDF 5.5.4 的目标。它使用独立的 **ESP8266 RTOS SDK 3.4** 配置及开发环境组件，不冒充 ESP-IDF 5.5.4。两个 SDK 的工具锁定和 Python 运行环境分别校验。
 

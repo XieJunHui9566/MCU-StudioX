@@ -54,15 +54,18 @@ public sealed class GitHubPackSyncService : IDisposable
         try
         {
             var commit = await GetCommitAsync(token);
-            var latest = await GetLatestEntriesAsync(commit, token);
+            var latest = await GetPublishedEntriesAsync(commit, token);
             var installed = await GetInstalledVersionsAsync(token);
             var updates = new List<RemotePackUpdate>();
             var upToDate = 0;
             foreach (var entry in latest)
             {
                 token.ThrowIfCancellationRequested();
-                installed.TryGetValue(entry.Id, out var localVersion);
-                if (localVersion is not null && CompareVersions(localVersion, entry.Version) >= 0)
+                installed.TryGetValue(entry.Id, out var localVersions);
+                var localVersion = entry.RetainVersion
+                    ? localVersions?.Contains(entry.Version) == true ? entry.Version : null
+                    : localVersions?.Max(Comparer<string>.Create(CompareVersions));
+                if (IsInstalled(entry, localVersions))
                 {
                     upToDate++;
                 }
@@ -84,7 +87,7 @@ public sealed class GitHubPackSyncService : IDisposable
         {
             progress?.Report(new(0, 0, null, "读取 GitHub 器件包目录", 0, 0, 0));
             var commit = await GetCommitAsync(cancellationToken);
-            var latest = await GetLatestEntriesAsync(commit, cancellationToken);
+            var latest = await GetPublishedEntriesAsync(commit, cancellationToken);
             var installed = await GetInstalledVersionsAsync(cancellationToken);
 
             var imported = 0;
@@ -94,8 +97,8 @@ public sealed class GitHubPackSyncService : IDisposable
             foreach (var entry in latest)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                if (installed.TryGetValue(entry.Id, out var localVersion) &&
-                    CompareVersions(localVersion, entry.Version) >= 0)
+                installed.TryGetValue(entry.Id, out var localVersions);
+                if (IsInstalled(entry, localVersions))
                 {
                     skipped++;
                     processed++;
@@ -117,7 +120,12 @@ public sealed class GitHubPackSyncService : IDisposable
                     {
                         throw new StudioXException("PACK_REMOTE_ID", "导入后器件包身份与 GitHub 目录不一致。");
                     }
-                    installed[entry.Id] = entry.Version;
+                    if (!installed.TryGetValue(entry.Id, out localVersions))
+                    {
+                        localVersions = new HashSet<string>(StringComparer.Ordinal);
+                        installed.Add(entry.Id, localVersions);
+                    }
+                    localVersions.Add(entry.Version);
                     imported++;
                     processed++;
                     progress?.Report(new(latest.Length, processed, entry.Path, "已导入", imported, skipped, failures.Count));
@@ -148,20 +156,31 @@ public sealed class GitHubPackSyncService : IDisposable
         finally { syncGate.Release(); }
     }
 
-    private async Task<RemotePackIndexEntry[]> GetLatestEntriesAsync(string commit, CancellationToken token)
+    private async Task<RemotePackIndexEntry[]> GetPublishedEntriesAsync(string commit, CancellationToken token)
     {
         var entries = await GetIndexAsync(commit, token);
         return entries.GroupBy(entry => entry.Id, StringComparer.OrdinalIgnoreCase)
-            .Select(group => group.MaxBy(entry => entry.Version, Comparer<string>.Create(CompareVersions))!)
-            .OrderBy(entry => entry.Id, StringComparer.OrdinalIgnoreCase).ToArray();
+            .SelectMany(group =>
+            {
+                var latest = group.MaxBy(entry => entry.Version, Comparer<string>.Create(CompareVersions))!;
+                // 目录明确保留的版本代表仍可选择的 SDK/组件组合；不能被同 ID 的最高版本遮蔽。
+                return group.Where(entry => entry.RetainVersion || entry == latest);
+            })
+            .OrderBy(entry => entry.Id, StringComparer.OrdinalIgnoreCase)
+            .ThenByDescending(entry => entry.Version, Comparer<string>.Create(CompareVersions)).ToArray();
     }
 
-    private async Task<Dictionary<string, string>> GetInstalledVersionsAsync(CancellationToken token) =>
+    private async Task<Dictionary<string, HashSet<string>>> GetInstalledVersionsAsync(CancellationToken token) =>
         (await packs.ListCatalogAsync(token))
         .GroupBy(pack => pack.Manifest.Id, StringComparer.OrdinalIgnoreCase)
         .ToDictionary(group => group.Key,
-            group => group.MaxBy(pack => pack.Manifest.Version, Comparer<string>.Create(CompareVersions))!.Manifest.Version,
+            group => group.Select(pack => pack.Manifest.Version).ToHashSet(StringComparer.Ordinal),
             StringComparer.OrdinalIgnoreCase);
+
+    private static bool IsInstalled(RemotePackIndexEntry entry, HashSet<string>? localVersions) =>
+        localVersions is not null && (entry.RetainVersion
+            ? localVersions.Contains(entry.Version)
+            : localVersions.Any(version => CompareVersions(version, entry.Version) >= 0));
 
     private async Task<string> GetCommitAsync(CancellationToken token)
     {
@@ -322,5 +341,6 @@ public sealed class GitHubPackSyncService : IDisposable
     private static int CompareVersions(string left, string right) => PackVersion.Compare(left, right);
 
     private sealed record RemotePackIndex(int FormatVersion, IReadOnlyList<RemotePackIndexEntry>? Packs);
-    private sealed record RemotePackIndexEntry(string Path, string Id, string Version, string Sha256, long Size);
+    private sealed record RemotePackIndexEntry(string Path, string Id, string Version, string Sha256, long Size,
+        bool RetainVersion = false);
 }
