@@ -4,7 +4,7 @@ using StudioX.Engine;
 using StudioX.Foundation;
 using StudioX.Packages;
 
-// 离线验收：所有明确收录的 STC 型号都实际创建工程并使用发行工具集编译。
+// 离线验收：所有明确收录的 STC 型号都实际创建工程并使用发行开发环境组件编译。
 // dotnet run --project tools/StudioX.StcValidation -c Release -- <tool-runtime> <pack.mcupack> <new-output-directory> [device-id]
 Console.OutputEncoding = Encoding.UTF8;
 if (args.Length is not (3 or 4))
@@ -33,12 +33,12 @@ foreach (var device in selectedDevices)
     {
         if (device.Architecture != "mcs51" || device.ToolsetId != "stc.sdcc" || device.OpenOcd is not null)
         {
-            throw new InvalidOperationException("器件架构、工具链或调试状态不符。 ");
+            throw new InvalidOperationException("器件架构、开发环境组件或调试状态不符。 ");
         }
         var manifest = await new ProjectService().CreateAsync(pack, device.Id, device.Templates[0].Id, "stc_check", path);
         if (manifest.CompilerId != "sdcc-4.5.0-15242" || await downloader.ConfigurationAsync(path) is not null)
         {
-            throw new InvalidOperationException("工具集或下载入口不符。");
+            throw new InvalidOperationException("开发环境组件或下载入口不符。");
         }
         if (!File.ReadAllText(Path.Combine(path, "CMakeLists.txt")).Contains("project(firmware LANGUAGES C)", StringComparison.Ordinal))
         {

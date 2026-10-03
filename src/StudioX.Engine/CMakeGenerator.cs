@@ -164,7 +164,7 @@ public static class CMakeGenerator
         // 不能把 add_custom_command(TARGET firmware) 直接挪到 add_subdirectory(device) 的作用域。
         return ManagedMarker + "\n" + """
             # 自动生成：裸机环境和固件产物规则。通常无需修改。
-            # 工具程序路径由 IDE 的工具集传入，工程中不记录开发机安装路径。
+            # 工具程序路径由 IDE 的开发环境组件传入，工程中不记录开发机安装路径。
             include_guard(GLOBAL)
             set(CMAKE_SYSTEM_NAME Generic)
             set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)

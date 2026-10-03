@@ -9,28 +9,28 @@ using StudioX.Foundation;
 using StudioX.Packages;
 
 /// <summary>按明确工程配置准备工具；快速入口不遍历 SDK、不运行程序、不更改工程锁。</summary>
-public sealed class ProjectToolPreparationService(ToolsetCatalog catalog, ToolManagementService management)
+public sealed partial class ProjectToolPreparationService(ToolsetCatalog catalog, ToolManagementService management)
 {
-    private sealed record Need(string Id, string Version, string Compiler, string Purpose, string? LockFile = null);
+    private sealed record Need(string Id, string Version, string Compiler, string Purpose);
     private static readonly string[] ConfigurationFiles = [".studiox/project.json", ".studiox/toolchain.lock.json",
-        ".studiox/ag32-mapping-toolchain.lock.json", HdlSimulationSettings.RelativePath];
+        DevelopmentComponentLock.RelativePath, "device/manifest.json", ".studiox/ag32-mapping-toolchain.lock.json",
+        ".studiox/ag32-logic-toolchain.lock.json", HdlSimulationSettings.RelativePath];
 
     public Task<ProjectToolPlan> InspectAsync(string? directory, DistributionListing? listing = null, CancellationToken token = default)
         => Task.Run(async () =>
         {
             if (directory is null) return new ProjectToolPlan(null, "尚未选择工程", "",
-                "先选择准确器件和模板创建工程，或选择已有 StudioX 工程。基础版需要先从新建工程页导入器件包；工具版本由工程明确指定。", []);
+                "从新建工程页选择器件包、准确器件和模板创建工程，或选择已有 StudioX 工程。缺少器件包时可导入 .mcupack；开发环境组件版本由工程明确指定。", []);
             var root = Path.GetFullPath(directory);
             var fingerprint = await FingerprintAsync(root, token);
             var project = await ProjectService.ReadAsync(root, token);
             if (project.Kind is ProjectKind.MicroPython or ProjectKind.Zephyr)
                 return new ProjectToolPlan(root, project.Name, fingerprint, project.Kind == ProjectKind.MicroPython
-                    ? "MicroPython 脚本工程不需要安装原生 GCC/CMake 工具集。请使用 MicroPython 页面。"
+                    ? "MicroPython 脚本工程不需要安装原生 GCC/CMake 开发环境组件。请使用 MicroPython 页面。"
                     : "Zephyr 当前为实验工程，本页不自动准备其外部环境。请阅读框架帮助。", []);
-            var needs = new List<Need> { new(project.ToolsetId, project.ToolsetVersion, project.CompilerId, "工程编译", ".studiox/toolchain.lock.json") };
-            if (project.PinMapping is { } mapping)
-                needs.Add(new(mapping.ToolsetId, mapping.ToolsetVersion, mapping.CompilerId, "引脚映射", ".studiox/ag32-mapping-toolchain.lock.json"));
-            if (project.Logic is not null) needs.Add(new("agm.logic", "1.0.0", "agm.native", "已启用的逻辑构建"));
+            var components = await ProjectDevelopmentComponents.ReadAsync(root, project, token);
+            var pins = await ProjectDevelopmentComponents.ReadPinsAsync(root, components, token);
+            var needs = components.Select(item => new Need(item.Id, item.Version, item.CompilerId, item.Purpose)).ToList();
             if (File.Exists(PathBoundary.Resolve(root, HdlSimulationSettings.RelativePath)))
                 needs.Add(new("hdl.iverilog", "14.0.0", "iverilog", "已配置的 RTL 仿真"));
             var result = new List<ProjectToolRequirement>();
@@ -38,14 +38,7 @@ public sealed class ProjectToolPreparationService(ToolsetCatalog catalog, ToolMa
             {
                 token.ThrowIfCancellationRequested();
                 PackValidator.Token(need.Id); PackValidator.Version(need.Version);
-                string? locked = null;
-                if (need.LockFile is { } relative && File.Exists(PathBoundary.Resolve(root, relative)))
-                {
-                    var pin = await JsonStore.ReadAsync<ToolchainLock>(PathBoundary.Resolve(root, relative), token);
-                    if (pin.FormatVersion != 1 || pin.ToolsetId != need.Id || pin.ToolsetVersion != need.Version || string.IsNullOrWhiteSpace(pin.Fingerprint))
-                        throw new StudioXException("TOOLCHAIN_LOCK", "工程工具内容锁与配置不一致，请进入工程健康检查；不会猜测要安装哪个版本。");
-                    locked = pin.Fingerprint;
-                }
+                var locked = pins.GetValueOrDefault(need.Id);
                 var entry = listing?.Catalog.Entries.SingleOrDefault(e => e.Kind == "tool" && e.Id == need.Id && e.Version == need.Version);
                 var folder = PathBoundary.Resolve(catalog.RootDirectory, need.Id + "/" + need.Version);
                 var state = Directory.Exists(folder) ? ProjectToolState.RepairNeeded : ProjectToolState.Missing;
@@ -54,18 +47,23 @@ public sealed class ProjectToolPreparationService(ToolsetCatalog catalog, ToolMa
                 {
                     try
                     {
-                        await CheckEntrypointsAsync(folder, need, locked, project.Espressif?.Target, token);
+                        await CheckEntrypointsAsync(folder, need, locked, need.Id == project.ToolsetId ? project.Espressif?.Target : null, token);
                         state = ProjectToolState.Installed;
                         diagnostic = "清单身份和入口存在；尚未完整校验 SDK 文件。构建前仍执行完整内容校验。";
                     }
                     catch (OperationCanceledException) { throw; }
                     catch (Exception error) { diagnostic = error.ToString(); }
                 }
+                if (state == ProjectToolState.Installed && !catalog.IsEnabled(need.Id, need.Version))
+                {
+                    state = ProjectToolState.Disabled;
+                    diagnostic = "组件已安装但被禁用。请在开发环境组件管理中启用此精确版本；不会改用其他版本或重新下载。";
+                }
                 result.Add(new(need.Id, need.Version, need.Compiler, need.Purpose, state, diagnostic, locked, entry));
             }
             if (fingerprint != await FingerprintAsync(root, token)) throw new StudioXException("TOOLS_PROJECT_CHANGED", "检查期间工程配置发生变化，请刷新。");
             return new ProjectToolPlan(root, project.Name, fingerprint,
-                $"{result.Count(r => r.State == ProjectToolState.Missing)} 个工具集未安装，{result.Count(r => r.State == ProjectToolState.RepairNeeded)} 个需要修复。仅检查明确版本和入口，不扫描 SDK，不自动下载。", result);
+                $"{result.Count(r => r.State == ProjectToolState.Missing)} 个开发环境组件未安装，{result.Count(r => r.State == ProjectToolState.RepairNeeded)} 个需要修复，{result.Count(r => r.State == ProjectToolState.Disabled)} 个已禁用。仅检查明确版本和入口，不扫描 SDK，不自动下载。", result);
         }, token);
 
     public async Task<ToolArchivePreview> PreviewAsync(ProjectToolPlan plan, ProjectToolRequirement requirement, string archive,
@@ -90,7 +88,7 @@ public sealed class ProjectToolPreparationService(ToolsetCatalog catalog, ToolMa
     private async Task EnsureCurrentAsync(ProjectToolPlan plan, ProjectToolRequirement requirement, CancellationToken token)
     {
         if (plan.ProjectDirectory is null || !plan.Requirements.Contains(requirement) || requirement.State != ProjectToolState.Missing)
-            throw new StudioXException("TOOLS_SELECTION", "请选择当前工程未安装的工具集；已有目录需要使用修复入口。");
+            throw new StudioXException("TOOLS_SELECTION", "请选择当前工程未安装的开发环境组件；已有目录需要使用修复入口。");
         if (await FingerprintAsync(plan.ProjectDirectory, token) != plan.Fingerprint)
             throw new StudioXException("TOOLS_PROJECT_CHANGED", "工程配置在预览后发生变化，请刷新后重试。");
         var current = await InspectAsync(plan.ProjectDirectory, token: token);
@@ -125,7 +123,7 @@ public sealed class ProjectToolPreparationService(ToolsetCatalog catalog, ToolMa
             || manifest.Executables is null || manifest.Sha256 is null)
             throw new StudioXException("TOOLSET_INCOMPATIBLE", "工具清单与工程指定的身份或编译器不一致。");
         if (pin is not null && !pin.Equals(Convert.ToHexString(SHA256.HashData(bytes)), StringComparison.OrdinalIgnoreCase))
-            throw new StudioXException("TOOLCHAIN_LOCK", "工具清单指纹与工程内容锁不一致，请恢复相同内容的工具集。");
+            throw new StudioXException("TOOLCHAIN_LOCK", "工具清单指纹与工程内容锁不一致，请恢复相同内容的开发环境组件。");
         var roles = manifest.Purpose switch
         {
             "ag32-mapping" => new[] { "python", "converter", "supra" }, "hdl-native" => ["mapper"], "hdl-simulation" => ["iverilog", "vvp"],
@@ -164,7 +162,8 @@ public sealed class ProjectToolPreparationService(ToolsetCatalog catalog, ToolMa
             var path = PathBoundary.Resolve(root, relative);
             hash.AppendData(System.Text.Encoding.UTF8.GetBytes(relative + "\n"));
             if (!File.Exists(path)) { hash.AppendData([0]); continue; }
-            if (new FileInfo(path).Length > 1024 * 1024) throw new StudioXException("TOOLS_PROJECT_SIZE", "工程配置文件过大：" + relative);
+            if (new FileInfo(path).Length > (relative == "device/manifest.json" ? 32 : 1) * 1024 * 1024)
+                throw new StudioXException("TOOLS_PROJECT_SIZE", "工程配置文件过大：" + relative);
             hash.AppendData([1]); hash.AppendData(await File.ReadAllBytesAsync(path, token));
         }
         return Convert.ToHexString(hash.GetHashAndReset());

@@ -2,6 +2,7 @@ namespace StudioX.Desktop;
 
 using System.Windows;
 using System.Windows.Threading;
+using StudioX.Engine;
 
 public partial class MainWindow
 {
@@ -27,7 +28,7 @@ public partial class MainWindow
         await OpenProjectAsync(fixture, CancellationToken.None);
         var main = activeEditor ?? throw new InvalidOperationException("主文件未打开。");
         var original = main.Buffer.Text;
-        main.Buffer.Insert(0, "// 自动保存与内置工具链构建检查\n");
+        main.Buffer.Insert(0, "// 自动保存与内置开发环境组件构建检查\n");
         Build_Click(this, new RoutedEventArgs());
         await pendingOperation;
         if (Status.Text != "编译成功，退出代码：0" || !BuildLog.Text.TrimEnd().EndsWith(Status.Text, StringComparison.Ordinal) || main.IsDirty || !File.Exists(Path.Combine(fixture, ".build/firmware.elf")))
@@ -48,14 +49,15 @@ public partial class MainWindow
         await SaveEditorAsync(fixture, main, CancellationToken.None);
         VerifyTools_Click(this, new RoutedEventArgs());
         await pendingOperation;
-        if (ToolInventory.Text.Contains("检查失败", StringComparison.Ordinal) || ToolInventory.Text.Split('✓').Length != 4)
+        var requirements = await ProjectDevelopmentComponents.ReadAsync(fixture, await ProjectService.ReadAsync(fixture));
+        if (ToolInventory.Text.Contains("检查失败", StringComparison.Ordinal) || ToolInventory.Text.Split('✓').Length != requirements.Count + 1)
         {
-            throw new InvalidOperationException("发行工具集检查失败：" + ToolInventory.Text);
+            throw new InvalidOperationException("发行开发环境组件检查失败：" + ToolInventory.Text);
         }
         await File.WriteAllTextAsync(Path.Combine(directory, "inventory.txt"), ToolInventory.Text);
         await Layout();
         Render(this, Path.Combine(directory, "tool-inventory.png"));
-        await File.WriteAllTextAsync(Path.Combine(directory, "result.txt"), "PASS: desktop saves dirty source before build; AG32 ELF/BIN/HEX/MAP; compiler errors retained; all three bundled toolsets pass hashes and executable startup. Isolated fixture only; no hardware access.\n");
+        await File.WriteAllTextAsync(Path.Combine(directory, "result.txt"), "PASS: desktop saves dirty source before build; AG32 ELF/BIN/HEX/MAP; compiler errors retained; only declared project components pass hashes and executable startup. Isolated fixture only; no hardware access.\n");
         async Task Layout()
         {
             UpdateLayout();

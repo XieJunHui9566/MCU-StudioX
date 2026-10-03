@@ -41,6 +41,7 @@
     <Project Path="tools/StudioX.DebugPluginValidation/StudioX.DebugPluginValidation.csproj" />
     <Project Path="tools/StudioX.ProjectHealthValidation/StudioX.ProjectHealthValidation.csproj" />
     <Project Path="tools/StudioX.ToolManagementValidation/StudioX.ToolManagementValidation.csproj" />
+    <Project Path="tools/StudioX.ToolchainArchiveValidation/StudioX.ToolchainArchiveValidation.csproj" />
     <Project Path="tools/StudioX.Ag32TimingValidation/StudioX.Ag32TimingValidation.csproj" />
     <Project Path="tools/StudioX.Ag32PeripheralValidation/StudioX.Ag32PeripheralValidation.csproj" />
     <Project Path="tools/StudioX.LabPluginsValidation/StudioX.LabPluginsValidation.csproj" />

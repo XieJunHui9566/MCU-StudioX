@@ -32,6 +32,11 @@ public partial class MainWindow
         ShowDocument(distributionTab);
         return Task.CompletedTask;
     }
+    private async Task ShowGithubComponentLibraryAsync()
+    {
+        await ShowDistributionAsync();
+        await RunDistributionAsync("trusted");
+    }
     private void ShowDistributionDetail(DistributionEntry entry)
     {
         var destination = entry.Kind == "tool" ? services.Toolsets.RootDirectory : entry.Kind == "plugin" ? services.DataDirectory : projectDirectory ?? services.DataDirectory;
@@ -47,8 +52,10 @@ public partial class MainWindow
     private Task RunDistributionAsync(string action) => action == "required" ? ShowProjectToolsAsync() : RunAsync(async token =>
     {
         var view = distributionView!;
+        view.SetBusy(true);
         try
         {
+            if (action == "migration") { await CreateComponentMigrationAsync(view, token); return; }
             if (action == "browse")
             {
                 var dialog = new OpenFileDialog { Filter = "分发目录|*.json" };
@@ -65,19 +72,25 @@ public partial class MainWindow
                 if (dialog.ShowDialog(this) == true)
                 {
                     distributionKey = dialog.FileName;
-                    view.SetStatus("已选定发布者公钥；重新读取目录执行签名验证。请通过独立可信渠道确认密钥。 ");
+                    view.SetListing(null);
+                    view.SetStatus("自定义目录公钥已变更，请重新读取。已验证组件库始终使用 IDE 内置公钥。");
                 }
                 return;
             }
             if (action == "clear-key")
             {
                 distributionKey = null;
-                view.SetStatus("已取消公钥验证，请重新读取目录。 ");
+                view.SetListing(null);
+                view.SetStatus("已取消自定义公钥，请重新读取目录。已验证组件库仍强制验签。");
                 return;
             }
-            if (action == "load")
+            if (action is "load" or "trusted")
             {
-                view.SetListing(await services.Distribution.ReadAsync(view.Source.Trim(), distributionKey, token));
+                view.SetListing(null);
+                if (action == "trusted") view.Source = TrustedDevelopmentCatalog.Source;
+                view.SetStatus("正在读取目录并校验发布者签名…");
+                view.SetListing(action == "trusted" ? await services.Distribution.ReadTrustedAsync(token)
+                    : await services.Distribution.ReadAsync(view.Source.Trim(), distributionKey, token));
                 return;
             }
             if (action == "components")
@@ -125,7 +138,7 @@ public partial class MainWindow
                 }
                 archive = dialog.FileName;
             }
-            else if (action == "install" && view.Listing is { } listing && view.Selected is { } selected)
+            else if (action is "install" or "preview-tool" && view.Listing is { } listing && view.Selected is { } selected)
             {
                 item = selected;
                 var destination = item.Kind == "tool" ? services.Toolsets.RootDirectory : item.Kind == "component" ? RequireProject() : services.DataDirectory;
@@ -146,11 +159,18 @@ public partial class MainWindow
                 {
                     throw new StudioXException("CATALOG_IDENTITY", "工具归档与目录声明不一致。");
                 }
-                if (MessageBox.Show(this, preview.ToText(), "确认并存安装工具集", MessageBoxButton.YesNo, MessageBoxImage.Information, MessageBoxResult.No) != MessageBoxResult.Yes)
+                var plan = projectDirectory is null ? null : await services.ProjectTools.InspectAsync(projectDirectory, token: token);
+                var compatibility = await services.ProjectTools.PreviewCompatibilityAsync(plan, preview, token);
+                var description = compatibility.ToText() + "\n\n" + preview.ToText() + "\n\n" + view.Listing!.Verification;
+                view.SetDetail(description);
+                if (action == "preview-tool") { view.SetStatus("升级预览完成。尚未安装或切换工程版本。"); return; }
+                if (!compatibility.CanInstall) throw new StudioXException("TOOLS_PROJECT_IDENTITY", compatibility.ToText());
+                if (MessageBox.Show(this, description, "确认开发环境组件", MessageBoxButton.YesNo, MessageBoxImage.Information, MessageBoxResult.No) != MessageBoxResult.Yes)
                 {
                     return;
                 }
-                await services.ToolManagement.InstallAsync(preview, new Progress<string>(view.SetStatus), token);
+                await services.ProjectTools.InstallWithCompatibilityAsync(plan, preview, compatibility, new Progress<string>(view.SetStatus), token);
+                Log($"开发环境组件 {preview.Identity.Key}：并存安装或重复完整校验完成，当前工程仍保持原需求。");
             }
             else if (item?.Kind == "plugin")
             {
@@ -179,8 +199,9 @@ public partial class MainWindow
                 await SaveAllSourcesAsync(project, token);
                 await services.Components.InstallAsync(project, preview, view.ComponentTarget, token);
             }
-            view.SetStatus("安装完成。组件需要重新编译；插件请到管理页确认启用；已有工具版本锁定保持不变。");
+            view.SetStatus("安装完成。组件需要重新编译；插件请到管理页确认启用；已有开发环境组件版本锁定保持不变。");
         }
         catch (Exception error) { view.SetDetail(error.ToString()); throw; }
+        finally { view.SetBusy(false); }
     });
 }

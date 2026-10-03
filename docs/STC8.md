@@ -47,11 +47,11 @@ STC15 系列按官方手册在物理程序容量末尾保留 7 字节 Global ID�
 3. 点击“下载”。IDE 会先保存源码、编译固件，核对工程型号、器件包容量、构建凭据、HEX 地址与 SHA-256，然后显示目标型号、串口、固件路径、哈希和时钟选项。确认窗口默认选“否”；只有明确确认后才打开串口。**下载会擦除并覆盖板内现有程序，STC ISP 无法把旧程序读回备份。**
 4. 工具日志开始显示等待单片机时，按开发板的下载/上电按钮完成上电进入 ISP。赛点 V3.1 板使用 S2：按住约 1 秒再松开。IDE 在擦写前核对芯片报告的准确型号与程序容量；不匹配时拒绝写入。完成后查看下载日志，并通过板上行为或串口输出确认程序运行。
 
-IDE 只在 `stcgal` 报告完整写入时显示下载完成；该工具链不做 Flash 读回校验。下载超时、中断或失败后若已开始擦写，板内程序可能不完整。STC 调试入口尚未接入。
+IDE 只在 `stcgal` 报告完整写入时显示下载完成；该开发环境组件不做 Flash 读回校验。下载超时、中断或失败后若已开始擦写，板内程序可能不完整。STC 调试入口尚未接入。
 
 ## 来源和重建
 
-包内五份 SDCC 寄存器头来自本机 AiCube 静态解包中的地址事实。构建脚本逐份核对源 SHA-256，规范化生成 SFR/sbit/xdata 声明；原始文件的再分发许可未找到，原文未打入包。来源、原始资源和生成物哈希记录于包内 `vendor/provenance.json`。发行版包含 SDCC 的原始许可证和工具文件索引；工具链重建见 [工具说明](TOOLCHAINS.md)。
+包内五份 SDCC 寄存器头来自本机 AiCube 静态解包中的地址事实。构建脚本逐份核对源 SHA-256，规范化生成 SFR/sbit/xdata 声明；原始文件的再分发许可未找到，原文未打入包。来源、原始资源和生成物哈希记录于包内 `vendor/provenance.json`。发行版包含 SDCC 的原始许可证和工具文件索引；开发环境组件重建见 [工具说明](TOOLCHAINS.md)。
 
 ```powershell
 & .\tools\Prepare-SdccToolRuntime.ps1 -SdccDirectory '<本机 SDCC 安装目录>'
@@ -69,4 +69,4 @@ dotnet run --project tools/StudioX.StcValidation -c Release -- artifacts/tool-ru
 
 ## STC32G/C251
 
-STC 官方[软件下载页](https://www.stcmicro.com/cn/rjxz.html)将 **Keil C251** 列为 STC32G 的编译软件；[Keil 产品页](https://www.keil.com/products/c251/c251.asp)说明它面向 MCS-251。[5.60 评估版下载](https://www.keil.com/c251/demo/eval/c251.htm)需填写联系信息，且[官方评估限制](https://www.keil.com/demo/limits.asp)把 C251 目标代码限制为 2 KiB。本机未发现可用的 C251 安装，因此没有可重现的本地编译器可供集成；当前 SDCC `mcs51` 工具集不用于 STC32G，也不把 STC32G 混入此 8 位包。后续若取得可用 C251 环境，需单独验证工程、链接与固件格式。
+STC 官方[软件下载页](https://www.stcmicro.com/cn/rjxz.html)将 **Keil C251** 列为 STC32G 的编译软件；[Keil 产品页](https://www.keil.com/products/c251/c251.asp)说明它面向 MCS-251。[5.60 评估版下载](https://www.keil.com/c251/demo/eval/c251.htm)需填写联系信息，且[官方评估限制](https://www.keil.com/demo/limits.asp)把 C251 目标代码限制为 2 KiB。本机未发现可用的 C251 安装，因此没有可重现的本地编译器可供集成；当前 SDCC `mcs51` 开发环境组件不用于 STC32G，也不把 STC32G 混入此 8 位包。后续若取得可用 C251 环境，需单独验证工程、链接与固件格式。

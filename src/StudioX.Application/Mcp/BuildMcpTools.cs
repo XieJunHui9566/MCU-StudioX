@@ -10,7 +10,7 @@ using StudioX.Foundation;
 internal sealed class BuildMcpTools(McpSessionContext context) : StudioXMcpToolProvider(context)
 {
     [McpServerTool(Name = "project_build")]
-    [Description("用户逐次批准后用工程锁定的内置工具链执行配置或编译；不会下载或连接硬件。返回有界诊断和完整日志路径。")]
+    [Description("用户逐次批准后用工程锁定的内置开发环境组件执行配置或编译；不会下载或连接硬件。返回有界诊断和完整日志路径。")]
     public async Task<string> ProjectBuildAsync(
         [Description("configure 只配置 CMake；build 编译固件。")]
         string action = "build", CancellationToken cancellationToken = default)
@@ -26,8 +26,8 @@ internal sealed class BuildMcpTools(McpSessionContext context) : StudioXMcpToolP
         }
         await RequireSavedDocumentsAsync().ConfigureAwait(false);
         await RequireApprovalAsync("project_build", action == "build"
-                ? "使用当前工程锁定的内置工具链编译固件。"
-                : "使用当前工程锁定的内置工具链配置 CMake。",
+                ? "使用当前工程锁定的内置开发环境组件编译固件。"
+                : "使用当前工程锁定的内置开发环境组件配置 CMake。",
             StudioXMcpPermission.Build, cancellationToken).ConfigureAwait(false);
         await RequireSavedDocumentsAsync().ConfigureAwait(false);
         var snapshot = Context.AgentEditor is { } beforeEditor ? await beforeEditor.SnapshotAsync(cancellationToken) : null;
@@ -54,7 +54,7 @@ internal sealed class BuildMcpTools(McpSessionContext context) : StudioXMcpToolP
                 report.ExitCode,
                 report.TimedOut,
                 stale,
-                evidence = action == "build" ? "内置工具链编译；未连接或验证硬件" : "CMake 配置；尚未编译或验证硬件",
+                evidence = action == "build" ? "内置开发环境组件编译；未连接或验证硬件" : "CMake 配置；尚未编译或验证硬件",
                 artifacts = report.Artifacts.Take(12),
                 report.LogPath,
                 log = LimitOutput(report.Log, 12_000)

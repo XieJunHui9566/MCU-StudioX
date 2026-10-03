@@ -33,7 +33,7 @@ public partial class MainWindow
         var root = healthDirectory ?? projectDirectory;
         var request = ++healthRequest;
         projectHealthView!.BeginInspection();
-        projectHealthView!.SetBusy(true, deep ? "正在完整校验工具集，可用顶部停止按钮取消…" : "正在检查工程配置与必要工具入口…");
+        projectHealthView!.SetBusy(true, deep ? "正在完整校验开发环境组件，可用顶部停止按钮取消…" : "正在检查工程配置与必要工具入口…");
         try
         {
             var report = await services.ProjectHealth.InspectAsync(root, deep, new Progress<string>(text => { if (request == healthRequest) projectHealthView.SetBusy(true, text); }), token);

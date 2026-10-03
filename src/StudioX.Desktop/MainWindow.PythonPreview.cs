@@ -8,7 +8,7 @@ using StudioX.Application;
 
 public partial class MainWindow
 {
-    /// <summary>隔离的 Python 编辑器验收；只操作内存文档，不需要解释器或工程工具链。</summary>
+    /// <summary>隔离的 Python 编辑器验收；只操作内存文档，不需要解释器或工程开发环境组件。</summary>
     public async Task RenderPythonPreviewAsync(string directory)
     {
         var results = new List<string>();

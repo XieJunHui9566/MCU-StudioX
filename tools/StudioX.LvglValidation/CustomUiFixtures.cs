@@ -1,6 +1,6 @@
 using StudioX.Application;
 
-/// <summary>扫描标记仅用于发现诊断；真实 UI 构建复用共享 LVGL，不复制库或工具链。</summary>
+/// <summary>扫描标记仅用于发现诊断；真实 UI 构建复用共享 LVGL，不复制库或开发环境组件。</summary>
 static class CustomUiFixtures
 {
     public static async Task WriteLibraryMarkersAsync(string root, int major = 8, int minor = 3,

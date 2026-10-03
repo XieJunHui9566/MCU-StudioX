@@ -256,7 +256,7 @@ internal sealed class HardwareCheck
             {
                 throw new StudioXException("DEBUG_SYMBOLS", "现有构建设置为 -g0，不能附加源码/RTOS 调试。");
             }
-            // Preview 校验工具集、构建凭据、源码摘要和唯一映像，不创建下载目录或运行工具。
+            // Preview 校验开发环境组件、构建凭据、源码摘要和唯一映像，不创建下载目录或运行工具。
             var preview = await services.Downloads.PreviewAsync(project, configuration.Options);
             imageSha256 = preview.Sha256;
             var receipt = await JsonStore.ReadAsync<JsonElement>(PathBoundary.Resolve(project, ".build/studiox-build-receipt.json"));

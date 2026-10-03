@@ -94,7 +94,7 @@ public sealed class LvglPreviewBuilder(ToolsetCatalog toolsets)
             : await InspectToolchainAsync(compiler.GccPath, token);
         if (checkedCompiler != compiler)
         {
-            throw new StudioXException("LVGL_COMPILER_CHANGED", "原生 GCC 已变化，请重新选择工具链，核对版本和指纹。");
+            throw new StudioXException("LVGL_COMPILER_CHANGED", "原生 GCC 已变化，请重新选择开发环境组件，核对版本和指纹。");
         }
         var manifest = await ProjectService.ReadAsync(root, token);
         var tools = await toolsets.ResolveAsync(manifest.ToolsetId, manifest.ToolsetVersion, manifest.CompilerId, token);
@@ -152,7 +152,7 @@ public sealed class LvglPreviewBuilder(ToolsetCatalog toolsets)
             : Path.Combine(Path.GetDirectoryName(compiler.GccPath)!, "g++.exe");
         if (!File.Exists(gxx))
         {
-            throw new StudioXException("LVGL_COMPILER", "原生工具链缺少 g++.exe。");
+            throw new StudioXException("LVGL_COMPILER", "原生开发环境组件缺少 g++.exe。");
         }
         arguments.Add("-DCMAKE_CXX_COMPILER=" + gxx.Replace('\\', '/'));
         var configured = await RunAsync(tools.Tool("cmake"), arguments, root, environment, log, progress, token);

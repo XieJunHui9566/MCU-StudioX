@@ -3,7 +3,7 @@ using StudioX.Application;
 using StudioX.Application.Editing;
 using StudioX.Foundation;
 
-/// <summary>替换模型而不替换 MCP、clangd 或构建器，复现修改后验证失败再修复的工具链。</summary>
+/// <summary>替换模型而不替换 MCP、clangd 或构建器，复现修改后验证失败再修复的开发环境组件。</summary>
 internal sealed class WorkflowTransport : IAiAgentTransport
 {
     private int round;

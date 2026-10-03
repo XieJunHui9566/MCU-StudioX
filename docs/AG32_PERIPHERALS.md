@@ -74,7 +74,7 @@ int main(void)
 | 160 / 80 MHz | 全部通过，其中 3 款触发低余量提醒 | +0.601 ns | +0.414～+0.599 ns |
 | 200 / 100 MHz | 全部按预期拒绝下载 | −0.649 ns | +0.301～+0.444 ns |
 
-型号为 AG32VF303KCU6/CCT6/VCT6、AG32VH303RCT6、AG32VF407RGT6/VGT6、AG32VH407VGT6。160/80 MHz 触发提醒的是 AG32VF303CCT6/VCT6 与 AG32VH303RCT6。这组数据只证明对应夹具、工具版本和约束的离线结果，不能推断所有引脚组合、IP 或电路在相同频率下都满足时序。
+型号为 AG32VF303KCU6/CCT6/VCT6、AG32VH303RCT6、AG32VF407RGT6/VGT6、AG32VH407VGT6。160/80 MHz 触发提醒的是 AG32VF303CCT6/VCT6 与 AG32VH303RCT6。这组数据只证明对应夹具、开发环境组件版本和约束的离线结果，不能推断所有引脚组合、IP 或电路在相同频率下都满足时序。
 
 回归工具：`dotnet run --project tools/StudioX.Ag32TimingValidation -c Release -- <toolsets> <AGM包目录> <新的输出目录>`。结果保留 `matrix.json`、各工程的原始构建报告和 `result.json`。可用 `<toolsets> --recheck-evidence <矩阵输出目录> <新的输出目录>` 重新读取既有 21 组证据，并在副本中验证报告损坏、过期及成功凭据缺失的处理，无需再次布线。
 

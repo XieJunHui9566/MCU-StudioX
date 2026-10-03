@@ -22,7 +22,7 @@ public sealed class CubeMxImportService(ToolsetCatalog catalog)
         {
             if (!File.Exists(PathBoundary.Resolve(root, required)))
             {
-                throw new StudioXException("CUBEMX_LAYOUT", $"缺少 {required}。请在 CubeMX 中选择 CMake 工具链、生成代码，并选择工程根目录。");
+                throw new StudioXException("CUBEMX_LAYOUT", $"缺少 {required}。请在 CubeMX 中选择 CMake 开发环境组件、生成代码，并选择工程根目录。");
             }
         }
         var iocs = Directory.GetFiles(root, "*.ioc", SearchOption.TopDirectoryOnly);
@@ -108,7 +108,7 @@ public sealed class CubeMxImportService(ToolsetCatalog catalog)
         PathBoundary.Resolve(directory, settings.ToolchainFile);
         if (project.ToolsetId != ToolsetId || project.ToolsetVersion != ToolsetVersion || project.CompilerId != CompilerId)
         {
-            throw new StudioXException("CUBEMX_TOOLSET", "CubeMX 工程需要此版本支持的内置 ARM GNU 工具集。");
+            throw new StudioXException("CUBEMX_TOOLSET", "CubeMX 工程需要此版本支持的内置 ARM GNU 开发环境组件。");
         }
     }
     private static void ValidatePath(string path)

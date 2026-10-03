@@ -18,7 +18,7 @@ STC 串口 ISP 在 MCP 中使用独立的 `stc_isp_plan` 与 `stc_isp_download`�
 
 ## 构建产物
 
-- 每次成功构建产生 `.build/studiox-build-receipt.json`，记录工程配置、工具集指纹、真实固件路径与 SHA-256。开始构建/配置时作废旧凭据，失败和取消不能继续使用旧固件。
+- 每次成功构建产生 `.build/studiox-build-receipt.json`，记录工程配置、开发环境组件指纹、真实固件路径与 SHA-256。开始构建/配置时作废旧凭据，失败和取消不能继续使用旧固件。
 - 器件包工程沿用其 `.build/firmware.bin` 和清单 Flash 地址。CubeMX 使用 CMake File API 实际报告的 ELF 目标，不要求命名为 firmware，也不采用可能经过用户签名/填充的 BIN 文件。
 - ELF 必须是与目标匹配的 ARM / RISC-V 32 位小端可执行映像，所有非空 PT_LOAD 段的物理装载地址都要落在已知芯片的应用 Flash 内；不允许段重叠。RAM `.data` 使用 Flash 装载地址，BSS 不下载。保留原链接脚本地址，传给 OpenOCD 的额外偏移为 0。
 - 下载前核对工具锁、构建凭据和产物哈希，再创建独立映像快照。目标脚本在任何擦写之前校验硅片组和标称 Flash 容量；不自动解锁、不写选项字节、不执行整片擦除。
@@ -34,7 +34,7 @@ CubeMX 下载目录包含已有 F1/F4 包中的 244 个基础型号，容量和�
 
 AG32 的 J-Link 通路使用 AGM OpenOCD 的 `interface/jlink.cfg`；Windows 须让 libusb 能访问 J-Link 对应接口。V9 标注表示支持的选择范围，软件不会从 USB 名称猜测实物版本。探针配置与命令解析已离线检查，新增 J-Link 通路仍需实板验收。
 
-CH32V307 的 `wch.ch32v307/0.1.1` 包提供 WCH-Link / WCH-LinkE（RISC-V / SDI）入口，使用独立的沁恒工具集。接口脚本随器件包提供，显式打开厂商 `page_erase` 模式，避免其默认全代码区擦除。写入前核对具体型号、读保护状态和 256 KiB Flash / 64 KiB RAM 划分；不自动改变选项字节。下载后执行 `reset halt; resume`：当前沁恒 OpenOCD 的 `reset run` 在实测中会停留在复位入口。下载配置不代表已支持交互式调试；旧 0.1.0 工程不会自动更换器件配置。实机范围与证据见 CH32V307 验证记录（本地记录）。
+CH32V307 的 `wch.ch32v307/0.1.1` 包提供 WCH-Link / WCH-LinkE（RISC-V / SDI）入口，使用独立的沁恒开发环境组件。接口脚本随器件包提供，显式打开厂商 `page_erase` 模式，避免其默认全代码区擦除。写入前核对具体型号、读保护状态和 256 KiB Flash / 64 KiB RAM 划分；不自动改变选项字节。下载后执行 `reset halt; resume`：当前沁恒 OpenOCD 的 `reset run` 在实测中会停留在复位入口。下载配置不代表已支持交互式调试；旧 0.1.0 工程不会自动更换器件配置。实机范围与证据见 CH32V307 验证记录（本地记录）。
 
 上述 STM32 下载目录的初始验证为离线检查；后续 ST-Link / DAP 实机记录见对应调试验收文档。设备在 Windows 上需要其对应 USB 驱动，J-Link 型号/固件也须支持目标使用的 SWD/JTAG 协议。
 

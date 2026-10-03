@@ -27,6 +27,13 @@ internal static class NativeChecks
         var baseline = await build.BuildAsync(project);
         await File.WriteAllTextAsync(Path.Combine(root, "native-baseline.log"), baseline.Log);
         check(baseline.Success, "isolated F407 HAL baseline compiles with installed locked tools");
+        var componentLockPath = Path.Combine(project, DevelopmentComponentLock.RelativePath);
+        var componentLockBytes = await File.ReadAllBytesAsync(componentLockPath);
+        var primaryLockBytes = await File.ReadAllBytesAsync(Path.Combine(project, ".studiox/toolchain.lock.json"));
+        var componentLock = await JsonStore.ReadAsync<DevelopmentComponentLock>(componentLockPath);
+        check(componentLock.Components is { Count: 1 } && componentLock.Components[0].Id == device.ToolsetId
+            && (await ProjectDevelopmentComponents.ReadPinsAsync(project, await ProjectDevelopmentComponents.ReadAsync(project, await ProjectService.ReadAsync(project)))).Count == 1,
+            "actual ARM build creates aggregate component lock consistent with original primary lock");
         var before = await history.CaptureAsync(project);
         check(before.Memory.Targets.Count > 0 && before.Details.Contributions.Count > 0 && before.Details.Timings.Count > 0, "native snapshot includes actual MAP contributions and Ninja timings");
         var component = new ComponentService(() => false, build);
@@ -39,6 +46,9 @@ internal static class NativeChecks
         var rebuilt = await build.BuildAsync(project);
         await File.WriteAllTextAsync(Path.Combine(root, "native-component.log"), rebuilt.Log);
         check(rebuilt.Success, "component registration actually compiles and links into F407 HAL project");
+        check((await File.ReadAllBytesAsync(componentLockPath)).SequenceEqual(componentLockBytes)
+            && (await File.ReadAllBytesAsync(Path.Combine(project, ".studiox/toolchain.lock.json"))).SequenceEqual(primaryLockBytes),
+            "subsequent actual build preserves both component and legacy content locks byte for byte");
         var after = await history.CaptureAsync(project);
         await JsonStore.WriteAsync(Path.Combine(root, "native-history.json"), new[] { before, after });
         check(after.Details.Contributions.Any(c => c.Name.Contains("studiox_component_value")) && BuildHistoryService.Compare(before, after).Any(r => r.Difference != 0), "two genuine builds expose new function and nonzero memory differences");

@@ -3,7 +3,7 @@ namespace StudioX.Engine;
 using System.Text.Json;
 using StudioX.Foundation;
 
-/// <summary>读取 CMake 实际生成的目标和工具链，避免从 CMake 脚本文本推测产物名称。</summary>
+/// <summary>读取 CMake 实际生成的目标和开发环境组件，避免从 CMake 脚本文本推测产物名称。</summary>
 internal static class CMakeFileApi
 {
     public static async Task QueryAsync(string build, CancellationToken token)
@@ -36,9 +36,9 @@ internal static class CMakeFileApi
             {
                 if (tools.Manifest.Purpose is "esp-idf" or "esp8266-rtos-sdk")
                 {
-                    throw new StudioXException("ESPRESSIF_COMPILER", "原生 CMake 工程指定了其他编译器：" + compiler + "。请使用工程锁定的内置 SDK 工具链。");
+                    throw new StudioXException("ESPRESSIF_COMPILER", "原生 CMake 工程指定了其他编译器：" + compiler + "。请使用工程锁定的内置 SDK 开发环境组件。");
                 }
-                throw new StudioXException("CUBEMX_COMPILER", "工程指定了其他编译器：" + compiler + "。请将 CubeMX GCC 工具链改为通过 arm-none-eabi- 前缀查找内置编译器。");
+                throw new StudioXException("CUBEMX_COMPILER", "工程指定了其他编译器：" + compiler + "。请将 CubeMX GCC 开发环境组件改为通过 arm-none-eabi- 前缀查找内置编译器。");
             }
         }
         using var model = await ReadAsync(PathBoundary.Resolve(reply, answers.GetProperty("codemodel-v2").GetProperty("jsonFile").GetString()!), token);

@@ -184,7 +184,7 @@ public sealed class Ag32PinPlanService(ToolsetCatalog tools)
     {
         var profile = Ag32DeviceCatalog.Find(project.DeviceId);
         if (project.Kind != ProjectKind.Pack || profile is null || !profile.CanMap || project.Logic is not null ||
-            project.PinMapping is not { } settings || settings != new Ag32PinMappingProjectSettings(profile.TargetDevice))
+            project.PinMapping is not { } settings || settings.TargetDevice != profile.TargetDevice)
         {
             throw new StudioXException("AG32_PIN_PLAN_DEVICE", "此图形规划需要已核实 AG32 器件封装、并启用基础映射的工程。");
         }

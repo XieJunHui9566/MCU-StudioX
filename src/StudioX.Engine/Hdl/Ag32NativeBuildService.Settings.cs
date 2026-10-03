@@ -50,7 +50,7 @@ public sealed partial class Ag32NativeBuildService
         if (pack.FormatVersion != 1 || pack.Id != project.PackId || pack.Version != project.PackVersion || pack.Vendor != "AGM" ||
             device is null || !profile.Matches(device) || device.ToolsetId != project.ToolsetId ||
             device.ToolsetVersion != project.ToolsetVersion || device.CompilerId != project.CompilerId ||
-            project.Logic != new Ag32LogicProjectSettings(profile.TargetDevice, "logic/user_logic.v", "logic/pins.ve"))
+            project.Logic?.TargetDevice != profile.TargetDevice || project.PinMapping?.TargetDevice != profile.TargetDevice)
             throw new StudioXException("AG32_LOGIC_DEVICE", "自定义逻辑的器件、封装、容量和工具必须匹配已核实的 AGM 器件包。");
     }
 
@@ -81,8 +81,10 @@ public sealed partial class Ag32NativeBuildService
         var path = PathBoundary.Resolve(root, Ag32NativeBuildReceipt.RelativePath);
         if (!File.Exists(path)) throw new StudioXException("AG32_LOGIC_STALE", "自定义逻辑尚未成功联合构建，请先编译。");
         var receipt = await JsonStore.ReadAsync<Ag32NativeBuildReceipt>(path, token);
-        var mapping = await catalog.ResolveAsync("agm.pin-mapping", "1.0.0", "agm.ve", token);
-        var native = await catalog.ResolveAsync("agm.logic", "1.0.0", "agm.native", token);
+        var mappingSettings = project.PinMapping!;
+        var logicSettings = project.Logic!;
+        var mapping = await catalog.ResolveAsync(mappingSettings.ToolsetId, mappingSettings.ToolsetVersion, mappingSettings.CompilerId, token);
+        var native = await catalog.ResolveAsync(logicSettings.ToolsetId, logicSettings.ToolsetVersion, logicSettings.CompilerId, token);
         if (receipt.FormatVersion != 1 || receipt.Inputs is null || receipt.Artifacts is null || receipt.Settings is null ||
             receipt.MappingTools != mapping.Fingerprint || receipt.NativeTools != native.Fingerprint ||
             !receipt.Inputs.ContainsKey(ToolLockPath) ||

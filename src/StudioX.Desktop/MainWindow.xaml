@@ -496,33 +496,24 @@
               <MenuItem
                 Header="AI 接口设置…"
                 Click="AiSettingsMenu_Click" />
-              <MenuItem
-                Header="Git 图谱"
-                Click="GitGraph_Click" />
-              <MenuItem
-                Header="GitHub 协作"
-                Click="GitHubWorkspace_Click" />
-              <MenuItem
-                Header="器件与模板"
-                Click="DevicesAndTemplates_Click" />
-              <MenuItem
-                Header="LVGL PC 预览"
-                Click="LvglPreview_Click" />
-              <MenuItem
-                Header="串口终端"
-                Click="Serial_Click" />
-              <MenuItem
-                Header="串口绘图"
-                Click="SerialPlot_Click" />
-              <MenuItem
-                Header="波形演示"
-                Click="Lab_Click" />
-              <MenuItem
-                Header="插件与工具集"
-                Click="Extensions_Click" />
-              <MenuItem
-                Header="检查内置工具链"
-                Click="VerifyTools_Click" />
+              <Separator />
+              <MenuItem x:Name="ProjectToolsMenu" Header="工程与构建">
+                <MenuItem Header="器件与模板" Click="DevicesAndTemplates_Click" />
+                <MenuItem Header="LVGL PC 预览" Click="LvglPreview_Click" />
+              </MenuItem>
+              <MenuItem x:Name="DevelopmentComponentsMenu" Header="开发环境组件" />
+              <MenuItem Header="串口与波形">
+                <MenuItem Header="串口终端" Click="Serial_Click" />
+                <MenuItem Header="串口绘图" Click="SerialPlot_Click" />
+                <MenuItem Header="波形演示" Click="Lab_Click" />
+              </MenuItem>
+              <MenuItem Header="Git 与协作">
+                <MenuItem Header="Git 图谱" Click="GitGraph_Click" />
+                <MenuItem Header="GitHub 协作" Click="GitHubWorkspace_Click" />
+              </MenuItem>
+              <MenuItem x:Name="ExtensionsMenu" Header="插件与扩展">
+                <MenuItem Header="插件管理" Click="Extensions_Click" />
+              </MenuItem>
             </MenuItem>
             <MenuItem
               x:Name="HelpRootMenu"
@@ -1417,7 +1408,7 @@
                                 <TextBlock
                                   Text="导入 CubeMX CMake 工程" />
                                 <TextBlock
-                                  Text="沿用已有源码和配置，使用内置工具链继续开发"
+                                  Text="沿用已有源码和配置，使用内置开发环境组件继续开发"
                                   Foreground="{DynamicResource Muted}"
                                   FontSize="12"
                                   Margin="0,5,0,0"
@@ -2259,7 +2250,7 @@
                             Foreground="{DynamicResource Muted}"
                             Margin="0,4,0,0" />
                           <TextBlock
-                            Text="编译工具集"
+                            Text="编译开发环境组件"
                             Style="{StaticResource SectionLabel}" />
                           <TextBlock
                             x:Name="CurrentProjectToolset"
@@ -2836,6 +2827,16 @@
                           Foreground="{DynamicResource Muted}"
                           Margin="0,8,0,0" />
                         <Border
+                          x:Name="IdfVersionPanel" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="4"
+                          Padding="12" Margin="0,14,0,0" Visibility="Collapsed">
+                          <StackPanel>
+                            <TextBlock Text="ESP-IDF 开发环境组件版本" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                            <ComboBox x:Name="IdfVersionPicker" DisplayMemberPath="DisplayName" MaxDropDownHeight="300"
+                              AutomationProperties.Name="ESP-IDF 开发环境组件版本" SelectionChanged="IdfVersionPicker_SelectionChanged"/>
+                            <TextBlock x:Name="IdfVersionDescription" TextWrapping="Wrap" Foreground="{DynamicResource Muted}" Margin="0,8,0,0"/>
+                          </StackPanel>
+                        </Border>
+                        <Border
                           x:Name="Ag32LogicModePanel"
                           BorderBrush="{DynamicResource Border}"
                           BorderThickness="1"
@@ -2846,6 +2847,8 @@
                           <StackPanel>
                             <CheckBox
                               x:Name="Ag32LogicModeCheckBox"
+                              Checked="ComponentSelection_Changed"
+                              Unchecked="ComponentSelection_Changed"
                               Content="启用 AG32 逻辑/Verilog 特殊模式"
                               FontWeight="SemiBold"
                               AutomationProperties.Name="启用 AG32 逻辑 Verilog 特殊模式" />
@@ -2862,6 +2865,12 @@
                               LineHeight="20" />
                           </StackPanel>
                         </Border>
+                        <TextBlock
+                          x:Name="SelectedDevelopmentComponents"
+                          TextWrapping="Wrap"
+                          Foreground="{DynamicResource Muted}"
+                          Margin="0,12,0,0"
+                          AutomationProperties.Name="所选模板需要的开发环境组件" />
                         <TextBlock
                           Text="工程名称"
                           Style="{StaticResource SectionLabel}" />
@@ -3075,7 +3084,7 @@
                 </Border>
               </TabItem>
               <TabItem
-                Header="插件与工具集"
+                Header="插件管理"
                 x:Name="ExtensionsTab"
                 Visibility="Collapsed">
                 <Border
@@ -3086,7 +3095,7 @@
                       Margin="32,28"
                       MaxWidth="1100">
                       <TextBlock
-                        Text="插件与工具集"
+                        Text="插件管理"
                         FontSize="23"
                         FontWeight="SemiBold" />
                       <TextBlock
@@ -3100,7 +3109,9 @@
                         Text="内置工具"
                         Style="{StaticResource SectionLabel}" />
                       <Button
-                        Content="检查内置工具链"
+                        x:Name="VerifyProjectComponentsButton"
+                        Content="校验当前工程的开发环境组件"
+                        IsEnabled="False"
                         Click="VerifyTools_Click"
                         HorizontalAlignment="Left"
                         Margin="0,0,0,12" />
@@ -3110,7 +3121,7 @@
                         MinHeight="80"
                         TextWrapping="Wrap" />
                       <TextBlock
-                        Text="工程按器件包自动选择工具集。F7 编译；支持下载的器件包可选择 ST-Link、CMSIS-DAP 或 J-Link。已收录的 STM32F1/F4 型号可选择 ST-Link 或 DAP-Link，通过 OpenOCD 调试。AG32 使用 DAP-Link 或 J-Link（V9 及以上）。"
+                        Text="工程按器件包自动选择开发环境组件。F7 编译；支持下载的器件包可选择 ST-Link、CMSIS-DAP 或 J-Link。已收录的 STM32F1/F4 型号可选择 ST-Link 或 DAP-Link，通过 OpenOCD 调试。AG32 使用 DAP-Link 或 J-Link（V9 及以上）。"
                         TextWrapping="Wrap"
                         Foreground="{DynamicResource Muted}"
                         Margin="0,12,0,0" />

@@ -7,7 +7,7 @@ using StudioX.Engine;
 using StudioX.Foundation;
 using StudioX.Packages;
 
-/// <summary>工具版本并存、依赖保留与可恢复清理；不迁移工程锁或调用工具程序。</summary>
+/// <summary>开发环境组件版本并存、依赖保留与可恢复清理；不迁移工程锁或调用工具程序。</summary>
 public sealed partial class ToolManagementService(ToolsetCatalog catalog, PackRepository packs, RecentProjectService recent,
     string dataDirectory, Func<bool>? sessionActive = null)
 {
@@ -84,6 +84,7 @@ public sealed partial class ToolManagementService(ToolsetCatalog catalog, PackRe
         var complete = diagnostics.Count == 0;
         return new(DateTimeOffset.UtcNow, versions.Select(version => version with
         {
+            Enabled = catalog.IsEnabled(version.Id, version.Version),
             Latest = version.Installed && latest.TryGetValue(version.Id, out var newest) && System.Version.TryParse(version.Version, out var number) && number == newest,
             SafeToManage = version.SafeToManage && complete && System.Version.TryParse(version.Version, out _)
         }).OrderBy(version => version.Id).ThenByDescending(version => System.Version.TryParse(version.Version, out var number) ? number : new System.Version(0, 0)).ToArray(),

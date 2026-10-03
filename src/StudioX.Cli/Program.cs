@@ -57,6 +57,24 @@ try
         case ["import", var archive, var repository]:
             Print(await new PackRepository(repository).ImportAsync(archive, cancel.Token));
             break;
+        case ["inspect-tool-archive", var archive, var output]:
+            ToolchainArchiveFormat.ValidateFileName(archive);
+            await using (var file = File.OpenRead(archive))
+            using (var container = ToolchainArchive.Open(file, cancel.Token))
+            {
+                var bytes = await container.ReadManifestAsync(cancel.Token);
+                var offset = bytes is [0xef, 0xbb, 0xbf, ..] ? 3 : 0;
+                var manifest = JsonSerializer.Deserialize<ToolsetManifest>(bytes.AsSpan(offset), JsonStore.Options)
+                    ?? throw new StudioXException("TOOLS_ARCHIVE", "工具清单为空。");
+                _ = manifest.Identity;
+                if (manifest.Sha256 is null || manifest.Executables is null)
+                    throw new StudioXException("TOOLS_IDENTITY", "组件清单不完整。");
+                container.ValidateIndex(manifest.Sha256);
+                // 制作目录复用 IDE 的容器边界检查；只读元数据，不导入或运行工具。
+                await using var receipt = new FileStream(output, FileMode.CreateNew, FileAccess.Write, FileShare.None);
+                await JsonSerializer.SerializeAsync(receipt, new { manifest, installedBytes = container.Bytes, container = container.Container }, JsonStore.Options, cancel.Token);
+            }
+            break;
         case ["create", var repository, var packId, var version, var device, var template, var name, var destination]:
             var pack = (await new PackRepository(repository).ListCatalogAsync(cancel.Token)).Single(p => p.Manifest.Id == packId && p.Manifest.Version == version);
             Print(await new ProjectService().CreateAsync(pack, device, template, name, destination, cancel.Token));
@@ -106,7 +124,7 @@ try
     return 0;
 }
 catch (OperationCanceledException) { Console.Error.WriteLine("CANCELLED"); return 130; }
-catch (Exception ex) { Console.Error.WriteLine(ex is StudioXException studio ? $"{studio.Code}: {studio.Message}" : ex.ToString()); return 1; }
+catch (Exception ex) { Console.Error.WriteLine(ex is StudioXException studio ? $"{studio.Code}: {studio.Message}" + (studio.InnerException is null ? "" : Environment.NewLine + studio.InnerException) : ex.ToString()); return 1; }
 static void Print<T>(T value) => Console.WriteLine(JsonSerializer.Serialize(value, JsonStore.Options));
 static async Task RunMcpAsync(string project, string? runtimeArgument, string? dataArgument, CancellationToken token)
 {
@@ -122,7 +140,7 @@ static async Task RunMcpAsync(string project, string? runtimeArgument, string? d
     }
     _ = await ProjectService.ReadAsync(projectDirectory, token);
 
-    // 便携版将 MCP 主机放在 runtime/mcp-host，工具链位于其父目录 runtime。
+    // 便携版将 MCP 主机放在 runtime/mcp-host，开发环境组件位于其父目录 runtime。
     var runtimeDirectory = Path.GetFullPath(runtimeArgument is null
         ? Path.Combine(AppContext.BaseDirectory, "..") : runtimeArgument);
     if (!Directory.Exists(runtimeDirectory))
@@ -158,6 +176,7 @@ static void ShowHelp() => Console.WriteLine("""
       read-file <project> <relative-path>
       mcp <absolute-project> [runtime-directory [absolute-data-directory]]
       build <project> <toolsets-root>
+      inspect-tool-archive <archive.mcutoolchain|archive.studioxtools> <new-receipt.json>
       inspect-cubemx <source> <toolsets-root>
       import-cubemx <source> <toolsets-root> <preset|->
       decode <host.exe> <plugin.json> <text>

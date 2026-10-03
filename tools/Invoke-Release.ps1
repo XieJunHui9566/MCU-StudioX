@@ -2,7 +2,7 @@ param(
     [Parameter(Mandatory=$true)][string]$ReleaseVersion,
     [Parameter(Mandatory=$true)][string]$OutputDirectory,
     [ValidateSet('Plan','Verify','Package','Publish')][string]$Stage='Plan',
-    [ValidateSet('base','full')][string]$DistributionProfile='base',
+    [ValidateSet('base','light','full')][string]$DistributionProfile='light',
     [string]$PayloadDirectory,
     [string]$DevicePackCatalogDirectory,
     [string]$CompilerPath,
@@ -17,6 +17,8 @@ param(
 $ErrorActionPreference='Stop'
 $root=Split-Path -Parent $PSScriptRoot
 . (Join-Path $PSScriptRoot 'Release-Version.ps1')
+. (Join-Path $PSScriptRoot 'Distribution-Profile.ps1')
+$DistributionProfile = Resolve-StudioXDistributionProfile $DistributionProfile
 . (Join-Path $PSScriptRoot 'Release-Evidence.ps1')
 $identity=Get-StudioXReleaseVersion $ReleaseVersion
 $props=[xml](Get-Content -LiteralPath (Join-Path $root 'Directory.Build.props') -Raw)
@@ -24,7 +26,7 @@ if($props.SelectSingleNode('//ProductVersion').InnerText -ne $ReleaseVersion){th
 if(!$ReleaseTag){$ReleaseTag='v'+$ReleaseVersion}
 # 同版本重打包使用新标签，不能将既有发布标签移到另一个提交。
 if($ReleaseTag -ne ('v'+$ReleaseVersion) -and $ReleaseTag -notmatch ('^v'+[regex]::Escape($ReleaseVersion)+'-[A-Za-z0-9][A-Za-z0-9_-]*$')){throw 'Release tag must match the product version, optionally followed by a rebuild suffix.'}
-$installerName=if($DistributionProfile -eq 'base'){"MCU-StudioX-$ReleaseVersion-win-x64-Base-Setup.exe"}else{"MCU-StudioX-$ReleaseVersion-win-x64-Setup.exe"}
+$installerName=Get-StudioXInstallerName $ReleaseVersion $DistributionProfile
 $output=[IO.Path]::GetFullPath($OutputDirectory)
 if(Test-Path -LiteralPath $output){throw 'Use a new release evidence directory.'}
 [IO.Directory]::CreateDirectory($output)|Out-Null

@@ -11,13 +11,18 @@ public partial class MainWindow
     private TabItem? toolManagementTab;
     private ToolManagementView? toolManagementView;
     private string? toolManagementProject;
+    private async Task ImportDevelopmentComponentAsync()
+    {
+        await ShowToolManagementAsync();
+        await RunToolManagementActionAsync("install");
+    }
     private Task ShowToolManagementAsync(string? checkedProject = null) => RunAsync(async token =>
     {
         toolManagementProject = checkedProject ?? projectDirectory;
         if (toolManagementTab is null || !WorkspaceTabs.Items.Contains(toolManagementTab))
         {
             toolManagementView = new() { Requested = RunToolManagementActionAsync };
-            toolManagementTab = AddToolTab("工具占用与升级管理", toolManagementView);
+            toolManagementTab = AddToolTab("开发环境组件管理", toolManagementView);
         }
         ShowDocument(toolManagementTab);
         await RefreshToolManagementAsync(token);
@@ -31,6 +36,8 @@ public partial class MainWindow
     private Task RunToolManagementActionAsync(string action)
     {
         if (action == "help") return ShowHelpAsync("tool-environment");
+        if (action == "github") return ShowGithubComponentLibraryAsync();
+        if (action == "prepare") return ShowProjectToolsAsync(toolManagementProject);
         return RunAsync(async token =>
         {
             if (action == "refresh") { await RefreshToolManagementAsync(token); return; }
@@ -57,15 +64,56 @@ public partial class MainWindow
             {
                 if (action == "install")
                 {
-                    var dialog = new OpenFileDialog { Title = "预览新工具版本", Filter = "StudioX 离线工具包|*.studioxtools" };
+                    var dialog = new OpenFileDialog { Title = "导入开发环境组件", Filter = DevelopmentComponentDialogs.ImportFilter };
                     if (dialog.ShowDialog(this) != true) return;
                     var preview = await services.ToolManagement.PreviewInstallAsync(dialog.FileName, progress, token);
-                    if (MessageBox.Show(this, preview.ToText(), "确认并存安装", MessageBoxButton.YesNo, MessageBoxImage.Information, MessageBoxResult.No) != MessageBoxResult.Yes) return;
-                    await services.ToolManagement.InstallAsync(preview, progress, token);
-                    Log($"已并存安装 {preview.Id} / {preview.Version}；已有工程锁定未修改。");
+                    if (MessageBox.Show(this, preview.ToText(), "确认开发环境组件", MessageBoxButton.YesNo, MessageBoxImage.Information, MessageBoxResult.No) != MessageBoxResult.Yes) return;
+                    var result = await services.ToolManagement.InstallAsync(preview, progress, token);
+                    Log($"{(result.AlreadyInstalled ? "相同开发环境组件已安装且校验通过" : "已并存安装开发环境组件")}：{result.Identity.Key}；已有工程锁定未修改。");
                 }
                 else if (toolManagementView.SelectedVersion is { } selected)
                 {
+                    if (action is "component-export" or "repair")
+                    {
+                        var entry = new ToolEnvironmentEntry(selected.Id, selected.Version, selected.Name, selected.CompilerId, selected.Bytes, selected.Files, false, "");
+                        if (action == "component-export")
+                        {
+                            var dialog = new SaveFileDialog { Filter = DevelopmentComponentDialogs.ExportFilter, FileName = selected.Id + "-" + selected.Version + ".mcutoolchain", DefaultExt = ".mcutoolchain", AddExtension = true };
+                            if (dialog.ShowDialog(this) != true) return;
+                            await services.ToolEnvironment.ExportAsync(entry, dialog.FileName, progress, token);
+                            Log("开发环境组件已导出：" + dialog.FileName);
+                        }
+                        else
+                        {
+                            var dialog = new OpenFileDialog { Title = "修复所选开发环境组件", Filter = DevelopmentComponentDialogs.ImportFilter };
+                            if (dialog.ShowDialog(this) != true) return;
+                            var backup = await services.ToolEnvironment.RepairAsync(entry, dialog.FileName, progress, token);
+                            Log("开发环境组件已修复。" + (backup.Length > 0 ? "原文件备份：" + backup : ""));
+                        }
+                        progressEnabled = false;
+                        await RefreshToolManagementAsync(token);
+                        return;
+                    }
+                    if (action == "toggle")
+                    {
+                        if (selected.Enabled && selected.References.Count > 0 && MessageBox.Show(this,
+                            ComponentImpact(selected) + "\n\n禁用保留文件和工程锁定；需要此版本的工程或功能会暂时无法使用。可随时重新启用。",
+                            "禁用开发环境组件", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No) != MessageBoxResult.Yes) return;
+                        await services.ToolManagement.SetEnabledAsync(selected, !selected.Enabled, toolManagementProject, token);
+                        Log($"开发环境组件 {selected.Id} / {selected.Version} 已{(selected.Enabled ? "禁用" : "启用")}。文件与工程锁保留。" );
+                        progressEnabled = false;
+                        await RefreshToolManagementAsync(token);
+                        return;
+                    }
+                    if (action == "debug-check")
+                    {
+                        var diagnostic = await services.ToolManagement.DiagnoseDebugEnvironmentAsync(selected, toolManagementProject, progress, token);
+                        progressEnabled = false;
+                        toolManagementView.DetailText.Text = diagnostic;
+                        toolManagementView.SetBusy(false, "调试环境检查通过；未连接设备。");
+                        Log(diagnostic);
+                        return;
+                    }
                     if (action == "verify")
                     {
                         await services.ToolEnvironment.VerifyAsync(new(selected.Id, selected.Version, selected.Name, selected.CompilerId, selected.Bytes, selected.Files, false, ""), progress, token);
@@ -81,14 +129,14 @@ public partial class MainWindow
                         }
                         return;
                     }
-                    var message = action == "retire" ? $"将 {selected.Id} / {selected.Version} 移入可恢复区？\n\n{selected.SizeText}，此步骤仍占磁盘空间，可稍后恢复或永久删除。\n只核对当前、最近、登记工程及器件包；其他工程请先登记。"
+                    var message = action == "retire" ? ComponentImpact(selected) + $"\n\n移至可恢复区？\n{selected.SizeText}，此步骤仍占磁盘空间，可稍后恢复或永久删除。需要它的工程会提示缺少组件。"
                         : action == "restore" ? $"恢复 {selected.Id} / {selected.Version}？\n恢复前完整校验文件，不覆盖同一版本，不修改工程锁。"
-                        : $"永久删除可恢复区中的 {selected.Id} / {selected.Version}？\n\n此操作不可恢复。逻辑文件大小 {selected.SizeText}，硬链接会影响实际释放空间。\n其他未登记工程的依赖无法核实，请先登记。";
-                    if (MessageBox.Show(this, message, "工具版本管理", MessageBoxButton.YesNo,
+                        : ComponentImpact(selected) + $"\n\n永久删除这个开发环境组件版本？\n此操作不可恢复。逻辑文件大小 {selected.SizeText}，硬链接会影响实际释放空间。\n需要此版本的工程和功能会提示缺少组件，需重新导入；源码、工程与内容锁保留。\n其他未登记工程的依赖无法核实，请先登记。";
+                    if (MessageBox.Show(this, message, "开发环境组件版本管理", MessageBoxButton.YesNo,
                         action == "purge" ? MessageBoxImage.Warning : MessageBoxImage.Information, MessageBoxResult.No) != MessageBoxResult.Yes) return;
-                    if (action == "retire") Log("旧工具版本已移至：" + await services.ToolManagement.RetireAsync(selected, toolManagementProject, token));
-                    else if (action == "restore") { await services.ToolManagement.RestoreAsync(selected, token); Log("工具版本已恢复：" + selected.Id + " / " + selected.Version); }
-                    else if (action == "purge") { await services.ToolManagement.PurgeAsync(selected, toolManagementProject, token); Log("已永久删除选中的可恢复版本：" + selected.Id + " / " + selected.Version); }
+                    if (action == "retire") Log("开发环境组件已移至：" + await services.ToolManagement.RemoveAsync(selected, toolManagementProject, token));
+                    else if (action == "restore") { await services.ToolManagement.RestoreAsync(selected, token); Log("开发环境组件版本已恢复：" + selected.Id + " / " + selected.Version); }
+                    else if (action == "purge") { await services.ToolManagement.DeleteAsync(selected, toolManagementProject, token); Log("已永久删除所选开发环境组件：" + selected.Id + " / " + selected.Version); }
                 }
                 progressEnabled = false;
                 await RefreshToolManagementAsync(token);
@@ -108,6 +156,9 @@ public partial class MainWindow
             finally { progressEnabled = false; toolManagementView.SetBusy(false); }
         });
     }
+    private static string ComponentImpact(ManagedToolVersion selected) => $"{selected.Name}\n{selected.Id} / {selected.Version} · {selected.StateText}\n"
+        + (selected.References.Count == 0 ? "检查范围内未发现依赖。" : $"受影响的依赖（{selected.References.Count} 项）：\n" + string.Join('\n', selected.References.Take(12))
+            + (selected.References.Count > 12 ? "\n其余依赖请在管理页详情查看。" : ""));
     private async Task ShowToolManagementScopeAsync(CancellationToken token)
     {
         var registered = await services.ToolManagement.RegisteredAsync(token);

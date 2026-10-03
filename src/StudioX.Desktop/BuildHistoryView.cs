@@ -64,6 +64,6 @@ public sealed class BuildHistoryView : UserControl
             return;
         }
         changes.ItemsSource = BuildHistoryService.Compare(before, after).Select(r => new { 类别 = r.Category, 名称 = r.Name, 基准 = r.Before, 当前 = r.After, 变化 = r.Difference.ToString("+0;-0;0") }).ToArray();
-        description.Text = $"构建墙钟时间（不含健康检查/分析）：{before.BuildSeconds?.ToString("F2") ?? "未记录"} → {after.BuildSeconds?.ToString("F2") ?? "未记录"} 秒；工具版本 {before.Details.Project.ToolsetVersion} → {after.Details.Project.ToolsetVersion}。编译配置或工具版本变化也会影响结果。";
+        description.Text = $"构建墙钟时间（不含健康检查/分析）：{before.BuildSeconds?.ToString("F2") ?? "未记录"} → {after.BuildSeconds?.ToString("F2") ?? "未记录"} 秒；开发环境组件版本 {before.Details.Project.ToolsetVersion} → {after.Details.Project.ToolsetVersion}。编译配置或开发环境组件版本变化也会影响结果。";
     }
 }

@@ -39,7 +39,7 @@ public static partial class PackValidator
             if (device.Architecture == "mcs51" && (device.ToolsetId != "stc.sdcc" || device.CompilerId != "sdcc-4.5.0-15242" ||
                 device.LinkerScript != "" || device.OpenOcd is not null))
             {
-                throw new StudioXException("PACK_DEVICE", "MCS-51 器件仅支持无调试配置的 STC SDCC 工具集，且不使用 GCC 链接脚本。");
+                throw new StudioXException("PACK_DEVICE", "MCS-51 器件仅支持无调试配置的 STC SDCC 开发环境组件，且不使用 GCC 链接脚本。");
             }
             if (string.IsNullOrWhiteSpace(device.CompilerId) || device.CpuFlags is null || device.Defines is null ||
                 device.Sources is null || device.IncludeDirectories is null || device.CompileOptions is null || device.LinkOptions is null)
@@ -75,6 +75,7 @@ public static partial class PackValidator
             }
             foreach (var template in device.Templates)
             {
+                _ = DevelopmentComponentRequirements.ForTemplate(device, template);
                 Token(template.Id);
                 if (!templates.Add(template.Id))
                 {
@@ -187,7 +188,7 @@ public static partial class PackValidator
                     {
                         if (device.Architecture != "riscv" || device.ToolsetId != "wch.riscv" || probe.Id != "wch-link" || probe.DefaultSpeedKhz is not (400 or 4000 or 6000))
                         {
-                            throw new StudioXException("PACK_PROBE", "SDI 配置需要 WCH RISC-V 工具集和有效的 WCH-Link 速度。");
+                            throw new StudioXException("PACK_PROBE", "SDI 配置需要 WCH RISC-V 开发环境组件和有效的 WCH-Link 速度。");
                         }
                         RequireFile(root, probe.InterfaceScript);
                     }

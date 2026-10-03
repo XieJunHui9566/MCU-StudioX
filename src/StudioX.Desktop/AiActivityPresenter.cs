@@ -85,7 +85,7 @@ internal sealed class AiActivityPresenter(
         body.Children.Add(heading);
         var status = new TextBlock
         {
-            Text = "正在准备工程工具…",
+            Text = "正在准备工程开发环境组件…",
             TextWrapping = TextWrapping.Wrap,
             FontSize = 12,
             Margin = new Thickness(0, 8, 0, 0)

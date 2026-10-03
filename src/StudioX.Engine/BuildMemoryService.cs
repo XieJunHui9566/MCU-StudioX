@@ -52,7 +52,7 @@ public sealed class BuildMemoryService(ToolsetCatalog? toolsets = null)
             if (receipt.Project != project) { return new([], "工程配置已变化，请重新编译。"); }
             if (nativeTools is not null && (receipt.ToolFingerprint != nativeTools.Fingerprint || receipt.SourceStamp != sourceStamp))
             {
-                return new([], "工程源码、SDK 配置或工具集已变化，请重新编译后查看统计。");
+                return new([], "工程源码、SDK 配置或开发环境组件已变化，请重新编译后查看统计。");
             }
             if (project.ToolsetId == "stc.sdcc")
             {

@@ -93,7 +93,7 @@ public partial class MainWindow
             }
             QueueCodeNavigation(false, SourceEditor.Text.IndexOf("uint32_t", StringComparison.Ordinal) + 2);
             await navigationTask;
-            if (!SourceEditor.IsReadOnly || activeDocument?.ReadOnlyReason != "只读 · 内置工具链头文件")
+            if (!SourceEditor.IsReadOnly || activeDocument?.ReadOnlyReason != "只读 · 内置开发环境组件头文件")
             {
                 throw new InvalidOperationException("内置头文件跳转/只读保护失败。");
             }

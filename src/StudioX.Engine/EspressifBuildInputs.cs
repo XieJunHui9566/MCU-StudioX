@@ -12,7 +12,7 @@ internal static class EspressifBuildInputs
     {
         var build = PathBoundary.Resolve(root, ".build");
         var boundary = new InputBoundary(root, tools.RootDirectory);
-        _ = await CMakeFileApi.ExecutablesAsync(build, tools.ForEspressifTarget(sdk.Target), token);
+        _ = await CMakeFileApi.ExecutablesAsync(build, EspressifXtensaBinding.Compilers(tools, sdk), token);
         using var description = await ReadAsync(PathBoundary.Resolve(build, "project_description.json"), token);
         foreach (var field in new[] { "config_file", "config_defaults", "build_component_paths" })
         {

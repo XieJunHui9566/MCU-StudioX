@@ -82,7 +82,7 @@ if (second.Log.Contains("compiler identification", StringComparison.Ordinal))
 {
     throw new InvalidOperationException("Repeated configure did not reuse the compiler cache.");
 }
-// Windows 启动路径可能全小写；跨会话打开后不能因编译器路径的大小写差异丢失工具链。
+// Windows 启动路径可能全小写；跨会话打开后不能因编译器路径的大小写差异丢失开发环境组件。
 await using (var reopened = new WorkbenchService(OperatingSystem.IsWindows() ? runtime.ToLowerInvariant() : runtime, Path.Combine(root, "user-data")))
 {
     var reopenedResult = await reopened.Builds.BuildAsync(fixture);

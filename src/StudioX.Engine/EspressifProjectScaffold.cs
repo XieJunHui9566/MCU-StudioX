@@ -3,7 +3,7 @@ namespace StudioX.Engine;
 using StudioX.Foundation;
 using StudioX.Packages;
 
-/// <summary>生成原生 IDF 工程入口，SDK 源码和工具链不复制到每个工程。</summary>
+/// <summary>生成原生 IDF 工程入口，SDK 源码和开发环境组件不复制到每个工程。</summary>
 internal static class EspressifProjectScaffold
 {
     public static void Validate(ProjectManifest project)
@@ -12,13 +12,13 @@ internal static class EspressifProjectScaffold
         {
             if (project.ToolsetId is "espressif.idf" or "espressif.esp8266-rtos")
             {
-                throw new StudioXException("PROJECT_ESPRESSIF_SETTINGS", "Espressif 工具集必须有明确的 SDK 与构建目标配置。");
+                throw new StudioXException("PROJECT_ESPRESSIF_SETTINGS", "Espressif 开发环境组件必须有明确的 SDK 与构建目标配置。");
             }
             return;
         }
         EspressifPackProfile.ValidateFramework(new EspressifDeviceDefinition(settings.Framework, settings.Target, settings.SdkVersion));
         if (settings.FormatVersion != 1 || project.Kind != ProjectKind.Pack || project.CubeMx is not null || project.Logic is not null ||
-            project.ToolsetId != EspressifPackProfile.ToolsetId(settings.Framework) || project.ToolsetVersion != settings.SdkVersion ||
+            project.ToolsetId != EspressifPackProfile.ToolsetId(settings.Framework) ||
             project.CompilerId != EspressifPackProfile.CompilerId(settings.Framework))
         {
             throw new StudioXException("PROJECT_ESPRESSIF_SETTINGS", "Espressif 工程类型、SDK 与工具锁定信息不一致。");

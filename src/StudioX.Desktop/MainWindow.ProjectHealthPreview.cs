@@ -53,7 +53,7 @@ public partial class MainWindow
         Check(!failed.Success && failed.Artifacts.Count == 0 && !Directory.Exists(Path.Combine(fixture, ".build")), "automatic build preflight blocks errors before the build backend runs");
         Check(projectHealthView.Report!.Checks.Any(check => check.Code == "TOOLSET_MISSING"), "automatic failure displays the missing locked toolset");
         projectHealthView.ChecksGrid.SelectedItem = projectHealthView.Report.Checks.First(check => check.Code == "TOOLSET_MISSING");
-        Check(projectHealthView.ActionButton.IsEnabled && projectHealthView.ActionButton.Content.ToString() == "打开对应工具集", "missing toolset exposes its repair entry");
+        Check(projectHealthView.ActionButton.IsEnabled && projectHealthView.ActionButton.Content.ToString() == "打开对应开发环境组件", "missing toolset exposes its repair entry");
         Check(projectHealthView.DetailText.Text.Contains("原始诊断") && projectHealthView.DetailText.Text.Contains("TOOLSET_MISSING"), "selected failure displays the full original exception");
         ApplyTheme(ThemeService.Dark);
         Width = 1440;

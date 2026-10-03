@@ -31,12 +31,19 @@ public sealed partial class Ag32NativeBuildService(ToolsetCatalog catalog, strin
             await RequireDeviceAsync(root, project, token);
             var settings = await ReadSettingsAsync(root, token);
             ValidateSettings(root, settings);
-            var tools = await catalog.ResolveAsync("agm.pin-mapping", "1.0.0", "agm.ve", token, progress: progress);
-            var native = await catalog.ResolveAsync("agm.logic", "1.0.0", "agm.native", token, progress: progress);
-            var toolLock = new ToolchainLock(1, "agm.logic", "1.0.0", tools.Fingerprint + ":" + native.Fingerprint);
+            var mapping = project.PinMapping!;
+            var logicTools = project.Logic!;
+            var tools = await catalog.ResolveAsync(mapping.ToolsetId, mapping.ToolsetVersion, mapping.CompilerId, token, progress: progress);
+            var native = await catalog.ResolveAsync(logicTools.ToolsetId, logicTools.ToolsetVersion, logicTools.CompilerId, token, progress: progress);
+            var toolLock = new ToolchainLock(1, logicTools.ToolsetId, logicTools.ToolsetVersion, native.Fingerprint);
             var lockPath = PathBoundary.Resolve(root, ToolLockPath);
-            if (File.Exists(lockPath) && await JsonStore.ReadAsync<ToolchainLock>(lockPath, token) != toolLock)
-                throw new StudioXException("TOOLCHAIN_LOCK", "自定义逻辑工具与工程锁定不一致。");
+            if (File.Exists(lockPath))
+            {
+                var previous = await JsonStore.ReadAsync<ToolchainLock>(lockPath, token);
+                // 旧版将映射与综合两项指纹串在同一锁中；两项都吻合时才转换为单组件锁。
+                if (previous != toolLock && previous != toolLock with { Fingerprint = tools.Fingerprint + ":" + native.Fingerprint })
+                    throw new StudioXException("TOOLCHAIN_LOCK", "自定义逻辑工具与工程锁定不一致。");
+            }
             await JsonStore.WriteAsync(lockPath, toolLock, token);
             var source = Path.Combine(run, "source");
             Directory.CreateDirectory(source);
@@ -92,8 +99,8 @@ public sealed partial class Ag32NativeBuildService(ToolsetCatalog catalog, strin
                     throw new StudioXException("AG32_LOGIC_CHANGED", "构建期间输入已变化：" + relative);
             }
             if (!await InputsCurrentAsync(root, hashes, settings, token) ||
-                (await catalog.ResolveAsync("agm.logic", "1.0.0", "agm.native", token)).Fingerprint != native.Fingerprint ||
-                (await catalog.ResolveAsync("agm.pin-mapping", "1.0.0", "agm.ve", token)).Fingerprint != tools.Fingerprint)
+                (await catalog.ResolveAsync(logicTools.ToolsetId, logicTools.ToolsetVersion, logicTools.CompilerId, token)).Fingerprint != native.Fingerprint ||
+                (await catalog.ResolveAsync(mapping.ToolsetId, mapping.ToolsetVersion, mapping.CompilerId, token)).Fingerprint != tools.Fingerprint)
                 throw new StudioXException("AG32_LOGIC_CHANGED", "构建期间源码集合或工具发生变化，请重新编译。");
             var artifacts = new Dictionary<string, string>();
             foreach (var name in new[] { "pins.bin", "pins.v", "pins.hx", "pins.vex", "pins.vqm", "pins_routed.v", "studiox-clocks.sdc", "studiox-gpio.asf", "setup.rpt", "hold.rpt", "fmax.rpt", "coverage.rpt" })

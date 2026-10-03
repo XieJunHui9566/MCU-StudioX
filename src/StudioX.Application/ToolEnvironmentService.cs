@@ -1,12 +1,11 @@
 namespace StudioX.Application;
 
-using System.IO.Compression;
 using System.Security.Cryptography;
 using StudioX.Engine;
 using StudioX.Foundation;
 using StudioX.Packages;
 
-/// <summary>管理内置工具版本和离线归档，修复使用已校验副本并保留回滚目录。</summary>
+/// <summary>管理内置开发环境组件版本和离线归档，修复使用已校验副本并保留回滚目录。</summary>
 public sealed class ToolEnvironmentService(ToolsetCatalog catalog)
 {
     private readonly SemaphoreSlim gate = new(1, 1);
@@ -14,6 +13,7 @@ public sealed class ToolEnvironmentService(ToolsetCatalog catalog)
     {
         var result = new List<ToolEnvironmentEntry>();
         var manifest = project is null ? null : await ProjectService.ReadAsync(project, token).ConfigureAwait(false);
+        var needs = manifest is null ? [] : await ProjectDevelopmentComponents.ReadAsync(project!, manifest, token).ConfigureAwait(false);
         foreach (var path in catalog.ManifestPaths())
         {
             token.ThrowIfCancellationRequested();
@@ -48,42 +48,31 @@ public sealed class ToolEnvironmentService(ToolsetCatalog catalog)
                 }
             }
             var missing = indexed.Count - found;
-            var required = manifest?.ToolsetId == tools.Id && manifest.ToolsetVersion == tools.Version || manifest?.PinMapping?.ToolsetId == tools.Id && manifest.PinMapping.ToolsetVersion == tools.Version;
+            var required = needs.Any(item => item.Id == tools.Id && item.Version == tools.Version);
             result.Add(new(tools.Id, tools.Version, tools.DisplayName ?? tools.Id, tools.CompilerId, bytes, tools.Sha256.Count,
                 required, links > 0 ? $"发现 {links} 个链接，需校验" : missing == 0 ? "未进行哈希校验" : $"缺少 {missing} 个文件", tools.ComponentVersions is null ? "" : string.Join("；", tools.ComponentVersions.Select(p => p.Key + " " + p.Value))));
         }
-        if (manifest is not null && !result.Any(r => r.Id == manifest.ToolsetId && r.Version == manifest.ToolsetVersion) && manifest.Kind != ProjectKind.MicroPython)
+        foreach (var need in needs.Where(item => !result.Any(r => r.Id == item.Id && r.Version == item.Version)))
         {
-            result.Insert(0, new(manifest.ToolsetId, manifest.ToolsetVersion, "工程需要的工具集", manifest.CompilerId, 0, 0, true, "未安装"));
+            result.Insert(0, new(need.Id, need.Version, "工程需要的开发环境组件", need.CompilerId, 0, 0, true, "未安装"));
         }
         return (IReadOnlyList<ToolEnvironmentEntry>)result.OrderByDescending(r => r.Required).ThenBy(r => r.Id).ToArray();
     }, token);
 
     public async Task VerifyAsync(ToolEnvironmentEntry entry, IProgress<string>? progress, CancellationToken token = default)
-        => _ = await catalog.ResolveAsync(entry.Id, entry.Version, entry.CompilerId, token, true, progress).ConfigureAwait(false);
+        => _ = await catalog.ResolveAsync(entry.Id, entry.Version, entry.CompilerId, token, true, progress, allowDisabled: true).ConfigureAwait(false);
 
     public async Task ExportAsync(ToolEnvironmentEntry entry, string output, IProgress<string>? progress, CancellationToken token = default)
     {
-        var resolved = await catalog.ResolveAsync(entry.Id, entry.Version, entry.CompilerId, token, true, progress).ConfigureAwait(false);
-        using var toolLease = ToolUsageLease.Acquire(resolved.RootDirectory);
+        ToolchainArchiveFormat.ValidateFileName(output);
+        var resolved = await catalog.ResolveAsync(entry.Id, entry.Version, entry.CompilerId, token, true, progress, allowDisabled: true).ConfigureAwait(false);
+        using var toolLease = ToolUsageLease.Acquire(resolved.RootDirectory, ignoreActivation: true);
         var manifest = await JsonStore.ReadAsync<ToolsetManifest>(Path.Combine(resolved.RootDirectory, "toolset.json"), token).ConfigureAwait(false);
         var temporary = Path.GetFullPath(output) + ".tmp-" + Guid.NewGuid().ToString("N");
         try
         {
-            await using (var stream = new FileStream(temporary, FileMode.CreateNew, FileAccess.Write, FileShare.None, 131072, true))
-            {
-                using (var zip = new ZipArchive(stream, ZipArchiveMode.Create, leaveOpen: true))
-                {
-                    foreach (var relative in manifest.Sha256.Keys.Prepend("toolset.json"))
-                    {
-                        token.ThrowIfCancellationRequested();
-                        progress?.Report("导出：" + relative);
-                        await using var input = File.OpenRead(PathBoundary.Resolve(resolved.RootDirectory, relative));
-                        await using var destination = zip.CreateEntry(relative, CompressionLevel.Fastest).Open();
-                        await input.CopyToAsync(destination, token).ConfigureAwait(false);
-                    }
-                }
-            }
+            await ToolchainArchiveWriter.WriteAsync(resolved.RootDirectory, manifest.Sha256.Keys.Order(StringComparer.Ordinal).Prepend("toolset.json"),
+                temporary, progress, token).ConfigureAwait(false);
             token.ThrowIfCancellationRequested();
             File.Move(temporary, output, overwrite: false);
         }
@@ -92,68 +81,56 @@ public sealed class ToolEnvironmentService(ToolsetCatalog catalog)
 
     public Task<string> RepairAsync(ToolEnvironmentEntry entry, string archive, IProgress<string>? progress, CancellationToken token = default)
         => RepairAsync(entry, archive, progress, token, installOnly: false);
-    public async Task<string> RepairAsync(ToolEnvironmentEntry entry, string archive, IProgress<string>? progress, CancellationToken token,
+    public Task<string> RepairAsync(ToolEnvironmentEntry entry, string archive, IProgress<string>? progress, CancellationToken token,
         bool installOnly, string? expectedArchiveHash = null)
+        => Task.Run(() => RepairCoreAsync(entry, archive, progress, token, installOnly, expectedArchiveHash), token);
+
+    private async Task<string> RepairCoreAsync(ToolEnvironmentEntry entry, string archive, IProgress<string>? progress, CancellationToken token,
+        bool installOnly, string? expectedArchiveHash)
     {
+        ToolchainArchiveFormat.ValidateFileName(archive);
         await gate.WaitAsync(token).ConfigureAwait(false);
         var staging = Path.Combine(catalog.RootDirectory, ".repair-" + Guid.NewGuid().ToString("N"));
         try
         {
-            using var zip = ZipFile.OpenRead(archive);
+            await using var archiveContent = new FileStream(archive, FileMode.Open, FileAccess.Read, FileShare.Read, 131072, true);
             if (expectedArchiveHash is not null)
             {
-                await using var archiveContent = File.OpenRead(archive);
                 if (!Convert.ToHexString(await SHA256.HashDataAsync(archiveContent, token)).Equals(expectedArchiveHash, StringComparison.OrdinalIgnoreCase))
                     throw new StudioXException("TOOLS_CHANGED", "离线归档在预览后发生变化。");
             }
-            if (zip.Entries.Count > 200000 || zip.Entries.Sum(e => e.Length) > 40L * 1024 * 1024 * 1024)
-            {
-                throw new StudioXException("TOOLS_ARCHIVE_SIZE", "工具归档超过大小或文件数限制。");
-            }
-            var description = zip.GetEntry("toolset.json") ?? throw new StudioXException("TOOLS_ARCHIVE", "归档缺少工具清单。");
-            if (description.Length > 32 * 1024 * 1024)
-            {
-                throw new StudioXException("TOOLS_ARCHIVE", "工具清单过大。");
-            }
-            using var manifestBuffer = new MemoryStream();
-            await using (var content = description.Open()) { await content.CopyToAsync(manifestBuffer, token).ConfigureAwait(false); }
-            var manifestBytes = manifestBuffer.ToArray();
+            archiveContent.Position = 0;
+            using var container = ToolchainArchive.Open(archiveContent, token);
+            var manifestBytes = await container.ReadManifestAsync(token).ConfigureAwait(false);
             var jsonOffset = manifestBytes is [0xef, 0xbb, 0xbf, ..] ? 3 : 0;
             var manifest = System.Text.Json.JsonSerializer.Deserialize<ToolsetManifest>(manifestBytes.AsSpan(jsonOffset), JsonStore.Options)
                 ?? throw new StudioXException("TOOLS_ARCHIVE", "工具清单为空。");
             if (manifest.Id != entry.Id || manifest.Version != entry.Version || manifest.CompilerId != entry.CompilerId)
             {
-                throw new StudioXException("TOOLS_IDENTITY", "离线包与所选工具集的 ID、版本或编译器不一致。");
+                throw new StudioXException("TOOLS_IDENTITY", "离线包与所选开发环境组件的 ID、版本或编译器不一致。");
             }
             PackValidator.Token(manifest.Id);
             PackValidator.Version(manifest.Version);
+            _ = manifest.Identity;
+            if (manifest.Sha256 is null || manifest.Executables is null) throw new StudioXException("TOOLS_IDENTITY", "组件清单不完整。");
+            container.ValidateIndex(manifest.Sha256);
             var relativeRoot = entry.Id + "/" + entry.Version;
             var extracted = PathBoundary.Resolve(staging, relativeRoot);
             Directory.CreateDirectory(extracted);
-            var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            foreach (var file in zip.Entries)
+            await container.ReadFilesAsync(async (file, source) =>
             {
                 token.ThrowIfCancellationRequested();
-                if (((file.ExternalAttributes >> 16) & 0xF000) == 0xA000 || (file.ExternalAttributes & (int)FileAttributes.ReparsePoint) != 0)
-                {
-                    throw new StudioXException("TOOLS_ARCHIVE_LINK", "离线工具包不能包含符号链接。");
-                }
-                if (!names.Add(file.FullName) || file.FullName.EndsWith('/') || file.FullName != "toolset.json" && !manifest.Sha256.ContainsKey(file.FullName))
-                {
-                    throw new StudioXException("TOOLS_ARCHIVE_ENTRY", "工具归档包含重复或未索引文件。");
-                }
-                var destination = PathBoundary.Resolve(extracted, file.FullName);
+                var destination = PathBoundary.Resolve(extracted, file.Name);
                 Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
-                progress?.Report("校验副本：" + file.FullName);
-                await using var source = file.Open();
+                progress?.Report("校验副本：" + file.Name);
                 await using var output = new FileStream(destination, FileMode.CreateNew, FileAccess.Write, FileShare.None, 131072, true);
-                await source.CopyToAsync(output, token).ConfigureAwait(false);
-            }
-            _ = await new ToolsetCatalog(staging).ResolveAsync(entry.Id, entry.Version, entry.CompilerId, token, true, progress).ConfigureAwait(false);
+                await ToolchainArchive.CopyExactAsync(source, output, file.Length, token).ConfigureAwait(false);
+            }, token).ConfigureAwait(false);
+            _ = await new ToolsetCatalog(staging).ResolveAsync(entry.Id, entry.Version, entry.CompilerId, token, true, progress, allowDisabled: true).ConfigureAwait(false);
             var target = PathBoundary.Resolve(catalog.RootDirectory, relativeRoot);
             using var toolLease = ToolUsageLease.Acquire(target, maintenance: true);
             if (installOnly && (Directory.Exists(target) || File.Exists(target)))
-                throw new StudioXException("TOOLS_VERSION_EXISTS", "同一工具版本已经存在；并存安装不覆盖任何已有内容。");
+                throw new StudioXException("TOOLS_VERSION_EXISTS", "同一开发环境组件版本已经存在；并存安装不覆盖任何已有内容。");
             var backup = PathBoundary.Resolve(catalog.RootDirectory, ".rollback-" + entry.Id + "-" + Guid.NewGuid().ToString("N"));
             token.ThrowIfCancellationRequested();
             Directory.CreateDirectory(Path.GetDirectoryName(target)!);

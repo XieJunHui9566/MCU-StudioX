@@ -149,7 +149,7 @@ try
 }
 finally
 {
-    // 只移除本次新建的临时夹具；不触碰用户工程、工具链或历史采集文件。
+    // 只移除本次新建的临时夹具；不触碰用户工程、开发环境组件或历史采集文件。
     var full = Path.GetFullPath(root);
     if (Path.GetDirectoryName(full) == Path.TrimEndingDirectorySeparator(Path.GetTempPath()) &&
         Path.GetFileName(full).StartsWith("studiox-architecture-checks-", StringComparison.Ordinal))

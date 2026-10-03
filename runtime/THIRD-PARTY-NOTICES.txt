@@ -66,3 +66,7 @@ This local binary does not report a source commit. Preserve the matching source 
 and dependency notices when preparing a public release; this development bundle is not a source offer.
 iverilog.exe SHA-256: F8BAD18D279F8C63AB041BD292606F21FC0E8B9CC0EDB37A311158F756C35EB0
 vvp.exe SHA-256: C3B28A3A088851FC3396A30A7C781C4B126C61DBBB7CEAD7C00644CC7AFAA4D4
+SharpCompress 0.50.3 (MIT)
+Managed 7z/LZMA2 development component import/export is included in both full and light IDE builds.
+Source: https://github.com/adamhathcock/sharpcompress/tree/0.50.3
+License: licenses/SharpCompress-MIT.txt; notice: licenses/SharpCompress-NOTICE.md

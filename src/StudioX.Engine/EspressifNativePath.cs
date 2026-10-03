@@ -35,7 +35,7 @@ internal static class EspressifNativePath
     {
         if (native.Any(character => character > 127 || char.IsWhiteSpace(character)) || native.Contains(';'))
         {
-            throw new StudioXException("ESPRESSIF_PATH", "此 IDF 工具链需要不含空格、分号或非 ASCII 字符的路径，" +
+            throw new StudioXException("ESPRESSIF_PATH", "此 IDF 开发环境组件需要不含空格、分号或非 ASCII 字符的路径，" +
                 "当前磁盘没有可用的 Windows 短路径：" + full + "。工程内容与 SDK 配置未改动。");
         }
     }

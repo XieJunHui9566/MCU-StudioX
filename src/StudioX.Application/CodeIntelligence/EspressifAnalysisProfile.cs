@@ -8,7 +8,7 @@ internal sealed record EspressifAnalysisProfile(string Target, string HeaderRoot
 {
     // 语言提示只需要入口元数据；跳过大型发行哈希表，完整校验仍由工具目录服务负责。
     private sealed record AnalysisTools(int FormatVersion, string Id, string Version, string Host, string CompilerId,
-        Dictionary<string, string> Executables, string? Purpose);
+        Dictionary<string, string> Executables, string? Purpose, Dictionary<string, string>? ComponentVersions);
     public static bool IsXtensa(string target) => target is "esp32" or "esp32s3" or "esp8266";
 
     public static async Task<EspressifAnalysisProfile> ReadAsync(string runtime, string projectRoot,
@@ -17,14 +17,15 @@ internal sealed record EspressifAnalysisProfile(string Target, string HeaderRoot
         var settings = project.Espressif!;
         var root = PathBoundary.Resolve(runtime, $"toolsets/{project.ToolsetId}/{project.ToolsetVersion}");
         var metadata = await JsonStore.ReadAsync<AnalysisTools>(Path.Combine(root, "toolset.json"), token).ConfigureAwait(false);
-        if (metadata.FormatVersion != 1 || metadata.Id != project.ToolsetId || metadata.Version != settings.SdkVersion ||
+        if (metadata.FormatVersion != 1 || metadata.Id != project.ToolsetId || metadata.Version != project.ToolsetVersion ||
+            (metadata.ComponentVersions?.GetValueOrDefault(settings.Framework) ?? metadata.Version) != settings.SdkVersion ||
             metadata.CompilerId != project.CompilerId || metadata.Purpose != settings.Framework || metadata.Host != "win-x64" || metadata.Executables is null)
         {
-            throw new StudioXException("LANGUAGE_ESPRESSIF_RUNTIME", "SDK 头文件与工程锁定的 Espressif 工具集不一致。");
+            throw new StudioXException("LANGUAGE_ESPRESSIF_RUNTIME", "SDK 头文件与工程锁定的 Espressif 开发环境组件不一致。");
         }
         var manifest = new ToolsetManifest(metadata.FormatVersion, metadata.Id, metadata.Version, metadata.Host,
             metadata.CompilerId, metadata.Executables, [], Purpose: metadata.Purpose);
-        // 这里只读取头文件，不执行 GCC 或 SDK 脚本；所有资源路径仍由工具集边界约束。
+        // 这里只读取头文件，不执行 GCC 或 SDK 脚本；所有资源路径仍由开发环境组件边界约束。
         var tools = new ResolvedToolset(manifest, root, "").ForEspressifTarget(settings.Target);
         var compilerRoot = Path.GetDirectoryName(Path.GetDirectoryName(tools.Tool("gcc")))!;
         var targetTriple = settings.Target switch

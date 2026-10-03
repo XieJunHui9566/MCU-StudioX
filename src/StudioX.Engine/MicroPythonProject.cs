@@ -3,7 +3,7 @@ namespace StudioX.Engine;
 using StudioX.Foundation;
 using StudioX.Packages;
 
-/// <summary>脚本工程生成与身份校验；不会产生 CMake 配置或本机工具链锁。</summary>
+/// <summary>脚本工程生成与身份校验；不会产生 CMake 配置或本机开发环境组件锁。</summary>
 public static class MicroPythonProject
 {
     public static StudioXException NativeOperationUnavailable() => new("MICROPYTHON_NATIVE_OPERATION",

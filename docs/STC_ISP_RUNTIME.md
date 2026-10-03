@@ -1,6 +1,6 @@
 # STC ISP 便携运行时
 
-`StcIspService` 在发行目录中查找 `runtime/stc-isp/Scripts/stcgal.exe`，并使用同目录上级的 `python.exe` 执行项目的型号防护脚本。编译工具集 `stc.sdcc` 与这个下载运行时独立。
+`StcIspService` 在发行目录中查找 `runtime/stc-isp/Scripts/stcgal.exe`，并使用同目录上级的 `python.exe` 执行项目的型号防护脚本。编译开发环境组件 `stc.sdcc` 与这个下载运行时独立。
 
 ## 准备
 

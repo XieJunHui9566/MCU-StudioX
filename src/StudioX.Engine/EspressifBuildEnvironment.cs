@@ -8,10 +8,7 @@ internal static class EspressifBuildEnvironment
     internal static async Task<Dictionary<string, string>> CreateAsync(string projectRoot, ResolvedToolset tools,
         EspressifProjectSettings settings, CancellationToken token)
     {
-        if (tools.Manifest.Purpose != settings.Framework || tools.Manifest.Version != settings.SdkVersion)
-        {
-            throw new StudioXException("ESPRESSIF_TOOLSET", "工程的 SDK 身份与内置工具集不一致。");
-        }
+        await EspressifSdkIdentity.ValidateAsync(tools, settings, token);
         var environment = ToolsetEnvironment.Create(tools);
         var state = PathBoundary.Resolve(projectRoot, ".build/idf-tools-state");
         Directory.CreateDirectory(state);
@@ -35,6 +32,8 @@ internal static class EspressifBuildEnvironment
             .Distinct(StringComparer.OrdinalIgnoreCase).Append(Environment.GetFolderPath(Environment.SpecialFolder.System)));
         environment["PYTHONUTF8"] = "1";
         environment["IDF_CCACHE_ENABLE"] = "0";
+        if (EspressifXtensaBinding.Create(tools, settings) is { } xtensa)
+            environment["XTENSA_GNU_CONFIG"] = EspressifNativePath.ForExecutable(xtensa.ConfigFile);
         // 编译生成物和 Python 缓存不写入共享 SDK；发行哈希在下次构建时仍可复用。
         environment["PYTHONDONTWRITEBYTECODE"] = "1";
         return environment;

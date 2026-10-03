@@ -6,8 +6,8 @@
 |---|---|---|
 | 调试连接 | 调试启动、调试连接记录 | 本地/探针/目标/ELF/固件校验/暂停/退出恢复；明确复位模式，取消等待清理 |
 | 故障工作台 | 调试 → 固件故障分析 | 暂停 Cortex-M3/M4/M7 状态、ESP Panic 与文件转储；导入数据不继承实板匹配 |
-| 构建比较 | 工具 → 构建历史与对比 | 最近 20 个成功快照，静态内存、输入段/符号/文件和 Ninja 编译步骤 |
-| 安装体验 | 发布脚本 full/base、软件与组件分发 | 精确版本并存，长度/哈希校验，磁盘预览；IDE 本体继续安装包升级 |
+| 构建比较 | 工具 → 工程与构建 → 构建历史与对比 | 最近 20 个成功快照，静态内存、输入段/符号/文件和 Ninja 编译步骤 |
+| 安装体验 | 发布脚本 full/light、软件与组件分发 | 精确版本并存，长度/哈希校验，磁盘预览；IDE 本体继续安装包升级 |
 | 生态分发 | 软件与组件分发 | 本地/HTTPS 目录，选定公钥验证，插件更新备份/回退/重新信任，组件源码锁定与回退 |
 
 Desktop 只驱动应用服务。调试阶段来自 Engine 实际检查，连接服务复用原有独占所有者；组件安装持有 BuildService 维护租约，避免与构建互相覆盖。目录读取和插件安装不执行入口程序集。
@@ -16,11 +16,11 @@ Desktop 只驱动应用服务。调试阶段来自 Engine 实际检查，连接�
 
 `tools/Build-DistributionExamples.ps1 -OutputDirectory <新目录>` 创建开发插件与 MIT 字节助手组件的离线目录。整体仓库尚无明确开源许可证，插件示例目录使用 NOASSERTION，不虚构许可。
 
-`tools/New-ToolsetArchive.ps1 -ToolsetDirectory <已有工具集> -OutputFile <新归档.studioxtools>` 校验完整文件集合后生成归档，不下载 SDK。私人 Supra 许可禁止进入分发。
+`tools/New-McuToolchain.ps1 -ToolsetDirectory <已有开发环境组件> -OutputFile <新归档.mcutoolchain>` 校验完整文件集合后生成归档，不下载 SDK。旧 `.studioxtools` 保留明确兼容入口。私人 Supra 许可禁止进入分发。
 
-`tools/New-DistributionCatalog.ps1 -MetadataFile <metadata.json> -OutputFile <同目录/catalog.json> [-PrivateKeyFile <离线RSA私钥>]` 写入归档实际身份、大小及 SHA-256；可生成 RSA-PSS/SHA-256 签名和公钥。私钥不进入目录。
+`tools/New-DistributionCatalog.ps1 -MetadataFile <metadata.json> -OutputFile <同目录/catalog.json> [-PrivateKeyFile <离线RSA私钥>] [-ToolchainInspectorPath <StudioX.Cli.exe>]` 写入归档实际身份、大小及 SHA-256；可生成 RSA-PSS/SHA-256 签名和公钥。工具条目通过 CLI 的 `inspect-tool-archive` 复用 IDE 的 7z/旧 ZIP 解析和边界检查；未指定已构建 CLI 时以本仓库 .NET SDK 编译运行。插件和源码组件仍使用 ZIP。私钥不进入目录。
 
-`Publish.ps1` 和 `Build-Installer.ps1` 接受 `-DistributionProfile full|base`，默认 full。基础发布必须指定新输出目录，可用独立 BuildArtifactsDirectory。可传 `-DistributionCatalogDirectory`；复制器仅带入目录、声明归档、签名和公钥，不携带示例构建输出或私钥。打包目录不代表产品安装器已经制作。
+`Publish.ps1` 和 `Build-Installer.ps1` 接受 `-DistributionProfile full|light`，默认 full；旧 base 参数是 light 的兼容别名。轻量发布必须指定新输出目录，可用独立 BuildArtifactsDirectory。两种配置保留相同器件包、内置插件和 IDE 能力，仅完整版预装开发工具。安装切换保留已有组件整个版本目录，卸载也保留组件；工程锁保持不变。可传 `-DistributionCatalogDirectory`；复制器仅带入目录、声明归档、签名和公钥，不携带示例构建输出或私钥。打包目录不代表产品安装器已经制作。
 
 ## 验证
 

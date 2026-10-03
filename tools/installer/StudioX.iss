@@ -11,6 +11,20 @@
 #ifndef DistributionProfile
   #define DistributionProfile "full"
 #endif
+#if DistributionProfile == "base"
+  #define DistributionProfile "light"
+#endif
+#if DistributionProfile != "full" && DistributionProfile != "light"
+  #error Unsupported distribution profile
+#endif
+#if DistributionProfile == "light" && (DirExists(PayloadDirectory + "\runtime\toolsets") || DirExists(PayloadDirectory + "\runtime\hdl") || DirExists(PayloadDirectory + "\runtime\stc-isp"))
+  #error Light payload must not contain development tools
+#endif
+#if DirExists(PayloadDirectory + "\runtime\toolsets") || DirExists(PayloadDirectory + "\runtime\hdl") || DirExists(PayloadDirectory + "\runtime\stc-isp")
+  #ifndef DevelopmentComponentEntries
+    #error Generate DevelopmentComponentEntries before compiling a payload containing toolsets
+  #endif
+#endif
 #ifndef ProductId
   #define ProductId "{B8050FBC-2DE2-43F4-B839-F0E90522E671}"
 #endif
@@ -45,6 +59,8 @@ DisableProgramGroupPage=yes
 AllowNoIcons=yes
 UninstallDisplayName=MCU StudioX
 UninstallDisplayIcon={app}\MCU StudioX.exe
+; 旧安装日志曾登记工具文件；重新建立当前程序日志，使升级后卸载不会沿用旧记录删除独立组件。
+UninstallLogMode=overwrite
 SetupIconFile=..\..\src\StudioX.Desktop\Assets\StudioX.ico
 AppMutex={#ProductMutex}
 SetupMutex={#InstallerMutex}
@@ -63,12 +79,16 @@ LZMADictionarySize=32768
 DiskSpanning=yes
 DiskSliceSize=max
 #endif
-#if DistributionProfile == "base"
-OutputBaseFilename=MCU-StudioX-{#AppVersion}-win-x64-Base-Setup
+#if DistributionProfile == "light"
+OutputBaseFilename=MCU-StudioX-{#AppVersion}-win-x64-Light-Setup
 #else
 OutputBaseFilename=MCU-StudioX-{#AppVersion}-win-x64-Setup
 #endif
+#if DistributionProfile == "light"
+InfoBeforeFile=install-info-light.txt
+#else
 InfoBeforeFile=install-info.txt
+#endif
 
 [Languages]
 Name: "chinesesimplified"; MessagesFile: "compiler:Languages\ChineseSimplified.isl"
@@ -79,7 +99,7 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 
 [Files]
 ; 只写入 IDE 发行目录；不包含用户的 AppData、背景图、工程或已安装器件包仓库。
-Source: "{#PayloadDirectory}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#PayloadDirectory}\*"; DestDir: "{app}"; Excludes: "\runtime\toolsets\*,\runtime\hdl\*,\runtime\stc-isp\*"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; 快捷方式使用随版本变更的独立图标路径，避免 Explorer 复用旧 EXE 路径的图标缓存。
 Source: "..\..\src\StudioX.Desktop\Assets\StudioX.ico"; DestDir: "{app}\icons"; DestName: "StudioX-{#AppVersion}.ico"; Flags: ignoreversion
 
@@ -94,6 +114,51 @@ Name: "{autodesktop}\MCU StudioX"; Filename: "{app}\MCU StudioX.exe"; WorkingDir
 Filename: "{app}\MCU StudioX.exe"; Description: "{cm:LaunchProgram,MCU StudioX}"; Flags: nowait postinstall skipifsilent
 
 [Code]
+var
+    PreservedDevelopmentDirectories: TStringList;
+
+procedure SnapshotDevelopmentDirectories; forward;
+
+function DirectoryAttributes(const Path: String): LongWord;
+    external 'GetFileAttributesW@kernel32.dll stdcall';
+
+procedure CheckDevelopmentDirectoryBoundary(Path: String);
+var
+    Parent, AppRoot: String;
+    Attributes: LongWord;
+begin
+    AppRoot := ExpandFileName(ExpandConstant('{app}'));
+    Path := ExpandFileName(Path);
+    while Length(Path) >= Length(AppRoot) do
+    begin
+        Attributes := DirectoryAttributes(Path);
+        if (Attributes <> $FFFFFFFF) and ((Attributes and $400) <> 0) then
+            RaiseException('开发组件安装路径包含链接，请选择普通目录：' + Path);
+        Parent := ExtractFileDir(Path);
+        if Parent = Path then Exit;
+        Path := Parent;
+    end;
+end;
+
+procedure SnapshotDevelopmentDirectory(Relative: String);
+var
+    Path: String;
+begin
+    Path := ExpandConstant('{app}\') + Relative;
+    CheckDevelopmentDirectoryBoundary(Path);
+    if DirExists(Path) or FileExists(Path) then
+    begin
+        PreservedDevelopmentDirectories.Add(Relative);
+        Log('Preserving existing development directory: ' + Relative);
+    end;
+end;
+
+function ShouldInstallDevelopmentDirectory(Relative: String): Boolean;
+begin
+    Result := (PreservedDevelopmentDirectories = nil) or
+        (PreservedDevelopmentDirectories.IndexOf(Relative) < 0);
+end;
+
 function TakeRevisionSuffix(var Version: String): String;
 var
     Last: String;
@@ -196,6 +261,17 @@ begin
     if (GetPreviousData('InstallDirectory', '') <> '') and
         (CompareText(ExpandFileName(WizardDirValue), ExpandFileName(GetPreviousData('InstallDirectory', ''))) <> 0) then
         Result := '安装目录与原版本不同，请使用原目录升级，或先卸载再迁移。';
+    if Result <> '' then Exit;
+    try
+        { 在任何文件复制前缓存整目录决定，不能因第一个文件创建目录而跳过后续文件。 }
+        if PreservedDevelopmentDirectories = nil then
+            PreservedDevelopmentDirectories := TStringList.Create;
+        PreservedDevelopmentDirectories.Clear;
+        CheckDevelopmentDirectoryBoundary(ExpandConstant('{app}\runtime'));
+        SnapshotDevelopmentDirectories;
+    except
+        Result := GetExceptionMessage;
+    end;
 end;
 
 procedure RegisterPreviousData(PreviousDataKey: Integer);
@@ -204,3 +280,10 @@ begin
 end;
 
 // 不设置 UninstallDelete：卸载只删除安装器记录的文件，保留用户后来添加的数据。
+#ifdef DevelopmentComponentEntries
+  #include DevelopmentComponentEntries
+#else
+procedure SnapshotDevelopmentDirectories;
+begin
+end;
+#endif

@@ -10,7 +10,7 @@
 
 CH32V203 使用独立 `wch.ch32v203/0.1.1` 包，收录 11 个型号，按容量和 SDK 分支区分配置，V203 寄存器窗口排除 FPU。新版为 V20x 的 10 个型号增加 FreeRTOS，CCT6 保留裸机模板。原有 11 个裸机型号通过编译和离线检查；C8T6 + WCH-LinkE 在用户授权解除读保护后通过 IDE 基础调试实板验收，见 C8T6 实板记录（本地记录）。新增 RTOS 仅有离线编译证据；范围和默认时钟见 [V203 软件适配](CH32V203.md)。
 
-CH32V307VCT6 / RCT6 / WCU6 使用 `wch.ch32v307/0.1.3` 器件包、`wch.riscv/1.0.0` 工具集和 WCH-Link / WCH-LinkE，工作在 RISC-V / SDI 模式。当前只接受 256 KiB Flash / 64 KiB RAM 布局、400/4000/6000 kHz 和单台探针（序列号留空）。不支持把通用 RISC-V、ST-Link 或 CMSIS-DAP 配置套用到 CH32。原有 0.1.1 包的裸机工程仍可用；0.1.0 工程没有下载/调试配置，不自动升级工程。VCT6 的隔离 FreeRTOS 验收工程已通过 WCH-LinkE 实板 MCP 调试，见 RTOS 实板记录（本地记录）；RCT6/WCU6 仍只有软件证据，模板范围见 [模板说明](CH32V307.md)。
+CH32V307VCT6 / RCT6 / WCU6 使用 `wch.ch32v307/0.1.3` 器件包、`wch.riscv/1.0.0` 开发环境组件和 WCH-Link / WCH-LinkE，工作在 RISC-V / SDI 模式。当前只接受 256 KiB Flash / 64 KiB RAM 布局、400/4000/6000 kHz 和单台探针（序列号留空）。不支持把通用 RISC-V、ST-Link 或 CMSIS-DAP 配置套用到 CH32。原有 0.1.1 包的裸机工程仍可用；0.1.0 工程没有下载/调试配置，不自动升级工程。VCT6 的隔离 FreeRTOS 验收工程已通过 WCH-LinkE 实板 MCP 调试，见 RTOS 实板记录（本地记录）；RCT6/WCU6 仍只有软件证据，模板范围见 [模板说明](CH32V307.md)。
 
 CH32 已在 VCT6 + WCH-LinkE 上通过附加、硬件断点、复位、运行/暂停、进入/逐过程/跳出、调用栈、局部变量和 SRAM 读取。寄存器窗口按 GDB 返回的编号读取整数、浮点及基础机器 CSR，排除厂商 GDB 泛列的向量/虚拟化寄存器。新工程默认只观察 `$pc`，可手动添加 `SystemCoreClock` 等工程符号。其他封装及特殊断点的实板范围见 CH32 调试验收（本地记录）。
 

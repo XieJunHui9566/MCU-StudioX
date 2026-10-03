@@ -10,12 +10,15 @@
     <ApplicationIcon>Assets/StudioX.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
+    <Content Include="../../licenses/SharpCompress-MIT.txt;../../licenses/SharpCompress-NOTICE.md"
+      Link="licenses/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <Resource
       Include="Assets/StudioX.ico" />
   </ItemGroup>
   <PropertyGroup>
     <StudioXRuntimeAssetsDirectory
       Condition="'$(StudioXRuntimeAssetsDirectory)' == ''">$(MSBuildThisFileDirectory)../../artifacts/tool-runtime</StudioXRuntimeAssetsDirectory>
+    <StudioXDistributionProfile Condition="'$(StudioXDistributionProfile)' == ''">full</StudioXDistributionProfile>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference
@@ -36,6 +39,7 @@
   <ItemGroup>
     <Content
       Include="$(StudioXRuntimeAssetsDirectory)/hdl/**/*"
+      Condition="'$(StudioXDistributionProfile)' == 'full'"
       Link="runtime/hdl/%(RecursiveDir)%(Filename)%(Extension)"
       CopyToOutputDirectory="PreserveNewest"
       CopyToPublishDirectory="PreserveNewest" />
@@ -162,6 +166,7 @@
   <ItemGroup>
     <Content
       Include="$(StudioXRuntimeAssetsDirectory)/toolsets/**/*"
+      Condition="'$(StudioXDistributionProfile)' == 'full'"
       Exclude="$(StudioXRuntimeAssetsDirectory)/toolsets/pc.mingw/**/*;$(StudioXRuntimeAssetsDirectory)/toolsets/espressif.idf/**/*;$(StudioXRuntimeAssetsDirectory)/toolsets/espressif.esp8266-rtos/**/*"
       Link="runtime/toolsets/%(RecursiveDir)%(Filename)%(Extension)"
       CopyToOutputDirectory="PreserveNewest"
@@ -170,11 +175,13 @@
   <ItemGroup>
     <Content
       Include="$(StudioXRuntimeAssetsDirectory)/toolsets/pc.mingw/**/*"
+      Condition="'$(StudioXDistributionProfile)' == 'full'"
       Link="runtime/toolsets/pc.mingw/%(RecursiveDir)%(Filename)%(Extension)"
       CopyToOutputDirectory="Never"
       CopyToPublishDirectory="PreserveNewest" />
     <StudioXPcRuntimeFiles
-      Include="$(StudioXRuntimeAssetsDirectory)/toolsets/pc.mingw/**/*" />
+      Include="$(StudioXRuntimeAssetsDirectory)/toolsets/pc.mingw/**/*"
+      Condition="'$(StudioXDistributionProfile)' == 'full'" />
     <Content
       Include="../../licenses/PC-Toolchain-NOTICE.md"
       Link="licenses/PC-Toolchain-NOTICE.md"
@@ -185,6 +192,7 @@
   <!-- PC SDK 为只读内置资源；同卷开发构建用硬链接节省空间，发布目录仍独立复制。 -->
   <Target
     Name="StudioXCopyPcToolchainForDevelopment"
+    Condition="'$(StudioXDistributionProfile)' == 'full'"
     AfterTargets="CopyFilesToOutputDirectory">
     <Copy
       SourceFiles="@(StudioXPcRuntimeFiles)"
@@ -194,11 +202,13 @@
   </Target>
   <ItemGroup>
     <StudioXEspressifRuntimeFiles
-      Include="$(StudioXRuntimeAssetsDirectory)/toolsets/espressif.idf/**/*">
+      Include="$(StudioXRuntimeAssetsDirectory)/toolsets/espressif.idf/**/*"
+      Condition="'$(StudioXDistributionProfile)' == 'full'">
       <RuntimeRelativePath>espressif.idf/%(RecursiveDir)%(Filename)%(Extension)</RuntimeRelativePath>
     </StudioXEspressifRuntimeFiles>
     <StudioXEspressifRuntimeFiles
-      Include="$(StudioXRuntimeAssetsDirectory)/toolsets/espressif.esp8266-rtos/**/*">
+      Include="$(StudioXRuntimeAssetsDirectory)/toolsets/espressif.esp8266-rtos/**/*"
+      Condition="'$(StudioXDistributionProfile)' == 'full'">
       <RuntimeRelativePath>espressif.esp8266-rtos/%(RecursiveDir)%(Filename)%(Extension)</RuntimeRelativePath>
     </StudioXEspressifRuntimeFiles>
     <Content
@@ -216,6 +226,7 @@
   <!-- ESP 共享组件不可写；开发构建保留同卷硬链接，避免每种配置复制数 GB 的 SDK。 -->
   <Target
     Name="StudioXCopyEspressifForDevelopment"
+    Condition="'$(StudioXDistributionProfile)' == 'full'"
     AfterTargets="CopyFilesToOutputDirectory">
     <Copy
       SourceFiles="@(StudioXEspressifRuntimeFiles)"
@@ -226,6 +237,7 @@
   <ItemGroup>
     <Content
       Include="$(StudioXRuntimeAssetsDirectory)/stc-isp-portable-3.14.7/**/*"
+      Condition="'$(StudioXDistributionProfile)' == 'full'"
       Link="runtime/stc-isp/%(RecursiveDir)%(Filename)%(Extension)"
       CopyToOutputDirectory="PreserveNewest"
       CopyToPublishDirectory="PreserveNewest" />
@@ -237,5 +249,25 @@
       CopyToOutputDirectory="PreserveNewest"
       CopyToPublishDirectory="PreserveNewest"
       Condition="Exists('$(StudioXRuntimeAssetsDirectory)/THIRD-PARTY-NOTICES.txt')" />
+    <Content
+      Include="../../runtime/THIRD-PARTY-NOTICES.txt"
+      Link="runtime/THIRD-PARTY-NOTICES.txt"
+      CopyToOutputDirectory="PreserveNewest"
+      CopyToPublishDirectory="PreserveNewest"
+      Condition="!Exists('$(StudioXRuntimeAssetsDirectory)/THIRD-PARTY-NOTICES.txt')" />
   </ItemGroup>
+  <Target Name="ValidateStudioXDistributionProfile" BeforeTargets="PrepareForBuild">
+    <Error Condition="'$(StudioXDistributionProfile)' != 'full' and '$(StudioXDistributionProfile)' != 'light'"
+      Text="StudioXDistributionProfile must be full or light." />
+  </Target>
+  <!-- MSBuild 会从所有 Content 自动寻找 app.config；SDK 示例配置不能成为 IDE 的配置。 -->
+  <Target Name="KeepDesktopApplicationConfiguration" AfterTargets="PrepareForBuild">
+    <ItemGroup>
+      <AppConfigWithTargetPath Remove="@(AppConfigWithTargetPath)"
+        Condition="'%(AppConfigWithTargetPath.FullPath)' != '$(MSBuildProjectDirectory)\App.config'" />
+    </ItemGroup>
+    <PropertyGroup>
+      <AppConfig Condition="'@(AppConfigWithTargetPath)' == ''"></AppConfig>
+    </PropertyGroup>
+  </Target>
 </Project>

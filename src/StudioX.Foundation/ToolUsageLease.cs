@@ -3,18 +3,38 @@ namespace StudioX.Foundation;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
+using System.Collections.Concurrent;
 using Microsoft.Win32.SafeHandles;
 
 /// <summary>跨进程工具目录租约；共享使用与独占维护互斥，进程退出时由系统释放。</summary>
 public sealed class ToolUsageLease : IDisposable
 {
     private readonly FileStream stream;
+    private static readonly ConcurrentDictionary<string, Func<string, bool>> useGuards = new(StringComparer.OrdinalIgnoreCase);
+    public static void RegisterUseGuard(string toolsetsRoot, Func<string, bool> isEnabled)
+        => useGuards[Normalize(toolsetsRoot).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar] = isEnabled;
     private ToolUsageLease(FileStream stream) => this.stream = stream;
-    public static ToolUsageLease Acquire(string toolRoot, bool maintenance = false)
+    public static ToolUsageLease Acquire(string toolRoot, bool maintenance = false, bool ignoreActivation = false)
     {
         var path = LeasePath(toolRoot);
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        try { return new(new FileStream(path, FileMode.OpenOrCreate, FileAccess.ReadWrite, maintenance ? FileShare.None : FileShare.ReadWrite)); }
+        try
+        {
+            var lease = new ToolUsageLease(new FileStream(path, FileMode.OpenOrCreate, FileAccess.ReadWrite, maintenance ? FileShare.None : FileShare.ReadWrite));
+            try
+            {
+                // 在共享租约内读启用状态；禁用需要独占租约，不能与新进程启动交错。
+                if (!maintenance && !ignoreActivation)
+                {
+                    var root = Normalize(toolRoot);
+                    foreach (var (prefix, enabled) in useGuards)
+                        if (root.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) && !enabled(root))
+                            throw new StudioXException("TOOLSET_DISABLED", "开发环境组件已禁用，请在“开发环境组件管理”中启用指定版本。");
+                }
+                return lease;
+            }
+            catch { lease.Dispose(); throw; }
+        }
         catch (IOException error) { throw new StudioXException("TOOLS_BUSY", "工具正在使用或维护，请等待操作结束后重试。", error); }
     }
     public static bool IsBusy(string toolRoot)

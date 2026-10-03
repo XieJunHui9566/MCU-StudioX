@@ -15,14 +15,19 @@ public sealed partial class ProjectService(Func<string, CancellationToken, Task>
             throw new StudioXException("PROJECT_TEMPLATE", "请选择明确的模板。");
         }
         var selectedTemplate = device.Templates.Single(template => template.Id == templateId);
+        var components = DevelopmentComponentRequirements.ForTemplate(device, selectedTemplate);
         // 特殊模式只由创建选项开启，模板资源不能替用户勾选或锁定模式。
         if (enableAg32Logic && !IsAg32LogicDevice(pack, deviceId))
         {
             throw new StudioXException("PROJECT_LOGIC_DEVICE", "逻辑/Verilog 特殊模式需要已核实型号、封装和逻辑保留区的 AGM 器件包。");
         }
         var ag32 = IsAg32LogicDevice(pack, deviceId) ? Ag32DeviceCatalog.Require(deviceId) : null;
-        var logic = enableAg32Logic ? new Ag32LogicProjectSettings(ag32!.TargetDevice, "logic/user_logic.v", "logic/pins.ve") : null;
-        var pinMapping = ag32 is not null ? new Ag32PinMappingProjectSettings(ag32.TargetDevice) : null;
+        var logicComponent = components.SingleOrDefault(c => c.Id == "agm.logic");
+        var mappingComponent = components.SingleOrDefault(c => c.Id == "agm.pin-mapping");
+        var logic = enableAg32Logic ? new Ag32LogicProjectSettings(ag32!.TargetDevice, "logic/user_logic.v", "logic/pins.ve",
+            ToolsetVersion: logicComponent?.Version ?? "1.0.0", CompilerId: logicComponent?.CompilerId ?? "agm.native") : null;
+        var pinMapping = ag32 is not null ? new Ag32PinMappingProjectSettings(ag32.TargetDevice,
+            ToolsetVersion: mappingComponent?.Version ?? "1.0.0", CompilerId: mappingComponent?.CompilerId ?? "agm.ve") : null;
         var espressif = device.Espressif is { } profile
             ? new EspressifProjectSettings(profile.Framework, profile.Target, profile.SdkVersion) : null;
         if (selectedTemplate.MicroPython is { } microPython)
@@ -33,13 +38,14 @@ public sealed partial class ProjectService(Func<string, CancellationToken, Task>
                 throw new StudioXException("PROJECT_MICROPYTHON", "MicroPython 工程不使用 AG32 逻辑模式。");
             }
             return new(new ProjectManifest(1, name, pack.Manifest.Id, pack.Manifest.Version, pack.ContentHash,
-                deviceId, templateId, "", "", "", ProjectKind.MicroPython, EntryFile: "main.py", MicroPython: microPython), device);
+                deviceId, templateId, "", "", "", ProjectKind.MicroPython, EntryFile: "main.py", MicroPython: microPython,
+                DevelopmentComponents: components), device);
         }
         var entryFile = selectedTemplate.EspressifExample is { } example
             ? selectedTemplate.EntryFile[(example.ExampleDirectory.TrimEnd('/').Length + 1)..] : null;
         return new BuildPlan(new ProjectManifest(1, name, pack.Manifest.Id, pack.Manifest.Version, pack.ContentHash,
             deviceId, templateId, device.ToolsetId, device.ToolsetVersion, device.CompilerId, Logic: logic, Espressif: espressif, EntryFile: entryFile,
-            PinMapping: pinMapping), TemplateResolver.Resolve(device, templateId, enableAg32Logic));
+            PinMapping: pinMapping, DevelopmentComponents: components), TemplateResolver.Resolve(device, templateId, enableAg32Logic));
     }
 
     public static bool IsAg32LogicDevice(InstalledPack pack, string deviceId)
@@ -75,7 +81,7 @@ public sealed partial class ProjectService(Func<string, CancellationToken, Task>
                     await initializeRepository(staging, cancellationToken);
                 }
                 cancellationToken.ThrowIfCancellationRequested();
-                Directory.Move(staging, target);
+                await PublishDirectoryAsync(staging, target, cancellationToken);
                 return plan.Project;
             }
             foreach (var source in Directory.EnumerateFiles(pack.RootDirectory, "*", SearchOption.AllDirectories))
@@ -187,10 +193,23 @@ public sealed partial class ProjectService(Func<string, CancellationToken, Task>
                 await initializeRepository(staging, cancellationToken);
             }
             cancellationToken.ThrowIfCancellationRequested();
-            Directory.Move(staging, target);
+            await PublishDirectoryAsync(staging, target, cancellationToken);
             return plan.Project;
         }
         finally { if (Directory.Exists(staging)) { Directory.Delete(staging, recursive: true); } }
+    }
+
+    private static async Task PublishDirectoryAsync(string staging, string target, CancellationToken token)
+    {
+        for (var attempt = 0; ; attempt++)
+        {
+            token.ThrowIfCancellationRequested();
+            try { Directory.Move(staging, target); return; }
+            // Windows 文件扫描器可能短暂持有刚复制的 SDK 目录；不改 ACL，不覆盖并发创建的目标。
+            catch (IOException error) when (OperatingSystem.IsWindows() && (error.HResult & 0xffff) is 5 or 32 or 33
+                && attempt < 8 && Directory.Exists(staging) && !Directory.Exists(target) && !File.Exists(target))
+            { await Task.Delay(TimeSpan.FromMilliseconds(150 * (attempt + 1)), token); }
+        }
     }
 
     public static async Task<ProjectManifest> ReadAsync(string directory, CancellationToken cancellationToken = default)
@@ -200,6 +219,7 @@ public sealed partial class ProjectService(Func<string, CancellationToken, Task>
         {
             throw new StudioXException("PROJECT_FORMAT", "不支持的工程格式。");
         }
+        ProjectDevelopmentComponents.ValidateSnapshot(project);
         if (project.Kind == ProjectKind.MicroPython)
         {
             await MicroPythonProject.ValidateAsync(directory, project, cancellationToken);
@@ -228,10 +248,12 @@ public sealed partial class ProjectService(Func<string, CancellationToken, Task>
         }
         if (project.Logic is { } logic && (project.Kind != ProjectKind.Pack ||
             Ag32DeviceCatalog.Find(project.DeviceId) is not { CanMap: true } profile ||
-            logic != new Ag32LogicProjectSettings(profile.TargetDevice, "logic/user_logic.v", "logic/pins.ve")))
+            logic.TargetDevice != profile.TargetDevice || logic.VerilogFile != "logic/user_logic.v" || logic.PinMapFile != "logic/pins.ve" ||
+            logic.ToolsetId != "agm.logic" || logic.CompilerId != "agm.native"))
         {
             throw new StudioXException("PROJECT_LOGIC_SETTINGS", "AG32 逻辑工程配置无效或不受当前版本支持。");
         }
+        if (project.Logic is { } validatedLogic) PackValidator.Version(validatedLogic.ToolsetVersion);
         ValidateAg32PinMappingSettings(directory, project);
         PackValidator.Token(project.ToolsetId);
         PackValidator.Version(project.ToolsetVersion);

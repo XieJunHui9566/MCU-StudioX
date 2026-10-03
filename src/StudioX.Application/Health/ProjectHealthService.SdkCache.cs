@@ -11,7 +11,7 @@ public sealed partial class ProjectHealthService
         try
         {
             var settings = project.Espressif!;
-            if (tools.Manifest.Purpose != settings.Framework || tools.Manifest.Version != settings.SdkVersion)
+            if (tools.Manifest.Purpose != settings.Framework || EspressifSdkIdentity.DeclaredVersion(tools.Manifest) != settings.SdkVersion)
                 throw new StudioXException("ESPRESSIF_TOOLSET", "SDK 用途或版本与工程锁定不一致。");
             foreach (var role in new[] { "idf", "tools", "python-env" })
                 if (!Directory.Exists(tools.ResourceDirectory(role))) throw new StudioXException("TOOL_RESOURCE", "SDK 资源目录缺失：" + role);
@@ -67,7 +67,7 @@ public sealed partial class ProjectHealthService
                 else if (tools is not null && tools.Manifest.Executables.ContainsKey("gcc") && !SamePath(compiler, tools.Tool("gcc")))
                 {
                     checks.Add(new("HEALTH_CACHE_TOOLSET", "缓存与锁定编译器不同", HealthState.Warning,
-                        "旧缓存可能来自其他工具环境。请核对并重建配置缓存，工程工具锁保持不变。", "tool-environment", HealthAction.ResetCache,
+                        "旧缓存可能来自其他开发环境组件。请核对并重建配置缓存，工程工具锁保持不变。", "tool-environment", HealthAction.ResetCache,
                         "缓存=" + compiler + "\n锁定=" + tools.Tool("gcc")));
                     issues = true;
                 }

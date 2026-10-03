@@ -1,38 +1,5 @@
-param([Parameter(Mandatory)][string]$OutputDirectory, [string]$ReleaseVersion, [string]$BuildArtifactsDirectory, [string]$DistributionCatalogDirectory)
+param([Parameter(Mandatory)][string]$OutputDirectory, [string]$RuntimeAssetsDirectory, [string]$ReleaseVersion,
+    [string]$BuildArtifactsDirectory, [string]$DevicePackCatalogDirectory, [switch]$ExcludePlugins, [string]$DistributionCatalogDirectory)
 $ErrorActionPreference = 'Stop'
-$taskRoot = Split-Path -Parent $PSScriptRoot
-. (Join-Path $PSScriptRoot 'Release-Version.ps1')
-. (Join-Path $PSScriptRoot 'Release-Evidence.ps1')
-if (!$ReleaseVersion) {
-    $taskProperties = [xml](Get-Content -LiteralPath (Join-Path $taskRoot 'Directory.Build.props') -Raw)
-    $ReleaseVersion = $taskProperties.SelectSingleNode('//ProductVersion').InnerText
-}
-$taskIdentity = Get-StudioXReleaseVersion $ReleaseVersion
-$taskOutput = [IO.Path]::GetFullPath($OutputDirectory)
-if (Test-Path -LiteralPath $taskOutput) { throw 'Base publication requires a new output directory.' }
-foreach ($taskFile in @('artifacts/language-runtime/clangd/bin/clangd.exe', 'artifacts/git-runtime/git/cmd/git.exe')) {
-    if (!(Test-Path -LiteralPath (Join-Path $taskRoot $taskFile))) { throw "Required core runtime missing: $taskFile" }
-}
-[IO.Directory]::CreateDirectory($taskOutput) | Out-Null
-$taskEmpty = Join-Path $taskOutput '.empty-runtime-assets'
-[IO.Directory]::CreateDirectory($taskEmpty) | Out-Null
-$taskArguments = @()
-if ($BuildArtifactsDirectory) { $taskArguments = @('--artifacts-path', [IO.Path]::GetFullPath($BuildArtifactsDirectory)) }
-# 基础发行仍自包含 .NET、语言服务、Git 和独立插件宿主；工具链按工程明确版本另行安装。
-foreach ($taskProject in @(
-    @{ name='StudioX.Desktop'; output=$taskOutput },
-    @{ name='StudioX.PluginHost'; output=(Join-Path $taskOutput 'runtime/plugin-host') },
-    @{ name='StudioX.Cli'; output=(Join-Path $taskOutput 'runtime/mcp-host') }
-)) {
-    & dotnet publish (Join-Path $taskRoot "src/$($taskProject.name)/$($taskProject.name).csproj") -c Release -r win-x64 --self-contained true -o $taskProject.output "-p:StudioXRuntimeAssetsDirectory=$taskEmpty" "-p:Version=$($taskIdentity.FileVersion)" "-p:ProductVersion=$ReleaseVersion" -p:DebugType=None -p:DebugSymbols=false -p:IncludeSourceRevisionInInformationalVersion=false --nologo @taskArguments
-    if ($LASTEXITCODE -ne 0) { throw "Base publication failed: $($taskProject.name)" }
-}
-if (Test-Path -LiteralPath (Join-Path $taskOutput 'runtime/toolsets')) { throw 'Base publication unexpectedly contains firmware toolsets.' }
-[IO.Directory]::CreateDirectory((Join-Path $taskOutput 'device-packs')) | Out-Null
-[IO.File]::WriteAllText((Join-Path $taskOutput 'device-packs/index.json'), '[]')
-$taskGuide = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'installer/使用说明.txt') -Raw
-($taskGuide.Replace('{{VERSION}}', $ReleaseVersion) + "`n基础版：先导入所需器件包并创建工程，从工具 → 准备工程工具安装工程锁定的工具集；支持继续下载和 .studioxtools 离线导入。`n") | Set-Content -LiteralPath (Join-Path $taskOutput '使用说明.txt') -Encoding utf8
-$taskSourceEvidence = Get-StudioXSourceEvidence $taskRoot
-@{formatVersion=1;sourceCommit=$taskSourceEvidence.sourceCommit;sourceDirty=$taskSourceEvidence.sourceDirty;product='MCU StudioX';version=$ReleaseVersion;channel='preview';platform='win-x64';distributionProfile='base';updateMode='installer';userDataDirectory='%LOCALAPPDATA%\MCUStudioX';devicePacksDirectory='device-packs';bundledPlugins=$false;devicePackCatalogSha256=(Get-FileHash -LiteralPath (Join-Path $taskOutput 'device-packs/index.json') -Algorithm SHA256).Hash} | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $taskOutput 'release.json') -Encoding utf8
-if ($DistributionCatalogDirectory) { & (Join-Path $PSScriptRoot 'Copy-DistributionCatalog.ps1') -SourceDirectory $DistributionCatalogDirectory -OutputDirectory (Join-Path $taskOutput 'runtime/distribution') }
-Write-Output $taskOutput
+# 保留既有脚本入口，base 现在明确指向轻量版，不再裁掉器件包和内置插件。
+& (Join-Path $PSScriptRoot 'Publish-Light.ps1') @PSBoundParameters

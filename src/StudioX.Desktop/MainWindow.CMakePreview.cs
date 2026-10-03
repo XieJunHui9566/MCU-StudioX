@@ -12,7 +12,7 @@ public partial class MainWindow
     {
         await OpenProjectAsync(project, CancellationToken.None);
         await OpenSourceAsync("CMakeLists.txt", CancellationToken.None);
-        // CMake 编辑不依赖 clangd 或工具链状态。
+        // CMake 编辑不依赖 clangd 或开发环境组件状态。
         await services.Intelligence.DisposeAsync();
         var original = activeDocument!;
         renderingAssistancePreview = true;

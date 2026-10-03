@@ -73,8 +73,26 @@ public sealed partial class ProjectHealthService(ToolsetCatalog catalog, BuildSe
             settings.ValidateFor(project);
             return settings.Summary;
         });
-        var primary = await InspectToolsAsync(project.ToolsetId, project.ToolsetVersion, project.CompilerId, project.Espressif?.Target,
-            deep, checks, progress, token);
+        ResolvedToolset? primary = null;
+        await CheckAsync("HEALTH_COMPONENT_REQUIREMENTS", "工程开发环境组件需求与内容锁", "tool-environment", HealthAction.Tools, async () =>
+        {
+            var needs = await ProjectDevelopmentComponents.ReadAsync(root, project, token);
+            var pins = await ProjectDevelopmentComponents.ReadPinsAsync(root, needs, token);
+            foreach (var need in needs)
+            {
+                var tools = await InspectToolsAsync(need.Id, need.Version, need.CompilerId,
+                    need.Id == project.ToolsetId ? project.Espressif?.Target : null, deep, checks, progress, token);
+                if (need.Id == project.ToolsetId) primary = tools;
+                if (tools is not null)
+                {
+                    try { ProjectDevelopmentComponents.CheckFingerprint(pins, need.Id, tools.Fingerprint); }
+                    catch (Exception error) { checks.Add(Failure("HEALTH_COMPONENT_LOCK", "开发环境组件内容锁：" + need.Id,
+                        "tool-environment", HealthAction.Tools, error, need.Id, need.Version)); }
+                }
+            }
+            return $"工程声明 {needs.Count} 个精确版本的开发环境组件。" + (File.Exists(PathBoundary.Resolve(root, DevelopmentComponentLock.RelativePath))
+                ? "已读取内容锁；检查不改写锁定文件。" : "完整组件内容锁将在首次构建校验通过后建立。");
+        });
         if (primary is not null)
         {
             await CheckAsync("HEALTH_TOOL_LOCK", "工程工具内容锁定", "tool-environment", HealthAction.Tools, async () =>
@@ -82,18 +100,17 @@ public sealed partial class ProjectHealthService(ToolsetCatalog catalog, BuildSe
                 var path = PathBoundary.Resolve(root, ".studiox/toolchain.lock.json");
                 if (!File.Exists(path)) return "尚未生成工具内容锁；首次构建会建立。健康检查不创建或修改锁定文件。";
                 var locked = await JsonStore.ReadAsync<ToolchainLock>(path, token);
-                if (locked != new ToolchainLock(1, project.ToolsetId, project.ToolsetVersion, primary.Fingerprint))
-                    throw new StudioXException("TOOLCHAIN_LOCK", "已安装工具清单与工程锁定指纹不同。请恢复相同版本、相同内容的工具集；不要删除工程锁来绕过检查。");
+                if (locked.FormatVersion != 1 || locked.ToolsetId != project.ToolsetId || locked.ToolsetVersion != project.ToolsetVersion
+                    || !primary.Fingerprint.Equals(locked.Fingerprint, StringComparison.OrdinalIgnoreCase))
+                    throw new StudioXException("TOOLCHAIN_LOCK", "已安装工具清单与工程锁定指纹不同。请恢复相同版本、相同内容的开发环境组件；不要删除工程锁来绕过检查。");
                 return "工具 ID、版本和清单指纹与工程锁一致；文件内容完整性仍由构建或深度检查核验。";
             }, project.ToolsetId, project.ToolsetVersion);
             if (project.Espressif is not null) await InspectSdkAsync(root, project, primary, checks, token);
         }
-        if (project.PinMapping is { } mapping)
-            await InspectToolsAsync(mapping.ToolsetId, mapping.ToolsetVersion, mapping.CompilerId, null, deep, checks, progress, token);
         await InspectCacheAsync(root, project, primary, checks, token);
         var ambient = ToolsetEnvironment.AmbientVariables.Where(name => !string.IsNullOrEmpty(Environment.GetEnvironmentVariable(name))).ToArray();
         if (ambient.Length > 0)
-            checks.Add(new("HEALTH_AMBIENT", "外部工具环境变量", HealthState.Information,
+            checks.Add(new("HEALTH_AMBIENT", "外部开发环境组件变量", HealthState.Information,
                 "检测到变量名：" + string.Join(", ", ambient) + "。构建服务会隔离这些变量；不修改系统环境，也不在报告中导出变量值。", "tool-environment"));
         checks.Add(new("HEALTH_SCOPE", "检查范围", HealthState.Information,
             "检查不编译固件、不执行用户 CMake、不连接设备。通过不代表固件、Python SDK 依赖或硬件运行已验收；实际构建仍执行完整校验。", "build"));

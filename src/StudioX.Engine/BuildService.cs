@@ -98,6 +98,8 @@ public sealed partial class BuildService(ToolsetCatalog catalog, string? ag32Map
                 File.Delete(receiptPath);
             }
             if (project.Logic is not null) Hdl.Ag32NativeBuildService.Invalidate(root);
+            using var components = await PrepareComponentsAsync(root, project, progress, cancellationToken);
+            var tools = components.Tools.Single(t => t.Manifest.Id == project.ToolsetId);
             await new Ag32SystemGenerationService(catalog).PrepareAsync(root, project, cancellationToken);
             if (!configureOnly && project.PinMapping is not null && project.Logic is null)
             {
@@ -112,15 +114,6 @@ public sealed partial class BuildService(ToolsetCatalog catalog, string? ag32Map
             var stcIsp = sdcc ? await StcIspSettings.ReadAsync(root, cancellationToken) : null;
             int? stcClockHz = stcIsp is { ClockMode: not StcClockMode.Preserve, ClockFrequencyHz: { } hz }
                 ? hz : null;
-            progress?.Report("检查内置工具集…");
-            var tools = await catalog.ResolveAsync(project.ToolsetId, project.ToolsetVersion, project.CompilerId, cancellationToken, progress: progress);
-            var lockPath = Path.Combine(root, ".studiox", "toolchain.lock.json");
-            var expected = new ToolchainLock(1, project.ToolsetId, project.ToolsetVersion, tools.Fingerprint);
-            if (File.Exists(lockPath) && await JsonStore.ReadAsync<ToolchainLock>(lockPath, cancellationToken) != expected)
-            {
-                throw new StudioXException("TOOLCHAIN_LOCK", "当前工具集与工程锁定内容不同，请检查安装版本。");
-            }
-            await JsonStore.WriteAsync(lockPath, expected, cancellationToken);
             if (project.Espressif is not null)
             {
                 return await new EspressifBuildBackend().ExecuteAsync(root, project, tools, settings, configureOnly,
@@ -174,7 +167,7 @@ public sealed partial class BuildService(ToolsetCatalog catalog, string? ag32Map
                     Log = log.ToString()
                 };
             }
-            // 不使用用户 PATH 发现工具；只为编译器的子程序提供本工具集和系统目录。
+            // 不使用用户 PATH 发现工具；只为编译器的子程序提供本开发环境组件和系统目录。
             var environment = ToolsetEnvironment.Create(tools);
             string CmakePath(string path) => path.Replace('\\', '/');
             List<string> configure = ["-S", root, "-B", build, "-G", "Ninja", "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
@@ -194,7 +187,7 @@ public sealed partial class BuildService(ToolsetCatalog catalog, string? ag32Map
                     configure.Add("-DCMAKE_BUILD_TYPE=" + cube.BuildType);
                 }
                 configure.Add("-DCMAKE_TOOLCHAIN_FILE=" + CmakePath(PathBoundary.Resolve(root, cube.ToolchainFile)));
-                // CubeMX 工具链通过隔离 PATH 选择编译器，File API 再核对其归属。
+                // CubeMX 开发环境组件通过隔离 PATH 选择编译器，File API 再核对其归属。
                 // 重复 -D 编译器路径会因 Windows 路径大小写不同触发 CMake 清缓存，丢失交叉编译配置。
                 await CMakeFileApi.QueryAsync(build, cancellationToken);
             }

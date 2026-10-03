@@ -27,20 +27,24 @@ public partial class MainWindow
         Add(WorkspaceViewMenu, "命令面板…", "Ctrl+Shift+P", () => true, ShowPaletteAsync);
         Add(WorkspaceViewMenu, "移到另一编辑分组", "Ctrl+Alt+Right", () => activeEditor is not null, () => { MoveEditorGroup(activeEditor!, activeEditor!.Group == 0 ? 1 : 0); return Task.CompletedTask; });
         Add(WorkspaceViewMenu, "合并编辑分组", "", () => secondaryTabs?.Items.Count > 0, () => { MergeEditorGroups(); return Task.CompletedTask; });
-        Add(ToolsRootMenu, "工具环境管理…", "", () => !projectActionsBusy, ShowToolEnvironmentAsync);
-        Add(ToolsRootMenu, "准备工程工具…", "", () => !projectActionsBusy, () => ShowProjectToolsAsync());
-        Add(ToolsRootMenu, "工具占用与升级管理…", "", () => !projectActionsBusy, () => ShowToolManagementAsync());
-        Add(ToolsRootMenu, "工程健康检查…", "", () => !projectActionsBusy, () => ShowProjectHealthAsync());
+        Add(DevelopmentComponentsMenu, "开发环境组件管理…", "", () => !projectActionsBusy, () => ShowToolManagementAsync());
+        Add(DevelopmentComponentsMenu, "准备工程开发环境组件…", "", () => !projectActionsBusy, () => ShowProjectToolsAsync());
+        DevelopmentComponentsMenu.Items.Add(new Separator());
+        Add(DevelopmentComponentsMenu, "从 GitHub 获取开发环境组件…", "", () => !projectActionsBusy, ShowGithubComponentLibraryAsync);
+        Add(DevelopmentComponentsMenu, "导入开发环境组件…", "", () => !projectActionsBusy, ImportDevelopmentComponentAsync);
+        DevelopmentComponentsMenu.Items.Add(new Separator());
+        Add(DevelopmentComponentsMenu, "校验当前工程的开发环境组件", "", () => projectDirectory is not null && !projectActionsBusy, VerifyProjectComponentsAsync);
+        Add(ProjectToolsMenu, "工程健康检查…", "", () => !projectActionsBusy, () => ShowProjectHealthAsync());
         Add(DebugTopMenu, "固件故障分析…", "", () => !projectActionsBusy, ShowFaultAnalysisAsync);
         Add(DebugTopMenu, "调试连接记录…", "", () => true, () =>
         {
             new DebugConnectionWindow(services.DebugLaunch, "最近一次连接与恢复记录", false, (_, _) => Task.CompletedTask, review: true) { Owner = this }.ShowDialog();
             return Task.CompletedTask;
         });
-        Add(ToolsRootMenu, "构建历史与对比…", "", () => projectDirectory is not null && !projectActionsBusy, ShowBuildHistoryAsync);
-        Add(ToolsRootMenu, "软件与组件分发…", "", () => !projectActionsBusy, ShowDistributionAsync);
-        Add(ToolsRootMenu, "插件设置…", "", () => pluginWorkspace is not null, () => ShowPluginSettingsAsync());
-        Add(ToolsRootMenu, "调试快照扩展…", "", () => pluginWorkspace is not null, () => ShowPluginDebugAdaptersAsync());
+        Add(ProjectToolsMenu, "构建历史与对比…", "", () => projectDirectory is not null && !projectActionsBusy, ShowBuildHistoryAsync);
+        Add(ExtensionsMenu, "软件与组件分发…", "", () => !projectActionsBusy, ShowDistributionAsync);
+        Add(ExtensionsMenu, "插件设置…", "", () => pluginWorkspace is not null, () => ShowPluginSettingsAsync());
+        Add(ExtensionsMenu, "调试快照扩展…", "", () => pluginWorkspace is not null, () => ShowPluginDebugAdaptersAsync());
         Add(HelpRootMenu, "帮助手册…", "F1", () => true, () => ShowHelpAsync());
         Add(HelpRootMenu, "快捷键速查…", "", () => true, () => ShowHelpAsync("shortcuts"));
         Add(HelpRootMenu, "故障处理指南…", "", () => true, () => ShowHelpAsync("troubleshooting"));

@@ -103,7 +103,7 @@ public partial class MainWindow
                 ? "板级目标 / " + project.Zephyr!.BoardTarget : "器件 / " + project.DeviceId;
             ToolsetLabel.Text = project.Kind == ProjectKind.Zephyr
                 ? "Zephyr " + project.Zephyr!.ZephyrVersion + " · 实验模式"
-                : $"工具集 / {project.ToolsetId} {project.ToolsetVersion}";
+                : $"开发环境组件 / {project.ToolsetId} {project.ToolsetVersion}";
             await services.Debugger.OpenProjectAsync(directory, token);
             if (!IsCurrentProject())
             {

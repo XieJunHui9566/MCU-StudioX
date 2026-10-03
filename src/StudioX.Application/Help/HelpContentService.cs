@@ -18,11 +18,11 @@ public sealed class HelpContentService
         bool Has(params string[] terms) => terms.Any(term => diagnostic.Contains(term, StringComparison.OrdinalIgnoreCase));
         if (Has("CODE_TEMPLATE_")) return "code-templates";
         if (Has("COMPONENT_")) return "components";
-        if (Has("CATALOG_", "DOWNLOAD_HASH", "DOWNLOAD_SIZE", "INSTALL_SPACE", "PLUGIN_ROLLBACK")) return "distribution";
+        if (Has("CATALOG_", "DOWNLOAD_HASH", "DOWNLOAD_SIZE", "INSTALL_SPACE", "PLUGIN_ROLLBACK", "TOOLS_MIGRATION_")) return "distribution";
         if (Has("BUILD_HISTORY_", "BUILD_COMPARE_")) return "build-comparison";
         if (Has("FAULT_", "HardFault", "Core Dump")) return "fault-analysis";
         if (Has("XTENSA_GNU_CONFIG", "dynconfig", "head-ref", "idf_py_", "ESPRESSIF_")) return "esp-idf-errors";
-        if (Has("TOOLS_", "TOOLSET_", "TOOL_MISSING", "TOOL_HASH", "TOOL_RESOURCE", "TOOL_EXECUTE", "TOOLCHAIN_LOCK", "LANGUAGE_MISSING", "工具集缺失")) return "tool-environment";
+        if (Has("TOOLS_", "TOOLSET_", "TOOL_MISSING", "TOOL_HASH", "TOOL_RESOURCE", "TOOL_EXECUTE", "TOOLCHAIN_LOCK", "LANGUAGE_MISSING", "开发环境组件缺失")) return "tool-environment";
         if (Has("HEALTH_CACHE_", "CMAKE_HOME_DIRECTORY", "CMakeCache.txt directory")) return "build-errors";
         if (Has("EDITOR_FILE_CHANGED", "WORKSPACE_EDIT_STALE", "RENAME_VERSION", "FIX_VERSION")) return "recovery";
         if (Has("port is busy", "串口", "COM 端口")) return "serial-errors";

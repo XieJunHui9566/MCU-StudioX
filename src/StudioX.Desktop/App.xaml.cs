@@ -22,6 +22,8 @@ public partial class App : System.Windows.Application
         var helpPreview = e.Args is ["--preview-help", _];
         var firstProjectPreview = e.Args is ["--preview-first-project", _, _];
         var projectToolsPreview = e.Args is ["--preview-project-tools", _, _, _];
+        var idfVersionsPreview = e.Args is ["--preview-idf-versions", _, _, _, _];
+        var developmentComponentsPreview = e.Args is ["--preview-development-components", _, _, _];
         var faultPeripheralsPreview = e.Args is ["--preview-fault-peripherals", _, _];
         var codeTemplatesPreview = e.Args is ["--preview-code-templates", _];
         var projectHealthPreview = e.Args is ["--preview-project-health", _, _];
@@ -76,9 +78,11 @@ public partial class App : System.Windows.Application
         anyPreview |= debugPluginsPreview || productWorkflowsPreview || projectToolsPreview;
         anyPreview |= faultPeripheralsPreview;
         anyPreview |= codeTemplatesPreview;
+        anyPreview |= developmentComponentsPreview;
+        anyPreview |= idfVersionsPreview;
         var data = (showAgentWorkspace || showProductivity || showDebugDemo || showBreakpointsDemo) && e.Args.Length == 3 ? Path.GetFullPath(e.Args[2]) : smoke || anyPreview ? Path.Combine(Path.GetFullPath(e.Args[1]), "user-data") :
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MCUStudioX");
-        var services = new WorkbenchService(Path.Combine(AppContext.BaseDirectory, "runtime"), data);
+        var services = new WorkbenchService(idfVersionsPreview ? Path.GetFullPath(e.Args[3]) : Path.Combine(AppContext.BaseDirectory, "runtime"), data);
         var window = new MainWindow(services);
         MainWindow = window;
         if (smoke || anyPreview)
@@ -96,7 +100,11 @@ public partial class App : System.Windows.Application
             Directory.CreateDirectory(directory);
             try
             {
-                if (codeTemplatesPreview)
+                if (developmentComponentsPreview)
+                {
+                    await window.RenderDevelopmentComponentsPreviewAsync(directory, Path.GetFullPath(e.Args[2]), Path.GetFullPath(e.Args[3]));
+                }
+                else if (codeTemplatesPreview)
                 {
                     await window.RenderCodeTemplatesPreviewAsync(directory);
                 }
@@ -107,6 +115,10 @@ public partial class App : System.Windows.Application
                 else if (projectToolsPreview)
                 {
                     await window.RenderProjectToolsPreviewAsync(directory, Path.GetFullPath(e.Args[2]), Path.GetFullPath(e.Args[3]));
+                }
+                else if (idfVersionsPreview)
+                {
+                    await window.RenderIdfVersionsPreviewAsync(directory, Path.GetFullPath(e.Args[2]), Path.GetFullPath(e.Args[4]));
                 }
                 else if (productWorkflowsPreview)
                 {

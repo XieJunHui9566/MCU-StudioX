@@ -19,7 +19,13 @@ public sealed partial class DistributionService : IDisposable
         http = new(handler ?? new HttpClientHandler { AllowAutoRedirect = false }) { Timeout = Timeout.InfiniteTimeSpan };
         http.DefaultRequestHeaders.UserAgent.ParseAdd("MCU-StudioX/1.0");
     }
-    public async Task<DistributionListing> ReadAsync(string source, string? publisherKey = null, CancellationToken token = default)
+    public Task<DistributionListing> ReadTrustedAsync(CancellationToken token = default)
+        => ReadCoreAsync(TrustedDevelopmentCatalog.Source, null, true, token);
+
+    public Task<DistributionListing> ReadAsync(string source, string? publisherKey = null, CancellationToken token = default)
+        => ReadCoreAsync(source, publisherKey, TrustedDevelopmentCatalog.IsSource(source), token);
+
+    private async Task<DistributionListing> ReadCoreAsync(string source, string? publisherKey, bool builtIn, CancellationToken token)
     {
         byte[] bytes;
         var online = Uri.TryCreate(source, UriKind.Absolute, out var uri) && uri.Scheme == "https";
@@ -54,17 +60,25 @@ public sealed partial class DistributionService : IDisposable
             else { _ = PathBoundary.Resolve(Path.GetDirectoryName(source)!, entry.Archive); }
         }
         var verification = "发布者自述，未验证签名；SHA-256 仅校验内容完整性";
-        if (publisherKey is not null)
+        if (builtIn || publisherKey is not null)
         {
-            if (new FileInfo(publisherKey).Length > 64 * 1024) { throw new StudioXException("CATALOG_KEY", "发布者公钥文件过大。"); }
+            if (!builtIn && new FileInfo(publisherKey!).Length > 64 * 1024) { throw new StudioXException("CATALOG_KEY", "发布者公钥文件过大。"); }
             var signature = online ? await GetBytesAsync(new Uri(source + ".sig"), 8192, token) : await File.ReadAllBytesAsync(source + ".sig", token);
             using var rsa = RSA.Create();
-            rsa.ImportFromPem(await File.ReadAllTextAsync(publisherKey, token));
+            rsa.ImportFromPem(builtIn ? TrustedDevelopmentCatalog.PublicKey() : await File.ReadAllTextAsync(publisherKey!, token));
             if (rsa.KeySize is < 2048 or > 8192) { throw new StudioXException("CATALOG_KEY", "RSA 公钥须为 2048–8192 位。"); }
-            if (!rsa.VerifyData(bytes, Convert.FromBase64String(Encoding.ASCII.GetString(signature).Trim()), HashAlgorithmName.SHA256, RSASignaturePadding.Pss)) { throw new StudioXException("CATALOG_SIGNATURE", "目录签名与所选发布者公钥不匹配。"); }
-            verification = "签名匹配所选公钥 · 密钥 SHA-256 " + Convert.ToHexString(SHA256.HashData(rsa.ExportSubjectPublicKeyInfo()));
+            var fingerprint = Convert.ToHexString(SHA256.HashData(rsa.ExportSubjectPublicKeyInfo()));
+            if (builtIn && !fingerprint.Equals(TrustedDevelopmentCatalog.KeySha256, StringComparison.OrdinalIgnoreCase))
+                throw new StudioXException("CATALOG_KEY", "内置目录公钥指纹异常，未读取目录。");
+            byte[] decoded;
+            try { decoded = Convert.FromBase64String(Encoding.ASCII.GetString(signature).Trim()); }
+            catch (FormatException error) { throw new StudioXException("CATALOG_SIGNATURE", "目录签名格式无效。", error); }
+            if (!rsa.VerifyData(bytes, decoded, HashAlgorithmName.SHA256, RSASignaturePadding.Pss)) { throw new StudioXException("CATALOG_SIGNATURE", "目录签名与受信任发布者公钥不匹配。"); }
+            if (builtIn && catalog.Publisher != TrustedDevelopmentCatalog.Publisher)
+                throw new StudioXException("CATALOG_PUBLISHER", "内置目录发布者身份不匹配。");
+            verification = (builtIn ? "已验证组件库 · 签名匹配 IDE 内置公钥" : "签名匹配所选公钥") + " · 密钥 SHA-256 " + fingerprint;
         }
-        return new(catalog, source, Convert.ToHexString(SHA256.HashData(bytes)), verification);
+        return new(catalog, source, Convert.ToHexString(SHA256.HashData(bytes)), verification, builtIn);
     }
 
     /// <summary>目录下载后的插件身份校验不执行入口程序集；完整内容校验由插件仓储在安装时执行。</summary>

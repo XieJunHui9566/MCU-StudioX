@@ -46,6 +46,13 @@ internal static class DebugSourceStamp
             }
         }
         using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
+        var componentLock = PathBoundary.Resolve(root, DevelopmentComponentLock.RelativePath);
+        if (File.Exists(componentLock) || File.Exists(projectPath) && (await ProjectService.ReadAsync(root, token)).DevelopmentComponents is not null)
+        {
+            // 额外构建组件及声明变化也会改变二进制；旧工程尚无组件锁时维持原有凭据算法。
+            foreach (var path in new[] { componentLock, PathBoundary.Resolve(root, "device/manifest.json") })
+                if (File.Exists(path)) files.Add(path);
+        }
         // 编译设置影响二进制；保存或外部编辑后不能把旧 ELF 当作当前工程的调试映像。
         var settings = Path.Combine(root, ProjectBuildSettings.RelativePath);
         if (File.Exists(settings))

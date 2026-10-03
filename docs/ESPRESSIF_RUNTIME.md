@@ -4,7 +4,7 @@
 
 ## 支持范围
 
-| 器件包条目 | SDK 构建目标 | SDK / 工具集 |
+| 器件包条目 | SDK 构建目标 | SDK / 开发环境组件 |
 | --- | --- | --- |
 | ESP32-WROOM-32 | `esp32` | ESP-IDF 5.5.4 / `espressif.idf/5.5.4` |
 | ESP32-P4 | `esp32p4` | 同上 |
@@ -53,11 +53,11 @@ python tools/New-EspressifPacks.py `
   --output '<新的小包生成目录>'
 ```
 
-ESP8266 准备脚本在旧 Kconfig 前端归档缺失时会下载厂商固定版本归档；其余归档必须存在且匹配固定 SHA-256。准备过程中核对工具入口，保留 SDK、工具和 Python 包许可证并生成完整哈希清单。工具版本和官方来源见 [Espressif 许可声明](../licenses/Espressif-NOTICE.md)。
+ESP8266 准备脚本在旧 Kconfig 前端归档缺失时会下载厂商固定版本归档；其余归档必须存在且匹配固定 SHA-256。准备过程中核对工具入口，保留 SDK、工具和 Python 包许可证并生成完整哈希清单。开发环境组件版本和官方来源见 [Espressif 许可声明](../licenses/Espressif-NOTICE.md)。
 
 ESP8266 v3.4 的原生组件清单中，pthread 条件变量的强制链接符号拼写与实际源码导出不同。生成工程显式纳入 SDK 工具组件和 pthread，并在应用链接选项中引用真实的 `pthread_include_pthread_cond_var_impl`；共享 SDK 源码和工具哈希保持不变。
 
-发行小包使用 `artifacts/packs/Espressif-0.1.1/` 中七个 `.mcupack` 和 `index.json`，其中 ESP32 六包版本为 0.1.1，ESP8266 为未改变的 0.1.0；生成时的 `source/` 仅为工作目录，不复制到发行包。开发 bundle 位于 `artifacts/device-packs-development/`，用于本地构建时自动导入这七个包，不用于替代完整厂商发行索引。SDK 工具集由 Desktop 的运行资源规则共享；`Publish.ps1` 在发布前独立验证全部 SDK 文件哈希，以及包路径、版本、设备身份与来源摘要。新版模板使用独立的包版本，已安装旧包和用户既有工程不会被同版本覆盖。
+发行小包使用 `artifacts/packs/Espressif-0.1.1/` 中七个 `.mcupack` 和 `index.json`，其中 ESP32 六包版本为 0.1.1，ESP8266 为未改变的 0.1.0；生成时的 `source/` 仅为工作目录，不复制到发行包。开发 bundle 位于 `artifacts/device-packs-development/`，用于本地构建时自动导入这七个包，不用于替代完整厂商发行索引。SDK 开发环境组件由 Desktop 的运行资源规则共享；`Publish.ps1` 在发布前独立验证全部 SDK 文件哈希，以及包路径、版本、设备身份与来源摘要。新版模板使用独立的包版本，已安装旧包和用户既有工程不会被同版本覆盖。
 
 ## 离线验证
 
@@ -79,6 +79,6 @@ dotnet run --project tools/StudioX.EspressifValidation -- --language `
 ## 厂商资料
 
 - [ESP-IDF 5.5.4 支持目标](https://github.com/espressif/esp-idf/blob/v5.5.4/tools/idf_py_actions/constants.py)
-- [ESP-IDF 5.5.4 工具版本](https://github.com/espressif/esp-idf/blob/v5.5.4/tools/tools.json)
+- [ESP-IDF 5.5.4 开发环境组件版本](https://github.com/espressif/esp-idf/blob/v5.5.4/tools/tools.json)
 - [ESP32-WROOM-32 数据手册](https://www.espressif.com/sites/default/files/documentation/esp32-wroom-32_datasheet_en.pdf)
 - [ESP8266 RTOS SDK v3.4](https://github.com/espressif/ESP8266_RTOS_SDK/tree/v3.4)

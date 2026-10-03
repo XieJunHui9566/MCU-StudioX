@@ -38,7 +38,7 @@ def official_templates(idf_root, stage, sources):
                 continue
             content = (idf_root / source_path).read_bytes().replace(b"\r\n", b"\n")
             if hashlib.sha256(content).hexdigest() != expected:
-                raise ValueError("Official IDF v5.5.4 template hash mismatch: " + source_path)
+                raise ValueError("Official IDF " + sources["sdkVersion"] + " template hash mismatch: " + source_path)
             relative = source_path[len(prefix) :] if source_path.startswith(prefix) else "LICENSE"
             output = destination / relative
             output.parent.mkdir(parents=True, exist_ok=True)
@@ -50,7 +50,7 @@ def official_templates(idf_root, stage, sources):
                 "sdkVersion": sources["sdkVersion"],
                 "upstreamCommit": sources["upstreamCommit"],
                 "examplePath": example["examplePath"],
-                "upstream": "https://github.com/espressif/esp-idf/tree/v5.5.4/"
+                "upstream": "https://github.com/espressif/esp-idf/tree/" + sources.get("upstreamTag", "v" + sources["sdkVersion"]) + "/"
                 + example["examplePath"],
                 "filesSha256": hashes,
                 "license": "Example source headers retain CC0/public-domain terms; LICENSE preserves the upstream SDK Apache-2.0 license.",
@@ -93,18 +93,26 @@ def main():
     parser.add_argument("--output", type=Path, required=True, help="New output directory")
     parser.add_argument("--cli", type=Path, help="Built StudioX.Cli.dll")
     parser.add_argument(
-        "--idf-root", type=Path, required=True, help="Complete local official ESP-IDF v5.5.4 root"
+        "--idf-root", type=Path, required=True, help="Complete verified local official ESP-IDF release root"
     )
     parser.add_argument(
         "--esp8266-pack", type=Path, help="Existing unchanged ESP8266 0.1.0 archive"
     )
+    parser.add_argument("--template-sources", type=Path, help="Verified release-specific template hashes and provenance")
+    parser.add_argument("--pack-version", default=PACK_VERSION)
+    parser.add_argument("--component-version")
+    parser.add_argument("--idf-only", action="store_true")
     arguments = parser.parse_args()
     repository = Path(__file__).resolve().parents[1]
     cli = arguments.cli or repository / "src/StudioX.Cli/bin/Debug/net10.0/StudioX.Cli.dll"
     if not cli.is_file():
         raise RuntimeError("Build the CLI before generating packs")
     source = repository / "examples/packs/espressif"
-    sources = json.loads((source / "idf-template-sources.json").read_text(encoding="utf-8"))
+    sources = json.loads((arguments.template_sources or source / "idf-template-sources.json").read_text(encoding="utf-8"))
+    sdk_release = sources["sdkVersion"]
+    component_version = arguments.component_version or sdk_release
+    if sdk_release != "5.5.4" and arguments.pack_version == PACK_VERSION:
+        raise ValueError("A different SDK requires an explicit new pack version; original packs are immutable")
     version_file = "tools/cmake/version.cmake"
     if (
         hashlib.sha256(
@@ -112,7 +120,7 @@ def main():
         ).hexdigest()
         != sources["filesSha256"][version_file]
     ):
-        raise ValueError("Require the fixed official ESP-IDF v5.5.4 template source")
+        raise ValueError("Require the verified official ESP-IDF " + sdk_release + " template source")
     legacy_archive = (
         arguments.esp8266_pack
         or repository / "artifacts/packs/Espressif-0.1.0/espressif.esp8266-0.1.0.mcupack"
@@ -122,9 +130,13 @@ def main():
 
     for device_id, suffix, target, architecture in TARGETS:
         is_8266 = target == "esp8266"
-        pack_version = "0.1.0" if is_8266 else PACK_VERSION
+        if is_8266 and arguments.idf_only:
+            continue
+        if not is_8266 and not (arguments.idf_root / "components/soc" / target / "include/soc/soc_caps.h").is_file():
+            continue
+        pack_version = "0.1.0" if is_8266 else arguments.pack_version
         framework = "esp8266-rtos-sdk" if is_8266 else "esp-idf"
-        sdk_version = "3.4.0" if is_8266 else "5.5.4"
+        sdk_version = "3.4.0" if is_8266 else sdk_release
         pack_id = "espressif." + suffix
         if is_8266:
             if not legacy_archive.is_file():
@@ -147,7 +159,10 @@ def main():
         templates = stage / "templates"
         templates.mkdir(parents=True)
         project_templates = official_templates(arguments.idf_root, stage, sources)
-        shutil.copyfile(source / "README.md", stage / "README.md")
+        if sdk_release == "5.5.4":
+            shutil.copyfile(source / "README.md", stage / "README.md")
+        else:
+            (stage / "README.md").write_text((source / "README.md").read_text(encoding="utf-8").replace("5.5.4", sdk_release), encoding="utf-8")
         device = {
             "id": device_id,
             "displayName": device_id,
@@ -157,7 +172,7 @@ def main():
             "ramOrigin": 0,
             "ramBytes": 520 * 1024 if device_id == "ESP32-WROOM-32" else 0,
             "toolsetId": "espressif.esp8266-rtos" if is_8266 else "espressif.idf",
-            "toolsetVersion": sdk_version,
+            "toolsetVersion": component_version,
             "compilerId": "esp8266-rtos" if is_8266 else "esp-idf",
             "cpuFlags": [],
             "defines": [],
@@ -169,6 +184,9 @@ def main():
             "templates": project_templates,
             "espressif": {"framework": framework, "target": target, "sdkVersion": sdk_version},
         }
+        if arguments.pack_version != PACK_VERSION or arguments.component_version is not None:
+            device["developmentComponents"] = [{"id": "espressif.idf", "version": component_version,
+                "compilerId": "esp-idf", "host": "win-x64", "purpose": "工程编译"}]
         write_json(
             stage / "manifest.json",
             {
@@ -183,7 +201,7 @@ def main():
         upstream = (
             "https://github.com/espressif/ESP8266_RTOS_SDK/tree/v3.4"
             if is_8266
-            else "https://github.com/espressif/esp-idf/tree/v5.5.4"
+            else "https://github.com/espressif/esp-idf/tree/" + sources.get("upstreamTag", "v" + sdk_release)
         )
         write_json(
             stage / "provenance.json",
@@ -195,7 +213,7 @@ def main():
                 "source": (
                     "StudioX legacy ESP8266 templates."
                     if is_8266
-                    else "Original ESP-IDF v5.5.4 examples; shared SDK remains outside the pack."
+                    else "Original ESP-IDF " + sdk_release + " examples; shared SDK remains outside the pack."
                 ),
                 "officialTemplates": None if is_8266 else sources,
                 "capacityEvidence": (

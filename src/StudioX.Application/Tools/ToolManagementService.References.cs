@@ -38,8 +38,15 @@ public sealed partial class ToolManagementService
             try
             {
                 var manifest = await ProjectService.ReadAsync(project, token);
-                Add(manifest.ToolsetId, manifest.ToolsetVersion, "工程：" + manifest.Name + " · " + project);
-                if (manifest.PinMapping is { } mapping) Add(mapping.ToolsetId, mapping.ToolsetVersion, "工程引脚映射：" + manifest.Name + " · " + project);
+                foreach (var need in await ProjectDevelopmentComponents.ReadAsync(project, manifest, token))
+                    Add(need.Id, need.Version, "工程：" + manifest.Name + " · " + need.Purpose + " · " + project);
+                var componentsPath = PathBoundary.Resolve(project, DevelopmentComponentLock.RelativePath);
+                if (File.Exists(componentsPath))
+                {
+                    var locked = await JsonStore.ReadAsync<DevelopmentComponentLock>(componentsPath, token);
+                    if (locked.FormatVersion != 1 || locked.Components is null) throw new StudioXException("TOOLS_PROJECT_LOCK", "开发环境组件内容锁格式不支持：" + componentsPath);
+                    foreach (var pin in locked.Components) Add(pin.Id, pin.Version, "开发环境组件内容锁：" + project);
+                }
                 foreach (var relative in new[] { ".studiox/toolchain.lock.json", ".studiox/ag32-mapping-toolchain.lock.json", ".studiox/ag32-logic-toolchain.lock.json" })
                 {
                     var path = PathBoundary.Resolve(project, relative);
@@ -56,7 +63,9 @@ public sealed partial class ToolManagementService
         {
             foreach (var pack in await packs.ListCatalogAsync(token))
                 foreach (var device in pack.Manifest.Devices)
-                    Add(device.ToolsetId, device.ToolsetVersion, "器件包：" + pack.Manifest.Id + " / " + pack.Manifest.Version);
+                    foreach (var template in device.Templates)
+                        foreach (var need in StudioX.Packages.DevelopmentComponentRequirements.ForTemplate(device, template))
+                            Add(need.Id, need.Version, "器件包：" + pack.Manifest.Id + " / " + pack.Manifest.Version + " · " + template.Id);
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }
         catch (Exception error) { diagnostics.Add("器件包依赖无法核实：\n" + error); }

@@ -21,7 +21,7 @@ public sealed partial class FirmwareFaultService
             ResolvedToolset resolved;
             if (selectedElf is null) { var symbols = await SymbolsAsync(project, token); selectedElf = symbols.Elf; resolved = symbols.Tools; }
             else { resolved = (await tools.ResolveAsync(manifest.ToolsetId, manifest.ToolsetVersion, manifest.CompilerId, token)).ForEspressifTarget(sdk.Target); }
-            if (resolved.Manifest.Purpose != "esp-idf" || resolved.Manifest.Version != sdk.SdkVersion) { throw new StudioXException("FAULT_TOOLSET", "工程锁定的 IDF 身份不一致。"); }
+            await EspressifSdkIdentity.ValidateAsync(resolved, sdk, token);
             var root = Path.Combine(Path.GetTempPath(), "MCU-StudioX", "faults", Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(root);
             Exception? decodingError = null;

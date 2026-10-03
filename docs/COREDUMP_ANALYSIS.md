@@ -1,6 +1,6 @@
 # ESP-IDF CoreDump 分析
 
-打开对应目标及锁定工具版本的 ESP-IDF 工程，在「固件故障分析」选择「转储 + 工程 ELF」或「转储 + 归档 ELF」。前者要求源码、工程配置、构建记录及 ELF 哈希一致；后者可选择历史 ELF，不要求伪造当前工程的构建凭据。
+打开对应目标及锁定开发环境组件版本的 ESP-IDF 工程，在「固件故障分析」选择「转储 + 工程 ELF」或「转储 + 归档 ELF」。前者要求源码、工程配置、构建记录及 ELF 哈希一致；后者可选择历史 ELF，不要求伪造当前工程的构建凭据。
 
 支持 Base64、原始二进制、ELF core，由用户明确选择格式。Base64 文件只包含正文，不包含 CORE DUMP START/END 或串口前缀，见 [Espressif 5.5.4 文档](https://docs.espressif.com/projects/esp-idf/en/v5.5.4/esp32s3/api-guides/core_dump.html)。解析不读取串口或 Flash，不下载 ROM，不执行用户 GDB/Python 启动脚本。
 

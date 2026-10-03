@@ -171,7 +171,7 @@ public sealed partial class CodeIntelligenceService
         {
             RelativePath = path.Replace('\\', '/'),
             IsReadOnly = true,
-            ReadOnlyReason = "只读 · 内置工具链头文件"
+            ReadOnlyReason = "只读 · 内置开发环境组件头文件"
         };
     }
 }

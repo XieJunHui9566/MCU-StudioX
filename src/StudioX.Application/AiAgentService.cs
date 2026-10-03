@@ -89,7 +89,7 @@ public sealed partial class AiAgentService
                     "重命名、格式化、快捷修复优先 editor_plan_refactor。其它已有文件修改使用 editor_plan_changes 的 contentHash 与唯一原文块，" +
                     "一次计划覆盖同一目标相关文件，再调用 editor_apply_plan。计划只是预览，只有 applied 才表示修改进入缓冲区；用户可能取消部分块，必须检查实际结果。" +
                     "不要用 project_edit_file/project_patch_file 覆盖实时缓冲区。用户请求修复或实现后，应完成适当验证：先查当前诊断，" +
-                    "需要编译时调用 project_build，它会按授权模式保存当前缓冲区再使用内置工具链，不得验证旧磁盘代码。" +
+                    "需要编译时调用 project_build，它会按授权模式保存当前缓冲区再使用内置开发环境组件，不得验证旧磁盘代码。" +
                     "检查编译 success、stale 和原始日志，失败后根据证据修正；同一无进展错误不要循环。结束前读取 editor_task_status，" +
                     "准确区分计划、已修改、编译通过、尚未实板验证。宿主根据用户所选模式处理权限；自动授权时直接继续，不要在自然语言中重复要求用户确认。";
             }

@@ -48,7 +48,7 @@ public sealed partial class OpenOcdService(ToolsetCatalog catalog)
         var definition = configuration.OpenOcd;
         if (device.ToolsetId != project.ToolsetId || device.ToolsetVersion != project.ToolsetVersion || device.CompilerId != project.CompilerId)
         {
-            throw new StudioXException("DOWNLOAD_TOOLSET", "工程与器件的下载工具集不一致。");
+            throw new StudioXException("DOWNLOAD_TOOLSET", "工程与器件的下载开发环境组件不一致。");
         }
         var settings = PathBoundary.Resolve(projectDirectory, ".studiox/download.json");
         var options = File.Exists(settings) ? await JsonStore.ReadAsync<DownloadOptions>(settings, token) : configuration.Options;
@@ -107,7 +107,7 @@ public sealed partial class OpenOcdService(ToolsetCatalog catalog)
         var receiptPath = PathBoundary.Resolve(root, BuildReceipt.RelativePath);
         if (!File.Exists(lockPath) || await JsonStore.ReadAsync<ToolchainLock>(lockPath, token) != expected || !File.Exists(receiptPath))
         {
-            throw new StudioXException("DOWNLOAD_BUILD", "请先使用当前工具集成功编译工程。");
+            throw new StudioXException("DOWNLOAD_BUILD", "请先使用当前开发环境组件成功编译工程。");
         }
         var receipt = await JsonStore.ReadAsync<BuildReceipt>(receiptPath, token);
         if (receipt.Project != project || receipt.ToolFingerprint != tools.Fingerprint || receipt.Images.Length == 0 ||
@@ -286,7 +286,7 @@ public sealed partial class OpenOcdService(ToolsetCatalog catalog)
         }
         var scripts = tools.ResourceDirectory("openocdScripts");
         var interfaceFile = PathBoundary.Resolve(scripts, probe.InterfaceScript);
-        // 厂商接口也可随包提供纯 Tcl 配置，工具集本身保持版本不可变。
+        // 厂商接口也可随包提供纯 Tcl 配置，开发环境组件本身保持版本不可变。
         if (!File.Exists(interfaceFile))
         {
             interfaceFile = PathBoundary.Resolve(projectDirectory, "device/" + probe.InterfaceScript);

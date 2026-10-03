@@ -85,8 +85,9 @@ await Reject(() => Task.Run(() => EspressifFlashService.CreateArguments(layout, 
     "no automatic COM selection", "ESP_FLASH_SETTINGS");
 await Reject(() => Task.Run(() => new EspressifFlashSettings(Port: "COM1 --force").Validate(true)),
     "COM argument injection rejected", "ESP_FLASH_SETTINGS");
-string Evidence(EspressifFlashLayout value) => string.Join("\n", value.Images.Select(image =>
-    $"Verifying 0x{((image.Bytes + 3) & ~3L):x} ({((image.Bytes + 3) & ~3L)}) bytes @ 0x{image.Offset:x8} in flash against image.bin...\n-- verify OK (digest matched)"));
+string Evidence(EspressifFlashLayout value, int major = 4) => string.Join("\n", value.Images.Select(image =>
+    $"Verifying 0x{((image.Bytes + 3) & ~3L):x} ({((image.Bytes + 3) & ~3L)}) bytes {(major == 5 ? "at" : "@")} 0x{image.Offset:x8} in flash against image.bin...\n"
+    + (major == 5 ? "Verification successful (digest matched)." : "-- verify OK (digest matched)")));
 Check(EspressifFlashService.HasVerificationEvidence(Evidence(layout), layout), "digest evidence covers each offset and padded byte count");
 Check(!EspressifFlashService.HasVerificationEvidence("-- verify OK (digest matched)", layout), "exit code or unbound success line is insufficient");
 Check(!EspressifFlashService.HasVerificationEvidence(Evidence(layout).Replace("(516)", "(512)", StringComparison.Ordinal), layout), "wrong verified image size rejected");
@@ -96,6 +97,15 @@ var crossedEvidence = "Verifying 0x80 (128) bytes @ 0x00001000 in flash against 
     "Verifying 0x4 (4) bytes @ 0x00010000 in flash against wrong.bin...\n-- verify OK (digest matched)\n" +
     "Verifying 0x204 (516) bytes @ 0x00010000 in flash against app.bin...\n-- verify OK (digest matched)\n";
 Check(!EspressifFlashService.HasVerificationEvidence(crossedEvidence, layout), "invalid verification block cannot reuse previous image binding");
+var write5 = EspressifFlashService.CreateArguments(layout, settings, paths, false, 5);
+var verify5 = EspressifFlashService.CreateArguments(layout, settings, paths, true, 5);
+Check(write5.Contains("write-flash") && verify5.Contains("verify-flash") && write5.Contains("--flash-mode") && write5.Contains("default-reset"),
+    "esptool 5 uses official command and reset names");
+Check(EspressifFlashService.HasVerificationEvidence(Evidence(layout, 5), layout, 5), "esptool 5 digest binds all offsets and byte counts");
+Check(!EspressifFlashService.HasVerificationEvidence(Evidence(layout, 5).Replace("(516)", "(512)", StringComparison.Ordinal), layout, 5), "esptool 5 wrong byte count rejected");
+Check(!EspressifFlashService.HasVerificationEvidence(Evidence(layout, 5) + "\nVerification failed (digest mismatch).", layout, 5), "esptool 5 failure cannot be hidden by earlier successful images");
+Check(!EspressifFlashService.HasVerificationEvidence("Verification successful (digest matched).", layout, 5), "esptool 5 unbound success rejected");
+Check(!EspressifFlashService.HasVerificationEvidence(Evidence(layout), layout, 5), "verification grammar stays bound to the selected esptool version");
 
 async Task RejectMutation(Action<JsonObject> mutation, string label)
 {
@@ -183,6 +193,7 @@ if (args.Length == 3)
     var nativeTools = await catalog.ResolveAsync(preview.Configuration.Project.ToolsetId,
         preview.Configuration.Project.ToolsetVersion, preview.Configuration.Project.CompilerId);
     var nativeLayout = preview.Layout;
+    var nativeMajor = int.Parse(preview.EsptoolVersion.Split('.')[0], CultureInfo.InvariantCulture);
     var mode = "success";
     var calls = new List<ProcessRequest>();
     async Task<ProcessResult> FakeProcess(ProcessRequest request, CancellationToken token)
@@ -193,10 +204,10 @@ if (args.Length == 3)
         {
             throw new OperationCanceledException(token);
         }
-        var verify = request.Arguments.Contains("verify_flash");
+        var verify = request.Arguments.Contains("verify_flash") || request.Arguments.Contains("verify-flash");
         var result = mode == "fail" ? new ProcessResult(2, "", "fake chip mismatch", false, false) :
             mode == "timeout" ? new ProcessResult(-1, "", "fake timeout", true, false) :
-            new ProcessResult(0, verify ? Evidence(nativeLayout) : "fake write complete", "", false, mode == "truncated");
+            new ProcessResult(0, verify ? Evidence(nativeLayout, nativeMajor) : "fake write complete", "", false, mode == "truncated");
         request.Output?.Report(result.StandardOutput + result.StandardError);
         return result;
     }
@@ -206,7 +217,7 @@ if (args.Length == 3)
     async Task<EspressifFlashReport> RunFake() => await service.DownloadApprovedAsync(project, settings,
         preview.Configuration.Device.Id, nativeLayout.LayoutSha256);
     var report = await RunFake();
-    Check(report.Success && calls.Count == 2 && calls[0].Arguments.Contains("write_flash") && calls[1].Arguments.Contains("verify_flash"),
+    Check(report.Success && calls.Count == 2 && calls[0].Arguments.Contains(nativeMajor == 5 ? "write-flash" : "write_flash") && calls[1].Arguments.Contains(nativeMajor == 5 ? "verify-flash" : "verify_flash"),
         "fake process executes write followed by independent verification");
     Check(calls.All(request => request.Environment!["PYTHONHOME"] == nativeTools.ResourceDirectory("python-env") &&
         request.Executable == nativeTools.Tool("python") && request.RemoveEnvironment!.Contains("PYTHONPATH")),

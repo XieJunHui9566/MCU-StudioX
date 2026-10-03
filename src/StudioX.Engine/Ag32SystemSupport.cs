@@ -26,6 +26,26 @@ public static class Ag32SystemSupport
         target_compile_definitions(studiox_device INTERFACE AGM_BOARD_INFO_H="StudioX_Board.h")
         """;
 
+    /// <summary>迁移前核对生成凭据及全部系统文件；修改过的生成代码不能被副本重建静默丢弃。</summary>
+    public static async Task<IReadOnlyList<string>> CheckMigrationFilesAsync(string root, CancellationToken token = default)
+    {
+        var path = PathBoundary.Resolve(root, StatePath);
+        if (!File.Exists(path)) throw new StudioXException("AG32_SYSTEM_MODIFIED", "缺少系统生成文件记录，需要先核对系统文件。");
+        var declared = await JsonStore.ReadAsync<Dictionary<string, string>>(path, token);
+        var known = Render([], null, []).Keys.ToHashSet(StringComparer.Ordinal);
+        if (declared.Count != known.Count || declared.Keys.Any(key => !known.Contains(key)))
+            throw new StudioXException("AG32_SYSTEM_MODIFIED", "系统生成文件记录与受管目录不一致，需要人工审阅。");
+        foreach (var (relative, expected) in declared)
+        {
+            var file = PathBoundary.Resolve(root, relative);
+            if (!File.Exists(file) || Hash(await File.ReadAllBytesAsync(file, token)) != expected)
+                throw new StudioXException("AG32_SYSTEM_MODIFIED", "系统生成文件已改变或缺失，需要保留修改：" + relative);
+        }
+        return known.ToArray();
+    }
+
+    public static string RenderDeviceForMigration(BuildPlan plan) => CMakeGenerator.RenderDevice(plan) + "\n" + PeripheralCMake + "\n";
+
     public static bool IsManagedFile(string path, string text) =>
         ((path.Equals(HeaderPath, StringComparison.OrdinalIgnoreCase) || path.Equals(SourcePath, StringComparison.OrdinalIgnoreCase) ||
           path.Equals("device/studiox/StudioX_Board.h", StringComparison.OrdinalIgnoreCase)) && text.StartsWith(Marker, StringComparison.Ordinal)) ||

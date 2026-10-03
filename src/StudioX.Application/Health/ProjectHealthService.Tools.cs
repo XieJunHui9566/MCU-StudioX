@@ -10,7 +10,7 @@ public sealed partial class ProjectHealthService
     private async Task<ResolvedToolset?> InspectToolsAsync(string id, string version, string compiler, string? target, bool deep,
         List<HealthCheck> checks, IProgress<string>? progress, CancellationToken token)
     {
-        var title = "工具集：" + id + " / " + version;
+        var title = "开发环境组件：" + id + " / " + version;
         try
         {
             progress?.Report("检查 " + title + "…");
@@ -18,13 +18,14 @@ public sealed partial class ProjectHealthService
             StudioX.Packages.PackValidator.Version(version);
             var root = PathBoundary.Resolve(catalog.RootDirectory, id + "/" + version);
             var path = PathBoundary.Resolve(root, "toolset.json");
-            if (!File.Exists(path)) throw new StudioXException("TOOLSET_MISSING", "未安装工程锁定的工具集：" + id + " / " + version);
+            catalog.RequireEnabled(id, version);
+            if (!File.Exists(path)) throw new StudioXException("TOOLSET_MISSING", "缺少开发环境组件：" + id + " / " + version + "。请通过“准备工程开发环境组件”导入对应 .mcutoolchain。");
             var bytes = await ReadLimitedAsync(path, 64 * 1024 * 1024, token);
             var offset = bytes is [0xef, 0xbb, 0xbf, ..] ? 3 : 0;
             var manifest = JsonSerializer.Deserialize<ToolsetManifest>(bytes.AsSpan(offset), JsonStore.Options)
                 ?? throw new StudioXException("TOOLSET_MANIFEST", "工具清单为空。");
             if (manifest.FormatVersion != 1 || manifest.Id != id || manifest.Version != version || manifest.CompilerId != compiler || manifest.Host != "win-x64")
-                throw new StudioXException("TOOLSET_INCOMPATIBLE", "工具集格式、ID、版本、宿主或编译器与工程不一致。");
+                throw new StudioXException("TOOLSET_INCOMPATIBLE", "开发环境组件格式、ID、版本、宿主或编译器与工程不一致。");
             if (manifest.Executables is null || manifest.Sha256 is null || manifest.Sha256.Count == 0)
                 throw new StudioXException("TOOLSET_MANIFEST", "工具入口或哈希索引缺失。");
             var resolved = new ResolvedToolset(manifest, root, Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant());
@@ -35,11 +36,15 @@ public sealed partial class ProjectHealthService
                 // 通用入口可能指向另一个芯片；健康检查必须确认工程目标自己的工具角色。
                 foreach (var role in new[] { "gcc", "gxx", "objcopy", "size" })
                     if (!manifest.Executables.ContainsKey(role + "-" + suffix))
-                        throw new StudioXException("TOOL_ROLE", "工具集缺少目标 " + target + " 的组件：" + role);
+                        throw new StudioXException("TOOL_ROLE", "开发环境组件缺少目标 " + target + " 的组件：" + role);
             }
-            var roles = manifest.Purpose == "ag32-mapping" ? new[] { "python", "converter", "supra" }
-                : id == "stc.sdcc" ? new[] { "cmake", "ninja", "sdcc", "sdar", "sdas8051", "sdld", "packihx" }
-                : new[] { "cmake", "ninja", "gcc", "gxx", "objcopy", "size" };
+            var roles = manifest.Purpose switch
+            {
+                "ag32-mapping" => new[] { "python", "converter", "supra" }, "hdl-native" => ["mapper"], "hdl-simulation" => ["iverilog", "vvp"],
+                "windows-native" => ["gcc", "gxx", "ar", "ranlib", "as", "ld", "objcopy", "objdump", "size"],
+                _ when id == "stc.sdcc" => ["cmake", "ninja", "sdcc", "sdar", "sdas8051", "sdld", "packihx"],
+                _ => ["cmake", "ninja", "gcc", "gxx", "objcopy", "size"]
+            };
             if (target is not null) roles = roles.Concat(["python", "git"]).ToArray();
             foreach (var role in roles)
             {

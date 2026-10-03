@@ -3,6 +3,7 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
   <ItemGroup>
+    <PackageVersion Include="SharpCompress" Version="0.50.3" />
     <PackageVersion
       Include="Jint"
       Version="4.16.3" />

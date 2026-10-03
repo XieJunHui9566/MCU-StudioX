@@ -5,7 +5,7 @@ using System.Text;
 using StudioX.Foundation;
 using StudioX.Packages;
 
-/// <summary>外部 stcgal 1.10 的受控串口下载；不把本机 Python 路径写进工程或工具集。</summary>
+/// <summary>外部 stcgal 1.10 的受控串口下载；不把本机 Python 路径写进工程或开发环境组件。</summary>
 public sealed class StcIspService(ToolsetCatalog catalog, string runtimeDirectory, string dataDirectory)
 {
     private readonly SemaphoreSlim gate = new(1, 1);
@@ -188,7 +188,7 @@ public sealed class StcIspService(ToolsetCatalog catalog, string runtimeDirector
         if (!File.Exists(lockPath) || await JsonStore.ReadAsync<ToolchainLock>(lockPath, token) !=
             new ToolchainLock(1, project.ToolsetId, project.ToolsetVersion, tools.Fingerprint) || !File.Exists(receiptPath))
         {
-            throw new StudioXException("STC_ISP_BUILD", "请先使用当前 STC 工具链成功编译工程。");
+            throw new StudioXException("STC_ISP_BUILD", "请先使用当前 STC 开发环境组件成功编译工程。");
         }
         var receipt = await JsonStore.ReadAsync<BuildReceipt>(receiptPath, token);
         if (receipt.Project != project || receipt.ToolFingerprint != tools.Fingerprint || receipt.Images.Length != 1 ||
@@ -343,7 +343,7 @@ public sealed class StcIspService(ToolsetCatalog catalog, string runtimeDirector
         if (device.Architecture != "mcs51" || device.ToolsetId != project.ToolsetId ||
             device.ToolsetVersion != project.ToolsetVersion || device.CompilerId != project.CompilerId || device.FlashOrigin != 0)
         {
-            throw new StudioXException("STC_ISP_DEVICE", "芯片架构、Flash 地址或工具链与工程不一致。");
+            throw new StudioXException("STC_ISP_DEVICE", "芯片架构、Flash 地址或开发环境组件与工程不一致。");
         }
         return (project, device);
     }

@@ -2,6 +2,7 @@
   Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
     <EmbeddedResource Include="Help/index.json;Help/Articles/*.md" />
+    <EmbeddedResource Include="Distribution/publisher.pem" LogicalName="StudioX.DevelopmentCatalog.Publisher.pem" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference

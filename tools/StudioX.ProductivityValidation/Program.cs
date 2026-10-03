@@ -94,6 +94,9 @@ var row = (await environment.InspectAsync(null)).Single();
 Check(row.Files == 1 && row.Bytes == toolBytes.Length, "environment reports actual file count and size");
 var archive = Path.Combine(root, "fixture.studioxtools");
 await environment.ExportAsync(row, archive, null);
+using (var content = File.OpenRead(archive))
+using (var container = ToolchainArchive.Open(content))
+    Check(container.Container == "7z", "offline tool export uses 7z even with legacy archive extension");
 await File.WriteAllTextAsync(Path.Combine(installed, "tool.exe"), "damaged");
 await Reject(() => environment.VerifyAsync(row, null), "tool verification detects damaged installed payload");
 var backup = await environment.RepairAsync(row, archive, null);
@@ -101,13 +104,13 @@ await environment.VerifyAsync(row, null);
 Check(await File.ReadAllTextAsync(Path.Combine(backup, "tool.exe")) == "damaged" && catalog.ManifestPaths().Count() == 1, "offline repair restores verified files and excludes preserved rollback from catalog");
 await Reject(() => environment.RepairAsync(row with { Version = "9.0.0" }, archive, null), "offline repair refuses wrong locked version");
 var corrupt = Path.Combine(root, "corrupt.studioxtools");
-File.Copy(archive, corrupt);
+await LegacyZipFixture(archive, corrupt);
 using (var zip = ZipFile.Open(corrupt, ZipArchiveMode.Update)) { zip.GetEntry("tool.exe")!.Delete(); await using var output = zip.CreateEntry("tool.exe").Open(); await output.WriteAsync(Encoding.UTF8.GetBytes("bad")); }
 await Reject(() => environment.RepairAsync(row, corrupt, null), "corrupt offline archive rejected before installed tools are replaced");
 await environment.VerifyAsync(row, null);
 Check(true, "failed repair preserves usable installed version");
 var linked = Path.Combine(root, "linked.studioxtools");
-File.Copy(archive, linked);
+await LegacyZipFixture(archive, linked);
 using (var zip = ZipFile.Open(linked, ZipArchiveMode.Update)) { zip.GetEntry("tool.exe")!.ExternalAttributes = unchecked((int)0xA1FF0000); }
 await Reject(() => environment.RepairAsync(row, linked, null), "offline repair rejects symbolic link entries before replacement");
 using (var zip = ZipFile.Open(corrupt, ZipArchiveMode.Update)) { await using var output = zip.CreateEntry("../escape").Open(); await output.WriteAsync(new byte[] { 1 }); }
@@ -149,7 +152,9 @@ await using (var manager = new PluginManagerService(runtime, data))
         state = "Disconnected",
         hardware = false
     }));
-    Check(panel.Widgets.Length == 1 && panel.Widgets[0].Value!.Value.GetString()!.Contains("Disconnected"), "debug snapshot adapter renders bounded data without starting hardware");
+    Check(panel.Widgets.Any(widget => widget.Id == "state" && widget.Value?.GetString()?.Contains("Disconnected") == true)
+        && panel.Widgets.Any(widget => widget.Id == "mode" && widget.Value?.GetString()?.Contains("未连接芯片") == true),
+        "debug snapshot adapter reports disconnected state and offline source without starting hardware");
     await Reject(() => workspace.InvokeAsync(pluginManifest.Id, "language", "unknown", JsonSerializer.SerializeToElement(new { })), "undeclared plugin adapter invocation rejected");
 }
 var legacyRoot = Path.Combine(root, "api2-plugin");
@@ -179,3 +184,15 @@ watch.Stop();
 await File.WriteAllTextAsync(Path.Combine(root, "performance.txt"), $"12000 small headers; quick open {quickOpenMs} ms; bounded project search {watch.ElapsedMilliseconds} ms; process working set {Process.GetCurrentProcess().WorkingSet64 / 1048576} MiB. Synthetic offline fixture, not hardware.\n");
 await File.WriteAllTextAsync(Path.Combine(root, "result.txt"), "PASS " + checks.Count + "\n" + string.Join('\n', checks));
 Console.WriteLine("PASS " + checks.Count);
+
+static async Task LegacyZipFixture(string source, string destination)
+{
+    using var file = File.OpenRead(source);
+    using var container = ToolchainArchive.Open(file);
+    using var zip = ZipFile.Open(destination, ZipArchiveMode.Create);
+    await container.ReadFilesAsync(async (entry, content) =>
+    {
+        using var output = zip.CreateEntry(entry.Name).Open();
+        await ToolchainArchive.CopyExactAsync(content, output, entry.Length);
+    });
+}

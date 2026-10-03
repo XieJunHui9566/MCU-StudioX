@@ -23,7 +23,8 @@ internal sealed record EspressifBuildArtifacts(string ApplicationBin, string App
         var expectedPaths = new List<(string Field, string Expected)> { ("project_path", root), ("build_dir", build) };
         if (settings.Framework == "esp-idf")
         {
-            expectedPaths.AddRange([("idf_path", tools.ResourceDirectory("idf")), ("c_compiler", tools.ForEspressifTarget(settings.Target).Tool("gcc"))]);
+            var compiler = EspressifXtensaBinding.Create(tools, settings)?.Gcc ?? tools.ForEspressifTarget(settings.Target).Tool("gcc");
+            expectedPaths.AddRange([("idf_path", tools.ResourceDirectory("idf")), ("c_compiler", compiler)]);
         }
         else
         {
@@ -35,9 +36,9 @@ internal sealed record EspressifBuildArtifacts(string ApplicationBin, string App
                 !cache.TryGetValue("CMAKE_TOOLCHAIN_FILE", out var toolchain) ||
                 !EspressifPathIdentity.AreEqual(toolchain, PathBoundary.Resolve(tools.ResourceDirectory("idf"), "tools/cmake/toolchain-esp8266.cmake")))
             {
-                throw new StudioXException("ESPRESSIF_DESCRIPTION", "ESP8266 原生缓存的目标、编译器或 SDK 工具链与工程不一致。");
+                throw new StudioXException("ESPRESSIF_DESCRIPTION", "ESP8266 原生缓存的目标、编译器或 SDK 开发环境组件与工程不一致。");
             }
-            // 旧 SDK 用普通变量设置编译器，CMakeCache 可能没有 compiler 项；File API 才是实际工具链记录。
+            // 旧 SDK 用普通变量设置编译器，CMakeCache 可能没有 compiler 项；File API 才是实际开发环境组件记录。
             _ = await CMakeFileApi.ExecutablesAsync(build, tools.ForEspressifTarget(settings.Target), token);
         }
         foreach (var (field, expected) in expectedPaths)

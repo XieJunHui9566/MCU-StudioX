@@ -93,8 +93,8 @@ internal static class EspressifProjectChecks
         Reject(sample, deviceSample with { Espressif = null }, "PACK_DEVICE", "zero-size memory requires SDK metadata");
         Reject(sample, deviceSample with { Espressif = deviceSample.Espressif! with { Target = "esp8266" } },
             "PACK_ESPRESSIF_SDK", "ESP8266 cannot masquerade as an IDF 5.5 target");
-        Reject(sample, deviceSample with { Espressif = deviceSample.Espressif! with { SdkVersion = "5.5.3" } },
-            "PACK_ESPRESSIF_SDK", "unreviewed SDK version is rejected");
+        Reject(sample, deviceSample with { Espressif = deviceSample.Espressif! with { SdkVersion = "latest" } },
+            "PACK_ESPRESSIF_SDK", "SDK version must be an explicit supported release, never latest");
         Reject(sample, deviceSample with { Architecture = "xtensa" }, "PACK_ESPRESSIF_TOOLSET", "RISC-V target cannot use Xtensa profile");
         Reject(sample, deviceSample with { ToolsetId = "arm.gcc" }, "PACK_ESPRESSIF_TOOLSET", "SDK and tool identity must agree");
         Reject(sample, deviceSample with { CompilerId = "riscv32-unknown-elf-gcc" }, "PACK_ESPRESSIF_TOOLSET", "generic GCC cannot bypass SDK lock");

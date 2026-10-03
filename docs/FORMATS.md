@@ -11,6 +11,7 @@ ZIP 的根包含 `manifest.json`、`files.sha256.json` 与器件资源。索引�
 - 包：formatVersion=1、id、version、displayName、vendor、devices。
 - 器件：明确型号 id、displayName、architecture（arm/riscv）、flashOrigin/flashBytes、ramOrigin/ramBytes。
 - 构建：toolsetId/toolsetVersion/compilerId、cpuFlags、defines、includeDirectories、sources、linkerScript、compileOptions、linkOptions。
+- 器件与模板可选 `developmentComponents`：精确 `id/version/compilerId/host/purpose`，当前仅 win-x64，最多 64 项。器件需求包含主工具的相同身份，模板需求叠加；相同身份去重，冲突拒绝。不声明时沿用原三个工具字段，不改写旧包。详见 [开发环境组件](DEVELOPMENT_COMPONENTS.md)。
 - 模板：id、displayName、description、entryFile；入口固定生成 `src/main.c`。可选 `build` 叠加 defines/includeDirectories/sources/compileOptions/linkOptions；构建和语言服务采用同一解析结果。可选 `files` 将用户目标相对路径映射到包内源文件，只允许 `src/`、`include/`，不能覆盖 main.c 或工程元数据。
 - AGM 模板可选 `ag32Sources: { pinMapFile, verilogFile, entryFile?, build? }`，仅在用户创建工程时勾选特殊模式才启用。前两者复制到 `logic/pins.ve` 和 `logic/user_logic.v`，可选入口替换初始 `src/main.c`，可选 `build` 叠加同格式构建参数；所有来源仍受包边界校验。未提供则沿用逻辑编辑骨架。模板不能强制勾选或禁用特殊模式。
 - 模板可选 `replacesTemplates` 声明明确合并的旧模板 ID，不能与本版任何模板 ID 重复。仅用于新版同 ID 包的选择器替代判断，不重写或迁移已建工程的模板与资源。
@@ -25,25 +26,29 @@ ZIP 的根包含 `manifest.json`、`files.sha256.json` 与器件资源。索引�
 
 MicroPython 模板在普通格式 1 器件包的模板项中声明 `microPython: { board, version }`。当前仅接受与 RP2040-PICO / RP2350A-PICO2 对应的 RPI_PICO / RPI_PICO2、1.29.0。它不能同时声明 C 构建覆盖或 Espressif 示例；入口必须是 `.py`。其附加用户文件允许 `boot.py`、`README.md` 和 `lib/*.py`，路径仍经过包边界校验。
 
-选择这类模板后，工程 `kind` 为 `MicroPython`，入口为 `main.py`，工具集与编译器字段为空，并保存明确的 `microPython` 配置。工程仅复制身份清单和所选脚本；打开时校验板型、版本、模板与 `device/manifest.json` 一致。C 编译、OpenOCD 和 GDB 后端拒绝这种类型。原 `Pack`、CubeMX、Zephyr 工程不得夹带 MicroPython 配置。
+选择这类模板后，工程 `kind` 为 `MicroPython`，入口为 `main.py`，开发环境组件与编译器字段为空，并保存明确的 `microPython` 配置。工程仅复制身份清单和所选脚本；打开时校验板型、版本、模板与 `device/manifest.json` 一致。C 编译、OpenOCD 和 GDB 后端拒绝这种类型。原 `Pack`、CubeMX、Zephyr 工程不得夹带 MicroPython 配置。
 
-`.studiox/project.json` 保存格式 1、工程名、芯片包 ID/版本/内容哈希、明确选择的芯片/模板和工具集 ID/版本/compilerId。复制器件资源到 `device/`，模板入口放入 `src/main.c`，生成用户可维护的 `CMakeLists.txt`。
+`.studiox/project.json` 保存格式 1、工程名、芯片包 ID/版本/内容哈希、明确选择的芯片/模板和开发环境组件 ID/版本/compilerId。复制器件资源到 `device/`，模板入口放入 `src/main.c`，生成用户可维护的 `CMakeLists.txt`。
 
 含 `template.build` 的工程根据所选模板筛选 `sdk/`：仅拷贝编译源文件和包含目录内资源；模板用户文件放到 `src/`、`include/`，追加到根 CMake。原始 `device/manifest.json` 和包索引保留来源信息，工程不是可重新导入的包镜像。仅含入口的早期模板继续完整复制器件资源。
 
-`.studiox/download.json` 保存烧录器 ID、速度（kHz）和可选序列号。下载服务使用当前工具集、构建版本锁和固件快照，日志与实际写入副本保存在 `.build/download-<id>/`。不支持下载的包保持按钮禁用。
+`.studiox/download.json` 保存烧录器 ID、速度（kHz）和可选序列号。下载服务使用当前开发环境组件、构建版本锁和固件快照，日志与实际写入副本保存在 `.build/download-<id>/`。不支持下载的包保持按钮禁用。
 
-首次构建生成 `.studiox/toolchain.lock.json`，记录精确工具集 ID、版本和清单指纹。工程不保存开发机器的绝对工具路径；CMake 通过调用参数获取当前安装路径，机器相关缓存只保留在 `.build/`。项目本身就是受用户控制的源码，修改 CMake 后编译将执行对应构建规则。
+首次构建生成 `.studiox/toolchain.lock.json`，记录精确开发环境组件 ID、版本和清单指纹。工程不保存开发机器的绝对工具路径；CMake 通过调用参数获取当前安装路径，机器相关缓存只保留在 `.build/`。项目本身就是受用户控制的源码，修改 CMake 后编译将执行对应构建规则。
 
-## 工具集
+新工程将选中器件/模板的 `developmentComponents` 需求快照保存到工程清单。首次构建完整校验所有组件后建立 `.studiox/development-components.lock.json`，格式为 `{ formatVersion: 1, components: [{ id, version, host, compilerId, fingerprint }] }`。原主工具锁保留，额外锁不能替换或绕过它。需求与显式器件声明、所有内容锁须一致；锁不存在时健康检查只提示首次构建建立，不自行创建。缺失组件或锁不一致时在工具启动前报错，不自动选择更高版本。
+
+## 开发环境组件
+
+开发环境组件离线归档使用 `.mcutoolchain`，默认真实 7z/LZMA2 容器；签名识别兼容既有 ZIP 及 `.studioxtools`。只含普通文件，根目录原始 `toolset.json` 的字节和指纹不随压缩格式变化，`sha256` 覆盖全部其它文件。最多 200,000 项、展开总量 40 GiB、清单 32 MiB；拒绝链接、目录、危险路径、加密和不完整文件集合。IDE 自带读写器，完整/轻量版均支持；器件 `.mcupack` 仍使用原有 ZIP 格式。
 
 `runtime/toolsets/<id>/<version>/toolset.json` 定义格式 1、ID/版本、host=win-x64、compilerId、executables、sha256。必需角色：gcc/gxx/objcopy/size/cmake/ninja。当前发行还包含 gdb/ar/ranlib/as/ld/objdump/readelf/openocd；OpenOCD 已接到包定义的一次性下载流程，GDB 调试会话待接入。
 
 可选字段 `displayName` 为显示名称，`componentVersions` 保存组件实际版本输出，`resourceDirectories` 为资源角色到相对目录的映射（`openocdScripts` 指向匹配版本的 OpenOCD 脚本）。完整性检查包括这些目录及其中所有文件。`provenance.json` 记录来源与实际版本，不包含开发者安装路径。
 
-sha256 覆盖清单之外的完整工具树；清单同时受工程的版本锁指纹约束。工具集版本指发行组合版本，编译器/组件原始版本及许可证应记录在发行资料中。`examples/toolsets/toolset.example.json` 只说明结构，空索引不会通过工具解析，不能当成已安装工具。
+sha256 覆盖清单之外的完整工具树；清单同时受工程的版本锁指纹约束。开发环境组件版本指发行组合版本，编译器/组件原始版本及许可证应记录在发行资料中。`examples/toolsets/toolset.example.json` 只说明结构，空索引不会通过工具解析，不能当成已安装工具。
 
-`.build/studiox-runtime.json` 是可重建的本机缓存标识，记录本次工程位置、工具集位置和指纹。位置改变后用 CMake `--fresh` 重配，不修改工程声明或用户源文件；此缓存不随源码提交。
+`.build/studiox-runtime.json` 是可重建的本机缓存标识，记录本次工程位置、开发环境组件位置和指纹。位置改变后用 CMake `--fresh` 重配，不修改工程声明或用户源文件；此缓存不随源码提交。
 
 ## 插件和主题
 

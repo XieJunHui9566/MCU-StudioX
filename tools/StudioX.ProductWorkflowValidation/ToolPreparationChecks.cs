@@ -30,7 +30,7 @@ internal static class ToolPreparationChecks
             new() { ["probe.exe"] = Convert.ToHexString(SHA256.HashData(new byte[] { 1, 2, 3, 4 })) }, "Fixture tool");
         async Task<string> Archive(string name, ToolsetManifest description)
         {
-            var output = Path.Combine(data, name + ".studioxtools");
+            var output = Path.Combine(data, name + ".mcutoolchain");
             using var zip = ZipFile.Open(output, ZipArchiveMode.Create);
             await using (var content = zip.CreateEntry("toolset.json").Open()) await content.WriteAsync(JsonSerializer.SerializeToUtf8Bytes(description, JsonStore.Options));
             await using (var content = zip.CreateEntry("probe.exe").Open()) await content.WriteAsync(new byte[] { 1, 2, 3, 4 });
@@ -56,6 +56,7 @@ internal static class ToolPreparationChecks
         var wrong = await Archive("wrong-compiler", manifest with { CompilerId = "other-gcc" });
         await Reject(() => service.PreviewAsync(plan, requirement, wrong, verifyCatalog: false), "TOOLS_PROJECT_IDENTITY", "offline archive with wrong compiler cannot be prepared", check);
         var downloaded = await distribution.DownloadAsync(listing, listing.Catalog.Entries.Single());
+        check(downloaded.EndsWith(".mcutoolchain", StringComparison.OrdinalIgnoreCase), "development component download retains canonical archive extension");
         var preview = await service.PreviewAsync(plan, requirement, downloaded);
         check(preview.Id == requirement.Id && preview.Version == requirement.Version && service.InstallSpacePlan(preview).All(p => p.RequiredBytes >= expanded * 2), "downloaded archive is bound to project identity with install staging budget");
         await JsonStore.WriteAsync(projectFile, original with { ToolsetVersion = "2.0.0" });

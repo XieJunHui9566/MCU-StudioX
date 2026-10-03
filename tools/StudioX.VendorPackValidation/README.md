@@ -1,6 +1,6 @@
 # 跨厂商器件包离线验收
 
-用内置工具链检查 StudioX 格式 1 的 ARM/RISC-V 器件包。该程序只使用文件、CMake/GCC/GDB 规划和 OpenOCD `noinit` 配置解析；不枚举或连接烧录器，不读写目标芯片。
+用内置开发环境组件检查 StudioX 格式 1 的 ARM/RISC-V 器件包。该程序只使用文件、CMake/GCC/GDB 规划和 OpenOCD `noinit` 配置解析；不枚举或连接烧录器，不读写目标芯片。
 
 ```powershell
 dotnet run --project tools/StudioX.VendorPackValidation -c Release -- `

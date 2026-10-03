@@ -9,14 +9,15 @@ public static class EspressifPackProfile
     {
         var supported = profile.Framework switch
         {
-            "esp-idf" => profile.SdkVersion == "5.5.4" &&
+            // 原生契约按 5.x/6.x 分开验收；接受精确发行身份，不把未知主版本交给已有适配器。
+            "esp-idf" => System.Text.RegularExpressions.Regex.IsMatch(profile.SdkVersion, @"\A[56]\.[0-9]+\.[0-9]+\z") &&
                 profile.Target is "esp32" or "esp32p4" or "esp32s3" or "esp32c3" or "esp32c5" or "esp32c6",
             "esp8266-rtos-sdk" => profile.SdkVersion == "3.4.0" && profile.Target == "esp8266",
             _ => false
         };
         if (!supported)
         {
-            throw new StudioXException("PACK_ESPRESSIF_SDK", "Espressif SDK 版本或构建目标不受支持；ESP8266 使用独立的 RTOS SDK。");
+            throw new StudioXException("PACK_ESPRESSIF_SDK", "Espressif SDK 版本或构建目标不受支持；IDF 5.x/6.x 必须指定完整发行版本，ESP8266 使用独立的 RTOS SDK 3.4.0。");
         }
     }
 
@@ -32,7 +33,7 @@ public static class EspressifPackProfile
         ValidateFramework(profile);
         var architecture = profile.Target is "esp32" or "esp32s3" or "esp8266" ? "xtensa" : "riscv";
         if (device.Architecture != architecture || device.ToolsetId != ToolsetId(profile.Framework) ||
-            device.ToolsetVersion != profile.SdkVersion || device.CompilerId != CompilerId(profile.Framework))
+            device.CompilerId != CompilerId(profile.Framework))
         {
             throw new StudioXException("PACK_ESPRESSIF_TOOLSET", "Espressif 架构、SDK 与工具锁定信息不一致。");
         }

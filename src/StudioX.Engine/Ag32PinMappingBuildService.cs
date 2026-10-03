@@ -302,7 +302,7 @@ public sealed partial class Ag32PinMappingBuildService(ToolsetCatalog catalog, s
         var settings = RequireSettings(project);
         var pack = await JsonStore.ReadAsync<PackManifest>(PathBoundary.Resolve(root, "device/manifest.json"), token);
         var device = pack.Devices.SingleOrDefault(item => item.Id == project.DeviceId);
-        if (!profile.CanMap || settings != new Ag32PinMappingProjectSettings(profile.TargetDevice) ||
+        if (!profile.CanMap || settings.TargetDevice != profile.TargetDevice ||
             pack.FormatVersion != 1 || pack.Id != project.PackId || pack.Version != project.PackVersion || pack.Vendor != "AGM" ||
             device is null || !profile.Matches(device) || device.ToolsetId != project.ToolsetId ||
             device.ToolsetVersion != project.ToolsetVersion || device.CompilerId != project.CompilerId)

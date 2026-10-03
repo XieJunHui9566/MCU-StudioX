@@ -63,7 +63,7 @@ public sealed class EspressifFlashService(ToolsetCatalog catalog,
         if (receipt.Project != project || receipt.ToolFingerprint != tools.Fingerprint || receipt.EspressifLayout is not { } approved ||
             receipt.SourceStamp is null || receipt.SourceStamp != await DebugSourceStamp.ComputeAsync(root, token))
         {
-            throw new StudioXException("ESP_FLASH_BUILD", "源码、SDK 配置或工具集已变化；请重新编译后下载。");
+            throw new StudioXException("ESP_FLASH_BUILD", "源码、SDK 配置或开发环境组件已变化；请重新编译后下载。");
         }
         var module = await EspressifModuleConfiguration.ReadAsync(root, token);
         var layout = await EspressifFlashLayoutReader.ParseAsync(root, approved.FlasherArgumentsRelativePath,
@@ -76,9 +76,9 @@ public sealed class EspressifFlashService(ToolsetCatalog catalog,
             throw new StudioXException("ESP_FLASH_CHANGED", "编译后的下载布局或 BIN 已被修改；请重新编译后下载。");
         }
         var esptoolVersion = tools.Manifest.ComponentVersions?.GetValueOrDefault("esptool");
-        if (esptoolVersion is null || !Regex.IsMatch(esptoolVersion, @"^[2-4]\.[0-9]+", RegexOptions.CultureInvariant))
+        if (esptoolVersion is null || !Regex.IsMatch(esptoolVersion, @"^[2-5]\.[0-9]+", RegexOptions.CultureInvariant))
         {
-            throw new StudioXException("ESP_FLASH_TOOL", "内置工具集没有锁定受支持的 esptool 版本。");
+            throw new StudioXException("ESP_FLASH_TOOL", "内置开发环境组件没有锁定受支持的 esptool 版本。");
         }
         return new(new(configuration with
         {
@@ -181,19 +181,20 @@ public sealed class EspressifFlashService(ToolsetCatalog catalog,
         IReadOnlyList<string> snapshots, bool verify, int esptoolMajor = 4)
     {
         settings.Validate(requirePort: true);
-        if (snapshots.Count != layout.Images.Length || layout.Images.Length == 0 || esptoolMajor is < 2 or > 4)
+        if (snapshots.Count != layout.Images.Length || layout.Images.Length == 0 || esptoolMajor is < 2 or > 5)
         {
-            throw new StudioXException("ESP_FLASH_ARGUMENTS", "下载快照或工具版本不匹配。");
+            throw new StudioXException("ESP_FLASH_ARGUMENTS", "下载快照或开发环境组件版本不匹配。");
         }
         List<string> arguments = ["-s", "-B", "-m", "esptool", "--chip", layout.Target, "--port", settings.Port,
-            "--baud", settings.BaudRate.ToString(CultureInfo.InvariantCulture), "--before", "default_reset",
-            "--after", "hard_reset"];
+            "--baud", settings.BaudRate.ToString(CultureInfo.InvariantCulture), "--before", esptoolMajor == 5 ? "default-reset" : "default_reset",
+            "--after", esptoolMajor == 5 ? "hard-reset" : "hard_reset"];
         if (!layout.UseStub)
         {
             arguments.Add("--no-stub");
         }
-        arguments.AddRange([verify ? "verify_flash" : "write_flash", "--flash_mode", layout.FlashMode,
-            "--flash_size", layout.FlashSize, "--flash_freq", layout.FlashFrequency]);
+        var separator = esptoolMajor == 5 ? "-" : "_";
+        arguments.AddRange([(verify ? "verify" : "write") + separator + "flash", "--flash" + separator + "mode", layout.FlashMode,
+            "--flash" + separator + "size", layout.FlashSize, "--flash" + separator + "freq", layout.FlashFrequency]);
         for (var index = 0; index < layout.Images.Length; index++)
         {
             arguments.Add("0x" + layout.Images[index].Offset.ToString("x", CultureInfo.InvariantCulture));
@@ -204,7 +205,7 @@ public sealed class EspressifFlashService(ToolsetCatalog catalog,
 
     public static bool HasVerificationEvidence(string output, EspressifFlashLayout layout, int esptoolMajor = 4)
     {
-        if (esptoolMajor is < 2 or > 4)
+        if (esptoolMajor is < 2 or > 5)
         {
             return false;
         }
@@ -212,7 +213,9 @@ public sealed class EspressifFlashService(ToolsetCatalog catalog,
         uint? current = null;
         foreach (var line in output.Split('\n'))
         {
-            var match = Regex.Match(line, @"Verifying 0x[0-9a-f]+ \(([0-9]+)\) bytes @ 0x([0-9a-f]+)", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+            var match = Regex.Match(line, esptoolMajor == 5
+                ? @"Verifying 0x[0-9a-f]+ \(([0-9]+)\) bytes at 0x([0-9a-f]+)"
+                : @"Verifying 0x[0-9a-f]+ \(([0-9]+)\) bytes @ 0x([0-9a-f]+)", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
             if (line.TrimStart().StartsWith("Verifying ", StringComparison.OrdinalIgnoreCase))
             {
                 current = null;
@@ -223,12 +226,12 @@ public sealed class EspressifFlashService(ToolsetCatalog catalog,
                     current = address;
                 }
             }
-            else if (line.Contains("-- verify OK (digest matched)", StringComparison.Ordinal) && current is { } verified)
+            else if (line.Trim() == (esptoolMajor == 5 ? "Verification successful (digest matched)." : "-- verify OK (digest matched)") && current is { } verified)
             {
                 pending.Remove(verified);
                 current = null;
             }
-            else if (line.Contains("verify FAILED", StringComparison.OrdinalIgnoreCase))
+            else if (line.Contains("verify FAILED", StringComparison.OrdinalIgnoreCase) || line.Contains("Verification failed", StringComparison.OrdinalIgnoreCase))
             {
                 return false;
             }

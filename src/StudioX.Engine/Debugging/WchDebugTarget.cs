@@ -35,7 +35,7 @@ public static class WchDebugTarget
     {
         if (Layout(device.Id) is not { } layout ||
             device.Architecture != "riscv" || device.ToolsetId != "wch.riscv" ||
-            device.ToolsetVersion != "1.0.0" || device.CompilerId != "wch-gcc-12.2.0-v1.4" ||
+            device.CompilerId != "wch-gcc-12.2.0-v1.4" ||
             device.FlashOrigin != 0 || device.FlashBytes != layout.FlashKib * 1024 ||
             device.RamOrigin != 0x20000000 || device.RamBytes != layout.RamKib * 1024 ||
             device.OpenOcd is not { } config || config.ApplicationFlashBytes != layout.ApplicationFlashKib * 1024 ||

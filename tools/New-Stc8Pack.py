@@ -140,10 +140,17 @@ def main() -> None:
         help="Directory containing AiCube_sources_and_firmware_extracted",
     )
     parser.add_argument("--output", required=True, type=Path, help="New output directory")
+    parser.add_argument("--pack-version", default=PACK_VERSION, help="Explicit new device pack version")
+    parser.add_argument("--toolset-version", default="1.0.0", help="Exact SDCC development component version")
     parser.add_argument(
         "--stage-only", action="store_true", help="Prepare source without invoking StudioX pack CLI"
     )
     args = parser.parse_args()
+    for version in (args.pack_version, args.toolset_version):
+        if not re.fullmatch(r"\d+\.\d+\.\d+(?:[-+][A-Za-z0-9.-]+)?", version):
+            raise ValueError("Invalid explicit version")
+    if args.toolset_version != "1.0.0" and args.pack_version == PACK_VERSION:
+        raise ValueError("Changing a development component requires a new device pack version")
     repo = Path(__file__).resolve().parents[1]
     recipe = repo / "examples/packs/stc.stc8"
     devices = json.loads((recipe / "devices.json").read_text(encoding="utf-8"))
@@ -209,8 +216,11 @@ def main() -> None:
                 "ramOrigin": 0,
                 "ramBytes": ram_bytes,
                 "toolsetId": "stc.sdcc",
-                "toolsetVersion": "1.0.0",
+                "toolsetVersion": args.toolset_version,
                 "compilerId": "sdcc-4.5.0-15242",
+                **({"developmentComponents": [{"id": "stc.sdcc", "version": args.toolset_version,
+                    "compilerId": "sdcc-4.5.0-15242", "host": "win-x64", "purpose": "STC 8 位工程编译"}]}
+                    if args.toolset_version != "1.0.0" else {}),
                 "cpuFlags": ["-mmcs51", "--model-large"],
                 "defines": ["STUDIOX_" + family.upper(), device_id],
                 "includeDirectories": ["sdk/include"],
@@ -240,7 +250,7 @@ def main() -> None:
     manifest = {
         "formatVersion": 1,
         "id": PACK_ID,
-        "version": PACK_VERSION,
+        "version": args.pack_version,
         "displayName": "STC 8 位 · SDCC（STC89/12/15/8G/8H）",
         "vendor": "STC / 宏晶科技",
         "devices": definitions,
@@ -250,7 +260,7 @@ def main() -> None:
         print(stage)
         return
 
-    archive = output / f"{PACK_ID}-{PACK_VERSION}.mcupack"
+    archive = output / f"{PACK_ID}-{args.pack_version}.mcupack"
     subprocess.run(
         [
             "dotnet",
@@ -271,7 +281,7 @@ def main() -> None:
         {
             "file": archive.name,
             "id": PACK_ID,
-            "version": PACK_VERSION,
+            "version": args.pack_version,
             "devices": [device["id"] for device in definitions],
             "sha256": sha256(archive.read_bytes()),
         }

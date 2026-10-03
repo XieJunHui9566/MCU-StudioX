@@ -21,6 +21,7 @@ try
     await DistributionChecks.RunAsync(root, Check);
     await DownloadResumeChecks.RunAsync(root, Check);
     await ToolPreparationChecks.RunAsync(root, Check);
+    await DevelopmentComponentChecks.RunAsync(root, Check);
     await ComponentChecks.RunAsync(root, Check);
     await PluginChecks.RunAsync(root, Path.GetFullPath(args[1]), Check);
     BuildChecks.Run(Check);

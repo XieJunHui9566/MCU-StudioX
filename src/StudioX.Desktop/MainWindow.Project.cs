@@ -60,7 +60,7 @@ public partial class MainWindow
             : "器件 / " + project.DeviceId;
         ToolsetLabel.Text = project.Kind == ProjectKind.Zephyr
             ? "Zephyr " + project.Zephyr!.ZephyrVersion + " · 实验模式"
-            : $"工具集 / {project.ToolsetId} {project.ToolsetVersion}";
+            : $"开发环境组件 / {project.ToolsetId} {project.ToolsetVersion}";
         ApplyDownloadConfiguration(await services.Downloads.ConfigurationAsync(directory, token));
         if (source is not null)
         {
@@ -217,6 +217,7 @@ public partial class MainWindow
     {
         projectActionsBusy = busy;
         var available = projectDirectory is not null && !busy;
+        VerifyProjectComponentsButton.IsEnabled = available;
         BuildButton.IsEnabled = BuildMenu.IsEnabled = available && !IsZephyrProject && !IsMicroPythonProject;
         CloseProjectMenu.IsEnabled = CloseProjectButton.IsEnabled = available;
         DownloadButton.IsEnabled = DownloadMenu.IsEnabled = available && supportsDownload && (!IsMicroPythonProject || !MicroPythonPanel.IsBusy);

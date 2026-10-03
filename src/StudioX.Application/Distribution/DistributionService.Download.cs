@@ -4,6 +4,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Text.Json;
 using StudioX.Foundation;
+using StudioX.Engine;
 
 public sealed partial class DistributionService
 {
@@ -14,7 +15,7 @@ public sealed partial class DistributionService
         if (entry.Sha256 is null || entry.Sha256.Length != 64 || !entry.Sha256.All(Uri.IsHexDigit)
             || entry.DownloadBytes < 1 || entry.DownloadBytes > 8L * 1024 * 1024 * 1024)
             throw new StudioXException("CATALOG_ENTRY", "下载身份或大小无效。");
-        var extension = entry.Kind switch { "tool" => ".studioxtools", "plugin" => ".studioxplugin", "component" => ".studioxcomponent",
+        var extension = entry.Kind switch { "tool" => ToolchainArchiveFormat.CacheExtension(entry.Archive), "plugin" => ".studioxplugin", "component" => ".studioxcomponent",
             _ => throw new StudioXException("CATALOG_ENTRY", "不支持的归档类型。") };
         return PathBoundary.Resolve(cache, entry.Sha256.ToUpperInvariant() + extension);
     }

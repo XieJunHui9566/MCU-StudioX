@@ -147,7 +147,7 @@ Supra 的 `license.txt` 是厂商节点授权数据，**不随 StudioX 工具发
 
 Agent 共用应用服务：`project_build` 联合编译 MCU 与 FPGA，`ag32_logic_workflow_settings` 读取或保存配置（写入需要 FileWrite 授权），`ag32_logic_simulate` 执行 RTL testbench（Build 授权）并返回 VCD、原始日志、信号列表和警告。仿真不建立硬件会话。
 
-开发环境使用 `tools/Prepare-HdlWorkflowRuntime.ps1 -SupraDirectory <已有 Supra> -IcarusDirectory <已有 Icarus>` 整理已核实工具；最终程序使用内置工具集，不从用户 PATH 查找。mapper、仿真器、资源文件均有 SHA-256 索引，Supra 私人许可不会进入工具树。
+开发环境使用 `tools/Prepare-HdlWorkflowRuntime.ps1 -SupraDirectory <已有 Supra> -IcarusDirectory <已有 Icarus>` 整理已核实工具；最终程序使用内置开发环境组件，不从用户 PATH 查找。mapper、仿真器、资源文件均有 SHA-256 索引，Supra 私人许可不会进入工具树。
 
 ## 验收边界
 
@@ -170,7 +170,7 @@ Agent 共用应用服务：`project_build` 联合编译 MCU 与 FPGA，`ag32_log
 
 实际窗口回归可运行 `MCU StudioX.exe --preview-ve <输出目录> <现有工程目录> logic/pins.ve`。该模式只复制必要的小型工程文件，不复制 SDK 或编译链。它验证真实 VE 文本的深浅主题渲染、C/Verilog/VE 标签切换、编辑保存和重新打开，比较副本的编码、BOM、换行及全部配置字节，并核对真实文件的 SHA-256 未变。所有写操作发生在输出目录的夹具中，不启动逻辑工具或访问硬件。
 
-图形与 MCP 离线验收入口为 `tools/StudioX.Ag32PinPlanningValidation`：参数是工具集根目录、新输出目录和真实器件包 `manifest.json`。完整检查使用含 CCT6 的 VF303 包；其它包增加 `--profiles-only`，逐型号运行实际转换器。真实窗口入口为 `MCU StudioX.exe --preview-ag32-mapping <新输出目录> <CCT6 工程目录>`，覆盖图形保存、冲突着色与提示、保存全部、SDC 打开和编辑同步。所有测试写入独立夹具，均不连接硬件。
+图形与 MCP 离线验收入口为 `tools/StudioX.Ag32PinPlanningValidation`：参数是开发环境组件根目录、新输出目录和真实器件包 `manifest.json`。完整检查使用含 CCT6 的 VF303 包；其它包增加 `--profiles-only`，逐型号运行实际转换器。真实窗口入口为 `MCU StudioX.exe --preview-ag32-mapping <新输出目录> <CCT6 工程目录>`，覆盖图形保存、冲突着色与提示、保存全部、SDC 打开和编辑同步。所有测试写入独立夹具，均不连接硬件。
 
 ## Verilog 电路图预览
 
@@ -181,7 +181,7 @@ AG32 的 **MCU+FPGA 自定义逻辑工程** 可从左侧 **AG32 引脚分配 →
 - Ctrl + 滚轮或工具栏缩放，滚动条移动视图；当前模块可导出为独立 SVG。
 - 配置存放在 `.studiox/hdl-schematic.json`，可指定源文件、包含目录、宏、顶层模块和展开子模块。首次进入自动发现入口所在目录及子目录的 `.v/.sv`，请移除 testbench 并补齐实际依赖；来源路径均相对当前工程，不保存开发者工具路径。
 - `include` 与 `$readmemh/$readmemb` 的字面依赖使用快照内的相对路径；外部依赖应先放入工程，再配置包含目录。绝对路径及 `../` 引用明确报错。空格目录通过快照别名处理；支持的附加输入扩展名是 `.vh/.svh/.mem/.hex/.mif/.dat`。
-- 每次生成使用 `.build/hdl-schematic/<运行编号>/source` 快照，保存 `netlist.json`、`report.json`、`preview.ys`、`yosys.log` 和 `process.log`。记录输入 SHA-256、工具版本和结果时效；源码或配置变化提示重新生成，失败会清空当前图并保留原始诊断，可用顶部停止按钮取消。
+- 每次生成使用 `.build/hdl-schematic/<运行编号>/source` 快照，保存 `netlist.json`、`report.json`、`preview.ys`、`yosys.log` 和 `process.log`。记录输入 SHA-256、开发环境组件版本和结果时效；源码或配置变化提示重新生成，失败会清空当前图并保留原始诊断，可用顶部停止按钮取消。
 - 显式声明的厂商黑盒显示端口与黑盒标记，不能据此推断内部电路；未知模块直接报错。综合警告在界面提示，详细内容保留在日志。
 
 该入口提供 **RTL 电路结构预览**，不生成 AGM 位流，不估算物理 LE 占用，不执行布局布线、时序分析或波形仿真。Verilog-2005 与部分 SystemVerilog 以所锁定 Yosys 前端的实际支持为准；完整 SystemVerilog、VHDL 和厂商加密 IP 不在本次范围内。实际 FPGA 镜像由顶部联合构建的厂商原生工具流程生成。

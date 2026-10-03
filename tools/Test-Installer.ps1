@@ -9,6 +9,7 @@ param(
 $ErrorActionPreference = 'Stop'
 $Installer = [IO.Path]::GetFullPath($Installer)
 . (Join-Path $PSScriptRoot 'Release-Version.ps1')
+. (Join-Path $PSScriptRoot 'Distribution-Profile.ps1')
 $releaseVersion = if ($PayloadDirectory)
 {
     # 隔离安装器以完整 Payload 为版本来源；发行安装器仍可能处于压缩阶段。
@@ -56,9 +57,12 @@ if ($PayloadDirectory)
     $isolatedOutput = Join-Path $root 'isolated-installer'
     # 隔离验收可关闭压缩，避免重复压缩完整 SDK；正式发行仍使用默认压缩配置。
     $compressionArguments = if ($NoCompression) { @('--no-compression', '--define=ValidationNoCompression=1') } else { @() }
-    & $CompilerPath --quiet-progress @compressionArguments "--define=AppVersion=$releaseVersion" "--define=AppFileVersion=$($releaseIdentity.FileVersion)" "--define=PayloadDirectory=$PayloadDirectory" "--output-dir=$isolatedOutput" @compilerArguments (Join-Path $PSScriptRoot 'installer/StudioX.iss')
+    $testProfile = Resolve-StudioXDistributionProfile ((Get-Content -LiteralPath (Join-Path $PayloadDirectory 'release.json') -Raw | ConvertFrom-Json).distributionProfile ?? 'full')
+    $testEntries = Join-Path $root 'development-components.iss'
+    Write-StudioXInstallerComponents $PayloadDirectory $testEntries
+    & $CompilerPath --quiet-progress @compressionArguments "--define=AppVersion=$releaseVersion" "--define=AppFileVersion=$($releaseIdentity.FileVersion)" "--define=DistributionProfile=$testProfile" "--define=DevelopmentComponentEntries=$testEntries" "--define=PayloadDirectory=$PayloadDirectory" "--output-dir=$isolatedOutput" @compilerArguments (Join-Path $PSScriptRoot 'installer/StudioX.iss')
     if ($LASTEXITCODE -ne 0) { throw 'Cannot compile the isolated full-payload installer.' }
-    $Installer = Join-Path $isolatedOutput "MCU-StudioX-$releaseVersion-win-x64-Setup.exe"
+    $Installer = Join-Path $isolatedOutput (Get-StudioXInstallerName $releaseVersion $testProfile)
 }
 $installed = Join-Path $root 'Installed App'
 $log = [Collections.Generic.List[string]]::new()

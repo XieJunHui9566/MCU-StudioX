@@ -19,6 +19,8 @@ public sealed class WorkbenchService : IAsyncDisposable
     public Health.ProjectHealthService ProjectHealth { get; }
     public Tools.ToolManagementService ToolManagement { get; }
     public Tools.ProjectToolPreparationService ProjectTools { get; }
+    public Tools.ComponentMigrationService ComponentMigration { get; }
+    public Tools.EspressifProjectVersionService EspressifProjectVersions { get; }
     public DebugLaunchService DebugLaunch { get; }
     public FaultAnalysisService Faults { get; }
     public Peripherals.PeripheralService Peripherals { get; }
@@ -48,10 +50,12 @@ public sealed class WorkbenchService : IAsyncDisposable
         Packs = new PackRepository(Path.Combine(DataDirectory, "packs"));
         ZephyrPacks = new ZephyrPackRepository(Path.Combine(DataDirectory, "zephyr-packs"));
         RemotePacks = new GitHubPackSyncService(Packs);
-        Toolsets = new ToolsetCatalog(Path.Combine(RuntimeDirectory, "toolsets"));
+        Toolsets = new ToolsetCatalog(Path.Combine(RuntimeDirectory, "toolsets"), DataDirectory);
         ToolInventory = new ToolInventoryService(Toolsets);
+        EspressifProjectVersions = new(Packs, Toolsets);
         ToolEnvironment = new ToolEnvironmentService(Toolsets);
         Builds = new BuildService(Toolsets, Path.Combine(DataDirectory, "licenses", "ag32-pin-mapping"));
+        ComponentMigration = new(Packs, Builds);
         BuildMemory = new BuildMemoryService(Toolsets);
         BuildHistory = new(DataDirectory, BuildMemory);
         LvglPreview = new Lvgl.LvglPreviewService(Toolsets, DataDirectory);

@@ -60,7 +60,7 @@ public static class OpenOcdDebugPlanner
 
     public static DebugTargetProfile ResolveTarget(DownloadConfiguration configuration) =>
         DebugTargetProfile.Find(configuration.Device) ?? throw new StudioXException("DEBUG_TARGET",
-            "当前调试支持已收录的 STM32F1/F4、AG32VF303、CH32V203 / V307、CH592 / CH595 和 RP2350；需要对应新版器件包、工具集和存储布局。当前器件：" + configuration.Device.Id);
+            "当前调试支持已收录的 STM32F1/F4、AG32VF303、CH32V203 / V307、CH592 / CH595 和 RP2350；需要对应新版器件包、开发环境组件和存储布局。当前器件：" + configuration.Device.Id);
 
     public static OpenOcdDebugPlan Create(string project, DownloadConfiguration configuration, ResolvedToolset tools, string elf, int port = 3333, int? tclPort = null, bool connectUnderReset = false)
     {

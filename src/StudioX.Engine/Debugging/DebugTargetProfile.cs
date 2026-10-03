@@ -11,7 +11,7 @@ public sealed record DebugTargetProfile(string DeviceId, string Core, bool HasFp
     public static DebugTargetProfile? Find(DeviceDefinition device)
     {
         if (device.Id == "AG32VF303CCT6" && device.Architecture == "riscv" &&
-            device.ToolsetId == "agm.agrv" && device.ToolsetVersion == "1.0.0" && device.CompilerId == "agrv-gcc-11.1.0" &&
+            device.ToolsetId == "agm.agrv" && device.CompilerId == "agrv-gcc-11.1.0" &&
             device.FlashOrigin == 0x80000000 && device.FlashBytes == 0x40000 &&
             device.RamOrigin == 0x20000000 && device.RamBytes == 0x20000 &&
             device.OpenOcd is { ApplicationFlashBytes: 0x27000 } openOcd &&

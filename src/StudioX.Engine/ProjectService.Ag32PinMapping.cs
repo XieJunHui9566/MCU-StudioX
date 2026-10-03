@@ -34,7 +34,10 @@ public sealed partial class ProjectService
             {
                 throw new StudioXException("PROJECT_PIN_MAPPING_DEVICE", "工程锁定的 AGM 器件信息与 device/manifest.json 不一致，不能启用引脚映射。");
             }
-            var settings = project.PinMapping ?? new Ag32PinMappingProjectSettings(profile.TargetDevice);
+            var declaredMapping = DevelopmentComponentRequirements.ForTemplate(device, device.Templates.Single(t => t.Id == project.TemplateId))
+                .SingleOrDefault(c => c.Id == "agm.pin-mapping");
+            var settings = project.PinMapping ?? new Ag32PinMappingProjectSettings(profile.TargetDevice,
+                ToolsetVersion: declaredMapping?.Version ?? "1.0.0", CompilerId: declaredMapping?.CompilerId ?? "agm.ve");
             var scaffold = CreateAg32PinMappingScaffold(profile);
             var pinMapPath = PathBoundary.Resolve(root, settings.PinMapFile);
             if (Directory.Exists(pinMapPath))
@@ -92,10 +95,12 @@ public sealed partial class ProjectService
             return;
         }
         if (project.Kind != ProjectKind.Pack || Ag32DeviceCatalog.Find(project.DeviceId) is not { CanMap: true } profile ||
-            settings != new Ag32PinMappingProjectSettings(profile.TargetDevice))
+            settings.TargetDevice != profile.TargetDevice || settings.PinMapFile != "logic/pins.ve" ||
+            settings.ToolsetId != "agm.pin-mapping" || settings.CompilerId != "agm.ve")
         {
             throw new StudioXException("PROJECT_PIN_MAPPING_SETTINGS", "AG32 基础引脚映射配置无效或不受当前版本支持。");
         }
+        PackValidator.Version(settings.ToolsetVersion);
         _ = PathBoundary.Resolve(directory, settings.PinMapFile);
     }
 

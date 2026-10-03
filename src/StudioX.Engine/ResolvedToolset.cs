@@ -4,9 +4,9 @@ using StudioX.Foundation;
 public sealed record ResolvedToolset(ToolsetManifest Manifest, string RootDirectory, string Fingerprint)
 {
     public string Tool(string role) => PathBoundary.Resolve(RootDirectory, Manifest.Executables.TryGetValue(role, out var path)
-        ? path : throw new StudioXException("TOOL_ROLE", $"工具集缺少组件：{role}"));
+        ? path : throw new StudioXException("TOOL_ROLE", $"开发环境组件缺少组件：{role}"));
     public string ResourceDirectory(string role) => PathBoundary.Resolve(RootDirectory, Manifest.ResourceDirectories is not null && Manifest.ResourceDirectories.TryGetValue(role, out var path)
-        ? path : throw new StudioXException("TOOL_RESOURCE", $"工具集缺少资源目录：{role}"));
+        ? path : throw new StudioXException("TOOL_RESOURCE", $"开发环境组件缺少资源目录：{role}"));
 
     /// <summary>共享 SDK 保留一份；通用分析工具按工程的明确目标选择对应编译器。</summary>
     public ResolvedToolset ForEspressifTarget(string target)
@@ -29,7 +29,7 @@ public sealed record ResolvedToolset(ToolsetManifest Manifest, string RootDirect
         }
         if (!executables.ContainsKey("gcc") || !executables.ContainsKey("gxx"))
         {
-            throw new StudioXException("TOOL_ROLE", "工具集缺少目标 " + target + " 的 C/C++ 编译器。");
+            throw new StudioXException("TOOL_ROLE", "开发环境组件缺少目标 " + target + " 的 C/C++ 编译器。");
         }
         return this with { Manifest = Manifest with { Executables = executables } };
     }

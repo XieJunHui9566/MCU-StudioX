@@ -4,8 +4,10 @@ import argparse
 import hashlib
 import json
 import os
+import re
 import shutil
 import subprocess
+import urllib.request
 from pathlib import Path
 
 
@@ -131,6 +133,11 @@ def run_python(python, arguments, output):
     environment["PYTHONDONTWRITEBYTECODE"] = "1"
     environment["PYTHONNOUSERSITE"] = "1"
     environment["PYTHONHOME"] = str(python.parent)
+    if arguments[:2] == ["-m", "pip"]:
+        # requests 不读取 Windows 代理注册项；仅给当前依赖准备进程传入系统已有代理，不改系统设置或输出其值。
+        for scheme, proxy in urllib.request.getproxies().items():
+            if scheme in {"http", "https"}:
+                environment[scheme.upper() + "_PROXY"] = proxy
     completed = subprocess.run(
         [str(python), *arguments],
         cwd=output,
@@ -150,7 +157,33 @@ def main():
     parser.add_argument("--python-env", type=Path, required=True)
     parser.add_argument("--git-root", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--sdk-version", default="5.5.4")
+    parser.add_argument("--component-version")
+    parser.add_argument("--upstream-tag")
+    parser.add_argument("--python-version", default="3.11.2")
     arguments = parser.parse_args()
+    sdk_version = arguments.sdk_version
+    component_version = arguments.component_version or sdk_version
+    if not re.fullmatch(r"[56]\.\d+\.\d+", sdk_version) or not re.fullmatch(r"\d+\.\d+\.\d+", component_version):
+        raise ValueError("Specify exact SDK and component release versions")
+    version_cmake = (arguments.idf_root / "tools/cmake/version.cmake").read_text(encoding="utf-8")
+    source_version = ".".join(re.search(r"set\(IDF_VERSION_" + part + r"\s+(\d+)\)", version_cmake).group(1)
+        for part in ("MAJOR", "MINOR", "PATCH"))
+    if source_version != sdk_version:
+        raise ValueError("SDK source version differs from the requested release: " + source_version)
+    spec = json.loads((arguments.idf_root / "tools/tools.json").read_text(encoding="utf-8"))
+    def recommended(name):
+        tool = next(tool for tool in spec["tools"] if tool["name"] == name)
+        return next(version["name"] for version in tool["versions"] if version["status"] == "recommended")
+    tool_version = recommended("xtensa-esp-elf")
+    if recommended("riscv32-esp-elf") != tool_version:
+        raise ValueError("Different compiler revisions need an explicit layout recipe")
+    gdb_version = recommended("xtensa-esp-elf-gdb")
+    if recommended("riscv32-esp-elf-gdb") != gdb_version:
+        raise ValueError("Different GDB revisions need an explicit layout recipe")
+    cmake_version = recommended("cmake")
+    ninja_version = recommended("ninja")
+    upstream_tag = arguments.upstream_tag or "v" + sdk_version
     output = arguments.output.resolve()
     sources = [
         arguments.idf_root,
@@ -164,10 +197,11 @@ def main():
         for source in sources
     ):
         raise ValueError("组件输出必须在来源目录外，且不能是盘符根目录。")
+    if (output / "toolset.json").exists():
+        raise ValueError("An indexed component is immutable; select a new output directory")
     output.mkdir(parents=True, exist_ok=True)
-    print("Preparing ESP-IDF 5.5.4 SDK (without history/examples)...", flush=True)
-    copy_sdk(arguments.idf_root, output / "sdk", "5.5.4")
-    tool_version = "esp-14.2.0_20260121"
+    print(f"Preparing ESP-IDF {sdk_version} SDK (without history/examples)...", flush=True)
+    copy_sdk(arguments.idf_root, output / "sdk", sdk_version)
     sources = {
         "xtensa": arguments.tools_root
         / "xtensa-esp-elf"
@@ -177,28 +211,27 @@ def main():
         / "riscv32-esp-elf"
         / tool_version
         / "riscv32-esp-elf",
-        "cmake": arguments.tools_root / "cmake" / "3.30.2",
-        "ninja": arguments.tools_root / "ninja" / "1.12.1",
+        "cmake": arguments.tools_root / "cmake" / cmake_version,
+        "ninja": arguments.tools_root / "ninja" / ninja_version,
         "git": arguments.git_root,
     }
     for role, source in sources.items():
         print(f"Preparing shared {role}...", flush=True)
         copy_tree(source, output / role)
     # CoreDump 分析使用与 IDF tools.json 对应的官方 GDB，不能回退到系统工具。
-    gdb_version = "16.3_20250913"
     for folder, package in (("xtensa-gdb", "xtensa-esp-elf-gdb"), ("riscv-gdb", "riscv32-esp-elf-gdb")):
         copy_tree(arguments.tools_root / package / gdb_version / package, output / folder)
     print("Preparing relocatable Python...", flush=True)
     prepare_python(
-        arguments.tools_root / "idf-python" / "3.11.2",
+        arguments.tools_root / "idf-python" / arguments.python_version,
         arguments.python_env / "Lib" / "site-packages",
         output / "python",
     )
     state = output / "idf-tools"
     state.mkdir(exist_ok=True)
     shutil.copy2(
-        arguments.tools_root.parent / "espidf.constraints.v5.5.txt",
-        state / "espidf.constraints.v5.5.txt",
+        arguments.tools_root.parent / ("espidf.constraints.v" + ".".join(sdk_version.split(".")[:2]) + ".txt"),
+        state / ("espidf.constraints.v" + ".".join(sdk_version.split(".")[:2]) + ".txt"),
     )
     esptool = run_python(
         output / "python" / "python.exe",
@@ -231,21 +264,45 @@ def main():
             executables[f"{role}-{target}"] = f"{folder}/bin/{prefix}-{suffix}.exe"
     for role in ("gcc", "gxx", "objcopy", "objdump", "size", "ar", "ranlib"):
         executables[role] = executables[f"{role}-esp32"]
+    resources = {"idf": "sdk", "tools": "idf-tools", "python-env": "python"}
+    extra_versions = {}
+    for package, folder, role, executable in (
+        ("esp32ulp-elf", "ulp", "ulp-as", "bin/esp32ulp-elf-as.exe"),
+        ("openocd-esp32", "openocd", "openocd", "bin/openocd.exe"),
+    ):
+        revision = recommended(package)
+        directory = arguments.tools_root / package / revision
+        if directory.exists():
+            entries = list(directory.iterdir())
+            source = entries[0] if len(entries) == 1 and entries[0].is_dir() else directory
+            copy_tree(source, output / folder)
+            executables[role] = folder + "/" + executable
+            extra_versions[package] = revision
+    rom_revision = recommended("esp-rom-elfs")
+    rom_source = arguments.tools_root / "esp-rom-elfs" / rom_revision
+    if rom_source.exists():
+        copy_tree(rom_source, output / "rom-elfs")
+        resources["rom-elfs"] = "rom-elfs"
+        extra_versions["esp-rom-elfs"] = rom_revision
     for relative in executables.values():
         if not (output / relative).is_file():
             raise FileNotFoundError(relative)
     provenance = {
         "framework": "ESP-IDF",
-        "version": "5.5.4",
+        "version": sdk_version,
         "sources": [
-            "https://github.com/espressif/esp-idf/releases/tag/v5.5.4",
-            "https://raw.githubusercontent.com/espressif/esp-idf/v5.5.4/tools/tools.json",
+            f"https://github.com/espressif/esp-idf/releases/tag/{upstream_tag}",
+            f"https://raw.githubusercontent.com/espressif/esp-idf/{upstream_tag}/tools/tools.json",
         ],
         "layout": "One SDK and two compiler trees shared by all six targets; no Git history or per-project SDK copies",
-        "python": "3.11.2",
+        "python": arguments.python_version,
         "esptool": esptool,
         "gcc": tool_version,
     }
+    if (arguments.idf_root / "release-source.json").exists():
+        provenance["releaseSource"] = json.loads((arguments.idf_root / "release-source.json").read_text(encoding="utf-8"))
+    if (arguments.python_env / "pip-report.json").exists():
+        shutil.copy2(arguments.python_env / "pip-report.json", output / "python-packages.json")
     (output / "SOURCE.json").write_text(
         json.dumps(provenance, indent=2) + "\n", encoding="utf-8"
     )
@@ -254,26 +311,23 @@ def main():
     manifest = {
         "formatVersion": 1,
         "id": "espressif.idf",
-        "version": "5.5.4",
+        "version": component_version,
         "host": "win-x64",
         "compilerId": "esp-idf",
         "executables": executables,
         "sha256": hashes,
-        "displayName": "Espressif ESP-IDF 5.5.4",
+        "displayName": f"Espressif ESP-IDF {sdk_version}",
         "componentVersions": {
-            "esp-idf": "5.5.4",
+            "esp-idf": sdk_version,
             "gcc": tool_version,
-            "python": "3.11.2",
-            "cmake": "3.30.2",
-            "ninja": "1.12.1",
+            "python": arguments.python_version,
+            "cmake": cmake_version,
+            "ninja": ninja_version,
             "esptool": esptool,
             "gdb": gdb_version,
+            **extra_versions,
         },
-        "resourceDirectories": {
-            "idf": "sdk",
-            "tools": "idf-tools",
-            "python-env": "python",
-        },
+        "resourceDirectories": resources,
         "purpose": "esp-idf",
     }
     (output / "toolset.json").write_text(

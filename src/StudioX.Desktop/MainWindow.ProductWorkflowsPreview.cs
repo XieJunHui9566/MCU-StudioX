@@ -73,7 +73,7 @@ public partial class MainWindow
         var snapshots = await JsonStore.ReadAsync<BuildHistorySnapshot[]>(snapshotsFile);
         buildHistoryView.SetSnapshots(snapshots);
         buildHistoryView.Compare();
-        Check(buildHistoryView.ComparisonCount > 0 && buildHistoryView.DescriptionText.Contains("工具版本"), "实际两次编译快照在界面呈现比较与配置限制");
+        Check(buildHistoryView.ComparisonCount > 0 && buildHistoryView.DescriptionText.Contains("开发环境组件版本"), "实际两次编译快照在界面呈现比较与配置限制");
         await Settle();
         Render(this, Path.Combine(directory, "build-comparison.png"));
         buildHistoryView.SetSnapshots([]);

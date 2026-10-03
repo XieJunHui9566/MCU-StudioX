@@ -100,7 +100,7 @@ public partial class MainWindow : Window
                 ApplyBackground(await services.Appearance.LoadAsync(token));
             }
             catch (Exception ex) { Log("背景恢复失败：" + ex.Message); Status.Text = "背景不可用，可在外观设置中重新选择。"; }
-            ToolInventory.Text = await services.ToolInventory.DescribeAsync(verify: false, token: token);
+            ToolInventory.Text = await services.ToolInventory.DescribeAsync(token);
             PluginPicker.ItemsSource = services.PluginManifests.ToArray();
             await PluginManager.RefreshAsync(token);
             try
@@ -332,6 +332,7 @@ public partial class MainWindow : Window
         TemplatePicker.IsEnabled = false;
         CreateProjectButton.IsEnabled = false;
         UpdateAg32LogicModeOption();
+        ClearIdfVersionSelection();
     }
     private static bool MatchesPuyaPackageAlias(string deviceId, string query)
     {
@@ -381,6 +382,7 @@ public partial class MainWindow : Window
                 : "可创建和编译工程；下载与调试待实板验证，暂未启用。";
         }
         UpdateAg32LogicModeOption();
+        ClearIdfVersionSelection();
     }
     private void UpdateAg32LogicModeOption()
     {
@@ -402,13 +404,23 @@ public partial class MainWindow : Window
         }
         Ag32LogicModePanel.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
     }
-    private void TemplatePicker_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private async void TemplatePicker_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         UpdateAg32LogicModeOption();
         if (CreateProjectButton is not null)
         {
             CreateProjectButton.IsEnabled = TemplatePicker.SelectedItem is ProjectTemplate;
         }
+        UpdateSelectedComponents();
+        await RefreshIdfVersionsAsync();
+    }
+    private void ComponentSelection_Changed(object sender, RoutedEventArgs e) => UpdateSelectedComponents();
+    private void UpdateSelectedComponents()
+    {
+        if (SelectedDevelopmentComponents is null) return;
+        SelectedDevelopmentComponents.Text = PackPicker?.SelectedItem is InstalledPack pack &&
+            DevicePicker?.SelectedItem is DeviceDefinition device && TemplatePicker?.SelectedItem is ProjectTemplate template
+            ? ProjectComponentSummary.ForSelection(pack, device.Id, template.Id, Ag32LogicModeCheckBox?.IsChecked == true) : "";
     }
     private async void CreateProject_Click(object sender, RoutedEventArgs e)
     {
@@ -423,6 +435,12 @@ public partial class MainWindow : Window
             return;
         }
         var enableAg32Logic = Ag32LogicModeCheckBox.IsChecked == true;
+        var idfSelection = IdfVersionPicker.SelectedItem as StudioX.Application.Tools.EspressifProjectVersionChoice;
+        if (device.Espressif?.Framework == "esp-idf" && idfSelection?.CanCreate != true)
+        {
+            Status.Text = "请选择可创建的 ESP-IDF 开发环境组件版本。";
+            return;
+        }
         var dialog = new OpenFolderDialog { Title = "选择新工程的父目录" };
         if (dialog.ShowDialog(this) != true)
         {
@@ -430,6 +448,7 @@ public partial class MainWindow : Window
         }
         await RunAsync(async token =>
         {
+            if (idfSelection is not null) await services.EspressifProjectVersions.EnsureSelectionAsync(idfSelection, token);
             PackValidator.Token(ProjectName.Text);
             var destination = Path.Combine(dialog.FolderName, ProjectName.Text);
             var created = await services.Projects.CreateAsync(pack, device.Id, template.Id, ProjectName.Text, destination, token, enableAg32Logic);
@@ -463,12 +482,14 @@ public partial class MainWindow : Window
         RefreshFirstProjectGuide();
         Status.Text = "已保存 " + session.Source.RelativePath;
     });
-    private async void VerifyTools_Click(object sender, RoutedEventArgs e) => await RunAsync(async token =>
+    private async void VerifyTools_Click(object sender, RoutedEventArgs e) => await VerifyProjectComponentsAsync();
+    private Task VerifyProjectComponentsAsync() => RunAsync(async token =>
     {
+        var directory = RequireProject();
         ShowDocument(ExtensionsTab);
-        ToolInventory.Text = "正在校验文件并检查工具版本…";
-        ToolInventory.Text = await services.ToolInventory.DescribeAsync(verify: true, new Progress<string>(message => Status.Text = message), token);
-        Status.Text = "工具检查完成，结果见插件与工具集页面。";
+        ToolInventory.Text = "正在校验当前工程需要的开发环境组件…";
+        ToolInventory.Text = await services.ToolInventory.VerifyProjectAsync(directory, new Progress<string>(message => Status.Text = message), token);
+        Status.Text = "当前工程的开发环境组件校验完成。";
     });
     private string RequireProject() => projectDirectory ?? throw new StudioXException("PROJECT_REQUIRED", "请先创建或打开工程。");
     private async void Build_Click(object sender, RoutedEventArgs e) => await RunAsync(async token =>

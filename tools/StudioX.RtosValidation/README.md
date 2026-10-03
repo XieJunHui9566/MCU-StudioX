@@ -1,6 +1,6 @@
 # FreeRTOS 调试离线验证
 
-从仓库根目录执行，复用本机已经准备的 ARM / WCH 工具集：
+从仓库根目录执行，复用本机已经准备的 ARM / WCH 开发环境组件：
 
 ```powershell
 dotnet run --project tools/StudioX.RtosValidation -- artifacts/tool-runtime artifacts/validation/rtos-offline

@@ -4,7 +4,7 @@ using System.Text.RegularExpressions;
 using StudioX.Foundation;
 using StudioX.Packages;
 
-/// <summary>Zephyr 工程只记录板级目标；运行时与工具链以后由独立后端锁定。</summary>
+/// <summary>Zephyr 工程只记录板级目标；运行时与开发环境组件以后由独立后端锁定。</summary>
 public sealed record ZephyrProjectSettings(int FormatVersion, string BoardId, string BoardTarget,
     string BoardRevision, string ZephyrVersion, bool Experimental)
 {

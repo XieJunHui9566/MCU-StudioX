@@ -24,7 +24,7 @@ public sealed record Ag32DeviceProfile(string DeviceId, string TargetDevice, str
     {
         return string.Equals(device.Id, DeviceId, StringComparison.OrdinalIgnoreCase) &&
             device.Architecture == "riscv" && device.ToolsetId == "agm.agrv" &&
-            device.ToolsetVersion == "1.0.0" && device.CompilerId == "agrv-gcc-11.1.0" &&
+            device.CompilerId == "agrv-gcc-11.1.0" &&
             device.FlashOrigin == FlashOrigin && device.FlashBytes == FlashBytes &&
             device.RamOrigin == RamOrigin && device.RamBytes == RamBytes;
     }

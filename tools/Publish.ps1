@@ -1,11 +1,9 @@
-param([string]$OutputDirectory, [string]$RuntimeAssetsDirectory, [string]$ReleaseVersion, [string]$BuildArtifactsDirectory, [string]$DevicePackCatalogDirectory, [switch]$ExcludePlugins, [ValidateSet('full','base')][string]$DistributionProfile='full', [string]$DistributionCatalogDirectory)
+param([string]$OutputDirectory, [string]$RuntimeAssetsDirectory, [string]$ReleaseVersion, [string]$BuildArtifactsDirectory, [string]$DevicePackCatalogDirectory, [switch]$ExcludePlugins, [ValidateSet('full','light','base')][string]$DistributionProfile='full', [string]$DistributionCatalogDirectory)
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
-if ($DistributionProfile -eq 'base') {
-    if (!$OutputDirectory) { throw 'Specify a new OutputDirectory for base publication.' }
-    & (Join-Path $PSScriptRoot 'Publish-Base.ps1') -OutputDirectory $OutputDirectory -ReleaseVersion $ReleaseVersion -BuildArtifactsDirectory $BuildArtifactsDirectory -DistributionCatalogDirectory $DistributionCatalogDirectory
-    return
-}
+. (Join-Path $PSScriptRoot 'Distribution-Profile.ps1')
+$DistributionProfile = Resolve-StudioXDistributionProfile $DistributionProfile
+if ($DistributionProfile -eq 'light' -and !$OutputDirectory) { throw 'Specify a new OutputDirectory for light publication.' }
 if (!$ReleaseVersion)
 {
     $properties = [xml](Get-Content -LiteralPath (Join-Path $projectRoot 'Directory.Build.props') -Raw)
@@ -19,6 +17,7 @@ if (!$RuntimeAssetsDirectory)
     $RuntimeAssetsDirectory = Join-Path $projectRoot 'artifacts/tool-runtime'
 }
 $assets = [IO.Path]::GetFullPath($RuntimeAssetsDirectory)
+if ($DistributionProfile -eq 'full') {
 $hdlRoot = Join-Path $assets 'hdl/yosys'
 foreach ($file in @('yosys.exe', 'runtime.json', 'Yosys-ISC.txt'))
 {
@@ -32,6 +31,7 @@ if ($hdlManifest.sha256 -ne (Get-FileHash -LiteralPath (Join-Path $hdlRoot 'yosy
 {
     throw 'Bundled Yosys executable does not match its SHA-256 manifest.'
 }
+}
 $buildArguments = @()
 if ($BuildArtifactsDirectory)
 {
@@ -40,6 +40,7 @@ if ($BuildArtifactsDirectory)
     $buildArguments = @('--artifacts-path', $BuildArtifactsDirectory)
 }
 $toolsets = Join-Path $assets 'toolsets'
+if ($DistributionProfile -eq 'full') {
 if (!(Test-Path -LiteralPath $toolsets -PathType Container))
 {
     throw 'Prepare the bundled tool runtime first: tools/Prepare-ToolRuntime.ps1'
@@ -83,11 +84,12 @@ foreach ($file in @('stc-isp-portable-3.14.7/python.exe', 'stc-isp-portable-3.14
         throw "Prepare the bundled STC ISP runtime first: $file (tools/Prepare-StcIspRuntime.ps1)"
     }
 }
+}
 # Espressif 的 SDK、主机工具和七个小包必须成套就绪；此检查只读取本地资源。
 . (Join-Path $PSScriptRoot 'Espressif-PublishAssets.ps1')
 $espressifCatalogRoot = Join-Path $projectRoot 'artifacts/packs/Espressif-0.1.1'
 $espressifPacks = @(Get-EspressifReleasePacks $espressifCatalogRoot)
-Test-EspressifPublishToolsets $toolsets
+if ($DistributionProfile -eq 'full') { Test-EspressifPublishToolsets $toolsets }
 # AGM 四个子系列从稳定的开发包索引读取，发布前完成型号、来源和路径核对。
 . (Join-Path $PSScriptRoot 'Ag32-PublishAssets.ps1')
 $ag32CatalogRoot = Join-Path $projectRoot 'artifacts/device-packs-development'
@@ -112,7 +114,7 @@ if (!(Test-Path -LiteralPath (Join-Path $projectRoot 'artifacts/git-runtime/git/
 {
     throw 'Prepare the bundled Git first: tools/Prepare-GitRuntime.ps1'
 }
-& dotnet publish (Join-Path $projectRoot 'src/StudioX.Desktop/StudioX.Desktop.csproj') -c Release -r win-x64 --self-contained true -o $output "-p:StudioXRuntimeAssetsDirectory=$assets" "-p:Version=$($releaseIdentity.FileVersion)" "-p:ProductVersion=$ReleaseVersion" -p:DebugType=None -p:DebugSymbols=false -p:IncludeSourceRevisionInInformationalVersion=false --nologo @buildArguments
+& dotnet publish (Join-Path $projectRoot 'src/StudioX.Desktop/StudioX.Desktop.csproj') -c Release -r win-x64 --self-contained true -o $output "-p:StudioXRuntimeAssetsDirectory=$assets" "-p:StudioXDistributionProfile=$DistributionProfile" "-p:Version=$($releaseIdentity.FileVersion)" "-p:ProductVersion=$ReleaseVersion" -p:DebugType=None -p:DebugSymbols=false -p:IncludeSourceRevisionInInformationalVersion=false --nologo @buildArguments
 if ($LASTEXITCODE -ne 0)
 {
     throw 'Desktop publish failed.'
@@ -374,6 +376,12 @@ if ($DevicePackCatalogDirectory)
 $releasedPacks | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath (Join-Path $packOutput 'index.json') -Encoding utf8
 $guide = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'installer/使用说明.txt') -Raw
 $guide.Replace('{{VERSION}}', $ReleaseVersion) | Set-Content -LiteralPath (Join-Path $output '使用说明.txt') -Encoding utf8
+$componentInventory = @(Get-StudioXBundledComponents $output)
+if ($DistributionProfile -eq 'light' -and ($componentInventory.Count -or
+    (Test-Path -LiteralPath (Join-Path $runtime 'toolsets')) -or
+    (Test-Path -LiteralPath (Join-Path $runtime 'hdl')) -or
+    (Test-Path -LiteralPath (Join-Path $runtime 'stc-isp')))) { throw 'Light publication unexpectedly contains development tools.' }
+@{formatVersion=1;components=$componentInventory} | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath (Join-Path $output 'development-components.json') -Encoding utf8
 $sourceEvidence = Get-StudioXSourceEvidence $projectRoot
 @{ formatVersion         =1;
     sourceCommit         =$sourceEvidence.sourceCommit;
@@ -383,7 +391,9 @@ $sourceEvidence = Get-StudioXSourceEvidence $projectRoot
     channel              ='preview';
     platform             ='win-x64';
     updateMode           ='installer';
-    distributionProfile  ='full';
+    distributionProfile  =$DistributionProfile;
+    bundledDevelopmentComponents = $componentInventory.Count;
+    componentInventorySha256 = (Get-FileHash -LiteralPath (Join-Path $output 'development-components.json')).Hash.ToLowerInvariant();
     userDataDirectory    ='%LOCALAPPDATA%\MCUStudioX';
     devicePacksDirectory ='device-packs';
     bundledPlugins       = !$ExcludePlugins.IsPresent

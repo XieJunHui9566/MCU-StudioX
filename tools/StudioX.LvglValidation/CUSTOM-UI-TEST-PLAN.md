@@ -2,7 +2,7 @@
 
 证据输出限定在 `artifacts/validation/lvgl-custom-ui-current`，不连接硬件，不下载固件。
 外部授权边界使用系统 Temp 下精确命名的 `StudioXLvglCustomUiExternal` 小标记目录，运行结束核对绝对路径与重解析点后清理。
-扫描测试使用少量标记文件，标记库明确不用于编译；真实窗口复用已有共享 LVGL 与内置 PC 工具链。
+扫描测试使用少量标记文件，标记库明确不用于编译；真实窗口复用已有共享 LVGL 与内置 PC 开发环境组件。
 
 ## 发现与检查
 
@@ -27,4 +27,4 @@
 - 新工程没有 MCU 构建结果时，目标 Flash/RAM 保持未知；未标定传输带宽时 MCU 传输上限保持未知。
 - 修改运行时资源触发自动重建并改变实际像素；之后错误映射不能替换运行窗口的旧资源，仍能截图。
 - 停止后回收两个当前资源 slot 与 staging，不保留每次资源复制的历史。
-- 保留截图、诊断与小型 fixture，复用单一 `.build/pc-preview`；不重复复制 LVGL 或数百 MiB 工具链。
+- 保留截图、诊断与小型 fixture，复用单一 `.build/pc-preview`；不重复复制 LVGL 或数百 MiB 开发环境组件。

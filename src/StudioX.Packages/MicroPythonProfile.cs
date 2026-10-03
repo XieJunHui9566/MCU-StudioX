@@ -3,7 +3,7 @@ namespace StudioX.Packages;
 using System.Text.Json.Serialization;
 using StudioX.Foundation;
 
-/// <summary>明确板型和解释器版本；C SDK 的工具集与下载配置不适用于脚本模板。</summary>
+/// <summary>明确板型和解释器版本；C SDK 的开发环境组件与下载配置不适用于脚本模板。</summary>
 public sealed record MicroPythonProfile(string Board, string Version)
 {
     [JsonIgnore]

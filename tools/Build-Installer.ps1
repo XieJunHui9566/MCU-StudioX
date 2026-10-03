@@ -4,7 +4,7 @@ param(
     [string]$OutputDirectory,
     [string]$DevicePackCatalogDirectory,
     [switch]$ExcludePlugins,
-    [ValidateSet('full','base')][string]$DistributionProfile='full',
+    [ValidateSet('full','light','base')][string]$DistributionProfile='full',
     [string]$DistributionCatalogDirectory,
     [string]$CompilerPath = (Join-Path $PSScriptRoot '../.artifacts/installer-tools/InnoSetup-7.1.0/ISCC.exe')
 )
@@ -16,6 +16,8 @@ if (!$ReleaseVersion)
     $ReleaseVersion = $properties.SelectSingleNode('//ProductVersion').InnerText
 }
 . (Join-Path $PSScriptRoot 'Release-Version.ps1')
+. (Join-Path $PSScriptRoot 'Distribution-Profile.ps1')
+$DistributionProfile = Resolve-StudioXDistributionProfile $DistributionProfile
 $releaseIdentity = Get-StudioXReleaseVersion $ReleaseVersion
 if (!$OutputDirectory)
 {
@@ -51,6 +53,7 @@ if ($release.version -ne $ReleaseVersion -or (Get-Item -LiteralPath $executable)
     throw 'Payload and installer versions do not match.'
 }
 if (($release.distributionProfile -and $release.distributionProfile -ne $DistributionProfile) -or (!$release.distributionProfile -and $DistributionProfile -ne 'full')) { throw 'Payload distribution profile differs from the requested installer profile.' }
+if ($DistributionProfile -eq 'light' -and @('runtime/toolsets','runtime/hdl','runtime/stc-isp').Where({Test-Path -LiteralPath (Join-Path $payload $_)}).Count) { throw 'Light installer payload contains development tools.' }
 foreach ($id in $(if ($DistributionProfile -eq 'full') { @('agm.agrv', 'arm.gnu', 'riscv.xpack', 'wch.riscv') } else { @() }))
 {
     if (!(Test-Path -LiteralPath (Join-Path $payload "runtime/toolsets/$id/1.0.0/toolset.json")))
@@ -83,16 +86,18 @@ foreach ($file in Get-ChildItem -LiteralPath $payload -Recurse -File | Sort-Obje
 }
 $hashes | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath (Join-Path $payload 'release-files.sha256.json') -Encoding utf8
 [IO.Directory]::CreateDirectory($output) | Out-Null
+$componentEntries = Join-Path $output 'development-components.iss'
+Write-StudioXInstallerComponents $payload $componentEntries
 $script = Join-Path $PSScriptRoot 'installer/StudioX.iss'
 $log = Join-Path $output 'installer-build.log'
 [IO.File]::WriteAllText($log, '')
-& $CompilerPath --quiet-progress "--define=AppVersion=$ReleaseVersion" "--define=AppFileVersion=$($releaseIdentity.FileVersion)" "--define=DistributionProfile=$DistributionProfile" "--define=PayloadDirectory=$payload" "--output-dir=$output" $script 2>&1 | Tee-Object -FilePath $log
+& $CompilerPath --quiet-progress "--define=AppVersion=$ReleaseVersion" "--define=AppFileVersion=$($releaseIdentity.FileVersion)" "--define=DistributionProfile=$DistributionProfile" "--define=DevelopmentComponentEntries=$componentEntries" "--define=PayloadDirectory=$payload" "--output-dir=$output" $script 2>&1 | Tee-Object -FilePath $log
 if ($LASTEXITCODE -ne 0)
 {
     throw 'Installer compilation failed; see installer-build.log.'
 }
 Add-Content -LiteralPath $log -Value "Inno Setup 7.1.0 compilation succeeded for MCU StudioX $ReleaseVersion."
-$setup = Join-Path $output $(if ($DistributionProfile -eq 'base') { "MCU-StudioX-$ReleaseVersion-win-x64-Base-Setup.exe" } else { "MCU-StudioX-$ReleaseVersion-win-x64-Setup.exe" })
+$setup = Join-Path $output (Get-StudioXInstallerName $ReleaseVersion $DistributionProfile)
 if (!(Test-Path -LiteralPath $setup))
 {
     throw 'Compiler did not produce the installer.'
@@ -103,6 +108,7 @@ $setupHash = (Get-FileHash -LiteralPath $setup -Algorithm SHA256).Hash.ToLowerIn
 Copy-Item -LiteralPath (Join-Path $payload 'device-packs') -Destination $output -Recurse
 Copy-Item -LiteralPath (Join-Path $payload '使用说明.txt') -Destination $output
 @{ version        =$ReleaseVersion;
+    distributionProfile=$DistributionProfile;
     installer     =[IO.Path]::GetFileName($setup);
     sha256        =$setupHash;
     bytes         =(Get-Item -LiteralPath $setup).Length;

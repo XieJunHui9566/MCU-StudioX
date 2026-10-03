@@ -32,7 +32,7 @@ Packages 完整校验新的 ZIP 芯片包，Engine 从明确选择构造纯 Buil
 
 工程保存 `.studiox/project.json` 格式 1，工具锁独立保存于 `.studiox/toolchain.lock.json`。工具只按精确 ID/版本选择，不搜索 PATH，不将绝对安装路径写入工程。工具清单使用安装目录内相对路径，允许完整安装目录搬迁。
 
-Engine 生成分层 CMake：根 `CMakeLists.txt` 交给用户维护，`device/CMakeLists.txt` 与 `device/platform.cmake` 管理固定 SDK、器件参数和产物规则。Application 将带生成器标识的内部配置视为只读，Desktop 显示原因；器件包内容不承担工具链分发。布局和维护约定见 [工程分层](PROJECT_LAYOUT.md)。
+Engine 生成分层 CMake：根 `CMakeLists.txt` 交给用户维护，`device/CMakeLists.txt` 与 `device/platform.cmake` 管理固定 SDK、器件参数和产物规则。Application 将带生成器标识的内部配置视为只读，Desktop 显示原因；器件包内容不承担开发环境组件分发。布局和维护约定见 [工程分层](PROJECT_LAYOUT.md)。
 
 ## 设备与实用工具
 

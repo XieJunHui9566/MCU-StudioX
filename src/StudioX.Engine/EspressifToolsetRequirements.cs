@@ -20,13 +20,13 @@ internal static class EspressifToolsetRequirements
             if (manifest.ResourceDirectories is null || !manifest.ResourceDirectories.TryGetValue(role, out var relative) ||
                 !Directory.Exists(PathBoundary.Resolve(root, relative)))
             {
-                throw new StudioXException("TOOL_RESOURCE", "Espressif 工具集缺少资源目录：" + role);
+                throw new StudioXException("TOOL_RESOURCE", "Espressif 开发环境组件缺少资源目录：" + role);
             }
         }
         var sdk = PathBoundary.Resolve(root, manifest.ResourceDirectories!["idf"]);
         if (!File.Exists(PathBoundary.Resolve(sdk, "tools/idf.py")) || !File.Exists(PathBoundary.Resolve(sdk, "tools/cmake/project.cmake")))
         {
-            throw new StudioXException("TOOL_RESOURCE", "Espressif 工具集缺少原生 IDF 构建入口。");
+            throw new StudioXException("TOOL_RESOURCE", "Espressif 开发环境组件缺少原生 IDF 构建入口。");
         }
     }
 }

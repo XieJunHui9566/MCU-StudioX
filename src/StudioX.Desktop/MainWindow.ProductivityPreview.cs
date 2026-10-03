@@ -90,7 +90,7 @@ public partial class MainWindow
         Render(this, Path.Combine(directory, "split-compact.png"));
         Check(SourceEditor.ActualWidth > 250 && mirrorEditor.ActualWidth > 250, $"both editor columns remain usable in compact window: active={SourceEditor.ActualWidth}, mirror={mirrorEditor.ActualWidth}, left={editorGroups!.ColumnDefinitions[0].ActualWidth}, right={editorGroups.ColumnDefinitions[2].ActualWidth}");
         await ShowToolEnvironmentAsync();
-        Check(environmentGrid!.Items.Count > 0, "tool environment lists installed versions");
+        Check(toolManagementView!.VersionsGrid.Items.Count > 0, "tool environment lists installed versions");
         Render(this, Path.Combine(directory, "tool-environment.png"));
         ShowTroubleshooting("TOOLSET_MISSING: demonstration only");
         Check(troubleshootingTab?.Content is not null, "diagnostic guide renders actionable steps and original diagnostics");

@@ -25,8 +25,16 @@ if($lines.Count -ne 2 -or $lines[0] -notmatch '^[0-9a-f]{64}  checksum-a.txt$' -
 $checks.Add('installer/source checksum entries remain separate and correctly formatted')
 & (Join-Path $PSScriptRoot 'Invoke-Release.ps1') -ReleaseVersion $version -OutputDirectory (Join-Path $output 'plan')
 $plan=Get-Content (Join-Path $output 'plan/plan.json') -Raw|ConvertFrom-Json
-if($plan.stage -ne 'Plan' -or $plan.version -ne $version -or $plan.releaseTag -ne ('v'+$version) -or $plan.automaticVersionChange){throw 'Unsafe release defaults.'}
+if($plan.stage -ne 'Plan' -or $plan.version -ne $version -or $plan.releaseTag -ne ('v'+$version) -or $plan.automaticVersionChange -or $plan.profile -ne 'light'){throw 'Unsafe release defaults.'}
 $checks.Add('default stage only writes reviewable plan')
+foreach($profile in @('full','light','base'))
+{
+    & (Join-Path $PSScriptRoot 'Invoke-Release.ps1') -ReleaseVersion $version -DistributionProfile $profile -OutputDirectory (Join-Path $output ('profile-'+$profile))
+    $profilePlan=Get-Content (Join-Path $output ('profile-'+$profile+'/plan.json')) -Raw|ConvertFrom-Json
+    $expectedProfile=if($profile -eq 'base'){'light'}else{$profile}
+    if($profilePlan.profile -ne $expectedProfile -or $profilePlan.version -ne $version){throw 'Distribution profile changed product identity or was not canonicalized.'}
+}
+$checks.Add('full and light plans retain identity; legacy base resolves to light')
 & (Join-Path $PSScriptRoot 'Invoke-Release.ps1') -ReleaseVersion $version -ReleaseTag ('v'+$version+'-rebuild-20261003') -OutputDirectory (Join-Path $output 'rebuild-plan')
 $rebuildPlan=Get-Content (Join-Path $output 'rebuild-plan/plan.json') -Raw|ConvertFrom-Json
 if($rebuildPlan.version -ne $version -or $rebuildPlan.releaseTag -ne ('v'+$version+'-rebuild-20261003') -or $rebuildPlan.automaticVersionChange){throw 'Rebuild changed product identity.'}

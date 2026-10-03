@@ -41,12 +41,12 @@ public sealed partial class LvglPreviewService : IAsyncDisposable
                 }
                 else if (settings is not { FormatVersion: 1, Mode: "bundled" })
                 {
-                    SettingsDiagnostic = "旧版或无效的外置 GCC 设置已停用，当前默认使用内置 PC 工具链；可在高级设置中明确覆盖。";
+                    SettingsDiagnostic = "旧版或无效的外置 GCC 设置已停用，当前默认使用内置 PC 开发环境组件；可在高级设置中明确覆盖。";
                 }
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException)
             {
-                SettingsDiagnostic = "原生工具链设置读取失败：" + ex.Message;
+                SettingsDiagnostic = "原生开发环境组件设置读取失败：" + ex.Message;
             }
         }
     }
