@@ -1,5 +1,6 @@
 param([Parameter(Mandatory)][string]$OutputDirectory, [Parameter(Mandatory)][string]$DesktopExe,
-    [string]$CompilerPath=(Join-Path $PSScriptRoot '../.artifacts/installer-tools/InnoSetup-7.1.0/ISCC.exe'))
+    [string]$CompilerPath=(Join-Path $PSScriptRoot '../.artifacts/installer-tools/InnoSetup-7.1.0/ISCC.exe'),
+    [ValidateRange(30,900)][int]$ProcessTimeoutSeconds=300)
 $ErrorActionPreference='Stop'
 . (Join-Path $PSScriptRoot 'Distribution-Profile.ps1')
 . (Join-Path $PSScriptRoot 'Release-Version.ps1')
@@ -21,7 +22,8 @@ function Run([string]$Program,[string[]]$Arguments,[string]$Log)
     foreach($argument in $Arguments){$start.ArgumentList.Add($argument)}
     $process=[Diagnostics.Process]::Start($start)
     $stdout=$process.StandardOutput.ReadToEndAsync();$stderr=$process.StandardError.ReadToEndAsync()
-    $deadline=[DateTime]::UtcNow.AddSeconds(90)
+    # 安装器资源更新在部分 Windows 主机上较慢，仍保留有界超时与进程树终止。
+    $deadline=[DateTime]::UtcNow.AddSeconds($ProcessTimeoutSeconds)
     while(!$process.WaitForExit(1000)){if([DateTime]::UtcNow -gt $deadline){$process.Kill($true);throw 'Fixture process timed out.'}}
     [IO.File]::WriteAllText($Log,$stdout.GetAwaiter().GetResult()+$stderr.GetAwaiter().GetResult())
     return $process.ExitCode
