@@ -12,7 +12,7 @@ permissions:
 jobs:
   full:
     runs-on: windows-2025
-    timeout-minutes: 45
+    timeout-minutes: 60
     env:
       GH_TOKEN: ${{ github.token }}
       GODEBUG: http2client=0
@@ -28,8 +28,14 @@ jobs:
           $ErrorActionPreference='Stop'
           $taskAssets=Join-Path $env:RUNNER_TEMP 'release-assets'
           New-Item -ItemType Directory -Path $taskAssets | Out-Null
-          gh release download $env:RELEASE_TAG --repo $env:GITHUB_REPOSITORY --dir $taskAssets --pattern '*-win-x64-Setup.exe' --pattern 'artifact-records.json'
-          if($LASTEXITCODE -ne 0){throw 'Asset download failed.'}
+          $taskDownloaded=$false
+          for($taskAttempt=0;$taskAttempt -lt 90;$taskAttempt++){
+            gh release download $env:RELEASE_TAG --repo $env:GITHUB_REPOSITORY --dir $taskAssets --pattern '*-win-x64-Setup.exe' --pattern 'artifact-records.json' --clobber
+            if($LASTEXITCODE -eq 0){$taskDownloaded=$true;break}
+            Write-Output "Waiting for complete draft assets ($taskAttempt)."
+            Start-Sleep -Seconds 20
+          }
+          if(!$taskDownloaded){throw 'Asset download failed within the bounded wait.'}
           $taskHead=(& git rev-parse HEAD).Trim()
           $taskRecord=@(Get-Content (Join-Path $taskAssets 'artifact-records.json') -Raw | ConvertFrom-Json | Where-Object profile -eq 'full')
           if($taskRecord.Count -ne 1 -or $taskRecord[0].sourceCommit -ne $taskHead){throw 'Release source binding mismatch.'}
