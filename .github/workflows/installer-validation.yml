@@ -26,12 +26,15 @@ jobs:
           RELEASE_TAG: ${{ inputs.release_tag }}
         run: |
           $ErrorActionPreference='Stop'
+          $PSNativeCommandUseErrorActionPreference=$false
           $taskAssets=Join-Path $env:RUNNER_TEMP 'release-assets'
           New-Item -ItemType Directory -Path $taskAssets | Out-Null
+          $taskVersion=([xml](Get-Content Directory.Build.props -Raw)).SelectSingleNode('//ProductVersion').InnerText
+          $taskExpected=Join-Path $taskAssets "MCU-StudioX-$taskVersion-win-x64-Setup.exe"
           $taskDownloaded=$false
           for($taskAttempt=0;$taskAttempt -lt 90;$taskAttempt++){
             gh release download $env:RELEASE_TAG --repo $env:GITHUB_REPOSITORY --dir $taskAssets --pattern '*-win-x64-Setup.exe' --pattern 'artifact-records.json' --clobber
-            if($LASTEXITCODE -eq 0){$taskDownloaded=$true;break}
+            if($LASTEXITCODE -eq 0 -and (Test-Path -LiteralPath $taskExpected)){$taskDownloaded=$true;break}
             Write-Output "Waiting for complete draft assets ($taskAttempt)."
             Start-Sleep -Seconds 20
           }
