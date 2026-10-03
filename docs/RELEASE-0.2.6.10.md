@@ -39,7 +39,7 @@
 | `pc.mingw` | 1.0.0 | Windows PC C/C++ / LVGL 预览 |
 | `hdl.iverilog` | 14.0.0 | Verilog 仿真 |
 | `espressif.idf` | 5.5.4 | ESP-IDF |
-| `espressif.esp8266-rtos` | 3.4 | ESP8266 RTOS SDK |
+| `espressif.esp8266-rtos` | 3.4.0 | ESP8266 RTOS SDK 3.4 |
 
 另保留原有独立 HDL / STC 下载运行环境、许可证及来源说明。Supra 使用用户自己的许可证，安装包不含私人许可。预装副本与独立公开组件不是同一审核范围，AGM/WCH 及部分旧副本的对应源码和再分发材料缺口见组件库；本次发布不宣称这些材料已经补齐。
 
