@@ -418,7 +418,14 @@ $sourceEvidence = Get-StudioXSourceEvidence $projectRoot
     sourceDirty                  =$sourceEvidence.sourceDirty;
     product                      ='MCU StudioX';
     version                      =$ReleaseVersion;
-    channel                      ='preview';
+    channel                      = $(if ($releaseIdentity.Suffix -eq 'LTS')
+        {
+            'lts'
+        }
+        else
+        {
+            'preview'
+        });
     platform                     ='win-x64';
     updateMode                   ='installer';
     distributionProfile          =$DistributionProfile;
