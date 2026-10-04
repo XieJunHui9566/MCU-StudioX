@@ -139,7 +139,7 @@
                 Margin="14,0,0,0"
                 Padding="6,2">
                 <TextBlock
-                  Text="PREVIEW"
+                  Text="{x:Static local:ProductInfo.ReleaseBadge}"
                   FontSize="9"
                   Foreground="{DynamicResource Muted}" />
               </Border>

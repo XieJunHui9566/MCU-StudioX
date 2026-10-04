@@ -10,7 +10,7 @@
 
 公开安装包采用轻量版，覆盖升级时保留已有工具、工程和用户设置。产品显示版本为 `0.2.6LTS`，Windows 文件版本为 `0.2.6.11`，可从 `0.2.6.10` 正常升级。
 
-[下载 LTS 安装包与源码](https://github.com/XieJunHui9566/MCU-StudioX/releases/tag/v0.2.6LTS) · [发行说明](docs/RELEASE-0.2.6LTS.md) · [开发环境组件库](https://github.com/XieJunHui9566/MCU-StudioX-Toolchains)
+[下载 LTS 安装包与源码](https://github.com/XieJunHui9566/MCU-StudioX/releases/tag/v0.2.6LTS-final-20261005) · [发行说明](docs/RELEASE-0.2.6LTS.md) · [开发环境组件库](https://github.com/XieJunHui9566/MCU-StudioX-Toolchains)
 
 ## 0.2.6.10 · 完整版与轻量版
 

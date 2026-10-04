@@ -20,6 +20,9 @@ public static class ProductInfo
         }
     }
     public static string DisplayName => "MCU StudioX " + Version;
+    public static string ReleaseBadge => Version.EndsWith("LTS", StringComparison.Ordinal)
+        ? "LTS"
+        : "PREVIEW";
     public static string PreviewVersion => Version.EndsWith("LTS", StringComparison.Ordinal)
         ? Version
         : Version + " · 预览版";
