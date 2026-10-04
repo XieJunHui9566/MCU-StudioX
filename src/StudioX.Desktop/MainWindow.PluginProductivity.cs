@@ -1,7 +1,6 @@
 namespace StudioX.Desktop;
 
 using System.Text.Json;
-using System.Windows;
 using StudioX.Application.Plugins;
 using StudioX.Foundation;
 
@@ -88,7 +87,10 @@ public partial class MainWindow
         if (choices.Length > 1)
         {
             var picker = new QuickPickWindow("插件设置", (q, _) => Task.FromResult<IReadOnlyList<QuickPickItem>>(choices.Where(p => p.Manifest.DisplayName.Contains(q, StringComparison.OrdinalIgnoreCase)).Select(p => new QuickPickItem(p.Manifest.DisplayName, p.Id, p)).ToArray())) { Owner = this };
-            if (picker.ShowDialog() != true || picker.Selected?.Value is not PluginActiveContribution selected) { return; }
+            if (picker.ShowDialog() != true || picker.Selected?.Value is not PluginActiveContribution selected)
+            {
+                return;
+            }
             plugin = selected;
         }
         await RunAsync(async token =>
@@ -104,7 +106,10 @@ public partial class MainWindow
             {
                 await workspace.InvokeAsync(plugin.Id, "event", "settings.changed", JsonSerializer.SerializeToElement(dialog.Values, JsonStore.Options), token);
             }
-            foreach (var item in pluginDebugViews.Where(p => p.Key.Plugin == plugin.Id).Select(p => p.Value)) { item.Session.Refresh(); }
+            foreach (var item in pluginDebugViews.Where(p => p.Key.Plugin == plugin.Id).Select(p => p.Value))
+            {
+                item.Session.Refresh();
+            }
             Status.Text = "插件设置已保存。";
         });
     }
@@ -127,7 +132,10 @@ public partial class MainWindow
         if (items.Length > 1)
         {
             var picker = new QuickPickWindow("调试快照扩展", (q, _) => Task.FromResult<IReadOnlyList<QuickPickItem>>(items.Where(i => i.ToString().Contains(q, StringComparison.OrdinalIgnoreCase)).ToArray())) { Owner = this };
-            if (picker.ShowDialog() != true || picker.Selected?.Value is not ValueTuple<string, string> choice) { return; }
+            if (picker.ShowDialog() != true || picker.Selected?.Value is not ValueTuple<string, string> choice)
+            {
+                return;
+            }
             selected = choice;
         }
         await OpenPluginDebugViewAsync(selected.Item1, selected.Item2);

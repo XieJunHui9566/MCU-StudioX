@@ -37,13 +37,19 @@ internal sealed record Ag32PinMappingTimingReport(string Sha256, int Covered, in
                 int count;
                 while ((count = await gzip.ReadAsync(buffer, token)) != 0)
                 {
-                    if (expanded.Length + count > 8 * 1024 * 1024) { throw Error("时序报告解压后超过大小限制。"); }
+                    if (expanded.Length + count > 8 * 1024 * 1024)
+                    {
+                        throw Error("时序报告解压后超过大小限制。");
+                    }
                     expanded.Write(buffer, 0, count);
                 }
             }
             catch (InvalidDataException ex) { throw new StudioXException("AG32_MAPPING_TIMING", "时序报告压缩数据损坏：" + name, ex); }
             var text = new UTF8Encoding(false, true).GetString(expanded.ToArray());
-            if (!text.Contains("Coverage report", StringComparison.Ordinal)) { throw Error("Supra 时序报告不完整：" + name); }
+            if (!text.Contains("Coverage report", StringComparison.Ordinal))
+            {
+                throw Error("Supra 时序报告不完整：" + name);
+            }
             reports.Add(name, text);
             hash.AppendData(Encoding.UTF8.GetBytes(name + "\0" + text + "\0"));
         }
@@ -55,7 +61,10 @@ internal sealed record Ag32PinMappingTimingReport(string Sha256, int Covered, in
         }
         var uncovered = Regex.Matches(reports["coverage"], @"(?m)^\s*Uncovered connection:\s*([^\r\n]+)")
             .Select(match => match.Groups[1].Value.Trim()).ToArray();
-        if (uncovered.Length != total - covered) { throw Error("时序报告的未覆盖连接列表与数量不一致。"); }
+        if (uncovered.Length != total - covered)
+        {
+            throw Error("时序报告的未覆盖连接列表与数量不一致。");
+        }
         var setup = Slack("setup_summary", "Setup");
         var hold = Slack("hold_summary", "Hold");
         var sdc = await File.ReadAllTextAsync(PathBoundary.Resolve(build, "studiox-clocks.sdc"), token);
@@ -64,9 +73,13 @@ internal sealed record Ag32PinMappingTimingReport(string Sha256, int Covered, in
             throw Error("已生成片内布线预算，但 Supra 没有返回对应的建立时序结果。");
         }
         if (sdc.Contains("# AGM analog_ip:", StringComparison.Ordinal) && (setup is null || hold is null))
+        {
             throw Error("模拟 IP 缺少可分析的建立或保持时序结果。");
+        }
         if (requirePassing && covered != total)
+        {
             throw Error($"Supra 时序约束未覆盖 {total - covered} 条连接；请完善约束后重新编译。");
+        }
         if (requirePassing && (setup < 0 || hold < 0))
         {
             throw Error($"Supra 时序预算未满足：建立余量 {Format(setup)}，保持余量 {Format(hold)}；请调整频率或映射后重新编译。原始报告位于 {build}。");
@@ -96,7 +109,12 @@ internal sealed record Ag32PinMappingTimingReport(string Sha256, int Covered, in
         {
             Policy = "basic-mapping-one-bus-system-cycle-v1",
             ExternalDeviceTimingModeled = false,
-            Covered, Total, WorstSetupSlackNs, WorstHoldSlackNs, Uncovered, Sha256
+            Covered,
+            Total,
+            WorstSetupSlackNs,
+            WorstHoldSlackNs,
+            Uncovered,
+            Sha256
         }, token);
     }
 

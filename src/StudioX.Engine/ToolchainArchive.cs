@@ -16,8 +16,14 @@ public sealed class ToolchainArchive : IDisposable
     private readonly ZipArchive? zip;
     private readonly IArchive? sevenZip;
     private readonly Dictionary<string, ToolchainArchiveEntry> index = new(StringComparer.Ordinal);
-    public IReadOnlyList<ToolchainArchiveEntry> Entries { get; }
-    public long Bytes { get; }
+    public IReadOnlyList<ToolchainArchiveEntry> Entries
+    {
+        get;
+    }
+    public long Bytes
+    {
+        get;
+    }
     public string Container => sevenZip is null ? "ZIP" : "7z";
 
     private ToolchainArchive(Stream stream, CancellationToken token)
@@ -25,7 +31,9 @@ public sealed class ToolchainArchive : IDisposable
         Span<byte> signature = stackalloc byte[6];
         stream.Position = 0;
         if (stream.Read(signature) != signature.Length)
+        {
             throw new StudioXException("TOOLS_ARCHIVE_FORMAT", "开发环境组件归档不完整。");
+        }
         stream.Position = 0;
         try
         {
@@ -37,15 +45,24 @@ public sealed class ToolchainArchive : IDisposable
                 bool encrypted = false, bool anti = false, bool incomplete = false, string? link = null)
             {
                 token.ThrowIfCancellationRequested();
-                if (encrypted) throw new StudioXException("TOOLS_ARCHIVE_ENCRYPTED", "开发环境组件不能使用加密或带密码的归档。");
+                if (encrypted)
+                {
+                    throw new StudioXException("TOOLS_ARCHIVE_ENCRYPTED", "开发环境组件不能使用加密或带密码的归档。");
+                }
                 if ((attributes & (int)FileAttributes.ReparsePoint) != 0 || ((attributes >> 16) & 0xf000) == 0xa000 ||
                     ((extendedAttributes >> 16) & 0xf000) == 0xa000 || link is not null)
+                {
                     throw new StudioXException("TOOLS_ARCHIVE_LINK", "工具归档不接受链接或重解析点。");
+                }
                 if (directory || name.EndsWith('/') || anti || incomplete || !names.Add(name))
+                {
                     throw new StudioXException("TOOLS_ARCHIVE_ENTRY", "归档含重复、目录、删除标记或不完整条目。");
+                }
                 _ = PathBoundary.Resolve(validationRoot, name);
                 if (size < 0 || size > MaximumBytes - total || entries.Count >= MaximumFiles)
+                {
                     throw new StudioXException("TOOLS_ARCHIVE_SIZE", "归档文件数或展开大小超出限制。");
+                }
                 total += size;
                 var entry = new ToolchainArchiveEntry(name, size);
                 index.Add(name, entry);
@@ -66,23 +83,41 @@ public sealed class ToolchainArchive : IDisposable
             else if (signature[0] == 0x50 && signature[1] == 0x4b && signature[2] is 3 or 5 && signature[3] is 4 or 6)
             {
                 zip = new ZipArchive(stream, ZipArchiveMode.Read, leaveOpen: true);
-                foreach (var file in zip.Entries) Add(file.FullName, file.Length, file.FullName.EndsWith('/'), file.ExternalAttributes);
+                foreach (var file in zip.Entries)
+                {
+                    Add(file.FullName, file.Length, file.FullName.EndsWith('/'), file.ExternalAttributes);
+                }
             }
-            else throw new StudioXException("TOOLS_ARCHIVE_FORMAT", "开发环境组件仅支持 7z 和已有 ZIP 容器；不接受自解压程序或分卷。");
+            else
+            {
+                throw new StudioXException("TOOLS_ARCHIVE_FORMAT", "开发环境组件仅支持 7z 和已有 ZIP 容器；不接受自解压程序或分卷。");
+            }
             // Windows 上文件不能同时充当父目录；在写入任何文件之前检查此类冲突。
             foreach (var name in names)
             {
                 for (var slash = name.IndexOf('/'); slash >= 0; slash = name.IndexOf('/', slash + 1))
-                    if (names.Contains(name[..slash])) throw new StudioXException("TOOLS_ARCHIVE_ENTRY", "归档内文件与父目录路径冲突。");
+                {
+                    if (names.Contains(name[..slash]))
+                    {
+                        throw new StudioXException("TOOLS_ARCHIVE_ENTRY", "归档内文件与父目录路径冲突。");
+                    }
+                }
             }
-            if (entries.Count < 2) throw new StudioXException("TOOLS_ARCHIVE_SIZE", "开发环境组件归档必须包含清单和工具文件。");
+            if (entries.Count < 2)
+            {
+                throw new StudioXException("TOOLS_ARCHIVE_SIZE", "开发环境组件归档必须包含清单和工具文件。");
+            }
             Entries = entries;
             Bytes = total;
         }
         catch (Exception error)
         {
-            zip?.Dispose(); sevenZip?.Dispose();
-            if (error is StudioXException or OperationCanceledException or OutOfMemoryException) throw;
+            zip?.Dispose();
+            sevenZip?.Dispose();
+            if (error is StudioXException or OperationCanceledException or OutOfMemoryException)
+            {
+                throw;
+            }
             throw new StudioXException("TOOLS_ARCHIVE", "无法读取开发环境组件归档；归档已损坏或压缩配置不受支持。", error);
         }
     }
@@ -91,8 +126,14 @@ public sealed class ToolchainArchive : IDisposable
 
     public async Task<byte[]> ReadManifestAsync(CancellationToken token = default)
     {
-        if (!index.TryGetValue("toolset.json", out var entry)) throw new StudioXException("TOOLS_ARCHIVE", "缺少 toolset.json。");
-        if (entry.Length > MaximumManifestBytes) throw new StudioXException("TOOLS_ARCHIVE_SIZE", "工具清单过大。");
+        if (!index.TryGetValue("toolset.json", out var entry))
+        {
+            throw new StudioXException("TOOLS_ARCHIVE", "缺少 toolset.json。");
+        }
+        if (entry.Length > MaximumManifestBytes)
+        {
+            throw new StudioXException("TOOLS_ARCHIVE_SIZE", "工具清单过大。");
+        }
         using var memory = new MemoryStream();
         using var content = zip is not null ? zip.GetEntry(entry.Name)!.Open() : sevenZip!.Entries.Single(e => e.Key == entry.Name).OpenEntryStream();
         await CopyExactAsync(content, memory, entry.Length, token).ConfigureAwait(false);
@@ -103,7 +144,9 @@ public sealed class ToolchainArchive : IDisposable
     {
         if (hashes.Count != Entries.Count - 1 || hashes.ContainsKey("toolset.json") ||
             Entries.Any(entry => entry.Name != "toolset.json" && !hashes.ContainsKey(entry.Name)))
+        {
             throw new StudioXException("TOOLS_ARCHIVE_ENTRY", "索引与归档文件集合不一致。");
+        }
     }
 
     public async Task ReadFilesAsync(Func<ToolchainArchiveEntry, Stream, Task> consume, CancellationToken token = default)
@@ -140,15 +183,28 @@ public sealed class ToolchainArchive : IDisposable
                 token.ThrowIfCancellationRequested();
                 // LZMA 解码使用同步 Read；工作在后台任务，避免上游异步解码器状态问题。
                 var read = source.Read(buffer, 0, buffer.Length);
-                if (read == 0) break;
-                if (read > length - copied) throw new StudioXException("TOOLS_ARCHIVE_SIZE", "文件实际展开大小超过归档声明。");
+                if (read == 0)
+                {
+                    break;
+                }
+                if (read > length - copied)
+                {
+                    throw new StudioXException("TOOLS_ARCHIVE_SIZE", "文件实际展开大小超过归档声明。");
+                }
                 copied += read;
                 await output.WriteAsync(buffer.AsMemory(0, read), token).ConfigureAwait(false);
             }
-            if (copied != length) throw new StudioXException("TOOLS_ARCHIVE", "归档文件内容不完整。");
+            if (copied != length)
+            {
+                throw new StudioXException("TOOLS_ARCHIVE", "归档文件内容不完整。");
+            }
         }
         finally { ArrayPool<byte>.Shared.Return(buffer); }
     }
 
-    public void Dispose() { zip?.Dispose(); sevenZip?.Dispose(); }
+    public void Dispose()
+    {
+        zip?.Dispose();
+        sevenZip?.Dispose();
+    }
 }

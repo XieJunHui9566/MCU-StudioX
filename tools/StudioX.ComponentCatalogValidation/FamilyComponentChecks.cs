@@ -28,9 +28,19 @@ internal static class FamilyComponentChecks
             {
                 var entry = zip.GetEntry("toolset.json")!;
                 ToolsetManifest manifest;
-                await using (var input = entry.Open()) manifest = (await JsonSerializer.DeserializeAsync<ToolsetManifest>(input, JsonStore.Options))!;
-                var next = manifest with { Version = "1.0.1", DisplayName = manifest.DisplayName + " (isolated component revision)",
-                    ComponentVersions = new(manifest.ComponentVersions ?? []) { [framework] = version } };
+                await using (var input = entry.Open())
+                {
+                    manifest = (await JsonSerializer.DeserializeAsync<ToolsetManifest>(input, JsonStore.Options))!;
+                }
+                var next = manifest with
+                {
+                    Version = "1.0.1",
+                    DisplayName = manifest.DisplayName + " (isolated component revision)",
+                    ComponentVersions = new(manifest.ComponentVersions ?? [])
+                    {
+                        [framework] = version
+                    }
+                };
                 entry.Delete();
                 await using var stream = zip.CreateEntry("toolset.json", CompressionLevel.Fastest).Open();
                 await JsonSerializer.SerializeAsync(stream, next, JsonStore.Options);
@@ -43,12 +53,24 @@ internal static class FamilyComponentChecks
                 id + " real archive/import independently locks component revision and unchanged SDK version");
             var afterHash = await ArchiveHashAsync(original);
             check(originalHash == afterHash, id + " original SDK archive unchanged during side-by-side revision");
-            rows.Add(new { id, componentVersion = "1.0.1", sdkVersion = version, preview.ArchiveSha256, preview.Fingerprint, publicRelease = false, fixture = true });
+            rows.Add(new
+            {
+                id,
+                componentVersion = "1.0.1",
+                sdkVersion = version,
+                preview.ArchiveSha256,
+                preview.Fingerprint,
+                publicRelease = false,
+                fixture = true
+            });
             await JsonStore.WriteAsync(Path.Combine(output, "components.json"), rows);
         }
     }
     private static async Task<string> ArchiveHashAsync(string path)
-    { await using var stream = File.OpenRead(path); return Convert.ToHexString(await SHA256.HashDataAsync(stream)); }
+    {
+        await using var stream = File.OpenRead(path);
+        return Convert.ToHexString(await SHA256.HashDataAsync(stream));
+    }
     internal static async Task RunAsync(string output, string originals, Action<bool, string> check)
     {
         var sourceCatalog = new ToolsetCatalog(originals);
@@ -65,7 +87,11 @@ internal static class FamilyComponentChecks
             Console.WriteLine("COMPONENT verify/package/import " + id);
             var source = await sourceCatalog.ResolveAsync(id, sourceVersion, sourceManifest.CompilerId);
             var isSdk = id.StartsWith("espressif.", StringComparison.Ordinal);
-            var candidate = isSdk ? source.Manifest : source.Manifest with { Version = "1.0.1", DisplayName = source.Manifest.DisplayName + " (isolated migration fixture)" };
+            var candidate = isSdk ? source.Manifest : source.Manifest with
+            {
+                Version = "1.0.1",
+                DisplayName = source.Manifest.DisplayName + " (isolated migration fixture)"
+            };
             var archive = Path.Combine(output, id + "-" + candidate.Version + "-win-x64.mcutoolchain");
             using (var zip = ZipFile.Open(archive, ZipArchiveMode.Create))
             {
@@ -78,7 +104,9 @@ internal static class FamilyComponentChecks
                 foreach (var relative in candidate.Sha256.Keys)
                 {
                     if (relative.StartsWith("supra/", StringComparison.Ordinal) && relative.Split('/').Any(p => p.Equals("license", StringComparison.OrdinalIgnoreCase) || p.Equals("license.txt", StringComparison.OrdinalIgnoreCase)))
+                    {
                         throw new InvalidOperationException("Private license in component index");
+                    }
                     zip.CreateEntryFromFile(PathBoundary.Resolve(source.RootDirectory, relative), relative, CompressionLevel.Fastest);
                 }
             }
@@ -90,8 +118,19 @@ internal static class FamilyComponentChecks
             check((await management.InstallAsync(preview)).AlreadyInstalled, id + " duplicate import keeps immutable installed contents");
             var afterBytes = await File.ReadAllBytesAsync(Path.Combine(sourceRoot, "toolset.json"));
             check(originalBytes.SequenceEqual(afterBytes), id + " source manifest untouched");
-            rows.Add(new { id, sourceVersion, installedVersion = candidate.Version, compiler = candidate.CompilerId, preview.Bytes, preview.Files, preview.ArchiveSha256,
-                installed.Fingerprint, publicRelease = false, fixture = !isSdk });
+            rows.Add(new
+            {
+                id,
+                sourceVersion,
+                installedVersion = candidate.Version,
+                compiler = candidate.CompilerId,
+                preview.Bytes,
+                preview.Files,
+                preview.ArchiveSha256,
+                installed.Fingerprint,
+                publicRelease = false,
+                fixture = !isSdk
+            });
             await JsonStore.WriteAsync(Path.Combine(output, "components.json"), rows);
         }
     }

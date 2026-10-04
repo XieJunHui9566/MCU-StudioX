@@ -12,7 +12,9 @@ public static class ToolchainArchiveFormat
     {
         var extension = Path.GetExtension(path);
         if (!extension.Equals(Extension, StringComparison.OrdinalIgnoreCase) && !extension.Equals(LegacyExtension, StringComparison.OrdinalIgnoreCase))
+        {
             throw new StudioXException("TOOLS_ARCHIVE_FORMAT", "请选择 .mcutoolchain 开发环境组件包；也支持已有 .studioxtools 离线归档。");
+        }
     }
 
     public static string CacheExtension(string source)

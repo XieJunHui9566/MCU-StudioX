@@ -35,7 +35,10 @@ public sealed class WorkspaceDiscoveryService(ProjectFileService files)
                     }
                     continue;
                 }
-                if (result.Count >= 100000) { throw new InvalidOperationException("快速打开最多发现 100,000 个文件，请缩小工程范围。"); }
+                if (result.Count >= 100000)
+                {
+                    throw new InvalidOperationException("快速打开最多发现 100,000 个文件，请缩小工程范围。");
+                }
                 result.Add(entry.RelativePath);
             }
         }

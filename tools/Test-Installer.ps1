@@ -15,7 +15,10 @@ $releaseVersion = if ($PayloadDirectory)
     # 隔离安装器以完整 Payload 为版本来源；发行安装器仍可能处于压缩阶段。
     (Get-Content -LiteralPath (Join-Path $PayloadDirectory 'release.json') -Raw | ConvertFrom-Json).version
 }
-else { (Get-Item -LiteralPath $Installer).VersionInfo.ProductVersion.Trim() }
+else
+{
+    (Get-Item -LiteralPath $Installer).VersionInfo.ProductVersion.Trim()
+}
 $releaseIdentity = Get-StudioXReleaseVersion $releaseVersion
 $previousIdentity = Get-StudioXReleaseVersion $PreviousVersion
 if ((Compare-StudioXReleaseVersions $PreviousVersion $releaseVersion) -ge 0)
@@ -50,18 +53,33 @@ if (Test-Path -LiteralPath $registry)
     throw 'MCU StudioX is already installed for this user; do not alter an existing installation during validation.'
 }
 New-Item -ItemType Directory -Path $root | Out-Null
-@{ productId = $productId; isolated = [bool]$PayloadDirectory; shippingInstaller = $Installer; version = $releaseVersion; compressionDisabled = [bool]$NoCompression } |
+@{ productId            = $productId;
+    isolated            = [bool]$PayloadDirectory;
+    shippingInstaller   = $Installer;
+    version             = $releaseVersion;
+    compressionDisabled = [bool]$NoCompression
+} |
     ConvertTo-Json | Set-Content -LiteralPath (Join-Path $root 'validation-identity.json') -Encoding utf8
 if ($PayloadDirectory)
 {
     $isolatedOutput = Join-Path $root 'isolated-installer'
     # 隔离验收可关闭压缩，避免重复压缩完整 SDK；正式发行仍使用默认压缩配置。
-    $compressionArguments = if ($NoCompression) { @('--no-compression', '--define=ValidationNoCompression=1') } else { @() }
+    $compressionArguments = if ($NoCompression)
+    {
+        @('--no-compression', '--define=ValidationNoCompression=1')
+    }
+    else
+    {
+        @()
+    }
     $testProfile = Resolve-StudioXDistributionProfile ((Get-Content -LiteralPath (Join-Path $PayloadDirectory 'release.json') -Raw | ConvertFrom-Json).distributionProfile ?? 'full')
     $testEntries = Join-Path $root 'development-components.iss'
     Write-StudioXInstallerComponents $PayloadDirectory $testEntries
     & $CompilerPath --quiet-progress @compressionArguments "--define=AppVersion=$releaseVersion" "--define=AppFileVersion=$($releaseIdentity.FileVersion)" "--define=DistributionProfile=$testProfile" "--define=DevelopmentComponentEntries=$testEntries" "--define=PayloadDirectory=$PayloadDirectory" "--output-dir=$isolatedOutput" @compilerArguments (Join-Path $PSScriptRoot 'installer/StudioX.iss')
-    if ($LASTEXITCODE -ne 0) { throw 'Cannot compile the isolated full-payload installer.' }
+    if ($LASTEXITCODE -ne 0)
+    {
+        throw 'Cannot compile the isolated full-payload installer.'
+    }
     $Installer = Join-Path $isolatedOutput (Get-StudioXInstallerName $releaseVersion $testProfile)
 }
 $installed = Join-Path $root 'Installed App'
@@ -172,7 +190,10 @@ if ($releaseIdentity.Suffix)
         $exitCode = Run-Program $Installer (Setup-Arguments 'newer-letter-blocked') 30
         Assert ($exitCode -ne 0) 'Installer ignored a newer letter revision'
     }
-    finally { Set-ItemProperty -LiteralPath $registry -Name DisplayVersion -Value $releaseVersion }
+    finally
+    {
+        Set-ItemProperty -LiteralPath $registry -Name DisplayVersion -Value $releaseVersion
+    }
     Pass 'Newer letter revision blocks downgrade at the same numeric version'
     $baseOutput = Join-Path $root 'base-installer'
     & $CompilerPath --quiet --no-compression "--define=AppVersion=$($releaseIdentity.FileVersion)" "--define=AppFileVersion=$($releaseIdentity.FileVersion)" "--define=PayloadDirectory=$seed" "--output-dir=$baseOutput" @compilerArguments (Join-Path $PSScriptRoot 'installer/StudioX.iss')

@@ -72,6 +72,10 @@ def c_sources() -> list[Path]:
     paths = list((REPOSITORY / "examples/packs").rglob("*.c"))
     paths += list((REPOSITORY / "examples/packs").rglob("*.h"))
     paths += list((REPOSITORY / "src/StudioX.Engine/Resources/Lvgl").glob("*.c"))
+    paths += list((REPOSITORY / "examples/components").rglob("*.h"))
+    for directory in ("StudioX.Ag32SystemValidation", "StudioX.Ag32PeripheralValidation"):
+        paths += list((REPOSITORY / "tools" / directory / "native").glob("*.c"))
+        paths += list((REPOSITORY / "tools" / directory / "native").glob("*.h"))
     paths += [
         REPOSITORY / "tools/stcgal-portable-launcher.c",
         REPOSITORY / "tools/StudioX.WchValidation/InterruptRam/main.c",

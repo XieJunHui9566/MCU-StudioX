@@ -8,16 +8,33 @@ public sealed class DebugFixturePlugin : IStudioXPlugin
 {
     private IPluginHost? host;
     public PluginContribution Describe() => new([], [], []) { DebugAdapters = [new("snapshot", "Debug fixture")] };
-    public Task ActivateAsync(IPluginHost host, CancellationToken token) { this.host = host; return Task.CompletedTask; }
-    public Task DeactivateAsync(CancellationToken token) { host = null; return Task.CompletedTask; }
+    public Task ActivateAsync(IPluginHost host, CancellationToken token)
+    {
+        this.host = host;
+        return Task.CompletedTask;
+    }
+    public Task DeactivateAsync(CancellationToken token)
+    {
+        host = null;
+        return Task.CompletedTask;
+    }
     public async Task<JsonElement> InvokeAsync(string kind, string id, JsonElement input, CancellationToken token)
     {
         var reply = await host!.CallAsync("validation.wait", input, token);
         var mode = reply.GetProperty("mode").GetString();
-        if (mode == "error") { throw new InvalidOperationException("debug-fixture-original-error"); }
+        if (mode == "error")
+        {
+            throw new InvalidOperationException("debug-fixture-original-error");
+        }
         if (mode == "unknown")
         {
-            return JsonSerializer.SerializeToElement(new { id = "snapshot", title = "Invalid", widgets = Array.Empty<object>(), xaml = "execute" });
+            return JsonSerializer.SerializeToElement(new
+            {
+                id = "snapshot",
+                title = "Invalid",
+                widgets = Array.Empty<object>(),
+                xaml = "execute"
+            });
         }
         var widget = mode == "action"
             ? new PluginPanelWidget("invalid", "button", "Cannot execute", CommandId: "write")

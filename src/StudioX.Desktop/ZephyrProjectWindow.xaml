@@ -10,8 +10,11 @@
   WindowStartupLocation="CenterOwner"
   ShowInTaskbar="False"
   Style="{StaticResource {x:Type Window}}">
-  <ScrollViewer VerticalScrollBarVisibility="Auto">
-    <StackPanel Margin="24" Width="570">
+  <ScrollViewer
+    VerticalScrollBarVisibility="Auto">
+    <StackPanel
+      Margin="24"
+      Width="570">
       <TextBlock
         Text="Zephyr 实验模式"
         FontSize="22"
@@ -25,22 +28,29 @@
         Content="导入 Zephyr .mcupack…"
         HorizontalAlignment="Left"
         Click="Import_Click" />
-      <TextBlock Text="Zephyr 专用包" Margin="0,18,0,5" />
+      <TextBlock
+        Text="Zephyr 专用包"
+        Margin="0,18,0,5" />
       <ComboBox
         x:Name="PackPicker"
         MinHeight="36"
         SelectionChanged="Pack_SelectionChanged">
         <ComboBox.ItemTemplate>
           <DataTemplate>
-            <StackPanel Orientation="Horizontal">
-              <TextBlock Text="{Binding Manifest.DisplayName}" />
-              <TextBlock Text="{Binding Manifest.Version, StringFormat='  v{0}'}"
-                         Foreground="{DynamicResource Muted}" />
+            <StackPanel
+              Orientation="Horizontal">
+              <TextBlock
+                Text="{Binding Manifest.DisplayName}" />
+              <TextBlock
+                Text="{Binding Manifest.Version, StringFormat='  v{0}'}"
+                Foreground="{DynamicResource Muted}" />
             </StackPanel>
           </DataTemplate>
         </ComboBox.ItemTemplate>
       </ComboBox>
-      <TextBlock Text="板级目标" Margin="0,16,0,5" />
+      <TextBlock
+        Text="板级目标"
+        Margin="0,16,0,5" />
       <ComboBox
         x:Name="BoardPicker"
         DisplayMemberPath="DisplayName"
@@ -52,7 +62,9 @@
         TextWrapping="Wrap"
         Foreground="{DynamicResource Muted}"
         Margin="0,7,0,0" />
-      <TextBlock Text="起始模板" Margin="0,16,0,5" />
+      <TextBlock
+        Text="起始模板"
+        Margin="0,16,0,5" />
       <ComboBox
         x:Name="TemplatePicker"
         DisplayMemberPath="DisplayName"
@@ -64,15 +76,26 @@
         TextWrapping="Wrap"
         Foreground="{DynamicResource Muted}"
         Margin="0,7,0,0" />
-      <TextBlock Text="工程名称" Margin="0,16,0,5" />
-      <TextBox x:Name="ProjectNameInput" Text="zephyr_experiment" />
+      <TextBlock
+        Text="工程名称"
+        Margin="0,16,0,5" />
+      <TextBox
+        x:Name="ProjectNameInput"
+        Text="zephyr_experiment" />
       <TextBlock
         x:Name="StatusText"
         TextWrapping="Wrap"
         Foreground="{DynamicResource Muted}"
         Margin="0,14,0,0" />
-      <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,24,0,0">
-        <Button Content="取消" IsCancel="True" MinWidth="78" Margin="0,0,10,0" />
+      <StackPanel
+        Orientation="Horizontal"
+        HorizontalAlignment="Right"
+        Margin="0,24,0,0">
+        <Button
+          Content="取消"
+          IsCancel="True"
+          MinWidth="78"
+          Margin="0,0,10,0" />
         <Button
           x:Name="CreateButton"
           Content="选择位置并创建…"

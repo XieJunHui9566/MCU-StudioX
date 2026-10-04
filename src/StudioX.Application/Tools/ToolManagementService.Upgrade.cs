@@ -4,7 +4,6 @@ using System.Security.Cryptography;
 using System.Text.Json;
 using StudioX.Engine;
 using StudioX.Foundation;
-using StudioX.Packages;
 
 public sealed partial class ToolManagementService
 {
@@ -22,7 +21,9 @@ public sealed partial class ToolManagementService
                 ?? throw new StudioXException("TOOLS_ARCHIVE", "工具清单为空。");
             var identity = manifest.Identity;
             if (manifest.Sha256 is null || manifest.Executables is null)
+            {
                 throw new StudioXException("TOOLS_IDENTITY", "工具格式或宿主不支持，或清单不完整。");
+            }
             container.ValidateIndex(manifest.Sha256);
             var fingerprint = Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant();
             var target = PathBoundary.Resolve(catalog.RootDirectory, identity.RelativeDirectory);
@@ -31,15 +32,23 @@ public sealed partial class ToolManagementService
             {
                 var installedManifest = PathBoundary.Resolve(target, "toolset.json");
                 if (!File.Exists(installedManifest) || new FileInfo(installedManifest).Length > 32 * 1024 * 1024)
+                {
                     throw new StudioXException("TOOLS_REPAIR_REQUIRED", "组件版本目录已存在，但清单缺失或无效。请使用离线修复入口。");
+                }
                 var installedFingerprint = Convert.ToHexString(SHA256.HashData(await File.ReadAllBytesAsync(installedManifest, token)));
                 if (!installedFingerprint.Equals(fingerprint, StringComparison.OrdinalIgnoreCase))
+                {
                     throw new StudioXException("TOOLS_VERSION_CONFLICT", "相同开发环境组件 ID 和版本已经存在不同内容。请发布新组件版本；不会覆盖预装或已导入的组件。");
+                }
             }
             var installed = new List<string>();
             foreach (var installedPath in catalog.ManifestPaths())
+            {
                 if (Path.GetFileName(Path.GetDirectoryName(Path.GetDirectoryName(installedPath))) == manifest.Id)
+                {
                     installed.Add(Path.GetFileName(Path.GetDirectoryName(installedPath))!);
+                }
+            }
             file.Position = 0;
             var hash = Convert.ToHexString(await SHA256.HashDataAsync(file, token));
             return new ToolArchivePreview(path, hash, manifest.Id, manifest.Version, manifest.CompilerId, manifest.DisplayName ?? manifest.Id,
@@ -56,7 +65,9 @@ public sealed partial class ToolManagementService
                 // 不信任调用方构造的预览；确认后重新读取归档，安装器持有同一归档的读锁。
                 var fresh = await PreviewInstallAsync(preview.Archive, progress, token);
                 if (fresh.ArchiveSha256 != preview.ArchiveSha256 || fresh.Fingerprint != preview.Fingerprint || fresh.Identity != preview.Identity)
+                {
                     throw new StudioXException("TOOLS_CHANGED", "离线归档在预览后发生变化，请重新预览。");
+                }
                 if (fresh.AlreadyInstalled)
                 {
                     await VerifyInstalledComponentAsync(fresh, new ThrottledProgress(progress), token);
@@ -77,7 +88,9 @@ public sealed partial class ToolManagementService
         using var lease = ToolUsageLease.Acquire(PathBoundary.Resolve(catalog.RootDirectory, preview.Identity.RelativeDirectory), ignoreActivation: true);
         await using var file = new FileStream(preview.Archive, FileMode.Open, FileAccess.Read, FileShare.Read, 131072, true);
         if (!Convert.ToHexString(await SHA256.HashDataAsync(file, token)).Equals(preview.ArchiveSha256, StringComparison.OrdinalIgnoreCase))
+        {
             throw new StudioXException("TOOLS_CHANGED", "开发环境组件归档在预览后发生变化，请重新预览。");
+        }
         file.Position = 0;
         using var container = ToolchainArchive.Open(file, token);
         var bytes = await container.ReadManifestAsync(token);
@@ -95,11 +108,15 @@ public sealed partial class ToolManagementService
             var actual = Convert.ToHexString(hash.Hash!);
             var expected = entry.Name == "toolset.json" ? preview.Fingerprint : manifest.Sha256[entry.Name];
             if (!actual.Equals(expected, StringComparison.OrdinalIgnoreCase))
+            {
                 throw new StudioXException("TOOL_HASH", "开发环境组件归档文件已损坏：" + entry.Name);
+            }
         }, token);
         var installed = await catalog.ResolveAsync(preview.Id, preview.Version, preview.CompilerId, token, true, progress, allowDisabled: true);
         if (!installed.Fingerprint.Equals(preview.Fingerprint, StringComparison.OrdinalIgnoreCase))
+        {
             throw new StudioXException("TOOLS_VERSION_CONFLICT", "校验期间组件内容发生变化，未执行安装。");
+        }
     }
     private sealed class ThrottledProgress(IProgress<string>? target) : IProgress<string>
     {
@@ -107,7 +124,11 @@ public sealed partial class ToolManagementService
         public void Report(string value)
         {
             var now = System.Diagnostics.Stopwatch.GetTimestamp();
-            if (last == 0 || System.Diagnostics.Stopwatch.GetElapsedTime(last, now).TotalMilliseconds >= 250) { last = now; target?.Report(value); }
+            if (last == 0 || System.Diagnostics.Stopwatch.GetElapsedTime(last, now).TotalMilliseconds >= 250)
+            {
+                last = now;
+                target?.Report(value);
+            }
         }
     }
 }

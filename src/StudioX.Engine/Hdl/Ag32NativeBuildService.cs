@@ -17,7 +17,10 @@ public sealed partial class Ag32NativeBuildService(ToolsetCatalog catalog, strin
     private async Task<BuildReport> BuildCoreAsync(string root, IProgress<string>? progress, IProgress<string>? output, CancellationToken token)
     {
         var gate = Gates.GetOrAdd(root, _ => new SemaphoreSlim(1, 1));
-        if (!await gate.WaitAsync(0, token)) throw new StudioXException("AG32_LOGIC_BUSY", "自定义逻辑正在构建。");
+        if (!await gate.WaitAsync(0, token))
+        {
+            throw new StudioXException("AG32_LOGIC_BUSY", "自定义逻辑正在构建。");
+        }
         var run = PathBoundary.Resolve(root, ".build/ag32-logic/" + Guid.NewGuid().ToString("N"));
         var logPath = Path.Combine(run, "build.log");
         var log = new StringBuilder();
@@ -41,8 +44,13 @@ public sealed partial class Ag32NativeBuildService(ToolsetCatalog catalog, strin
             {
                 var previous = await JsonStore.ReadAsync<ToolchainLock>(lockPath, token);
                 // 旧版将映射与综合两项指纹串在同一锁中；两项都吻合时才转换为单组件锁。
-                if (previous != toolLock && previous != toolLock with { Fingerprint = tools.Fingerprint + ":" + native.Fingerprint })
+                if (previous != toolLock && previous != toolLock with
+                {
+                    Fingerprint = tools.Fingerprint + ":" + native.Fingerprint
+                })
+                {
                     throw new StudioXException("TOOLCHAIN_LOCK", "自定义逻辑工具与工程锁定不一致。");
+                }
             }
             await JsonStore.WriteAsync(lockPath, toolLock, token);
             var source = Path.Combine(run, "source");
@@ -78,7 +86,9 @@ public sealed partial class Ag32NativeBuildService(ToolsetCatalog catalog, strin
             var veSource = await File.ReadAllBytesAsync(Path.Combine(run, "pins.ve"), token);
             await Ag32GpioElectrical.CreateAsync(run, veSource, token);
             foreach (var file in settings.SdcFiles)
+            {
                 await File.AppendAllTextAsync(Path.Combine(run, "studiox-clocks.sdc"), "\n" + await File.ReadAllTextAsync(PathBoundary.Resolve(source, file), token), token);
+            }
             privateRuntime = await licensing.PreparePrivateRuntimeAsync(tools, token);
             environment["ALTA_HOME"] = privateRuntime.Replace('\\', '/');
             await File.WriteAllTextAsync(Path.Combine(run, "route.tcl"), Ag32NativeScripts.PlaceAndRoute, token);
@@ -86,22 +96,30 @@ public sealed partial class Ag32NativeBuildService(ToolsetCatalog catalog, strin
             // Supra 某些失败仍返回 0；检查完整厂商日志，不能只依赖进程退出码或截断输出。
             var diagnostic = await File.ReadAllTextAsync(Path.Combine(run, "supra.log"), token);
             if (Regex.IsMatch(diagnostic, @"(?im)^\s*(Error:|Fatal:|Warn: IO .*not assigned)"))
+            {
                 throw new StudioXException("AG32_LOGIC_ROUTE", "厂商报告错误或未分配 IO，拒绝产生下载凭据。日志：" + logPath);
+            }
             await Ag32GpioElectrical.VerifyAsync(run, veSource, await File.ReadAllTextAsync(Path.Combine(run, "pins.vex"), token),
                 await File.ReadAllTextAsync(Path.Combine(run, "pins_routed.v"), token), token);
             var image = Path.Combine(run, "pins.bin");
             if (!File.Exists(image) || new FileInfo(image).Length is <= 0 or > 102400)
+            {
                 throw new StudioXException("AG32_LOGIC_IMAGE", "位流为空或超过 100 KiB 保留逻辑区。");
+            }
             foreach (var (relative, expected) in hashes)
             {
                 var file = PathBoundary.Resolve(root, relative);
                 if ((File.Exists(file) ? await HashAsync(file, token) : "") != expected)
+                {
                     throw new StudioXException("AG32_LOGIC_CHANGED", "构建期间输入已变化：" + relative);
+                }
             }
             if (!await InputsCurrentAsync(root, hashes, settings, token) ||
                 (await catalog.ResolveAsync(logicTools.ToolsetId, logicTools.ToolsetVersion, logicTools.CompilerId, token)).Fingerprint != native.Fingerprint ||
                 (await catalog.ResolveAsync(mapping.ToolsetId, mapping.ToolsetVersion, mapping.CompilerId, token)).Fingerprint != tools.Fingerprint)
+            {
                 throw new StudioXException("AG32_LOGIC_CHANGED", "构建期间源码集合或工具发生变化，请重新编译。");
+            }
             var artifacts = new Dictionary<string, string>();
             foreach (var name in new[] { "pins.bin", "pins.v", "pins.hx", "pins.vex", "pins.vqm", "pins_routed.v", "studiox-clocks.sdc", "studiox-gpio.asf", "setup.rpt", "hold.rpt", "fmax.rpt", "coverage.rpt" })
             {
@@ -121,12 +139,21 @@ public sealed partial class Ag32NativeBuildService(ToolsetCatalog catalog, strin
             Invalidate(root);
             log.AppendLine(error.ToString());
             await File.WriteAllTextAsync(logPath, log.ToString(), CancellationToken.None);
-            if (error is OperationCanceledException) throw;
+            if (error is OperationCanceledException)
+            {
+                throw;
+            }
             return new(false, log.ToString(), [], logPath, 1);
         }
         finally
         {
-            try { if (privateRuntime is not null) licensing.RemovePrivateRuntime(privateRuntime); }
+            try
+            {
+                if (privateRuntime is not null)
+                {
+                    licensing.RemovePrivateRuntime(privateRuntime);
+                }
+            }
             finally { gate.Release(); }
         }
 
@@ -138,7 +165,10 @@ public sealed partial class Ag32NativeBuildService(ToolsetCatalog catalog, strin
                 RemoveEnvironment: ToolsetEnvironment.AmbientVariables.Concat(["ALTA_HOME", "YOSYS_DATDIR", "YOSYS_ABC_EXECUTABLE"]).ToArray(), Output: output), token);
             log.AppendLine(result.StandardOutput).AppendLine(result.StandardError).AppendLine($"exit={result.ExitCode}; timeout={result.TimedOut}");
             await File.WriteAllTextAsync(logPath, log.ToString(), token);
-            if (!result.Success) throw new StudioXException("AG32_LOGIC_TOOL", phase + "失败。原始日志：" + logPath);
+            if (!result.Success)
+            {
+                throw new StudioXException("AG32_LOGIC_TOOL", phase + "失败。原始日志：" + logPath);
+            }
         }
     }
 }

@@ -5,8 +5,17 @@ using StudioX.Foundation;
 
 public sealed partial class CodeIntelligenceService
 {
-    private async Task<string> SynchronizeWorkspaceAsync(string path, string text, IReadOnlyList<CodeDocumentSnapshot>? documents, CancellationToken token)
+    private async Task<string> SynchronizeWorkspaceAsync(string path, string text, IReadOnlyList<CodeDocumentSnapshot>? documents, CancellationToken token,
+        bool refreshEnvironment = true)
     {
+        if (refreshEnvironment)
+        {
+            await RefreshEnvironmentCoreAsync(token).ConfigureAwait(false);
+        }
+        if (!IsReady)
+        {
+            throw new StudioXException("LANGUAGE_CONFIGURATION", StatusDescription);
+        }
         if (documents is not null)
         {
             var retained = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { new Uri(ResolveDocumentPath(path)).AbsoluteUri };

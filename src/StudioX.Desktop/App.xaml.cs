@@ -15,6 +15,7 @@ public partial class App : System.Windows.Application
         WindowMouseWheel.Install();
         installationMutex = new Mutex(false, "MCUStudioX.Desktop.InstallLock");
         var showProductivity = e.Args is ["--show-ide-next", _, _];
+        var acceptanceWorkbench = e.Args is ["--acceptance-workbench", _, _];
         var showAgentWorkspace = e.Args is ["--show-agent-workspace", _, _];
         var agentWorkspacePreview = e.Args is ["--preview-agent-workspace", _, _];
         var productivityPreview = e.Args is ["--preview-ide-next", _, _] or ["--preview-ide-next-recovery", _, _];
@@ -26,12 +27,14 @@ public partial class App : System.Windows.Application
         var developmentComponentsPreview = e.Args is ["--preview-development-components", _, _, _];
         var faultPeripheralsPreview = e.Args is ["--preview-fault-peripherals", _, _];
         var codeTemplatesPreview = e.Args is ["--preview-code-templates", _];
+        var peripheralDevelopmentPreview = e.Args is ["--preview-peripheral-development", _, _, _];
         var projectHealthPreview = e.Args is ["--preview-project-health", _, _];
-        var toolManagementPreview = e.Args is ["--preview-tool-management", _, _];
+        var toolManagementPreview = e.Args is ["--preview-tool-management", _, _] or ["--preview-tool-management", _, _, _];
         var diagnosticsPreview = e.Args is ["--preview-diagnostics", _];
         var openOcdPlotPreview = e.Args is ["--preview-openocd-plot", _];
         var pluginLabsPreview = e.Args is ["--preview-plugin-labs", _, _];
-        var workspaceEditingPreview = e.Args is ["--preview-workspace-editor", _, _] or ["--preview-editor-recovery", _, _];
+        var workspaceEditingPreview = e.Args is ["--preview-workspace-editor", _, _] or ["--preview-editor-recovery", _, _]
+            or ["--preview-workspace-editor", _, _, _] or ["--preview-editor-recovery", _, _, _];
         var showDebugDemo = e.Args is ["--show-debug-demo", _] or ["--show-debug-demo", _, _];
         var showBreakpointsDemo = e.Args is ["--show-breakpoints-demo", _] or ["--show-breakpoints-demo", _, _];
         var preview = e.Args is ["--preview-ui", _];
@@ -78,11 +81,16 @@ public partial class App : System.Windows.Application
         anyPreview |= debugPluginsPreview || productWorkflowsPreview || projectToolsPreview;
         anyPreview |= faultPeripheralsPreview;
         anyPreview |= codeTemplatesPreview;
+        anyPreview |= peripheralDevelopmentPreview;
         anyPreview |= developmentComponentsPreview;
         anyPreview |= idfVersionsPreview;
-        var data = (showAgentWorkspace || showProductivity || showDebugDemo || showBreakpointsDemo) && e.Args.Length == 3 ? Path.GetFullPath(e.Args[2]) : smoke || anyPreview ? Path.Combine(Path.GetFullPath(e.Args[1]), "user-data") :
+        var data = (acceptanceWorkbench || showAgentWorkspace || showProductivity || showDebugDemo || showBreakpointsDemo) && e.Args.Length == 3 ? Path.GetFullPath(e.Args[2]) : smoke || anyPreview ? Path.Combine(Path.GetFullPath(e.Args[1]), "user-data") :
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MCUStudioX");
-        var services = new WorkbenchService(idfVersionsPreview ? Path.GetFullPath(e.Args[3]) : Path.Combine(AppContext.BaseDirectory, "runtime"), data);
+        var services = new WorkbenchService(acceptanceWorkbench ? Path.GetFullPath(e.Args[1])
+            : peripheralDevelopmentPreview ? Path.GetFullPath(e.Args[3])
+            : workspaceEditingPreview && e.Args.Length == 4 ? Path.GetFullPath(e.Args[3])
+            : toolManagementPreview && e.Args.Length == 4 ? Path.GetFullPath(e.Args[3])
+            : idfVersionsPreview ? Path.GetFullPath(e.Args[3]) : Path.Combine(AppContext.BaseDirectory, "runtime"), data);
         var window = new MainWindow(services);
         MainWindow = window;
         if (smoke || anyPreview)
@@ -93,14 +101,18 @@ public partial class App : System.Windows.Application
             window.Left = -20000;
         }
         window.Show();
-        await window.InitializeAsync(loadGitHubAccounts: !smoke && !anyPreview && !showProductivity && !showAgentWorkspace);
+        await window.InitializeAsync(loadGitHubAccounts: !smoke && !anyPreview && !showProductivity && !showAgentWorkspace && !acceptanceWorkbench);
         if (anyPreview)
         {
             var directory = Path.GetFullPath(e.Args[1]);
             Directory.CreateDirectory(directory);
             try
             {
-                if (developmentComponentsPreview)
+                if (peripheralDevelopmentPreview)
+                {
+                    await window.RenderPeripheralDevelopmentPreviewAsync(directory, Path.GetFullPath(e.Args[2]));
+                }
+                else if (developmentComponentsPreview)
                 {
                     await window.RenderDevelopmentComponentsPreviewAsync(directory, Path.GetFullPath(e.Args[2]), Path.GetFullPath(e.Args[3]));
                 }
@@ -358,8 +370,14 @@ public partial class App : System.Windows.Application
             if (e.Args.Length == 0 || e.Args is ["--first-project"])
             {
                 await window.RestoreLastEditorSessionAsync();
-                if (e.Args.Length == 0) await window.OfferFirstProjectGuideAsync();
-                else await window.OpenFirstProjectGuideAsync();
+                if (e.Args.Length == 0)
+                {
+                    await window.OfferFirstProjectGuideAsync();
+                }
+                else
+                {
+                    await window.OpenFirstProjectGuideAsync();
+                }
             }
             else if (e.Args is ["--new-project"])
             {

@@ -1,4 +1,3 @@
-using StudioX.Application;
 using StudioX.Engine;
 using StudioX.Engine.Hdl;
 using StudioX.Foundation;
@@ -33,15 +32,25 @@ await native.SaveSettingsAsync(root, settings);
 var checks = new List<string>();
 void Check(bool condition, string message)
 {
-    if (!condition) throw new InvalidOperationException(message);
+    if (!condition)
+    {
+        throw new InvalidOperationException(message);
+    }
     checks.Add(message);
     Console.WriteLine("PASS " + message);
 }
 async Task Reject(Func<Task> action, string message)
 {
-    try { await action(); }
+    try
+    {
+        await action();
+    }
     catch (Exception error) when (error is StudioXException or OperationCanceledException)
-    { checks.Add(message); Console.WriteLine("PASS " + message); return; }
+    {
+        checks.Add(message);
+        Console.WriteLine("PASS " + message);
+        return;
+    }
     throw new InvalidOperationException("Expected rejection: " + message);
 }
 var build = await new BuildService(catalog).BuildAsync(root, new Progress<string>(Console.WriteLine));
@@ -56,7 +65,8 @@ await File.AppendAllTextAsync(sdc, "\n# changed");
 await Reject(async () => await native.RequireImageAsync(root), "SDC 变化拒绝旧镜像");
 await File.WriteAllTextAsync(sdc, originalSdc);
 var bytes = await File.ReadAllBytesAsync(image.Path);
-var corrupted = bytes.ToArray(); corrupted[0] ^= 1;
+var corrupted = bytes.ToArray();
+corrupted[0] ^= 1;
 await File.WriteAllBytesAsync(image.Path, corrupted);
 await Reject(async () => await native.RequireImageAsync(root), "位流被修改拒绝下载");
 await File.WriteAllBytesAsync(image.Path, bytes);

@@ -2,7 +2,6 @@ namespace StudioX.Desktop;
 
 using System.Windows;
 using System.Windows.Controls;
-using Microsoft.Win32;
 using StudioX.Application;
 
 public partial class MainWindow

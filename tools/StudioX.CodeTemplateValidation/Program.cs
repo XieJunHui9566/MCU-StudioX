@@ -1,4 +1,3 @@
-using System.Text;
 using StudioX.Application.Editing;
 using StudioX.Foundation;
 
@@ -11,7 +10,10 @@ void Check(bool success, string label) { if (!success) { throw new InvalidOperat
 async Task Reject(Func<Task> action, string label)
 {
     var rejected = false;
-    try { await action(); }
+    try
+    {
+        await action();
+    }
     catch (Exception ex) when (ex is StudioXException or IOException or UnauthorizedAccessException or OperationCanceledException) { rejected = true; }
     Check(rejected, label);
 }
@@ -21,11 +23,16 @@ var context = new CodeTemplateContext("first();\nsecond();", "电机😀.c");
 try
 {
     var service = new CodeTemplateService(Path.Combine(root, "user"));
-    var project = Path.Combine(root, "project"); Directory.CreateDirectory(project);
-    var other = Path.Combine(root, "other"); Directory.CreateDirectory(other);
+    var project = Path.Combine(root, "project");
+    Directory.CreateDirectory(project);
+    var other = Path.Combine(root, "other");
+    Directory.CreateDirectory(other);
     var initial = await service.LoadAsync(project);
     Check(initial.Entries.Count == 6 && !File.Exists(initial.User.Path) && !File.Exists(initial.Project!.Path), "loading built-ins does not create or write template stores");
-    foreach (var builtin in BuiltInCodeTemplates.All) { CodeTemplateExpander.Describe(builtin.Body); }
+    foreach (var builtin in BuiltInCodeTemplates.All)
+    {
+        CodeTemplateExpander.Describe(builtin.Body);
+    }
     Check(BuiltInCodeTemplates.All.Where(t => CodeTemplateService.Supports(t, "C")).Count() == 4 && !CodeTemplateService.Supports(BuiltInCodeTemplates.All[0], "Python"), "built-ins have explicit generic language applicability");
     Check((await service.CompleteAsync(project, "Python", "sxdef", 5)).Count == 1 && (await service.CompleteAsync(project, "Python", "# sxdef", 7)).Count == 0 && (await service.CompleteAsync(project, "Python", "\"\"\"sxdef", 8)).Count == 0, "Python templates respect comment and multiline string contexts");
     Check((await service.CompleteAsync(project, "CMake", "sxsources", 9)).Count == 1 && (await service.CompleteAsync(project, "CMake", "# sxsources", 11)).Count == 0 && (await service.CompleteAsync(project, "CMake", "#[=[sxsources", 13)).Count == 0, "CMake templates respect line and bracket comments");
@@ -34,7 +41,11 @@ try
     var loaded = await service.LoadAsync(project);
     Check(loaded.User.Templates.Single() == template && loaded.Entries.Any(e => e.Scope == CodeTemplateScope.User), "personal templates round-trip including Unicode and variables");
     Check((await service.LoadAsync(other)).User.Templates.Single() == template, "personal templates are available across projects");
-    var shared = template with { Id = Guid.NewGuid().ToString("N"), Name = "工程日志" };
+    var shared = template with
+    {
+        Id = Guid.NewGuid().ToString("N"),
+        Name = "工程日志"
+    };
     await service.SaveAsync(project, CodeTemplateScope.Project, loaded.Project!.Revision, [shared]);
     Check((await service.LoadAsync(other)).Project!.Templates.Count == 0 && (await service.LoadAsync(project)).Project!.Templates.Single() == shared, "project template store is isolated and shareable as plain JSON");
     await Reject(() => service.SaveAsync(project, CodeTemplateScope.User, initial.User.Revision, []), "stale saves refuse to overwrite another window's edits");
@@ -57,7 +68,11 @@ try
     var revision = (await service.LoadAsync(project)).User.Revision;
     var outcomes = await Task.WhenAll(Enumerable.Range(0, 2).Select(i => Task.Run(async () =>
     {
-        try { await new CodeTemplateService(Path.Combine(root, "user")).SaveAsync(project, CodeTemplateScope.User, revision, [template with { Name = "并发 " + i }]); return true; }
+        try
+        {
+            await new CodeTemplateService(Path.Combine(root, "user")).SaveAsync(project, CodeTemplateScope.User, revision, [template with { Name = "并发 " + i }]);
+            return true;
+        }
         catch (Exception ex) when (ex is IOException or StudioXException) { return false; }
     })));
     Check(outcomes.Count(v => v) == 1 && (await service.LoadAsync(project)).User.Templates.Count == 1, "concurrent writers produce exactly one committed update");
@@ -96,11 +111,21 @@ try
     await Reject(() => Parse(string.Join("", Enumerable.Range(0, 33).Select(i => "${v" + i + "}"))), "parameter count is bounded");
     await Reject(() => { CodeTemplateExpander.Expand("${a}", new Dictionary<string, string> { ["a"] = "line\nline" }, context); return Task.CompletedTask; }, "typed parameters cannot inject extra lines");
     await Reject(() => { CodeTemplateExpander.Expand("${selection}${selection}", empty, context with { Selection = new string('x', 200_000) }); return Task.CompletedTask; }, "expanded text growth is bounded");
-    await JsonStore.WriteAsync(Path.Combine(root, "result.json"), new { success = true, hardware = false, checks });
+    await JsonStore.WriteAsync(Path.Combine(root, "result.json"), new
+    {
+        success = true,
+        hardware = false,
+        checks
+    });
     Console.WriteLine($"PASS {checks.Count} checks");
 }
 catch (Exception ex)
 {
-    await JsonStore.WriteAsync(Path.Combine(root, "result.json"), new { success = false, checks, diagnostic = ex.ToString() });
+    await JsonStore.WriteAsync(Path.Combine(root, "result.json"), new
+    {
+        success = false,
+        checks,
+        diagnostic = ex.ToString()
+    });
     throw;
 }

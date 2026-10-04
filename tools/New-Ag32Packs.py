@@ -115,9 +115,7 @@ def make_linker(sources: dict[str, bytes], device: dict) -> str:
     ]
     return (
         f"/* {device['id']}：应用区 {device['applicationFlashBytes']} B；"
-        f"末尾 {device['logicReserveBytes']} B 为未压缩逻辑区。 */\n"
-        + "\n".join(parts)
-        + "\n"
+        f"末尾 {device['logicReserveBytes']} B 为未压缩逻辑区。 */\n" + "\n".join(parts) + "\n"
     )
 
 
@@ -183,7 +181,7 @@ def make_device(device: dict, stage: Path, verified_target: bytes) -> dict:
                     "interfaceScript": "interface/jlink.cfg",
                     "transport": "swd",
                     "defaultSpeedKhz": 1000,
-                }
+                },
             ],
         },
         "templates": [
@@ -200,7 +198,8 @@ def make_device(device: dict, stage: Path, verified_target: bytes) -> dict:
                 "description": "内存中生成数据，可查看注释、函数和数据结构，不依赖板级外设。",
                 "entryFile": "templates/editor-demo/main.c",
             },
-        ] + Ag32RtosTemplates.templates(),
+        ]
+        + Ag32RtosTemplates.templates(),
     }
 
 
@@ -257,7 +256,8 @@ def stage_pack(
     write(
         stage,
         "vendor/NOTICE.md",
-        "# 厂商源码与来源\n\n" + details["licenseStatus"]
+        "# 厂商源码与来源\n\n"
+        + details["licenseStatus"]
         + "\n\n完整来源版本、文件 SHA-256、布局转换及器件事实见 provenance.json。\n",
     )
     verified_target = (preview / "debug/ag32vf303.cfg").read_bytes()
@@ -269,8 +269,7 @@ def stage_pack(
         "formatVersion": 1,
         "id": pack_id,
         "version": version,
-        "displayName": f"{series} · MCU 引脚映射"
-        + (" / 8 MiB PSRAM" if "VH" in series else ""),
+        "displayName": f"{series} · MCU 引脚映射" + (" / 8 MiB PSRAM" if "VH" in series else ""),
         "vendor": "AGM",
         "devices": definitions,
     }
@@ -304,13 +303,17 @@ def main() -> None:
     sdk = args.sdk_directory.resolve()
     platform = args.platform_directory.resolve()
     sources, provenance = read_sources(sdk, platform, catalog)
-    rtos_files, provenance["freeRtos"] = Ag32RtosTemplates.prepare(args.freertos_directory.resolve(), recipe)
+    rtos_files, provenance["freeRtos"] = Ag32RtosTemplates.prepare(
+        args.freertos_directory.resolve(), recipe
+    )
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=False)
     index = []
     for series in PACKS:
         selected = [device for device in devices if device["series"] == series]
-        stage, manifest = stage_pack(series, selected, output, recipe, sdk, sources, provenance, rtos_files)
+        stage, manifest = stage_pack(
+            series, selected, output, recipe, sdk, sources, provenance, rtos_files
+        )
         entry = {
             "id": manifest["id"],
             "version": manifest["version"],

@@ -217,8 +217,15 @@ public partial class MainWindow
                     }
                     catch (OperationCanceledException) when (cancellation.IsCancellationRequested) { throw; }
                     catch (Exception ex) { if (Current()) { Status.Text = "代码模板：" + ex.Message; } Log(ex.ToString()); }
-                    if (!Current()) { return; }
-                    if (!languageReady) { ShowCompletions([], text, offset, templates: templates); return; }
+                    if (!Current())
+                    {
+                        return;
+                    }
+                    if (!languageReady)
+                    {
+                        ShowCompletions([], text, offset, templates: templates);
+                        return;
+                    }
                 }
                 if (pluginLanguage && pluginWorkspace is { } workspace)
                 {

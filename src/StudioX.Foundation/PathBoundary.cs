@@ -40,6 +40,8 @@ public static class PathBoundary
     {
         var stem = part.Split('.')[0].ToUpperInvariant();
         return stem is "CON" or "PRN" or "AUX" or "NUL" ||
-            (stem.Length == 4 && (stem.StartsWith("COM", StringComparison.Ordinal) || stem.StartsWith("LPT", StringComparison.Ordinal)) && stem[3] is >= '1' and <= '9');
+            // Win32 同样把上标 ¹、²、³ 当作端口设备数字，不能作为普通组件文件名。
+            (stem.Length == 4 && (stem.StartsWith("COM", StringComparison.Ordinal) || stem.StartsWith("LPT", StringComparison.Ordinal)) &&
+             stem[3] is >= '1' and <= '9' or '¹' or '²' or '³');
     }
 }

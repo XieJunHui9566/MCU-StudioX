@@ -22,7 +22,10 @@ public partial class MicroPythonView : UserControl
     private int projectRevision;
     private string? connectedPort;
     public bool IsBusy => operation is not null;
-    public bool IsScriptRunning { get; private set; }
+    public bool IsScriptRunning
+    {
+        get; private set;
+    }
     public string OperationStatus => OperationText.Text;
     public Func<Task>? DownloadRequested
     {
@@ -149,10 +152,16 @@ public partial class MicroPythonView : UserControl
 
     public async Task StartScriptAsync()
     {
-        if (project is not { } directory || service is null || IsBusy) { return; }
+        if (project is not { } directory || service is null || IsBusy)
+        {
+            return;
+        }
         var relative = ScriptPath.Text.Trim();
         var port = PortPicker.Text.Trim();
-        if (!service.IsConnected && !RequirePort(port)) { return; }
+        if (!service.IsConnected && !RequirePort(port))
+        {
+            return;
+        }
         await RunAsync(async token =>
         {
             MicroPythonSessionService.ValidateScriptPath(relative);
@@ -172,8 +181,14 @@ public partial class MicroPythonView : UserControl
             void Flush()
             {
                 var (text, discarded) = buffer.Drain();
-                if (discarded != 0) { Append($"显示缓存已截断 {discarded} 个字符。"); }
-                if (text.Length != 0) { AppendOutput(text); }
+                if (discarded != 0)
+                {
+                    Append($"显示缓存已截断 {discarded} 个字符。");
+                }
+                if (text.Length != 0)
+                {
+                    AppendOutput(text);
+                }
             }
             timer.Tick += (_, _) => Flush();
             timer.Start();

@@ -114,8 +114,14 @@ foreach (var chip in new[] { "RP2040", "RP2350" })
         var running = session.RunScriptAsync("main.py", text =>
         {
             Interlocked.Add(ref received, text.Length);
-            if (liveOutput.Length < 100) { liveOutput.Append(text); }
-            if (liveOutput.ToString().Contains("中文持续输出", StringComparison.Ordinal)) { firstOutput.TrySetResult(); }
+            if (liveOutput.Length < 100)
+            {
+                liveOutput.Append(text);
+            }
+            if (liveOutput.ToString().Contains("中文持续输出", StringComparison.Ordinal))
+            {
+                firstOutput.TrySetResult();
+            }
         });
         await firstOutput.Task.WaitAsync(TimeSpan.FromSeconds(3));
         Check(!running.IsCompleted && liveOutput.ToString() == "中文持续输出", "未结束且无换行的程序也实时显示分帧中文输出");
@@ -124,7 +130,10 @@ foreach (var chip in new[] { "RP2040", "RP2350" })
             transport.StreamOutput(new string('x', 4096));
             await Task.Delay(2);
         }
-        if (chip == "RP2040") { await Task.Delay(TimeSpan.FromSeconds(31)); }
+        if (chip == "RP2040")
+        {
+            await Task.Delay(TimeSpan.FromSeconds(31));
+        }
         Check(!running.IsCompleted && Interlocked.Read(ref received) > 1024 * 1024,
             chip == "RP2040" ? "持续运行超过 30 秒、累计输出超过 1 MiB 仍保持会话 RP2040" : "累计输出超过 1 MiB 仍保持会话 RP2350");
         if (chip == "RP2040")
@@ -137,7 +146,11 @@ foreach (var chip in new[] { "RP2040", "RP2350" })
         }
         var interrupts = transport.Interrupts;
         await session.DisconnectAsync().WaitAsync(TimeSpan.FromSeconds(3));
-        try { await running; throw new InvalidOperationException("运行未取消"); }
+        try
+        {
+            await running;
+            throw new InvalidOperationException("运行未取消");
+        }
         catch (OperationCanceledException)
         {
             Check(!session.IsConnected && transport.Closed && transport.Interrupts > interrupts, "停止持续运行发送中断并释放唯一端口");

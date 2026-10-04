@@ -25,7 +25,10 @@ internal static class EspressifMemoryAnalyzer
         {
             throw new StudioXException("ESPRESSIF_SIZE", "SDK 内存统计失败：" + result.StandardError + "\n" + result.StandardOutput);
         }
-        try { return Parse(result.StandardOutput, sdk); }
+        try
+        {
+            return Parse(result.StandardOutput, sdk);
+        }
         catch (Exception exception) when (exception is JsonException or KeyNotFoundException or InvalidOperationException)
         {
             throw new InvalidDataException("SDK 内存统计格式无效；原始输出保留在 .build/studiox-idf-size.log。", exception);
@@ -42,7 +45,10 @@ internal static class EspressifMemoryAnalyzer
             {
                 var used = value.GetProperty(usedName).GetUInt64();
                 var total = checked((long)used + value.GetProperty(availableName).GetInt64());
-                if (total < 0) { throw new InvalidDataException("ESP8266 SDK 统计返回了负容量。"); }
+                if (total < 0)
+                {
+                    throw new InvalidDataException("ESP8266 SDK 统计返回了负容量。");
+                }
                 return new(name, 0, (ulong)total, used, IsLogical: true);
             }
             return [Ram("DRAM", "used_dram", "available_dram"), Ram("IRAM", "used_iram", "available_iram"),
@@ -65,7 +71,10 @@ internal static class EspressifMemoryAnalyzer
             // Flash 总容量为零是厂商明确的未知值；不能改用映射窗口或假定板载 Flash。
             regions.Add(new(name, 0, region.GetProperty("total").GetUInt64(), region.GetProperty("used").GetUInt64(), IsLogical: true));
         }
-        if (regions.Count == 0) { throw new InvalidDataException("SDK 内存统计没有可用的存储区。"); }
+        if (regions.Count == 0)
+        {
+            throw new InvalidDataException("SDK 内存统计没有可用的存储区。");
+        }
         return regions.ToArray();
     }
 }

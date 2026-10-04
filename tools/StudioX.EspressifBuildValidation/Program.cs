@@ -56,9 +56,22 @@ foreach (var target in selected)
         await File.WriteAllTextAsync(Path.Combine(output, name + "-memory.json"), JsonSerializer.Serialize(memory, JsonStore.Options));
         Check(memory.Targets.Count == 1 && (memory.Targets[0].Regions.Count > 0 || !string.IsNullOrEmpty(memory.Targets[0].Diagnostic)),
             name + " exposes link regions or the raw alias diagnostic: " + JsonSerializer.Serialize(memory, JsonStore.Options));
-        results.Add(new { name, report.Success, report.ExitCode, sourceStamp, imageCount = images.Length, memory.Message,
-            memoryDiagnostic = memory.Targets[0].Diagnostic, memoryRegionCount = memory.Targets[0].Regions.Count });
-        await File.WriteAllTextAsync(Path.Combine(output, "result.json"), JsonSerializer.Serialize(new { count, results }, JsonStore.Options));
+        results.Add(new
+        {
+            name,
+            report.Success,
+            report.ExitCode,
+            sourceStamp,
+            imageCount = images.Length,
+            memory.Message,
+            memoryDiagnostic = memory.Targets[0].Diagnostic,
+            memoryRegionCount = memory.Targets[0].Regions.Count
+        });
+        await File.WriteAllTextAsync(Path.Combine(output, "result.json"), JsonSerializer.Serialize(new
+        {
+            count,
+            results
+        }, JsonStore.Options));
         Console.WriteLine("PASS " + name + " · " + images.Length + " flash images · " + memory.Message);
     }
 }

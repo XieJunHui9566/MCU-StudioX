@@ -19,9 +19,15 @@ internal static class Ag32GpioElectrical
     internal static (string Pull, string OutputType) ReadOptions(string line)
     {
         var index = line.IndexOf(Marker, StringComparison.Ordinal);
-        if (index < 0) { return ("NONE", "PUSH_PULL"); }
+        if (index < 0)
+        {
+            return ("NONE", "PUSH_PULL");
+        }
         var match = Regex.Match(line[index..], @"\A#@StudioX:GPIO pull=(NONE|UP|DOWN) output=(PUSH_PULL|OPEN_DRAIN)[ \t]*\z", RegexOptions.CultureInvariant);
-        if (!match.Success) { throw new StudioXException("AG32_GPIO_OPTIONS", "GPIO 电气配置注释无效：需要 pull=NONE/UP/DOWN 与 output=PUSH_PULL/OPEN_DRAIN。"); }
+        if (!match.Success)
+        {
+            throw new StudioXException("AG32_GPIO_OPTIONS", "GPIO 电气配置注释无效：需要 pull=NONE/UP/DOWN 与 output=PUSH_PULL/OPEN_DRAIN。");
+        }
         return (match.Groups[1].Value, match.Groups[2].Value);
     }
 
@@ -33,7 +39,12 @@ internal static class Ag32GpioElectrical
     internal static string WithOptions(string line, Ag32PinAssignment pin) => pin.Pull == "NONE" && pin.OutputType == "PUSH_PULL"
         ? line : line.TrimEnd() + $" {Marker} pull={pin.Pull} output={pin.OutputType}";
     internal static string Describe(Ag32PinAssignment pin) =>
-        (pin.Pull switch { "UP" => "上拉", "DOWN" => "下拉", _ => "无上下拉" }) + " / " +
+        (pin.Pull switch
+        {
+            "UP" => "上拉",
+            "DOWN" => "下拉",
+            _ => "无上下拉"
+        }) + " / " +
         (pin.OutputType == "OPEN_DRAIN" ? "开漏" : "推挽");
 
     internal static async Task CreateAsync(string build, byte[] source, CancellationToken token)
@@ -45,7 +56,10 @@ internal static class Ag32GpioElectrical
     private static Ag32PinAssignment[] ReadPins(byte[] source)
     {
         var pins = new Ag32PinPlanDocument(source).Assignments;
-        if (pins.Any(pin => !IsValid(pin))) { throw new StudioXException("AG32_GPIO_OPTIONS", "电气配置仅适用于 GPIO；输入模式不能设置开漏输出。"); }
+        if (pins.Any(pin => !IsValid(pin)))
+        {
+            throw new StudioXException("AG32_GPIO_OPTIONS", "电气配置仅适用于 GPIO；输入模式不能设置开漏输出。");
+        }
         return pins.Where(pin => IsGpio(pin.Function)).ToArray();
     }
 
@@ -54,7 +68,10 @@ internal static class Ag32GpioElectrical
         // -to 使用转换后的真实顶层端口，而不是将封装编号误作逻辑端口。
         var matches = Regex.Matches(vex, @"(?m)^[ \t]*([A-Za-z_][A-Za-z0-9_]*)[ \t]+PIN_" +
             pin.PinNumber.ToString(CultureInfo.InvariantCulture) + @"(?:[ \t\r]|$)");
-        if (matches.Count != 1) { throw new StudioXException("AG32_GPIO_OPTIONS", $"PIN_{pin.PinNumber} 缺少唯一的电气配置目标。"); }
+        if (matches.Count != 1)
+        {
+            throw new StudioXException("AG32_GPIO_OPTIONS", $"PIN_{pin.PinNumber} 缺少唯一的电气配置目标。");
+        }
         return matches[0].Groups[1].Value;
     }
 
@@ -64,7 +81,12 @@ internal static class Ag32GpioElectrical
         foreach (var pin in ReadPins(source))
         {
             var port = Port(vex, pin);
-            var keep = pin.Pull switch { "UP" => "10", "DOWN" => "01", _ => "00" };
+            var keep = pin.Pull switch
+            {
+                "UP" => "10",
+                "DOWN" => "01",
+                _ => "00"
+            };
             result.AppendLine($"# {pin.Function} -> PIN_{pin.PinNumber}: {pin.Pull}, {pin.OutputType}");
             result.AppendLine($"set_instance_assignment -name CFG_KEEP -to {{{port}}} 2'b{keep} -extension");
             // 锁定版本的布局器在读入网表后不应用 AUTO_OPEN_DRAIN_PINS；使用其 IO 原语的明确参数并回查最终网表。
@@ -84,7 +106,10 @@ internal static class Ag32GpioElectrical
         {
             var port = Port(vex, pin);
             var matched = cells.Where(cell => Regex.IsMatch(cell.Groups["body"].Value, @"\.padio\s*\(\s*" + Regex.Escape(port) + @"\s*\)")).ToArray();
-            if (matched.Length != 1) { throw new StudioXException("AG32_GPIO_OPTIONS", $"缺少 {pin.Function} 的实际 IO 单元电气证据。"); }
+            if (matched.Length != 1)
+            {
+                throw new StudioXException("AG32_GPIO_OPTIONS", $"缺少 {pin.Function} 的实际 IO 单元电气证据。");
+            }
             var instance = Regex.Escape(matched[0].Groups["name"].Value);
             foreach (var (parameter, expected) in new[]
             {

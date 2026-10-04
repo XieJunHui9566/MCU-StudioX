@@ -3,9 +3,22 @@
 #define TEST_ALTA_H
 #include <stdint.h>
 #include <stdbool.h>
-typedef struct { uint32_t CLK_CNTL, PBUS_DIVIDER; } SYS_ControlTypeDef;
-typedef struct { uint32_t HSI_FREQUENCY, HSE_FREQUENCY, PLL_FREQUENCY, EXT_FREQUENCY; } SYS_ClocksTypeDef;
-typedef struct { uint32_t Direction, Data, Hardware; } GPIO_TypeDef;
+
+typedef struct
+{
+    uint32_t CLK_CNTL, PBUS_DIVIDER;
+} SYS_ControlTypeDef;
+
+typedef struct
+{
+    uint32_t HSI_FREQUENCY, HSE_FREQUENCY, PLL_FREQUENCY, EXT_FREQUENCY;
+} SYS_ClocksTypeDef;
+
+typedef struct
+{
+    uint32_t Direction, Data, Hardware;
+} GPIO_TypeDef;
+
 extern SYS_ControlTypeDef test_sys;
 extern GPIO_TypeDef test_gpio;
 extern SYS_ClocksTypeDef SYS_Clocks;
@@ -31,9 +44,29 @@ extern SYS_ClocksTypeDef SYS_Clocks;
 #define FLASH_MAX_FREQ 100000000u
 #define read_csr(reg) test_read_csr(#reg)
 uint32_t test_read_csr(const char *reg);
-static inline void SYS_EnableAPBClock(uint32_t mask) { (void)mask; }
-static inline void GPIO_SetSoftwareMode(GPIO_TypeDef *gpio, uint8_t bit) { gpio->Hardware &= ~bit; }
-static inline void GPIO_SetLow(GPIO_TypeDef *gpio, uint8_t bit) { gpio->Data &= ~bit; }
-static inline void GPIO_SetInput(GPIO_TypeDef *gpio, uint8_t bit) { gpio->Direction &= ~bit; }
-static inline void GPIO_SetOutput(GPIO_TypeDef *gpio, uint8_t bit) { gpio->Direction |= bit; }
+
+static inline void SYS_EnableAPBClock(uint32_t mask)
+{
+    (void)mask;
+}
+
+static inline void GPIO_SetSoftwareMode(GPIO_TypeDef *gpio, uint8_t bit)
+{
+    gpio->Hardware &= ~bit;
+}
+
+static inline void GPIO_SetLow(GPIO_TypeDef *gpio, uint8_t bit)
+{
+    gpio->Data &= ~bit;
+}
+
+static inline void GPIO_SetInput(GPIO_TypeDef *gpio, uint8_t bit)
+{
+    gpio->Direction &= ~bit;
+}
+
+static inline void GPIO_SetOutput(GPIO_TypeDef *gpio, uint8_t bit)
+{
+    gpio->Direction |= bit;
+}
 #endif

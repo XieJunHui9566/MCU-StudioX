@@ -63,10 +63,16 @@ internal sealed class RawReplClient(DeviceSession session, FrameSubscription fra
             if (ended || count == bytes.Length || position >= current.Length)
             {
                 var length = decoder.GetChars(bytes, 0, count, chars, 0, flush: ended);
-                if (length != 0) { output(new string(chars, 0, length)); }
+                if (length != 0)
+                {
+                    output(new string(chars, 0, length));
+                }
                 count = 0;
             }
-            if (ended) { return received; }
+            if (ended)
+            {
+                return received;
+            }
         }
     }
 

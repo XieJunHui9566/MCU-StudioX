@@ -6,6 +6,16 @@ public static class TroubleshootingService
     public static TroubleshootingAdvice Explain(string diagnostic)
     {
         bool Has(params string[] words) => words.Any(w => diagnostic.Contains(w, StringComparison.OrdinalIgnoreCase));
+        if (Has("LANGUAGE_CACHE_", "LANGUAGE_DATABASE_", "LANGUAGE_CONFIG_CHANGED", "LANGUAGE_SDKCONFIG_CHANGED", "LANGUAGE_CONFIGURATION", "LANGUAGE_INPUTS_CHANGED", "LANGUAGE_ESPRESSIF_RESPONSE"))
+        {
+            return new("实时分析配置需要刷新", "编译数据库、生成宏或 SDK 路径与当前工程不一致，旧实时诊断已撤销。",
+                ["打开工程健康检查，查看锁定版本、目标和原始路径证据。", "若工程或工具目录已移动，先预览并重建配置缓存。", "选择“重新配置并刷新代码分析”；此操作运行原生配置，不连接设备。", "配置成功后保留当前编辑缓冲区重新分析，真实代码错误仍会显示。"], "health");
+        }
+        if (Has("LANGUAGE_ESPRESSIF_LIBC"))
+        {
+            return new("所选 C 标准库头文件缺失", "生成配置选择的标准库与锁定工具的文件内容不一致。",
+            ["打开工程健康检查，核对实际选择的标准库。", "恢复同 ID、同版本、同内容的完整开发环境组件。", "重新配置工程，不通过手工定义内部宏掩盖错误。"], "tools");
+        }
         if (Has("TOOLS_BUSY", "TOOLS_SESSION_ACTIVE", "TOOLS_PROTECTED", "TOOLS_CHANGED", "TOOLS_VERSION_EXISTS", "TOOLS_RETIREMENT", "TOOLS_ARCHIVE"))
         {
             return new("开发环境组件版本管理需要核对", "占用、依赖、归档或确认之后的内容变化阻止了本次维护。",
@@ -16,7 +26,7 @@ public static class TroubleshootingService
             return new("工程工具锁与安装内容不同", "同一版本号的工具清单与工程记录的指纹不一致。",
                 ["打开工程健康检查，核对所需工具 ID、版本和原始诊断。", "在开发环境组件中选中工程锁定版本，用相同 ID、版本、内容的离线包恢复。", "保留 .studiox/toolchain.lock.json，不通过删除锁定或改用系统工具绕过检查。", "修复后重新检查并构建。"], "tools");
         }
-        if (Has("HEALTH_CACHE_", "CMakeCache.txt directory", "does not match the source", "CMAKE_HOME_DIRECTORY"))
+        if (Has("HEALTH_CACHE_", "CMakeCache.txt directory", "does not match the source", "CMAKE_HOME_DIRECTORY", "cannot read spec file"))
         {
             return new("CMake 配置缓存需要核对", "已有生成缓存与当前工程目录或开发环境组件不一致。",
                 ["打开工程健康检查，查看缓存记录的目录、编译器与 target。", "选择相应检查项，点击“预览并重建配置缓存”。", "核对将移入备份的生成文件后确认；源码、sdkconfig 和工程工具锁保留。", "重新编译以生成新缓存与构建凭据；不要手改 Ninja 文件。"], "health");

@@ -18,7 +18,10 @@ public partial class MainWindow
             try
             {
                 var result = await services.HdlWorkflow.SimulateAsync(root, settings, token);
-                if (projectDirectory == root) HdlWorkflow.ShowResult(result);
+                if (projectDirectory == root)
+                {
+                    HdlWorkflow.ShowResult(result);
+                }
                 Log("RTL 仿真日志：" + result.LogPath);
                 Status.Text = "RTL 仿真完成，波形已显示。";
             }
@@ -37,34 +40,51 @@ public partial class MainWindow
         });
         HdlWorkflow.LogRequested += async (_, _) => await RunAsync(async token =>
         {
-            if (HdlWorkflow.Result is { } result) await OpenSourceAsync(Path.GetRelativePath(RequireProject(), result.LogPath).Replace('\\', '/'), token);
+            if (HdlWorkflow.Result is { } result)
+            {
+                await OpenSourceAsync(Path.GetRelativePath(RequireProject(), result.LogPath).Replace('\\', '/'), token);
+            }
         });
         HdlWorkflow.TimingReportRequested += async (_, _) => await RunAsync(async token =>
         {
             if (HdlWorkflow.TimingReport.SelectedItem is System.Windows.Controls.ComboBoxItem item)
+            {
                 await OpenSourceAsync(await services.HdlWorkflow.ReportPathAsync(RequireProject(), (string)item.Content, token), token);
+            }
         });
         Activated += async (_, _) => await CheckHdlWorkflowFreshnessAsync();
         WorkspaceTabs.SelectionChanged += async (_, _) =>
         {
-            if (HdlWorkflowTab.IsSelected) await CheckHdlWorkflowFreshnessAsync();
+            if (HdlWorkflowTab.IsSelected)
+            {
+                await CheckHdlWorkflowFreshnessAsync();
+            }
         };
     }
 
     private async Task CheckHdlWorkflowFreshnessAsync()
     {
-        if (HdlWorkflow.Result is not { } result || projectActionsBusy || closing) return;
+        if (HdlWorkflow.Result is not { } result || projectActionsBusy || closing)
+        {
+            return;
+        }
         try
         {
             var dirty = editorDocuments.Any(document => document.IsDirty && result.Inputs.ContainsKey(document.Source.RelativePath));
-            if ((dirty || !await services.HdlWorkflow.IsCurrentAsync(result)) && ReferenceEquals(result, HdlWorkflow.Result)) HdlWorkflow.MarkStale();
+            if ((dirty || !await services.HdlWorkflow.IsCurrentAsync(result)) && ReferenceEquals(result, HdlWorkflow.Result))
+            {
+                HdlWorkflow.MarkStale();
+            }
         }
         catch (Exception error) { Log("仿真快照检查失败：" + error); HdlWorkflow.MarkStale(); }
     }
 
     private async Task SaveHdlBuildSettingsAsync(CancellationToken token)
     {
-        if (hdlWorkflowProject != projectDirectory || !HdlWorkflow.BuildDirty) return;
+        if (hdlWorkflowProject != projectDirectory || !HdlWorkflow.BuildDirty)
+        {
+            return;
+        }
         await services.HdlWorkflow.SaveBuildAsync(RequireProject(), HdlWorkflow.ReadBuild(), token);
         HdlWorkflow.MarkBuildSaved();
         Status.Text = "逻辑构建配置已保存，下次编译生效。";

@@ -230,10 +230,15 @@
                     FontSize="11"
                     TextWrapping="Wrap">
                     <TextBlock.Style>
-                      <Style TargetType="TextBlock">
+                      <Style
+                        TargetType="TextBlock">
                         <Style.Triggers>
-                          <DataTrigger Binding="{Binding Diagnostic}" Value="{x:Null}">
-                            <Setter Property="Visibility" Value="Collapsed" />
+                          <DataTrigger
+                            Binding="{Binding Diagnostic}"
+                            Value="{x:Null}">
+                            <Setter
+                              Property="Visibility"
+                              Value="Collapsed" />
                           </DataTrigger>
                         </Style.Triggers>
                       </Style>

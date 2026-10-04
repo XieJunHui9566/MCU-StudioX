@@ -13,7 +13,10 @@ public sealed class WorkspaceFileIndex
             foreach (var path in paths)
             {
                 token.ThrowIfCancellationRequested();
-                if (path.Contains(query, StringComparison.OrdinalIgnoreCase)) { matches.Add(path); }
+                if (path.Contains(query, StringComparison.OrdinalIgnoreCase))
+                {
+                    matches.Add(path);
+                }
             }
             var result = matches.OrderBy(path => !Path.GetFileName(path).StartsWith(query, StringComparison.OrdinalIgnoreCase))
                 .ThenBy(path => path.Length).ThenBy(path => path, StringComparer.OrdinalIgnoreCase).Take(300).ToArray();

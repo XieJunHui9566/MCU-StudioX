@@ -1,14 +1,15 @@
-using System.Security.Cryptography;
 using System.Text;
 using StudioX.Application;
 using StudioX.Application.Peripherals;
 using StudioX.Engine;
-using StudioX.Engine.Debugging;
 using StudioX.Engine.Svd;
 using StudioX.Foundation;
 
 if (args is ["--f407-restore", var hardwareProject, var hardwareTools, var hardwareSvd, var hardwareOutput])
-{ await F407Acceptance.RunAsync(hardwareProject, hardwareTools, hardwareSvd, hardwareOutput); return; }
+{
+    await F407Acceptance.RunAsync(hardwareProject, hardwareTools, hardwareSvd, hardwareOutput);
+    return;
+}
 
 if (args.Length is not (1 or 2 or 4)) { throw new ArgumentException("<new output> [vendor SVD] [toolsets official-coredump-fixtures]"); }
 var root = Path.GetFullPath(args[0]);
@@ -18,7 +19,11 @@ var checks = new List<string>();
 void Check(bool value, string label) { if (!value) { throw new InvalidOperationException(label); } checks.Add(label); Console.WriteLine("PASS " + label); }
 async Task Reject(Func<Task> action, string label)
 {
-    try { await action(); } catch (Exception e) when (e is StudioXException or System.Xml.XmlException or OverflowException) { Check(true, label); return; }
+    try
+    {
+        await action();
+    }
+    catch (Exception e) when (e is StudioXException or System.Xml.XmlException or OverflowException) { Check(true, label); return; }
     throw new InvalidOperationException("Expected rejection: " + label);
 }
 var xml = """
@@ -45,10 +50,13 @@ await Reject(() => Task.FromResult(Parse(xml.Replace("[3:0]", "[33:0]"))), "fiel
 await Reject(() => Task.FromResult(Parse(xml.Replace("0x40020400", "0x100000000"))), "32-bit address overflow rejected");
 await Reject(() => Task.FromResult(Parse(xml.Replace("<dim>2</dim>", "<dim>2000</dim>"))), "array expansion bounded");
 Check(!Parse(xml.Replace("<access>read-write</access>", "<access>unknown</access>")).Registers[0].CanRead, "unknown access remains disabled");
-var file = Path.Combine(root, "fixture.svd"); await File.WriteAllTextAsync(file, xml);
-var project = Path.Combine(root, "project"); Directory.CreateDirectory(Path.Combine(project, ".studiox"));
-await JsonStore.WriteAsync(Path.Combine(project, ".studiox/project.json"), new ProjectManifest(1, "fixture", "fixture", "1.0.0", new string('a',64), "STM32F407ZG", "hal", "arm.gnu", "1.0.0", "arm-gnu-15.2.rel1"));
-await using var debug = new DebugSessionService(Path.Combine(root, "data")); await debug.OpenProjectAsync(project);
+var file = Path.Combine(root, "fixture.svd");
+await File.WriteAllTextAsync(file, xml);
+var project = Path.Combine(root, "project");
+Directory.CreateDirectory(Path.Combine(project, ".studiox"));
+await JsonStore.WriteAsync(Path.Combine(project, ".studiox/project.json"), new ProjectManifest(1, "fixture", "fixture", "1.0.0", new string('a', 64), "STM32F407ZG", "hal", "arm.gnu", "1.0.0", "arm-gnu-15.2.rel1"));
+await using var debug = new DebugSessionService(Path.Combine(root, "data"));
+await debug.OpenProjectAsync(project);
 var peripherals = new PeripheralService(debug, Path.Combine(root, "data"));
 await Reject(() => peripherals.ImportAsync(project, file, "STM32F407ZGT6"), "SVD explicit device confirmation must match project");
 var doc = await peripherals.ImportAsync(project, file, "STM32F407ZG");
@@ -59,8 +67,15 @@ await File.WriteAllTextAsync(Path.Combine(root, "data/svd", Directory.GetDirecto
 await Reject(() => peripherals.OpenAsync(project), "corrupted saved SVD binding rejected");
 var faults = new FaultAnalysisService(new ToolsetCatalog(Path.Combine(root, "unused-tools")), debug);
 var originalReport = faults.Analyze("ESP32-S3", "fixture");
-originalReport = originalReport with { Evidence = originalReport.Evidence with { FirmwareMatched = true, Raw = new string('x', 3 * 1024 * 1024) },
-    CoreDump = new(new string('a', 64), "b64", "esp32s3", "5.5.4", "fixture", "abcdef1234", true, [], null, null, "fixture") };
+originalReport = originalReport with
+{
+    Evidence = originalReport.Evidence with
+    {
+        FirmwareMatched = true,
+        Raw = new string('x', 3 * 1024 * 1024)
+    },
+    CoreDump = new(new string('a', 64), "b64", "esp32s3", "5.5.4", "fixture", "abcdef1234", true, [], null, null, "fixture")
+};
 var reportFile = Path.Combine(root, "fault-report.json");
 await faults.ExportAsync(originalReport, reportFile);
 var importedReport = await faults.ImportAsync(reportFile);
@@ -74,7 +89,12 @@ if (args.Length >= 2)
 {
     var vendor = await SvdParser.LoadAsync(args[1]);
     Check(vendor.Registers.Count > 100 && vendor.Registers.Any(r => r.Path == "RCC.AHB1ENR"), "real vendor SVD parsed with RCC register map");
-    await JsonStore.WriteAsync(Path.Combine(root, "vendor.json"), new { vendor.Name, vendor.Sha256, registerCount=vendor.Registers.Count });
+    await JsonStore.WriteAsync(Path.Combine(root, "vendor.json"), new
+    {
+        vendor.Name,
+        vendor.Sha256,
+        registerCount = vendor.Registers.Count
+    });
 }
 if (args.Length == 4)
 {

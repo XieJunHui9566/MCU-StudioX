@@ -1,9 +1,8 @@
 namespace StudioX.Application.Plugins;
 
-using System.Text.Json;
-using System.Text;
 using System.Globalization;
 using System.Numerics;
+using System.Text.Json;
 using StudioX.Foundation;
 
 /// <summary>实现有界 JSON Schema 子集；定义和参数使用同一规则，不解析引用或外部资源。</summary>

@@ -40,10 +40,21 @@ public sealed partial class CodeIntelligenceService(string runtimeDirectory, str
         await gate.WaitAsync(token).ConfigureAwait(false);
         try
         {
-            var generation = Interlocked.Increment(ref languageGeneration);
-            diagnosticDocuments.Clear();
-            diagnosticBatches.Clear();
-            invalidatedDiagnostics.Clear();
+            InvalidateDiagnostics();
+            unexpectedRestartWindow = DateTimeOffset.MinValue;
+            unexpectedRestartCount = 0;
+            retryDisconnectedServer = false;
+            await StartCoreAsync(directory, token).ConfigureAwait(false);
+        }
+        finally { gate.Release(); }
+    }
+    private async Task StartCoreAsync(string directory, CancellationToken token)
+    {
+        analysisDirectory = Path.GetFullPath(directory);
+        analysisInputs = null;
+        analysisProject = null;
+        {
+            var generation = ResetDiagnosticSession();
             if (connection is { } previous)
             {
                 connection = null;
@@ -54,6 +65,7 @@ public sealed partial class CodeIntelligenceService(string runtimeDirectory, str
             version = 0;
             projectRoot = Path.GetFullPath(directory);
             var project = await ProjectService.ReadAsync(projectRoot, token).ConfigureAwait(false);
+            var before = AnalysisInputStamp.Capture(runtimeDirectory, analysisDirectory, project);
             if (project.Kind == ProjectKind.MicroPython)
             {
                 throw MicroPythonProject.NativeOperationUnavailable();
@@ -115,6 +127,19 @@ public sealed partial class CodeIntelligenceService(string runtimeDirectory, str
             }
             var cache = Path.Combine(dataDirectory, "language-cache", Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(projectRoot)))[..16]);
             Directory.CreateDirectory(cache);
+            IReadOnlyList<string> configuredResponses = [];
+            string? configuredResponseStamp = null;
+            if (espressifProfile is not null || project.Kind == ProjectKind.CubeMx)
+            {
+                var environment = await AnalysisEnvironmentInspector.InspectAsync(projectRoot, project, espressifProfile?.Tools, token).ConfigureAwait(false);
+                configuredResponses = environment.ResponseFiles;
+                configuredResponseStamp = AnalysisInputStamp.Capture(runtimeDirectory, analysisDirectory, project, configuredResponses);
+                if (environment.Issues.FirstOrDefault() is { } issue)
+                {
+                    StatusDescription = environment.Summary;
+                    throw new StudioXException(issue.Code, issue.Detail + "\n" + issue.RawDiagnostic);
+                }
+            }
             var analysisCommands = espressifProfile is not null
                 ? await CreateEspressifDatabaseAsync(cache, espressifProfile, token).ConfigureAwait(false)
                 : project.Kind == ProjectKind.CubeMx
@@ -222,11 +247,19 @@ public sealed partial class CodeIntelligenceService(string runtimeDirectory, str
                         compilationDatabaseChanges = analysisCommands
                     }
                 }, token).ConfigureAwait(false);
+                var after = AnalysisInputStamp.Capture(runtimeDirectory, analysisDirectory, project);
+                if (before != after || espressifProfile?.ResponseInputsUnchanged == false || configuredResponseStamp is not null &&
+                    configuredResponseStamp != AnalysisInputStamp.Capture(runtimeDirectory, analysisDirectory, project, configuredResponses))
+                {
+                    throw new StudioXException("LANGUAGE_INPUTS_CHANGED", "分析配置在加载期间发生变化，稍后将重新加载；未发布旧配置的诊断。");
+                }
                 connection = server;
+                analysisResponseFiles = configuredResponses.Concat(espressifProfile?.ResponsePaths ?? []).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+                analysisInputs = AnalysisInputStamp.Capture(runtimeDirectory, analysisDirectory, project, analysisResponseFiles);
+                analysisProject = project;
             }
             catch { await server.DisposeAsync().ConfigureAwait(false); throw; }
         }
-        finally { gate.Release(); }
     }
 
     private string[] CreateFlags(DeviceDefinition device)
@@ -480,13 +513,17 @@ public sealed partial class CodeIntelligenceService(string runtimeDirectory, str
         await gate.WaitAsync().ConfigureAwait(false);
         try
         {
-            Interlocked.Increment(ref languageGeneration);
-            diagnosticDocuments.Clear();
-            diagnosticBatches.Clear();
-            invalidatedDiagnostics.Clear();
+            InvalidateDiagnostics();
+            ResetDiagnosticSession();
             var previous = connection;
             connection = null;
             projectRoot = "";
+            analysisDirectory = "";
+            analysisInputs = null;
+            analysisProject = null;
+            lastEnvironmentFailure = null;
+            retryDisconnectedServer = false;
+            analysisResponseFiles = [];
             flags = [];
             compilerHeaders = null;
             espressifAnalysis = false;

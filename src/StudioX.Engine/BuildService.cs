@@ -10,13 +10,22 @@ public sealed partial class BuildService(ToolsetCatalog catalog, string? ag32Map
     public IDisposable AcquireMaintenance(CancellationToken token = default)
     {
         token.ThrowIfCancellationRequested();
-        if (!gate.Wait(0)) { throw new StudioXException("BUILD_BUSY", "构建或工程维护正在进行。"); }
+        if (!gate.Wait(0))
+        {
+            throw new StudioXException("BUILD_BUSY", "构建或工程维护正在进行。");
+        }
         return new MaintenanceLease(gate);
     }
     private sealed class MaintenanceLease(SemaphoreSlim gate) : IDisposable
     {
         private int released;
-        public void Dispose() { if (Interlocked.Exchange(ref released, 1) == 0) { gate.Release(); } }
+        public void Dispose()
+        {
+            if (Interlocked.Exchange(ref released, 1) == 0)
+            {
+                gate.Release();
+            }
+        }
     }
     public Task<ProjectBuildSettings> LoadSettingsAsync(string directory, CancellationToken token = default) => ProjectBuildSettings.ReadAsync(directory, token);
     public async Task<StcCodeRomLimit?> ReadStcCodeRomLimitAsync(string directory, CancellationToken token = default)
@@ -97,7 +106,10 @@ public sealed partial class BuildService(ToolsetCatalog catalog, string? ag32Map
             {
                 File.Delete(receiptPath);
             }
-            if (project.Logic is not null) Hdl.Ag32NativeBuildService.Invalidate(root);
+            if (project.Logic is not null)
+            {
+                Hdl.Ag32NativeBuildService.Invalidate(root);
+            }
             using var components = await PrepareComponentsAsync(root, project, progress, cancellationToken);
             var tools = components.Tools.Single(t => t.Manifest.Id == project.ToolsetId);
             await new Ag32SystemGenerationService(catalog).PrepareAsync(root, project, cancellationToken);
@@ -138,7 +150,11 @@ public sealed partial class BuildService(ToolsetCatalog catalog, string? ag32Map
                     if (!logic.Success)
                     {
                         await File.WriteAllTextAsync(logPath, log.ToString(), cancellationToken);
-                        return logic with { Log = log.ToString(), LogPath = logPath };
+                        return logic with
+                        {
+                            Log = log.ToString(),
+                            LogPath = logPath
+                        };
                     }
                     artifacts = artifacts.Concat(logic.Artifacts).ToArray();
                 }

@@ -6,6 +6,9 @@ using System.Text.Json;
 public sealed record PluginDebugSnapshotRequest(string State, bool Hardware, JsonElement Snapshot)
 {
     public int FormatVersion { get; init; } = 1;
-    public long Revision { get; init; }
+    public long Revision
+    {
+        get; init;
+    }
     public string Reason { get; init; } = "";
 }

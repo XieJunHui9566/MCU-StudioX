@@ -21,14 +21,20 @@ Directory.CreateDirectory(root);
 var checks = new List<string>();
 void Check(bool passed, string label)
 {
-    if (!passed) { throw new InvalidOperationException(label); }
+    if (!passed)
+    {
+        throw new InvalidOperationException(label);
+    }
     checks.Add(label);
     Console.WriteLine("PASS " + label);
 }
 async Task WaitAsync(Func<bool> condition)
 {
     using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(10));
-    while (!condition()) { await Task.Delay(15, deadline.Token); }
+    while (!condition())
+    {
+        await Task.Delay(15, deadline.Token);
+    }
 }
 Check(OpenOcdDebugDiagnostics.TargetExaminationFailure("Error: [stm32f4x.cpu] Examination failed")?.Code == "DEBUG_TARGET_EXAMINE", "target examination failure has actionable code before GDB attach");
 Check(OpenOcdDebugDiagnostics.TargetExaminationFailure("Warn : target stm32f4x.cpu examination failed")?.Message.Contains("examination failed") == true, "OpenOCD original examination diagnostic preserved");
@@ -51,7 +57,10 @@ var assemblyName = Path.GetFileName(assembly);
 File.Copy(assembly, Path.Combine(plugin, assemblyName));
 var hash = Convert.ToHexString(SHA256.HashData(await File.ReadAllBytesAsync(assembly)));
 var manifest = new PluginManifest(1, 3, "validation.debug-view", "1.0.0", "Debug view", assemblyName,
-    typeof(DebugFixturePlugin).FullName!, ["debugAdapters"], new() { [assemblyName] = hash }, HostTools: ["validation.wait"]);
+    typeof(DebugFixturePlugin).FullName!, ["debugAdapters"], new()
+    {
+        [assemblyName] = hash
+    }, HostTools: ["validation.wait"]);
 await JsonStore.WriteAsync(Path.Combine(plugin, "plugin.json"), manifest);
 var archive = Path.Combine(root, "fixture.studioxplugin");
 await PluginRepository.PackAsync(plugin, archive);
@@ -68,8 +77,14 @@ await using var workspace = await services.PluginManager.OpenWorkspaceAsync(proj
     Interlocked.Increment(ref calls);
     var currentRelease = release;
     entered?.TrySetResult(true);
-    if (currentRelease is not null) { await currentRelease.Task; }
-    return JsonSerializer.SerializeToElement(new { mode });
+    if (currentRelease is not null)
+    {
+        await currentRelease.Task;
+    }
+    return JsonSerializer.SerializeToElement(new
+    {
+        mode
+    });
 });
 Check(workspace.Contributions.Count == 1, "API 3 debug plugin runs in actual separate host");
 await using var view = new PluginDebugViewSession(workspace, services.Debugger, manifest.Id, "snapshot");

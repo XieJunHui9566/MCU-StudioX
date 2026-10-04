@@ -19,9 +19,16 @@ public sealed class BitLabPlugin : LabPlugin
     protected override string Introduction => "程序员计算器：四种进制、定宽整数、按位运算与位域工具。";
     protected override JsonElement Schema => LabPanel.Schema(new()
     {
-        ["width"] = EnumSchema("8", "16", "32", "64"), ["radix"] = EnumSchema("2", "8", "10", "16"),
-        ["signedMode"] = new { type = "boolean" }, ["value"] = StringSchema(1024), ["operand"] = StringSchema(1024),
-        ["start"] = NumberSchema(0, 63, true), ["count"] = NumberSchema(1, 64, true),
+        ["width"] = EnumSchema("8", "16", "32", "64"),
+        ["radix"] = EnumSchema("2", "8", "10", "16"),
+        ["signedMode"] = new
+        {
+            type = "boolean"
+        },
+        ["value"] = StringSchema(1024),
+        ["operand"] = StringSchema(1024),
+        ["start"] = NumberSchema(0, 63, true),
+        ["count"] = NumberSchema(1, 64, true),
         ["operation"] = EnumSchema("evaluate", "and", "or", "xor", "not", "nand", "nor", "+", "-", "*", "/", "%", "shl", "shr", ">>>", "rol", "ror", "inspect", "set", "clear", "toggle", "replace")
     });
 
@@ -75,14 +82,30 @@ public sealed class BitLabPlugin : LabPlugin
     {
         token.ThrowIfCancellationRequested();
         var host = activeHost ?? throw new InvalidOperationException("插件尚未激活。");
-        if (arguments.ValueKind != JsonValueKind.Object) throw new ArgumentException("参数必须是对象。");
-        if (kind == "command" && id == "open") { await host.PublishPanelAsync(Panel(), token); return Json(new { ok = true }); }
-        if (kind is not ("command" or "agentTool") || (kind == "agentTool" && id != "calculate")) throw new ArgumentException("未知插件命令。");
+        if (arguments.ValueKind != JsonValueKind.Object)
+        {
+            throw new ArgumentException("参数必须是对象。");
+        }
+        if (kind == "command" && id == "open")
+        {
+            await host.PublishPanelAsync(Panel(), token);
+            return Json(new
+            {
+                ok = true
+            });
+        }
+        if (kind is not ("command" or "agentTool") || (kind == "agentTool" && id != "calculate"))
+        {
+            throw new ArgumentException("未知插件命令。");
+        }
         try
         {
             var values = arguments.TryGetProperty("values", out var submitted) ? NormalizeInputs(submitted) :
                 kind == "command" ? CurrentInput : arguments;
-            if (values.ValueKind != JsonValueKind.Object) throw new ArgumentException("表单参数必须是对象。");
+            if (values.ValueKind != JsonValueKind.Object)
+            {
+                throw new ArgumentException("表单参数必须是对象。");
+            }
             if (kind == "command" && id is "calculator" or "bitfield")
             {
                 // 先验证两页数据，再提交状态；错误输入不能破坏另一页或上次结果。
@@ -97,7 +120,18 @@ public sealed class BitLabPlugin : LabPlugin
             }
             else
             {
-                if (id == "clear") values = Json(new { width = LabInput.Text(values, "width", "32"), radix = LabInput.Text(values, "radix", "10"), signedMode = LabInput.Boolean(values, "signedMode"), value = "0", operand = "0", operation = "evaluate" });
+                if (id == "clear")
+                {
+                    values = Json(new
+                    {
+                        width = LabInput.Text(values, "width", "32"),
+                        radix = LabInput.Text(values, "radix", "10"),
+                        signedMode = LabInput.Boolean(values, "signedMode"),
+                        value = "0",
+                        operand = "0",
+                        operation = "evaluate"
+                    });
+                }
                 else if (id == "use-result")
                 {
                     var data = Json(current?.Data ?? throw new ArgumentException("尚无可继续计算的结果。"));
@@ -106,33 +140,68 @@ public sealed class BitLabPlugin : LabPlugin
                     edited["operation"] = Json("evaluate");
                     values = Json(edited);
                 }
-                else if (id != "calculate") throw new ArgumentException("未知插件命令。");
+                else if (id != "calculate")
+                {
+                    throw new ArgumentException("未知插件命令。");
+                }
                 var computed = Calculate(values);
                 token.ThrowIfCancellationRequested();
                 var nextFieldMode = Json(computed.Data).GetProperty("operation").GetString() is "inspect" or "set" or "clear" or "toggle" or "replace";
-                if (nextFieldMode != fieldMode) inputRevision++;
+                if (nextFieldMode != fieldMode)
+                {
+                    inputRevision++;
+                }
                 fieldMode = nextFieldMode;
                 Store(values);
                 current = computed;
-                if (id is "clear" or "use-result" || kind == "agentTool") inputRevision++;
+                if (id is "clear" or "use-result" || kind == "agentTool")
+                {
+                    inputRevision++;
+                }
             }
             await host.PublishPanelAsync(Panel(), token);
-            return Json(new { ok = true, data = current!.Data, copyText = current.CopyText });
+            return Json(new
+            {
+                ok = true,
+                data = current!.Data,
+                copyText = current.CopyText
+            });
         }
         catch (ArgumentException error) when (kind == "command")
         {
             await host.PublishPanelAsync(Panel(error.Message), token);
-            return Json(new { ok = false, error = error.Message });
+            return Json(new
+            {
+                ok = false,
+                error = error.Message
+            });
         }
     }
 
-    public override Task DeactivateAsync(CancellationToken token) { activeHost = null; return Task.CompletedTask; }
+    public override Task DeactivateAsync(CancellationToken token)
+    {
+        activeHost = null;
+        return Task.CompletedTask;
+    }
     private JsonElement CurrentInput => fieldMode ? fieldInput : calculatorInput;
-    private void Store(JsonElement values) { if (fieldMode) fieldInput = values.Clone(); else calculatorInput = values.Clone(); }
+    private void Store(JsonElement values)
+    {
+        if (fieldMode)
+        {
+            fieldInput = values.Clone();
+        }
+        else
+        {
+            calculatorInput = values.Clone();
+        }
+    }
 
     private JsonElement NormalizeInputs(JsonElement submitted)
     {
-        if (submitted.ValueKind != JsonValueKind.Object) throw new ArgumentException("表单参数必须是对象。");
+        if (submitted.ValueKind != JsonValueKind.Object)
+        {
+            throw new ArgumentException("表单参数必须是对象。");
+        }
         // 宿主会提交复制框等全部输入；这里只保留当前表单字段，避免旧结果成为计算参数。
         var prefix = "input" + inputRevision + "_";
         if (!submitted.EnumerateObject().Any(p => p.Name.StartsWith(prefix, StringComparison.Ordinal)))
@@ -151,15 +220,24 @@ public sealed class BitLabPlugin : LabPlugin
             new("calculator", "button", fieldMode ? "切换到程序员计算器" : "程序员计算器", CommandId: "calculator"),
             new("bitfield", "button", fieldMode ? "位域工具" : "切换到位域工具", CommandId: "bitfield")
         };
-        if (error is not null) widgets.Add(Text("error", "输入错误 / Error", error + " 保留上次成功结果。"));
-        if (current is { } result) widgets.AddRange(result.Widgets);
+        if (error is not null)
+        {
+            widgets.Add(Text("error", "输入错误 / Error", error + " 保留上次成功结果。"));
+        }
+        if (current is { } result)
+        {
+            widgets.AddRange(result.Widgets);
+        }
         widgets.Add(new("controls", "form", fieldMode ? "位域工具" : "程序员计算器", Children:
             [.. Inputs(CurrentInput).Select(w => w with { Id = "input" + inputRevision + "_" + w.Id }),
              new("calculate", "button", "计算 / 生成", CommandId: "calculate"),
              .. fieldMode ? Array.Empty<PluginPanelWidget>() : new PluginPanelWidget[]
              { new("use-result", "button", "结果作为 A（继续计算）", CommandId: "use-result"), new("clear", "button", "C · 清空", CommandId: "clear") }]));
         widgets.Add(Text("help", "输入提示", "无前缀数字使用所选进制；0x / 0d / 0o / 0b 可混合输入。例：(0xF0 & 0x3C) | (1 << 0d8)。支持 + − × ÷ %、括号和 AND / OR / XOR / NOT / NAND / NOR / ROL / ROR（除号使用 /，乘号使用 *）。输入须在位宽范围内；运算溢出保留低位，整数除法向 0 截断。移位量为 0–位宽。"));
-        if (current is { } output) widgets.Add(Input("output_" + ++revision, "复制结果（Ctrl+A / Ctrl+C）", output.CopyText));
+        if (current is { } output)
+        {
+            widgets.Add(Input("output_" + ++revision, "复制结果（Ctrl+A / Ctrl+C）", output.CopyText));
+        }
         return new("lab", Title, widgets.ToArray());
     }
 }

@@ -32,7 +32,11 @@ internal static class MigrationChecks
         await JsonStore.WriteAsync(Path.Combine(root, StcIspSettings.RelativePath), clock);
         await JsonStore.WriteAsync(Path.Combine(root, ".studiox/toolchain.lock.json"), new ToolchainLock(1, "stc.sdcc", "1.0.0", new string('a', 64)));
         foreach (var relative in new[] { ".build/do-not-copy.obj", ".git/do-not-copy", ".studiox/debug.json", "notes/draft.txt" })
-        { var path = PathBoundary.Resolve(root, relative); Directory.CreateDirectory(Path.GetDirectoryName(path)!); await File.WriteAllTextAsync(path, relative); }
+        {
+            var path = PathBoundary.Resolve(root, relative);
+            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+            await File.WriteAllTextAsync(path, relative);
+        }
         var destination = Path.Combine(output, "validated-copy");
         var preview = await migration.PreviewAsync(root, nextPack, destination);
         check(preview.CanCreate && preview.TargetProject.ToolsetVersion == "1.0.1" && preview.Files >= 4, "migration preview preserves explicit device/template and shows separate new component identity");
@@ -48,7 +52,8 @@ internal static class MigrationChecks
         await File.WriteAllBytesAsync(main, mainBytes);
         await Reject(() => migration.PreviewAsync(root, nextPack, Path.Combine(root, "nested-copy")), "TOOLS_MIGRATION_PATH", "migration cannot create a copy inside the original project", check);
         await Reject(() => migration.PreviewAsync(root, nextPack, output), "TOOLS_MIGRATION_PATH", "migration cannot choose an ancestor of original project", check);
-        var occupied = Path.Combine(output, "occupied"); Directory.CreateDirectory(occupied);
+        var occupied = Path.Combine(output, "occupied");
+        Directory.CreateDirectory(occupied);
         await File.WriteAllTextAsync(Path.Combine(occupied, "keep.txt"), "keep");
         await Reject(() => migration.PreviewAsync(root, nextPack, occupied), "PROJECT_EXISTS", "migration refuses an occupied destination without deleting contents", check);
         var header = Directory.EnumerateFiles(Path.Combine(root, "device/sdk/include"), "*.h").First();
@@ -68,13 +73,20 @@ internal static class MigrationChecks
         using (var cancel = new CancellationTokenSource())
         {
             cancel.Cancel();
-            try { await migration.CreateAndBuildAsync(preview, token: cancel.Token); throw new InvalidOperationException("Cancellation ignored"); }
+            try
+            {
+                await migration.CreateAndBuildAsync(preview, token: cancel.Token);
+                throw new InvalidOperationException("Cancellation ignored");
+            }
             catch (OperationCanceledException) { check(!Directory.Exists(destination), "cancellation before creation leaves original and destination untouched"); }
         }
         var before = await Snapshot(root);
         var result = await migration.CreateAndBuildAsync(preview);
         await JsonStore.WriteAsync(Path.Combine(output, "migration-preview.json"), preview);
-        if (!result.Success) throw new InvalidOperationException(result.ToText());
+        if (!result.Success)
+        {
+            throw new InvalidOperationException(result.ToText());
+        }
         check(await Snapshot(root) == before, "successful clone and actual build preserve every original file including old lock and cache");
         var project = await ProjectService.ReadAsync(destination);
         var locked = await JsonStore.ReadAsync<DevelopmentComponentLock>(Path.Combine(destination, DevelopmentComponentLock.RelativePath));
@@ -102,12 +114,19 @@ internal static class MigrationChecks
     {
         using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
         foreach (var file in Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories).Order(StringComparer.Ordinal))
-        { hash.AppendData(System.Text.Encoding.UTF8.GetBytes(Path.GetRelativePath(root, file))); hash.AppendData(await File.ReadAllBytesAsync(file)); }
+        {
+            hash.AppendData(System.Text.Encoding.UTF8.GetBytes(Path.GetRelativePath(root, file)));
+            hash.AppendData(await File.ReadAllBytesAsync(file));
+        }
         return Convert.ToHexString(hash.GetHashAndReset());
     }
     private static async Task Reject(Func<Task> action, string code, string label, Action<bool, string> check)
     {
-        try { await action(); throw new InvalidOperationException(label); }
+        try
+        {
+            await action();
+            throw new InvalidOperationException(label);
+        }
         catch (StudioXException error) { check(error.Code == code, label); }
     }
 }

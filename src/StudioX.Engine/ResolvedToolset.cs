@@ -31,6 +31,12 @@ public sealed record ResolvedToolset(ToolsetManifest Manifest, string RootDirect
         {
             throw new StudioXException("TOOL_ROLE", "开发环境组件缺少目标 " + target + " 的 C/C++ 编译器。");
         }
-        return this with { Manifest = Manifest with { Executables = executables } };
+        return this with
+        {
+            Manifest = Manifest with
+            {
+                Executables = executables
+            }
+        };
     }
 }

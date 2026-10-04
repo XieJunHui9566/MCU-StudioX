@@ -80,7 +80,15 @@ internal static class IdfVersionChecks
                     await File.WriteAllTextAsync(Path.Combine(caseRoot, "debug-environment.txt"), diagnostic);
                     check(diagnostic.Contains("[gdb]") && diagnostic.Contains("[openocd]"), "real IDF 6.1 GDB/OpenOCD version queries complete without hardware");
                 }
-                rows.Add(new { sdk, target, template, original = source, upgraded = preview.DestinationDirectory, result.Success });
+                rows.Add(new
+                {
+                    sdk,
+                    target,
+                    template,
+                    original = source,
+                    upgraded = preview.DestinationDirectory,
+                    result.Success
+                });
                 await JsonStore.WriteAsync(Path.Combine(output, "matrix.json"), rows);
             }
         }
@@ -98,7 +106,12 @@ internal static class IdfVersionChecks
             var installed = await manager.InstallAsync(preview, new ProgressLog(sdk));
             var duplicate = await manager.InstallAsync(await manager.PreviewInstallAsync(archive), new ProgressLog(sdk));
             check(!installed.AlreadyInstalled && duplicate.AlreadyInstalled, sdk + " actual archive import, full hash verification and duplicate import");
-            await JsonStore.WriteAsync(Path.Combine(output, "import-" + sdk + ".json"), new { preview, installed, duplicate });
+            await JsonStore.WriteAsync(Path.Combine(output, "import-" + sdk + ".json"), new
+            {
+                preview,
+                installed,
+                duplicate
+            });
             await packs.ImportAsync(PackArchive(stage, sdk, Versions.Single(item => item.Sdk == sdk).Pack, "esp32s3"));
         }
         var original = await packs.ImportAsync(Path.Combine(workspace, "artifacts/packs/Espressif-0.1.1/espressif.esp32s3-0.1.1.mcupack"));
@@ -115,7 +128,11 @@ internal static class IdfVersionChecks
         check(project.Espressif?.SdkVersion == "6.1.0" && project.ToolsetVersion == "6.1.0", "new project uses the explicitly selected IDF version");
         await catalog.SetEnabledAsync("espressif.idf", "6.1.0", false);
         check((await service.ListAsync(original, "ESP32-S3", "hello-world")).Single(item => item.SdkVersion == "6.1.0") is { State: EspressifVersionState.Disabled, CanCreate: false }, "selector exposes disabled version and blocks creation");
-        try { await service.EnsureSelectionAsync(selected); throw new InvalidOperationException("stale enabled state accepted"); }
+        try
+        {
+            await service.EnsureSelectionAsync(selected);
+            throw new InvalidOperationException("stale enabled state accepted");
+        }
         catch (StudioXException error) { check(error.Code == "ESPRESSIF_VERSION_SELECTION", "selection rechecks enabled state before creating"); }
         var plan = await new ProjectToolPreparationService(catalog, manager).InspectAsync(projectPath);
         check(plan.Requirements.Single().State == ProjectToolState.Disabled, "existing project directs user to enable its exact version without downloading");
@@ -129,7 +146,10 @@ internal static class IdfVersionChecks
     {
         using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
         foreach (var path in Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories).Order(StringComparer.Ordinal))
-        { hash.AppendData(Encoding.UTF8.GetBytes(Path.GetRelativePath(root, path))); hash.AppendData(await File.ReadAllBytesAsync(path)); }
+        {
+            hash.AppendData(Encoding.UTF8.GetBytes(Path.GetRelativePath(root, path)));
+            hash.AppendData(await File.ReadAllBytesAsync(path));
+        }
         return Convert.ToHexString(hash.GetHashAndReset());
     }
     internal static async Task CheckImportedAsync(string output, string imported, string workspace, Action<bool, string> check)
@@ -166,7 +186,10 @@ internal static class IdfVersionChecks
         check((await selector.ListAsync(c3, "ESP32-C3", "hello-world")).Count(item => item.State == EspressifVersionState.PackMissing) == 2,
             "installed SDK cannot borrow another SDK pack when chip/template support is missing");
     }
-    private sealed class ProgressLog(string name) : IProgress<string> { public void Report(string value) => Console.WriteLine(name + ": " + value); }
+    private sealed class ProgressLog(string name) : IProgress<string>
+    {
+        public void Report(string value) => Console.WriteLine(name + ": " + value);
+    }
 
     internal static async Task CompleteMatrixAsync(string output, string runtime, string projectRoot, Action<bool, string> check)
     {
@@ -190,7 +213,18 @@ internal static class IdfVersionChecks
         var health = await new StudioX.Application.Health.ProjectHealthService(tools, builder).InspectAsync(projectRoot);
         check(project.Espressif is { Target: "esp32p4", SdkVersion: "6.1.0" } && !health.Checks.Any(item => item.State == StudioX.Application.Health.HealthState.Error),
             "P4 exact SDK identity and quick project health pass");
-        priorRows.Add(System.Text.Json.JsonSerializer.SerializeToNode(new { sdk = "6.1.0", target = "esp32p4", template = "hello-world", original = source, upgraded = projectRoot, success = true }));
-        await File.WriteAllTextAsync(Path.Combine(output, "matrix.json"), priorRows.ToJsonString(new() { WriteIndented = true }));
+        priorRows.Add(System.Text.Json.JsonSerializer.SerializeToNode(new
+        {
+            sdk = "6.1.0",
+            target = "esp32p4",
+            template = "hello-world",
+            original = source,
+            upgraded = projectRoot,
+            success = true
+        }));
+        await File.WriteAllTextAsync(Path.Combine(output, "matrix.json"), priorRows.ToJsonString(new()
+        {
+            WriteIndented = true
+        }));
     }
 }

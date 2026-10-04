@@ -20,14 +20,21 @@ internal sealed class HdlWorkflowMcpTools(McpSessionContext context) : StudioXMc
             await RequireApprovalAsync("ag32_logic_workflow_settings", "保存当前工程的逻辑构建或仿真配置。", StudioXMcpPermission.FileWrite, cancellationToken);
             await RequireSavedDocumentsAsync();
             if (build_json is not null)
+            {
                 await Services.HdlWorkflow.SaveBuildAsync(Project, JsonSerializer.Deserialize<Ag32NativeBuildSettings>(build_json, JsonStore.Options)
-                    ?? throw new ArgumentException("构建配置为空。"), cancellationToken);
+                ?? throw new ArgumentException("构建配置为空。"), cancellationToken);
+            }
             if (simulation_json is not null)
+            {
                 await Services.HdlWorkflow.SaveSimulationAsync(Project, JsonSerializer.Deserialize<HdlSimulationSettings>(simulation_json, JsonStore.Options)
-                    ?? throw new ArgumentException("仿真配置为空。"), cancellationToken);
+                ?? throw new ArgumentException("仿真配置为空。"), cancellationToken);
+            }
         }
-        return JsonSerializer.Serialize(new { build = await Services.HdlWorkflow.ReadBuildAsync(Project, cancellationToken),
-            simulation = await Services.HdlWorkflow.ReadSimulationAsync(Project, cancellationToken) });
+        return JsonSerializer.Serialize(new
+        {
+            build = await Services.HdlWorkflow.ReadBuildAsync(Project, cancellationToken),
+            simulation = await Services.HdlWorkflow.ReadSimulationAsync(Project, cancellationToken)
+        });
     }
 
     [McpServerTool(Name = "ag32_logic_simulate")]
@@ -40,8 +47,15 @@ internal sealed class HdlWorkflowMcpTools(McpSessionContext context) : StudioXMc
         await RequireSavedDocumentsAsync();
         var settings = await Services.HdlWorkflow.ReadSimulationAsync(Project, cancellationToken);
         var result = await Services.HdlWorkflow.SimulateAsync(Project, settings, cancellationToken);
-        return JsonSerializer.Serialize(new { mode = "RTL", result.VcdPath, result.LogPath, result.Warnings,
-            result.Waveform.NanosecondsPerTick, result.Waveform.EndTick,
-            signals = result.Waveform.Signals.Select(signal => new { signal.Name, signal.Width, changes = signal.Changes.Length }) });
+        return JsonSerializer.Serialize(new
+        {
+            mode = "RTL",
+            result.VcdPath,
+            result.LogPath,
+            result.Warnings,
+            result.Waveform.NanosecondsPerTick,
+            result.Waveform.EndTick,
+            signals = result.Waveform.Signals.Select(signal => new { signal.Name, signal.Width, changes = signal.Changes.Length })
+        });
     }
 }

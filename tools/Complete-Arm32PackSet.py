@@ -1,84 +1,189 @@
 """Assemble only packs whose complete model matrix passed against the same imported payload."""
+
 import argparse, csv, hashlib, json, shutil, zipfile
 from collections import Counter
 from pathlib import Path
 
-def sha(data):return hashlib.sha256(data).hexdigest()
-def read(path):return json.loads(path.read_text(encoding='utf-8-sig'))
-def save(path,data):path.parent.mkdir(parents=True,exist_ok=True);path.write_text(json.dumps(data,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+
+def sha(data):
+    return hashlib.sha256(data).hexdigest()
+
+
+def read(path):
+    return json.loads(path.read_text(encoding='utf-8-sig'))
+
+
+def save(path, data):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+
 
 def inspect(path):
     with zipfile.ZipFile(path) as z:
-        index=json.loads(z.read('files.sha256.json'))
-        names=set(z.namelist())
-        if len(names)!=len(z.infolist()) or names!=set(index)|{'files.sha256.json'}:raise ValueError('Unexpected archive entries: '+str(path))
-        for name,expected in index.items():
-            if sha(z.read(name)).lower()!=expected.lower():raise ValueError('Hash mismatch: '+str(path)+'/'+name)
-        manifest=json.loads(z.read('manifest.json'))
-        if manifest['formatVersion']!=1 or not all(d['architecture']=='arm' for d in manifest['devices']):raise ValueError('Not an ARM format-1 pack: '+str(path))
-        return manifest,index
+        index = json.loads(z.read('files.sha256.json'))
+        names = set(z.namelist())
+        if len(names) != len(z.infolist()) or names != set(index) | {'files.sha256.json'}:
+            raise ValueError('Unexpected archive entries: ' + str(path))
+        for name, expected in index.items():
+            if sha(z.read(name)).lower() != expected.lower():
+                raise ValueError('Hash mismatch: ' + str(path) + '/' + name)
+        manifest = json.loads(z.read('manifest.json'))
+        if manifest['formatVersion'] != 1 or not all(
+            d['architecture'] == 'arm' for d in manifest['devices']
+        ):
+            raise ValueError('Not an ARM format-1 pack: ' + str(path))
+        return manifest, index
+
 
 def main():
-    p=argparse.ArgumentParser(description=__doc__)
-    p.add_argument('--candidate',action='append',nargs=2,metavar=('PACK_ROOT','VALIDATION_ROOT'),required=True)
-    p.add_argument('--existing',type=Path,required=True);p.add_argument('--output',type=Path,required=True)
-    p.add_argument('--omit-pack',action='append',nargs=2,default=[],metavar=('PACK_ID','REASON'))
-    a=p.parse_args();root=a.output
-    if root.exists():raise ValueError('Use a new delivery directory')
-    selected={};excluded=[]
-    for directory,validation in a.candidate:
-        directory=Path(directory);validation=Path(validation)
-        if (directory/'rejected.json').exists():excluded+=read(directory/'rejected.json')
-        for entry in read(directory/'index.json'):selected[entry['id']]=(directory/'packages'/entry['file'],validation)
-    for packid,reason in a.omit_pack:
-        if packid not in selected:raise ValueError('Unknown omitted pack: '+packid)
-        del selected[packid];excluded.append(dict(pack=packid,device='*',reason=reason))
-    verified=[];matrix=[]
-    for packid,(path,validation) in sorted(selected.items()):
-        manifest,index=inspect(path)
-        expected={packid+'/'+d['id']+'/'+t['id'] for d in manifest['devices'] for t in d['templates']}
-        matches=[]
+    p = argparse.ArgumentParser(description=__doc__)
+    p.add_argument(
+        '--candidate',
+        action='append',
+        nargs=2,
+        metavar=('PACK_ROOT', 'VALIDATION_ROOT'),
+        required=True,
+    )
+    p.add_argument('--existing', type=Path, required=True)
+    p.add_argument('--output', type=Path, required=True)
+    p.add_argument(
+        '--omit-pack', action='append', nargs=2, default=[], metavar=('PACK_ID', 'REASON')
+    )
+    a = p.parse_args()
+    root = a.output
+    if root.exists():
+        raise ValueError('Use a new delivery directory')
+    selected = {}
+    excluded = []
+    for directory, validation in a.candidate:
+        directory = Path(directory)
+        validation = Path(validation)
+        if (directory / 'rejected.json').exists():
+            excluded += read(directory / 'rejected.json')
+        for entry in read(directory / 'index.json'):
+            selected[entry['id']] = (directory / 'packages' / entry['file'], validation)
+    for packid, reason in a.omit_pack:
+        if packid not in selected:
+            raise ValueError('Unknown omitted pack: ' + packid)
+        del selected[packid]
+        excluded.append(dict(pack=packid, device='*', reason=reason))
+    verified = []
+    matrix = []
+    for packid, (path, validation) in sorted(selected.items()):
+        manifest, index = inspect(path)
+        expected = {
+            packid + '/' + d['id'] + '/' + t['id']
+            for d in manifest['devices']
+            for t in d['templates']
+        }
+        matches = []
         for f in validation.glob('batch-*/matrix.json'):
-            installed=f.parent/'repository'/packid/manifest['version']/'files.sha256.json'
-            if not installed.exists():continue
-            installed_index=read(installed)
-            if {k:v.lower() for k,v in installed_index.items()}!={k:v.lower() for k,v in index.items()}:raise ValueError('Validation payload differs: '+packid)
-            matches += [x for x in read(f) if x['model'].startswith(packid+'/')]
-        if {x['model'] for x in matches}!=expected or len(matches)!=len(expected):raise ValueError('Incomplete/duplicate model matrix: '+packid)
-        if any(x['status']!='PASS' for x in matches) or not any(x['compiled'] for x in matches):raise ValueError('Failed/uncompiled pack: '+packid)
-        matrix+=matches;verified.append((path,manifest,'new',sum(x['compiled'] for x in matches)))
+            installed = f.parent / 'repository' / packid / manifest['version'] / 'files.sha256.json'
+            if not installed.exists():
+                continue
+            installed_index = read(installed)
+            if {k: v.lower() for k, v in installed_index.items()} != {
+                k: v.lower() for k, v in index.items()
+            }:
+                raise ValueError('Validation payload differs: ' + packid)
+            matches += [x for x in read(f) if x['model'].startswith(packid + '/')]
+        if {x['model'] for x in matches} != expected or len(matches) != len(expected):
+            raise ValueError('Incomplete/duplicate model matrix: ' + packid)
+        if any(x['status'] != 'PASS' for x in matches) or not any(x['compiled'] for x in matches):
+            raise ValueError('Failed/uncompiled pack: ' + packid)
+        matrix += matches
+        verified.append((path, manifest, 'new', sum(x['compiled'] for x in matches)))
     for entry in read(a.existing):
-        path=Path(entry['path']);manifest,_=inspect(path)
-        if manifest['id'] in selected:raise ValueError('Existing/new pack ID collision: '+manifest['id'])
-        verified.append((path,manifest,'existing',0))
+        path = Path(entry['path'])
+        manifest, _ = inspect(path)
+        if manifest['id'] in selected:
+            raise ValueError('Existing/new pack ID collision: ' + manifest['id'])
+        verified.append((path, manifest, 'existing', 0))
     # 所有验证通过后才创建交付目录；半成品留在独立 candidate 目录。
-    root.mkdir(parents=True);catalog=[];models=[]
-    for path,m,kind,builds in sorted(verified,key=lambda x:x[1]['id']):
-        folder=root/'packages'/m['id'].split('.')[0];folder.mkdir(parents=True,exist_ok=True)
-        target=folder/path.name;shutil.copyfile(path,target)
-        catalog.append(dict(id=m['id'],version=m['version'],vendor=m['vendor'],displayName=m['displayName'],file=target.relative_to(root).as_posix(),devices=len(m['devices']),sha256=sha(target.read_bytes()),bytes=target.stat().st_size,origin=kind,compiledModels=builds,verification='all-model-project-and-representative-build' if kind=='new' else 'existing-package-sha256-verification'))
+    root.mkdir(parents=True)
+    catalog = []
+    models = []
+    for path, m, kind, builds in sorted(verified, key=lambda x: x[1]['id']):
+        folder = root / 'packages' / m['id'].split('.')[0]
+        folder.mkdir(parents=True, exist_ok=True)
+        target = folder / path.name
+        shutil.copyfile(path, target)
+        catalog.append(
+            dict(
+                id=m['id'],
+                version=m['version'],
+                vendor=m['vendor'],
+                displayName=m['displayName'],
+                file=target.relative_to(root).as_posix(),
+                devices=len(m['devices']),
+                sha256=sha(target.read_bytes()),
+                bytes=target.stat().st_size,
+                origin=kind,
+                compiledModels=builds,
+                verification=(
+                    'all-model-project-and-representative-build'
+                    if kind == 'new'
+                    else 'existing-package-sha256-verification'
+                ),
+            )
+        )
         for d in m['devices']:
-            models.append(dict(pack=m['id'],device=d['id'],displayName=d['displayName'],flashBytes=d['flashBytes'],ramBytes=d['ramBytes'],templates=';'.join(t['id'] for t in d['templates']),downloadDeclared=bool(d.get('openOcd')),origin=kind))
-    accepted_names={name for row in models for name in (row['device'],row['displayName'])}
-    exclusions={}
+            models.append(
+                dict(
+                    pack=m['id'],
+                    device=d['id'],
+                    displayName=d['displayName'],
+                    flashBytes=d['flashBytes'],
+                    ramBytes=d['ramBytes'],
+                    templates=';'.join(t['id'] for t in d['templates']),
+                    downloadDeclared=bool(d.get('openOcd')),
+                    origin=kind,
+                )
+            )
+    accepted_names = {name for row in models for name in (row['device'], row['displayName'])}
+    exclusions = {}
     for row in excluded:
-        if row.get('device','').lstrip('-') in accepted_names:continue
-        exclusions[(row.get('source',row.get('pack','')),row['device'])]=row
-    excluded=list(exclusions.values())
-    save(root/'catalog.json',catalog);save(root/'validation/new-model-matrix.json',matrix);save(root/'validation/excluded.json',excluded)
-    for name,rows in [('packages.csv',catalog),('devices.csv',models)]:
-        with (root/name).open('w',encoding='utf-8-sig',newline='') as f:
-            writer=csv.DictWriter(f,fieldnames=list(rows[0]));writer.writeheader();writer.writerows(rows)
-    source=Path(__file__).resolve().parents[1]/'examples/packs/arm32-expansion/sources.lock.json';shutil.copyfile(source,root/'sources.lock.json')
-    counts=Counter();newcounts=Counter()
-    for _,m,kind,_ in verified:
-        vendor=m['vendor'].split(' / ')[0]
-        counts[vendor]+=len(m['devices'])
-        if kind=='new':newcounts[vendor]+=len(m['devices'])
-    summary=dict(packs=len(catalog),devices=len(models),newPacks=sum(c['origin']=='new' for c in catalog),newDevices=sum(c['devices'] for c in catalog if c['origin']=='new'),newBuilds=sum(c['compiledModels'] for c in catalog),existingPacks=sum(c['origin']=='existing' for c in catalog),excludedEntries=len(excluded),byVendor=counts,newByVendor=newcounts,hardwareAccessed=False)
-    save(root/'summary.json',summary)
-    table='\n'.join('| '+v+' | '+str(newcounts[v])+' | '+str(n)+' |' for v,n in sorted(counts.items()))
-    text=f'''# ARM32 MCU Pack 集合（2026-09-30）
+        if row.get('device', '').lstrip('-') in accepted_names:
+            continue
+        exclusions[(row.get('source', row.get('pack', '')), row['device'])] = row
+    excluded = list(exclusions.values())
+    save(root / 'catalog.json', catalog)
+    save(root / 'validation/new-model-matrix.json', matrix)
+    save(root / 'validation/excluded.json', excluded)
+    for name, rows in [('packages.csv', catalog), ('devices.csv', models)]:
+        with (root / name).open('w', encoding='utf-8-sig', newline='') as f:
+            writer = csv.DictWriter(f, fieldnames=list(rows[0]))
+            writer.writeheader()
+            writer.writerows(rows)
+    source = (
+        Path(__file__).resolve().parents[1] / 'examples/packs/arm32-expansion/sources.lock.json'
+    )
+    shutil.copyfile(source, root / 'sources.lock.json')
+    counts = Counter()
+    newcounts = Counter()
+    for _, m, kind, _ in verified:
+        vendor = m['vendor'].split(' / ')[0]
+        counts[vendor] += len(m['devices'])
+        if kind == 'new':
+            newcounts[vendor] += len(m['devices'])
+    summary = dict(
+        packs=len(catalog),
+        devices=len(models),
+        newPacks=sum(c['origin'] == 'new' for c in catalog),
+        newDevices=sum(c['devices'] for c in catalog if c['origin'] == 'new'),
+        newBuilds=sum(c['compiledModels'] for c in catalog),
+        existingPacks=sum(c['origin'] == 'existing' for c in catalog),
+        excludedEntries=len(excluded),
+        byVendor=counts,
+        newByVendor=newcounts,
+        hardwareAccessed=False,
+    )
+    save(root / 'summary.json', summary)
+    table = '\n'.join(
+        '| ' + v + ' | ' + str(newcounts[v]) + ' | ' + str(n) + ' |'
+        for v, n in sorted(counts.items())
+    )
+    text = f'''# ARM32 MCU Pack 集合（2026-09-30）
 
 共 **{summary['packs']} 个独立包、{summary['devices']} 个器件条目**。本轮新增 **{summary['newPacks']} 包、{summary['newDevices']} 个条目**；另收录 {summary['existingPacks']} 个现有 ARM 包。器件条目沿用原厂 DFP 命名，有些包含封装通配符，不等同于独立芯片设计数量。
 
@@ -104,7 +209,9 @@ def main():
 
 来源锁定见 `sources.lock.json`；各包内含原始 PDSC、启动证据、许可证和文件哈希。厂商代码保留自身许可。此集合只用于本地交付，未安装进当前用户的器件包库。公开发布必须另经 `Prepare-Arm32PublicRelease.py` 筛选许可并保留已有公开修订，不可将本地 ZIP 直接上传。
 '''
-    (root/'README.md').write_text(text,encoding='utf-8')
-    print(json.dumps(summary,ensure_ascii=True),flush=True)
+    (root / 'README.md').write_text(text, encoding='utf-8')
+    print(json.dumps(summary, ensure_ascii=True), flush=True)
 
-if __name__=='__main__':main()
+
+if __name__ == '__main__':
+    main()

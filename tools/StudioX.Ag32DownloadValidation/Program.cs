@@ -16,7 +16,10 @@ if (args is ["--build-existing", var buildProject, var buildRuntime, var buildOu
 {
     var build = await new BuildService(new ToolsetCatalog(Path.Combine(Path.GetFullPath(buildRuntime), "toolsets"))).BuildAsync(buildProject);
     await File.WriteAllTextAsync(Path.GetFullPath(buildOutput) + ".build.log", build.Log);
-    if (!build.Success) { throw new InvalidOperationException("Existing project build failed: " + build.LogPath); }
+    if (!build.Success)
+    {
+        throw new InvalidOperationException("Existing project build failed: " + build.LogPath);
+    }
     return await ExistingProjectChecks.RunAsync(buildProject, buildRuntime, buildOutput);
 }
 
@@ -93,7 +96,13 @@ Check(DownloadImageLayout.ApprovalSha256(changedAddress) != second.ApprovalSha25
 var finalPrepared = await downloads.PrepareAsync(project, configuration.Options);
 await Reject(() => Task.Run(() => OpenOcdService.CreatePinMappingArguments(project, configuration, configuration.Options,
     finalPrepared.Tools, finalPrepared.Images.Select(image => image.Preview.Role == "pin-mapping"
-        ? image with { Preview = image.Preview with { Address = 0x80026000 } } : image).ToArray())), "mapping cannot overlap MCU application space");
+        ? image with
+        {
+            Preview = image.Preview with
+            {
+                Address = 0x80026000
+            }
+        } : image).ToArray())), "mapping cannot overlap MCU application space");
 var mappingFile = Path.Combine(project, second.Images[1].RelativePath.Replace('/', Path.DirectorySeparatorChar));
 await File.AppendAllTextAsync(mappingFile, "tamper");
 await Reject(() => downloads.PreviewAsync(project, configuration.Options), "modified mapping binaries cannot be downloaded");
@@ -112,14 +121,20 @@ void CheckPlacedPin(string pin)
 
 void Check(bool condition, string description)
 {
-    if (!condition) { throw new InvalidOperationException(description); }
+    if (!condition)
+    {
+        throw new InvalidOperationException(description);
+    }
     results.Add(description);
     Console.WriteLine("PASS " + description);
 }
 
 async Task Reject(Func<Task> action, string description)
 {
-    try { await action(); }
+    try
+    {
+        await action();
+    }
     catch (StudioXException) { Check(true, description); return; }
     throw new InvalidOperationException("Expected rejection: " + description);
 }

@@ -27,12 +27,20 @@ static void WorkerTask(void *argument)
 int main(void)
 {
     BaseType_t result = xTaskCreate(HeartbeatTask, "heartbeat", 256, NULL, 1, NULL);
-    if (result != pdPASS) { StudioX_RtosAssert("heartbeat task", 0); }
+    if (result != pdPASS)
+    {
+        StudioX_RtosAssert("heartbeat task", 0);
+    }
     result = xTaskCreate(WorkerTask, "worker", 256, NULL, 1, NULL);
-    if (result != pdPASS) { StudioX_RtosAssert("worker task", 0); }
+    if (result != pdPASS)
+    {
+        StudioX_RtosAssert("worker task", 0);
+    }
     vTaskStartScheduler();
 
     /* 仅在调度器启动失败时返回。 */
     configASSERT(0);
-    for (;;) { }
+    for (;;)
+    {
+    }
 }

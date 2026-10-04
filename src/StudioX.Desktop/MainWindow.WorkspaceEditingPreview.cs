@@ -96,6 +96,30 @@ public partial class MainWindow
         }
         Check(problemRows.Any(r => r.Origin.StartsWith("实时", StringComparison.Ordinal) && r.Message.Contains("missing_value", StringComparison.Ordinal)), "actual editor shows live clangd error in problems panel");
         Check(diagnosticRenderer!.Markers.Any(m => m.Diagnostic.Message.Contains("missing_value", StringComparison.Ordinal)), "live error underlined in source editor");
+        var dependency = FindEditor("include/shared.h")!;
+        dependency.Buffer.Text = dependency.Buffer.Text.Replace("helper", "renamed_helper", StringComparison.Ordinal);
+        Check(problemRows.Length == 0 && diagnosticRenderer.Markers.Count == 0, "editing inactive header revokes displayed diagnostics immediately before debounce");
+        Check(ProblemsTab.Header.ToString()!.Contains("正在分析", StringComparison.Ordinal), "zero visible problems during refresh is explicitly labeled as analysis pending");
+        SourceEditor.Text = dirty;
+        for (var attempt = 0; attempt < 60 && !problemRows.Any(r => r.Message.Contains("helper", StringComparison.Ordinal)); attempt++)
+        {
+            await Task.Delay(150);
+        }
+        Check(problemRows.Any(r => r.Origin.StartsWith("实时", StringComparison.Ordinal) && r.Message.Contains("helper", StringComparison.Ordinal)), "dependent editor shows actual error from unsaved header");
+        await CloseWorkspaceTabAsync(dependency.Tab, _ => System.Windows.MessageBoxResult.No);
+        Check(FindEditor("include/shared.h") is null && problemRows.Length == 0, "closing inactive dirty header immediately clears its dependent errors");
+        for (var attempt = 0; attempt < 60 && !services.Intelligence.GetDiagnostics().Any(b => b.Path == "src/main.c" && b.Text == dirty && b.IsComplete); attempt++)
+        {
+            await Task.Delay(150);
+        }
+        RefreshDiagnosticMarkers();
+        Check(services.Intelligence.GetDiagnostics().Any(b => b.Path == "src/main.c" && b.Text == dirty && b.IsComplete && b.Items.All(i => i.Severity != 1)) && problemRows.All(r => r.Origin != "实时 · clangd" || !r.Message.Contains("helper", StringComparison.Ordinal)), "discarding header draft reparses unchanged source and restores clean live result");
+        SourceEditor.Text = dirty.Replace("return shared_value + helper()", "return missing_value + helper()", StringComparison.Ordinal);
+        for (var attempt = 0; attempt < 60 && !problemRows.Any(r => r.Message.Contains("missing_value", StringComparison.Ordinal)); attempt++)
+        {
+            await Task.Delay(150);
+        }
+        Check(problemRows.Any(r => r.Message.Contains("missing_value", StringComparison.Ordinal)), "subsequent editor change still publishes a new real error");
         ShowBottom(4);
         UpdateLayout();
         await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ContextIdle);

@@ -1,15 +1,21 @@
 <Project
   Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
-    <PackageReference Include="SharpCompress" />
+    <PackageReference
+      Include="SharpCompress" />
     <ProjectReference
       Include="../StudioX.Packages/StudioX.Packages.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Resources/studiox-coredump.py" />
-    <EmbeddedResource Include="Resources/Ag32/StudioX_System.h" />
-    <EmbeddedResource Include="Resources/Ag32/StudioX_System.c" />
-    <EmbeddedResource Include="Resources/Ag32/Peripherals/*" LogicalName="StudioX.Ag32.Peripherals.%(Filename)%(Extension)" />
+    <EmbeddedResource
+      Include="Resources/studiox-coredump.py" />
+    <EmbeddedResource
+      Include="Resources/Ag32/StudioX_System.h" />
+    <EmbeddedResource
+      Include="Resources/Ag32/StudioX_System.c" />
+    <EmbeddedResource
+      Include="Resources/Ag32/Peripherals/*"
+      LogicalName="StudioX.Ag32.Peripherals.%(Filename)%(Extension)" />
     <EmbeddedResource
       Include="Resources/stm32-download.json" />
     <EmbeddedResource

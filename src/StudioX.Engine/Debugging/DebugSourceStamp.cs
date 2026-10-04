@@ -51,7 +51,12 @@ internal static class DebugSourceStamp
         {
             // 额外构建组件及声明变化也会改变二进制；旧工程尚无组件锁时维持原有凭据算法。
             foreach (var path in new[] { componentLock, PathBoundary.Resolve(root, "device/manifest.json") })
-                if (File.Exists(path)) files.Add(path);
+            {
+                if (File.Exists(path))
+                {
+                    files.Add(path);
+                }
+            }
         }
         // 编译设置影响二进制；保存或外部编辑后不能把旧 ELF 当作当前工程的调试映像。
         var settings = Path.Combine(root, ProjectBuildSettings.RelativePath);
@@ -62,13 +67,19 @@ internal static class DebugSourceStamp
         if (espressif)
         {
             var modulePath = Path.Combine(root, EspressifModuleSettings.RelativePath);
-            if (File.Exists(modulePath)) { files.Add(modulePath); }
+            if (File.Exists(modulePath))
+            {
+                files.Add(modulePath);
+            }
             var module = await EspressifModuleConfiguration.ReadSettingsAsync(root, token);
             if (module.HasOverrides)
             {
                 // 模块侧车和本次原生 SDK 使用的配置都影响二进制，不能因它们位于排除目录而漏掉。
                 var config = Path.Combine(root, EspressifModuleSettings.GeneratedConfigPath);
-                if (File.Exists(config)) { files.Add(config); }
+                if (File.Exists(config))
+                {
+                    files.Add(config);
+                }
                 var nativeBase = await EspressifModuleSdkConfig.ReadBaseAsync(root, token);
                 if (nativeBase is not null)
                 {
@@ -94,7 +105,10 @@ internal static class DebugSourceStamp
                         if (!relative.StartsWith("../", StringComparison.Ordinal) && !Path.IsPathFullyQualified(relative))
                         {
                             var config = PathBoundary.Resolve(root, relative);
-                            if (File.Exists(config)) { files.Add(config); }
+                            if (File.Exists(config))
+                            {
+                                files.Add(config);
+                            }
                         }
                     }
                 }

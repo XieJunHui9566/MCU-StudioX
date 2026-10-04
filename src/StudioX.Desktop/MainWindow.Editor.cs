@@ -53,6 +53,7 @@ public partial class MainWindow
         InitializeExplorer();
         InitializeDebugger();
         InitializeWorkspaceEditing();
+        InitializePeripheralDevelopment();
         InitializeLiveDiagnostics();
         InitializeEditorRecovery();
         ApplyEditorSettings(editorSettings);
@@ -192,7 +193,10 @@ public partial class MainWindow
     }
     private Task LoadChildrenAsync(TreeViewItem parent, CancellationToken token = default)
     {
-        if (loadedProjectDirectories.Contains(parent)) { return Task.CompletedTask; }
+        if (loadedProjectDirectories.Contains(parent))
+        {
+            return Task.CompletedTask;
+        }
         if (!loadingProjectDirectories.TryGetValue(parent, out var loading))
         {
             loading = LoadChildrenCoreAsync(parent, token);
@@ -206,7 +210,10 @@ public partial class MainWindow
         {
             return;
         }
-        if (projectTreeCancellation is null || projectDirectory is not { } directory) { return; }
+        if (projectTreeCancellation is null || projectDirectory is not { } directory)
+        {
+            return;
+        }
         using var lifetime = CancellationTokenSource.CreateLinkedTokenSource(projectTreeCancellation.Token, token);
         var stop = lifetime.Token;
         parent.Items.Clear();
@@ -268,7 +275,10 @@ public partial class MainWindow
         }
         e.Handled = true;
         SetFolderIcon(node, true);
-        try { await LoadChildrenAsync(node); }
+        try
+        {
+            await LoadChildrenAsync(node);
+        }
         catch (OperationCanceledException) { }
     }
     private static void SetFolderIcon(TreeViewItem node, bool expanded)

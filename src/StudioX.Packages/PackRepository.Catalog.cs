@@ -10,6 +10,7 @@ public sealed partial class PackRepository
     public Task<IReadOnlyList<InstalledPack>> ListCatalogAsync(CancellationToken cancellationToken = default) => Task.Run(async () =>
     {
         cancellationToken.ThrowIfCancellationRequested();
+        PackFileTree.RejectLinkedAncestors(RootDirectory);
         if (!Directory.Exists(RootDirectory))
         {
             return (IReadOnlyList<InstalledPack>)Array.Empty<InstalledPack>();
@@ -17,6 +18,7 @@ public sealed partial class PackRepository
         var result = new List<InstalledPack>();
         foreach (var id in Directory.EnumerateDirectories(RootDirectory).Where(p => !Path.GetFileName(p).StartsWith('.')))
         {
+            _ = PathBoundary.Resolve(RootDirectory, Path.GetFileName(id));
             foreach (var version in Directory.EnumerateDirectories(id))
             {
                 cancellationToken.ThrowIfCancellationRequested();
@@ -47,6 +49,7 @@ public sealed partial class PackRepository
     private static async Task<(InstalledPack Pack, Dictionary<string, string> Hashes)> ReadCatalogEntryAsync(string directory, CancellationToken token)
     {
         token.ThrowIfCancellationRequested();
+        PackFileTree.RejectLinkedAncestors(directory);
         var install = await JsonStore.ReadAsync<Installation>(PathBoundary.Resolve(directory, "installation.json"), token);
         if (install.FormatVersion != 1)
         {

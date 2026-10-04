@@ -22,7 +22,10 @@ public static partial class Ag32LogicUsageAnalyzer
         })
         {
             var matches = pattern.Matches(text);
-            if (matches.Count == 0) { continue; }
+            if (matches.Count == 0)
+            {
+                continue;
+            }
             var counts = Counts().Match(matches[^1].Groups["counts"].Value);
             if (!counts.Success ||
                 !ulong.TryParse(counts.Groups["used"].Value, NumberStyles.None, CultureInfo.InvariantCulture, out var used) ||

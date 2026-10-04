@@ -1,12 +1,16 @@
-<Project Sdk="Microsoft.NET.Sdk">
+<Project
+  Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <EnableDynamicLoading>true</EnableDynamicLoading>
     <Version>1.0.0</Version>
     <InformationalVersion>1.0.0</InformationalVersion>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="../../src/StudioX.Extensions.Abstractions/StudioX.Extensions.Abstractions.csproj" />
+    <ProjectReference
+      Include="../../src/StudioX.Extensions.Abstractions/StudioX.Extensions.Abstractions.csproj" />
     <!-- 共用纯插件表单代码；打包只包含本程序集，无需安装第一批插件。 -->
-    <Compile Include="../StudioX.LabPlugins/Lab*.cs" Link="Shared/%(Filename)%(Extension)" />
+    <Compile
+      Include="../StudioX.LabPlugins/Lab*.cs"
+      Link="Shared/%(Filename)%(Extension)" />
   </ItemGroup>
 </Project>

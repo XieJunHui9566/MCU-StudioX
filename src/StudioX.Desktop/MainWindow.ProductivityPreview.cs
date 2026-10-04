@@ -2,7 +2,6 @@ namespace StudioX.Desktop;
 
 using System.Windows;
 using System.Windows.Threading;
-using StudioX.Application;
 using StudioX.Application.Editing;
 using StudioX.Foundation;
 

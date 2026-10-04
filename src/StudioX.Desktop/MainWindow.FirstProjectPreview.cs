@@ -12,7 +12,14 @@ public partial class MainWindow
     public async Task RenderFirstProjectPreviewAsync(string directory, string archive)
     {
         var checks = new List<string>();
-        void Check(bool value, string message) { if (!value) throw new InvalidOperationException(message); checks.Add(message); }
+        void Check(bool value, string message)
+        {
+            if (!value)
+            {
+                throw new InvalidOperationException(message);
+            }
+            checks.Add(message);
+        }
         Check(!await services.FirstProjectGuide.IsDismissedAsync(), "fresh user preference defaults to onboarding");
         await OfferFirstProjectGuideAsync();
         Check(firstProjectTab is not null && WorkspaceTabs.SelectedItem == firstProjectTab, "first launch with no recent project offers real guide");
@@ -52,18 +59,25 @@ public partial class MainWindow
         Check(firstProjectView.EvidenceText.Text.Contains(".elf", StringComparison.OrdinalIgnoreCase), "result step shows genuine generated firmware");
         foreach (var theme in new[] { ThemeService.Dark, ThemeService.Light })
         {
-            ApplyTheme(theme); Width = 1440; Height = 960;
-            firstProjectView.Select(3); await Layout();
+            ApplyTheme(theme);
+            Width = 1440;
+            Height = 960;
+            firstProjectView.Select(3);
+            await Layout();
             Check(firstProjectView.BodyScroll.ActualWidth > 400 && firstProjectView.StepList.Items.Count == 7, theme.Id + " guide retains readable navigation and scrollable content");
             Render(this, Path.Combine(directory, "guide-" + theme.Id + ".png"));
         }
-        ApplyTheme(ThemeService.Dark); Width = MinWidth; Height = MinHeight;
-        firstProjectView.Select(1); await Layout();
+        ApplyTheme(ThemeService.Dark);
+        Width = MinWidth;
+        Height = MinHeight;
+        firstProjectView.Select(1);
+        await Layout();
         Check(firstProjectView.BodyScroll.ActualWidth > 230, "minimum window keeps guide body accessible");
         Render(this, Path.Combine(directory, "guide-compact.png"));
         activeEditor!.Buffer.Insert(0, "#error GUIDE_EXPECTED_FAILURE\n");
         Check(guideBuild is null, "editing invalidates successful build evidence immediately");
-        await RunGuideActionAsync("build"); await pendingOperation;
+        await RunGuideActionAsync("build");
+        await pendingOperation;
         Check(guideBuild is { Success: false } && BuildLog.Text.Contains("GUIDE_EXPECTED_FAILURE"), "failed real build preserves original error and removes success marking");
         await File.WriteAllTextAsync(Path.Combine(directory, "build-expected-failure.log"), BuildLog.Text);
         activeEditor.Buffer.Remove(0, "#error GUIDE_EXPECTED_FAILURE\n".Length);
@@ -82,7 +96,17 @@ public partial class MainWindow
         Check(WorkspaceTabs.SelectedItem == WelcomeTab, "dismissed guide does not auto-open again");
         await ShowFirstProjectAsync();
         Check(firstProjectTab == originalTab, "dismissed guide remains manually accessible");
-        await JsonStore.WriteAsync(Path.Combine(directory, "result.json"), new { status = "passed", checks, hardwareAccess = false });
-        async Task Layout() { UpdateLayout(); await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ContextIdle); UpdateLayout(); }
+        await JsonStore.WriteAsync(Path.Combine(directory, "result.json"), new
+        {
+            status = "passed",
+            checks,
+            hardwareAccess = false
+        });
+        async Task Layout()
+        {
+            UpdateLayout();
+            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ContextIdle);
+            UpdateLayout();
+        }
     }
 }

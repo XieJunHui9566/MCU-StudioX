@@ -1,7 +1,6 @@
 namespace StudioX.Desktop;
 
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Threading;
 using StudioX.Application;
 using StudioX.Engine.Debugging;
@@ -15,7 +14,10 @@ public partial class MainWindow
         var checks = new List<string>();
         void Check(bool passed, string message)
         {
-            if (!passed) { throw new InvalidOperationException(message); }
+            if (!passed)
+            {
+                throw new InvalidOperationException(message);
+            }
             checks.Add(message);
         }
         async Task Settle()
@@ -27,7 +29,10 @@ public partial class MainWindow
         async Task WaitAsync(Func<bool> condition)
         {
             using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
-            while (!condition()) { await Task.Delay(20, timeout.Token); }
+            while (!condition())
+            {
+                await Task.Delay(20, timeout.Token);
+            }
             await Settle();
         }
         var installed = await services.PluginManager.ImportAsync(pluginArchive);
@@ -87,6 +92,11 @@ public partial class MainWindow
         await ReloadPluginWorkspaceAsync(CancellationToken.None);
         Check(pluginDebugViews.Count == 0 && !WorkspaceTabs.Items.Contains(item.Tab), "重新加载工作区移除已撤销的调试扩展标签");
         await services.Debugger.StopAsync();
-        await JsonStore.WriteAsync(Path.Combine(directory, "result.json"), new { success = true, hardware = false, checks });
+        await JsonStore.WriteAsync(Path.Combine(directory, "result.json"), new
+        {
+            success = true,
+            hardware = false,
+            checks
+        });
     }
 }

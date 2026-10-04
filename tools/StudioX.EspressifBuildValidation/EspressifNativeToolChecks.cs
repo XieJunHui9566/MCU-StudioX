@@ -9,14 +9,23 @@ internal static class EspressifNativeToolChecks
     internal static async Task<int> RunAsync(ToolsetCatalog catalog, string source, string output)
     {
         var root = Path.Combine(output, "project with spaces");
-        if (Directory.Exists(root)) throw new ArgumentException("Use a new native-path validation directory.");
+        if (Directory.Exists(root))
+        {
+            throw new ArgumentException("Use a new native-path validation directory.");
+        }
         var checks = new List<string>();
         var manifest = await ProjectService.ReadAsync(source);
-        if (manifest.Espressif is not { Framework: "esp-idf", Target: "esp32s3" }) throw new ArgumentException("Use the bound ESP32-S3 ESP-IDF project.");
+        if (manifest.Espressif is not { Framework: "esp-idf", Target: "esp32s3" })
+        {
+            throw new ArgumentException("Use the bound ESP32-S3 ESP-IDF project.");
+        }
         foreach (var file in Directory.EnumerateFiles(source, "*", SearchOption.AllDirectories))
         {
             var relative = Path.GetRelativePath(source, file);
-            if (relative.Split(Path.DirectorySeparatorChar)[0] is ".build" or ".git") continue;
+            if (relative.Split(Path.DirectorySeparatorChar)[0] is ".build" or ".git")
+            {
+                continue;
+            }
             var destination = PathBoundary.Resolve(root, relative.Replace('\\', '/'));
             Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
             File.Copy(file, destination);
@@ -57,7 +66,10 @@ internal static class EspressifNativeToolChecks
             }
             using var receipt = JsonDocument.Parse(await File.ReadAllTextAsync(Path.Combine(root, ".build/studiox-build-receipt.json")));
             Check(receipt.RootElement.GetProperty("images").GetArrayLength() >= 3, "application, partition table and bootloader artifacts have a validated build receipt");
-            foreach (var (path, hash) in protectedFiles) Check(Hash(path) == hash, "preserve input " + Path.GetRelativePath(root, path));
+            foreach (var (path, hash) in protectedFiles)
+            {
+                Check(Hash(path) == hash, "preserve input " + Path.GetRelativePath(root, path));
+            }
             var incremental = await builds.BuildAsync(root, new ProgressText());
             await File.WriteAllTextAsync(Path.Combine(output, "incremental-build.log"), incremental.Log);
             Check(incremental.Success && !incremental.Log.Contains("构建环境已变化", StringComparison.Ordinal), "subsequent build reuses native cache without compiler-change reset");
@@ -72,7 +84,10 @@ internal static class EspressifNativeToolChecks
                 await CheckVersionAsync("5.6.7", "version.txt");
                 File.Delete(Path.Combine(root, "version.txt"));
                 var versionCmake = Regex.Replace(originalCmake, @"(?m)^project\(([^\r\n()]*)\)", "project($1 VERSION 6.7.8)");
-                if (versionCmake == originalCmake) throw new InvalidOperationException("Version validation needs a plain project() declaration.");
+                if (versionCmake == originalCmake)
+                {
+                    throw new InvalidOperationException("Version validation needs a plain project() declaration.");
+                }
                 await File.WriteAllTextAsync(cmake, versionCmake);
                 await CheckVersionAsync("6.7.8", "project(VERSION)");
             }
@@ -83,7 +98,13 @@ internal static class EspressifNativeToolChecks
             }
             _ = await catalog.ResolveAsync(manifest.ToolsetId, manifest.ToolsetVersion, manifest.CompilerId, forceVerification: true);
             Check(true, "SDK and all toolchain files still match the original hash manifest after build");
-            await File.WriteAllTextAsync(Path.Combine(output, "result.json"), JsonSerializer.Serialize(new { status = "passed", count = checks.Count, checks, hardwareConnected = false }, JsonStore.Options));
+            await File.WriteAllTextAsync(Path.Combine(output, "result.json"), JsonSerializer.Serialize(new
+            {
+                status = "passed",
+                count = checks.Count,
+                checks,
+                hardwareConnected = false
+            }, JsonStore.Options));
             Console.WriteLine("PASS " + checks.Count + " native path and build checks.");
             return 0;
         }
@@ -92,7 +113,10 @@ internal static class EspressifNativeToolChecks
         static string Hash(string path) => Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(path)));
         void Check(bool passed, string message)
         {
-            if (!passed) throw new InvalidOperationException(message);
+            if (!passed)
+            {
+                throw new InvalidOperationException(message);
+            }
             checks.Add(message);
             Console.WriteLine("PASS " + message);
         }

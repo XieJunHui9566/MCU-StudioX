@@ -60,19 +60,28 @@ try
         case ["inspect-tool-archive", var archive, var output]:
             ToolchainArchiveFormat.ValidateFileName(archive);
             await using (var file = File.OpenRead(archive))
-            using (var container = ToolchainArchive.Open(file, cancel.Token))
             {
-                var bytes = await container.ReadManifestAsync(cancel.Token);
-                var offset = bytes is [0xef, 0xbb, 0xbf, ..] ? 3 : 0;
-                var manifest = JsonSerializer.Deserialize<ToolsetManifest>(bytes.AsSpan(offset), JsonStore.Options)
-                    ?? throw new StudioXException("TOOLS_ARCHIVE", "工具清单为空。");
-                _ = manifest.Identity;
-                if (manifest.Sha256 is null || manifest.Executables is null)
-                    throw new StudioXException("TOOLS_IDENTITY", "组件清单不完整。");
-                container.ValidateIndex(manifest.Sha256);
-                // 制作目录复用 IDE 的容器边界检查；只读元数据，不导入或运行工具。
-                await using var receipt = new FileStream(output, FileMode.CreateNew, FileAccess.Write, FileShare.None);
-                await JsonSerializer.SerializeAsync(receipt, new { manifest, installedBytes = container.Bytes, container = container.Container }, JsonStore.Options, cancel.Token);
+                using (var container = ToolchainArchive.Open(file, cancel.Token))
+                {
+                    var bytes = await container.ReadManifestAsync(cancel.Token);
+                    var offset = bytes is [0xef, 0xbb, 0xbf, ..] ? 3 : 0;
+                    var manifest = JsonSerializer.Deserialize<ToolsetManifest>(bytes.AsSpan(offset), JsonStore.Options)
+                        ?? throw new StudioXException("TOOLS_ARCHIVE", "工具清单为空。");
+                    _ = manifest.Identity;
+                    if (manifest.Sha256 is null || manifest.Executables is null)
+                    {
+                        throw new StudioXException("TOOLS_IDENTITY", "组件清单不完整。");
+                    }
+                    container.ValidateIndex(manifest.Sha256);
+                    // 制作目录复用 IDE 的容器边界检查；只读元数据，不导入或运行工具。
+                    await using var receipt = new FileStream(output, FileMode.CreateNew, FileAccess.Write, FileShare.None);
+                    await JsonSerializer.SerializeAsync(receipt, new
+                    {
+                        manifest,
+                        installedBytes = container.Bytes,
+                        container = container.Container
+                    }, JsonStore.Options, cancel.Token);
+                }
             }
             break;
         case ["create", var repository, var packId, var version, var device, var template, var name, var destination]:

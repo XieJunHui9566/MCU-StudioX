@@ -78,7 +78,10 @@ public sealed partial class DebugSessionService
             if (preparation.PinMapping is { } mapping)
             {
                 await VerifyImageAsync(current, PinMappingVerifyCommand(mapping),
-                    preparation with { ImageByteCount = mapping.VerificationBytes }, token);
+                    preparation with
+                    {
+                        ImageByteCount = mapping.VerificationBytes
+                    }, token);
                 Trace("板上引脚映射镜像与当前 .ve 构建产物完整校验一致；未下载映射。");
             }
             preparation.Progress?.Report(new("snapshot", "映像一致性已通过，检查源码信息并读取暂停快照。"));
@@ -97,9 +100,14 @@ public sealed partial class DebugSessionService
             Snapshot = NormalizeSnapshot(await current.ReadAsync(watches, 0, token));
             // 只有映像校验通过后才发布只读采样入口；地址随会话失效。
             var header = new byte[6];
-            using (var elfStream = File.OpenRead(preparation.Elf)) { await elfStream.ReadExactlyAsync(header, token); }
+            using (var elfStream = File.OpenRead(preparation.Elf))
+            {
+                await elfStream.ReadExactlyAsync(header, token);
+            }
             if (!header.AsSpan(0, 4).SequenceEqual(new byte[] { 0x7f, 0x45, 0x4c, 0x46 }) || header[5] is not (1 or 2))
-            { throw Error("ELF 字节序无效。"); }
+            {
+                throw Error("ELF 字节序无效。");
+            }
             plotLittleEndian = header[5] == 1;
             plotRamOrigin = preparation.Configuration.Device.RamOrigin;
             plotRamBytes = preparation.Configuration.Device.RamBytes;

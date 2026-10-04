@@ -34,7 +34,10 @@ var totalDebugPlans = 0;
 foreach (var archive in args.Skip(2))
 {
     InstalledPack pack;
-    try { pack = await repository.ImportAsync(Path.GetFullPath(archive)); }
+    try
+    {
+        pack = await repository.ImportAsync(Path.GetFullPath(archive));
+    }
     catch (Exception ex)
     {
         rows.Add(new(Path.GetFileName(archive) + "/IMPORT", false, 0, 0, 0, false, 0, 0, "FAIL", ex.ToString()));
@@ -134,7 +137,10 @@ return failures == 0 ? 0 : 1;
 
 static HashSet<(string DeviceId, string TemplateId)> SelectBuilds(IReadOnlyList<DeviceDefinition> devices)
 {
-    if (Environment.GetEnvironmentVariable("STUDIOX_PACK_PREFLIGHT") == "1") return [(devices[0].Id, devices[0].Templates[0].Id)];
+    if (Environment.GetEnvironmentVariable("STUDIOX_PACK_PREFLIGHT") == "1")
+    {
+        return [(devices[0].Id, devices[0].Templates[0].Id)];
+    }
     // 每个 CPU、定义、启动和模板组合选最小及最大容量；全型号仍检查链接配置并创建工程。
     var groups = devices.SelectMany(d => d.Templates.Select(t => (Device: d, Template: t)))
         .GroupBy(x => JsonSerializer.Serialize(new
@@ -270,7 +276,10 @@ static void ValidateImage(byte[] image, byte[] elf, DeviceDefinition device)
     if (device.Id.StartsWith("LPC", StringComparison.Ordinal))
     {
         uint checksum = 0;
-        for (var offset = 0; offset < 32; offset += 4) checksum = unchecked(checksum + BinaryPrimitives.ReadUInt32LittleEndian(image.AsSpan(offset)));
+        for (var offset = 0; offset < 32; offset += 4)
+        {
+            checksum = unchecked(checksum + BinaryPrimitives.ReadUInt32LittleEndian(image.AsSpan(offset)));
+        }
         Check(checksum == 0, "LPC ROM 启动校验：前八个向量之和必须为零。");
     }
     if (device.Id.StartsWith("MK", StringComparison.Ordinal))

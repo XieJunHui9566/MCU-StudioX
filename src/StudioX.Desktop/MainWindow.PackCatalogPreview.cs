@@ -38,7 +38,9 @@ public partial class MainWindow
         if (device.Templates.Any(template => template.Id == "freertos-mcu"))
         {
             if (device.Templates.Count(template => template.Id.StartsWith("freertos-", StringComparison.Ordinal)) != 1)
+            {
                 throw new InvalidOperationException("FreeRTOS 仍提供独立混合模板。");
+            }
             foreach (var mode in new[] { false, true })
             {
                 Ag32LogicModeCheckBox.IsChecked = mode;
@@ -46,10 +48,14 @@ public partial class MainWindow
                 {
                     TemplatePicker.SelectedItem = template;
                     if (!Ag32LogicModeCheckBox.IsEnabled || Ag32LogicModeCheckBox.IsChecked != mode)
+                    {
                         throw new InvalidOperationException("切换模板改变或锁定了特殊模式选择。");
+                    }
                     var plan = Engine.ProjectService.Plan(selected, device.Id, template.Id, "mode_preview", mode);
                     if ((plan.Project.Logic is not null) != mode)
+                    {
                         throw new InvalidOperationException("创建计划与特殊模式复选框不同步。");
+                    }
                 }
                 TemplatePicker.SelectedItem = device.Templates.Single(template => template.Id == "freertos-mcu");
                 Ag32LogicModePanel.BringIntoView();

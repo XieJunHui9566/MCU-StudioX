@@ -1,8 +1,7 @@
 namespace StudioX.Desktop;
 
-using Microsoft.Win32;
 using System.Windows.Controls;
-using StudioX.Engine.Debugging;
+using Microsoft.Win32;
 
 public partial class MainWindow
 {
@@ -53,17 +52,26 @@ public partial class MainWindow
                 {
                     return;
                 }
-                if (action == "import") { view.SetReport(await services.Faults.ImportAsync(dialog.FileName, token)); }
+                if (action == "import")
+                {
+                    view.SetReport(await services.Faults.ImportAsync(dialog.FileName, token));
+                }
                 else
                 {
                     var type = dialog.FilterIndex == 1 ? "b64" : dialog.FilterIndex == 2 ? "elf" : "raw";
                     if (action == "archive-dump")
                     {
                         var elf = new OpenFileDialog { Title = "选择故障固件对应的归档 ELF", Filter = "应用程序 ELF|*.elf" };
-                        if (elf.ShowDialog(this) != true) { return; }
+                        if (elf.ShowDialog(this) != true)
+                        {
+                            return;
+                        }
                         view.SetReport(await services.Faults.DecodeDumpAsync(RequireProject(), dialog.FileName, type, elf.FileName, token));
                     }
-                    else { view.SetReport(await services.Faults.DecodeDumpAsync(RequireProject(), dialog.FileName, type, token)); }
+                    else
+                    {
+                        view.SetReport(await services.Faults.DecodeDumpAsync(RequireProject(), dialog.FileName, type, token));
+                    }
                 }
             }
         }

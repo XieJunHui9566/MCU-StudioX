@@ -14,7 +14,9 @@ public sealed record DevelopmentComponentIdentity(string Id, string Version, str
         PackValidator.Token(manifest.Id);
         PackValidator.Version(manifest.Version);
         if (manifest.FormatVersion != 1 || manifest.Host != "win-x64" || string.IsNullOrWhiteSpace(manifest.CompilerId))
+        {
             throw new StudioXException("TOOLS_IDENTITY", "开发环境组件格式或宿主不支持，或编译器身份缺失。");
+        }
         return new(manifest.Id, manifest.Version, manifest.Host, manifest.CompilerId);
     }
 }

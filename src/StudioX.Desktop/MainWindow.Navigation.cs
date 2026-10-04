@@ -13,7 +13,10 @@ public partial class MainWindow
     private bool recentInitialized;
     private void ShowDocument(TabItem tab)
     {
-        if (ReferenceEquals(tab, firstProjectTab)) RefreshFirstProjectGuide();
+        if (ReferenceEquals(tab, firstProjectTab))
+        {
+            RefreshFirstProjectGuide();
+        }
         tab.Visibility = Visibility.Visible;
         if (tab.Tag is EditorDocumentSession target)
         {
@@ -180,7 +183,7 @@ public partial class MainWindow
         }
     }
     private void Close_Click(object sender, RoutedEventArgs e) => Close();
-    private void About_Click(object sender, RoutedEventArgs e) => MessageBox.Show(this, ProductInfo.DisplayName + "\n\n独立单片机开发环境 · 预览版\n\n升级：关闭 IDE 后运行新版安装包，保留工程、器件包和个人设置。\n\n随附器件包：\n" + Path.Combine(AppContext.BaseDirectory, "device-packs"), "关于 MCU StudioX", MessageBoxButton.OK, MessageBoxImage.None);
+    private void About_Click(object sender, RoutedEventArgs e) => MessageBox.Show(this, ProductInfo.DisplayName + "\n\n独立单片机开发环境 · " + ProductInfo.ReleaseDescription + "\n\n升级：关闭 IDE 后运行新版安装包，保留工程、器件包和个人设置。\n\n随附器件包：\n" + Path.Combine(AppContext.BaseDirectory, "device-packs"), "关于 MCU StudioX", MessageBoxButton.OK, MessageBoxImage.None);
     private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
     {
         if (Keyboard.Modifiers == ModifierKeys.Control && e.Key == Key.Oem3)

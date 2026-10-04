@@ -13,14 +13,28 @@ public sealed partial class FirmwareFaultService
     public Task<FaultAnalysisReport> DecodeCoreDumpAsync(string project, string dump, string type, string? archivedElf, CancellationToken token = default)
         => Task.Run(async () =>
         {
-            if (type is not ("b64" or "elf" or "raw")) { throw new ArgumentException("转储格式应为 b64、elf 或 raw。", nameof(type)); }
+            if (type is not ("b64" or "elf" or "raw"))
+            {
+                throw new ArgumentException("转储格式应为 b64、elf 或 raw。", nameof(type));
+            }
             var manifest = await ProjectService.ReadAsync(project, token);
             var sdk = manifest.Espressif;
-            if (sdk is not { Framework: "esp-idf" }) { throw new StudioXException("FAULT_IDF", "Core Dump 解码需要明确目标的 ESP-IDF 工程。"); }
+            if (sdk is not { Framework: "esp-idf" })
+            {
+                throw new StudioXException("FAULT_IDF", "Core Dump 解码需要明确目标的 ESP-IDF 工程。");
+            }
             var selectedElf = archivedElf;
             ResolvedToolset resolved;
-            if (selectedElf is null) { var symbols = await SymbolsAsync(project, token); selectedElf = symbols.Elf; resolved = symbols.Tools; }
-            else { resolved = (await tools.ResolveAsync(manifest.ToolsetId, manifest.ToolsetVersion, manifest.CompilerId, token)).ForEspressifTarget(sdk.Target); }
+            if (selectedElf is null)
+            {
+                var symbols = await SymbolsAsync(project, token);
+                selectedElf = symbols.Elf;
+                resolved = symbols.Tools;
+            }
+            else
+            {
+                resolved = (await tools.ResolveAsync(manifest.ToolsetId, manifest.ToolsetVersion, manifest.CompilerId, token)).ForEspressifTarget(sdk.Target);
+            }
             await EspressifSdkIdentity.ValidateAsync(resolved, sdk, token);
             var root = Path.Combine(Path.GetTempPath(), "MCU-StudioX", "faults", Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(root);
@@ -34,12 +48,18 @@ public sealed partial class FirmwareFaultService
                 var elfHash = await SnapshotAsync(selectedElf, elfCopy, 256 * 1024 * 1024, token);
                 var bridge = Path.Combine(root, "decode.py");
                 await using (var resource = typeof(FirmwareFaultService).Assembly.GetManifestResourceStream("StudioX.Engine.Resources.studiox-coredump.py")!)
-                await using (var target = File.Create(bridge)) { await resource.CopyToAsync(target, token); }
+                {
+                    await using (var target = File.Create(bridge))
+                    {
+                        await resource.CopyToAsync(target, token);
+                    }
+                }
                 var environment = ToolsetEnvironment.Create(resolved);
                 environment["IDF_PATH"] = resolved.ResourceDirectory("idf");
                 environment["PYTHONHOME"] = resolved.ResourceDirectory("python-env");
                 environment["PYTHONUTF8"] = "1";
-                environment["TEMP"] = root; environment["TMP"] = root;
+                environment["TEMP"] = root;
+                environment["TMP"] = root;
                 environment["PYTHONPYCACHEPREFIX"] = Path.Combine(root, "python-cache");
                 var metadata = Path.Combine(root, "evidence.json");
                 var result = await runner.RunAsync(new(resolved.Tool("python"), ["-I", "-B", bridge, sdk.Target, type, dumpCopy, elfCopy, resolved.Tool("gdb"), metadata], root,
@@ -47,12 +67,20 @@ public sealed partial class FirmwareFaultService
                 var output = result.StandardOutput + "\n" + result.StandardError;
                 diagnostic = output;
                 if (result.ExitCode != 0 || result.TimedOut || result.OutputTruncated || !File.Exists(metadata))
-                { throw new StudioXException("FAULT_DUMP", $"本地转储解析失败（exit={result.ExitCode}, timeout={result.TimedOut}, truncated={result.OutputTruncated}）：\n" + output); }
+                {
+                    throw new StudioXException("FAULT_DUMP", $"本地转储解析失败（exit={result.ExitCode}, timeout={result.TimedOut}, truncated={result.OutputTruncated}）：\n" + output);
+                }
                 var detail = await JsonStore.ReadAsync<DecoderEvidence>(metadata, token);
-                if (detail.Target != sdk.Target) { throw new StudioXException("FAULT_TARGET", "转储目标与工程不一致。\n" + output); }
+                if (detail.Target != sdk.Target)
+                {
+                    throw new StudioXException("FAULT_TARGET", "转储目标与工程不一致。\n" + output);
+                }
                 var embedded = detail.EmbeddedElfHash;
                 var match = embedded is { Length: >= 8 and <= 64 } && embedded.All(Uri.IsHexDigit) && elfHash.StartsWith(embedded, StringComparison.OrdinalIgnoreCase);
-                if (embedded is not null && !match) { throw new StudioXException("FAULT_ELF", "转储中的 ELF 摘要与选择的 ELF 不一致。\n" + output); }
+                if (embedded is not null && !match)
+                {
+                    throw new StudioXException("FAULT_ELF", "转储中的 ELF 摘要与选择的 ELF 不一致。\n" + output);
+                }
                 var evidence = new CoreDumpEvidence(dumpHash, type, detail.Target, sdk.SdkVersion, detail.DecoderVersion, embedded, match,
                     detail.Tasks, detail.CrashedTask, detail.PanicDetails, archivedElf is null ? "当前工程构建记录" : "用户选择的归档 ELF");
                 return new FaultAnalysisReport(new(1, manifest.DeviceId, "导入的 ESP Core Dump；离线解析，未连接设备", DateTimeOffset.UtcNow,
@@ -63,11 +91,17 @@ public sealed partial class FirmwareFaultService
             catch (Exception ex) { decodingError = ex; throw; }
             finally
             {
-                try { await DeleteSnapshotAsync(root); }
+                try
+                {
+                    await DeleteSnapshotAsync(root);
+                }
                 catch (Exception cleanup)
                 {
                     // 清理失败不能覆盖真正的解码诊断；只清理本次创建的临时目录。
-                    if (decodingError is not null) { throw new AggregateException("转储解码及临时目录清理均失败。", decodingError, cleanup); }
+                    if (decodingError is not null)
+                    {
+                        throw new AggregateException("转储解码及临时目录清理均失败。", decodingError, cleanup);
+                    }
                     throw new StudioXException("FAULT_CLEANUP", $"转储解码后未能清理临时目录：{root}\n" + diagnostic, cleanup);
                 }
             }
@@ -80,15 +114,28 @@ public sealed partial class FirmwareFaultService
         // Windows 工具退出时仍可能短暂持有映像；限时重试，不将文件占用误报为解码失败。
         for (var attempt = 0; ; attempt++)
         {
-            try { if (Directory.Exists(root)) { Directory.Delete(root, true); } return; }
+            try
+            {
+                if (Directory.Exists(root))
+                {
+                    Directory.Delete(root, true);
+                }
+                return;
+            }
             catch (IOException) when (attempt < 5) { await Task.Delay(100 * (attempt + 1)); }
         }
     }
     private static async Task<string> SnapshotAsync(string source, string target, int maximum, CancellationToken token)
     {
         await using var input = new FileStream(Path.GetFullPath(source), FileMode.Open, FileAccess.Read, FileShare.Read);
-        if (input.Length is < 1 || input.Length > maximum) { throw new StudioXException("FAULT_SIZE", "转储或 ELF 为空或超过大小限制。"); }
-        await using (var output = File.Create(target)) { await input.CopyToAsync(output, token); }
+        if (input.Length is < 1 || input.Length > maximum)
+        {
+            throw new StudioXException("FAULT_SIZE", "转储或 ELF 为空或超过大小限制。");
+        }
+        await using (var output = File.Create(target))
+        {
+            await input.CopyToAsync(output, token);
+        }
         input.Position = 0;
         return Convert.ToHexString(await SHA256.HashDataAsync(input, token));
     }

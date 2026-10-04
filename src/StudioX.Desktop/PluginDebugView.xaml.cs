@@ -9,7 +9,10 @@ using StudioX.Engine.Debugging;
 public partial class PluginDebugView : UserControl
 {
     private readonly PluginPanelRenderer renderer;
-    public Action? RefreshRequested { get; set; }
+    public Action? RefreshRequested
+    {
+        get; set;
+    }
     public PluginDebugView(string title, string identity, Action<string> log)
     {
         InitializeComponent();

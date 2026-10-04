@@ -37,7 +37,10 @@ public sealed record ProjectDeviceInfo(string Manufacturer, string DeviceName, s
                 var template = board?.Templates?.FirstOrDefault(item => item.Id == project.TemplateId);
                 if (pack.Id != project.PackId || pack.Version != project.PackVersion || board is null || template is null)
                 {
-                    return recorded with { Notice = "Zephyr 包记录与工程选择不一致；仅显示工程清单中的板级目标。" };
+                    return recorded with
+                    {
+                        Notice = "Zephyr 包记录与工程选择不一致；仅显示工程清单中的板级目标。"
+                    };
                 }
                 return new(pack.Vendor, board.DisplayName, template.DisplayName,
                     template.Description, pack.DisplayName,
@@ -46,7 +49,10 @@ public sealed record ProjectDeviceInfo(string Manufacturer, string DeviceName, s
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException or StudioXException)
             {
-                return recorded with { Notice = "Zephyr 包说明读取失败，仅显示工程记录。\n" + ex.Message };
+                return recorded with
+                {
+                    Notice = "Zephyr 包说明读取失败，仅显示工程记录。\n" + ex.Message
+                };
             }
         }
         try

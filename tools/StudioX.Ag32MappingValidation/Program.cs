@@ -34,7 +34,11 @@ var checks = new List<string>();
 void Check(bool value, string name) { if (!value) { throw new InvalidOperationException(name); } checks.Add(name); Console.WriteLine("PASS " + name); }
 async Task Reject(Func<Task> action, string code, string name)
 {
-    try { await action(); throw new InvalidOperationException("Expected rejection: " + name); }
+    try
+    {
+        await action();
+        throw new InvalidOperationException("Expected rejection: " + name);
+    }
     catch (StudioXException ex) when (ex.Code == code) { Check(true, name); }
 }
 Check(service.LicenseConfigured, "Private vendor license configured; credentials never printed");
@@ -60,7 +64,12 @@ var setupPath = Path.Combine(root, ".build/ag32-mapping/logic_db/setup_summary.r
 var setupBytes = await File.ReadAllBytesAsync(setupPath);
 string setupText;
 using (var stream = new System.IO.Compression.GZipStream(new MemoryStream(setupBytes), System.IO.Compression.CompressionMode.Decompress))
-using (var reader = new StreamReader(stream)) { setupText = await reader.ReadToEndAsync(); }
+{
+    using (var reader = new StreamReader(stream))
+    {
+        setupText = await reader.ReadToEndAsync();
+    }
+}
 async Task ReplaceSetup(string value)
 {
     await using var file = File.Create(setupPath);
@@ -175,7 +184,10 @@ await Reject(async () => await service.BuildAsync(root), "AG32_MAPPING_CUSTOM_LO
 await File.WriteAllTextAsync(source, "GPIO4_4 PIN_2\n");
 await Reject(async () => await service.BuildAsync(root, new ImmediateProgress(message =>
 {
-    if (message.Contains("独立映射镜像", StringComparison.Ordinal)) { File.WriteAllText(source, "GPIO4_4 PIN_21\n"); }
+    if (message.Contains("独立映射镜像", StringComparison.Ordinal))
+    {
+        File.WriteAllText(source, "GPIO4_4 PIN_21\n");
+    }
 })), "AG32_MAPPING_CHANGED", "VE edited during compilation cannot receive a valid receipt");
 Check(!File.Exists(secondImage.Path), "Changed-during-build image is removed");
 await JsonStore.WriteAsync(Path.Combine(root, ".studiox/project.json"), project with { Logic = new("AGRV2KL48", "logic/user_logic.v", "logic/pins.ve") });

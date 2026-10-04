@@ -17,9 +17,11 @@ public sealed partial class PackRepository(string rootDirectory)
     public async Task<InstalledPack> ImportAsync(string archivePath, CancellationToken cancellationToken = default)
     {
         await importGate.WaitAsync(cancellationToken);
-        var staging = Path.Combine(RootDirectory, ".import-" + Guid.NewGuid().ToString("N"));
+        var staging = "";
         try
         {
+            PackFileTree.RejectLinkedAncestors(RootDirectory);
+            staging = PathBoundary.Resolve(RootDirectory, ".import-" + Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(staging);
             var payload = Directory.CreateDirectory(Path.Combine(staging, "payload")).FullName;
             await using var file = new FileStream(archivePath, FileMode.Open, FileAccess.Read, FileShare.Read);
@@ -37,7 +39,8 @@ public sealed partial class PackRepository(string rootDirectory)
                 {
                     throw new StudioXException("PACK_DUPLICATE_PATH", "芯片包路径重复或大小写冲突。");
                 }
-                if ((entry.ExternalAttributes >> 16 & 0xf000) == 0xa000)
+                if ((entry.ExternalAttributes >> 16 & 0xf000) is 0xa000 or 0x4000 ||
+                    (entry.ExternalAttributes & (int)FileAttributes.ReparsePoint) != 0)
                 {
                     throw new StudioXException("PACK_LINK", "芯片包不接受符号链接。");
                 }
@@ -65,7 +68,7 @@ public sealed partial class PackRepository(string rootDirectory)
             foreach (var entry in zip.Entries.Where(e => e.FullName != HashIndex))
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                if (!hashes.TryGetValue(entry.FullName, out var expected) || expected.Length != 64 || !expected.All(Uri.IsHexDigit))
+                if (!hashes.TryGetValue(entry.FullName, out var expected) || expected is null || expected.Length != 64 || !expected.All(Uri.IsHexDigit))
                 {
                     throw new StudioXException("PACK_INDEX", $"缺少有效文件哈希：{entry.FullName}");
                 }
@@ -108,21 +111,32 @@ public sealed partial class PackRepository(string rootDirectory)
             await JsonStore.WriteAsync(Path.Combine(staging, "installation.json"), new Installation(1, contentHash), cancellationToken);
             await JsonStore.WriteAsync(Path.Combine(staging, HashIndex), hashes, cancellationToken);
             Directory.CreateDirectory(Path.GetDirectoryName(finalDirectory)!);
+            cancellationToken.ThrowIfCancellationRequested();
             Directory.Move(staging, finalDirectory);
+            staging = "";
             return new InstalledPack(manifest, Path.Combine(finalDirectory, "payload"), contentHash);
         }
         finally
         {
-            if (Directory.Exists(staging))
+            try
             {
-                Directory.Delete(staging, recursive: true);
+                if (staging.Length > 0 && Directory.Exists(staging))
+                {
+                    _ = PackFileTree.EnumerateFiles(staging, CancellationToken.None);
+                    Directory.Delete(staging, recursive: true);
+                }
             }
-            importGate.Release();
+            finally
+            {
+                // 清理失败保留原始诊断，同时释放门闩，避免后续导入永久等待。
+                importGate.Release();
+            }
         }
     }
 
     public async Task<IReadOnlyList<InstalledPack>> ListAsync(CancellationToken cancellationToken = default)
     {
+        PackFileTree.RejectLinkedAncestors(RootDirectory);
         if (!Directory.Exists(RootDirectory))
         {
             return [];
@@ -130,6 +144,7 @@ public sealed partial class PackRepository(string rootDirectory)
         var result = new List<InstalledPack>();
         foreach (var id in Directory.EnumerateDirectories(RootDirectory).Where(p => !Path.GetFileName(p).StartsWith('.')))
         {
+            _ = PathBoundary.Resolve(RootDirectory, Path.GetFileName(id));
             foreach (var version in Directory.EnumerateDirectories(id))
             {
                 result.Add(await OpenAsync(version, cancellationToken));
@@ -142,7 +157,7 @@ public sealed partial class PackRepository(string rootDirectory)
     {
         var (pack, hashes) = await ReadCatalogEntryAsync(directory, cancellationToken);
         var root = pack.RootDirectory;
-        if (Directory.GetFiles(root, "*", SearchOption.AllDirectories).Length != hashes.Count)
+        if (PackFileTree.EnumerateFiles(root, cancellationToken).Count != hashes.Count)
         {
             throw new StudioXException("PACK_HASH", "已安装芯片包的内容索引发生变化。");
         }

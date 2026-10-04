@@ -21,9 +21,9 @@
 
 覆盖范围：
 
-- `tools` 根目录的 Python、PowerShell 维护脚本，以及 STC 的离线检查与运行时保护脚本。
+- `tools` 根目录的 Python、PowerShell 维护脚本、`tools/acceptance` 来宾验收脚本，以及 STC 的离线检查与运行时保护脚本。来宾脚本保留 UTF-8 BOM，并用 Windows PowerShell 5.1 检查语法。
 - `examples/packs` 内本仓库维护的 C/H 模板。
-- 原生 LVGL PC 宿主、STC 启动器和两个离线 C 验证夹具。
+- 原生 LVGL PC 宿主、STC 启动器、第一方组件头文件和离线 C 验证夹具。`Resources/Ag32/Peripherals` 的厂商驱动及带占位符的 `StudioX_System` 生成模板由维护者单独核对。
 
 默认四空格缩进，控制块展开显示；C 的花括号单独成行，头文件顺序保持不变。Python 和 C 的行长目标为 100，生成字符串和外部协议文案不为排版强行折断。中文注释说明时序、来源、失败原因与职责边界；许可证和上游声明保持原文。
 

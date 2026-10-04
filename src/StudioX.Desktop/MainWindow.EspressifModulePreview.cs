@@ -15,7 +15,10 @@ public partial class MainWindow
     public async Task RenderEspressifModulePreviewAsync(string directory, string project)
     {
         var fixtures = Path.Combine(directory, "fixtures");
-        if (Directory.Exists(fixtures)) { throw new InvalidOperationException("模块检查需要新的输出目录。"); }
+        if (Directory.Exists(fixtures))
+        {
+            throw new InvalidOperationException("模块检查需要新的输出目录。");
+        }
         var sourceProjects = Path.GetDirectoryName(project)!;
         var roots = new Dictionary<string, string>(StringComparer.Ordinal);
         var sourceRoots = new Dictionary<string, string>(StringComparer.Ordinal);
@@ -165,9 +168,18 @@ public partial class MainWindow
                 SelectModuleValue<int?>(EspressifFlashFrequencyPicker, 40);
                 var psram = capabilities.PsramModes.FirstOrDefault(mode => mode != "disabled") ?? "disabled";
                 SelectModuleValue<string?>(EspressifPsramModePicker, psram);
-                if (psram != "disabled") { EspressifPsramSizeBox.Text = "8"; }
-                if (capabilities.P4RevisionFamilies is { Length: > 0 }) { SelectModuleValue<string?>(EspressifRevisionPicker, "current"); }
-                if (capabilities.SupportsSingleCore) { SelectModuleValue<bool?>(EspressifCorePicker, true); }
+                if (psram != "disabled")
+                {
+                    EspressifPsramSizeBox.Text = "8";
+                }
+                if (capabilities.P4RevisionFamilies is { Length: > 0 })
+                {
+                    SelectModuleValue<string?>(EspressifRevisionPicker, "current");
+                }
+                if (capabilities.SupportsSingleCore)
+                {
+                    SelectModuleValue<bool?>(EspressifCorePicker, true);
+                }
                 Check(TrySelectedEspressifModule(out custom, out _) && SaveEspressifModuleButton.IsEnabled,
                     target + " 自定义选择不可保存。");
                 await SaveSelected();
@@ -196,7 +208,10 @@ public partial class MainWindow
 
         static void Check(bool condition, string message)
         {
-            if (!condition) { throw new InvalidOperationException(message); }
+            if (!condition)
+            {
+                throw new InvalidOperationException(message);
+            }
         }
         async Task ChooseProfile(string id)
         {
@@ -244,7 +259,10 @@ public partial class MainWindow
         {
             var child = VisualTreeHelper.GetChild(parent, index);
             yield return child;
-            foreach (var descendant in VisualModuleDescendants(child)) { yield return descendant; }
+            foreach (var descendant in VisualModuleDescendants(child))
+            {
+                yield return descendant;
+            }
         }
     }
 
@@ -260,13 +278,22 @@ public partial class MainWindow
             }
             if (Directory.Exists(input))
             {
-                if (Path.GetFileName(input) is ".build" or ".git" or ".pio") { return; }
+                if (Path.GetFileName(input) is ".build" or ".git" or ".pio")
+                {
+                    return;
+                }
                 Directory.CreateDirectory(Path.Combine(destination, relative));
-                foreach (var entry in Directory.EnumerateFileSystemEntries(input)) { Copy(Path.GetRelativePath(source, entry)); }
+                foreach (var entry in Directory.EnumerateFileSystemEntries(input))
+                {
+                    Copy(Path.GetRelativePath(source, entry));
+                }
                 return;
             }
             bytes += new FileInfo(input).Length;
-            if (bytes > 16 * 1024 * 1024) { throw new InvalidOperationException("模块预览只接受小型 SDK 示例副本。"); }
+            if (bytes > 16 * 1024 * 1024)
+            {
+                throw new InvalidOperationException("模块预览只接受小型 SDK 示例副本。");
+            }
             originals[input] = FileHash(input);
             File.Copy(input, Path.Combine(destination, relative));
         }

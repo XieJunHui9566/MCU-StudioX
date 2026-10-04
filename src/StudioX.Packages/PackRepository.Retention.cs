@@ -77,14 +77,7 @@ public sealed partial class PackRepository
 
     private void RejectLinkedPackRoot()
     {
-        // 只检查 root 下的相对路径不足以保护清理；父目录 junction 也会把整个仓库映射到外部目录。
-        for (var directory = new DirectoryInfo(RootDirectory); directory is not null; directory = directory.Parent)
-        {
-            if (directory.Exists && (directory.Attributes & FileAttributes.ReparsePoint) != 0)
-            {
-                throw new StudioXException("PATH_LINK", "器件包清理目录及其父级不能是重解析点：" + directory.FullName);
-            }
-        }
+        PackFileTree.RejectLinkedAncestors(RootDirectory);
     }
 
     private static long MeasurePackWithoutLinks(string directory, CancellationToken token)

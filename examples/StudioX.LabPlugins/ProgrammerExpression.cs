@@ -10,10 +10,16 @@ internal sealed class ProgrammerExpression(ProgrammerWord word, string expressio
 
     internal ulong Evaluate()
     {
-        if (expression.Length is < 1 or > 1024) throw new ArgumentException("表达式须为 1–1024 个字符。");
+        if (expression.Length is < 1 or > 1024)
+        {
+            throw new ArgumentException("表达式须为 1–1024 个字符。");
+        }
         Next();
         var value = Binary(1);
-        if (token != "") throw new ArgumentException("表达式中存在多余字符或缺少运算符：" + token);
+        if (token != "")
+        {
+            throw new ArgumentException("表达式中存在多余字符或缺少运算符：" + token);
+        }
         return value;
     }
 
@@ -32,7 +38,10 @@ internal sealed class ProgrammerExpression(ProgrammerWord word, string expressio
 
     private ulong Primary()
     {
-        if (++depth > 32) throw new ArgumentException("表达式括号或一元运算嵌套最多 32 层。");
+        if (++depth > 32)
+        {
+            throw new ArgumentException("表达式括号或一元运算嵌套最多 32 层。");
+        }
         try
         {
             var current = token;
@@ -40,18 +49,29 @@ internal sealed class ProgrammerExpression(ProgrammerWord word, string expressio
             {
                 Next();
                 // 负字面量先按有符号范围检查，避免把超范围负数静默取模。
-                if (current == "-" && IsNumber(token)) { var value = word.Parse("-" + token); Next(); return value; }
+                if (current == "-" && IsNumber(token))
+                {
+                    var value = word.Parse("-" + token);
+                    Next();
+                    return value;
+                }
                 return word.Unary(current, Primary());
             }
             if (current == "(")
             {
                 Next();
                 var value = Binary(1);
-                if (token != ")") throw new ArgumentException("表达式缺少右括号 )。");
+                if (token != ")")
+                {
+                    throw new ArgumentException("表达式缺少右括号 )。");
+                }
                 Next();
                 return value;
             }
-            if (!IsNumber(current)) throw new ArgumentException("这里需要整数或左括号：" + current);
+            if (!IsNumber(current))
+            {
+                throw new ArgumentException("这里需要整数或左括号：" + current);
+            }
             Next();
             return word.Parse(current);
         }
@@ -60,9 +80,13 @@ internal sealed class ProgrammerExpression(ProgrammerWord word, string expressio
 
     private static int Priority(string value) => value switch
     {
-        "|" or "or" or "nor" => 1, "^" or "xor" => 2, "&" or "and" or "nand" => 3,
+        "|" or "or" or "nor" => 1,
+        "^" or "xor" => 2,
+        "&" or "and" or "nand" => 3,
         "<<" or ">>" or ">>>" or "shl" or "shr" or "rol" or "ror" => 4,
-        "+" or "-" => 5, "*" or "/" or "%" => 6, _ => 0
+        "+" or "-" => 5,
+        "*" or "/" or "%" => 6,
+        _ => 0
     };
 
     private static bool IsNumber(string value) => value.Length > 0 && value is not
@@ -70,23 +94,44 @@ internal sealed class ProgrammerExpression(ProgrammerWord word, string expressio
 
     private void Next()
     {
-        while (position < expression.Length && char.IsWhiteSpace(expression[position])) position++;
-        if (position == expression.Length) { token = ""; return; }
-        if (++tokens > 256) throw new ArgumentException("表达式最多包含 256 个数字与运算符。");
+        while (position < expression.Length && char.IsWhiteSpace(expression[position]))
+        {
+            position++;
+        }
+        if (position == expression.Length)
+        {
+            token = "";
+            return;
+        }
+        if (++tokens > 256)
+        {
+            throw new ArgumentException("表达式最多包含 256 个数字与运算符。");
+        }
         var start = position++;
         var ch = expression[start];
         if (char.IsAsciiLetterOrDigit(ch))
         {
-            while (position < expression.Length && (char.IsAsciiLetterOrDigit(expression[position]) || expression[position] == '_')) position++;
+            while (position < expression.Length && (char.IsAsciiLetterOrDigit(expression[position]) || expression[position] == '_'))
+            {
+                position++;
+            }
         }
         else if (ch is '<' or '>')
         {
-            if (position >= expression.Length || expression[position] != ch) throw new ArgumentException("移位请使用 << / >> / >>>。");
+            if (position >= expression.Length || expression[position] != ch)
+            {
+                throw new ArgumentException("移位请使用 << / >> / >>>。");
+            }
             position++;
-            if (ch == '>' && position < expression.Length && expression[position] == '>') position++;
+            if (ch == '>' && position < expression.Length && expression[position] == '>')
+            {
+                position++;
+            }
         }
         else if (ch is not ('(' or ')' or '+' or '-' or '*' or '/' or '%' or '&' or '|' or '^' or '~'))
+        {
             throw new ArgumentException("表达式包含不支持的字符：" + ch);
+        }
         token = expression[start..position].ToLowerInvariant();
     }
 }

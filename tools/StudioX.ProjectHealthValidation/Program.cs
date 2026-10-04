@@ -5,22 +5,30 @@ using StudioX.Application.Health;
 using StudioX.Engine;
 using StudioX.Foundation;
 using StudioX.Packages;
+using StudioX.ProjectHealthValidation;
 
-if (args.Length is not (2 or 4)) throw new ArgumentException("Usage: health-validation <new-output> <ninja.exe> [real-project runtime]");
+if (args.Length is not (2 or 4)) { throw new ArgumentException("Usage: health-validation <new-output> <ninja.exe> [real-project runtime]"); }
 var output = Path.GetFullPath(args[0]);
-if (Directory.Exists(output)) throw new InvalidOperationException("Use a new evidence directory.");
+if (Directory.Exists(output)) { throw new InvalidOperationException("Use a new evidence directory."); }
 Directory.CreateDirectory(output);
 var ninja = await File.ReadAllBytesAsync(args[1]);
 var checks = new List<string>();
 void Check(bool value, string description)
 {
-    if (!value) throw new InvalidOperationException(description);
+    if (!value)
+    {
+        throw new InvalidOperationException(description);
+    }
     checks.Add(description);
     Console.WriteLine("PASS " + description);
 }
 async Task ExpectCode(Func<Task> operation, string code)
 {
-    try { await operation(); throw new InvalidOperationException("Expected " + code); }
+    try
+    {
+        await operation();
+        throw new InvalidOperationException("Expected " + code);
+    }
     catch (StudioXException error) when (error.Code == code) { Check(true, "reject " + code); }
 }
 async Task<(string Root, ToolsetCatalog Catalog, ProjectHealthService Service, ProjectManifest Project)> Fixture(string name, bool esp = false)
@@ -39,8 +47,16 @@ async Task<(string Root, ToolsetCatalog Catalog, ProjectHealthService Service, P
     Dictionary<string, string>? resources = null;
     if (esp)
     {
-        foreach (var role in new[] { "python", "git", "gcc-esp32s3", "gxx-esp32s3", "objcopy-esp32s3", "size-esp32s3" }) roles[role] = "probe.exe";
-        resources = new() { ["idf"] = "sdk", ["tools"] = "tools", ["python-env"] = "python" };
+        foreach (var role in new[] { "python", "git", "gcc-esp32s3", "gxx-esp32s3", "objcopy-esp32s3", "size-esp32s3" })
+        {
+            roles[role] = "probe.exe";
+        }
+        resources = new()
+        {
+            ["idf"] = "sdk",
+            ["tools"] = "tools",
+            ["python-env"] = "python"
+        };
         foreach (var relative in new[] { "sdk/tools/idf.py", "sdk/tools/cmake/project.cmake", "tools/idf-env.json", "python/marker.txt" })
         {
             var path = Path.Combine(toolsetRoot, relative);
@@ -70,7 +86,9 @@ async Task<Dictionary<string, string>> Snapshot(string root)
 {
     var result = new Dictionary<string, string>();
     foreach (var file in Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories))
+    {
         result[Path.GetRelativePath(root, file).Replace('\\', '/')] = Convert.ToHexString(SHA256.HashData(await File.ReadAllBytesAsync(file)));
+    }
     return result;
 }
 var good = await Fixture("normal");
@@ -108,6 +126,8 @@ var badSettings = await Fixture("invalid-settings");
 await File.WriteAllTextAsync(Path.Combine(badSettings.Root, ".studiox", "build.json"), "{\"formatVersion\":99}");
 Check((await badSettings.Service.InspectAsync(badSettings.Root)).Checks.Any(check => check.Code == "BUILD_SETTINGS" && check.Action == HealthAction.BuildSettings), "invalid build parameters have a direct settings action");
 var sdk = await Fixture("esp-sdk", true);
+var analysisFixture = await Fixture("analysis-environment", true);
+await AnalysisEnvironmentChecks.RunAsync(analysisFixture.Root, analysisFixture.Project, analysisFixture.Catalog, analysisFixture.Service, Check);
 Check((await sdk.Service.InspectAsync(sdk.Root)).CanBuild, "ESP-IDF SDK identity and locked target are checked without invoking idf.py");
 var wrongTargetTool = await Fixture("missing-target-compiler", true);
 var wrongTargetManifestPath = Path.Combine(wrongTargetTool.Catalog.RootDirectory, "espressif.idf", "5.5.4", "toolset.json");
@@ -141,13 +161,19 @@ var withDebug = new ProjectHealthService(cache.Catalog, new BuildService(cache.C
 await ExpectCode(() => withDebug.RepairCacheAsync(plan), "HEALTH_DEBUG_ACTIVE");
 var cancelled = new CancellationTokenSource();
 cancelled.Cancel();
-try { await cache.Service.RepairCacheAsync(plan, cancelled.Token); throw new InvalidOperationException("Expected cancellation"); }
+try
+{
+    await cache.Service.RepairCacheAsync(plan, cancelled.Token);
+    throw new InvalidOperationException("Expected cancellation");
+}
 catch (OperationCanceledException) { Check(File.Exists(Path.Combine(cache.Root, ".build", "CMakeCache.txt")), "cancelled repair preserves cache"); }
 var backup = await cache.Service.RepairCacheAsync(plan);
 Check(Directory.Exists(backup) && File.Exists(Path.Combine(backup, "CMakeCache.txt")) && File.Exists(Path.Combine(backup, "CMakeFiles", "compiler.obj")), "repair moves original generated content to a local backup");
 Check(!File.Exists(Path.Combine(cache.Root, ".build", "studiox-build-receipt.json")) && File.Exists(Path.Combine(backup, "studiox-build-receipt.json")), "repair invalidates the old download receipt while retaining it in backup");
 foreach (var relative in new[] { "CMakeLists.txt", "src/main.c", "sdkconfig", ".studiox/project.json", ".build/sdkconfig", ".build/firmware.bin", ".build/studiox-build.log" })
+{
     Check(cacheBefore[relative] == Convert.ToHexString(SHA256.HashData(await File.ReadAllBytesAsync(Path.Combine(cache.Root, relative)))), "repair preserves " + relative);
+}
 Check((await cache.Service.InspectAsync(cache.Root)).CanBuild, "repaired cache leaves a clean first-configuration state");
 var stale = await Fixture("stale-preview");
 Directory.CreateDirectory(Path.Combine(stale.Root, ".build"));
@@ -165,7 +191,11 @@ await File.WriteAllTextAsync(rollbackSecond, "original database");
 var rollbackPlan = await rollback.Service.PreviewCacheRepairAsync(rollback.Root);
 using (var occupied = new FileStream(rollbackSecond, FileMode.Open, FileAccess.Read, FileShare.None))
 {
-    try { await rollback.Service.RepairCacheAsync(rollbackPlan); throw new InvalidOperationException("Expected occupied cache failure"); }
+    try
+    {
+        await rollback.Service.RepairCacheAsync(rollbackPlan);
+        throw new InvalidOperationException("Expected occupied cache failure");
+    }
     catch (IOException) { Check(await File.ReadAllTextAsync(rollbackFirst) == "original cache", "partial repair failure restores the first moved cache file"); }
 }
 Check(await File.ReadAllTextAsync(rollbackSecond) == "original database", "occupied cache file retains original content after rollback");
@@ -187,7 +217,11 @@ if (args.Length == 4)
     await real.ExportAsync(realReport, Path.Combine(output, "real-project-report.json"));
     Check(realReport.CanBuild, "real ESP32-S3 project passes fast preflight");
     Check(selected.All(entry => entry.Value == Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(Path.Combine(realRoot, entry.Key))))), "real project configuration and tool lock remain unchanged");
-    await File.WriteAllTextAsync(Path.Combine(output, "real-check-timing.json"), JsonSerializer.Serialize(new { milliseconds = timer.ElapsedMilliseconds, realReport.Summary }));
+    await File.WriteAllTextAsync(Path.Combine(output, "real-check-timing.json"), JsonSerializer.Serialize(new
+    {
+        milliseconds = timer.ElapsedMilliseconds,
+        realReport.Summary
+    }));
 }
 await File.WriteAllTextAsync(Path.Combine(output, "result.json"), JsonSerializer.Serialize(new { status = "passed", checks }, new JsonSerializerOptions { WriteIndented = true }));
 Console.WriteLine($"Passed {checks.Count} checks.");

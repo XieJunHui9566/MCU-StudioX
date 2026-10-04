@@ -31,22 +31,55 @@
         IsEnabled="False"
         Margin="0,0,8,8" />
     </WrapPanel>
-    <WrapPanel Margin="0,0,0,12">
-      <TextBlock Text="搜索插件" VerticalAlignment="Center" Margin="0,0,8,0" />
-      <TextBox x:Name="CatalogFilter" Width="250" MaxLength="120" ToolTip="按名称、ID、说明或能力搜索插件"
-        TextChanged="CatalogFilter_TextChanged" Margin="0,0,8,0" />
-      <ComboBox x:Name="CapabilityFilter" Width="150" SelectedIndex="0" ToolTip="按声明的能力筛选"
-        SelectionChanged="CapabilityFilter_SelectionChanged" Margin="0,0,12,0">
-        <ComboBoxItem Content="全部能力" Tag="" />
-        <ComboBoxItem Content="调试快照" Tag="debugAdapters" />
-        <ComboBoxItem Content="语言补全" Tag="languages" />
-        <ComboBoxItem Content="设置" Tag="settings" />
-        <ComboBoxItem Content="面板" Tag="panels" />
-        <ComboBoxItem Content="Agent 工具" Tag="agentTools" />
-        <ComboBoxItem Content="命令" Tag="commands" />
-        <ComboBoxItem Content="数据解码" Tag="decode" />
+    <WrapPanel
+      Margin="0,0,0,12">
+      <TextBlock
+        Text="搜索插件"
+        VerticalAlignment="Center"
+        Margin="0,0,8,0" />
+      <TextBox
+        x:Name="CatalogFilter"
+        Width="250"
+        MaxLength="120"
+        ToolTip="按名称、ID、说明或能力搜索插件"
+        TextChanged="CatalogFilter_TextChanged"
+        Margin="0,0,8,0" />
+      <ComboBox
+        x:Name="CapabilityFilter"
+        Width="150"
+        SelectedIndex="0"
+        ToolTip="按声明的能力筛选"
+        SelectionChanged="CapabilityFilter_SelectionChanged"
+        Margin="0,0,12,0">
+        <ComboBoxItem
+          Content="全部能力"
+          Tag="" />
+        <ComboBoxItem
+          Content="调试快照"
+          Tag="debugAdapters" />
+        <ComboBoxItem
+          Content="语言补全"
+          Tag="languages" />
+        <ComboBoxItem
+          Content="设置"
+          Tag="settings" />
+        <ComboBoxItem
+          Content="面板"
+          Tag="panels" />
+        <ComboBoxItem
+          Content="Agent 工具"
+          Tag="agentTools" />
+        <ComboBoxItem
+          Content="命令"
+          Tag="commands" />
+        <ComboBoxItem
+          Content="数据解码"
+          Tag="decode" />
       </ComboBox>
-      <TextBlock x:Name="CatalogSummary" Foreground="{DynamicResource Muted}" VerticalAlignment="Center" />
+      <TextBlock
+        x:Name="CatalogSummary"
+        Foreground="{DynamicResource Muted}"
+        VerticalAlignment="Center" />
     </WrapPanel>
     <ItemsControl
       x:Name="CatalogList">
@@ -82,8 +115,15 @@
                   FontSize="11"
                   TextWrapping="Wrap"
                   Margin="0,3,0,0" />
-                <TextBlock Text="{Binding Description}" TextWrapping="Wrap" Margin="0,5,0,0" />
-                <TextBlock Text="{Binding OriginText}" Foreground="{DynamicResource Muted}" FontSize="11" Margin="0,3,0,0" />
+                <TextBlock
+                  Text="{Binding Description}"
+                  TextWrapping="Wrap"
+                  Margin="0,5,0,0" />
+                <TextBlock
+                  Text="{Binding OriginText}"
+                  Foreground="{DynamicResource Muted}"
+                  FontSize="11"
+                  Margin="0,3,0,0" />
                 <TextBlock
                   Text="{Binding StateText}"
                   Foreground="{DynamicResource Accent}"
@@ -105,20 +145,54 @@
                   IsEnabled="{Binding CanUninstall}"
                   Tag="{Binding}"
                   Click="Uninstall_Click" />
-                <Button Content="插件设置…" IsEnabled="{Binding CanSettings}" Tag="{Binding}" Click="Settings_Click" Margin="0,6,0,0">
+                <Button
+                  Content="插件设置…"
+                  IsEnabled="{Binding CanSettings}"
+                  Tag="{Binding}"
+                  Click="Settings_Click"
+                  Margin="0,6,0,0">
                   <Button.Style>
-                    <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
-                      <Setter Property="Visibility" Value="Collapsed" />
-                      <Style.Triggers><DataTrigger Binding="{Binding HasSettings}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers>
+                    <Style
+                      TargetType="Button"
+                      BasedOn="{StaticResource {x:Type Button}}">
+                      <Setter
+                        Property="Visibility"
+                        Value="Collapsed" />
+                      <Style.Triggers>
+                        <DataTrigger
+                          Binding="{Binding HasSettings}"
+                          Value="True">
+                          <Setter
+                            Property="Visibility"
+                            Value="Visible" />
+                        </DataTrigger>
+                      </Style.Triggers>
                     </Style>
                   </Button.Style>
                 </Button>
-                <Button Content="打开调试扩展" IsEnabled="{Binding CanDebug}" Tag="{Binding}" Click="Debug_Click" Margin="0,6,0,0"
+                <Button
+                  Content="打开调试扩展"
+                  IsEnabled="{Binding CanDebug}"
+                  Tag="{Binding}"
+                  Click="Debug_Click"
+                  Margin="0,6,0,0"
                   ToolTip="需要打开工程且插件运行成功；此入口不会连接设备。">
                   <Button.Style>
-                    <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
-                      <Setter Property="Visibility" Value="Collapsed" />
-                      <Style.Triggers><DataTrigger Binding="{Binding HasDebug}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers>
+                    <Style
+                      TargetType="Button"
+                      BasedOn="{StaticResource {x:Type Button}}">
+                      <Setter
+                        Property="Visibility"
+                        Value="Collapsed" />
+                      <Style.Triggers>
+                        <DataTrigger
+                          Binding="{Binding HasDebug}"
+                          Value="True">
+                          <Setter
+                            Property="Visibility"
+                            Value="Visible" />
+                        </DataTrigger>
+                      </Style.Triggers>
                     </Style>
                   </Button.Style>
                 </Button>

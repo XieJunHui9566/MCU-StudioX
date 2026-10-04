@@ -19,7 +19,10 @@ public sealed record ProjectHealthReport(string? ProjectDirectory, string Projec
         {
             text.AppendLine($"[{check.StateText}] {check.Title} ({check.Code})").AppendLine(check.Detail)
                 .AppendLine("处理入口：" + check.ActionText + "；帮助主题：" + check.HelpTopic);
-            if (check.RawDiagnostic.Length > 0) text.AppendLine("原始诊断：").AppendLine(check.RawDiagnostic);
+            if (check.RawDiagnostic.Length > 0)
+            {
+                text.AppendLine("原始诊断：").AppendLine(check.RawDiagnostic);
+            }
             text.AppendLine();
         }
         return text.ToString();

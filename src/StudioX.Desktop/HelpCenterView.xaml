@@ -1,83 +1,247 @@
-<UserControl x:Class="StudioX.Desktop.HelpCenterView"
+<UserControl
+  x:Class="StudioX.Desktop.HelpCenterView"
   xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-  Background="{DynamicResource Surface}" Foreground="{DynamicResource Text}">
+  Background="{DynamicResource Surface}"
+  Foreground="{DynamicResource Text}">
   <UserControl.Resources>
-    <Style x:Key="HelpTopicItem" TargetType="ListBoxItem">
-      <Setter Property="Foreground" Value="{DynamicResource Text}"/>
-      <Setter Property="Background" Value="Transparent"/>
-      <Setter Property="BorderBrush" Value="Transparent"/>
-      <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-      <Setter Property="Template">
+    <Style
+      x:Key="HelpTopicItem"
+      TargetType="ListBoxItem">
+      <Setter
+        Property="Foreground"
+        Value="{DynamicResource Text}" />
+      <Setter
+        Property="Background"
+        Value="Transparent" />
+      <Setter
+        Property="BorderBrush"
+        Value="Transparent" />
+      <Setter
+        Property="HorizontalContentAlignment"
+        Value="Stretch" />
+      <Setter
+        Property="Template">
         <Setter.Value>
-          <ControlTemplate TargetType="ListBoxItem">
-            <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1" CornerRadius="4" Padding="7,2" Margin="0,0,0,3">
-              <ContentPresenter HorizontalAlignment="Stretch"/>
+          <ControlTemplate
+            TargetType="ListBoxItem">
+            <Border
+              Background="{TemplateBinding Background}"
+              BorderBrush="{TemplateBinding BorderBrush}"
+              BorderThickness="1"
+              CornerRadius="4"
+              Padding="7,2"
+              Margin="0,0,0,3">
+              <ContentPresenter
+                HorizontalAlignment="Stretch" />
             </Border>
           </ControlTemplate>
         </Setter.Value>
       </Setter>
       <Style.Triggers>
-        <Trigger Property="IsMouseOver" Value="True"><Setter Property="Background" Value="{DynamicResource HoverSurface}"/></Trigger>
-        <Trigger Property="IsSelected" Value="True"><Setter Property="Background" Value="{DynamicResource HoverSurface}"/><Setter Property="BorderBrush" Value="{DynamicResource Accent}"/></Trigger>
+        <Trigger
+          Property="IsMouseOver"
+          Value="True">
+          <Setter
+            Property="Background"
+            Value="{DynamicResource HoverSurface}" />
+        </Trigger>
+        <Trigger
+          Property="IsSelected"
+          Value="True">
+          <Setter
+            Property="Background"
+            Value="{DynamicResource HoverSurface}" />
+          <Setter
+            Property="BorderBrush"
+            Value="{DynamicResource Accent}" />
+        </Trigger>
       </Style.Triggers>
     </Style>
   </UserControl.Resources>
   <Grid>
-    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
-    <Border BorderBrush="{DynamicResource Border}" BorderThickness="0,0,0,1" Padding="18,12">
+    <Grid.RowDefinitions>
+      <RowDefinition
+        Height="Auto" />
+      <RowDefinition
+        Height="*" />
+    </Grid.RowDefinitions>
+    <Border
+      BorderBrush="{DynamicResource Border}"
+      BorderThickness="0,0,0,1"
+      Padding="18,12">
       <DockPanel>
-        <Button x:Name="CatalogToggle" Content="目录" Click="CatalogToggle_Click" Margin="0,0,12,0" DockPanel.Dock="Left" VerticalAlignment="Center" ToolTip="显示或隐藏帮助目录"/>
-        <Button Content="清除搜索" Click="ClearSearch_Click" DockPanel.Dock="Right" VerticalAlignment="Center" Margin="10,0,0,0"/>
+        <Button
+          x:Name="CatalogToggle"
+          Content="目录"
+          Click="CatalogToggle_Click"
+          Margin="0,0,12,0"
+          DockPanel.Dock="Left"
+          VerticalAlignment="Center"
+          ToolTip="显示或隐藏帮助目录" />
+        <Button
+          Content="清除搜索"
+          Click="ClearSearch_Click"
+          DockPanel.Dock="Right"
+          VerticalAlignment="Center"
+          Margin="10,0,0,0" />
         <StackPanel>
-          <TextBlock Text="帮助中心" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,6"/>
+          <TextBlock
+            Text="帮助中心"
+            FontSize="18"
+            FontWeight="SemiBold"
+            Margin="0,0,0,6" />
           <Grid>
-            <TextBox x:Name="SearchBox" TextChanged="Search_Changed" ToolTip="搜索标题、关键词和正文，例如：ESP-IDF、断点、位与、头文件" AutomationProperties.Name="搜索帮助"/>
-            <TextBlock Text="搜索：ESP-IDF、位与、断点、头文件…" Foreground="{DynamicResource Muted}" Margin="8,0" VerticalAlignment="Center" IsHitTestVisible="False">
-              <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><DataTrigger Binding="{Binding Text, ElementName=SearchBox}" Value=""><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></TextBlock.Style>
+            <TextBox
+              x:Name="SearchBox"
+              TextChanged="Search_Changed"
+              ToolTip="搜索标题、关键词和正文，例如：ESP-IDF、断点、位与、头文件"
+              AutomationProperties.Name="搜索帮助" />
+            <TextBlock
+              Text="搜索：ESP-IDF、位与、断点、头文件…"
+              Foreground="{DynamicResource Muted}"
+              Margin="8,0"
+              VerticalAlignment="Center"
+              IsHitTestVisible="False">
+              <TextBlock.Style>
+                <Style
+                  TargetType="TextBlock">
+                  <Setter
+                    Property="Visibility"
+                    Value="Collapsed" />
+                  <Style.Triggers>
+                    <DataTrigger
+                      Binding="{Binding Text, ElementName=SearchBox}"
+                      Value="">
+                      <Setter
+                        Property="Visibility"
+                        Value="Visible" />
+                    </DataTrigger>
+                  </Style.Triggers>
+                </Style>
+              </TextBlock.Style>
             </TextBlock>
           </Grid>
-          <TextBlock x:Name="ResultStatus" Foreground="{DynamicResource Muted}" FontSize="12" Margin="0,6,0,0" TextWrapping="Wrap"/>
+          <TextBlock
+            x:Name="ResultStatus"
+            Foreground="{DynamicResource Muted}"
+            FontSize="12"
+            Margin="0,6,0,0"
+            TextWrapping="Wrap" />
         </StackPanel>
       </DockPanel>
     </Border>
-    <Grid Grid.Row="1" x:Name="ContentGrid">
-      <Grid.ColumnDefinitions><ColumnDefinition x:Name="CatalogColumn" Width="246"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-      <Border x:Name="CatalogPanel" BorderBrush="{DynamicResource Border}" BorderThickness="0,0,1,0" Padding="12">
+    <Grid
+      Grid.Row="1"
+      x:Name="ContentGrid">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition
+          x:Name="CatalogColumn"
+          Width="246" />
+        <ColumnDefinition
+          Width="*" />
+      </Grid.ColumnDefinitions>
+      <Border
+        x:Name="CatalogPanel"
+        BorderBrush="{DynamicResource Border}"
+        BorderThickness="0,0,1,0"
+        Padding="12">
         <DockPanel>
-          <StackPanel DockPanel.Dock="Top" Margin="0,0,0,10">
-            <TextBlock Text="按功能查找" Foreground="{DynamicResource Muted}" Margin="0,0,0,7"/>
-            <ComboBox x:Name="CategoryPicker" SelectionChanged="Category_Changed" AutomationProperties.Name="帮助分类"/>
+          <StackPanel
+            DockPanel.Dock="Top"
+            Margin="0,0,0,10">
+            <TextBlock
+              Text="按功能查找"
+              Foreground="{DynamicResource Muted}"
+              Margin="0,0,0,7" />
+            <ComboBox
+              x:Name="CategoryPicker"
+              SelectionChanged="Category_Changed"
+              AutomationProperties.Name="帮助分类" />
           </StackPanel>
-          <ListBox x:Name="ArticleList" SelectionChanged="Article_Changed" BorderThickness="0" Background="Transparent"
-            Foreground="{DynamicResource Text}" ItemContainerStyle="{StaticResource HelpTopicItem}"
-            ScrollViewer.HorizontalScrollBarVisibility="Disabled" HorizontalContentAlignment="Stretch" AutomationProperties.Name="帮助主题">
+          <ListBox
+            x:Name="ArticleList"
+            SelectionChanged="Article_Changed"
+            BorderThickness="0"
+            Background="Transparent"
+            Foreground="{DynamicResource Text}"
+            ItemContainerStyle="{StaticResource HelpTopicItem}"
+            ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+            HorizontalContentAlignment="Stretch"
+            AutomationProperties.Name="帮助主题">
             <ListBox.ItemTemplate>
               <DataTemplate>
-                <StackPanel Margin="2,6">
-                  <TextBlock Text="{Binding Title}" Foreground="{DynamicResource Text}" FontWeight="SemiBold" TextWrapping="Wrap"/>
-                  <TextBlock Text="{Binding Category}" Foreground="{DynamicResource Muted}" FontSize="11" Margin="0,4,0,0"/>
+                <StackPanel
+                  Margin="2,6">
+                  <TextBlock
+                    Text="{Binding Title}"
+                    Foreground="{DynamicResource Text}"
+                    FontWeight="SemiBold"
+                    TextWrapping="Wrap" />
+                  <TextBlock
+                    Text="{Binding Category}"
+                    Foreground="{DynamicResource Muted}"
+                    FontSize="11"
+                    Margin="0,4,0,0" />
                 </StackPanel>
               </DataTemplate>
             </ListBox.ItemTemplate>
           </ListBox>
         </DockPanel>
       </Border>
-      <Grid Grid.Column="1">
-        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-        <StackPanel Margin="24,18,24,12">
+      <Grid
+        Grid.Column="1">
+        <Grid.RowDefinitions>
+          <RowDefinition
+            Height="Auto" />
+          <RowDefinition
+            Height="*" />
+          <RowDefinition
+            Height="Auto" />
+        </Grid.RowDefinitions>
+        <StackPanel
+          Margin="24,18,24,12">
           <DockPanel>
-            <Button x:Name="CopyButton" Content="复制本篇" Click="CopyArticle_Click" DockPanel.Dock="Right" Margin="12,0,0,0"/>
-            <TextBlock x:Name="ArticleTitle" FontSize="25" FontWeight="SemiBold" TextWrapping="Wrap"/>
+            <Button
+              x:Name="CopyButton"
+              Content="复制本篇"
+              Click="CopyArticle_Click"
+              DockPanel.Dock="Right"
+              Margin="12,0,0,0" />
+            <TextBlock
+              x:Name="ArticleTitle"
+              FontSize="25"
+              FontWeight="SemiBold"
+              TextWrapping="Wrap" />
           </DockPanel>
-          <TextBlock x:Name="ArticleSummary" Foreground="{DynamicResource Muted}" TextWrapping="Wrap" Margin="0,10,0,0"/>
+          <TextBlock
+            x:Name="ArticleSummary"
+            Foreground="{DynamicResource Muted}"
+            TextWrapping="Wrap"
+            Margin="0,10,0,0" />
         </StackPanel>
-        <FlowDocumentScrollViewer x:Name="ArticleBody" Grid.Row="1" IsToolBarVisible="False" Background="Transparent"
-          Foreground="{DynamicResource Text}" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" AutomationProperties.Name="帮助正文"/>
-        <Border Grid.Row="2" Padding="24,10" BorderBrush="{DynamicResource Border}" BorderThickness="0,1,0,0">
+        <FlowDocumentScrollViewer
+          x:Name="ArticleBody"
+          Grid.Row="1"
+          IsToolBarVisible="False"
+          Background="Transparent"
+          Foreground="{DynamicResource Text}"
+          VerticalScrollBarVisibility="Auto"
+          HorizontalScrollBarVisibility="Disabled"
+          AutomationProperties.Name="帮助正文" />
+        <Border
+          Grid.Row="2"
+          Padding="24,10"
+          BorderBrush="{DynamicResource Border}"
+          BorderThickness="0,1,0,0">
           <StackPanel>
-            <TextBlock Text="继续阅读" Foreground="{DynamicResource Muted}" FontSize="12" Margin="0,0,0,6"/>
-            <WrapPanel x:Name="RelatedTopics"/>
+            <TextBlock
+              Text="继续阅读"
+              Foreground="{DynamicResource Muted}"
+              FontSize="12"
+              Margin="0,0,0,6" />
+            <WrapPanel
+              x:Name="RelatedTopics" />
           </StackPanel>
         </Border>
       </Grid>

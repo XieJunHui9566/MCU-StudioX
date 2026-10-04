@@ -10,7 +10,10 @@ using ModelContextProtocol.Authentication;
 internal sealed class EspressifOAuthCallback : IDisposable
 {
     private readonly HttpListener listener = new();
-    public Uri RedirectUri { get; }
+    public Uri RedirectUri
+    {
+        get;
+    }
 
     public EspressifOAuthCallback()
     {

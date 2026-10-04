@@ -96,9 +96,7 @@ def link_shared_tree(source, destination):
 def prepare_python(downloads, output):
     output.mkdir(parents=True, exist_ok=True)
     if not (output / "python.exe").is_file():
-        extract_archive(
-            checked_archive(downloads, "python-3.8.10-embed-amd64.zip"), output
-        )
+        extract_archive(checked_archive(downloads, "python-3.8.10-embed-amd64.zip"), output)
     for path in output.glob("*._pth"):
         require_contained(output, path).unlink()
     python = output / "python.exe"
@@ -191,9 +189,7 @@ def main():
     esptool = prepare_python(downloads, output / "python")
     (output / "idf-tools").mkdir(exist_ok=True)
     # 文件复制/安装不会保留空目录；只读说明确保资源目录在开发版与发行版都存在。
-    (output / "idf-tools" / "README.txt").write_text(
-        TOOLS_STATE_NOTICE, encoding="utf-8"
-    )
+    (output / "idf-tools" / "README.txt").write_text(TOOLS_STATE_NOTICE, encoding="utf-8")
     executables = {
         "python": "python/python.exe",
         "cmake": "cmake/bin/cmake.exe",
@@ -225,9 +221,7 @@ def main():
         "pythonSource": "https://www.python.org/ftp/python/3.8.10/python-3.8.10-embed-amd64.zip",
         "layout": "Legacy SDK/compiler/Python isolated; immutable host tool files shared by hard links",
     }
-    (output / "SOURCE.json").write_text(
-        json.dumps(provenance, indent=2) + "\n", encoding="utf-8"
-    )
+    (output / "SOURCE.json").write_text(json.dumps(provenance, indent=2) + "\n", encoding="utf-8")
     print("Indexing immutable legacy runtime...", flush=True)
     hashes, size, saved = hash_and_deduplicate(output)
     manifest = {
@@ -254,9 +248,7 @@ def main():
         },
         "purpose": "esp8266-rtos-sdk",
     }
-    (output / "toolset.json").write_text(
-        json.dumps(manifest, indent=2) + "\n", encoding="utf-8"
-    )
+    (output / "toolset.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
     print(
         json.dumps(
             {

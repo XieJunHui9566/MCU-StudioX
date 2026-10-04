@@ -6,23 +6,44 @@ using StudioX.Foundation;
 /// <summary>保留目标编译器文件名，在 CMake 检测与引导程序子工程中绑定同一组已锁定工具。</summary>
 internal static class EspressifNativeTools
 {
-    internal const int Revision = 5;
+    internal const int Revision = 7;
 
     internal static async Task<string[]> PrepareAsync(string build, ResolvedToolset tools, EspressifProjectSettings sdk, CancellationToken token)
     {
-        if (!OperatingSystem.IsWindows() || sdk.Framework != "esp-idf") return [];
+        if (!OperatingSystem.IsWindows() || sdk.Framework != "esp-idf")
+        {
+            return [];
+        }
         var target = tools.ForEspressifTarget(sdk.Target);
         var xtensa = EspressifXtensaBinding.Create(tools, sdk);
         var hook = PathBoundary.Resolve(build, "studiox-native-tools.cmake");
         var script = new StringBuilder("# StudioX generated native paths; keep compiler basenames and SDK flags.\n");
+        var sdkDirectory = tools.ResourceDirectory("idf").Replace('\\', '/');
+        var nativeSdkDirectory = EspressifNativePath.For(tools.ResourceDirectory("idf")).Replace('\\', '/');
+        // IDF 的链接片段收集会按空格拆分绝对 SDK 路径，蓝牙控制器片段因此成为不存在的依赖。
+        // 只在生成的 hook 中绑定已锁定 SDK 的原生目录，不改写共享 SDK 或用户片段。
+        script.Append("if(COMMAND __ldgen_add_fragment_files AND NOT COMMAND ___ldgen_add_fragment_files)\n" +
+            "  function(__ldgen_add_fragment_files _studiox_native_fragments)\n" +
+            $"    string(REPLACE \"{sdkDirectory}/\" \"{nativeSdkDirectory}/\" _studiox_native_fragments \"${{_studiox_native_fragments}}\")\n" +
+            "    ___ldgen_add_fragment_files(\"${_studiox_native_fragments}\")\n" +
+            "  endfunction()\n" +
+            "endif()\n");
         foreach (var (variable, role) in new (string, string)[]
         {
             ("CMAKE_C_COMPILER", "gcc"), ("CMAKE_CXX_COMPILER", "gxx"), ("CMAKE_ASM_COMPILER", "gcc"),
             ("CMAKE_AR", "ar"), ("CMAKE_RANLIB", "ranlib"), ("CMAKE_OBJCOPY", "objcopy"), ("CMAKE_OBJDUMP", "objdump")
         })
         {
-            if (!target.Manifest.Executables.ContainsKey(role)) continue;
-            var executable = xtensa is null ? target.Tool(role) : role switch { "gcc" => xtensa.Gcc, "gxx" => xtensa.Gxx, _ => target.Tool(role) };
+            if (!target.Manifest.Executables.ContainsKey(role))
+            {
+                continue;
+            }
+            var executable = xtensa is null ? target.Tool(role) : role switch
+            {
+                "gcc" => xtensa.Gcc,
+                "gxx" => xtensa.Gxx,
+                _ => target.Tool(role)
+            };
             var path = EspressifNativePath.ForExecutable(executable).Replace('\\', '/');
             // 两种绑定都写，避免 CMP0126 政策及已有缓存重新恢复带空格的规范路径。
             script.AppendLine($"set({variable} \"{path}\")");

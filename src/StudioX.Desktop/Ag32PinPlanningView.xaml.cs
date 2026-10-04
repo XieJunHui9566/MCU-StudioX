@@ -146,28 +146,42 @@ public partial class Ag32PinPlanningView : UserControl
 
     public Ag32AnalogSettings GetAnalog()
     {
-        if (AnalogEnabled.IsChecked != true) return new();
+        if (AnalogEnabled.IsChecked != true)
+        {
+            return new();
+        }
         uint channels = 0;
         foreach (var part in AnalogChannels.Text.Split([',', '，'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
         {
             if (!int.TryParse(part, NumberStyles.None, CultureInfo.InvariantCulture, out var bit) || bit is < 0 or > 15)
+            {
                 throw new StudioXException("AG32_ANALOG_CHANNEL", "ADC 通道请填写 0–15 的数字，用逗号分隔；实际可用通道见下方固定引脚表。");
+            }
             channels |= 1u << bit;
         }
         var settings = new Ag32AnalogSettings(true, channels, AnalogDac0.IsChecked == true, AnalogDac1.IsChecked == true, AnalogComparator.IsChecked == true);
-        if (Snapshot is { } snapshot) Ag32PinPlanningService.ValidateAnalogSettings(snapshot.DeviceId, settings);
+        if (Snapshot is { } snapshot)
+        {
+            Ag32PinPlanningService.ValidateAnalogSettings(snapshot.DeviceId, settings);
+        }
         return settings;
     }
 
     private void Analog_Changed(object sender, RoutedEventArgs e)
     {
-        if (loading || AnalogComparator is null) return;
+        if (loading || AnalogComparator is null)
+        {
+            return;
+        }
         MarkChanged();
         UpdateDiagram();
     }
     private void AnalogText_Changed(object sender, TextChangedEventArgs e)
     {
-        if (loading || AnalogComparator is null) return;
+        if (loading || AnalogComparator is null)
+        {
+            return;
+        }
         MarkChanged();
         UpdateDiagram();
     }
@@ -320,7 +334,10 @@ public partial class Ag32PinPlanningView : UserControl
 
     private void UpdatePinDetails()
     {
-        if (PinName is null) { return; }
+        if (PinName is null)
+        {
+            return;
+        }
         var wasLoading = loading;
         loading = true;
         var selected = assignments.FirstOrDefault(item => item.PinNumber == selectedPin);
@@ -357,15 +374,24 @@ public partial class Ag32PinPlanningView : UserControl
     private void PinDirection_Changed(object sender, SelectionChangedEventArgs e) => ChangePinDetails();
     private void ChangePinDetails()
     {
-        if (loading || busy || Snapshot?.CanEdit != true || assignments.FirstOrDefault(item => item.PinNumber == selectedPin) is not { } old) { return; }
+        if (loading || busy || Snapshot?.CanEdit != true || assignments.FirstOrDefault(item => item.PinNumber == selectedPin) is not { } old)
+        {
+            return;
+        }
         var name = PinName.Text.Trim();
         var direction = PinDirection.SelectedValue as string;
         var gpio = old.Function.StartsWith("GPIO", StringComparison.Ordinal);
-        var updated = old with { Name = name.Length == 0 ? null : name,
+        var updated = old with
+        {
+            Name = name.Length == 0 ? null : name,
             Direction = gpio ? string.IsNullOrEmpty(direction) ? null : direction : old.Direction,
             Pull = gpio ? PinPull.SelectedValue as string ?? "NONE" : old.Pull,
-            OutputType = gpio ? direction == "INPUT" ? "PUSH_PULL" : PinOutputType.SelectedValue as string ?? "PUSH_PULL" : old.OutputType };
-        if (updated == old) { return; }
+            OutputType = gpio ? direction == "INPUT" ? "PUSH_PULL" : PinOutputType.SelectedValue as string ?? "PUSH_PULL" : old.OutputType
+        };
+        if (updated == old)
+        {
+            return;
+        }
         loading = true;
         assignments[assignments.IndexOf(old)] = updated;
         AssignmentsGrid.SelectedItem = updated;

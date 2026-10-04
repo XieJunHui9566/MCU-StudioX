@@ -9,7 +9,6 @@ using StudioX.Application.Editing;
 using StudioX.Application.Plugins;
 using StudioX.Engine;
 using StudioX.Extensions;
-using StudioX.Extensions.Abstractions;
 using StudioX.Foundation;
 
 if (args.Length != 4) { throw new ArgumentException("runtime, fixture, sample DLL, NEW output directory required"); }
@@ -95,8 +94,12 @@ Check(row.Files == 1 && row.Bytes == toolBytes.Length, "environment reports actu
 var archive = Path.Combine(root, "fixture.studioxtools");
 await environment.ExportAsync(row, archive, null);
 using (var content = File.OpenRead(archive))
-using (var container = ToolchainArchive.Open(content))
-    Check(container.Container == "7z", "offline tool export uses 7z even with legacy archive extension");
+{
+    using (var container = ToolchainArchive.Open(content))
+    {
+        Check(container.Container == "7z", "offline tool export uses 7z even with legacy archive extension");
+    }
+}
 await File.WriteAllTextAsync(Path.Combine(installed, "tool.exe"), "damaged");
 await Reject(() => environment.VerifyAsync(row, null), "tool verification detects damaged installed payload");
 var backup = await environment.RepairAsync(row, archive, null);
@@ -145,7 +148,10 @@ await using (var manager = new PluginManagerService(runtime, data))
     Check(status.GetProperty("events").GetInt32() == 2 && status.GetProperty("greeting").GetString() == "Test greeting", "settings and document events reach real plugin process");
     var completions = await workspace.CompleteAsync(new("completion", "demo.sxdemo", "pri", 3, 1));
     Check(completions.Any(c => c.Label == "print" && c.Detail == "Test greeting"), "custom language completion returns from plugin process");
-    await workspace.PublishWorkspaceEventAsync("settings.changed", new { showDetails = false });
+    await workspace.PublishWorkspaceEventAsync("settings.changed", new
+    {
+        showDetails = false
+    });
     Check((await workspace.CompleteAsync(new("completion", "demo.sxdemo", "pri", 3, 2))).All(c => c.Detail == ""), "boolean setting changes the example's completion presentation");
     var panel = await workspace.AdaptDebugSnapshotAsync(pluginManifest.Id, "snapshot", JsonSerializer.SerializeToElement(new
     {

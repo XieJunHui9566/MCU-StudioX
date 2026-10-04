@@ -12,7 +12,10 @@ public partial class MainWindow
 
     private void AddPluginActivity(PluginActiveContribution active)
     {
-        if (pluginActivities.ContainsKey(active.Id) || active.Manifest.Activity is not { } definition) return;
+        if (pluginActivities.ContainsKey(active.Id) || active.Manifest.Activity is not { } definition)
+        {
+            return;
+        }
         var title = definition.Title ?? active.Manifest.DisplayName;
         // 入口与图案完全来自插件清单；宿主没有插件 ID 或插件专属图案分支。
         FrameworkElement icon = definition.Icon is { } drawing
@@ -22,7 +25,8 @@ public partial class MainWindow
             new Binding("Foreground") { RelativeSource = new RelativeSource(RelativeSourceMode.FindAncestor, typeof(Button), 1) });
         var button = new Button
         {
-            Content = icon, Style = (Style)FindResource("RailButton"),
+            Content = icon,
+            Style = (Style)FindResource("RailButton"),
             ToolTip = definition.Tooltip ?? title + (string.IsNullOrEmpty(active.Manifest.Description) ? "" : "\n" + active.Manifest.Description)
         };
         AutomationProperties.SetName(button, "插件：" + title);
@@ -38,7 +42,10 @@ public partial class MainWindow
         PluginActivityRail.Children.Add(button);
         button.Click += (_, _) =>
         {
-            if (pluginActivities.TryGetValue(active.Id, out var current) && ReferenceEquals(current, activity)) ShowDocument(tab);
+            if (pluginActivities.TryGetValue(active.Id, out var current) && ReferenceEquals(current, activity))
+            {
+                ShowDocument(tab);
+            }
         };
         tab.IsVisibleChanged += (_, _) => RefreshPluginActivitySelection();
         if (active.Contribution.Panels.Length == 0)
@@ -60,17 +67,26 @@ public partial class MainWindow
 
     private void RemovePluginActivity(string id)
     {
-        if (!pluginActivities.Remove(id, out var activity)) return;
+        if (!pluginActivities.Remove(id, out var activity))
+        {
+            return;
+        }
         PluginActivityRail.Children.Remove(activity.Button);
         var selected = WorkspaceTabs.SelectedItem == activity.Tab;
         activity.Tab.Content = null;
         WorkspaceTabs.Items.Remove(activity.Tab);
-        if (selected) ShowDocument(WelcomeTab);
+        if (selected)
+        {
+            ShowDocument(WelcomeTab);
+        }
     }
 
     private void ClearPluginActivities()
     {
-        foreach (var id in pluginActivities.Keys.ToArray()) RemovePluginActivity(id);
+        foreach (var id in pluginActivities.Keys.ToArray())
+        {
+            RemovePluginActivity(id);
+        }
     }
 
     private sealed record PluginActivity(Button Button, TabItem Tab, StackPanel Body);

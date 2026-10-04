@@ -29,12 +29,21 @@ internal static class EspressifMemoryChecks
                 {
                     throw new InvalidOperationException(name + " SDK statistics cache did not reuse the unchanged native result");
                 }
-                results.Add(new { name, report, cacheReused = true });
+                results.Add(new
+                {
+                    name,
+                    report,
+                    cacheReused = true
+                });
                 await File.WriteAllTextAsync(Path.Combine(output, name + "-memory.json"), JsonSerializer.Serialize(report, JsonStore.Options));
                 Console.WriteLine("PASS native size " + name + " · " + string.Join(", ", report.Targets[0].Regions.Select(region => region.Name + "=" + region.Used)));
             }
         }
-        await File.WriteAllTextAsync(Path.Combine(output, "result.json"), JsonSerializer.Serialize(new { count = results.Count, results }, JsonStore.Options));
+        await File.WriteAllTextAsync(Path.Combine(output, "result.json"), JsonSerializer.Serialize(new
+        {
+            count = results.Count,
+            results
+        }, JsonStore.Options));
         return 0;
     }
 }

@@ -62,9 +62,17 @@ internal static class NativeChecks
         var located = await new FirmwareFaultService(catalog).SymbolizeAsync(project, report);
         check(located.ElfSha256 is not null && located.SymbolInformation.Contains("main") && !located.Evidence.FirmwareMatched, "managed GDB maps imported address to source without device connection");
         await File.AppendAllTextAsync(main, "\n/* changed after build */\n");
-        try { await history.CaptureAsync(project); check(false, "stale build snapshot"); }
+        try
+        {
+            await history.CaptureAsync(project);
+            check(false, "stale build snapshot");
+        }
         catch (StudioXException error) { check(error.Code == "BUILD_HISTORY_STALE", "source change prevents recording stale build as current"); }
-        try { await new FirmwareFaultService(catalog).SymbolizeAsync(project, report); check(false, "stale fault symbols"); }
+        try
+        {
+            await new FirmwareFaultService(catalog).SymbolizeAsync(project, report);
+            check(false, "stale fault symbols");
+        }
         catch (StudioXException error) { check(error.Code == "FAULT_ELF", "source change prevents mapping old fault ELF onto changed source"); }
     }
 }

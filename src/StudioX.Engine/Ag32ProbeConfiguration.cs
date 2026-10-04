@@ -10,18 +10,24 @@ internal static class Ag32ProbeConfiguration
     public static bool IsSupported(DeviceDefinition device) => DebugTargetProfile.Find(device)?.IsAg32 == true;
 
     public static bool IsSupportedProbe(DebugProbeDefinition probe) => probe.Transport == "swd" && (probe.Id switch
-        {
-            "agm-blaster" or "cmsis-dap" => probe.InterfaceScript == "interface/cmsis-dap.cfg",
-            "jlink" => probe.InterfaceScript == "interface/jlink.cfg",
-            _ => false
-        });
+    {
+        "agm-blaster" or "cmsis-dap" => probe.InterfaceScript == "interface/cmsis-dap.cfg",
+        "jlink" => probe.InterfaceScript == "interface/jlink.cfg",
+        _ => false
+    });
 
     public static DownloadOptions NormalizeOptions(DeviceDefinition device, DownloadOptions options) =>
-        IsSupported(device) && options.ProbeId == "agm-blaster" ? options with { ProbeId = "cmsis-dap" } : options;
+        IsSupported(device) && options.ProbeId == "agm-blaster" ? options with
+        {
+            ProbeId = "cmsis-dap"
+        } : options;
 
     public static DownloadConfiguration Normalize(DownloadConfiguration configuration)
     {
-        if (!IsSupported(configuration.Device)) { return configuration; }
+        if (!IsSupported(configuration.Device))
+        {
+            return configuration;
+        }
         var definition = configuration.OpenOcd;
         if (!Ag32PinMappingTargetScript.IsSupportedPath(definition.TargetScript) ||
             definition.TargetScript != configuration.Device.OpenOcd!.TargetScript || definition.ApplicationFlashBytes != 0x27000 ||
@@ -39,6 +45,10 @@ internal static class Ag32ProbeConfiguration
                 new("jlink", "J-Link（V9 及以上）", "interface/jlink.cfg", "swd", 1000)
             ]
         };
-        return configuration with { OpenOcd = definition, Options = NormalizeOptions(configuration.Device, configuration.Options) };
+        return configuration with
+        {
+            OpenOcd = definition,
+            Options = NormalizeOptions(configuration.Device, configuration.Options)
+        };
     }
 }

@@ -3,8 +3,8 @@ namespace StudioX.Desktop;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using StudioX.Application.Editing;
 using StudioX.Application.CodeIntelligence;
+using StudioX.Application.Editing;
 
 public partial class MainWindow
 {
@@ -132,14 +132,20 @@ public partial class MainWindow
             Owner = this
         };
         bool accepted;
-        try { accepted = picker.ShowDialog() == true; }
+        try
+        {
+            accepted = picker.ShowDialog() == true;
+        }
         finally
         {
             // 输入取消只撤销旧查询，关闭窗口才停止共享扫描；任务结束前不释放其取消源。
             discoveryLifetime.Cancel();
             if (fileIndex is not null)
             {
-                try { await fileIndex; }
+                try
+                {
+                    await fileIndex;
+                }
                 catch (OperationCanceledException) when (discoveryLifetime.IsCancellationRequested) { }
                 catch (Exception ex) { Log(ex.ToString()); }
             }

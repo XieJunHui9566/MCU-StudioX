@@ -1,7 +1,7 @@
 namespace StudioX.Application.Plugins;
 
-using System.Security.Cryptography;
 using System.IO.Compression;
+using System.Security.Cryptography;
 using System.Text.Json;
 using StudioX.Extensions;
 using StudioX.Foundation;
@@ -92,7 +92,10 @@ public sealed class PluginManagerService : IAsyncDisposable
         var parent = PathBoundary.Resolve(rollbackDirectory, manifest.Id);
         Directory.CreateDirectory(parent);
         var archive = PathBoundary.Resolve(parent, manifest.Version + "-" + fingerprint + ".studioxplugin");
-        if (File.Exists(archive)) { return; }
+        if (File.Exists(archive))
+        {
+            return;
+        }
         var temp = archive + ".partial";
         try
         {
@@ -108,16 +111,25 @@ public sealed class PluginManagerService : IAsyncDisposable
         PackValidator.Token(id);
         var parent = PathBoundary.Resolve(rollbackDirectory, id);
         var result = new List<PluginRollbackVersion>();
-        if (!Directory.Exists(parent)) { return result; }
+        if (!Directory.Exists(parent))
+        {
+            return result;
+        }
         foreach (var file in Directory.EnumerateFiles(parent, "*.studioxplugin"))
         {
             token.ThrowIfCancellationRequested();
             using var zip = ZipFile.OpenRead(file);
             var entry = zip.GetEntry("plugin.json") ?? throw new StudioXException("PLUGIN_ROLLBACK", "回退归档缺少清单。");
-            if (entry.Length > 1024 * 1024) { throw new StudioXException("PLUGIN_ROLLBACK", "回退清单过大。"); }
+            if (entry.Length > 1024 * 1024)
+            {
+                throw new StudioXException("PLUGIN_ROLLBACK", "回退清单过大。");
+            }
             using var reader = new StreamReader(entry.Open());
             var manifest = JsonSerializer.Deserialize<PluginManifest>(reader.ReadToEnd(), JsonStore.Options) ?? throw new StudioXException("PLUGIN_ROLLBACK", "回退清单为空。");
-            if (manifest.Id != id) { throw new StudioXException("PLUGIN_ROLLBACK", "回退归档身份不一致。"); }
+            if (manifest.Id != id)
+            {
+                throw new StudioXException("PLUGIN_ROLLBACK", "回退归档身份不一致。");
+            }
             using var stream = File.OpenRead(file);
             result.Add(new(id, manifest.Version, file, Convert.ToHexString(SHA256.HashData(stream))));
         }

@@ -10,15 +10,19 @@
     <ApplicationIcon>Assets/StudioX.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
-    <Content Include="../../licenses/SharpCompress-MIT.txt;../../licenses/SharpCompress-NOTICE.md"
-      Link="licenses/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content
+      Include="../../licenses/SharpCompress-MIT.txt;../../licenses/SharpCompress-NOTICE.md"
+      Link="licenses/%(Filename)%(Extension)"
+      CopyToOutputDirectory="PreserveNewest"
+      CopyToPublishDirectory="PreserveNewest" />
     <Resource
       Include="Assets/StudioX.ico" />
   </ItemGroup>
   <PropertyGroup>
     <StudioXRuntimeAssetsDirectory
       Condition="'$(StudioXRuntimeAssetsDirectory)' == ''">$(MSBuildThisFileDirectory)../../artifacts/tool-runtime</StudioXRuntimeAssetsDirectory>
-    <StudioXDistributionProfile Condition="'$(StudioXDistributionProfile)' == ''">full</StudioXDistributionProfile>
+    <StudioXDistributionProfile
+      Condition="'$(StudioXDistributionProfile)' == ''">full</StudioXDistributionProfile>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference
@@ -256,18 +260,25 @@
       CopyToPublishDirectory="PreserveNewest"
       Condition="!Exists('$(StudioXRuntimeAssetsDirectory)/THIRD-PARTY-NOTICES.txt')" />
   </ItemGroup>
-  <Target Name="ValidateStudioXDistributionProfile" BeforeTargets="PrepareForBuild">
-    <Error Condition="'$(StudioXDistributionProfile)' != 'full' and '$(StudioXDistributionProfile)' != 'light'"
+  <Target
+    Name="ValidateStudioXDistributionProfile"
+    BeforeTargets="PrepareForBuild">
+    <Error
+      Condition="'$(StudioXDistributionProfile)' != 'full' and '$(StudioXDistributionProfile)' != 'light'"
       Text="StudioXDistributionProfile must be full or light." />
   </Target>
   <!-- MSBuild 会从所有 Content 自动寻找 app.config；SDK 示例配置不能成为 IDE 的配置。 -->
-  <Target Name="KeepDesktopApplicationConfiguration" AfterTargets="PrepareForBuild">
+  <Target
+    Name="KeepDesktopApplicationConfiguration"
+    AfterTargets="PrepareForBuild">
     <ItemGroup>
-      <AppConfigWithTargetPath Remove="@(AppConfigWithTargetPath)"
+      <AppConfigWithTargetPath
+        Remove="@(AppConfigWithTargetPath)"
         Condition="'%(AppConfigWithTargetPath.FullPath)' != '$(MSBuildProjectDirectory)\App.config'" />
     </ItemGroup>
     <PropertyGroup>
-      <AppConfig Condition="'@(AppConfigWithTargetPath)' == ''"></AppConfig>
+      <AppConfig
+        Condition="'@(AppConfigWithTargetPath)' == ''"></AppConfig>
     </PropertyGroup>
   </Target>
 </Project>

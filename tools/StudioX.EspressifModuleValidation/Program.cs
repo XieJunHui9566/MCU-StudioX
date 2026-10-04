@@ -5,7 +5,7 @@ using StudioX.Foundation;
 
 if (args is not [var runtimeArgument, var projectsArgument, var outputArgument, var groupsArgument])
 {
-    Console.Error.WriteLine("Usage: StudioX.EspressifModuleValidation <runtime> <official-projects> <output> <offline,s3,c5,p4,classic,legacy,focused>");
+    Console.Error.WriteLine("Usage: StudioX.EspressifModuleValidation <runtime> <official-projects> <output> <offline,s3,c5,p4,classic,legacy,focused,config>");
     return 2;
 }
 var runtime = Path.GetFullPath(runtimeArgument);
@@ -20,19 +20,68 @@ foreach (var group in groupsArgument.Split(','))
     Console.WriteLine("GROUP " + group);
     switch (group)
     {
-        case "offline": await OfflineAsync(); break;
-        case "s3": await S3Async(); break;
-        case "c5": await C5Async(); break;
-        case "p4": await P4Async(); break;
-        case "classic": await ClassicAsync(); break;
-        case "legacy": await LegacyAsync(); break;
-        case "focused": await FocusedAsync(); break;
-        default: throw new ArgumentException("Unknown validation group: " + group);
+        case "offline":
+            await OfflineAsync();
+            break;
+        case "s3":
+            await S3Async();
+            break;
+        case "c5":
+            await C5Async();
+            break;
+        case "p4":
+            await P4Async();
+            break;
+        case "classic":
+            await ClassicAsync();
+            break;
+        case "legacy":
+            await LegacyAsync();
+            break;
+        case "focused":
+            await FocusedAsync();
+            break;
+        case "config":
+            ConfigValues();
+            break;
+        default:
+            throw new ArgumentException("Unknown validation group: " + group);
     }
-    await File.WriteAllTextAsync(Path.Combine(output, "result.json"), JsonSerializer.Serialize(new { count = assertions.Count, assertions }, JsonStore.Options));
+    await File.WriteAllTextAsync(Path.Combine(output, "result.json"), JsonSerializer.Serialize(new
+    {
+        count = assertions.Count,
+        assertions
+    }, JsonStore.Options));
 }
 Console.WriteLine("PASS " + assertions.Count + " module assertions; no device connection.");
 return 0;
+
+void ConfigValues()
+{
+    var parser = typeof(BuildService).Assembly.GetType("StudioX.Engine.EspressifModuleSdkConfig")!
+        .GetMethod("ReadValues", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!;
+    Dictionary<string, string> Parse(params string[] lines) => (Dictionary<string, string>)parser.Invoke(null, [lines])!;
+    var values = Parse("CONFIG_ESP32_WIFI_AMPDU_RX_ENABLED=y", "CONFIG_ESP32_WIFI_AMPDU_RX_ENABLED=y",
+        "CONFIG_ESP32_WIFI_DYNAMIC_RX_BUFFER_NUM=32", "CONFIG_ESP32_WIFI_DYNAMIC_RX_BUFFER_NUM=32",
+        "CONFIG_ESPTOOLPY_FLASHSIZE=\"4MB\"", "CONFIG_ESPTOOLPY_FLASHSIZE=\"4MB\"", "# CONFIG_DISABLED is not set");
+    Check(values.Count == 3 && values["CONFIG_ESP32_WIFI_AMPDU_RX_ENABLED"] == "y" &&
+        values["CONFIG_ESP32_WIFI_DYNAMIC_RX_BUFFER_NUM"] == "32" && values["CONFIG_ESPTOOLPY_FLASHSIZE"] == "4MB",
+        "Identical IDF deprecated aliases accepted without losing values");
+    foreach (var pair in new[] { new[] { "CONFIG_FLASH=y", "CONFIG_FLASH=n" }, new[] { "CONFIG_SIZE=4", "CONFIG_SIZE=8" },
+        new[] { "CONFIG_MODE=\"dio\"", "CONFIG_MODE=\"qio\"" } })
+    {
+        try
+        {
+            Parse(pair);
+            throw new InvalidOperationException("Conflicting configuration accepted");
+        }
+        catch (System.Reflection.TargetInvocationException ex) when (ex.InnerException is StudioXException error &&
+            error.Message.Contains("冲突的重复项", StringComparison.Ordinal))
+        {
+            Check(true, "Conflicting sdkconfig values rejected: " + pair[0]);
+        }
+    }
+}
 
 async Task OfflineAsync()
 {
@@ -43,7 +92,13 @@ async Task OfflineAsync()
         var original = await InputHashesAsync(root);
         Check(await builds.LoadEspressifModuleSettingsAsync(root) == new EspressifModuleSettings(), target + " defaults to native SDK");
         var capabilities = await builds.ReadEspressifModuleCapabilitiesAsync(root);
-        Check(capabilities.FlashSizesMb.Max() == (target switch { "esp32s3" => 128, "esp32p4" => 64, "esp32c5" => 32, _ => 16 }), target + " flash choices respect verified SoC limits");
+        Check(capabilities.FlashSizesMb.Max() == (target switch
+        {
+            "esp32s3" => 128,
+            "esp32p4" => 64,
+            "esp32c5" => 32,
+            _ => 16
+        }), target + " flash choices respect verified SoC limits");
         var profiles = await builds.ListEspressifModuleProfilesAsync(root);
         Check(profiles.Count > 0 && capabilities.Target == target, target + " exposes target-specific capabilities and official profiles");
         foreach (var profile in profiles)
@@ -254,7 +309,10 @@ string CopyProject(string target, string name)
 {
     var source = target == "esp8266" ? Path.GetFullPath(Path.Combine(projects, "../../espressif-projects-current/projects/esp8266_hello_world")) : Path.Combine(projects, target + "_hello_world");
     var root = Path.Combine(output, name);
-    if (File.Exists(PathBoundary.Resolve(root, ".studiox/project.json"))) { return root; }
+    if (File.Exists(PathBoundary.Resolve(root, ".studiox/project.json")))
+    {
+        return root;
+    }
     Directory.CreateDirectory(root);
     foreach (var directory in Directory.EnumerateDirectories(source, "*", SearchOption.AllDirectories).Where(Included))
     {
@@ -296,12 +354,19 @@ async Task BuildAsync(string root, string name)
 }
 async Task RejectAsync(Func<Task> action, string code, string message)
 {
-    try { await action(); throw new InvalidOperationException("Expected rejection: " + message); }
+    try
+    {
+        await action();
+        throw new InvalidOperationException("Expected rejection: " + message);
+    }
     catch (StudioXException exception) when (exception.Code == code) { Check(true, message); }
 }
 void Check(bool passed, string message)
 {
-    if (!passed) { throw new InvalidOperationException(message); }
+    if (!passed)
+    {
+        throw new InvalidOperationException(message);
+    }
     assertions.Add(message);
     Console.WriteLine("PASS " + message);
 }

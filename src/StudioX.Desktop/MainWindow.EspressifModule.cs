@@ -42,14 +42,23 @@ public partial class MainWindow
         var settingsTask = services.Builds.LoadEspressifModuleSettingsAsync(directory);
         var profilesTask = services.Builds.ListEspressifModuleProfilesAsync(directory);
         var capabilitiesTask = services.Builds.ReadEspressifModuleCapabilitiesAsync(directory);
-        try { await Task.WhenAll(settingsTask, profilesTask, capabilitiesTask); }
+        try
+        {
+            await Task.WhenAll(settingsTask, profilesTask, capabilitiesTask);
+        }
         catch (Exception ex)
         {
-            if (IsCurrentEspressifModuleProject(directory, revision)) { EspressifModuleStatus.Text = "读取配置失败：" + ex.Message; }
+            if (IsCurrentEspressifModuleProject(directory, revision))
+            {
+                EspressifModuleStatus.Text = "读取配置失败：" + ex.Message;
+            }
             throw;
         }
         // 页面读取可以晚于工程切换；旧工程的配置不能回填到新工程。
-        if (!IsCurrentEspressifModuleProject(directory, revision)) { return; }
+        if (!IsCurrentEspressifModuleProject(directory, revision))
+        {
+            return;
+        }
         espressifModuleProfiles = await profilesTask;
         espressifModuleCapabilities = await capabilitiesTask;
         applyingEspressifModule = true;
@@ -87,7 +96,11 @@ public partial class MainWindow
 
     private static string PsramLabel(string mode) => mode switch
     {
-        "disabled" => "关闭", "quad" => "Quad（4线）", "octal" => "Octal（8线）", "hex" => "HEX（16线）", _ => mode
+        "disabled" => "关闭",
+        "quad" => "Quad（4线）",
+        "octal" => "Octal（8线）",
+        "hex" => "HEX（16线）",
+        _ => mode
     };
 
     private void ApplyEspressifModuleSettings(EspressifModuleSettings settings)
@@ -121,9 +134,19 @@ public partial class MainWindow
     {
         settings = new();
         error = "";
-        if (EspressifModuleProfilePicker.SelectedItem is not EspressifModuleChoice choice) { return false; }
-        if (choice.Profile is { } profile) { settings = profile.Settings; return true; }
-        if (choice.Id == "inherit") { return true; }
+        if (EspressifModuleProfilePicker.SelectedItem is not EspressifModuleChoice choice)
+        {
+            return false;
+        }
+        if (choice.Profile is { } profile)
+        {
+            settings = profile.Settings;
+            return true;
+        }
+        if (choice.Id == "inherit")
+        {
+            return true;
+        }
         var psramMode = ModuleValue<string?>(EspressifPsramModePicker);
         int? psramSize = null;
         if (psramMode is not (null or "disabled") && EspressifPsramSizeBox.Text.Trim() is { Length: > 0 } text)
@@ -145,7 +168,10 @@ public partial class MainWindow
 
     private void EspressifModuleProfile_Changed(object sender, SelectionChangedEventArgs e)
     {
-        if (applyingEspressifModule || loadedEspressifModule is null) { return; }
+        if (applyingEspressifModule || loadedEspressifModule is null)
+        {
+            return;
+        }
         applyingEspressifModule = true;
         if (EspressifModuleProfilePicker.SelectedItem is EspressifModuleChoice { Profile: { } profile })
         {
@@ -161,7 +187,10 @@ public partial class MainWindow
 
     private void EspressifModuleParameter_Changed(object sender, SelectionChangedEventArgs e)
     {
-        if (applyingEspressifModule || loadedEspressifModule is null) { return; }
+        if (applyingEspressifModule || loadedEspressifModule is null)
+        {
+            return;
+        }
         if (ReferenceEquals(sender, EspressifPsramModePicker) && ModuleValue<string?>(EspressifPsramModePicker) is null or "disabled")
         {
             applyingEspressifModule = true;
@@ -173,7 +202,10 @@ public partial class MainWindow
 
     private void EspressifPsramSize_Changed(object sender, TextChangedEventArgs e)
     {
-        if (!applyingEspressifModule && loadedEspressifModule is not null) { UpdateEspressifModuleDirtyStatus(); }
+        if (!applyingEspressifModule && loadedEspressifModule is not null)
+        {
+            UpdateEspressifModuleDirtyStatus();
+        }
     }
 
     private void UpdateEspressifModuleDirtyStatus()
@@ -185,7 +217,10 @@ public partial class MainWindow
 
     private void UpdateEspressifModuleControls()
     {
-        if (EspressifModuleEditor is null) { return; }
+        if (EspressifModuleEditor is null)
+        {
+            return;
+        }
         var enabled = IsEspressifProject && projectDirectory is not null && loadedEspressifModule is not null &&
             espressifModuleCapabilities is not null && !projectActionsBusy && !services.Debugger.IsActive;
         EspressifModuleEditor.IsEnabled = enabled;
@@ -214,13 +249,22 @@ public partial class MainWindow
         await RunAsync(async token =>
         {
             EnsureNoActiveDebug();
-            try { await services.Builds.SaveEspressifModuleSettingsAsync(directory, settings, token); }
+            try
+            {
+                await services.Builds.SaveEspressifModuleSettingsAsync(directory, settings, token);
+            }
             catch (Exception ex)
             {
-                if (IsCurrentEspressifModuleProject(directory, revision)) { EspressifModuleStatus.Text = ex.Message; }
+                if (IsCurrentEspressifModuleProject(directory, revision))
+                {
+                    EspressifModuleStatus.Text = ex.Message;
+                }
                 throw;
             }
-            if (!IsCurrentEspressifModuleProject(directory, revision)) { return; }
+            if (!IsCurrentEspressifModuleProject(directory, revision))
+            {
+                return;
+            }
             loadedEspressifModule = settings;
             BuildMemory.SetMessage("模组与存储配置已修改，重新编译后更新占用。");
             await RefreshEspressifModuleEditorAsync(directory, revision, token);
@@ -236,13 +280,19 @@ public partial class MainWindow
         if (FindEditor(EspressifModuleSettings.RelativePath) is { } session)
         {
             var disk = await services.Files.ReadAsync(directory, EspressifModuleSettings.RelativePath, token);
-            if (!IsCurrentEspressifModuleProject(directory, revision)) { return; }
+            if (!IsCurrentEspressifModuleProject(directory, revision))
+            {
+                return;
+            }
             if (EditorSynchronizer.Apply(session, disk) == EditorDiskSyncResult.UnsavedChangesPreserved)
             {
                 Log("模组设置已落盘；编辑器存在未保存修改，保留缓冲区并等待用户核对。");
             }
         }
-        if (IsCurrentEspressifModuleProject(directory, revision)) { await RefreshProjectTreeAsync(token: token); }
+        if (IsCurrentEspressifModuleProject(directory, revision))
+        {
+            await RefreshProjectTreeAsync(token: token);
+        }
     }
 
     private void CancelEspressifModule_Click(object sender, RoutedEventArgs e)

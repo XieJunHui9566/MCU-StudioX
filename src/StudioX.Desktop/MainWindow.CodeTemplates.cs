@@ -1,6 +1,5 @@
 namespace StudioX.Desktop;
 
-using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using ICSharpCode.AvalonEdit.Document;
@@ -27,32 +26,56 @@ public partial class MainWindow
 
     private async Task ShowCodeTemplatesAsync()
     {
-        var target = CaptureTemplateTarget(); var project = projectDirectory;
+        var target = CaptureTemplateTarget();
+        var project = projectDirectory;
         CloseCodeAssistance();
         try
         {
             var library = await services.CodeTemplates.LoadAsync(project);
-            if (closing || project != projectDirectory) { return; }
+            if (closing || project != projectDirectory)
+            {
+                return;
+            }
             var manager = new CodeTemplateWindow(services.CodeTemplates, project, library, target is null ? null : CodeLanguage.ForFile(target.Session.Source.RelativePath), target is not null, Log) { Owner = this };
-            if (manager.ShowDialog() == true && manager.Selected is { } selected && target is not null) { InsertCodeTemplate(selected.Template, target); }
+            if (manager.ShowDialog() == true && manager.Selected is { } selected && target is not null)
+            {
+                InsertCodeTemplate(selected.Template, target);
+            }
         }
         catch (Exception ex) { Status.Text = "代码模板：" + ex.Message; Log(ex.ToString()); }
     }
 
     private async Task SaveCodeSelectionAsync()
     {
-        if (CaptureTemplateTarget() is not { Length: > 0 } target) { return; }
-        if (target.Length > CodeTemplateService.MaximumBodyLength) { Status.Text = "选区超过 65,536 字符，请缩小后保存为模板。"; return; }
+        if (CaptureTemplateTarget() is not { Length: > 0 } target)
+        {
+            return;
+        }
+        if (target.Length > CodeTemplateService.MaximumBodyLength)
+        {
+            Status.Text = "选区超过 65,536 字符，请缩小后保存为模板。";
+            return;
+        }
         var body = CodeTemplateExpander.CaptureSelection(target.Document.Text, target.Start, target.Length);
-        if (body.Length > CodeTemplateService.MaximumBodyLength) { Status.Text = "选区转义后超过模板正文上限，请缩小选区。"; return; }
+        if (body.Length > CodeTemplateService.MaximumBodyLength)
+        {
+            Status.Text = "选区转义后超过模板正文上限，请缩小选区。";
+            return;
+        }
         var template = new CodeTemplate(Guid.NewGuid().ToString("N"), "", "", CodeLanguage.ForFile(target.Session.Source.RelativePath), "", body);
         CloseCodeAssistance();
         try
         {
             var library = await services.CodeTemplates.LoadAsync(target.Project);
-            if (closing || target.Project != projectDirectory) { return; }
+            if (closing || target.Project != projectDirectory)
+            {
+                return;
+            }
             var editor = new CodeTemplateEditorWindow(services.CodeTemplates, target.Project, library, template, CodeTemplateScope.User, false, Log) { Owner = this };
-            if (editor.ShowDialog() == true) { Status.Text = "已保存代码模板：" + editor.Saved!.Name; }
+            if (editor.ShowDialog() == true)
+            {
+                Status.Text = "已保存代码模板：" + editor.Saved!.Name;
+            }
         }
         catch (Exception ex) { Status.Text = "保存代码模板：" + ex.Message; Log(ex.ToString()); }
     }
@@ -65,7 +88,11 @@ public partial class MainWindow
     private void InsertCodeTemplate(CodeTemplate template, TemplateInsertionTarget target)
     {
         CloseCodeAssistance();
-        if (!TemplateTargetCurrent(target)) { Status.Text = "文件或编辑状态已变化，请重新选择插入位置。"; return; }
+        if (!TemplateTargetCurrent(target))
+        {
+            Status.Text = "文件或编辑状态已变化，请重新选择插入位置。";
+            return;
+        }
         try
         {
             var snapshot = target.Document.Text;
@@ -75,18 +102,31 @@ public partial class MainWindow
             if (CodeTemplateExpander.Describe(template.Body).Count > 0)
             {
                 var variables = new CodeTemplateVariablesWindow(template, Expand) { Owner = this };
-                if (variables.ShowDialog() != true || variables.Expansion is null) { return; }
+                if (variables.ShowDialog() != true || variables.Expansion is null)
+                {
+                    return;
+                }
                 expansion = variables.Expansion;
             }
-            else { expansion = Expand(new Dictionary<string, string>()); }
-            if (ApplyCodeTemplate(target, expansion)) { Status.Text = "已插入代码模板：" + template.Name + " · Ctrl+Z 可撤销"; }
+            else
+            {
+                expansion = Expand(new Dictionary<string, string>());
+            }
+            if (ApplyCodeTemplate(target, expansion))
+            {
+                Status.Text = "已插入代码模板：" + template.Name + " · Ctrl+Z 可撤销";
+            }
         }
         catch (Exception ex) { Status.Text = "插入代码模板：" + ex.Message; Log(ex.ToString()); }
     }
 
     private bool ApplyCodeTemplate(TemplateInsertionTarget target, CodeTemplateExpansion expansion)
     {
-        if (!TemplateTargetCurrent(target)) { Status.Text = "文件已变化或变为只读，请重新选择插入位置。"; return false; }
+        if (!TemplateTargetCurrent(target))
+        {
+            Status.Text = "文件已变化或变为只读，请重新选择插入位置。";
+            return false;
+        }
         using (target.Document.RunUpdate())
         {
             target.Document.Replace(target.Start, target.Length, expansion.Text);

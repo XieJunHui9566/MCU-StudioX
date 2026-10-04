@@ -11,9 +11,18 @@ public abstract class LabPlugin : IStudioXPlugin
     private LabResult? result;
     private long revision;
 
-    public abstract string Title { get; }
-    protected abstract string Introduction { get; }
-    protected abstract JsonElement Schema { get; }
+    public abstract string Title
+    {
+        get;
+    }
+    protected abstract string Introduction
+    {
+        get;
+    }
+    protected abstract JsonElement Schema
+    {
+        get;
+    }
     protected abstract PluginPanelWidget[] Inputs(JsonElement values);
     public abstract LabResult Calculate(JsonElement values);
 
@@ -36,27 +45,51 @@ public abstract class LabPlugin : IStudioXPlugin
         if (kind == "command" && id == "open")
         {
             await active.PublishPanelAsync(Panel(), cancellationToken);
-            return LabPanel.Json(new { ok = true });
+            return LabPanel.Json(new
+            {
+                ok = true
+            });
         }
-        if (kind is not ("command" or "agentTool") || id != "calculate") throw new ArgumentException("未知插件命令。");
-        if (arguments.ValueKind != JsonValueKind.Object) throw new ArgumentException("参数必须是对象。");
+        if (kind is not ("command" or "agentTool") || id != "calculate")
+        {
+            throw new ArgumentException("未知插件命令。");
+        }
+        if (arguments.ValueKind != JsonValueKind.Object)
+        {
+            throw new ArgumentException("参数必须是对象。");
+        }
         var values = arguments.TryGetProperty("values", out var submitted) ? submitted : arguments;
         // 从命令面板调用时没有表单参数，重复计算上次输入，避免意外切回默认示例。
-        if (kind == "command" && !arguments.TryGetProperty("values", out _)) values = input;
+        if (kind == "command" && !arguments.TryGetProperty("values", out _))
+        {
+            values = input;
+        }
         try
         {
-            if (values.ValueKind != JsonValueKind.Object) throw new ArgumentException("表单参数必须是对象。");
+            if (values.ValueKind != JsonValueKind.Object)
+            {
+                throw new ArgumentException("表单参数必须是对象。");
+            }
             var computed = Calculate(values);
             cancellationToken.ThrowIfCancellationRequested();
             input = values.Clone();
             result = computed;
             await active.PublishPanelAsync(Panel(), cancellationToken);
-            return LabPanel.Json(new { ok = true, data = computed.Data, copyText = computed.CopyText });
+            return LabPanel.Json(new
+            {
+                ok = true,
+                data = computed.Data,
+                copyText = computed.CopyText
+            });
         }
         catch (ArgumentException error) when (kind == "command")
         {
             await active.PublishPanelAsync(Panel(error.Message), cancellationToken);
-            return LabPanel.Json(new { ok = false, error = error.Message });
+            return LabPanel.Json(new
+            {
+                ok = false,
+                error = error.Message
+            });
         }
     }
 
@@ -71,7 +104,10 @@ public abstract class LabPlugin : IStudioXPlugin
         var widgets = new List<PluginPanelWidget> { LabPanel.Text("intro", "", Introduction) };
         widgets.Add(new("controls", "form", "试一试", Children:
             [.. Inputs(input), new("calculate", "button", "计算 / 生成", CommandId: "calculate")]));
-        if (error is not null) widgets.Add(LabPanel.Text("error", "输入错误 / Error", error + " 下方保留上次成功结果。"));
+        if (error is not null)
+        {
+            widgets.Add(LabPanel.Text("error", "输入错误 / Error", error + " 下方保留上次成功结果。"));
+        }
         if (result is { } current)
         {
             widgets.AddRange(current.Widgets);

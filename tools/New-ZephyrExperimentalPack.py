@@ -50,10 +50,7 @@ def collect_payload() -> dict[str, bytes]:
 
 def archive_bytes(payload: dict[str, bytes]) -> bytes:
     # 索引覆盖原始资源，索引自身不递归计算；ZIP 时间戳固定以便核对重复构建。
-    checksums = {
-        name: hashlib.sha256(data).hexdigest()
-        for name, data in sorted(payload.items())
-    }
+    checksums = {name: hashlib.sha256(data).hexdigest() for name, data in sorted(payload.items())}
     indexed_payload = dict(payload)
     indexed_payload["files.sha256.json"] = (
         json.dumps(checksums, ensure_ascii=False, indent=2) + "\n"
@@ -73,7 +70,9 @@ def archive_bytes(payload: dict[str, bytes]) -> bytes:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--output", type=Path, required=True, help="Output directory for the .mcupack")
+    parser.add_argument(
+        "--output", type=Path, required=True, help="Output directory for the .mcupack"
+    )
     args = parser.parse_args()
 
     output = args.output.resolve()
@@ -86,11 +85,15 @@ def main() -> None:
     archive = output / f"{PACK_ID}-{PACK_VERSION}.mcupack"
     if archive.exists():
         if archive.read_bytes() != data:
-            raise FileExistsError(f"Existing package differs; choose another output directory: {archive}")
+            raise FileExistsError(
+                f"Existing package differs; choose another output directory: {archive}"
+            )
     else:
         archive.write_bytes(data)
 
-    print(f"{archive} ({len(payload)} indexed resources, SHA-256 {hashlib.sha256(data).hexdigest()})")
+    print(
+        f"{archive} ({len(payload)} indexed resources, SHA-256 {hashlib.sha256(data).hexdigest()})"
+    )
 
 
 if __name__ == "__main__":

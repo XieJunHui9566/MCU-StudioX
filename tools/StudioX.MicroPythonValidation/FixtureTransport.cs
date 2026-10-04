@@ -34,8 +34,14 @@ internal sealed class FixtureTransport(string python, string root, MicroPythonPr
     {
         get; set;
     }
-    public bool RunForeverNext { get; set; }
-    public int Interrupts { get; private set; }
+    public bool RunForeverNext
+    {
+        get; set;
+    }
+    public int Interrupts
+    {
+        get; private set;
+    }
     public void StreamOutput(string text) => incoming.Writer.TryWrite(Encoding.UTF8.GetBytes(text));
     public void FinishRun() => Reply("\x04\x04>"u8.ToArray());
     public List<string> Commands { get; } = [];
@@ -78,7 +84,10 @@ internal sealed class FixtureTransport(string python, string root, MicroPythonPr
             }
             else if (value == 3 || value == 2)
             {
-                if (value == 3) { Interrupts++; }
+                if (value == 3)
+                {
+                    Interrupts++;
+                }
                 code.Clear();
             }
             else if (value == 4)

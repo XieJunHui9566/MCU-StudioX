@@ -1,5 +1,5 @@
-using System.Globalization;
 using System.Diagnostics;
+using System.Globalization;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -9,20 +9,29 @@ using StudioX.Engine.Debugging;
 var checks = new List<string>();
 void Check(bool value, string name)
 {
-    if (!value) { throw new InvalidOperationException(name); }
+    if (!value)
+    {
+        throw new InvalidOperationException(name);
+    }
     checks.Add(name);
     Console.WriteLine("PASS " + name);
 }
 async Task Reject(Func<Task> action, string name)
 {
-    try { await action(); }
+    try
+    {
+        await action();
+    }
     catch (Exception) { Check(true, name); return; }
     throw new InvalidOperationException("Expected rejection: " + name);
 }
 async Task WaitUntil(Func<bool> condition)
 {
     using var timeout = new CancellationTokenSource(5000);
-    while (!condition()) { await Task.Delay(10, timeout.Token); }
+    while (!condition())
+    {
+        await Task.Delay(10, timeout.Token);
+    }
 }
 
 Check(PlotScalarCodec.Decode([0xff], PlotScalar.Int8, true) == -1, "signed byte");
@@ -70,11 +79,13 @@ await using (var listener = new TestServer(async stream =>
     await Task.Delay(15);
     await stream.WriteAsync(Encoding.UTF8.GetBytes("2 3 4\x1a"));
 }))
-await using (var client = new OpenOcdMemoryClient())
 {
-    await client.ConnectAsync(listener.Port, CancellationToken.None);
-    Check((await client.ReadAsync(0x20000010, 4, CancellationToken.None)).SequenceEqual(new byte[] { 1, 2, 3, 4 }), "fragmented TCP frame assembled");
-    await listener.Completion;
+    await using (var client = new OpenOcdMemoryClient())
+    {
+        await client.ConnectAsync(listener.Port, CancellationToken.None);
+        Check((await client.ReadAsync(0x20000010, 4, CancellationToken.None)).SequenceEqual(new byte[] { 1, 2, 3, 4 }), "fragmented TCP frame assembled");
+        await listener.Completion;
+    }
 }
 
 await using (var listener = new TestServer(async stream =>
@@ -82,12 +93,14 @@ await using (var listener = new TestServer(async stream =>
     await TestServer.ReadFrame(stream);
     await Task.Delay(150);
 }))
-await using (var client = new OpenOcdMemoryClient())
 {
-    await client.ConnectAsync(listener.Port, CancellationToken.None);
-    using var cancellation = new CancellationTokenSource(50);
-    await Reject(async () => { await client.ReadAsync(0x20000010, 4, cancellation.Token); }, "cancelled in-flight RPC fails");
-    await Reject(async () => { await client.ReadAsync(0x20000010, 4, CancellationToken.None); }, "late RPC cannot contaminate next read");
+    await using (var client = new OpenOcdMemoryClient())
+    {
+        await client.ConnectAsync(listener.Port, CancellationToken.None);
+        using var cancellation = new CancellationTokenSource(50);
+        await Reject(async () => { await client.ReadAsync(0x20000010, 4, cancellation.Token); }, "cancelled in-flight RPC fails");
+        await Reject(async () => { await client.ReadAsync(0x20000010, 4, CancellationToken.None); }, "late RPC cannot contaminate next read");
+    }
 }
 
 var source = new TestSource();
@@ -160,7 +173,10 @@ if (args is ["--runtime", var runtime])
         foreach (var command in new[] { "noinit", "bindto 127.0.0.1", "gdb_port disabled", "telnet_port disabled", "tcl_port " + port,
             "proc studiox_test {cmd name width address count} {upvar $name bytes; for {set i 0} {$i < $count} {incr i} {set bytes($i) [expr {$i + 10}]}}",
             "set studiox_plot_target studiox_test" })
-        { start.ArgumentList.Add("-c"); start.ArgumentList.Add(command); }
+        {
+            start.ArgumentList.Add("-c");
+            start.ArgumentList.Add(command);
+        }
         using var process = Process.Start(start)!;
         var ready = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var lines = new System.Collections.Concurrent.ConcurrentQueue<string>();
@@ -169,7 +185,10 @@ if (args is ["--runtime", var runtime])
             while (await reader.ReadLineAsync() is { } line)
             {
                 lines.Enqueue(line);
-                if (line.Contains($"Listening on port {port} for tcl connections")) { ready.TrySetResult(); }
+                if (line.Contains($"Listening on port {port} for tcl connections"))
+                {
+                    ready.TrySetResult();
+                }
             }
         }
         var drains = new[] { Drain(process.StandardOutput), Drain(process.StandardError) };
@@ -184,7 +203,10 @@ if (args is ["--runtime", var runtime])
         catch { Console.WriteLine(string.Join('\n', lines)); throw; }
         finally
         {
-            if (!process.HasExited) { process.Kill(true); }
+            if (!process.HasExited)
+            {
+                process.Kill(true);
+            }
             await process.WaitForExitAsync();
             await Task.WhenAll(drains);
         }
@@ -196,7 +218,10 @@ sealed class SymbolTransport : IGdbMiTransport
 {
     public event Action<string>? RecordReceived { add { } remove { } }
     public List<string> Commands { get; } = [];
-    public int LiveVariables { get; private set; }
+    public int LiveVariables
+    {
+        get; private set;
+    }
     public string Address { get; set; } = "536870928";
     public Task<string> ExecuteAsync(string command, CancellationToken token = default)
     {
@@ -210,7 +235,11 @@ sealed class SymbolTransport : IGdbMiTransport
             var type = request.EndsWith("\"::samples\"") ? "uint32_t [4]" : request.EndsWith("\"::pointer\"") ? "uint32_t *" : "volatile uint32_t";
             return Task.FromResult(id + "^done,name=\"var1\",numchild=\"0\",type=" + MiRecord.Quote(type));
         }
-        if (request.StartsWith("-var-delete")) { LiveVariables--; return Task.FromResult(id + "^done"); }
+        if (request.StartsWith("-var-delete"))
+        {
+            LiveVariables--;
+            return Task.FromResult(id + "^done");
+        }
         return Task.FromResult(id + "^done,value=" + MiRecord.Quote(request.Contains("sizeof") ? "4" : Address));
     }
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
@@ -229,9 +258,18 @@ sealed class TestSource : IOpenOcdPlotSource
         Task.FromResult(new OpenOcdPlotChannel(PlotSessionId, expression, 0x20000010, type, true));
     public async Task<OpenOcdPlotReading> ReadPlotAsync(IReadOnlyList<OpenOcdPlotChannel> channels, CancellationToken token = default)
     {
-        if (Failure is not null) { throw new IOException(Failure); }
-        if (DelayMs > 0) { await Task.Delay(DelayMs, token); }
-        if (channels.Any(c => c.SessionId != PlotSessionId)) { throw new IOException("session changed"); }
+        if (Failure is not null)
+        {
+            throw new IOException(Failure);
+        }
+        if (DelayMs > 0)
+        {
+            await Task.Delay(DelayMs, token);
+        }
+        if (channels.Any(c => c.SessionId != PlotSessionId))
+        {
+            throw new IOException("session changed");
+        }
         var sample = Interlocked.Increment(ref Count);
         return new(DateTimeOffset.Now, Running, channels.Select(_ => NonFinite ? double.NaN : sample + .25).ToArray());
     }
@@ -240,8 +278,14 @@ sealed class TestSource : IOpenOcdPlotSource
 sealed class TestServer : IAsyncDisposable
 {
     private readonly TcpListener listener = new(IPAddress.Loopback, 0);
-    public int Port { get; }
-    public Task Completion { get; }
+    public int Port
+    {
+        get;
+    }
+    public Task Completion
+    {
+        get;
+    }
     public TestServer(Func<NetworkStream, Task> serve)
     {
         listener.Start();
@@ -253,8 +297,15 @@ sealed class TestServer : IAsyncDisposable
         var bytes = new List<byte>();
         var one = new byte[1];
         using var timeout = new CancellationTokenSource(3000);
-        while (await stream.ReadAsync(one, timeout.Token) != 0 && one[0] != 0x1a) { bytes.Add(one[0]); }
+        while (await stream.ReadAsync(one, timeout.Token) != 0 && one[0] != 0x1a)
+        {
+            bytes.Add(one[0]);
+        }
         return Encoding.UTF8.GetString(bytes.ToArray());
     }
-    public async ValueTask DisposeAsync() { listener.Stop(); await Completion; }
+    public async ValueTask DisposeAsync()
+    {
+        listener.Stop();
+        await Completion;
+    }
 }

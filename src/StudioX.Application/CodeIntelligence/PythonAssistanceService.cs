@@ -80,7 +80,10 @@ public sealed class PythonAssistanceService
         AddDefinitions(text, tokens, entries, offset, token);
         if (hints is not null)
         {
-            foreach (var (name, entry) in hints.Names) { entries[name] = entry; }
+            foreach (var (name, entry) in hints.Names)
+            {
+                entries[name] = entry;
+            }
         }
         var signature = hints?.Signature ?? FindSignature(tokens, offset, entries);
         // 属性名必须有类型或模块证据；不可用无关的全局名称冒充成员分析结果。

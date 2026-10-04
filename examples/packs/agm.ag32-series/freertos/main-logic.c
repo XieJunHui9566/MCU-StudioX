@@ -28,10 +28,18 @@ static void LogicTask(void *argument)
 int main(void)
 {
     BaseType_t result = xTaskCreate(HeartbeatTask, "heartbeat", 256, NULL, 1, NULL);
-    if (result != pdPASS) { StudioX_RtosAssert("heartbeat task", 0); }
+    if (result != pdPASS)
+    {
+        StudioX_RtosAssert("heartbeat task", 0);
+    }
     result = xTaskCreate(LogicTask, "logic", 256, NULL, 1, NULL);
-    if (result != pdPASS) { StudioX_RtosAssert("logic task", 0); }
+    if (result != pdPASS)
+    {
+        StudioX_RtosAssert("logic task", 0);
+    }
     vTaskStartScheduler();
     configASSERT(0);
-    for (;;) { }
+    for (;;)
+    {
+    }
 }

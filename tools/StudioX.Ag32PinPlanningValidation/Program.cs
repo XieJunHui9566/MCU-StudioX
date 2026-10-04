@@ -36,14 +36,21 @@ var service = new Ag32PinPlanningService(toolsetCatalog);
 var checks = new List<string>();
 void Check(bool value, string name)
 {
-    if (!value) { throw new InvalidOperationException(name); }
+    if (!value)
+    {
+        throw new InvalidOperationException(name);
+    }
     checks.Add(name);
     Console.WriteLine("PASS " + name);
 }
 async Task Reject(Func<Task> action, string code, string name)
 {
     var before = await File.ReadAllBytesAsync(source);
-    try { await action(); throw new InvalidOperationException("Expected rejection: " + name); }
+    try
+    {
+        await action();
+        throw new InvalidOperationException("Expected rejection: " + name);
+    }
     catch (StudioXException ex) when (ex.Code == code)
     {
         var after = await File.ReadAllBytesAsync(source);
@@ -53,7 +60,12 @@ async Task Reject(Func<Task> action, string code, string name)
 if (args.Length > 3 && args[3] == "--profiles-only")
 {
     await RunProfilesAsync();
-    await JsonStore.WriteAsync(Path.Combine(output, "result.json"), new { checks, count = checks.Count, success = true });
+    await JsonStore.WriteAsync(Path.Combine(output, "result.json"), new
+    {
+        checks,
+        count = checks.Count,
+        success = true
+    });
     Console.WriteLine($"Completed {checks.Count} profile checks; converter only, no license or hardware access.");
     return;
 }
@@ -185,8 +197,11 @@ async Task RunProfilesAsync()
         var profile = Ag32DeviceCatalog.Require(candidateDevice.Id);
         var candidateProject = project with
         {
-            DeviceId = candidateDevice.Id, ToolsetId = candidateDevice.ToolsetId, ToolsetVersion = candidateDevice.ToolsetVersion,
-            CompilerId = candidateDevice.CompilerId, PinMapping = new(profile.TargetDevice)
+            DeviceId = candidateDevice.Id,
+            ToolsetId = candidateDevice.ToolsetId,
+            ToolsetVersion = candidateDevice.ToolsetVersion,
+            CompilerId = candidateDevice.CompilerId,
+            PinMapping = new(profile.TargetDevice)
         };
         await JsonStore.WriteAsync(Path.Combine(root, ".studiox/project.json"), candidateProject);
         await File.WriteAllTextAsync(source, "# 官方器件包逐型号转换\nGPIO4_4 PIN_2\n");

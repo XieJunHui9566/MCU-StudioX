@@ -33,17 +33,29 @@ internal static class CatalogTrustChecks
         await Reject(() => service.ReadTrustedAsync(), "CATALOG_SIGNATURE", "self-signed replacement catalog cannot acquire built-in trust", check);
         handler.Signature = signature;
         var description = JsonSerializer.Deserialize<DistributionCatalog>(catalog, JsonStore.Options)!;
-        handler.Catalog = JsonSerializer.SerializeToUtf8Bytes(description with { Publisher = "Altered publisher" }, JsonStore.Options);
+        handler.Catalog = JsonSerializer.SerializeToUtf8Bytes(description with
+        {
+            Publisher = "Altered publisher"
+        }, JsonStore.Options);
         await Reject(() => service.ReadTrustedAsync(), "CATALOG_SIGNATURE", "catalog byte changes invalidate pinned publisher signature", check);
         handler.Catalog = catalog;
         var custom = await service.ReadAsync("https://example.test/catalog.json");
         check(!custom.BuiltInTrusted && custom.Verification.Contains("未验证签名"), "custom catalog never inherits built-in trust from matching content");
         handler.Status = HttpStatusCode.Redirect;
-        try { await service.ReadTrustedAsync(); throw new InvalidOperationException("redirect accepted"); }
+        try
+        {
+            await service.ReadTrustedAsync();
+            throw new InvalidOperationException("redirect accepted");
+        }
         catch (HttpRequestException) { check(true, "trusted catalog refuses redirect downgrade"); }
         handler.Status = HttpStatusCode.OK;
-        using var cancelled = new CancellationTokenSource(); cancelled.Cancel();
-        try { await service.ReadTrustedAsync(cancelled.Token); throw new InvalidOperationException("cancellation ignored"); }
+        using var cancelled = new CancellationTokenSource();
+        cancelled.Cancel();
+        try
+        {
+            await service.ReadTrustedAsync(cancelled.Token);
+            throw new InvalidOperationException("cancellation ignored");
+        }
         catch (OperationCanceledException) { check(true, "trusted catalog read respects cancellation"); }
         if (online)
         {
@@ -56,7 +68,11 @@ internal static class CatalogTrustChecks
     }
     private static async Task Reject(Func<Task> action, string code, string label, Action<bool, string> check)
     {
-        try { await action(); throw new InvalidOperationException(label); }
+        try
+        {
+            await action();
+            throw new InvalidOperationException(label);
+        }
         catch (StudioXException error) { check(error.Code == code, label); }
     }
     private sealed class Handler(byte[] catalog, byte[] signature) : HttpMessageHandler

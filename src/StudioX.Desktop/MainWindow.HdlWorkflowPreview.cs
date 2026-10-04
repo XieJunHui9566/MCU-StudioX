@@ -14,7 +14,10 @@ public partial class MainWindow
         var checks = new List<string>();
         void Check(bool condition, string text)
         {
-            if (!condition) throw new InvalidOperationException(text);
+            if (!condition)
+            {
+                throw new InvalidOperationException(text);
+            }
             checks.Add(text);
         }
         async Task LayoutAsync()
@@ -52,8 +55,15 @@ public partial class MainWindow
         HdlWorkflow.ConfigurationPanel.IsExpanded = true;
         await LayoutAsync();
         Render(this, Path.Combine(output, "configuration.png"));
-        RefreshAg32LogicUi(currentProjectManifest! with { Logic = null });
+        RefreshAg32LogicUi(currentProjectManifest! with
+        {
+            Logic = null
+        });
         Check(HdlWorkflowTab.Visibility == Visibility.Collapsed && HdlWorkflow.Result is null, "普通工程隐藏仿真入口并清空旧波形");
-        await JsonStore.WriteAsync(Path.Combine(output, "result.json"), new { passed = checks.Count, checks });
+        await JsonStore.WriteAsync(Path.Combine(output, "result.json"), new
+        {
+            passed = checks.Count,
+            checks
+        });
     }
 }

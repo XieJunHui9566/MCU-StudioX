@@ -8,21 +8,32 @@ public static class ProjectDevelopmentComponents
 {
     public static void ValidateSnapshot(ProjectManifest project)
     {
-        if (project.DevelopmentComponents is not { } needs) return;
+        if (project.DevelopmentComponents is not { } needs)
+        {
+            return;
+        }
         DevelopmentComponentRequirements.Validate(needs);
         if (project.Kind is ProjectKind.MicroPython or ProjectKind.Zephyr)
         {
-            if (needs.Count != 0) throw new StudioXException("DEVELOPMENT_COMPONENT_REQUIREMENT", "当前工程类型不使用原生开发环境组件。");
+            if (needs.Count != 0)
+            {
+                throw new StudioXException("DEVELOPMENT_COMPONENT_REQUIREMENT", "当前工程类型不使用原生开发环境组件。");
+            }
             return;
         }
         if (!needs.Any(item => DevelopmentComponentRequirements.SameIdentity(item, Primary(project))))
+        {
             throw new StudioXException("DEVELOPMENT_COMPONENT_REQUIREMENT", "工程开发环境组件需求与主开发环境组件版本不一致，请检查工程配置。");
+        }
     }
 
     public static async Task<IReadOnlyList<DevelopmentComponentRequirement>> ReadAsync(string root, ProjectManifest project, CancellationToken token = default)
     {
         ValidateSnapshot(project);
-        if (project.Kind is ProjectKind.MicroPython or ProjectKind.Zephyr) return [];
+        if (project.Kind is ProjectKind.MicroPython or ProjectKind.Zephyr)
+        {
+            return [];
+        }
         IReadOnlyList<DevelopmentComponentRequirement> needs = project.DevelopmentComponents ?? [Primary(project)];
         var devicePath = PathBoundary.Resolve(root, "device/manifest.json");
         if (project.Kind == ProjectKind.Pack && File.Exists(devicePath))
@@ -33,11 +44,18 @@ public static class ProjectDevelopmentComponents
             if (device?.DevelopmentComponents is not null || template?.DevelopmentComponents is not null)
             {
                 if (pack.FormatVersion != 1 || pack.Id != project.PackId || pack.Version != project.PackVersion || device is null || template is null)
+                {
                     throw new StudioXException("DEVELOPMENT_COMPONENT_REQUIREMENT", "器件包开发环境组件声明与工程身份不一致。");
+                }
                 var declared = DevelopmentComponentRequirements.ForTemplate(device, template);
-                if (project.DevelopmentComponents is null) needs = declared;
+                if (project.DevelopmentComponents is null)
+                {
+                    needs = declared;
+                }
                 else if (needs.Count != declared.Count || declared.Any(item => !needs.Any(n => DevelopmentComponentRequirements.SameIdentity(n, item))))
+                {
                     throw new StudioXException("DEVELOPMENT_COMPONENT_REQUIREMENT", "工程开发环境组件快照与器件/模板声明不一致，不能通过删改需求绕过检查。");
+                }
             }
         }
         return Configured(project, needs);
@@ -69,39 +87,58 @@ public static class ProjectDevelopmentComponents
         {
             var locked = await ReadMetadataAsync<DevelopmentComponentLock>(path, 1024 * 1024, token);
             if (locked.FormatVersion != 1 || locked.Components is null || locked.Components.Count != needs.Count)
+            {
                 throw LockError("开发环境组件内容锁与当前需求数量不一致。");
+            }
             foreach (var item in locked.Components)
             {
                 if (item is null || !needs.Any(n => n.Id == item.Id && n.Version == item.Version && n.Host == item.Host && n.CompilerId == item.CompilerId)
                     || !IsFingerprint(item.Fingerprint) || !result.TryAdd(item.Id, item.Fingerprint))
+                {
                     throw LockError("开发环境组件内容锁身份、指纹或重复条目无效。");
+                }
             }
         }
         foreach (var relative in new[] { ".studiox/toolchain.lock.json", ".studiox/ag32-mapping-toolchain.lock.json", ".studiox/ag32-logic-toolchain.lock.json" })
         {
             path = PathBoundary.Resolve(root, relative);
-            if (!File.Exists(path)) continue;
+            if (!File.Exists(path))
+            {
+                continue;
+            }
             var pin = await ReadMetadataAsync<ToolchainLock>(path, 1024 * 1024, token);
             if (relative == ".studiox/ag32-logic-toolchain.lock.json" && pin.ToolsetId == "agm.logic" && pin.Fingerprint is { } combined
                 && combined.Split(':') is [var mappingHash, var logicHash] && IsFingerprint(mappingHash) && IsFingerprint(logicHash))
             {
                 if (!needs.Any(n => n.Id == "agm.pin-mapping") || !needs.Any(n => n.Id == pin.ToolsetId && n.Version == pin.ToolsetVersion))
+                {
                     throw LockError("旧逻辑工具锁与工程组件需求不一致。");
+                }
                 CheckFingerprint(result, "agm.pin-mapping", mappingHash);
                 result["agm.pin-mapping"] = mappingHash;
-                pin = pin with { Fingerprint = logicHash };
+                pin = pin with
+                {
+                    Fingerprint = logicHash
+                };
             }
             if (pin.FormatVersion != 1 || !needs.Any(n => n.Id == pin.ToolsetId && n.Version == pin.ToolsetVersion) || !IsFingerprint(pin.Fingerprint))
+            {
                 throw LockError("已有工具内容锁与工程需求不一致：" + relative);
+            }
             var expectedId = relative switch
             {
                 ".studiox/toolchain.lock.json" => needs.FirstOrDefault()?.Id,
                 ".studiox/ag32-mapping-toolchain.lock.json" => "agm.pin-mapping",
                 _ => "agm.logic"
             };
-            if (pin.ToolsetId != expectedId) throw LockError("工具内容锁记录了错误的组件：" + relative);
+            if (pin.ToolsetId != expectedId)
+            {
+                throw LockError("工具内容锁记录了错误的组件：" + relative);
+            }
             if (result.TryGetValue(pin.ToolsetId, out var previous) && !previous.Equals(pin.Fingerprint, StringComparison.OrdinalIgnoreCase))
+            {
                 throw LockError("已有工具锁与开发环境组件内容锁冲突：" + pin.ToolsetId);
+            }
             result[pin.ToolsetId] = pin.Fingerprint;
         }
         return result;
@@ -110,19 +147,27 @@ public static class ProjectDevelopmentComponents
     public static void CheckFingerprint(IReadOnlyDictionary<string, string> pins, string id, string fingerprint)
     {
         if (pins.TryGetValue(id, out var pin) && !pin.Equals(fingerprint, StringComparison.OrdinalIgnoreCase))
+        {
             throw LockError("开发环境组件清单与工程锁定内容不同，请恢复相同内容的组件：" + id);
+        }
     }
 
     internal static async Task<T> ReadMetadataAsync<T>(string path, long limit, CancellationToken token)
     {
         await using var input = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 131072, true);
-        if (input.Length > limit) throw new StudioXException("DEVELOPMENT_COMPONENT_METADATA", "开发环境组件配置文件过大：" + path);
+        if (input.Length > limit)
+        {
+            throw new StudioXException("DEVELOPMENT_COMPONENT_METADATA", "开发环境组件配置文件过大：" + path);
+        }
         using var output = new MemoryStream();
         var buffer = new byte[131072];
         int count;
         while ((count = await input.ReadAsync(buffer, token)) > 0)
         {
-            if (output.Length + count > limit) throw new StudioXException("DEVELOPMENT_COMPONENT_METADATA", "开发环境组件配置读取期间超过大小限制：" + path);
+            if (output.Length + count > limit)
+            {
+                throw new StudioXException("DEVELOPMENT_COMPONENT_METADATA", "开发环境组件配置读取期间超过大小限制：" + path);
+            }
             output.Write(buffer, 0, count);
         }
         var bytes = output.ToArray();

@@ -30,11 +30,24 @@ public static class ToolchainArchiveWriter
         public override bool CanSeek => input.CanSeek;
         public override bool CanWrite => false;
         public override long Length => input.Length;
-        public override long Position { get => input.Position; set => input.Position = value; }
-        public override int Read(byte[] buffer, int offset, int count) { token.ThrowIfCancellationRequested(); return input.Read(buffer, offset, count); }
-        public override int Read(Span<byte> buffer) { token.ThrowIfCancellationRequested(); return input.Read(buffer); }
+        public override long Position
+        {
+            get => input.Position; set => input.Position = value;
+        }
+        public override int Read(byte[] buffer, int offset, int count)
+        {
+            token.ThrowIfCancellationRequested();
+            return input.Read(buffer, offset, count);
+        }
+        public override int Read(Span<byte> buffer)
+        {
+            token.ThrowIfCancellationRequested();
+            return input.Read(buffer);
+        }
         public override long Seek(long offset, SeekOrigin origin) => input.Seek(offset, origin);
-        public override void Flush() { }
+        public override void Flush()
+        {
+        }
         public override void SetLength(long value) => throw new NotSupportedException();
         public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
     }

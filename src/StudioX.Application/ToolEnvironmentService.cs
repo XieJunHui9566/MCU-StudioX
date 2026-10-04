@@ -1,12 +1,13 @@
 namespace StudioX.Application;
 
 using System.Security.Cryptography;
+using StudioX.Application.Tools;
 using StudioX.Engine;
 using StudioX.Foundation;
 using StudioX.Packages;
 
 /// <summary>管理内置开发环境组件版本和离线归档，修复使用已校验副本并保留回滚目录。</summary>
-public sealed class ToolEnvironmentService(ToolsetCatalog catalog)
+public sealed partial class ToolEnvironmentService(ToolsetCatalog catalog)
 {
     private readonly SemaphoreSlim gate = new(1, 1);
     public Task<IReadOnlyList<ToolEnvironmentEntry>> InspectAsync(string? project, CancellationToken token = default) => Task.Run(async () =>
@@ -90,14 +91,19 @@ public sealed class ToolEnvironmentService(ToolsetCatalog catalog)
     {
         ToolchainArchiveFormat.ValidateFileName(archive);
         await gate.WaitAsync(token).ConfigureAwait(false);
-        var staging = Path.Combine(catalog.RootDirectory, ".repair-" + Guid.NewGuid().ToString("N"));
+        var key = Guid.NewGuid().ToString("N");
+        var staging = ToolRepairTransactions.Stage(catalog.RootDirectory, key);
+        ToolRepairRecord? transaction = null;
+        Exception? operationFailure = null;
         try
         {
             await using var archiveContent = new FileStream(archive, FileMode.Open, FileAccess.Read, FileShare.Read, 131072, true);
             if (expectedArchiveHash is not null)
             {
                 if (!Convert.ToHexString(await SHA256.HashDataAsync(archiveContent, token)).Equals(expectedArchiveHash, StringComparison.OrdinalIgnoreCase))
+                {
                     throw new StudioXException("TOOLS_CHANGED", "离线归档在预览后发生变化。");
+                }
             }
             archiveContent.Position = 0;
             using var container = ToolchainArchive.Open(archiveContent, token);
@@ -112,7 +118,10 @@ public sealed class ToolEnvironmentService(ToolsetCatalog catalog)
             PackValidator.Token(manifest.Id);
             PackValidator.Version(manifest.Version);
             _ = manifest.Identity;
-            if (manifest.Sha256 is null || manifest.Executables is null) throw new StudioXException("TOOLS_IDENTITY", "组件清单不完整。");
+            if (manifest.Sha256 is null || manifest.Executables is null)
+            {
+                throw new StudioXException("TOOLS_IDENTITY", "组件清单不完整。");
+            }
             container.ValidateIndex(manifest.Sha256);
             var relativeRoot = entry.Id + "/" + entry.Version;
             var extracted = PathBoundary.Resolve(staging, relativeRoot);
@@ -129,32 +138,108 @@ public sealed class ToolEnvironmentService(ToolsetCatalog catalog)
             _ = await new ToolsetCatalog(staging).ResolveAsync(entry.Id, entry.Version, entry.CompilerId, token, true, progress, allowDisabled: true).ConfigureAwait(false);
             var target = PathBoundary.Resolve(catalog.RootDirectory, relativeRoot);
             using var toolLease = ToolUsageLease.Acquire(target, maintenance: true);
+            var pending = await ToolRepairTransactions.InspectAsync(catalog.RootDirectory, token);
+            if (pending.Diagnostics.Count > 0 || pending.Items.Any(item => item.Id == entry.Id && item.Version == entry.Version))
+            {
+                throw new StudioXException("TOOLS_RECOVERY_REQUIRED", "组件目录含未完成或无效事务，请先在开发环境组件管理中检查恢复记录。\n" + string.Join('\n', pending.Diagnostics));
+            }
             if (installOnly && (Directory.Exists(target) || File.Exists(target)))
+            {
                 throw new StudioXException("TOOLS_VERSION_EXISTS", "同一开发环境组件版本已经存在；并存安装不覆盖任何已有内容。");
-            var backup = PathBoundary.Resolve(catalog.RootDirectory, ".rollback-" + entry.Id + "-" + Guid.NewGuid().ToString("N"));
+            }
+            var backupRoot = ToolRepairTransactions.Backup(catalog.RootDirectory, key);
+            var backup = PathBoundary.Resolve(backupRoot, relativeRoot);
             token.ThrowIfCancellationRequested();
             Directory.CreateDirectory(Path.GetDirectoryName(target)!);
             var existed = Directory.Exists(target);
+            transaction = new(1, key, entry.Id, entry.Version, entry.CompilerId,
+                Convert.ToHexString(SHA256.HashData(manifestBytes)).ToLowerInvariant(),
+                existed ? await ToolRepairTransactions.ManifestHashAsync(target, token) : null,
+                existed, "prepared", DateTimeOffset.UtcNow);
+            await ToolRepairTransactions.WriteAsync(catalog.RootDirectory, transaction);
+            progress?.Report("组件事务已记录，准备替换目录。");
+            token.ThrowIfCancellationRequested();
             if (existed)
             {
+                Directory.CreateDirectory(Path.GetDirectoryName(backup)!);
                 Directory.Move(target, backup);
+                progress?.Report("原组件已备份，准备发布已校验副本。");
             }
             try
             {
                 Directory.Move(extracted, target);
+                progress?.Report("已校验组件已就位，准备完成事务。");
             }
-            catch { if (existed) { Directory.Move(backup, target); } throw; }
-            return existed ? backup : "";
+            catch (Exception failure)
+            {
+                var failures = new List<Exception> { failure };
+                try
+                {
+                    if (existed)
+                    {
+                        Directory.Move(backup, target);
+                    }
+                }
+                catch (Exception rollback) { failures.Add(rollback); }
+                transaction = transaction with
+                {
+                    State = failures.Count == 1 ? "rolled-back" : "prepared",
+                    Diagnostic = string.Join('\n', failures)
+                };
+                try
+                {
+                    await ToolRepairTransactions.WriteAsync(catalog.RootDirectory, transaction);
+                }
+                catch (Exception journal) { failures.Add(journal); }
+                if (failures.Count > 1)
+                {
+                    throw new AggregateException("组件发布失败；回退或事务记录也失败，保留恢复文件。", failures);
+                }
+                throw;
+            }
+            transaction = transaction with
+            {
+                State = "committed"
+            };
+            await ToolRepairTransactions.WriteAsync(catalog.RootDirectory, transaction);
+            return existed ? backupRoot : "";
+        }
+        catch (Exception failure)
+        {
+            operationFailure = failure;
+            if (transaction?.State == "prepared")
+            {
+                try
+                {
+                    await ToolRepairTransactions.WriteAsync(catalog.RootDirectory, transaction with
+                    {
+                        Diagnostic = failure.ToString()
+                    });
+                }
+                catch (Exception journal)
+                {
+                    operationFailure = new AggregateException("组件事务中断，原始诊断和记录错误均已保留。", failure, journal);
+                    throw operationFailure;
+                }
+            }
+            throw;
         }
         finally
         {
             // staging 是本服务在工具目录内新建的唯一目录；拒绝清理目录链接。
-            if (Directory.Exists(staging) && (File.GetAttributes(staging) & FileAttributes.ReparsePoint) == 0 &&
-                Path.GetFullPath(staging).StartsWith(Path.GetFullPath(catalog.RootDirectory).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+            try
             {
-                Directory.Delete(staging, true);
+                if ((transaction?.State is null or "committed" or "rolled-back") && Directory.Exists(staging) && (File.GetAttributes(staging) & FileAttributes.ReparsePoint) == 0 &&
+                    Path.GetFullPath(staging).StartsWith(Path.GetFullPath(catalog.RootDirectory).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+                {
+                    Directory.Delete(staging, true);
+                }
             }
-            gate.Release();
+            catch (Exception cleanup) when (operationFailure is not null)
+            {
+                throw new AggregateException("组件操作和暂存清理均失败，保留两项原始诊断。", operationFailure, cleanup);
+            }
+            finally { gate.Release(); }
         }
     }
 }

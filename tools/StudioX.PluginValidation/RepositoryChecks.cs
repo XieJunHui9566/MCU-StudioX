@@ -20,7 +20,10 @@ internal static class RepositoryChecks
         CopyDirectory(installed.Directory, source);
         var manifest = installed.Manifest;
         var manifestPath = Path.Combine(source, "plugin.json");
-        await JsonStore.WriteAsync(manifestPath, manifest with { Version = "1.1.0" });
+        await JsonStore.WriteAsync(manifestPath, manifest with
+        {
+            Version = "1.1.0"
+        });
         var upgrade = Path.Combine(scratch, "upgrade.studioxplugin");
         await PluginRepository.PackAsync(source, upgrade);
         using var cancelled = new CancellationTokenSource();
@@ -42,7 +45,11 @@ internal static class RepositoryChecks
         _ = await repository.ImportAsync(upgrade);
         checks.Check((await repository.ListAsync()).Single().Manifest.Version == "1.1.0", "new version atomically replaces catalog");
         await checks.RejectAsync(async () => { _ = await repository.ImportAsync(archive); }, "downgrade rejected", "PLUGIN_DOWNGRADE");
-        await JsonStore.WriteAsync(manifestPath, manifest with { Version = "1.1.0", DisplayName = "Different same version" });
+        await JsonStore.WriteAsync(manifestPath, manifest with
+        {
+            Version = "1.1.0",
+            DisplayName = "Different same version"
+        });
         var conflict = Path.Combine(scratch, "conflict.studioxplugin");
         await PluginRepository.PackAsync(source, conflict);
         await checks.RejectAsync(async () => { _ = await repository.ImportAsync(conflict); }, "same version content conflict rejected", "PLUGIN_VERSION_CONFLICT");
@@ -55,59 +62,71 @@ internal static class RepositoryChecks
 
         var tampered = Path.Combine(scratch, "tampered.studioxplugin");
         await using (var output = File.Create(tampered))
-        {using (var target = new ZipArchive(output, ZipArchiveMode.Create))
-        {await using (var input = File.OpenRead(archive))
-        {using (var original = new ZipArchive(input, ZipArchiveMode.Read))
         {
-            foreach (var entry in original.Entries)
+            using (var target = new ZipArchive(output, ZipArchiveMode.Create))
             {
-                await using var from = entry.Open();
-                await using var to = target.CreateEntry(entry.FullName).Open();
-                if (entry.FullName.EndsWith(".dll", StringComparison.OrdinalIgnoreCase))
+                await using (var input = File.OpenRead(archive))
                 {
-                    using var bytes = new MemoryStream();
-                    await from.CopyToAsync(bytes);
-                    var content = bytes.ToArray();
-                    content[^1] ^= 1;
-                    await to.WriteAsync(content);
-                }
-                else
-                {
-                    await from.CopyToAsync(to);
+                    using (var original = new ZipArchive(input, ZipArchiveMode.Read))
+                    {
+                        foreach (var entry in original.Entries)
+                        {
+                            await using var from = entry.Open();
+                            await using var to = target.CreateEntry(entry.FullName).Open();
+                            if (entry.FullName.EndsWith(".dll", StringComparison.OrdinalIgnoreCase))
+                            {
+                                using var bytes = new MemoryStream();
+                                await from.CopyToAsync(bytes);
+                                var content = bytes.ToArray();
+                                content[^1] ^= 1;
+                                await to.WriteAsync(content);
+                            }
+                            else
+                            {
+                                await from.CopyToAsync(to);
+                            }
+                        }
+                    }
                 }
             }
-        }}}}
+        }
         await checks.RejectAsync(async () => { _ = await repository.ImportAsync(tampered); }, "modified archive content fails SHA-256", "PLUGIN_HASH");
         var linked = Path.Combine(scratch, "linked.studioxplugin");
         await using (var stream = File.Create(linked))
-        {using (var zip = new ZipArchive(stream, ZipArchiveMode.Create))
         {
-            await using (var entry = zip.CreateEntry("plugin.json").Open())
-            {await using (var writer = new StreamWriter(entry))
+            using (var zip = new ZipArchive(stream, ZipArchiveMode.Create))
             {
-                await writer.WriteAsync("{}");
-            }}
-            var link = zip.CreateEntry("link.dll");
-            link.ExternalAttributes = unchecked((int)(0xa000u << 16));
-            await using var target = link.Open();
-            await target.WriteAsync("outside.dll"u8.ToArray());
-        }}
+                await using (var entry = zip.CreateEntry("plugin.json").Open())
+                {
+                    await using (var writer = new StreamWriter(entry))
+                    {
+                        await writer.WriteAsync("{}");
+                    }
+                }
+                var link = zip.CreateEntry("link.dll");
+                link.ExternalAttributes = unchecked((int)(0xa000u << 16));
+                await using var target = link.Open();
+                await target.WriteAsync("outside.dll"u8.ToArray());
+            }
+        }
         await checks.RejectAsync(async () => { _ = await repository.ImportAsync(linked); }, "ZIP Unix symbolic link rejected", "PLUGIN_ARCHIVE");
         var bomb = Path.Combine(scratch, "compressed.studioxplugin");
         await using (var stream = File.Create(bomb))
-        {using (var zip = new ZipArchive(stream, ZipArchiveMode.Create))
         {
-            await using (var manifestEntry = zip.CreateEntry("plugin.json").Open())
+            using (var zip = new ZipArchive(stream, ZipArchiveMode.Create))
             {
-                await manifestEntry.WriteAsync("{}"u8.ToArray());
+                await using (var manifestEntry = zip.CreateEntry("plugin.json").Open())
+                {
+                    await manifestEntry.WriteAsync("{}"u8.ToArray());
+                }
+                await using var large = zip.CreateEntry("zeros.dll", CompressionLevel.SmallestSize).Open();
+                var buffer = new byte[65536];
+                for (var index = 0; index < 32; index++)
+                {
+                    await large.WriteAsync(buffer);
+                }
             }
-            await using var large = zip.CreateEntry("zeros.dll", CompressionLevel.SmallestSize).Open();
-            var buffer = new byte[65536];
-            for (var index = 0; index < 32; index++)
-            {
-                await large.WriteAsync(buffer);
-            }
-        }}
+        }
         await checks.RejectAsync(async () => { _ = await repository.ImportAsync(bomb); }, "excessive ZIP compression ratio rejected", "PLUGIN_LIMIT");
         await repository.UninstallAsync(manifest.Id);
         checks.Check((await repository.ListAsync()).Count == 0, "uninstall removes only managed plugin directory");

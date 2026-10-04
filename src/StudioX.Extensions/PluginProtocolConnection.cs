@@ -256,7 +256,8 @@ public sealed class PluginProtocolConnection : IAsyncDisposable
                 cancellation.Dispose();
                 throw new StudioXException("PLUGIN_PROTOCOL", "插件复用了在途请求 ID。");
             }
-            Track(message.RequestId, () => HandleRequestAsync(message, cancellation));
+            // 回调生命周期不使用对端提供的 ID，避免响应完成前复用 ID 覆盖旧任务。
+            Track(Guid.NewGuid().ToString("N"), () => HandleRequestAsync(message, cancellation));
             return;
         }
         if (message.Kind == "event" && !string.IsNullOrWhiteSpace(message.Method) && message.Payload is { } eventPayload)
@@ -292,23 +293,29 @@ public sealed class PluginProtocolConnection : IAsyncDisposable
 
     private async Task HandleRequestAsync(PluginProtocolMessage message, CancellationTokenSource cancellation)
     {
-        PluginProtocolMessage response;
         try
         {
-            var result = await onRequest(message.Method!, message.Payload ?? JsonSerializer.SerializeToElement(new { }), cancellation.Token)
-                .ConfigureAwait(false);
-            response = new PluginProtocolMessage(2, "response", message.RequestId, Payload: result);
-        }
-        catch (Exception exception)
-        {
-            var code = exception is StudioXException studio ? studio.Code : exception is OperationCanceledException ? "PLUGIN_CANCELLED" : "PLUGIN_EXCEPTION";
-            response = new PluginProtocolMessage(2, "response", message.RequestId, ErrorCode: code, Error: exception.ToString());
+            PluginProtocolMessage response;
+            try
+            {
+                var result = await onRequest(message.Method!, message.Payload ?? JsonSerializer.SerializeToElement(new
+                {
+                }), cancellation.Token)
+                    .ConfigureAwait(false);
+                response = new PluginProtocolMessage(2, "response", message.RequestId, Payload: result);
+            }
+            catch (Exception exception)
+            {
+                var code = exception is StudioXException studio ? studio.Code : exception is OperationCanceledException ? "PLUGIN_CANCELLED" : "PLUGIN_EXCEPTION";
+                response = new PluginProtocolMessage(2, "response", message.RequestId, ErrorCode: code, Error: exception.ToString());
+            }
+            // 对端不读取响应时仍占用入站额度，防止已处理请求无限堆积在写入信号量后面。
+            await SendAsync(response, lifetime.Token).ConfigureAwait(false);
         }
         finally
         {
             incoming.TryRemove(message.RequestId!, out _);
             cancellation.Dispose();
         }
-        await SendAsync(response, lifetime.Token).ConfigureAwait(false);
     }
 }

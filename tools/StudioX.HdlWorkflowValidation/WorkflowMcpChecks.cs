@@ -29,7 +29,10 @@ internal static class WorkflowMcpChecks
     }
     private sealed class Authorizer : IStudioXMcpAuthorizer
     {
-        public bool Allow { get; set; }
+        public bool Allow
+        {
+            get; set;
+        }
         public List<StudioXMcpApprovalRequest> Requests { get; } = [];
         public Task<bool> ApproveAsync(StudioXMcpApprovalRequest request, CancellationToken token)
         {

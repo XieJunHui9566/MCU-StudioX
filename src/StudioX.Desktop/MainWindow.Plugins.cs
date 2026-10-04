@@ -364,7 +364,10 @@ public partial class MainWindow
                         }
                         foreach (var key in pluginPanels.Keys.Where(key => key.StartsWith(update.PluginId + "/", StringComparison.Ordinal)).ToArray())
                         {
-                            if (pluginPanels[key].Host.Parent is Panel parent) { parent.Children.Remove(pluginPanels[key].Host); }
+                            if (pluginPanels[key].Host.Parent is Panel parent)
+                            {
+                                parent.Children.Remove(pluginPanels[key].Host);
+                            }
                             pluginPanels.Remove(key);
                         }
                         RemovePluginActivity(update.PluginId);

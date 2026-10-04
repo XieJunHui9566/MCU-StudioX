@@ -23,16 +23,26 @@ public sealed class ToolsetCatalog
     private readonly SemaphoreSlim verificationGate = new(1, 1);
     private readonly Dictionary<string, VerifiedTree> verified = new(StringComparer.OrdinalIgnoreCase);
     private sealed record VerifiedTree(string Fingerprint, ToolsetSnapshot Snapshot);
-    public string RootDirectory { get; }
+    public string RootDirectory
+    {
+        get;
+    }
     public bool IsEnabled(string id, string version) => activation?.IsEnabled(id, version) ?? true;
     public void RequireEnabled(string id, string version)
     {
-        if (!IsEnabled(id, version)) throw new StudioXException("TOOLSET_DISABLED", $"开发环境组件 {id} / {version} 已禁用，请在组件管理中启用。工程不会改用其他版本。");
+        if (!IsEnabled(id, version))
+        {
+            throw new StudioXException("TOOLSET_DISABLED", $"开发环境组件 {id} / {version} 已禁用，请在组件管理中启用。工程不会改用其他版本。");
+        }
     }
     public async Task SetEnabledAsync(string id, string version, bool enabled, CancellationToken token = default)
     {
-        PackValidator.Token(id); PackValidator.Version(version);
-        if (activation is null) throw new StudioXException("TOOLS_ACTIVATION", "组件启用管理需要独立用户数据目录。");
+        PackValidator.Token(id);
+        PackValidator.Version(version);
+        if (activation is null)
+        {
+            throw new StudioXException("TOOLS_ACTIVATION", "组件启用管理需要独立用户数据目录。");
+        }
         using var lease = ToolUsageLease.Acquire(PathBoundary.Resolve(RootDirectory, id + "/" + version), maintenance: true);
         await activation.SetEnabledAsync(id, version, enabled, token);
     }
@@ -40,6 +50,22 @@ public sealed class ToolsetCatalog
     public Task<ResolvedToolset> ResolveAsync(string id, string version, string compilerId, CancellationToken cancellationToken = default,
         bool forceVerification = false, IProgress<string>? progress = null, bool allowDisabled = false)
         => Task.Run(() => ResolveInBackgroundAsync(id, version, compilerId, cancellationToken, forceVerification, progress, allowDisabled), cancellationToken);
+    /// <summary>恢复组件时完整核验内容；调用方必须持有此精确目录的独占租约。</summary>
+    public Task<ResolvedToolset> VerifyForMaintenanceAsync(string id, string version, string compilerId, ToolUsageLease lease,
+        CancellationToken token = default, IProgress<string>? progress = null) => Task.Run(async () =>
+    {
+        PackValidator.Token(id);
+        PackValidator.Version(version);
+        var root = PathBoundary.Resolve(RootDirectory, id + "/" + version);
+        lease.RequireMaintenance(root);
+        await verificationGate.WaitAsync(token);
+        try
+        {
+            return await ResolveCoreAsync(root, id, version, compilerId, true, progress, token);
+        }
+        catch { verified.Remove(root); throw; }
+        finally { verificationGate.Release(); }
+    }, token);
     private async Task<ResolvedToolset> ResolveInBackgroundAsync(string id, string version, string compilerId, CancellationToken cancellationToken,
         bool forceVerification, IProgress<string>? progress, bool allowDisabled)
     {
@@ -47,7 +73,10 @@ public sealed class ToolsetCatalog
         PackValidator.Version(version);
         var root = PathBoundary.Resolve(RootDirectory, $"{id}/{version}");
         using var toolLease = ToolUsageLease.Acquire(root, ignoreActivation: allowDisabled);
-        if (!allowDisabled) RequireEnabled(id, version);
+        if (!allowDisabled)
+        {
+            RequireEnabled(id, version);
+        }
         await verificationGate.WaitAsync(cancellationToken);
         try
         {

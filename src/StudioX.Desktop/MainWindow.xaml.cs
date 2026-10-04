@@ -417,7 +417,10 @@ public partial class MainWindow : Window
     private void ComponentSelection_Changed(object sender, RoutedEventArgs e) => UpdateSelectedComponents();
     private void UpdateSelectedComponents()
     {
-        if (SelectedDevelopmentComponents is null) return;
+        if (SelectedDevelopmentComponents is null)
+        {
+            return;
+        }
         SelectedDevelopmentComponents.Text = PackPicker?.SelectedItem is InstalledPack pack &&
             DevicePicker?.SelectedItem is DeviceDefinition device && TemplatePicker?.SelectedItem is ProjectTemplate template
             ? ProjectComponentSummary.ForSelection(pack, device.Id, template.Id, Ag32LogicModeCheckBox?.IsChecked == true) : "";
@@ -448,7 +451,10 @@ public partial class MainWindow : Window
         }
         await RunAsync(async token =>
         {
-            if (idfSelection is not null) await services.EspressifProjectVersions.EnsureSelectionAsync(idfSelection, token);
+            if (idfSelection is not null)
+            {
+                await services.EspressifProjectVersions.EnsureSelectionAsync(idfSelection, token);
+            }
             PackValidator.Token(ProjectName.Text);
             var destination = Path.Combine(dialog.FolderName, ProjectName.Text);
             var created = await services.Projects.CreateAsync(pack, device.Id, template.Id, ProjectName.Text, destination, token, enableAg32Logic);

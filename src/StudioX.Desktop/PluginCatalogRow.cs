@@ -21,8 +21,14 @@ internal sealed class PluginCatalogRow(PluginCatalogEntry entry, bool busy, bool
     public string OriginText => Entry.IsBundled ? "来源：IDE 内置" : "来源：用户安装";
     internal static string CapabilityName(string capability) => capability switch
     {
-        "commands" => "命令", "panels" => "面板", "agentTools" => "Agent 工具", "settings" => "设置",
-        "events" => "工程/文档事件", "languages" => "语言补全", "debugAdapters" => "调试快照", "decode" => "数据解码",
+        "commands" => "命令",
+        "panels" => "面板",
+        "agentTools" => "Agent 工具",
+        "settings" => "设置",
+        "events" => "工程/文档事件",
+        "languages" => "语言补全",
+        "debugAdapters" => "调试快照",
+        "decode" => "数据解码",
         _ => capability
     };
 }

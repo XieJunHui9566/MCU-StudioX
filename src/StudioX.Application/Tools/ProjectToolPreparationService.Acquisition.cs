@@ -12,24 +12,38 @@ public sealed partial class ProjectToolPreparationService
         var plan = await RefreshSnapshotAsync(snapshot, null, token);
         var blocked = plan.Requirements.Where(r => r.State is ProjectToolState.Disabled or ProjectToolState.RepairNeeded).ToArray();
         if (blocked.Length != 0)
+        {
             throw new StudioXException("TOOLS_PREPARATION_BLOCKED", "请先在开发环境组件管理中启用被禁用组件，或使用组件校验与修复：\n"
-                + string.Join('\n', blocked.Select(r => $"{r.Id}/{r.Version}：{r.StatusText}")));
+            + string.Join('\n', blocked.Select(r => $"{r.Id}/{r.Version}：{r.StatusText}")));
+        }
         if (plan.Requirements.All(r => r.State == ProjectToolState.Installed))
+        {
             return new(plan, null, []);
+        }
 
         progress?.Report("正在读取 GitHub 组件目录并验证 IDE 内置发布者签名…");
         var listing = await distribution.ReadTrustedAsync(token);
         plan = await RefreshSnapshotAsync(snapshot, listing, token);
         if (plan.Requirements.Any(r => r.State is ProjectToolState.Disabled or ProjectToolState.RepairNeeded))
+        {
             throw new StudioXException("TOOLS_PREPARATION_BLOCKED", "读取目录期间组件状态发生变化，请刷新并先启用或修复已有组件。");
+        }
         var missing = plan.Requirements.Where(r => r.State == ProjectToolState.Missing).ToArray();
-        if (missing.Length == 0) return new(plan, listing, []);
-        if (missing.Length > 32) throw new StudioXException("TOOLS_SELECTION", "工程缺失组件过多，请分批手动导入。");
+        if (missing.Length == 0)
+        {
+            return new(plan, listing, []);
+        }
+        if (missing.Length > 32)
+        {
+            throw new StudioXException("TOOLS_SELECTION", "工程缺失组件过多，请分批手动导入。");
+        }
         var unavailable = missing.Where(r => r.Entry is null).ToArray();
         if (unavailable.Length != 0)
+        {
             throw new StudioXException("TOOLS_CATALOG_UNAVAILABLE", "GitHub 目录尚未提供以下工程指定版本，本次未安装任何组件：\n"
-                + string.Join('\n', unavailable.Select(r => $"{r.Id}/{r.Version} · {r.CompilerId}"))
-                + "\n可手动导入相同身份的本地 .mcutoolchain，或在组件库查看已发布版本。工程不会自动改用其他版本。");
+            + string.Join('\n', unavailable.Select(r => $"{r.Id}/{r.Version} · {r.CompilerId}"))
+            + "\n可手动导入相同身份的本地 .mcutoolchain，或在组件库查看已发布版本。工程不会自动改用其他版本。");
+        }
 
         // 同盘下载缓存和所有安装暂存一起计入预算，不能逐包低估多组件工程空间。
         CheckSpace(missing.SelectMany(r => distribution.SpacePlan(r.Entry!, catalog.RootDirectory)));
@@ -50,13 +64,19 @@ public sealed partial class ProjectToolPreparationService
         IProgress<string>? progress = null, CancellationToken token = default)
     {
         var plan = await RefreshSnapshotAsync(snapshot, null, token);
-        if (archives.Count is < 1 or > 32) throw new StudioXException("TOOLS_SELECTION", "一次请选择 1 至 32 个开发环境组件归档。");
+        if (archives.Count is < 1 or > 32)
+        {
+            throw new StudioXException("TOOLS_SELECTION", "一次请选择 1 至 32 个开发环境组件归档。");
+        }
         var previews = new List<ToolArchivePreview>();
         foreach (var archive in archives)
         {
             var preview = await management.PreviewInstallAsync(archive, progress, token);
             var requirement = MatchMissing(plan, preview);
-            if (previews.Any(p => p.Id == preview.Id)) throw new StudioXException("TOOLS_SELECTION", "重复选择同一开发环境组件，未安装：" + preview.Id);
+            if (previews.Any(p => p.Id == preview.Id))
+            {
+                throw new StudioXException("TOOLS_SELECTION", "重复选择同一开发环境组件，未安装：" + preview.Id);
+            }
             await EnsureCurrentAsync(plan, requirement, token);
             EnsureIdentity(requirement, preview, verifyCatalog: false);
             previews.Add(preview);
@@ -74,9 +94,14 @@ public sealed partial class ProjectToolPreparationService
         DistributionListing? listing, IProgress<string>? progress, CancellationToken token)
     {
         if (previews.Count is < 1 or > 32 || previews.Select(p => p.Id).Distinct(StringComparer.Ordinal).Count() != previews.Count)
+        {
             throw new StudioXException("TOOLS_SELECTION", "请选择不重复的工程开发环境组件。");
+        }
         // 先绑定整批身份；调用方不能用伪造预览绕过需求、内容锁或目录摘要。
-        foreach (var preview in previews) EnsureIdentity(MatchMissing(plan, preview), preview, listing is not null);
+        foreach (var preview in previews)
+        {
+            EnsureIdentity(MatchMissing(plan, preview), preview, listing is not null);
+        }
         CheckSpace(previews.SelectMany(InstallSpacePlan));
         var installed = new List<DevelopmentComponentInstallResult>();
         foreach (var preview in previews)
@@ -93,9 +118,15 @@ public sealed partial class ProjectToolPreparationService
 
     private async Task<ProjectToolPlan> RefreshSnapshotAsync(ProjectToolPlan snapshot, DistributionListing? listing, CancellationToken token)
     {
-        if (snapshot.ProjectDirectory is null) throw new StudioXException("TOOLS_SELECTION", "请先选择或创建工程，也可在组件库选择独立组件。");
+        if (snapshot.ProjectDirectory is null)
+        {
+            throw new StudioXException("TOOLS_SELECTION", "请先选择或创建工程，也可在组件库选择独立组件。");
+        }
         var current = await InspectAsync(snapshot.ProjectDirectory, listing, token);
-        if (current.Fingerprint != snapshot.Fingerprint) throw new StudioXException("TOOLS_PROJECT_CHANGED", "工程配置发生变化，请刷新后重试。");
+        if (current.Fingerprint != snapshot.Fingerprint)
+        {
+            throw new StudioXException("TOOLS_PROJECT_CHANGED", "工程配置发生变化，请刷新后重试。");
+        }
         return current;
     }
 
@@ -107,7 +138,11 @@ public sealed partial class ProjectToolPreparationService
     private static void CheckSpace(IEnumerable<DistributionSpacePlan> plans)
     {
         foreach (var volume in plans.GroupBy(p => p.Directory, StringComparer.OrdinalIgnoreCase))
+        {
             if (volume.Sum(p => p.RequiredBytes) > volume.Min(p => p.AvailableBytes))
+            {
                 throw new StudioXException("INSTALL_SPACE", "组件缓存和安装暂存所需磁盘空间不足：" + volume.Key);
+            }
+        }
     }
 }

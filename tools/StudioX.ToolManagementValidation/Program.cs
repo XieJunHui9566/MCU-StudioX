@@ -1,7 +1,6 @@
 using System.Diagnostics;
 using System.IO.Compression;
 using System.Security.Cryptography;
-using System.Text;
 using System.Text.Json;
 using StudioX.Application;
 using StudioX.Application.Tools;
@@ -17,29 +16,39 @@ if (args is ["--hold", var leasedRoot])
     Console.ReadLine();
     return;
 }
-if (args.Length != 2) throw new ArgumentException("Usage: tool-management-validation <new-output> <ninja.exe>");
+if (args.Length != 2) { throw new ArgumentException("Usage: tool-management-validation <new-output> <ninja.exe>"); }
 var output = Path.GetFullPath(args[0]);
-if (Directory.Exists(output)) throw new InvalidOperationException("Use a new evidence directory.");
+if (Directory.Exists(output)) { throw new InvalidOperationException("Use a new evidence directory."); }
 Directory.CreateDirectory(output);
 var ninja = await File.ReadAllBytesAsync(args[1]);
 var checks = new List<string>();
-void Check(bool value, string label) { if (!value) throw new InvalidOperationException(label); checks.Add(label); Console.WriteLine("PASS " + label); }
+void Check(bool value, string label) { if (!value) { throw new InvalidOperationException(label); } checks.Add(label); Console.WriteLine("PASS " + label); }
 async Task Reject(Func<Task> operation, string code)
 {
-    try { await operation(); throw new InvalidOperationException("Expected " + code); }
+    try
+    {
+        await operation();
+        throw new InvalidOperationException("Expected " + code);
+    }
     catch (StudioXException error) when (error.Code == code) { Check(true, "reject " + code); }
 }
 async Task LegacyZipFixture(string source, string destination)
 {
     var temporary = destination + ".zip-fixture";
     using (var file = File.OpenRead(source))
-    using (var container = ToolchainArchive.Open(file))
-    using (var zip = ZipFile.Open(temporary, ZipArchiveMode.Create))
-        await container.ReadFilesAsync(async (entry, content) =>
+    {
+        using (var container = ToolchainArchive.Open(file))
         {
-            using var output = zip.CreateEntry(entry.Name).Open();
-            await ToolchainArchive.CopyExactAsync(content, output, entry.Length);
-        });
+            using (var zip = ZipFile.Open(temporary, ZipArchiveMode.Create))
+            {
+                await container.ReadFilesAsync(async (entry, content) =>
+            {
+                using var output = zip.CreateEntry(entry.Name).Open();
+                await ToolchainArchive.CopyExactAsync(content, output, entry.Length);
+            });
+            }
+        }
+    }
     File.Move(temporary, destination, true);
 }
 async Task<ToolsetCatalog> MakeTools(string parent, params string[] versions)
@@ -52,7 +61,13 @@ async Task<ToolsetCatalog> MakeTools(string parent, params string[] versions)
         await File.WriteAllBytesAsync(Path.Combine(folder, "probe.exe"), ninja);
         await JsonStore.WriteAsync(Path.Combine(folder, "toolset.json"), new ToolsetManifest(1, "test.gcc", version, "win-x64", "test-gcc",
             new[] { "gcc", "gxx", "objcopy", "size", "cmake", "ninja" }.ToDictionary(role => role, _ => "probe.exe"),
-            new() { ["probe.exe"] = Convert.ToHexString(SHA256.HashData(ninja)) }, "测试工具", new() { ["fixture"] = version }));
+            new()
+            {
+                ["probe.exe"] = Convert.ToHexString(SHA256.HashData(ninja))
+            }, "测试工具", new()
+            {
+                ["fixture"] = version
+            }));
     }
     return new(root);
 }
@@ -120,11 +135,16 @@ using (var lease = ToolUsageLease.Acquire(oldRoot))
     await Reject(() => Task.Run(() => { using var exclusive = ToolUsageLease.Acquire(oldRoot, true); }), "TOOLS_BUSY");
 }
 using (var exclusive = ToolUsageLease.Acquire(oldRoot, true))
+{
     await Reject(() => catalog.ResolveAsync("test.gcc", "1.1.0", "test-gcc"), "TOOLS_BUSY");
+}
 using (var executableLease = ToolUsageLease.ForExecutable(Path.Combine(oldRoot, "probe.exe")))
+{
     Check(executableLease is not null && ToolUsageLease.IsBusy(oldRoot), "process executable automatically resolves its toolset lease");
+}
 var start = new ProcessStartInfo(Environment.ProcessPath!) { UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true, RedirectStandardInput = true };
-start.ArgumentList.Add("--hold"); start.ArgumentList.Add(oldRoot);
+start.ArgumentList.Add("--hold");
+start.ArgumentList.Add(oldRoot);
 using (var child = Process.Start(start)!)
 {
     Check(await child.StandardOutput.ReadLineAsync().WaitAsync(TimeSpan.FromSeconds(10)) == "READY", "separate process holds a live tool lease");
@@ -162,10 +182,12 @@ var preinstalledPreview = await service.PreviewInstallAsync(preinstalledArchive)
 Check(preinstalledPreview.AlreadyInstalled && preinstalledPreview.Identity.Key == "test.gcc/1.0.0/win-x64"
     && preinstalledPreview.Fingerprint == preinstalledFingerprint, "preinstalled and imported components share stable identity and original content fingerprint");
 using (var file = File.OpenRead(preinstalledArchive))
-using (var container = ToolchainArchive.Open(file))
 {
-    Check(container.Container == "7z", "default IDE export uses real 7z container");
-    Check((await container.ReadManifestAsync()).SequenceEqual(preinstalledManifest), "mcutoolchain export preserves original manifest bytes without changing project locks");
+    using (var container = ToolchainArchive.Open(file))
+    {
+        Check(container.Container == "7z", "default IDE export uses real 7z container");
+        Check((await container.ReadManifestAsync()).SequenceEqual(preinstalledManifest), "mcutoolchain export preserves original manifest bytes without changing project locks");
+    }
 }
 var originalStamp = File.GetLastWriteTimeUtc(Path.Combine(preinstalledRoot, "probe.exe"));
 Check((await service.InstallAsync(preinstalledPreview)).AlreadyInstalled
@@ -198,7 +220,10 @@ using (var zip = ZipFile.Open(conflictArchive, ZipArchiveMode.Update))
     zip.GetEntry("toolset.json")!.Delete();
     using var writer = new StreamWriter(zip.CreateEntry("toolset.json").Open());
     var original = await JsonStore.ReadAsync<ToolsetManifest>(Path.Combine(newSource.RootDirectory, "test.gcc", "10.0.0", "toolset.json"));
-    writer.Write(JsonSerializer.Serialize(original with { CompilerId = "different-compiler" }, JsonStore.Options));
+    writer.Write(JsonSerializer.Serialize(original with
+    {
+        CompilerId = "different-compiler"
+    }, JsonStore.Options));
 }
 await Reject(() => service.PreviewInstallAsync(conflictArchive), "TOOLS_VERSION_CONFLICT");
 Check((await service.PreviewInstallAsync(archive)).AlreadyInstalled, "conflicting same-version import never overwrites installed identity");
@@ -222,7 +247,10 @@ using (var zip = ZipFile.Open(unsupportedHost, ZipArchiveMode.Update))
     zip.GetEntry("toolset.json")!.Delete();
     using var writer = new StreamWriter(zip.CreateEntry("toolset.json").Open());
     var original = await JsonStore.ReadAsync<ToolsetManifest>(Path.Combine(newSource.RootDirectory, "test.gcc", "10.0.0", "toolset.json"));
-    writer.Write(JsonSerializer.Serialize(original with { Host = "linux-x64" }, JsonStore.Options));
+    writer.Write(JsonSerializer.Serialize(original with
+    {
+        Host = "linux-x64"
+    }, JsonStore.Options));
 }
 await Reject(() => service.PreviewInstallAsync(unsupportedHost), "TOOLS_IDENTITY");
 var nextSource = await MakeTools(Path.Combine(output, "changed-source"), "11.0.0");
@@ -251,7 +279,11 @@ var sharedProbe = Path.Combine(output, "shared-probe.exe");
 Check(NativeLinks.CreateHardLink(sharedProbe, retiredProbe, IntPtr.Zero), "fixture shares a real NTFS hard link outside the retired directory");
 using (var occupied = new FileStream(retiredProbe, FileMode.Open, FileAccess.Read, FileShare.Read))
 {
-    try { await service.PurgeAsync(purgeEntry, null); throw new InvalidOperationException("Expected occupied file failure"); }
+    try
+    {
+        await service.PurgeAsync(purgeEntry, null);
+        throw new InvalidOperationException("Expected occupied file failure");
+    }
     catch (IOException) { Check(File.Exists(Path.Combine(toPurgeDirectory, "retirement.json")), "interrupted permanent deletion retains its management record"); }
 }
 purgeEntry = (await service.InspectAsync(null)).Versions.Single(version => !version.Installed);
@@ -267,7 +299,9 @@ var activationRoot = Path.Combine(catalog.RootDirectory, activationEntry.Id, act
 var manifestBefore = await File.ReadAllBytesAsync(Path.Combine(activationRoot, "toolset.json"));
 var cached = await catalog.ResolveAsync(activationEntry.Id, activationEntry.Version, activationEntry.CompilerId);
 using (var lease = ToolUsageLease.Acquire(activationRoot))
+{
     await Reject(() => service.SetEnabledAsync(activationEntry, false, null), "TOOLS_PROTECTED");
+}
 await service.SetEnabledAsync(activationEntry, false, null);
 var disabled = (await service.InspectAsync(null)).Versions.Single(version => version.Version == "2.0.0");
 Check(!disabled.Enabled && disabled.StateText == "已禁用" && disabled.CanToggle && disabled.References.Count > 0,
@@ -320,7 +354,11 @@ Check(multiVerification.Count(character => character == '✓') == 2 && multiVeri
 using (var canceled = new CancellationTokenSource())
 {
     canceled.Cancel();
-    try { await inventory.VerifyProjectAsync(project, token: canceled.Token); throw new InvalidOperationException("Expected cancellation"); }
+    try
+    {
+        await inventory.VerifyProjectAsync(project, token: canceled.Token);
+        throw new InvalidOperationException("Expected cancellation");
+    }
     catch (OperationCanceledException) { Check(true, "canceled project check never launches a component or leaves a use lease"); }
 }
 var projectAfterVerification = await File.ReadAllBytesAsync(Path.Combine(project, ".studiox", "project.json"));
@@ -335,7 +373,9 @@ Check(Directory.Exists(Path.Combine(catalog.RootDirectory, "test.gcc", "10.0.0")
 reviewed = (await service.InspectAsync(null)).Versions.Single(version => version.Version == "10.0.0");
 Check(reviewed.Latest && reviewed.CanRemove && reviewed.CanDelete && reviewed.References.Count > 0, "explicit removal is available for reviewed latest referenced versions");
 using (var useLease = ToolUsageLease.Acquire(Path.Combine(catalog.RootDirectory, "test.gcc", "10.0.0")))
+{
     await Reject(() => service.DeleteAsync(reviewed, null), "TOOLS_PROTECTED");
+}
 var removedPath = await service.RemoveAsync(reviewed, null);
 var removed = (await service.InspectAsync(null)).Versions.Single(version => version.RetirementId == Path.GetFileName(removedPath));
 Check(removed.CanRestore && removed.CanDelete && removed.References.Count > 0, "explicit uninstall keeps a recoverable exact identity even with dependencies");

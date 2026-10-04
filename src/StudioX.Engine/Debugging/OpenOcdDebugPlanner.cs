@@ -103,14 +103,20 @@ public static class OpenOcdDebugPlanner
             openocd.AddRange(["-c", "adapter serial " + TclQuote(serial)]);
         }
         openocd.AddRange(target is null ? ["-c", configuration.TargetScriptText!] : ["-f", target]);
-        if (connectUnderReset) { openocd.AddRange(["-c", "reset_config srst_only srst_nogate connect_assert_srst"]); }
+        if (connectUnderReset)
+        {
+            openocd.AddRange(["-c", "reset_config srst_only srst_nogate connect_assert_srst"]);
+        }
         openocd.AddRange(["-c", "adapter speed " + configuration.Options.SpeedKhz.ToString(CultureInfo.InvariantCulture)]);
         openocd.AddRange(["-c", profile.IsWch ? "gdb_flash_program disable" : "gdb flash_program disable"]);
         // 附加正在运行的程序时，CRC 工作区会覆盖 SRAM 全局变量。
         // 调试校验走主机读回比较，不向目标 RAM 放置校验算法。
         // 沁恒脚本的 TAP 为 wch_riscv.cpu，实际 target 名称还带 .0。
         var targetName = profile.IsWch ? "$_TARGETNAME.0" : "$_TARGETNAME";
-        if (tclPort is not null) { openocd.AddRange(["-c", "set studiox_plot_target " + targetName]); }
+        if (tclPort is not null)
+        {
+            openocd.AddRange(["-c", "set studiox_plot_target " + targetName]);
+        }
         // RP2350 的 GDB 内存映射会先探测 QSPI，须暂时保留带备份的工作区；完成身份检查后再禁用。
         openocd.AddRange(["-c", targetName + (profile.IsRp2350 ? " configure -work-area-backup 1" : " configure -work-area-size 0 -work-area-backup 1")]);
         // detach 的 GDB 成功响应不等同于目标已运行；由 OpenOCD 明确检查并回报。
@@ -124,7 +130,10 @@ public static class OpenOcdDebugPlanner
             openocd.AddRange(["-c", targetName + " configure -event gdb-detach { " + detach + "resume; poll; if {[[target current] curstate] ne \"running\"} { error \"Target did not resume\" }; echo STUDIOX_DETACHED_RUNNING }"]);
         }
         // init 必须排在 Flash 写入禁用、工作区和退出行为声明之后；不自动重试复位。
-        if (connectUnderReset) { openocd.AddRange(["-c", "init; reset halt; echo STUDIOX_RESET_HALTED"]); }
+        if (connectUnderReset)
+        {
+            openocd.AddRange(["-c", "init; reset halt; echo STUDIOX_RESET_HALTED"]);
+        }
         return new(tools.Tool("openocd"), openocd.ToArray(), tools.Tool("gdb"), ["--interpreter=mi2", "--nx", "--quiet"],
             ["-gdb-set auto-load off", "-gdb-set mi-async on", "-gdb-set pagination off", "-gdb-set confirm off", "-gdb-set may-call-functions off", "-gdb-set remotetimeout 60",
              // 不套用 F407 的比较器数量；OpenOCD 按实际目标资源插入，资源耗尽时保留原始诊断。

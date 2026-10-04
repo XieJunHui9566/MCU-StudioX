@@ -2,7 +2,10 @@ namespace StudioX.Application.Editing;
 
 public static class BuiltInCodeTemplates
 {
-    public static IReadOnlyList<CodeTemplate> All { get; } = Array.AsReadOnly(new CodeTemplate[]
+    public static IReadOnlyList<CodeTemplate> All
+    {
+        get;
+    } = Array.AsReadOnly(new CodeTemplate[]
     {
         new("builtin-if", "条件判断", "sxif", "C/C++", "填写条件，可将选区放入语句体。", "if (${condition:condition})\n{\n    ${selection}${cursor}\n}"),
         new("builtin-for", "计数循环", "sxfor", "C/C++", "循环变量会在所有位置使用同一个填写值。", "for (int ${index:i} = 0; ${index} < ${count:count}; ++${index})\n{\n    ${selection}${cursor}\n}"),

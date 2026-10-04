@@ -1,14 +1,19 @@
 namespace StudioX.Application.CodeIntelligence;
 
+using System.Text.Json;
 using StudioX.Engine;
 using StudioX.Foundation;
 
 /// <summary>把原生 SDK 参数转换成语言服务参数；转换结果不参与真实编译或 ABI 验证。</summary>
-internal sealed record EspressifAnalysisProfile(string Target, string HeaderRoot, string[] Flags, string Description)
+internal sealed record EspressifAnalysisProfile(string Target, string HeaderRoot, string[] Flags, string Description, ResolvedToolset Tools)
 {
+    private readonly CompilationResponseFiles responses = new();
+    internal string[] ResponsePaths => responses.Paths;
+    internal bool ResponseInputsUnchanged => responses.Unchanged;
     // 语言提示只需要入口元数据；跳过大型发行哈希表，完整校验仍由工具目录服务负责。
     private sealed record AnalysisTools(int FormatVersion, string Id, string Version, string Host, string CompilerId,
-        Dictionary<string, string> Executables, string? Purpose, Dictionary<string, string>? ComponentVersions);
+        Dictionary<string, string> Executables, string? Purpose, Dictionary<string, string>? ComponentVersions,
+        Dictionary<string, string>? ResourceDirectories);
     public static bool IsXtensa(string target) => target is "esp32" or "esp32s3" or "esp8266";
 
     public static async Task<EspressifAnalysisProfile> ReadAsync(string runtime, string projectRoot,
@@ -24,7 +29,7 @@ internal sealed record EspressifAnalysisProfile(string Target, string HeaderRoot
             throw new StudioXException("LANGUAGE_ESPRESSIF_RUNTIME", "SDK 头文件与工程锁定的 Espressif 开发环境组件不一致。");
         }
         var manifest = new ToolsetManifest(metadata.FormatVersion, metadata.Id, metadata.Version, metadata.Host,
-            metadata.CompilerId, metadata.Executables, [], Purpose: metadata.Purpose);
+            metadata.CompilerId, metadata.Executables, [], ResourceDirectories: metadata.ResourceDirectories, Purpose: metadata.Purpose);
         // 这里只读取头文件，不执行 GCC 或 SDK 脚本；所有资源路径仍由开发环境组件边界约束。
         var tools = new ResolvedToolset(manifest, root, "").ForEspressifTarget(settings.Target);
         var compilerRoot = Path.GetDirectoryName(Path.GetDirectoryName(tools.Tool("gcc")))!;
@@ -47,6 +52,22 @@ internal sealed record EspressifAnalysisProfile(string Target, string HeaderRoot
             // LLVM clangd 没有 Xtensa 后端；这些标记只选择 SDK 声明分支，不代表验证了 Xtensa ABI。
             result.Add("-D__XTENSA__=1");
         }
+        var configPath = PathBoundary.Resolve(projectRoot, ".build/config/sdkconfig.json");
+        if (File.Exists(configPath))
+        {
+            using var config = JsonDocument.Parse(await File.ReadAllTextAsync(configPath, token).ConfigureAwait(false));
+            if (config.RootElement.TryGetProperty("LIBC_PICOLIBC", out var library) && library.ValueKind == JsonValueKind.True)
+            {
+                // GCC specs 隐式加入 Picolibc；clangd 不执行 specs，须按实际生成配置恢复相同的头文件顺序。
+                // 否则 Newlib 的 stdout 宏会遇到 Picolibc 的 sys/reent.h 兼容分支，产生误报。
+                var picolibc = Path.Combine(compilerRoot, "picolibc", "include");
+                if (!Directory.Exists(picolibc))
+                {
+                    throw new StudioXException("LANGUAGE_ESPRESSIF_LIBC", "工程已选择 Picolibc，但锁定的开发环境组件缺少对应头文件目录。");
+                }
+                result.AddRange(["-isystem", EspressifPathIdentity.NormalizePath(picolibc).Replace('\\', '/')]);
+            }
+        }
         var includes = Path.Combine(compilerRoot, targetTriple, "include");
         if (Directory.Exists(includes))
         {
@@ -55,11 +76,12 @@ internal sealed record EspressifAnalysisProfile(string Target, string HeaderRoot
         var description = IsXtensa(settings.Target)
             ? "Xtensa 使用通用 32 位 C/C++ 解析；目标 ABI 以 SDK 编译为准"
             : "RISC-V 使用原生 SDK 参数进行 32 位 C/C++ 解析；编译结果以 SDK 为准";
-        return new(settings.Target, EspressifPathIdentity.NormalizePath(root), result.ToArray(), description);
+        return new(settings.Target, EspressifPathIdentity.NormalizePath(root), result.ToArray(), description, tools);
     }
 
     public string[] Translate(string[] original, string directory, string file, string clangExecutable)
     {
+        original = responses.Expand(original, directory);
         var translated = new List<string> { clangExecutable };
         for (var index = 1; index < original.Length; index++)
         {
@@ -118,4 +140,5 @@ internal sealed record EspressifAnalysisProfile(string Target, string HeaderRoot
 
     private static string Normalize(string value, string directory) =>
         EspressifPathIdentity.NormalizePath(Path.GetFullPath(value, directory)).Replace('\\', '/');
+
 }

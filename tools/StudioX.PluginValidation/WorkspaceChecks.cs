@@ -43,15 +43,27 @@ internal static class WorkspaceChecks
         await using var workspace = await services.PluginManager.OpenWorkspaceAsync(project, broker.CallAsync);
         checks.Check(workspace.Contributions.Count == 1 && workspace.LatestPanels.Count == 1,
             "workspace activation validates contributions and delivers initial panel before return");
-        var overview = await workspace.InvokeAsync(pluginId, "command", "refresh", JsonSerializer.SerializeToElement(new { }));
+        var overview = await workspace.InvokeAsync(pluginId, "command", "refresh", JsonSerializer.SerializeToElement(new
+        {
+        }));
         checks.Check(ProjectName(overview.GetProperty("project")) == "plugin-fixture", "real .NET command uses project-scoped host broker");
 
-        var edited = await broker.CallAsync(pluginId, "editor_read", JsonSerializer.SerializeToElement(new { path = "src/main.c" }));
+        var edited = await broker.CallAsync(pluginId, "editor_read", JsonSerializer.SerializeToElement(new
+        {
+            path = "src/main.c"
+        }));
         checks.Check(edited.GetProperty("text").GetString() == editor.Buffer && edited.GetProperty("IsDirty").GetBoolean(),
             "editor_read uses current unsaved buffer instead of disk text");
         editor.Buffer = new string('a', 15999) + "😀tail";
-        var firstPage = await broker.CallAsync(pluginId, "editor_read", JsonSerializer.SerializeToElement(new { path = "src/main.c" }));
-        var secondPage = await broker.CallAsync(pluginId, "editor_read", JsonSerializer.SerializeToElement(new { path = "src/main.c", offset = 15999 }));
+        var firstPage = await broker.CallAsync(pluginId, "editor_read", JsonSerializer.SerializeToElement(new
+        {
+            path = "src/main.c"
+        }));
+        var secondPage = await broker.CallAsync(pluginId, "editor_read", JsonSerializer.SerializeToElement(new
+        {
+            path = "src/main.c",
+            offset = 15999
+        }));
         checks.Check(firstPage.GetProperty("text").GetString()!.Length == 15999 && firstPage.GetProperty("nextOffset").GetInt32() == 15999 &&
             secondPage.GetProperty("text").GetString() == "😀tail",
             "editor paging preserves Unicode surrogate pair at 16000-character boundary");
@@ -59,7 +71,12 @@ internal static class WorkspaceChecks
             "unsaved buffer changes produce new contentHash independently of diskHash");
         await checks.RejectAsync(async () => { _ = await broker.CallAsync(pluginId, "editor_read", JsonSerializer.SerializeToElement(new { path = "src/main.c", offset = 16000 })); },
             "editor paging offset inside surrogate pair rejected", "PLUGIN_EDITOR_OFFSET");
-        _ = await broker.CallAsync(pluginId, "editor_open", JsonSerializer.SerializeToElement(new { path = "src/main.c", line = 3, column = 7 }));
+        _ = await broker.CallAsync(pluginId, "editor_open", JsonSerializer.SerializeToElement(new
+        {
+            path = "src/main.c",
+            line = 3,
+            column = 7
+        }));
         checks.Check(editor.LastLocation == ("src/main.c", 3, 7), "editor_open routes validated line and column to desktop abstraction");
         await checks.RejectAsync(async () => { _ = await broker.CallAsync(pluginId, "editor_read", JsonSerializer.SerializeToElement(new { path = "../secret.c" })); },
             "editor path escape rejected", "PLUGIN_EDITOR_PATH", "PATH_UNSAFE");
@@ -67,7 +84,12 @@ internal static class WorkspaceChecks
             "broker rejects recursive plugin tools", "PLUGIN_HOST_TOOL");
 
         var disk = await services.Files.ReadAsync(project, "src/main.c");
-        var writeArguments = JsonSerializer.SerializeToElement(new { path = "src/main.c", originalSha256 = disk.DiskHash, content = "int changed;\n" });
+        var writeArguments = JsonSerializer.SerializeToElement(new
+        {
+            path = "src/main.c",
+            originalSha256 = disk.DiskHash,
+            content = "int changed;\n"
+        });
         var refused = await broker.CallAsync(pluginId, "project_edit_file", writeArguments);
         checks.Check(refused.GetRawText().Contains("MCP_APPROVAL_DENIED", StringComparison.Ordinal) && await File.ReadAllTextAsync(mainPath) == diskText,
             "plugin host writes require approval and denied write preserves source");
@@ -97,7 +119,10 @@ internal static class WorkspaceChecks
         var installed = (await new PluginRepository(Path.Combine(data, "plugins")).ListAsync()).Single();
         var updateSource = Path.Combine(scratch, "manager-upgrade-source");
         RepositoryChecks.CopyDirectory(installed.Directory, updateSource);
-        await JsonStore.WriteAsync(Path.Combine(updateSource, "plugin.json"), installed.Manifest with { Version = "1.2.0" });
+        await JsonStore.WriteAsync(Path.Combine(updateSource, "plugin.json"), installed.Manifest with
+        {
+            Version = "1.2.0"
+        });
         var updateArchive = Path.Combine(scratch, "manager-upgrade.studioxplugin");
         await PluginRepository.PackAsync(updateSource, updateArchive);
         var updated = await services.PluginManager.ImportAsync(updateArchive);
@@ -139,7 +164,10 @@ internal static class WorkspaceChecks
     private sealed class FixtureEditor : IPluginEditorAccess
     {
         public string Buffer { get; set; } = "int unsaved_editor_buffer;\n";
-        public (string Path, int Line, int Column)? LastLocation { get; private set; }
+        public (string Path, int Line, int Column)? LastLocation
+        {
+            get; private set;
+        }
 
         public Task<PluginEditorSnapshot?> ReadAsync(string relativePath, CancellationToken token)
         {

@@ -5,7 +5,6 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
-using ICSharpCode.AvalonEdit.Document;
 using StudioX.Application.Editing;
 
 public partial class MainWindow

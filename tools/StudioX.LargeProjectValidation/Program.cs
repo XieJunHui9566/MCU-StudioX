@@ -16,10 +16,16 @@ if (!Directory.Exists(fixture))
     {
         var directory = Path.Combine(fixture, "sdk", $"module{module:000}");
         Directory.CreateDirectory(directory);
-        for (var i = 0; i < 80; i++) { File.WriteAllText(Path.Combine(directory, $"header{i:000}.h"), "int sdk_symbol;\n"); }
+        for (var i = 0; i < 80; i++)
+        {
+            File.WriteAllText(Path.Combine(directory, $"header{i:000}.h"), "int sdk_symbol;\n");
+        }
     }
     Directory.CreateDirectory(Path.Combine(fixture, "src"));
-    for (var i = 0; i < 6000; i++) { File.WriteAllText(Path.Combine(fixture, "src", $"source{i:0000}.c"), $"int function{i}(void) {{ return {i}; }}\n"); }
+    for (var i = 0; i < 6000; i++)
+    {
+        File.WriteAllText(Path.Combine(fixture, "src", $"source{i:0000}.c"), $"int function{i}(void) {{ return {i}; }}\n");
+    }
 }
 var discovery = new WorkspaceDiscoveryService(new ProjectFileService());
 var measurements = new List<object>();
@@ -30,14 +36,23 @@ foreach (var query in new[] { "", "s", "so", "sou", "source59", "module299/heade
     var watch = Stopwatch.StartNew();
     index ??= await discovery.CreateIndexAsync(fixture);
     var paths = await index.SearchAsync(query);
-    measurements.Add(new { query, elapsedMs = watch.Elapsed.TotalMilliseconds, allocatedBytes = GC.GetTotalAllocatedBytes(true) - allocated, results = paths.Count });
+    measurements.Add(new
+    {
+        query,
+        elapsedMs = watch.Elapsed.TotalMilliseconds,
+        allocatedBytes = GC.GetTotalAllocatedBytes(true) - allocated,
+        results = paths.Count
+    });
     Console.WriteLine($"{query}: {watch.Elapsed.TotalMilliseconds:F1} ms, {paths.Count} results");
 }
 await File.WriteAllTextAsync(Path.Combine(report, "quick-open.json"), JsonSerializer.Serialize(measurements, new JsonSerializerOptions { WriteIndented = true }));
 var checks = new List<string>();
 void Check(bool condition, string message)
 {
-    if (!condition) { throw new InvalidOperationException(message); }
+    if (!condition)
+    {
+        throw new InvalidOperationException(message);
+    }
     checks.Add(message);
     Console.WriteLine("PASS " + message);
 }
@@ -50,19 +65,33 @@ Check(ranked[0] == "src/source0000.c" && ranked[^1] == "src/source0299.c", "file
 using (var stop = new CancellationTokenSource())
 {
     stop.Cancel();
-    try { await index.SearchAsync("source", stop.Token); throw new InvalidOperationException("Expected cancellation"); }
+    try
+    {
+        await index.SearchAsync("source", stop.Token);
+        throw new InvalidOperationException("Expected cancellation");
+    }
     catch (OperationCanceledException) { Check(true, "stale query cancellation is observed"); }
     Check((await index.SearchAsync("source5999")).Count == 1, "cancelled query does not cancel the shared snapshot");
-    try { await discovery.CreateIndexAsync(fixture, stop.Token); throw new InvalidOperationException("Expected cancellation"); }
+    try
+    {
+        await discovery.CreateIndexAsync(fixture, stop.Token);
+        throw new InvalidOperationException("Expected cancellation");
+    }
     catch (OperationCanceledException) { Check(true, "cancelled discovery cannot return a partial index"); }
 }
 using (var stop = new CancellationTokenSource())
-using (var entries = new ProjectFileService().Enumerate(fixture, "src", stop.Token).GetEnumerator())
 {
-    Check(entries.MoveNext(), "wide directory starts streaming");
-    stop.Cancel();
-    try { entries.MoveNext(); throw new InvalidOperationException("Expected cancellation"); }
-    catch (OperationCanceledException) { Check(true, "in-progress wide-directory enumeration cancels between entries"); }
+    using (var entries = new ProjectFileService().Enumerate(fixture, "src", stop.Token).GetEnumerator())
+    {
+        Check(entries.MoveNext(), "wide directory starts streaming");
+        stop.Cancel();
+        try
+        {
+            entries.MoveNext();
+            throw new InvalidOperationException("Expected cancellation");
+        }
+        catch (OperationCanceledException) { Check(true, "in-progress wide-directory enumeration cancels between entries"); }
+    }
 }
 var fresh = Path.Combine(fixture, "src", "new-external-file.c");
 try

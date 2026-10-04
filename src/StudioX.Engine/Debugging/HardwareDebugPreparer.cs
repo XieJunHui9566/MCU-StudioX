@@ -26,7 +26,10 @@ public static class HardwareDebugPreparer
             var prepared = await downloads.PrepareAsync(root, configuration.Options, token);
             if (prepared.Images.Any(snapshot => snapshot.Preview.Role == "pin-mapping"))
             {
-                configuration = configuration with { TargetScriptText = Ag32PinMappingTargetScript.RequireCompatible(root, configuration.OpenOcd.TargetScript) };
+                configuration = configuration with
+                {
+                    TargetScriptText = Ag32PinMappingTargetScript.RequireCompatible(root, configuration.OpenOcd.TargetScript)
+                };
             }
             var receipt = await JsonStore.ReadAsync<BuildReceipt>(PathBoundary.Resolve(root, BuildReceipt.RelativePath), token);
             if (receipt.SourceStamp is null || receipt.SourceStamp != await DebugSourceStamp.ComputeAsync(root, token))

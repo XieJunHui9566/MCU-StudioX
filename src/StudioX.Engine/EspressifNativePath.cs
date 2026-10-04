@@ -10,7 +10,10 @@ internal static class EspressifNativePath
     internal static string ForExecutable(string path)
     {
         var full = Path.GetFullPath(path);
-        if (!OperatingSystem.IsWindows()) return full;
+        if (!OperatingSystem.IsWindows())
+        {
+            return full;
+        }
         // Xtensa 启动器根据原始文件名选择配置；文件名变为 8.3 别名会使子编译器配置冲突。
         var native = Path.Combine(For(Path.GetDirectoryName(full)!), Path.GetFileName(full));
         Validate(native, full);

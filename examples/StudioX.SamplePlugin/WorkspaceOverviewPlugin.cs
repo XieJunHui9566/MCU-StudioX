@@ -54,11 +54,18 @@ public sealed class WorkspaceOverviewPlugin : IStudioXPlugin
         try
         {
             var current = host ?? throw new InvalidOperationException("插件尚未激活。");
-            var empty = JsonSerializer.SerializeToElement(new { });
+            var empty = JsonSerializer.SerializeToElement(new
+            {
+            });
             var project = await current.CallAsync("project_info", empty, cancellationToken);
             var serial = await current.CallAsync("serial_status", empty, cancellationToken);
             var log = await current.CallAsync("serial_read",
-                JsonSerializer.SerializeToElement(new { previousVersion = -1, maxCharacters = 2000, timestamps = false }),
+                JsonSerializer.SerializeToElement(new
+                {
+                    previousVersion = -1,
+                    maxCharacters = 2000,
+                    timestamps = false
+                }),
                 cancellationToken);
             if (serial.TryGetProperty("receivedBytes", out var bytes) && bytes.TryGetDouble(out var value) && double.IsFinite(value))
             {
@@ -101,7 +108,13 @@ public sealed class WorkspaceOverviewPlugin : IStudioXPlugin
                 new("refresh", "button", "刷新", CommandId: "refresh")
             ]);
             await current.PublishPanelAsync(panel, cancellationToken);
-            return JsonSerializer.SerializeToElement(new { project, serial, log, timeSource = "plugin-host-monotonic" });
+            return JsonSerializer.SerializeToElement(new
+            {
+                project,
+                serial,
+                log,
+                timeSource = "plugin-host-monotonic"
+            });
         }
         finally
         {

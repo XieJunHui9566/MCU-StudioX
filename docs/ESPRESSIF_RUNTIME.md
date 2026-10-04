@@ -22,6 +22,8 @@ ESP32 六个 0.1.1 器件包使用 IDF 自带的 `get-started/hello_world` 与 `
 
 代码提示按每个源文件导入 SDK 实际宏、头文件路径和语言标准，8.3 路径别名转换为编辑器的规范路径。首次打开未配置工程先提供通用提示，提示配置或编译以获得 SDK API。新增 C/C++ 文件继承相邻应用文件的 SDK 分析环境。Xtensa 使用通用 32 位 C/C++ 声明解析；RISC-V 使用标准 32 位目标并转换厂商扩展参数。语言服务缓存不修改原始 `compile_commands.json`，解析结果不替代真实 SDK 的 ABI 和编译验证。
 
+标准 C 头文件按原生生成的 `.build/config/sdkconfig.json` 选择。工程启用 `LIBC_PICOLIBC` 时，语言服务将锁定编译器的 `picolibc/include` 放在默认 Newlib 目录之前，恢复 GCC specs 隐式提供的搜索顺序；不按 IDF 版本猜测标准库。选定目录缺失时保留明确诊断，不通过补宏或过滤错误掩盖问题。SDK、用户源码和原生编译数据库保持不变。
+
 原生工具运行目录必须能够表示为不含空格和非 ASCII 字符的 Windows 短路径；无法取得有效短名称时明确拒绝，避免配置成功但后续编译器处理路径失败。编辑器仍使用工程的原始规范路径。应用组件、图片、字体和预编译库应放在工程内；构建检查原生 CMake/Ninja 输入，工程外的未锁定输入不会获得下载凭据。
 
 Windows 下编译器只缩短目录，保留 `xtensa-esp32s3-elf-gcc.exe` 等完整文件名。Xtensa 启动器使用文件名选择动态配置，把整个可执行文件缩成 8.3 名称会使 `XTENSA_GNU_CONFIG` 与 `-dynconfig` 指向不同文件。构建在 `.build` 内生成 CMake 语言规则钩子，在编译器检测前绑定已锁定路径，并经 IDF 的 `EXTRA_CMAKE_ARGS` 传入 bootloader 子工程；SDK 源码和用户 CMake 不改写。构建策略修订进入缓存身份，旧原生缓存会重建；其他进程的 `XTENSA_GNU_CONFIG` 不继承。
@@ -72,9 +74,14 @@ dotnet run --project tools/StudioX.EspressifValidation -- --bundle-upgrade `
 
 dotnet run --project tools/StudioX.EspressifValidation -- --language `
   artifacts/tool-runtime '<已原生配置的 ESP 验证工程目录>' '<新的语言验证输出目录>'
+
+dotnet run --project tools/StudioX.EspressifValidation -- --language-diagnostics `
+  artifacts/tool-runtime '<同版本已配置工程的父目录>' '<新的实时诊断输出目录>'
 ```
 
 官方模板验证覆盖六个 ESP32 目标的十二个工程，包含原生源码、组件依赖、配置与许可证保持一致，以及 SDK/目标/工具身份边界、未声明容量和无开发者工具路径。先前七个包、十四个工程的基础验证包含独立 ESP8266 模板。升级验证覆盖六个新版自动导入、未改变的 ESP8266 跳过、重复启动和既有工程内容保持不变。实际 C3/S3 clangd 验证已覆盖 SDK API 与 FreeRTOS 补全、只读 SDK 定义跳转、新 C++ 文件、8.3 路径映射，以及原始编译数据库保持不变；未配置 C5 工程的通用提示与状态说明也通过。
+
+实时诊断验证使用真实 clangd 与未保存编辑快照，覆盖 `FILE`、标准输入输出流、`errno`、标准库和 SDK API；确认合法代码无错误、故意写错的符号仍报错、改正后旧错误清除，且原生编译数据库哈希不变。结果 JSON 和原始语言日志保存到独立输出目录，不修改被测工程、不连接硬件。
 
 ## 厂商资料
 

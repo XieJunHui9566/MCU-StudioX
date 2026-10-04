@@ -1,7 +1,7 @@
 namespace StudioX.Desktop;
 
-using System.Text.Json;
 using System.IO.Compression;
+using System.Text.Json;
 using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
@@ -19,7 +19,10 @@ public partial class MainWindow
         var checks = new List<string>();
         void Check(bool value, string description)
         {
-            if (!value) throw new InvalidOperationException(description);
+            if (!value)
+            {
+                throw new InvalidOperationException(description);
+            }
             checks.Add(description);
         }
         async Task Layout()
@@ -57,9 +60,15 @@ public partial class MainWindow
                 var oldOutput = PluginDescendants(activity.Body).OfType<TextBox>().Last().Text;
                 switch (id)
                 {
-                    case "studiox.bit-lab": Input(activity.Body, "原始值").Text = "0xFFFFFFFF"; break;
-                    case "studiox.protocol-lab": Input(activity.Body, "报文").Text = "31 32 33 34 35 36 37 38 39"; break;
-                    case "studiox.wave-lab": Input(activity.Body, "每周期").Text = "32"; break;
+                    case "studiox.bit-lab":
+                        Input(activity.Body, "原始值").Text = "0xFFFFFFFF";
+                        break;
+                    case "studiox.protocol-lab":
+                        Input(activity.Body, "报文").Text = "31 32 33 34 35 36 37 38 39";
+                        break;
+                    case "studiox.wave-lab":
+                        Input(activity.Body, "每周期").Text = "32";
+                        break;
                     case "studiox.pixel-lab":
                         var flip = PluginDescendants(activity.Body).OfType<CheckBox>().Single(box => Equals(box.Content, "反色（只反转有效像素，补齐位仍为 0）"));
                         flip.IsChecked = true;
@@ -81,7 +90,9 @@ public partial class MainWindow
                 await Layout();
                 Check(PluginDescendants(activity.Body).OfType<TextBox>().Select(box => box.Text).SequenceEqual(beforeClose), id + " reopening keeps form and result");
                 await CloseWorkspaceTabAsync(activity.Tab);
-                await InvokePluginCommandAsync(id, "open", JsonSerializer.SerializeToElement(new { }));
+                await InvokePluginCommandAsync(id, "open", JsonSerializer.SerializeToElement(new
+                {
+                }));
                 await Layout();
                 Check(WorkspaceTabs.SelectedItem == activity.Tab && activity.Body.IsVisible, id + " manager command opens corresponding page");
             }
@@ -113,8 +124,9 @@ public partial class MainWindow
             var externalManifest = await PluginManifest.ReadAsync(externalManifestPath);
             externalManifest = externalManifest with
             {
-                Id = "validation.external-entry", DisplayName = "第三方扩展验证",
-                Activity = new(Title: "自定义入口", Tooltip: "由插件声明的提示", Icon: new([[3,12,12,3,21,12,12,21,3,12], [7,12,17,12]]))
+                Id = "validation.external-entry",
+                DisplayName = "第三方扩展验证",
+                Activity = new(Title: "自定义入口", Tooltip: "由插件声明的提示", Icon: new([[3, 12, 12, 3, 21, 12, 12, 21, 3, 12], [7, 12, 17, 12]]))
             };
             await JsonStore.WriteAsync(externalManifestPath, externalManifest);
             var externalArchive = Path.Combine(directory, "external-entry.studioxplugin");
@@ -160,7 +172,10 @@ public partial class MainWindow
                 await Layout();
                 FlushPluginPanels();
                 await Layout();
-                if (!ReferenceEquals(previousPanel, host.Content)) break;
+                if (!ReferenceEquals(previousPanel, host.Content))
+                {
+                    break;
+                }
                 await Task.Delay(20, timeout.Token);
             } while (true);
         }

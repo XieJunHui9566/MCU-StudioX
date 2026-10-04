@@ -33,7 +33,10 @@ public sealed class ValidationPlugin : IStudioXPlugin
         {
             case "increment":
             case "counter":
-                return JsonSerializer.SerializeToElement(new { count = ++count });
+                return JsonSerializer.SerializeToElement(new
+                {
+                    count = ++count
+                });
             case "callback":
                 return await host!.CallAsync("validation.echo", arguments, cancellationToken);
             case "reenter":
@@ -44,12 +47,20 @@ public sealed class ValidationPlugin : IStudioXPlugin
                 throw new InvalidOperationException("validation-original-error");
             case "cancel":
                 await Task.Delay(TimeSpan.FromSeconds(30), cancellationToken);
-                return JsonSerializer.SerializeToElement(new { cancelled = false });
+                return JsonSerializer.SerializeToElement(new
+                {
+                    cancelled = false
+                });
             case "environment":
-                return JsonSerializer.SerializeToElement(new { secret = Environment.GetEnvironmentVariable("STUDIOX_VALIDATION_SECRET") });
+                return JsonSerializer.SerializeToElement(new
+                {
+                    secret = Environment.GetEnvironmentVariable("STUDIOX_VALIDATION_SECRET")
+                });
             case "crash":
                 Environment.Exit(37);
-                return JsonSerializer.SerializeToElement(new { });
+                return JsonSerializer.SerializeToElement(new
+                {
+                });
             default:
                 throw new InvalidOperationException($"未知夹具调用：{kind}/{id}");
         }

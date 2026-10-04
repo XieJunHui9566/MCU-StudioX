@@ -151,7 +151,10 @@ public partial class MainWindow
             pinMenu.IsOpen = false;
             // WPF 在弹出层完成关闭后发出 Closed，等待输入队列清理引用。
             await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);
-            for (var attempt = 0; attempt < 20 && planner.ActivePinMenu is not null; attempt++) await Task.Delay(50);
+            for (var attempt = 0; attempt < 20 && planner.ActivePinMenu is not null; attempt++)
+            {
+                await Task.Delay(50);
+            }
             Check(planner.ActivePinMenu is null && !planner.HasChanges, "关闭菜单不创建脏草稿");
             pinMenu = OpenPinMenu(2);
             pinMenu.SearchBox.Text = "gpio4_4";

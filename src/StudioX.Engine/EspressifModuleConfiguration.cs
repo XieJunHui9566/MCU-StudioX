@@ -27,21 +27,36 @@ internal sealed record EspressifModuleConfiguration(ProjectManifest Project, Dev
     internal static async Task<EspressifModuleSettings> ReadSettingsAsync(string root, CancellationToken token)
     {
         var path = PathBoundary.Resolve(root, EspressifModuleSettings.RelativePath);
-        if (!File.Exists(path)) { return new(); }
-        if (new FileInfo(path).Length is <= 0 or > 16 * 1024) { throw Invalid("模块设置文件无效或过大。"); }
+        if (!File.Exists(path))
+        {
+            return new();
+        }
+        if (new FileInfo(path).Length is <= 0 or > 16 * 1024)
+        {
+            throw Invalid("模块设置文件无效或过大。");
+        }
         using var json = JsonDocument.Parse(await File.ReadAllTextAsync(path, token));
-        if (json.RootElement.ValueKind != JsonValueKind.Object) { throw Invalid("模块设置必须为 JSON 对象。"); }
+        if (json.RootElement.ValueKind != JsonValueKind.Object)
+        {
+            throw Invalid("模块设置必须为 JSON 对象。");
+        }
         var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var field in json.RootElement.EnumerateObject())
         {
-            if (!names.Add(field.Name)) { throw Invalid("模块设置包含重复字段。"); }
+            if (!names.Add(field.Name))
+            {
+                throw Invalid("模块设置包含重复字段。");
+            }
         }
         return json.RootElement.Deserialize<EspressifModuleSettings>(JsonStore.Options) ?? throw Invalid("模块设置为空。");
     }
 
     internal static void Validate(EspressifModuleSettings settings, string target, ulong originalFlashBytes)
     {
-        if (settings.FormatVersion != 1) { throw Invalid("不支持此模块设置格式版本。"); }
+        if (settings.FormatVersion != 1)
+        {
+            throw Invalid("不支持此模块设置格式版本。");
+        }
         var capabilities = EspressifModuleCapabilities.ForTarget(target);
         if (settings.FlashSizeMb is { } size && !capabilities.FlashSizesMb.Contains(size) ||
             settings.FlashMode is { } mode && !capabilities.FlashModes.Contains(mode, StringComparer.Ordinal) ||

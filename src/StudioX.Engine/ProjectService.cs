@@ -204,11 +204,17 @@ public sealed partial class ProjectService(Func<string, CancellationToken, Task>
         for (var attempt = 0; ; attempt++)
         {
             token.ThrowIfCancellationRequested();
-            try { Directory.Move(staging, target); return; }
+            try
+            {
+                Directory.Move(staging, target);
+                return;
+            }
             // Windows 文件扫描器可能短暂持有刚复制的 SDK 目录；不改 ACL，不覆盖并发创建的目标。
             catch (IOException error) when (OperatingSystem.IsWindows() && (error.HResult & 0xffff) is 5 or 32 or 33
                 && attempt < 8 && Directory.Exists(staging) && !Directory.Exists(target) && !File.Exists(target))
-            { await Task.Delay(TimeSpan.FromMilliseconds(150 * (attempt + 1)), token); }
+            {
+                await Task.Delay(TimeSpan.FromMilliseconds(150 * (attempt + 1)), token);
+            }
         }
     }
 
@@ -253,7 +259,10 @@ public sealed partial class ProjectService(Func<string, CancellationToken, Task>
         {
             throw new StudioXException("PROJECT_LOGIC_SETTINGS", "AG32 逻辑工程配置无效或不受当前版本支持。");
         }
-        if (project.Logic is { } validatedLogic) PackValidator.Version(validatedLogic.ToolsetVersion);
+        if (project.Logic is { } validatedLogic)
+        {
+            PackValidator.Version(validatedLogic.ToolsetVersion);
+        }
         ValidateAg32PinMappingSettings(directory, project);
         PackValidator.Token(project.ToolsetId);
         PackValidator.Version(project.ToolsetVersion);

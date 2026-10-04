@@ -28,7 +28,10 @@ public sealed partial class ToolManagementService(ToolsetCatalog catalog, PackRe
     public async Task ForgetProjectAsync(string project, CancellationToken token = default)
     {
         await gate.WaitAsync(token);
-        try { await JsonStore.WriteAsync(RegistryPath, (await RegisteredAsync(token)).Where(path => !path.Equals(project, StringComparison.OrdinalIgnoreCase)).ToArray(), token); }
+        try
+        {
+            await JsonStore.WriteAsync(RegistryPath, (await RegisteredAsync(token)).Where(path => !path.Equals(project, StringComparison.OrdinalIgnoreCase)).ToArray(), token);
+        }
         finally { gate.Release(); }
     }
     public Task<IReadOnlyList<string>> RegisteredAsync(CancellationToken token = default) => File.Exists(RegistryPath)
@@ -39,6 +42,8 @@ public sealed partial class ToolManagementService(ToolsetCatalog catalog, PackRe
     private async Task<ToolManagementReport> InspectCoreAsync(string? currentProject, IProgress<string>? progress, CancellationToken token)
     {
         var diagnostics = new List<string>();
+        var recovery = await ToolRepairTransactions.InspectAsync(catalog.RootDirectory, token);
+        diagnostics.AddRange(recovery.Diagnostics);
         var references = await ReadReferencesAsync(currentProject, diagnostics, token);
         var versions = new List<ManagedToolVersion>();
         foreach (var path in catalog.ManifestPaths().Order(StringComparer.Ordinal))
@@ -56,11 +61,21 @@ public sealed partial class ToolManagementService(ToolsetCatalog catalog, PackRe
                 try
                 {
                     var key = Path.GetFileName(directory);
-                    if (!Guid.TryParseExact(key, "N", out _)) throw new StudioXException("TOOLS_RETIREMENT", "可恢复目录身份无效：" + key);
+                    if (!Guid.TryParseExact(key, "N", out _))
+                    {
+                        throw new StudioXException("TOOLS_RETIREMENT", "可恢复目录身份无效：" + key);
+                    }
                     var record = await JsonStore.ReadAsync<ToolRetirement>(PathBoundary.Resolve(retired, key + "/retirement.json"), token);
-                    if (record.State == "restored") continue;
-                    PackValidator.Token(record.Id); PackValidator.Version(record.Version);
-                    if (record.FormatVersion != 1 || record.State is not ("retired" or "purging")) throw new StudioXException("TOOLS_RETIREMENT", "不支持的恢复记录。");
+                    if (record.State == "restored")
+                    {
+                        continue;
+                    }
+                    PackValidator.Token(record.Id);
+                    PackValidator.Version(record.Version);
+                    if (record.FormatVersion != 1 || record.State is not ("retired" or "purging"))
+                    {
+                        throw new StudioXException("TOOLS_RETIREMENT", "不支持的恢复记录。");
+                    }
                     if (record.State == "purging")
                     {
                         var partialRoot = PathBoundary.Resolve(directory, record.Id + "/" + record.Version);
@@ -72,7 +87,9 @@ public sealed partial class ToolManagementService(ToolsetCatalog catalog, PackRe
                     }
                     var entry = await DescribeVersionAsync(PathBoundary.Resolve(directory, record.Id + "/" + record.Version + "/toolset.json"), key, references.Items, diagnostics, token);
                     if (entry.Id != record.Id || entry.Version != record.Version || entry.CompilerId != record.CompilerId || entry.Fingerprint != record.Fingerprint)
+                    {
                         throw new StudioXException("TOOLS_RETIREMENT", "恢复记录与工具内容身份不一致。");
+                    }
                     versions.Add(entry);
                 }
                 catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }
@@ -87,8 +104,12 @@ public sealed partial class ToolManagementService(ToolsetCatalog catalog, PackRe
             Enabled = catalog.IsEnabled(version.Id, version.Version),
             Latest = version.Installed && latest.TryGetValue(version.Id, out var newest) && System.Version.TryParse(version.Version, out var number) && number == newest,
             SafeToManage = version.SafeToManage && complete && System.Version.TryParse(version.Version, out _)
+                && !recovery.Items.Any(item => item.Id == version.Id && item.Version == version.Version)
         }).OrderBy(version => version.Id).ThenByDescending(version => System.Version.TryParse(version.Version, out var number) ? number : new System.Version(0, 0)).ToArray(),
-            references.Projects, diagnostics, complete);
+            references.Projects, diagnostics, complete)
+        {
+            Recoveries = recovery.Items
+        };
     }
     private async Task<ManagedToolVersion> DescribeVersionAsync(string path, string? retiredId,
         Dictionary<string, List<string>> references, List<string> diagnostics, CancellationToken token)
@@ -97,14 +118,20 @@ public sealed partial class ToolManagementService(ToolsetCatalog catalog, PackRe
         var id = Path.GetFileName(Path.GetDirectoryName(Path.GetDirectoryName(path)))!;
         try
         {
-            PackValidator.Token(id); PackValidator.Version(version);
+            PackValidator.Token(id);
+            PackValidator.Version(version);
             var bytes = await File.ReadAllBytesAsync(path, token);
-            if (bytes.Length > 64 * 1024 * 1024) throw new StudioXException("TOOLS_MANIFEST_SIZE", "工具清单过大。");
+            if (bytes.Length > 64 * 1024 * 1024)
+            {
+                throw new StudioXException("TOOLS_MANIFEST_SIZE", "工具清单过大。");
+            }
             var offset = bytes is [0xef, 0xbb, 0xbf, ..] ? 3 : 0;
             var manifest = JsonSerializer.Deserialize<ToolsetManifest>(bytes.AsSpan(offset), JsonStore.Options)
                 ?? throw new StudioXException("TOOLS_MANIFEST", "工具清单为空。");
             if (manifest.FormatVersion != 1 || manifest.Id != id || manifest.Version != version || manifest.Host != "win-x64" || manifest.Sha256 is null || manifest.Executables is null)
+            {
                 throw new StudioXException("TOOLS_IDENTITY", "工具清单与目录身份不一致。");
+            }
             var root = Path.GetDirectoryName(path)!;
             var tree = CaptureTree(root, token);
             return new(id, version, manifest.DisplayName ?? id, manifest.CompilerId, tree.Bytes, tree.Files, retiredId is null, retiredId, false,
@@ -121,23 +148,40 @@ public sealed partial class ToolManagementService(ToolsetCatalog catalog, PackRe
     private static string Components(ToolsetManifest manifest) => manifest.ComponentVersions is null ? "未声明组件版本" : string.Join("；", manifest.ComponentVersions.Select(item => item.Key + " " + item.Value));
     private static (long Bytes, int Files, string Stamp) CaptureTree(string root, CancellationToken token)
     {
-        var pending = new Stack<string>(); pending.Push(root);
-        long bytes = 0; var files = 0; var visited = 0;
+        var pending = new Stack<string>();
+        pending.Push(root);
+        long bytes = 0;
+        var files = 0;
+        var visited = 0;
         using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
         while (pending.TryPop(out var directory))
         {
             token.ThrowIfCancellationRequested();
-            if ((File.GetAttributes(directory) & FileAttributes.ReparsePoint) != 0) throw new StudioXException("PATH_LINK", "工具目录包含链接：" + directory);
+            if ((File.GetAttributes(directory) & FileAttributes.ReparsePoint) != 0)
+            {
+                throw new StudioXException("PATH_LINK", "工具目录包含链接：" + directory);
+            }
             foreach (var entry in new DirectoryInfo(directory).EnumerateFileSystemInfos().OrderBy(info => info.Name, StringComparer.Ordinal))
             {
                 token.ThrowIfCancellationRequested();
-                if (++visited > 300000) throw new StudioXException("TOOLS_TREE_SIZE", "工具目录条目过多，停止清理检查。");
-                if ((entry.Attributes & FileAttributes.ReparsePoint) != 0) throw new StudioXException("PATH_LINK", "工具目录包含链接：" + entry.FullName);
+                if (++visited > 300000)
+                {
+                    throw new StudioXException("TOOLS_TREE_SIZE", "工具目录条目过多，停止清理检查。");
+                }
+                if ((entry.Attributes & FileAttributes.ReparsePoint) != 0)
+                {
+                    throw new StudioXException("PATH_LINK", "工具目录包含链接：" + entry.FullName);
+                }
                 var relative = Path.GetRelativePath(root, entry.FullName).Replace('\\', '/');
-                if (entry is DirectoryInfo child) { hash.AppendData(Encoding.UTF8.GetBytes(relative + ":dir\n")); pending.Push(child.FullName); }
+                if (entry is DirectoryInfo child)
+                {
+                    hash.AppendData(Encoding.UTF8.GetBytes(relative + ":dir\n"));
+                    pending.Push(child.FullName);
+                }
                 else if (entry is FileInfo file)
                 {
-                    bytes += file.Length; files++;
+                    bytes += file.Length;
+                    files++;
                     hash.AppendData(Encoding.UTF8.GetBytes(relative + ":" + file.Length + ":" + file.LastWriteTimeUtc.Ticks + ":" + file.CreationTimeUtc.Ticks + ":" + (int)file.Attributes + "\n"));
                 }
             }
@@ -146,7 +190,10 @@ public sealed partial class ToolManagementService(ToolsetCatalog catalog, PackRe
     }
     private void EnsureIdle()
     {
-        if (sessionActive?.Invoke() == true) throw new StudioXException("TOOLS_SESSION_ACTIVE", "请先结束调试、预览或当前工具操作再管理版本。");
+        if (sessionActive?.Invoke() == true)
+        {
+            throw new StudioXException("TOOLS_SESSION_ACTIVE", "请先结束调试、预览或当前工具操作再管理版本。");
+        }
     }
     private string VersionRoot(ManagedToolVersion version) => PathBoundary.Resolve(catalog.RootDirectory,
         (version.RetirementId is null ? "" : ".retired/" + version.RetirementId + "/") + version.Id + "/" + version.Version);

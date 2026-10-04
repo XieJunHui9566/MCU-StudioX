@@ -23,13 +23,19 @@ public partial class MainWindow
         bool IsCurrent() => !closing && !cancellation.IsCancellationRequested && buildMemoryRevision == revision && projectDirectory == directory;
         var progress = new Progress<string>(message =>
         {
-            if (IsCurrent()) { BuildMemory.SetMessage("后台更新内存统计 · " + message); }
+            if (IsCurrent())
+            {
+                BuildMemory.SetMessage("后台更新内存统计 · " + message);
+            }
         });
         try
         {
             // 内存统计是可选信息，工具完整校验在后台继续；不占住工程打开和编辑操作。
             var report = await services.BuildMemory.ReadAsync(directory, cancellation.Token, progress);
-            if (IsCurrent()) { BuildMemory.SetReport(report); }
+            if (IsCurrent())
+            {
+                BuildMemory.SetReport(report);
+            }
         }
         catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
         {
@@ -41,7 +47,10 @@ public partial class MainWindow
         catch (Exception ex)
         {
             Log("后台构建占用分析：" + ex);
-            if (IsCurrent()) { BuildMemory.SetMessage("暂无法分析，请查看构建日志。"); }
+            if (IsCurrent())
+            {
+                BuildMemory.SetMessage("暂无法分析，请查看构建日志。");
+            }
         }
         finally
         {

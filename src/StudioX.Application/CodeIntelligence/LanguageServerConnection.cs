@@ -18,12 +18,27 @@ internal sealed class LanguageServerConnection : IAsyncDisposable
     private int nextId;
     private int disposed;
     private readonly Action<string, JsonElement>? notification;
-    public bool IsRunning => !process.HasExited && !reader.IsCompleted;
+    private readonly Action<string> log;
+    private Exception? failure;
+    private int readerCompleted;
+    public Exception? Failure => Volatile.Read(ref failure);
+    public bool IsRunning
+    {
+        get
+        {
+            try
+            {
+                return !process.HasExited && Volatile.Read(ref readerCompleted) == 0;
+            }
+            catch (ObjectDisposedException) { return false; }
+        }
+    }
 
     public LanguageServerConnection(string executable, string workingDirectory, string cacheDirectory, Action<string> log,
         Action<string, JsonElement>? notification = null)
     {
         this.notification = notification;
+        this.log = log;
         var start = new ProcessStartInfo(executable)
         {
             WorkingDirectory = workingDirectory,
@@ -64,7 +79,7 @@ internal sealed class LanguageServerConnection : IAsyncDisposable
         {
             if (!IsRunning)
             {
-                throw new StudioXException("LANGUAGE_EXITED", "代码提示服务已退出；重新打开工程可重启。");
+                throw new StudioXException("LANGUAGE_EXITED", "代码提示服务已退出，等待自动恢复。", Failure);
             }
             await SendAsync(new
             {
@@ -131,7 +146,7 @@ internal sealed class LanguageServerConnection : IAsyncDisposable
     }
     private async Task ReadAsync()
     {
-        Exception failure = new StudioXException("LANGUAGE_EXITED", "代码提示服务已关闭。");
+        Exception terminalFailure = new StudioXException("LANGUAGE_EXITED", "代码提示服务已关闭。");
         try
         {
             var stream = process.StandardOutput.BaseStream;
@@ -198,8 +213,23 @@ internal sealed class LanguageServerConnection : IAsyncDisposable
                 }
             }
         }
-        catch (Exception ex) { failure = ex; }
-        finally { foreach (var entry in pending) { if (pending.TryRemove(entry.Key, out var completion)) { completion.TrySetException(failure); } } }
+        catch (Exception ex) { terminalFailure = ex; }
+        finally
+        {
+            Volatile.Write(ref failure, terminalFailure);
+            Volatile.Write(ref readerCompleted, 1);
+            if (!lifetime.IsCancellationRequested)
+            {
+                log("clangd 消息通道已结束：" + terminalFailure);
+            }
+            foreach (var entry in pending)
+            {
+                if (pending.TryRemove(entry.Key, out var completion))
+                {
+                    completion.TrySetException(terminalFailure);
+                }
+            }
+        }
     }
     public async ValueTask DisposeAsync()
     {
@@ -209,7 +239,7 @@ internal sealed class LanguageServerConnection : IAsyncDisposable
         }
         try
         {
-            if (IsRunning)
+            if (!process.HasExited && Volatile.Read(ref readerCompleted) == 0)
             {
                 using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(1));
                 try

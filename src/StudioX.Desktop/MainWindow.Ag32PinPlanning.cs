@@ -25,7 +25,10 @@ public partial class MainWindow
     {
         var view = Ag32PinMapping.Planner;
         var timing = await services.Ag32PinPlanning.ReadTimingAsync(root, token);
-        if (projectDirectory != root) return;
+        if (projectDirectory != root)
+        {
+            return;
+        }
         var hasUnsavedText = currentProjectManifest?.PinMapping is { } mapping && FindEditor(mapping.PinMapFile)?.IsDirty == true;
         if (!discardDraft && ag32PinPlanProject == root && view.HasChanges)
         {
@@ -54,7 +57,10 @@ public partial class MainWindow
     private async void ApplyAg32RecommendedClock_Click(object? sender, Ag32ClockRecommendation recommendation)
     {
         // RunAsync 会切换忙碌状态；先把用户点击的组合写入草稿，保存仍走原有冲突/散列检查。
-        try { Ag32PinMapping.Planner.UseRecommendedClocks(recommendation); }
+        try
+        {
+            Ag32PinMapping.Planner.UseRecommendedClocks(recommendation);
+        }
         catch (StudioXException error) { Log(error.ToString()); Status.Text = error.Message; return; }
         await RunAsync(async token => await SaveAg32PinPlanAsync(RequireProject(), token));
     }

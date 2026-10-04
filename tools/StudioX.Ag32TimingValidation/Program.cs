@@ -8,9 +8,9 @@ if (args is [var toolsets, "--recheck-evidence", var matrix, var recheckOutput])
     await EvidenceChecks.RunAsync(toolsets, matrix, recheckOutput);
     return;
 }
-if (args.Length != 3) throw new ArgumentException("toolsets pack-directory new-output");
+if (args.Length != 3) { throw new ArgumentException("toolsets pack-directory new-output"); }
 var output = Path.GetFullPath(args[2]);
-if (Directory.Exists(output)) throw new IOException("Use a new validation output directory.");
+if (Directory.Exists(output)) { throw new IOException("Use a new validation output directory."); }
 Directory.CreateDirectory(output);
 var catalog = new ToolsetCatalog(Path.GetFullPath(args[0]));
 var packs = new PackRepository(Path.Combine(output, "packs"));
@@ -21,7 +21,10 @@ var checks = new List<string>();
 var cases = new List<object>();
 void Check(bool pass, string description)
 {
-    if (!pass) throw new InvalidOperationException(description);
+    if (!pass)
+    {
+        throw new InvalidOperationException(description);
+    }
     checks.Add(description);
     Console.WriteLine("PASS " + description);
     File.WriteAllLines(Path.Combine(output, "checks.txt"), checks);
@@ -68,18 +71,36 @@ foreach (var archive in Directory.GetFiles(Path.GetFullPath(args[1]), "*.mcupack
                 : status.State == Ag32TimingState.Failed && (status.SetupSlackNs < 0 || status.HoldSlackNs < 0),
                 device.Id + $" {sys}: status matches actual tool timing outcome");
             if (device.Id == "AG32VF303CCT6" && sys == 200)
+            {
                 Check(!buildPassed && status.SetupSlackNs < 0, "Original 200/100 analog timing failure reproduced and shown in red state");
-            if (buildPassed) _ = await mapping.RequireImageAsync(root);
+            }
+            if (buildPassed)
+            {
+                _ = await mapping.RequireImageAsync(root);
+            }
             else
             {
-                try { await mapping.RequireImageAsync(root); throw new InvalidOperationException("Failed timing image accepted"); }
+                try
+                {
+                    await mapping.RequireImageAsync(root);
+                    throw new InvalidOperationException("Failed timing image accepted");
+                }
                 catch (StudioXException error) when (error.Code == "AG32_MAPPING_BUILD_REQUIRED")
-                { Check(!File.Exists(Path.Combine(root, ".build/ag32-mapping/pins.bin")), "Failed image deleted and download blocked"); }
+                {
+                    Check(!File.Exists(Path.Combine(root, ".build/ag32-mapping/pins.bin")), "Failed image deleted and download blocked");
+                }
             }
             var mainAfter = await File.ReadAllBytesAsync(Path.Combine(root, "src/main.c"));
             Check(main.SequenceEqual(mainAfter), "Application main remains unchanged");
-            cases.Add(new { device = device.Id, sysMhz = sys, busMhz = sys / 2, buildPassed, status,
-                sourceSha256 = Convert.ToHexString(SHA256.HashData(before)) });
+            cases.Add(new
+            {
+                device = device.Id,
+                sysMhz = sys,
+                busMhz = sys / 2,
+                buildPassed,
+                status,
+                sourceSha256 = Convert.ToHexString(SHA256.HashData(before))
+            });
             await JsonStore.WriteAsync(Path.Combine(output, "matrix.json"), cases);
 
             if (device.Id == "AG32VF303CCT6")

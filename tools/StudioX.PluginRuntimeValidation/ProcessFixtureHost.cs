@@ -27,13 +27,19 @@ internal static class ProcessFixtureHost
                     return JsonSerializer.SerializeToElement(plugin.Describe());
                 case "activate":
                     await plugin.ActivateAsync(new Bridge(connection!), token);
-                    return JsonSerializer.SerializeToElement(new { active = true });
+                    return JsonSerializer.SerializeToElement(new
+                    {
+                        active = true
+                    });
                 case "invoke":
                     return await plugin.InvokeAsync(payload.GetProperty("kind").GetString()!, payload.GetProperty("id").GetString()!,
                         payload.GetProperty("arguments"), token);
                 case "deactivate":
                     await plugin.DeactivateAsync(token);
-                    return JsonSerializer.SerializeToElement(new { active = false });
+                    return JsonSerializer.SerializeToElement(new
+                    {
+                        active = false
+                    });
                 default:
                     throw new InvalidOperationException(method);
             }
@@ -57,7 +63,11 @@ internal static class ProcessFixtureHost
     {
         public Task<JsonElement> CallAsync(string tool, JsonElement arguments, CancellationToken cancellationToken)
         {
-            return connection.RequestAsync("hostCall", JsonSerializer.SerializeToElement(new { tool, arguments }), TimeSpan.FromSeconds(10), cancellationToken);
+            return connection.RequestAsync("hostCall", JsonSerializer.SerializeToElement(new
+            {
+                tool,
+                arguments
+            }), TimeSpan.FromSeconds(10), cancellationToken);
         }
 
         public Task PublishPanelAsync(PluginPanelDefinition panel, CancellationToken cancellationToken)
@@ -67,7 +77,11 @@ internal static class ProcessFixtureHost
 
         public Task LogAsync(string level, string message, CancellationToken cancellationToken)
         {
-            return connection.PublishAsync("log", JsonSerializer.SerializeToElement(new { level, message }), cancellationToken);
+            return connection.PublishAsync("log", JsonSerializer.SerializeToElement(new
+            {
+                level,
+                message
+            }), cancellationToken);
         }
     }
 }

@@ -10,13 +10,19 @@ public static class DownloadImageLayout
 {
     public static string ApprovalSha256(IReadOnlyList<DownloadImagePreview> images)
     {
-        if (images.Count == 0) { throw new StudioXException("DOWNLOAD_IMAGES", "下载布局不能为空。"); }
+        if (images.Count == 0)
+        {
+            throw new StudioXException("DOWNLOAD_IMAGES", "下载布局不能为空。");
+        }
         if (images.Any(image => image.Bytes <= 0 || image.Format is not ("bin" or "elf") ||
             image.Sha256.Length != 64 || !image.Sha256.All(Uri.IsHexDigit)))
         {
             throw new StudioXException("DOWNLOAD_IMAGES", "下载布局含无效映像。");
         }
-        if (images.Count == 1) { return images[0].Sha256; }
+        if (images.Count == 1)
+        {
+            return images[0].Sha256;
+        }
         var text = new StringBuilder("StudioX-download-layout-1\n");
         foreach (var image in images.OrderBy(image => image.Address).ThenBy(image => image.Role, StringComparer.Ordinal))
         {

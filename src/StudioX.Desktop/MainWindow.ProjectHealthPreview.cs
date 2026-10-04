@@ -15,7 +15,14 @@ public partial class MainWindow
     public async Task RenderProjectHealthPreviewAsync(string directory, string project)
     {
         var checks = new List<string>();
-        void Check(bool value, string label) { if (!value) throw new InvalidOperationException(label); checks.Add(label); }
+        void Check(bool value, string label)
+        {
+            if (!value)
+            {
+                throw new InvalidOperationException(label);
+            }
+            checks.Add(label);
+        }
         healthDirectory = project;
         await ShowProjectHealthAsync();
         Check(projectHealthView?.Report is { Errors: 0, NativeBuildApplicable: true }, "real project displays complete read-only preflight");
@@ -37,6 +44,16 @@ public partial class MainWindow
         var real = projectHealthView!.Report!;
         projectHealthView.ChecksGrid.SelectedItem = real.Checks.First(check => check.Code == "HEALTH_SDK");
         Check(!projectHealthView.ActionButton.IsEnabled && projectHealthView.HelpButton.IsEnabled, "settings action requires the same active project while help stays available");
+        var configureCheck = new HealthCheck("LANGUAGE_CONFIG_CHANGED", "分析配置已变化", HealthState.Warning,
+            "请重新配置工程。", "build", HealthAction.Configure, "retained configuration evidence");
+        projectHealthView.SetReport(real with
+        {
+            Checks = [configureCheck]
+        });
+        Check(projectHealthView.ActionButton.Content?.ToString() == "重新配置并刷新代码分析" && !projectHealthView.ActionButton.IsEnabled,
+            "configuration refresh is named explicitly and disabled for an unopened project");
+        projectHealthView.SetReport(real);
+        projectHealthView.ChecksGrid.SelectedItem = real.Checks.First(check => check.Code == "HEALTH_SDK");
         await projectHealthView.HelpRequested!(projectHealthView.SelectedCheck!.HelpTopic);
         Check(helpCenter?.SelectedArticle?.Id == "esp-idf", "selected diagnostic opens the corresponding actual help article");
         await ShowProjectHealthAsync(diagnostic: "cc1.exe: XTENSA_GNU_CONFIG pointed different files");
@@ -45,7 +62,7 @@ public partial class MainWindow
         Check(!projectHealthView.ActionButton.IsEnabled && !projectHealthView.Toolbar.IsEnabled, "busy inspection prevents repair and export actions");
         projectHealthView.BeginInspection();
         projectHealthView.SetBusy(false, "已取消");
-        Check(projectHealthView.Report is null && !projectHealthView.ExportButton.IsEnabled && !projectHealthView.ActionButton.IsEnabled, "cancelled inspection cannot use stale report actions");
+        Check(projectHealthView!.Report is null && !projectHealthView.ExportButton.IsEnabled && !projectHealthView.ActionButton.IsEnabled, "cancelled inspection cannot use stale report actions");
         var fixture = Path.Combine(directory, "failed-project");
         await JsonStore.WriteAsync(Path.Combine(fixture, ".studiox", "project.json"), new ProjectManifest(1, "offline", "validation.pack", "1.0.0", "offline",
             "OfflineDevice", "minimal", "validation.missing", "1.0.0", "offline"));
@@ -53,7 +70,7 @@ public partial class MainWindow
         Check(!failed.Success && failed.Artifacts.Count == 0 && !Directory.Exists(Path.Combine(fixture, ".build")), "automatic build preflight blocks errors before the build backend runs");
         Check(projectHealthView.Report!.Checks.Any(check => check.Code == "TOOLSET_MISSING"), "automatic failure displays the missing locked toolset");
         projectHealthView.ChecksGrid.SelectedItem = projectHealthView.Report.Checks.First(check => check.Code == "TOOLSET_MISSING");
-        Check(projectHealthView.ActionButton.IsEnabled && projectHealthView.ActionButton.Content.ToString() == "打开对应开发环境组件", "missing toolset exposes its repair entry");
+        Check(projectHealthView.ActionButton.IsEnabled && projectHealthView.ActionButton.Content?.ToString() == "打开对应开发环境组件", "missing toolset exposes its repair entry");
         Check(projectHealthView.DetailText.Text.Contains("原始诊断") && projectHealthView.DetailText.Text.Contains("TOOLSET_MISSING"), "selected failure displays the full original exception");
         ApplyTheme(ThemeService.Dark);
         Width = 1440;
@@ -71,7 +88,11 @@ public partial class MainWindow
         Render(this, Path.Combine(directory, "health-compact.png"));
         projectHealthView.Invalidate();
         Check(projectHealthView.Report is null && !projectHealthView.ExportButton.IsEnabled, "project switch invalidates old inspection and export state");
-        await File.WriteAllTextAsync(Path.Combine(directory, "health-ui-result.json"), JsonSerializer.Serialize(new { status = "passed", checks }, new JsonSerializerOptions { WriteIndented = true }));
+        await File.WriteAllTextAsync(Path.Combine(directory, "health-ui-result.json"), JsonSerializer.Serialize(new
+        {
+            status = "passed",
+            checks
+        }, new JsonSerializerOptions { WriteIndented = true }));
         async Task SettleAsync()
         {
             UpdateLayout();

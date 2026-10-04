@@ -1,0 +1,12 @@
+<Project
+  Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference
+      Include="../../src/StudioX.Packages/StudioX.Packages.csproj" />
+    <ProjectReference
+      Include="../../src/StudioX.Extensions/StudioX.Extensions.csproj" />
+  </ItemGroup>
+</Project>

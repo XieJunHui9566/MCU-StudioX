@@ -82,7 +82,10 @@ public sealed partial class OpenOcdService(ToolsetCatalog catalog)
         var validated = await ValidateImageAsync(projectDirectory, options, token);
         options = Ag32ProbeConfiguration.NormalizeOptions(validated.Configuration.Device, options);
         return new(validated.Configuration, options, validated.SourceImage, validated.Format,
-            validated.Sha256, validated.Bytes.LongLength) { Images = validated.Images };
+            validated.Sha256, validated.Bytes.LongLength)
+        {
+            Images = validated.Images
+        };
     }
 
     private sealed record ValidatedImage(DownloadConfiguration Configuration, ResolvedToolset Tools,
@@ -258,7 +261,10 @@ public sealed partial class OpenOcdService(ToolsetCatalog catalog)
                 {
                     capture.Report("\n下载诊断：" + failureReason + "。\n");
                 }
-                return new(success, capture.Text, prepared.LogPath, result.ExitCode, result.TimedOut) { FailureReason = failureReason };
+                return new(success, capture.Text, prepared.LogPath, result.ExitCode, result.TimedOut)
+                {
+                    FailureReason = failureReason
+                };
             }
             catch (OperationCanceledException) { capture.Report("\n下载已停止，未确认写入完成；请重新下载。\n"); throw; }
             catch (Exception ex) { capture.Report("\n" + ex + "\n"); throw; }

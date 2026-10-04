@@ -169,14 +169,19 @@ public sealed class PluginRepository
                 var target = PathBoundary.Resolve(staging, relative);
                 Directory.CreateDirectory(Path.GetDirectoryName(target)!);
                 await using (var input = File.OpenRead(source))
-                {await using (var destination = new FileStream(target, FileMode.CreateNew))
                 {
-                    await input.CopyToAsync(destination, token).ConfigureAwait(false);
-                }}
+                    await using (var destination = new FileStream(target, FileMode.CreateNew))
+                    {
+                        await input.CopyToAsync(destination, token).ConfigureAwait(false);
+                    }
+                }
                 hashes.Add(relative, await HashAsync(target, token).ConfigureAwait(false));
             }
             var manifest = await JsonStore.ReadAsync<PluginManifest>(Path.Combine(sourceRoot, "plugin.json"), token).ConfigureAwait(false);
-            await JsonStore.WriteAsync(Path.Combine(staging, "plugin.json"), manifest with { Sha256 = hashes }, token).ConfigureAwait(false);
+            await JsonStore.WriteAsync(Path.Combine(staging, "plugin.json"), manifest with
+            {
+                Sha256 = hashes
+            }, token).ConfigureAwait(false);
             _ = await PluginManifest.ReadAsync(Path.Combine(staging, "plugin.json"), token).ConfigureAwait(false);
             Directory.CreateDirectory(Path.GetDirectoryName(output)!);
             await using (var stream = new FileStream(temporary, FileMode.CreateNew))

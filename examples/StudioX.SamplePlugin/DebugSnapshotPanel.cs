@@ -10,7 +10,10 @@ internal static class DebugSnapshotPanel
     {
         var request = arguments.Deserialize<PluginDebugSnapshotRequest>(new JsonSerializerOptions(JsonSerializerDefaults.Web))
             ?? throw new InvalidOperationException("缺少调试快照输入。");
-        if (request.FormatVersion != 1) { throw new InvalidOperationException("不支持的快照格式。"); }
+        if (request.FormatVersion != 1)
+        {
+            throw new InvalidOperationException("不支持的快照格式。");
+        }
         var widgets = new List<PluginPanelWidget>
         {
             new("mode", "text", "数据来源", JsonSerializer.SerializeToElement(request.Hardware ? "实机暂停快照" : "离线模拟 · 未连接芯片")),
@@ -40,7 +43,10 @@ internal static class DebugSnapshotPanel
     }
     private static string Cell(JsonElement row, string field)
     {
-        if (!row.TryGetProperty(field, out var value)) { return ""; }
+        if (!row.TryGetProperty(field, out var value))
+        {
+            return "";
+        }
         return value.ValueKind switch
         {
             JsonValueKind.String => value.GetString() ?? "",

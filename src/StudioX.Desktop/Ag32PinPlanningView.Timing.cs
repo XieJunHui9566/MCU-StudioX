@@ -12,7 +12,10 @@ public partial class Ag32PinPlanningView
     private Ag32TimingStatus? timing;
     private string? clockError;
     private bool externalDraft;
-    internal Ag32TimingState DisplayedTimingState { get; private set; }
+    internal Ag32TimingState DisplayedTimingState
+    {
+        get; private set;
+    }
 
     public void SetTiming(Ag32TimingStatus status, bool hasUnsavedText = false)
     {
@@ -24,7 +27,9 @@ public partial class Ag32PinPlanningView
     public void UseRecommendedClocks(Ag32ClockRecommendation recommendation)
     {
         if (busy || Snapshot is null || !Ag32PinPlanningService.ClockRecommendations(Snapshot.DeviceId, GetClocks(), GetAnalog()).Contains(recommendation))
+        {
             throw new StudioXException("AG32_CLOCK_RECOMMENDATION", "推荐组合已不适用于当前配置，请重新读取。");
+        }
         loading = true;
         try
         {
@@ -37,7 +42,10 @@ public partial class Ag32PinPlanningView
 
     private void RefreshClockPresentation()
     {
-        if (Snapshot is null || RecommendedClocks is null || AnalogComparator is null) return;
+        if (Snapshot is null || RecommendedClocks is null || AnalogComparator is null)
+        {
+            return;
+        }
         var selected = (RecommendedClocks.SelectedItem as Ag32ClockRecommendation)?.Name;
         clockError = null;
         try
@@ -63,7 +71,10 @@ public partial class Ag32PinPlanningView
 
     private void UpdateTimingPresentation()
     {
-        if (TimingStateText is null) return;
+        if (TimingStateText is null)
+        {
+            return;
+        }
         var state = timing?.State ?? Ag32TimingState.Unverified;
         var text = timing?.Message ?? "尚未验证 / Unverified：请保存配置后编译。";
         var hideEvidence = false;
@@ -98,19 +109,30 @@ public partial class Ag32PinPlanningView
 
     private void UpdateRecommendation()
     {
-        if (RecommendationDetails is null) return;
+        if (RecommendationDetails is null)
+        {
+            return;
+        }
         RecommendationDetails.Text = RecommendedClocks.SelectedItem is Ag32ClockRecommendation item
             ? item.Evidence + " 应用会保存当前整份图形草稿并同步系统参数。"
             : "启用模拟 IP 且实际 HSE 为 8 MHz 时提供离线验证组合；其它配置须单独编译验证。";
     }
-    private void Recommendation_Changed(object sender, SelectionChangedEventArgs e) { UpdateRecommendation(); }
+    private void Recommendation_Changed(object sender, SelectionChangedEventArgs e)
+    {
+        UpdateRecommendation();
+    }
     private void ApplyRecommendedClock_Click(object sender, RoutedEventArgs e)
     {
         if (ApplyRecommendedClockButton.IsEnabled && RecommendedClocks.SelectedItem is Ag32ClockRecommendation item)
+        {
             RecommendedClockRequested?.Invoke(this, item);
+        }
     }
     private void TimingReport_Click(object sender, RoutedEventArgs e)
     {
-        if (TimingReportButton.IsEnabled && timing?.ReportPath is { } path) OpenConstraintRequested?.Invoke(this, path);
+        if (TimingReportButton.IsEnabled && timing?.ReportPath is { } path)
+        {
+            OpenConstraintRequested?.Invoke(this, path);
+        }
     }
 }

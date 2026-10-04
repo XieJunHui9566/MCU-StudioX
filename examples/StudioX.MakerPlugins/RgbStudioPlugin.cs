@@ -12,9 +12,13 @@ public sealed class RgbStudioPlugin : LabPlugin
     protected override string Introduction => "制作彩虹、双色渐变或呼吸灯帧表，查看三路亮度曲线，复制 RGB / GRB 与 RGB565 数据。参数改变后点击计算。";
     protected override JsonElement Schema => LabPanel.Schema(new()
     {
-        ["mode"] = EnumSchema("rainbow", "gradient", "breathe"), ["count"] = NumberSchema(2, 32, true),
-        ["start"] = StringSchema(7), ["end"] = StringSchema(7), ["brightness"] = NumberSchema(0, 100),
-        ["gamma"] = NumberSchema(0.1, 5), ["order"] = EnumSchema("rgb", "grb")
+        ["mode"] = EnumSchema("rainbow", "gradient", "breathe"),
+        ["count"] = NumberSchema(2, 32, true),
+        ["start"] = StringSchema(7),
+        ["end"] = StringSchema(7),
+        ["brightness"] = NumberSchema(0, 100),
+        ["gamma"] = NumberSchema(0.1, 5),
+        ["order"] = EnumSchema("rgb", "grb")
     });
     protected override PluginPanelWidget[] Inputs(JsonElement v) =>
     [
@@ -32,7 +36,9 @@ public sealed class RgbStudioPlugin : LabPlugin
         var mode = LabInput.Text(v, "mode", "rainbow");
         var order = LabInput.Text(v, "order", "rgb");
         if (mode is not ("rainbow" or "gradient" or "breathe") || order is not ("rgb" or "grb"))
+        {
             throw new ArgumentException("请选择支持的灯效和字节顺序。");
+        }
         var count = LabInput.Integer(v, "count", 16, 2, 32);
         var brightness = LabInput.Number(v, "brightness", 50, 0, 100) / 100;
         var gamma = LabInput.Number(v, "gamma", 1, 0.1, 5);
@@ -65,19 +71,36 @@ public sealed class RgbStudioPlugin : LabPlugin
             widgets.Add(new("channel" + k, "plot", "RGB"[k] + " 分量：X=帧序号，Y=代码 0–255", Json(frames.Select((c, i) => new { x = i, y = c[k] }))));
         }
         widgets.Add(Table("colors", "帧明细", ["序号", "输出 #RRGGBB", "RGB565"], frames.Select((c, i) => new[] { i.ToString(CultureInfo.InvariantCulture), $"#{c[0]:X2}{c[1]:X2}{c[2]:X2}", $"0x{rgb565[i]:X4}" })));
-        return new(new { mode, order, frames, bytes, rgb565 }, code, widgets.ToArray());
+        return new(new
+        {
+            mode,
+            order,
+            frames,
+            bytes,
+            rgb565
+        }, code, widgets.ToArray());
     }
 
     private static double[] Color(string text)
     {
         if (text.Length != 7 || text[0] != '#' || !uint.TryParse(text.AsSpan(1), NumberStyles.AllowHexSpecifier, CultureInfo.InvariantCulture, out var value))
+        {
             throw new ArgumentException("颜色应为 #RRGGBB，例如 #FF4000。");
+        }
         return new[] { (value >> 16 & 255) / 255d, (value >> 8 & 255) / 255d, (value & 255) / 255d };
     }
 
     private static double[] Hue(double h)
     {
         var x = 1 - Math.Abs(h % 2 - 1);
-        return (int)h switch { 0 => [1, x, 0], 1 => [x, 1, 0], 2 => [0, 1, x], 3 => [0, x, 1], 4 => [x, 0, 1], _ => [1, 0, x] };
+        return (int)h switch
+        {
+            0 => [1, x, 0],
+            1 => [x, 1, 0],
+            2 => [0, 1, x],
+            3 => [0, x, 1],
+            4 => [x, 0, 1],
+            _ => [1, 0, x]
+        };
     }
 }

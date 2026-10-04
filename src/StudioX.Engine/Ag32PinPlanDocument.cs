@@ -181,7 +181,10 @@ internal sealed class Ag32PinPlanDocument
     private static string? ReadName(string line)
     {
         var comment = line.IndexOf('#');
-        if (comment < 0) { return null; }
+        if (comment < 0)
+        {
+            return null;
+        }
         var name = Regex.Match(line[comment..], @"^#([A-Za-z][A-Za-z0-9_]*)(?=\s*(?:#|$))", RegexOptions.CultureInvariant);
         return name.Success ? name.Groups[1].Value : null;
     }
@@ -193,7 +196,10 @@ internal sealed class Ag32PinPlanDocument
     }
     private static string WithName(string line, string? name)
     {
-        if (string.IsNullOrEmpty(name)) { return line; }
+        if (string.IsNullOrEmpty(name))
+        {
+            return line;
+        }
         var comment = line.IndexOf('#');
         return comment < 0 ? line.TrimEnd() + " #" + name : line.Insert(comment, "#" + name + " ");
     }

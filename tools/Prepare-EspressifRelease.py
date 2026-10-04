@@ -27,7 +27,10 @@ def write_json(path, value):
 
 
 def request_json(url):
-    with urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": "MCUStudioX-release-preparation"}), timeout=60) as response:
+    with urllib.request.urlopen(
+        urllib.request.Request(url, headers={"User-Agent": "MCUStudioX-release-preparation"}),
+        timeout=60,
+    ) as response:
         return json.load(response)
 
 
@@ -39,7 +42,22 @@ def download(record, cache):
     if not file.exists() or digest(file) != record["sha256"]:
         partial = file.with_suffix(".partial")
         with file.with_suffix(".log").open("ab") as log:
-            result = subprocess.run(["curl.exe", "--fail", "--location", "--retry", "3", "--continue-at", "-", "--output", str(partial), url], stdout=log, stderr=log)
+            result = subprocess.run(
+                [
+                    "curl.exe",
+                    "--fail",
+                    "--location",
+                    "--retry",
+                    "3",
+                    "--continue-at",
+                    "-",
+                    "--output",
+                    str(partial),
+                    url,
+                ],
+                stdout=log,
+                stderr=log,
+            )
         if result.returncode:
             raise RuntimeError("Tool download failed; raw log: " + str(file.with_suffix(".log")))
         if partial.stat().st_size != record["size"] or digest(partial) != record["sha256"]:
@@ -84,16 +102,29 @@ def extract(package, destination, strip=0, selected=None, sdk_links=False):
             if not parts or any(part in ("", ".", "..") or ":" in part for part in parts):
                 raise ValueError("Unsafe archive entry: " + entry.filename)
             relative = "/".join(parts)
-            if any(part in (".git", "__pycache__") for part in parts) or selected and not selected(relative):
+            if (
+                any(part in (".git", "__pycache__") for part in parts)
+                or selected
+                and not selected(relative)
+            ):
                 continue
             if entry.external_attr >> 16 & 0o170000 == 0o120000:
                 # 官方 NimBLE 的 RIOT 适配头使用一个包内相对链接；明确核对目标后实体化，组件归档仍只含普通文件。
                 expected = "components/bt/host/nimble/nimble/porting/npl/riot/include/npl_syscfg/npl_sycfg.h"
-                if not sdk_links or relative != expected or archive.read(entry) != b"../syscfg/syscfg.h":
+                if (
+                    not sdk_links
+                    or relative != expected
+                    or archive.read(entry) != b"../syscfg/syscfg.h"
+                ):
                     raise ValueError("Unreviewed archive link: " + entry.filename)
-                source_name = posixpath.normpath(posixpath.join(posixpath.dirname(entry.filename), "../syscfg/syscfg.h"))
+                source_name = posixpath.normpath(
+                    posixpath.join(posixpath.dirname(entry.filename), "../syscfg/syscfg.h")
+                )
                 source_entry = archive.getinfo(source_name)
-                if not source_name.startswith(entry.filename.split("/")[0] + "/components/") or source_entry.external_attr >> 16 & 0o170000 == 0o120000:
+                if (
+                    not source_name.startswith(entry.filename.split("/")[0] + "/components/")
+                    or source_entry.external_attr >> 16 & 0o170000 == 0o120000
+                ):
                     raise ValueError("SDK link must resolve to a regular file inside the SDK")
             else:
                 source_entry = entry
@@ -121,30 +152,63 @@ def main():
     output = args.output.resolve()
     base = args.base_component.resolve()
     cache = args.cache.resolve()
-    if output.exists() or output == Path(output.anchor) or output.is_relative_to(base) or base.is_relative_to(output):
+    if (
+        output.exists()
+        or output == Path(output.anchor)
+        or output.is_relative_to(base)
+        or base.is_relative_to(output)
+    ):
         raise ValueError("Use a new isolated output directory outside the original component")
     output.mkdir(parents=True)
     cache.mkdir(parents=True, exist_ok=True)
-    spec_loader = importlib.util.spec_from_file_location("studiox_runtime_recipe", Path(__file__).with_name("Prepare-EspressifRuntime.py"))
+    spec_loader = importlib.util.spec_from_file_location(
+        "studiox_runtime_recipe", Path(__file__).with_name("Prepare-EspressifRuntime.py")
+    )
     recipe = importlib.util.module_from_spec(spec_loader)
     spec_loader.loader.exec_module(recipe)
     release = json.loads(args.release_json.read_text(encoding="utf-8-sig"))
     if release["tag_name"] != args.tag or release["prerelease"] or release["draft"]:
         raise ValueError("Only the selected stable official release is accepted")
-    asset = next(item for item in release["assets"] if item["name"] == "esp-idf-" + args.tag + ".zip")
+    asset = next(
+        item for item in release["assets"] if item["name"] == "esp-idf-" + args.tag + ".zip"
+    )
     sha = digest(args.sdk_archive)
     if args.sdk_archive.stat().st_size != asset["size"] or asset["digest"] != "sha256:" + sha:
         raise ValueError("SDK archive differs from the official Release digest")
     print("Extracting verified SDK " + args.tag, flush=True)
     sdk = output / "source/sdk"
-    extract(args.sdk_archive, sdk, strip=1, sdk_links=True, selected=lambda path: not path.startswith(("docs/", "examples/"))
-        or path.startswith(("examples/get-started/hello_world/", "examples/system/freertos/real_time_stats/")))
+    extract(
+        args.sdk_archive,
+        sdk,
+        strip=1,
+        sdk_links=True,
+        selected=lambda path: not path.startswith(("docs/", "examples/"))
+        or path.startswith(
+            ("examples/get-started/hello_world/", "examples/system/freertos/real_time_stats/")
+        ),
+    )
     version_cmake = (sdk / "tools/cmake/version.cmake").read_text(encoding="utf-8")
-    version = ".".join(re.search(r"set\(IDF_VERSION_" + part + r"\s+(\d+)\)", version_cmake).group(1) for part in ("MAJOR", "MINOR", "PATCH"))
-    if args.tag.removeprefix("v").split(".") != version.split(".")[:len(args.tag.removeprefix("v").split("."))]:
+    version = ".".join(
+        re.search(r"set\(IDF_VERSION_" + part + r"\s+(\d+)\)", version_cmake).group(1)
+        for part in ("MAJOR", "MINOR", "PATCH")
+    )
+    if (
+        args.tag.removeprefix("v").split(".")
+        != version.split(".")[: len(args.tag.removeprefix("v").split("."))]
+    ):
         raise ValueError("SDK source version does not match the official tag")
     tools_spec = json.loads((sdk / "tools/tools.json").read_text(encoding="utf-8"))
-    needed = {"xtensa-esp-elf", "riscv32-esp-elf", "xtensa-esp-elf-gdb", "riscv32-esp-elf-gdb", "cmake", "ninja", "esp32ulp-elf", "openocd-esp32", "esp-rom-elfs"}
+    needed = {
+        "xtensa-esp-elf",
+        "riscv32-esp-elf",
+        "xtensa-esp-elf-gdb",
+        "riscv32-esp-elf-gdb",
+        "cmake",
+        "ninja",
+        "esp32ulp-elf",
+        "openocd-esp32",
+        "esp-rom-elfs",
+    }
     records = []
     for tool in tools_spec["tools"]:
         if tool["name"] not in needed:
@@ -152,7 +216,9 @@ def main():
         release_tool = next(item for item in tool["versions"] if item["status"] == "recommended")
         archive = release_tool.get("win64", release_tool.get("any"))
         if not archive or not archive["url"].endswith((".zip", ".tar.gz")):
-            raise ValueError("A different archive format needs an explicit extraction recipe: " + tool["name"])
+            raise ValueError(
+                "A different archive format needs an explicit extraction recipe: " + tool["name"]
+            )
         records.append(dict(archive, name=tool["name"], version=release_tool["name"]))
     if {item["name"] for item in records} != needed:
         raise ValueError("SDK does not declare all required tool recipes")
@@ -184,7 +250,11 @@ def main():
             if not file.is_file():
                 continue
             relative = file.relative_to(base / "python")
-            if relative.parts[0] == "Scripts" or relative.parts[:2] == ("Lib", "site-packages") or "__pycache__" in relative.parts:
+            if (
+                relative.parts[0] == "Scripts"
+                or relative.parts[:2] == ("Lib", "site-packages")
+                or "__pycache__" in relative.parts
+            ):
                 continue
             if digest(file) != base_manifest["sha256"].get("python/" + relative.as_posix()):
                 raise ValueError("Original Python resource changed: " + str(relative))
@@ -201,7 +271,11 @@ def main():
         if digest(wheel) != pip_source["digests"]["sha256"]:
             raise ValueError("Isolated pip bootstrap wheel changed")
     else:
-        pip_source = next(item for item in request_json("https://pypi.org/pypi/pip/json")["urls"] if item["filename"].endswith("py3-none-any.whl"))
+        pip_source = next(
+            item
+            for item in request_json("https://pypi.org/pypi/pip/json")["urls"]
+            if item["filename"].endswith("py3-none-any.whl")
+        )
         wheel = cache / pip_source["filename"]
         urllib.request.urlretrieve(pip_source["url"], wheel)
         if digest(wheel) != pip_source["digests"]["sha256"]:
@@ -212,28 +286,90 @@ def main():
         extract(wheel, bootstrap)
     backend_receipt = cache / "bootstrap-build-tools.json"
     if not backend_receipt.exists():
-        recipe.run_python(python_base / "python.exe", ["-m", "pip", "--isolated", "install", "--disable-pip-version-check",
-            "--only-binary=:all:", "--index-url", "https://pypi.org/simple/", "--target", str(bootstrap),
-            "setuptools>=64", "wheel", "--report", str(backend_receipt)], output)
+        recipe.run_python(
+            python_base / "python.exe",
+            [
+                "-m",
+                "pip",
+                "--isolated",
+                "install",
+                "--disable-pip-version-check",
+                "--only-binary=:all:",
+                "--index-url",
+                "https://pypi.org/simple/",
+                "--target",
+                str(bootstrap),
+                "setuptools>=64",
+                "wheel",
+                "--report",
+                str(backend_receipt),
+            ],
+            output,
+        )
     print("Resolving release-specific Python dependencies " + version, flush=True)
-    pip_log = recipe.run_python(python_base / "python.exe", ["-m", "pip", "--isolated", "install", "--disable-pip-version-check", "--only-binary=:all:",
-        "--no-binary=esptool", "--no-build-isolation", "--cache-dir", str(cache / "pip-cache"),
-        "--index-url", "https://pypi.org/simple/",
-        "--target", str(packages / "Lib/site-packages"), "--constraint", str(constraints), "--requirement", str(sdk / "tools/requirements/requirements.core.txt"),
-        "--report", str(packages / "pip-report.json")], output)
+    pip_log = recipe.run_python(
+        python_base / "python.exe",
+        [
+            "-m",
+            "pip",
+            "--isolated",
+            "install",
+            "--disable-pip-version-check",
+            "--only-binary=:all:",
+            "--no-binary=esptool",
+            "--no-build-isolation",
+            "--cache-dir",
+            str(cache / "pip-cache"),
+            "--index-url",
+            "https://pypi.org/simple/",
+            "--target",
+            str(packages / "Lib/site-packages"),
+            "--constraint",
+            str(constraints),
+            "--requirement",
+            str(sdk / "tools/requirements/requirements.core.txt"),
+            "--report",
+            str(packages / "pip-report.json"),
+        ],
+        output,
+    )
     (output / "python-dependencies.log").write_text(pip_log, encoding="utf-8")
-    commit = request_json("https://api.github.com/repos/espressif/esp-idf/commits/" + args.tag)["sha"]
-    source_receipt = {"sdkVersion": version, "upstreamTag": args.tag, "upstreamCommit": commit,
-        "sdkArchive": {"url": asset["browser_download_url"], "sha256": sha, "bytes": asset["size"]}, "tools": records,
-        "constraints": {"url": constraints_url, "sha256": digest(constraints)}, "sdkLinkMaterialization": "NimBLE RIOT npl_syscfg/npl_sycfg.h -> ../syscfg/syscfg.h, verified within SDK",
-        "pipBootstrap": {"url": pip_source["url"], "sha256": pip_source["digests"]["sha256"], "version": pip_source["filename"]},
+    commit = request_json("https://api.github.com/repos/espressif/esp-idf/commits/" + args.tag)[
+        "sha"
+    ]
+    source_receipt = {
+        "sdkVersion": version,
+        "upstreamTag": args.tag,
+        "upstreamCommit": commit,
+        "sdkArchive": {"url": asset["browser_download_url"], "sha256": sha, "bytes": asset["size"]},
+        "tools": records,
+        "constraints": {"url": constraints_url, "sha256": digest(constraints)},
+        "sdkLinkMaterialization": "NimBLE RIOT npl_syscfg/npl_sycfg.h -> ../syscfg/syscfg.h, verified within SDK",
+        "pipBootstrap": {
+            "url": pip_source["url"],
+            "sha256": pip_source["digests"]["sha256"],
+            "version": pip_source["filename"],
+        },
         "pythonBuildBackend": json.loads(backend_receipt.read_text(encoding="utf-8")),
-        "pythonBase": {"id": base_manifest["id"], "version": base_manifest["version"],
-            "manifestSha256": digest(base / "toolset.json")}, "publication": "local candidate; redistribution review is separate"}
+        "pythonBase": {
+            "id": base_manifest["id"],
+            "version": base_manifest["version"],
+            "manifestSha256": digest(base / "toolset.json"),
+        },
+        "publication": "local candidate; redistribution review is separate",
+    }
     write_json(sdk / "release-source.json", source_receipt)
-    templates = json.loads((Path(__file__).resolve().parents[1] / "examples/packs/espressif/idf-template-sources.json").read_text(encoding="utf-8"))
+    templates = json.loads(
+        (
+            Path(__file__).resolve().parents[1]
+            / "examples/packs/espressif/idf-template-sources.json"
+        ).read_text(encoding="utf-8")
+    )
     templates.update(sdkVersion=version, upstreamTag=args.tag, upstreamCommit=commit)
-    templates["filesSha256"] = {path: hashlib.sha256((sdk / path).read_bytes().replace(b"\r\n", b"\n")).hexdigest() for path in templates["filesSha256"]}
+    templates["filesSha256"] = {
+        path: hashlib.sha256((sdk / path).read_bytes().replace(b"\r\n", b"\n")).hexdigest()
+        for path in templates["filesSha256"]
+    }
     for example in templates["examples"]:
         example["description"] = example["description"].replace("5.5.4", version)
     write_json(output / "template-sources.json", templates)
@@ -241,10 +377,42 @@ def main():
     print("Assembling immutable component " + version, flush=True)
     environment = os.environ.copy()
     environment.update(PYTHONDONTWRITEBYTECODE="1", PYTHONNOUSERSITE="1")
-    subprocess.run([str(base / "python/python.exe"), "-B", str(Path(__file__).with_name("Prepare-EspressifRuntime.py")), "--idf-root", str(sdk),
-        "--tools-root", str(tools), "--python-env", str(packages), "--git-root", str(base / "git"), "--output", str(runtime),
-        "--sdk-version", version, "--component-version", version, "--upstream-tag", args.tag], check=True, env=environment)
-    write_json(output / "preparation-result.json", {"success": True, "hardware": False, "sdkVersion": version, "componentVersion": version, "upstreamTag": args.tag, "source": source_receipt})
+    subprocess.run(
+        [
+            str(base / "python/python.exe"),
+            "-B",
+            str(Path(__file__).with_name("Prepare-EspressifRuntime.py")),
+            "--idf-root",
+            str(sdk),
+            "--tools-root",
+            str(tools),
+            "--python-env",
+            str(packages),
+            "--git-root",
+            str(base / "git"),
+            "--output",
+            str(runtime),
+            "--sdk-version",
+            version,
+            "--component-version",
+            version,
+            "--upstream-tag",
+            args.tag,
+        ],
+        check=True,
+        env=environment,
+    )
+    write_json(
+        output / "preparation-result.json",
+        {
+            "success": True,
+            "hardware": False,
+            "sdkVersion": version,
+            "componentVersion": version,
+            "upstreamTag": args.tag,
+            "source": source_receipt,
+        },
+    )
 
 
 if __name__ == "__main__":

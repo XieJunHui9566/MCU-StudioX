@@ -1,7 +1,5 @@
 namespace StudioX.Application.Tools;
 
-public enum ComponentProjectCompatibility { NoProject, Unrelated, ExactRequirement, MigrationRequired, Incompatible }
-
 /// <summary>只读升级预览。组件并存安装与工程迁移是两个独立操作。</summary>
 public sealed record DevelopmentComponentCompatibility(string ArchiveSha256, string? ProjectDirectory, string? ProjectFingerprint,
     ComponentProjectCompatibility State, string Summary, IReadOnlyList<string> Differences, IReadOnlyList<string> Blockers,

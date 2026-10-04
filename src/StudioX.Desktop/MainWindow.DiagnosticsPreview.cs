@@ -14,7 +14,10 @@ public partial class MainWindow
         var checks = new List<string>();
         void Check(bool condition, string message)
         {
-            if (!condition) { throw new InvalidOperationException(message); }
+            if (!condition)
+            {
+                throw new InvalidOperationException(message);
+            }
             checks.Add(message);
         }
         EditorProblemRow[] rows =
@@ -58,8 +61,14 @@ public partial class MainWindow
             for (var index = 0; index < VisualTreeHelper.GetChildrenCount(parent); index++)
             {
                 var child = VisualTreeHelper.GetChild(parent, index);
-                if (child is T match) { yield return match; }
-                foreach (var descendant in Descendants<T>(child)) { yield return descendant; }
+                if (child is T match)
+                {
+                    yield return match;
+                }
+                foreach (var descendant in Descendants<T>(child))
+                {
+                    yield return descendant;
+                }
             }
         }
     }

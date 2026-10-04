@@ -12,7 +12,10 @@ public partial class BuildMemoryView : UserControl
     {
         get; private set;
     }
-    internal int LogicResourceCount { get; private set; }
+    internal int LogicResourceCount
+    {
+        get; private set;
+    }
     public void SetMessage(string message)
     {
         Targets.ItemsSource = null;
@@ -68,7 +71,10 @@ public partial class BuildMemoryView : UserControl
     private static bool IsSdkReport(IReadOnlyList<BuildMemoryRegion> regions) => regions.Count > 0 && regions.All(region => region.IsLogical);
     private static IReadOnlyList<BuildMemoryRegion> VisibleRegions(IReadOnlyList<BuildMemoryRegion> regions)
     {
-        if (!IsSdkReport(regions)) { return regions; }
+        if (!IsSdkReport(regions))
+        {
+            return regions;
+        }
         var flash = regions.Where(region => region.Name.StartsWith("Flash", StringComparison.Ordinal)).ToArray();
         var ram = regions.Except(flash).ToArray();
         var overview = new List<BuildMemoryRegion>();

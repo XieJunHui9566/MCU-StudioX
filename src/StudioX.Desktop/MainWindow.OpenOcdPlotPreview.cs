@@ -21,7 +21,10 @@ public partial class MainWindow
         var checks = new List<string>();
         void Check(bool value, string name)
         {
-            if (!value) { throw new InvalidOperationException(name); }
+            if (!value)
+            {
+                throw new InvalidOperationException(name);
+            }
             checks.Add(name);
         }
         async Task Click(Button button)
@@ -84,15 +87,26 @@ public partial class MainWindow
     private sealed class PreviewPlotSource : IOpenOcdPlotSource
     {
         private int sample;
-        public bool Failure { get; set; }
+        public bool Failure
+        {
+            get; set;
+        }
         public Guid PlotSessionId { get; } = Guid.NewGuid();
         public bool CanPlot => true;
         public string PlotTarget => "离线界面验证 · 模拟数据 · 未连接芯片";
         public Task<OpenOcdPlotChannel> ResolvePlotChannelAsync(string expression, PlotScalar type, CancellationToken token = default) =>
-            Task.FromResult(new OpenOcdPlotChannel(PlotSessionId, expression, expression switch { "sensor.voltage" => 0x20000010, "control.output" => 0x20000014, _ => 0x20000018 }, PlotScalar.Float32, true));
+            Task.FromResult(new OpenOcdPlotChannel(PlotSessionId, expression, expression switch
+            {
+                "sensor.voltage" => 0x20000010,
+                "control.output" => 0x20000014,
+                _ => 0x20000018
+            }, PlotScalar.Float32, true));
         public Task<OpenOcdPlotReading> ReadPlotAsync(IReadOnlyList<OpenOcdPlotChannel> channels, CancellationToken token = default)
         {
-            if (Failure) { throw new IOException("模拟读取失败 / target not halted (offline test)"); }
+            if (Failure)
+            {
+                throw new IOException("模拟读取失败 / target not halted (offline test)");
+            }
             var x = Interlocked.Increment(ref sample) * .25;
             return Task.FromResult(new OpenOcdPlotReading(DateTimeOffset.Now, true, [2 + Math.Sin(x), 2 + Math.Cos(x) * .6, x % 4]));
         }

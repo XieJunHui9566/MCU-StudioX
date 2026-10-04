@@ -18,8 +18,14 @@ internal static class FixtureArchives
             ["LICENSE.txt"] = Encoding.UTF8.GetBytes("Offline fixture; not a public library release.\n")
         };
         var manifest = new ComponentManifest(1, id, version, "Fixture byte library", "Isolated test", "NOASSERTION", "https://example.test/fixture", ["cmake", "esp-idf"], ["src/component.c"], ["include"], payload.ToDictionary(p => p.Key, p => Convert.ToHexString(SHA256.HashData(p.Value))));
-        if (corrupt) { payload["src/component.c"] = [0]; }
-        if (extra is not null) { payload[extra] = [1]; }
+        if (corrupt)
+        {
+            payload["src/component.c"] = [0];
+        }
+        if (extra is not null)
+        {
+            payload[extra] = [1];
+        }
         payload["component.json"] = JsonSerializer.SerializeToUtf8Bytes(manifest, JsonStore.Options);
         var file = Path.Combine(root, id + "-" + version + "-" + Guid.NewGuid().ToString("N") + ".studioxcomponent");
         Write(file, payload);

@@ -164,6 +164,13 @@ var
     Last: String;
 begin
     Result := '';
+    { LTS 名称和 Windows 数字构建号同步映射，避免将 .10 升级误判为降级。 }
+    if Version = '0.2.6LTS' then
+    begin
+        Version := '0.2.6.11';
+        Result := 'LTS';
+        Exit;
+    end;
     if Length(Version) = 0 then Exit;
     Last := Copy(Version, Length(Version), 1);
     if (Last >= 'A') and (Last <= 'Z') then

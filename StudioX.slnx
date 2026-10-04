@@ -24,7 +24,8 @@
   </Folder>
   <Folder
     Name="/examples/">
-    <Project Path="examples/StudioX.LabPlugins/StudioX.LabPlugins.csproj" />
+    <Project
+      Path="examples/StudioX.LabPlugins/StudioX.LabPlugins.csproj" />
     <Project
       Path="examples/StudioX.SampleDecoder/StudioX.SampleDecoder.csproj" />
     <Project
@@ -37,15 +38,28 @@
   </Folder>
   <Folder
     Name="/validation/">
-    <Project Path="tools/StudioX.LargeProjectValidation/StudioX.LargeProjectValidation.csproj" />
-    <Project Path="tools/StudioX.DebugPluginValidation/StudioX.DebugPluginValidation.csproj" />
-    <Project Path="tools/StudioX.ProjectHealthValidation/StudioX.ProjectHealthValidation.csproj" />
-    <Project Path="tools/StudioX.ToolManagementValidation/StudioX.ToolManagementValidation.csproj" />
-    <Project Path="tools/StudioX.ToolchainArchiveValidation/StudioX.ToolchainArchiveValidation.csproj" />
-    <Project Path="tools/StudioX.Ag32TimingValidation/StudioX.Ag32TimingValidation.csproj" />
-    <Project Path="tools/StudioX.Ag32PeripheralValidation/StudioX.Ag32PeripheralValidation.csproj" />
-    <Project Path="tools/StudioX.LabPluginsValidation/StudioX.LabPluginsValidation.csproj" />
-    <Project Path="tools/StudioX.OpenOcdPlotChecks/StudioX.OpenOcdPlotChecks.csproj" />
+    <Project
+      Path="tools/StudioX.LargeProjectValidation/StudioX.LargeProjectValidation.csproj" />
+    <Project
+      Path="tools/StudioX.DebugPluginValidation/StudioX.DebugPluginValidation.csproj" />
+    <Project
+      Path="tools/StudioX.ProjectHealthValidation/StudioX.ProjectHealthValidation.csproj" />
+    <Project
+      Path="tools/StudioX.ToolManagementValidation/StudioX.ToolManagementValidation.csproj" />
+    <Project
+      Path="tools/StudioX.ToolchainArchiveValidation/StudioX.ToolchainArchiveValidation.csproj" />
+    <Project
+      Path="tools/StudioX.EnvironmentReliabilityValidation/StudioX.EnvironmentReliabilityValidation.csproj" />
+    <Project
+      Path="tools/StudioX.ShippingInstallerValidation/StudioX.ShippingInstallerValidation.csproj" />
+    <Project
+      Path="tools/StudioX.Ag32TimingValidation/StudioX.Ag32TimingValidation.csproj" />
+    <Project
+      Path="tools/StudioX.Ag32PeripheralValidation/StudioX.Ag32PeripheralValidation.csproj" />
+    <Project
+      Path="tools/StudioX.LabPluginsValidation/StudioX.LabPluginsValidation.csproj" />
+    <Project
+      Path="tools/StudioX.OpenOcdPlotChecks/StudioX.OpenOcdPlotChecks.csproj" />
     <Project
       Path="tools/StudioX.AgentWorkspaceValidation/StudioX.AgentWorkspaceValidation.csproj" />
     <Project
@@ -57,9 +71,17 @@
     <Project
       Path="tools/StudioX.WorkspaceEditingValidation/StudioX.WorkspaceEditingValidation.csproj" />
   </Folder>
-  <Folder Name="/workflow-validation/">
-    <Project Path="tools/StudioX.CodeTemplateValidation/StudioX.CodeTemplateValidation.csproj" />
-    <Project Path="tools/StudioX.FaultPeripheralValidation/StudioX.FaultPeripheralValidation.csproj" />
-    <Project Path="tools/StudioX.ProductWorkflowValidation/StudioX.ProductWorkflowValidation.csproj" />
+  <Folder
+    Name="/workflow-validation/">
+    <Project
+      Path="tools/StudioX.SecurityValidation/StudioX.SecurityValidation.csproj" />
+    <Project
+      Path="tools/StudioX.PeripheralDevelopmentValidation/StudioX.PeripheralDevelopmentValidation.csproj" />
+    <Project
+      Path="tools/StudioX.CodeTemplateValidation/StudioX.CodeTemplateValidation.csproj" />
+    <Project
+      Path="tools/StudioX.FaultPeripheralValidation/StudioX.FaultPeripheralValidation.csproj" />
+    <Project
+      Path="tools/StudioX.ProductWorkflowValidation/StudioX.ProductWorkflowValidation.csproj" />
   </Folder>
 </Solution>

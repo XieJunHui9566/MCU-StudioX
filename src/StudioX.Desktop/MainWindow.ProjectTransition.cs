@@ -33,6 +33,7 @@ public partial class MainWindow
     {
         await StopLiveDiagnosticsAsync();
         ClearWorkspaceEditing();
+        peripheralUndo = null;
         CloseCodeAssistance();
         if (sourceContextMenu is not null)
         {

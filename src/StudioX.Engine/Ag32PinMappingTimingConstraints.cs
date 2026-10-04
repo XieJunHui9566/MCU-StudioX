@@ -21,9 +21,15 @@ internal static class Ag32PinMappingTimingConstraints
         var inputVectors = Regex.Matches(netlist, @"\bwire\s+\[[0-9]+:0\]\s+(gpio[0-9]+_io_in)\s*=\s*(\{[^{};]+\})\s*;")
             .ToDictionary(match => match.Groups[1].Value, match => Regex.Replace(match.Groups[2].Value, @"\s+", ""));
         var systemHz = new[] { Frequency("HSI"), Frequency("HSE"), Frequency("PLL") }.Max();
-        if (systemHz == 0) { throw new StudioXException("AG32_MAPPING_CLOCK", "缺少有效的基础映射时钟频率。"); }
+        if (systemHz == 0)
+        {
+            throw new StudioXException("AG32_MAPPING_CLOCK", "缺少有效的基础映射时钟频率。");
+        }
         var busHz = Frequency("BUS");
-        if (busHz == 0) { busHz = systemHz; }
+        if (busHz == 0)
+        {
+            busHz = systemHz;
+        }
         var result = new StringBuilder();
         result.AppendLine("# StudioX basic-mapping routing budget v1: one BUS/SYS cycle, in ns.");
         result.AppendLine("# This is an internal propagation budget, not external-device setup/hold timing.");
@@ -43,11 +49,17 @@ internal static class Ag32PinMappingTimingConstraints
                     }
                 }
                 var input = Resolve(io.Port("combout"));
-                if (string.IsNullOrEmpty(input)) { continue; }
+                if (string.IsNullOrEmpty(input))
+                {
+                    continue;
+                }
                 foreach (var (port, connection) in mcu.Ports.Where(pair => Regex.IsMatch(pair.Key, @"^gpio[0-9]+_io_in$")))
                 {
                     var expression = inputVectors.GetValueOrDefault(connection, connection);
-                    if (!expression.StartsWith('{') || !expression.EndsWith('}')) { continue; }
+                    if (!expression.StartsWith('{') || !expression.EndsWith('}'))
+                    {
+                        continue;
+                    }
                     var bits = expression[1..^1].Split(',');
                     for (var bit = 0; bit < bits.Length; bit++)
                     {
@@ -78,7 +90,10 @@ internal static class Ag32PinMappingTimingConstraints
             var seen = new HashSet<string>(StringComparer.Ordinal);
             while (aliases.TryGetValue(signal, out var next))
             {
-                if (!seen.Add(signal)) { throw new StudioXException("AG32_MAPPING_CLOCK", "基础映射存在循环信号别名。"); }
+                if (!seen.Add(signal))
+                {
+                    throw new StudioXException("AG32_MAPPING_CLOCK", "基础映射存在循环信号别名。");
+                }
                 signal = next;
             }
             return signal;

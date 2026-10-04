@@ -17,7 +17,9 @@ internal static class SevenZipHeaderGuard
         var offset = BinaryPrimitives.ReadUInt64LittleEndian(start[12..]);
         var size = BinaryPrimitives.ReadUInt64LittleEndian(start[20..]);
         if (size > MaximumHeaderBytes || offset > (ulong)(stream.Length - 32) || size > (ulong)(stream.Length - 32) - offset)
+        {
             throw SizeError();
+        }
         stream.Position = 32 + (long)offset;
         var bytes = new byte[(int)size];
         stream.ReadExactly(bytes);
@@ -28,7 +30,9 @@ internal static class SevenZipHeaderGuard
             var encoded = reader.Streams(MaximumHeaderBytes);
             if (encoded.Folders.Length != 1 || encoded.Folders[0].Coders != 1 || encoded.Sizes.Length != 1 || encoded.Sizes[0] > MaximumHeaderBytes ||
                 encoded.Position > (ulong)(stream.Length - 32) || encoded.Sizes[0] > (ulong)(stream.Length - 32) - encoded.Position)
+            {
                 throw SizeError();
+            }
             var folder = encoded.Folders[0];
             var packed = new byte[(int)encoded.Sizes[0]];
             stream.Position = 32 + (long)encoded.Position;
@@ -41,27 +45,55 @@ internal static class SevenZipHeaderGuard
             {
                 token.ThrowIfCancellationRequested();
                 var read = decoded.Read(unpacked, copied, Math.Min(131072, unpacked.Length - copied));
-                if (read == 0) throw new StudioXException("TOOLS_ARCHIVE", "7z 压缩头不完整。");
+                if (read == 0)
+                {
+                    throw new StudioXException("TOOLS_ARCHIVE", "7z 压缩头不完整。");
+                }
                 copied += read;
             }
-            if (decoded.ReadByte() != -1) throw SizeError();
+            if (decoded.ReadByte() != -1)
+            {
+                throw SizeError();
+            }
             reader = new Header(unpacked, token);
             type = reader.Byte();
         }
-        if (type != 1) throw ProfileError();
+        if (type != 1)
+        {
+            throw ProfileError();
+        }
         type = reader.Byte();
         if (type == 2)
         {
-            while (reader.Byte() != 0) reader.Skip(reader.Number());
+            while (reader.Byte() != 0)
+            {
+                reader.Skip(reader.Number());
+            }
             type = reader.Byte();
         }
         // 格式 1 无外部属性流；允许有界 LZMA 字典及固定大小的分支/Delta 过滤器。
-        if (type == 3) throw ProfileError();
-        if (type == 4) { _ = reader.Streams(ToolchainArchive.MaximumBytes); type = reader.Byte(); }
-        if (type != 5) throw ProfileError();
+        if (type == 3)
+        {
+            throw ProfileError();
+        }
+        if (type == 4)
+        {
+            _ = reader.Streams(ToolchainArchive.MaximumBytes);
+            type = reader.Byte();
+        }
+        if (type != 5)
+        {
+            throw ProfileError();
+        }
         _ = reader.Count();
-        while ((type = reader.Byte()) != 0) reader.Skip(reader.Number());
-        if (reader.Byte() != 0 || !reader.AtEnd) throw ProfileError();
+        while ((type = reader.Byte()) != 0)
+        {
+            reader.Skip(reader.Number());
+        }
+        if (reader.Byte() != 0 || !reader.AtEnd)
+        {
+            throw ProfileError();
+        }
         stream.Position = 0;
     }
 
@@ -76,7 +108,10 @@ internal static class SevenZipHeaderGuard
         internal byte Byte()
         {
             token.ThrowIfCancellationRequested();
-            if (position >= bytes.Length) throw new StudioXException("TOOLS_ARCHIVE", "7z 头不完整。");
+            if (position >= bytes.Length)
+            {
+                throw new StudioXException("TOOLS_ARCHIVE", "7z 头不完整。");
+            }
             return bytes[position++];
         }
         internal ulong Number()
@@ -86,7 +121,10 @@ internal static class SevenZipHeaderGuard
             for (var i = 0; i < 8; i++)
             {
                 var mask = 0x80 >> i;
-                if ((first & mask) == 0) return value | ((ulong)(first & (mask - 1)) << (8 * i));
+                if ((first & mask) == 0)
+                {
+                    return value | ((ulong)(first & (mask - 1)) << (8 * i));
+                }
                 value |= (ulong)Byte() << (8 * i);
             }
             return value;
@@ -94,12 +132,18 @@ internal static class SevenZipHeaderGuard
         internal int Count()
         {
             var count = Number();
-            if (count > ToolchainArchive.MaximumFiles) throw SizeError();
+            if (count > ToolchainArchive.MaximumFiles)
+            {
+                throw SizeError();
+            }
             return (int)count;
         }
         internal void Skip(ulong count)
         {
-            if (count > (ulong)(bytes.Length - position)) throw new StudioXException("TOOLS_ARCHIVE", "7z 头数据越界。");
+            if (count > (ulong)(bytes.Length - position))
+            {
+                throw new StudioXException("TOOLS_ARCHIVE", "7z 头数据越界。");
+            }
             position += (int)count;
         }
         private byte[] Read(int count)
@@ -111,31 +155,61 @@ internal static class SevenZipHeaderGuard
         private bool[] Digests(int count)
         {
             var all = Byte();
-            if (all > 1) throw ProfileError();
+            if (all > 1)
+            {
+                throw ProfileError();
+            }
             var flags = all == 1 ? [] : Read((count + 7) / 8);
             var defined = new bool[count];
             for (var i = 0; i < count; i++)
-                if (defined[i] = all == 1 || (flags[i / 8] & (0x80 >> (i % 8))) != 0) Skip(4);
+            {
+                if (defined[i] = all == 1 || (flags[i / 8] & (0x80 >> (i % 8))) != 0)
+                {
+                    Skip(4);
+                }
+            }
             return defined;
         }
         internal StreamsInfo Streams(long maximumBytes)
         {
-            if (Byte() != 6) throw ProfileError();
+            if (Byte() != 6)
+            {
+                throw ProfileError();
+            }
             var packPosition = Number();
             var packCount = Count();
-            if (packCount == 0 || Byte() != 9) throw ProfileError();
+            if (packCount == 0 || Byte() != 9)
+            {
+                throw ProfileError();
+            }
             var sizes = new ulong[packCount];
-            for (var i = 0; i < sizes.Length; i++) sizes[i] = Number();
+            for (var i = 0; i < sizes.Length; i++)
+            {
+                sizes[i] = Number();
+            }
             var type = Byte();
-            if (type == 10) { _ = Digests(packCount); type = Byte(); }
-            if (type != 0 || Byte() != 7 || Byte() != 11) throw ProfileError();
+            if (type == 10)
+            {
+                _ = Digests(packCount);
+                type = Byte();
+            }
+            if (type != 0 || Byte() != 7 || Byte() != 11)
+            {
+                throw ProfileError();
+            }
             var count = Count();
-            if (count != packCount || Byte() != 0) throw ProfileError();
+            if (count != packCount || Byte() != 0)
+            {
+                throw ProfileError();
+            }
             var folders = new Folder[count];
             for (var i = 0; i < count; i++)
             {
                 var coders = Number();
-                if (coders is not (1 or 2)) throw ProfileError();
+                if (coders is not (1 or 2))
+                {
+                    throw ProfileError();
+                }
                 ulong codec = 0;
                 byte[] codecProperties = [];
                 var codecs = 0;
@@ -144,49 +218,100 @@ internal static class SevenZipHeaderGuard
                 {
                     var flags = Byte();
                     var methodSize = flags & 15;
-                    if (methodSize is 0 or > 8 || (flags & 0xc0) != 0) throw ProfileError();
+                    if (methodSize is 0 or > 8 || (flags & 0xc0) != 0)
+                    {
+                        throw ProfileError();
+                    }
                     ulong method = 0;
-                    for (var j = 0; j < methodSize; j++) method = (method << 8) | Byte();
-                    if (method == 0x06f10701) throw new StudioXException("TOOLS_ARCHIVE_ENCRYPTED", "开发环境组件不能使用加密或带密码的归档。");
+                    for (var j = 0; j < methodSize; j++)
+                    {
+                        method = (method << 8) | Byte();
+                    }
+                    if (method == 0x06f10701)
+                    {
+                        throw new StudioXException("TOOLS_ARCHIVE_ENCRYPTED", "开发环境组件不能使用加密或带密码的归档。");
+                    }
                     var filter = method is 3 or 0x0a or 0x0b or 0x03030103 or 0x03030205 or 0x03030401 or 0x03030501 or 0x03030701 or 0x03030805;
-                    if (!filter && method is not (0 or 0x030101 or 0x21)) throw ProfileError();
-                    if ((flags & 0x10) != 0 && (Number() != 1 || Number() != 1)) throw ProfileError();
+                    if (!filter && method is not (0 or 0x030101 or 0x21))
+                    {
+                        throw ProfileError();
+                    }
+                    if ((flags & 0x10) != 0 && (Number() != 1 || Number() != 1))
+                    {
+                        throw ProfileError();
+                    }
                     var propertyCount = (flags & 0x20) != 0 ? Number() : 0;
-                    if (propertyCount > 5) throw ProfileError();
+                    if (propertyCount > 5)
+                    {
+                        throw ProfileError();
+                    }
                     var properties = Read((int)propertyCount);
                     ulong dictionary;
                     if (method == 0x21)
                     {
-                        if (properties.Length != 1 || properties[0] > 40) throw ProfileError();
+                        if (properties.Length != 1 || properties[0] > 40)
+                        {
+                            throw ProfileError();
+                        }
                         dictionary = properties[0] == 40 ? uint.MaxValue : (ulong)(2 | (properties[0] & 1)) << ((properties[0] >> 1) + 11);
                     }
                     else if (method == 0x030101)
                     {
-                        if (properties.Length != 5 || properties[0] >= 225) throw ProfileError();
+                        if (properties.Length != 5 || properties[0] >= 225)
+                        {
+                            throw ProfileError();
+                        }
                         dictionary = BinaryPrimitives.ReadUInt32LittleEndian(properties.AsSpan(1));
                     }
                     else if (filter)
                     {
-                        if (method == 3 ? properties.Length != 1 : properties.Length is not (0 or 4)) throw ProfileError();
+                        if (method == 3 ? properties.Length != 1 : properties.Length is not (0 or 4))
+                        {
+                            throw ProfileError();
+                        }
                         filters++;
                         dictionary = 0;
                     }
-                    else { if (properties.Length != 0) throw ProfileError(); dictionary = 0; }
-                    if (dictionary > MaximumDictionaryBytes) throw SizeError();
-                    if (!filter) { codec = method; codecProperties = properties; codecs++; }
+                    else
+                    {
+                        if (properties.Length != 0)
+                        {
+                            throw ProfileError();
+                        }
+                        dictionary = 0;
+                    }
+                    if (dictionary > MaximumDictionaryBytes)
+                    {
+                        throw SizeError();
+                    }
+                    if (!filter)
+                    {
+                        codec = method;
+                        codecProperties = properties;
+                        codecs++;
+                    }
                 }
-                if (codecs != 1 || filters != (int)coders - 1) throw ProfileError();
+                if (codecs != 1 || filters != (int)coders - 1)
+                {
+                    throw ProfileError();
+                }
                 var output = 0;
                 if (coders == 2)
                 {
                     var boundInput = Number();
                     var boundOutput = Number();
-                    if (boundInput > 1 || boundOutput > 1 || boundInput == boundOutput) throw ProfileError();
+                    if (boundInput > 1 || boundOutput > 1 || boundInput == boundOutput)
+                    {
+                        throw ProfileError();
+                    }
                     output = 1 - (int)boundOutput;
                 }
                 folders[i] = new(codec, codecProperties, 0, false, (int)coders, output);
             }
-            if (Byte() != 12) throw ProfileError();
+            if (Byte() != 12)
+            {
+                throw ProfileError();
+            }
             ulong total = 0;
             for (var i = 0; i < count; i++)
             {
@@ -194,21 +319,42 @@ internal static class SevenZipHeaderGuard
                 for (var coder = 0; coder < folders[i].Coders; coder++)
                 {
                     var unpackSize = Number();
-                    if (unpackSize > (ulong)maximumBytes) throw SizeError();
-                    if (coder == folders[i].Output) size = unpackSize;
+                    if (unpackSize > (ulong)maximumBytes)
+                    {
+                        throw SizeError();
+                    }
+                    if (coder == folders[i].Output)
+                    {
+                        size = unpackSize;
+                    }
                 }
-                if (size > (ulong)maximumBytes - total) throw SizeError();
+                if (size > (ulong)maximumBytes - total)
+                {
+                    throw SizeError();
+                }
                 total += size;
-                folders[i] = folders[i] with { Size = size };
+                folders[i] = folders[i] with
+                {
+                    Size = size
+                };
             }
             type = Byte();
             if (type == 10)
             {
                 var defined = Digests(count);
-                for (var i = 0; i < count; i++) folders[i] = folders[i] with { Crc = defined[i] };
+                for (var i = 0; i < count; i++)
+                {
+                    folders[i] = folders[i] with
+                    {
+                        Crc = defined[i]
+                    };
+                }
                 type = Byte();
             }
-            if (type != 0) throw ProfileError();
+            if (type != 0)
+            {
+                throw ProfileError();
+            }
             type = Byte();
             if (type == 8)
             {
@@ -220,7 +366,10 @@ internal static class SevenZipHeaderGuard
                     for (var i = 0; i < count; i++)
                     {
                         streams[i] = Count();
-                        if (streams[i] > ToolchainArchive.MaximumFiles - totalStreams) throw SizeError();
+                        if (streams[i] > ToolchainArchive.MaximumFiles - totalStreams)
+                        {
+                            throw SizeError();
+                        }
                         totalStreams += streams[i];
                     }
                     type = Byte();
@@ -230,19 +379,34 @@ internal static class SevenZipHeaderGuard
                     for (var i = 0; i < count; i++)
                     {
                         ulong subTotal = 0;
-                        for (var j = 1; j < streams[i]; j++) { var size = Number(); if (size > folders[i].Size - subTotal) throw SizeError(); subTotal += size; }
+                        for (var j = 1; j < streams[i]; j++)
+                        {
+                            var size = Number();
+                            if (size > folders[i].Size - subTotal)
+                            {
+                                throw SizeError();
+                            }
+                            subTotal += size;
+                        }
                     }
                     type = Byte();
                 }
                 if (type == 10)
                 {
                     var digests = Enumerable.Range(0, count).Sum(i => streams[i] == 1 && folders[i].Crc ? 0 : streams[i]);
-                    _ = Digests(digests); type = Byte();
+                    _ = Digests(digests);
+                    type = Byte();
                 }
-                if (type != 0) throw ProfileError();
+                if (type != 0)
+                {
+                    throw ProfileError();
+                }
                 type = Byte();
             }
-            if (type != 0) throw ProfileError();
+            if (type != 0)
+            {
+                throw ProfileError();
+            }
             return new(packPosition, sizes, folders);
         }
     }

@@ -3,9 +3,7 @@ namespace StudioX.Desktop;
 using System.Windows;
 using System.Windows.Controls;
 using Microsoft.Win32;
-using StudioX.Application.Components;
 using StudioX.Application.Distribution;
-using StudioX.Engine;
 using StudioX.Foundation;
 
 public partial class MainWindow
@@ -55,7 +53,11 @@ public partial class MainWindow
         view.SetBusy(true);
         try
         {
-            if (action == "migration") { await CreateComponentMigrationAsync(view, token); return; }
+            if (action == "migration")
+            {
+                await CreateComponentMigrationAsync(view, token);
+                return;
+            }
             if (action == "browse")
             {
                 var dialog = new OpenFileDialog { Filter = "分发目录|*.json" };
@@ -87,7 +89,10 @@ public partial class MainWindow
             if (action is "load" or "trusted")
             {
                 view.SetListing(null);
-                if (action == "trusted") view.Source = TrustedDevelopmentCatalog.Source;
+                if (action == "trusted")
+                {
+                    view.Source = TrustedDevelopmentCatalog.Source;
+                }
                 view.SetStatus("正在读取目录并校验发布者签名…");
                 view.SetListing(action == "trusted" ? await services.Distribution.ReadTrustedAsync(token)
                     : await services.Distribution.ReadAsync(view.Source.Trim(), distributionKey, token));
@@ -163,8 +168,15 @@ public partial class MainWindow
                 var compatibility = await services.ProjectTools.PreviewCompatibilityAsync(plan, preview, token);
                 var description = compatibility.ToText() + "\n\n" + preview.ToText() + "\n\n" + view.Listing!.Verification;
                 view.SetDetail(description);
-                if (action == "preview-tool") { view.SetStatus("升级预览完成。尚未安装或切换工程版本。"); return; }
-                if (!compatibility.CanInstall) throw new StudioXException("TOOLS_PROJECT_IDENTITY", compatibility.ToText());
+                if (action == "preview-tool")
+                {
+                    view.SetStatus("升级预览完成。尚未安装或切换工程版本。");
+                    return;
+                }
+                if (!compatibility.CanInstall)
+                {
+                    throw new StudioXException("TOOLS_PROJECT_IDENTITY", compatibility.ToText());
+                }
                 if (MessageBox.Show(this, description, "确认开发环境组件", MessageBoxButton.YesNo, MessageBoxImage.Information, MessageBoxResult.No) != MessageBoxResult.Yes)
                 {
                     return;

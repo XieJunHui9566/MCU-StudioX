@@ -22,19 +22,23 @@ static const struct gpio_dt_spec led = GPIO_DT_SPEC_GET(LED0_NODE, gpios);
 
 int main(void)
 {
-    if (!gpio_is_ready_dt(&led)) {
+    if (!gpio_is_ready_dt(&led))
+    {
         printk("LED0 GPIO device is not ready\n");
         return 0;
     }
 
-    if (gpio_pin_configure_dt(&led, GPIO_OUTPUT_INACTIVE) < 0) {
+    if (gpio_pin_configure_dt(&led, GPIO_OUTPUT_INACTIVE) < 0)
+    {
         printk("LED0 GPIO configuration failed\n");
         return 0;
     }
 
     printk("Alientek Explorer STM32F407ZG: experimental Zephyr board\n");
-    while (true) {
-        if (gpio_pin_toggle_dt(&led) < 0) {
+    while (true)
+    {
+        if (gpio_pin_toggle_dt(&led) < 0)
+        {
             printk("LED0 GPIO toggle failed\n");
             return 0;
         }

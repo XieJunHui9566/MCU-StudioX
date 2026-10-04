@@ -1,8 +1,8 @@
 namespace StudioX.Application.Plugins;
 
-using System.Text.Json;
-using System.Text;
 using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
 using StudioX.Application.Mcp;
 using StudioX.Foundation;
 using StudioX.Packages;
@@ -83,7 +83,10 @@ public sealed class PluginWorkspaceBroker : IAsyncDisposable
             }
             catch (JsonException)
             {
-                text = JsonSerializer.SerializeToElement(new { text = response.Text });
+                text = JsonSerializer.SerializeToElement(new
+                {
+                    text = response.Text
+                });
             }
             result = response.Images.Count == 0 ? text : JsonSerializer.SerializeToElement(new
             {
@@ -172,7 +175,12 @@ public sealed class PluginWorkspaceBroker : IAsyncDisposable
                 throw new StudioXException("PLUGIN_EDITOR_POSITION", "行列位置超出范围。");
             }
             await editor.OpenAsync(relative, line, column, token).ConfigureAwait(false);
-            return JsonSerializer.SerializeToElement(new { opened = relative, line, column });
+            return JsonSerializer.SerializeToElement(new
+            {
+                opened = relative,
+                line,
+                column
+            });
         }
         var snapshot = editor is null ? null : await editor.ReadAsync(relative, token).ConfigureAwait(false);
         if (snapshot is null)
@@ -199,7 +207,11 @@ public sealed class PluginWorkspaceBroker : IAsyncDisposable
         var text = snapshot.Text[offset..end];
         return JsonSerializer.SerializeToElement(new
         {
-            snapshot.RelativePath, snapshot.IsDirty, snapshot.DiskHash, text, offset,
+            snapshot.RelativePath,
+            snapshot.IsDirty,
+            snapshot.DiskHash,
+            text,
+            offset,
             contentHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(snapshot.Text))),
             totalCharacters = snapshot.Text.Length,
             nextOffset = offset + text.Length < snapshot.Text.Length ? (int?)(offset + text.Length) : null
@@ -234,6 +246,9 @@ public sealed class PluginWorkspaceBroker : IAsyncDisposable
     private sealed class PluginAuthorizer(string id, IStudioXMcpAuthorizer inner) : IStudioXMcpAuthorizer
     {
         public Task<bool> ApproveAsync(StudioXMcpApprovalRequest request, CancellationToken token) =>
-            inner.ApproveAsync(request with { Summary = $"插件 {id}\n{request.Summary}" }, token);
+            inner.ApproveAsync(request with
+            {
+                Summary = $"插件 {id}\n{request.Summary}"
+            }, token);
     }
 }

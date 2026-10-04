@@ -11,8 +11,10 @@ public sealed class WaveLabPlugin : LabPlugin
     protected override string Introduction => "生成一个周期的正弦波、三角波、锯齿波或 PWM。曲线与 uint16_t 查表数组用于离线实验，不输出真实电压。";
     protected override JsonElement Schema => LabPanel.Schema(new()
     {
-        ["shape"] = EnumSchema("sine", "triangle", "saw", "pwm"), ["samples"] = NumberSchema(8, 256, true),
-        ["frequency"] = NumberSchema(0.01, 1000000), ["maximum"] = NumberSchema(1, 65535, true),
+        ["shape"] = EnumSchema("sine", "triangle", "saw", "pwm"),
+        ["samples"] = NumberSchema(8, 256, true),
+        ["frequency"] = NumberSchema(0.01, 1000000),
+        ["maximum"] = NumberSchema(1, 65535, true),
         ["duty"] = NumberSchema(0, 100)
     });
     protected override PluginPanelWidget[] Inputs(JsonElement values) =>
@@ -26,7 +28,10 @@ public sealed class WaveLabPlugin : LabPlugin
     public override LabResult Calculate(JsonElement values)
     {
         var shape = LabInput.Text(values, "shape", "sine");
-        if (shape is not ("sine" or "triangle" or "saw" or "pwm")) throw new ArgumentException("未知波形。");
+        if (shape is not ("sine" or "triangle" or "saw" or "pwm"))
+        {
+            throw new ArgumentException("未知波形。");
+        }
         var count = LabInput.Integer(values, "samples", 64, 8, 256);
         var frequency = LabInput.Number(values, "frequency", 100, 0.01, 1000000);
         var maximum = LabInput.Integer(values, "maximum", 4095, 1, 65535);
@@ -48,7 +53,16 @@ public sealed class WaveLabPlugin : LabPlugin
         var quantizedDuty = highCount * 100d / count;
         var code = $"#include <stdint.h>\n/* {shape}; target {frequency.ToString("G9", CultureInfo.InvariantCulture)} Hz; update {rate.ToString("G9", CultureInfo.InvariantCulture)} samples/s */\nstatic const uint16_t waveform[{count}] = {{\n" +
             string.Join("\n", samples.Chunk(16).Select(chunk => "    " + string.Join(", ", chunk) + ",")) + "\n};\n";
-        return new(new { shape, samples, frequency, sampleRate = rate, maximum, requestedDuty = duty, quantizedDuty }, code,
+        return new(new
+        {
+            shape,
+            samples,
+            frequency,
+            sampleRate = rate,
+            maximum,
+            requestedDuty = duty,
+            quantizedDuty
+        }, code,
         [
             Text("summary", "采样要求", $"一个周期 {count} 点；更新率 {rate.ToString("G9", CultureInfo.InvariantCulture)} samples/s；区间 [0, 1/f)，不重复周期末点。"),
             Text("pwm", "PWM 量化", shape == "pwm" ? $"高电平 {highCount}/{count} 点，实际占空比 {quantizedDuty.ToString("0.####", CultureInfo.InvariantCulture)}%。" : "正弦波从谷值开始；三角波 0→峰值→0；锯齿波在下一周期跳回 0。"),

@@ -1,9 +1,7 @@
 namespace StudioX.Desktop;
 
 using System.Windows;
-using System.Windows.Input;
 using StudioX.Application.Editing;
-using StudioX.Application.CodeIntelligence;
 using StudioX.Foundation;
 
 public partial class MainWindow

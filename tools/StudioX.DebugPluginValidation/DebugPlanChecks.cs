@@ -18,7 +18,14 @@ internal static class DebugPlanChecks
         await JsonStore.WriteAsync(Path.Combine(project, ".studiox/project.json"), manifest);
         var configuration = (await new OpenOcdService(new ToolsetCatalog(Path.Combine(root, "plan-tools"))).ConfigurationAsync(project))!;
         var tools = new ResolvedToolset(new ToolsetManifest(1, "arm.gnu", "1.0.0", "win-x64", "arm-gnu-15.2.rel1",
-            new() { ["openocd"] = "openocd.exe", ["gdb"] = "gdb.exe" }, new(), ResourceDirectories: new() { ["openocdScripts"] = "scripts" }), Path.Combine(root, "plan-tools"), "offline");
+            new()
+            {
+                ["openocd"] = "openocd.exe",
+                ["gdb"] = "gdb.exe"
+            }, new(), ResourceDirectories: new()
+            {
+                ["openocdScripts"] = "scripts"
+            }), Path.Combine(root, "plan-tools"), "offline");
         var normal = OpenOcdDebugPlanner.Create(root, configuration, tools, Path.Combine(root, "fixture.elf"));
         var reset = OpenOcdDebugPlanner.Create(root, configuration, tools, Path.Combine(root, "fixture.elf"), connectUnderReset: true);
         check(!normal.OpenOcdArguments.Any(a => a.Contains("connect_assert_srst") || a.Contains("reset halt")), "normal attach never silently chooses reset connection");
@@ -27,7 +34,13 @@ internal static class DebugPlanChecks
         check(normal.InitializeCommands.Contains("-gdb-set remotetimeout 60") && reset.InitializeCommands.Any(a => a.Contains("monitor verify_image")), "slow link tolerance keeps board image verification mandatory");
         try
         {
-            _ = OpenOcdDebugPlanner.Create(root, configuration with { Options = configuration.Options with { ProbeId = "cmsis-dap" } }, tools, Path.Combine(root, "fixture.elf"), connectUnderReset: true);
+            _ = OpenOcdDebugPlanner.Create(root, configuration with
+            {
+                Options = configuration.Options with
+                {
+                    ProbeId = "cmsis-dap"
+                }
+            }, tools, Path.Combine(root, "fixture.elf"), connectUnderReset: true);
             check(false, "unsupported reset probe rejected");
         }
         catch (StudioXException error) { check(error.Code == "DEBUG_RESET_CONNECT", "unsupported reset probe rejected before any tool launch"); }

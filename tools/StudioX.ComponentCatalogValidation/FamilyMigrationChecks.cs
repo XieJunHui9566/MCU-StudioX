@@ -19,11 +19,23 @@ internal static class FamilyMigrationChecks
         foreach (var file in Directory.EnumerateFiles(original.RootDirectory, "*", SearchOption.AllDirectories))
         {
             var relative = Path.GetRelativePath(original.RootDirectory, file).Replace('\\', '/');
-            if (relative is "manifest.json" or "files.sha256.json") continue;
-            var target = PathBoundary.Resolve(source, relative); Directory.CreateDirectory(Path.GetDirectoryName(target)!); File.Copy(file, target);
+            if (relative is "manifest.json" or "files.sha256.json")
+            {
+                continue;
+            }
+            var target = PathBoundary.Resolve(source, relative);
+            Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+            File.Copy(file, target);
         }
-        var manifest = original.Manifest with { Version = "90.0.3", Devices = original.Manifest.Devices.Select(d =>
-            d with { CpuFlags = d.CpuFlags.Append(d.Architecture == "arm" ? "-mfloat-abi=soft" : "-mabi=ilp32e").ToArray() }).ToArray() };
+        var manifest = original.Manifest with
+        {
+            Version = "90.0.3",
+            Devices = original.Manifest.Devices.Select(d =>
+            d with
+            {
+                CpuFlags = d.CpuFlags.Append(d.Architecture == "arm" ? "-mfloat-abi=soft" : "-mabi=ilp32e").ToArray()
+            }).ToArray()
+        };
         await JsonStore.WriteAsync(Path.Combine(source, "manifest.json"), manifest);
         var archive = Path.Combine(output, manifest.Id + "-90.0.3.mcupack");
         await PackArchiveWriter.WriteAsync(source, archive);
@@ -74,17 +86,36 @@ internal static class FamilyMigrationChecks
             foreach (var file in Directory.EnumerateFiles(original.RootDirectory, "*", SearchOption.AllDirectories))
             {
                 var relative = Path.GetRelativePath(original.RootDirectory, file).Replace('\\', '/');
-                if (relative is "manifest.json" or "files.sha256.json") continue;
-                var path = PathBoundary.Resolve(targetSource, relative); Directory.CreateDirectory(Path.GetDirectoryName(path)!); File.Copy(file, path);
+                if (relative is "manifest.json" or "files.sha256.json")
+                {
+                    continue;
+                }
+                var path = PathBoundary.Resolve(targetSource, relative);
+                Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+                File.Copy(file, path);
             }
-            var manifest = original.Manifest with { Version = "90.0.1", Devices = original.Manifest.Devices.Select(d =>
+            var manifest = original.Manifest with
+            {
+                Version = "90.0.1",
+                Devices = original.Manifest.Devices.Select(d =>
             {
                 var needs = new List<DevelopmentComponentRequirement> { new(d.ToolsetId, "1.0.1", d.CompilerId) };
-                if (original.Manifest.Vendor == "AGM") needs.Add(new("agm.pin-mapping", "1.0.1", "agm.ve"));
-                return d with { ToolsetVersion = "1.0.1", DevelopmentComponents = needs,
-                    Templates = d.Templates.Select(t => t with { DevelopmentComponents = original.Manifest.Vendor == "AGM" && item.Logic
-                        ? [new("agm.logic", "1.0.1", "agm.native")] : null }).ToArray() };
-            }).ToArray() };
+                if (original.Manifest.Vendor == "AGM")
+                {
+                    needs.Add(new("agm.pin-mapping", "1.0.1", "agm.ve"));
+                }
+                return d with
+                {
+                    ToolsetVersion = "1.0.1",
+                    DevelopmentComponents = needs,
+                    Templates = d.Templates.Select(t => t with
+                    {
+                        DevelopmentComponents = original.Manifest.Vendor == "AGM" && item.Logic
+                        ? [new("agm.logic", "1.0.1", "agm.native")] : null
+                    }).ToArray()
+                };
+            }).ToArray()
+            };
             await JsonStore.WriteAsync(Path.Combine(targetSource, "manifest.json"), manifest);
             var archive = Path.Combine(output, item.Id, manifest.Id + "-90.0.1.mcupack");
             await PackArchiveWriter.WriteAsync(targetSource, archive);
@@ -130,7 +161,11 @@ internal static class FamilyMigrationChecks
                 await JsonStore.WriteAsync(Path.Combine(root, ".studiox/toolchain.lock.json"), new ToolchainLock(1, project.ToolsetId, project.ToolsetVersion, originalTools.Fingerprint));
             }
             foreach (var relative in new[] { ".build/obsolete.obj", ".git/obsolete", ".studiox/debug.json", "notes/draft.txt" })
-            { var path = PathBoundary.Resolve(root, relative); Directory.CreateDirectory(Path.GetDirectoryName(path)!); await File.WriteAllTextAsync(path, relative); }
+            {
+                var path = PathBoundary.Resolve(root, relative);
+                Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+                await File.WriteAllTextAsync(path, relative);
+            }
             var destination = Path.Combine(output, item.Id, project.Espressif is null ? "升级验证 有空格" : "upgrade-check");
             if (project.Espressif is not null)
             {
@@ -166,11 +201,15 @@ internal static class FamilyMigrationChecks
                     item.Id + " input sdkconfig backup and explicit module settings retained");
                 var resolved = await catalog.ResolveAsync(copiedProject.ToolsetId, copiedProject.ToolsetVersion, copiedProject.CompilerId);
                 if (project.Espressif.Framework == "esp-idf")
+                {
                     await Reject(() => EspressifSdkIdentity.ValidateAsync(resolved with { Manifest = resolved.Manifest with { ComponentVersions = new(resolved.Manifest.ComponentVersions!) { ["esp-idf"] = "5.5.3" } } }, copiedProject.Espressif! with { SdkVersion = "5.5.3" }),
-                        "ESPRESSIF_SDK_VERSION", item.Id + " SDK payload cannot be relabelled as another release", check);
+                    "ESPRESSIF_SDK_VERSION", item.Id + " SDK payload cannot be relabelled as another release", check);
+                }
                 else
+                {
                     await Reject(() => EspressifSdkIdentity.ValidateAsync(resolved, copiedProject.Espressif! with { SdkVersion = "3.5.0" }),
-                        "ESPRESSIF_TOOLSET", item.Id + " separate RTOS SDK cannot silently switch version", check);
+                    "ESPRESSIF_TOOLSET", item.Id + " separate RTOS SDK cannot silently switch version", check);
+                }
             }
             if (item.Logic)
             {
@@ -192,9 +231,23 @@ internal static class FamilyMigrationChecks
                 check(!modified.CanCreate && modified.Blockers.Any(b => b.Contains("AG32_SYSTEM_MODIFIED")), item.Id + " manual generated system edits block replacement");
                 await File.WriteAllBytesAsync(generatedFile, generatedBytes);
             }
-            var changedManifest = manifest with { Version = "90.0.2", Devices = manifest.Devices.Select(d => d.Espressif is { } esp
-                ? d with { Architecture = "xtensa", Espressif = esp with { Target = esp.Target == "esp8266" ? "esp8266" : "esp32" } }
-                : d with { CpuFlags = d.CpuFlags.Append(d.Architecture == "arm" ? "-mfloat-abi=soft" : "-mabi=ilp32e").ToArray() }).ToArray() };
+            var changedManifest = manifest with
+            {
+                Version = "90.0.2",
+                Devices = manifest.Devices.Select(d => d.Espressif is { } esp
+                ? d with
+                {
+                    Architecture = "xtensa",
+                    Espressif = esp with
+                    {
+                        Target = esp.Target == "esp8266" ? "esp8266" : "esp32"
+                    }
+                }
+                : d with
+                {
+                    CpuFlags = d.CpuFlags.Append(d.Architecture == "arm" ? "-mfloat-abi=soft" : "-mabi=ilp32e").ToArray()
+                }).ToArray()
+            };
             if (project.Espressif?.Framework != "esp8266-rtos-sdk")
             {
                 await JsonStore.WriteAsync(Path.Combine(targetSource, "manifest.json"), changedManifest);
@@ -206,9 +259,24 @@ internal static class FamilyMigrationChecks
             }
             var changed = project.Espressif is not null ? Path.Combine(root, "sdkconfig") : project.PinMapping is not null ? Path.Combine(root, "logic/pins.ve") : source;
             await File.AppendAllTextAsync(changed, "\n# changed after preview\n");
-            var stale = preview with { DestinationDirectory = Path.Combine(output, item.Id, "stale-copy") };
+            var stale = preview with
+            {
+                DestinationDirectory = Path.Combine(output, item.Id, "stale-copy")
+            };
             await Reject(() => service.CreateAndBuildAsync(stale), "TOOLS_PROJECT_CHANGED", item.Id + " config/source edits invalidate preview before any copy", check);
-            rows.Add(new { item.Id, item.Device, item.Template, item.Logic, result.Success, result.BuildLog, components = copiedNeeds, sdk = copiedProject.Espressif, originalPreserved = true, hardware = false });
+            rows.Add(new
+            {
+                item.Id,
+                item.Device,
+                item.Template,
+                item.Logic,
+                result.Success,
+                result.BuildLog,
+                components = copiedNeeds,
+                sdk = copiedProject.Espressif,
+                originalPreserved = true,
+                hardware = false
+            });
             await JsonStore.WriteAsync(Path.Combine(output, "matrix.json"), rows);
         }
         check(rows.Count > 0, "at least one explicitly selected family case completed");
@@ -224,7 +292,8 @@ internal static class FamilyMigrationChecks
         check(true, "IDF 6.x adapter accepts an exact release identity independently of SDK payload validation");
         await Reject(() => { EspressifPackProfile.ValidateFramework(new("esp-idf", "esp32s3", "7.0.0")); return Task.CompletedTask; }, "PACK_ESPRESSIF_SDK", "unadapted IDF major requires explicit adapter work", check);
         var root = Path.Combine(output, "legacy-logic-lock");
-        var mapping = new string('a', 64); var logic = new string('b', 64);
+        var mapping = new string('a', 64);
+        var logic = new string('b', 64);
         await JsonStore.WriteAsync(Path.Combine(root, ".studiox/ag32-logic-toolchain.lock.json"), new ToolchainLock(1, "agm.logic", "1.0.0", mapping + ":" + logic));
         DevelopmentComponentRequirement[] needs = [new("agm.agrv", "1.0.0", "agrv-gcc-11.1.0"), new("agm.pin-mapping", "1.0.0", "agm.ve"), new("agm.logic", "1.0.0", "agm.native")];
         var pins = await ProjectDevelopmentComponents.ReadPinsAsync(root, needs);
@@ -234,13 +303,26 @@ internal static class FamilyMigrationChecks
     }
 
     private static async Task Reject(Func<Task> operation, string code, string label, Action<bool, string> check)
-    { try { await operation(); throw new InvalidOperationException(label); } catch (StudioXException error) { check(error.Code == code, label + ": " + error.Code); } }
+    {
+        try
+        {
+            await operation();
+            throw new InvalidOperationException(label);
+        }
+        catch (StudioXException error) { check(error.Code == code, label + ": " + error.Code); }
+    }
     private static async Task<string> SnapshotAsync(string root)
     {
         using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
         foreach (var file in Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories).Order(StringComparer.Ordinal))
-        { hash.AppendData(System.Text.Encoding.UTF8.GetBytes(Path.GetRelativePath(root, file))); hash.AppendData(await File.ReadAllBytesAsync(file)); }
+        {
+            hash.AppendData(System.Text.Encoding.UTF8.GetBytes(Path.GetRelativePath(root, file)));
+            hash.AppendData(await File.ReadAllBytesAsync(file));
+        }
         return Convert.ToHexString(hash.GetHashAndReset());
     }
-    private sealed class TextProgress(string name) : IProgress<string> { public void Report(string value) => Console.WriteLine(name + ": " + value); }
+    private sealed class TextProgress(string name) : IProgress<string>
+    {
+        public void Report(string value) => Console.WriteLine(name + ": " + value);
+    }
 }

@@ -91,13 +91,18 @@ public static partial class PackValidator
                 {
                     RequireFile(root, ag32Sources.PinMapFile);
                     RequireFile(root, ag32Sources.VerilogFile);
-                    if (ag32Sources.EntryFile is { } entryFile) RequireFile(root, entryFile);
+                    if (ag32Sources.EntryFile is { } entryFile)
+                    {
+                        RequireFile(root, entryFile);
+                    }
                 }
                 foreach (var replaced in template.ReplacesTemplates ?? [])
                 {
                     Token(replaced);
                     if (device.Templates.Any(item => item.Id.Equals(replaced, StringComparison.OrdinalIgnoreCase)))
+                    {
                         throw new StudioXException("PACK_TEMPLATE", "被合并的旧模板不能同时作为当前模板提供。");
+                    }
                 }
                 if (template.MicroPython is { } microPython)
                 {

@@ -24,7 +24,8 @@ public partial class MainWindow
         {
             firstProjectView = new FirstProjectGuideView
             {
-                ActionRequested = RunGuideActionAsync, HelpRequested = id => ShowHelpAsync(id),
+                ActionRequested = RunGuideActionAsync,
+                HelpRequested = id => ShowHelpAsync(id),
                 Failed = error => Log(error.ToString()),
                 FinishRequested = async () =>
                 {
@@ -44,9 +45,16 @@ public partial class MainWindow
     {
         // 教程不可在每次击键时重建列表；不可见时只收集证据，重新选中标签时刷新。
         if (firstProjectView is not null && ReferenceEquals(WorkspaceTabs.SelectedItem, firstProjectTab))
+        {
             firstProjectView.Refresh(GuideProgress());
+        }
     }
-    private void ResetFirstProjectEvidence() { guideSaved = guideHealthPassed = false; guideBuild = null; RefreshFirstProjectGuide(); }
+    private void ResetFirstProjectEvidence()
+    {
+        guideSaved = guideHealthPassed = false;
+        guideBuild = null;
+        RefreshFirstProjectGuide();
+    }
     private async void FirstProject_Click(object sender, RoutedEventArgs e) => await ShowFirstProjectAsync();
     public Task OpenFirstProjectGuideAsync() => ShowFirstProjectAsync();
 
@@ -55,7 +63,9 @@ public partial class MainWindow
         try
         {
             if (projectDirectory is null && (await services.RecentProjects.LoadAsync()).Count == 0 && !await services.FirstProjectGuide.IsDismissedAsync())
+            {
                 await ShowFirstProjectAsync();
+            }
         }
         catch (Exception error) { Log("首次工程引导偏好读取失败：" + error); }
     }
@@ -64,9 +74,15 @@ public partial class MainWindow
     {
         switch (action)
         {
-            case "tools": await ShowProjectToolsAsync(); break;
-            case "create": await RunAsync(token => BeginNewProjectAsync(token)); break;
-            case "open": OpenProject_Click(this, new RoutedEventArgs()); break;
+            case "tools":
+                await ShowProjectToolsAsync();
+                break;
+            case "create":
+                await RunAsync(token => BeginNewProjectAsync(token));
+                break;
+            case "open":
+                OpenProject_Click(this, new RoutedEventArgs());
+                break;
             case "health":
                 healthDirectory = projectDirectory;
                 await ShowProjectHealthAsync();
@@ -88,9 +104,15 @@ public partial class MainWindow
                     Status.Text = "已保存全部打开的文件。";
                 });
                 break;
-            case "build": Build_Click(this, new RoutedEventArgs()); break;
-            case "output": ShowBottom(0); break;
-            case "help": await ShowHelpAsync(FirstProjectGuideService.Steps(GuideProgress())[firstProjectView!.SelectedStep].HelpTopic); break;
+            case "build":
+                Build_Click(this, new RoutedEventArgs());
+                break;
+            case "output":
+                ShowBottom(0);
+                break;
+            case "help":
+                await ShowHelpAsync(FirstProjectGuideService.Steps(GuideProgress())[firstProjectView!.SelectedStep].HelpTopic);
+                break;
         }
         RefreshFirstProjectGuide();
     }

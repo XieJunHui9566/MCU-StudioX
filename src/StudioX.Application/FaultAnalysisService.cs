@@ -1,9 +1,9 @@
 namespace StudioX.Application;
 
+using System.Text.Json;
 using StudioX.Engine;
 using StudioX.Engine.Debugging;
 using StudioX.Foundation;
-using System.Text.Json;
 
 public sealed class FaultAnalysisService(ToolsetCatalog tools, DebugSessionService debugger)
 {
@@ -24,12 +24,19 @@ public sealed class FaultAnalysisService(ToolsetCatalog tools, DebugSessionServi
         var report = await JsonSerializer.DeserializeAsync<FaultAnalysisReport>(input, JsonStore.Options, token)
             ?? throw new StudioXException("JSON_EMPTY", "故障报告没有有效内容。");
         // 导入文件中的来源字段不能证明本轮实机连接或固件匹配。
-        return report with { Evidence = report.Evidence with
+        return report with
         {
-            FirmwareMatched = false,
-            Source = "导入报告；原记录来源：" + report.Evidence.Source
-        }, CoreDump = report.CoreDump is { } dump ? dump with { HashMatches = false } : null,
-        Findings = ["导入报告仅保留原记录，未重新验证 ELF 或转储摘要；请重新导入原始转储完成核对。"] };
+            Evidence = report.Evidence with
+            {
+                FirmwareMatched = false,
+                Source = "导入报告；原记录来源：" + report.Evidence.Source
+            },
+            CoreDump = report.CoreDump is { } dump ? dump with
+            {
+                HashMatches = false
+            } : null,
+            Findings = ["导入报告仅保留原记录，未重新验证 ELF 或转储摘要；请重新导入原始转储完成核对。"]
+        };
     }
     public Task ExportAsync(FaultAnalysisReport report, string file, CancellationToken token = default) => JsonStore.WriteAsync(file, report, token);
 }

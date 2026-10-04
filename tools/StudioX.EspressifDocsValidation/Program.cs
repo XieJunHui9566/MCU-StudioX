@@ -127,14 +127,20 @@ Check(revoker.Read<ModelContextProtocol.Authentication.TokenContainer>("oauth.da
 revoker.BeginOperation();
 revoker.StoreNewAuthorization(new ModelContextProtocol.Authentication.TokenContainer
 {
-    TokenType = "Bearer", ObtainedAt = DateTimeOffset.UtcNow, AccessToken = "fake-newer-authorization", ClientId = "fake-newer-client"
+    TokenType = "Bearer",
+    ObtainedAt = DateTimeOffset.UtcNow,
+    AccessToken = "fake-newer-authorization",
+    ClientId = "fake-newer-client"
 });
 var oldRefreshRejected = false;
 try
 {
     await staleWriter.StoreTokensAsync(new ModelContextProtocol.Authentication.TokenContainer
     {
-        TokenType = "Bearer", ObtainedAt = DateTimeOffset.UtcNow, AccessToken = "fake-old-refresh", ClientId = "fake-old-client"
+        TokenType = "Bearer",
+        ObtainedAt = DateTimeOffset.UtcNow,
+        AccessToken = "fake-old-refresh",
+        ClientId = "fake-old-client"
     });
 }
 catch (EspressifAuthorizationRevokedException)
@@ -226,16 +232,46 @@ internal sealed class FakeServer : HttpMessageHandler
 {
     public const string AccessToken = "offline-docs-access-token";
     public const string ClientSecret = "offline-docs-client-secret";
-    public string? Challenge { get; set; }
-    public int Requests { get; private set; }
-    public int Registrations { get; private set; }
-    public int TokenExchanges { get; private set; }
-    public int Refreshes { get; private set; }
-    public int Searches { get; private set; }
-    public bool PkceVerified { get; private set; }
-    public bool LimitSearch { get; set; }
-    public bool RejectRefresh { get; set; }
-    public string? LastLanguage { get; private set; }
+    public string? Challenge
+    {
+        get; set;
+    }
+    public int Requests
+    {
+        get; private set;
+    }
+    public int Registrations
+    {
+        get; private set;
+    }
+    public int TokenExchanges
+    {
+        get; private set;
+    }
+    public int Refreshes
+    {
+        get; private set;
+    }
+    public int Searches
+    {
+        get; private set;
+    }
+    public bool PkceVerified
+    {
+        get; private set;
+    }
+    public bool LimitSearch
+    {
+        get; set;
+    }
+    public bool RejectRefresh
+    {
+        get; set;
+    }
+    public string? LastLanguage
+    {
+        get; private set;
+    }
 
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken token)
     {
@@ -243,24 +279,38 @@ internal sealed class FakeServer : HttpMessageHandler
         var path = request.RequestUri!.AbsolutePath;
         if (path == "/.well-known/oauth-protected-resource/docs")
         {
-            return Json(new { resource = "https://mcp.espressif.com/docs", authorization_servers = new[] { "https://mcp.espressif.com/docs" }, scopes_supported = new[] { "read:user" } });
+            return Json(new
+            {
+                resource = "https://mcp.espressif.com/docs",
+                authorization_servers = new[] { "https://mcp.espressif.com/docs" },
+                scopes_supported = new[] { "read:user" }
+            });
         }
         if (path == "/.well-known/oauth-authorization-server/docs")
         {
             return Json(new
             {
-                issuer = "https://mcp.espressif.com/docs", authorization_endpoint = "https://mcp.espressif.com/docs/authorize",
-                token_endpoint = "https://mcp.espressif.com/docs/token", registration_endpoint = "https://mcp.espressif.com/docs/register",
-                response_types_supported = new[] { "code" }, grant_types_supported = new[] { "authorization_code", "refresh_token" },
+                issuer = "https://mcp.espressif.com/docs",
+                authorization_endpoint = "https://mcp.espressif.com/docs/authorize",
+                token_endpoint = "https://mcp.espressif.com/docs/token",
+                registration_endpoint = "https://mcp.espressif.com/docs/register",
+                response_types_supported = new[] { "code" },
+                grant_types_supported = new[] { "authorization_code", "refresh_token" },
                 token_endpoint_auth_methods_supported = new[] { "client_secret_post", "client_secret_basic" },
-                code_challenge_methods_supported = new[] { "S256" }, scopes_supported = new[] { "read:user" },
+                code_challenge_methods_supported = new[] { "S256" },
+                scopes_supported = new[] { "read:user" },
                 authorization_response_iss_parameter_supported = true
             });
         }
         if (path == "/docs/register")
         {
             Registrations++;
-            return Json(new { client_id = "offline-docs-client", client_secret = ClientSecret, token_endpoint_auth_method = "client_secret_post" });
+            return Json(new
+            {
+                client_id = "offline-docs-client",
+                client_secret = ClientSecret,
+                token_endpoint_auth_method = "client_secret_post"
+            });
         }
         if (path == "/docs/token")
         {
@@ -270,7 +320,11 @@ internal sealed class FakeServer : HttpMessageHandler
                 Refreshes++;
                 if (RejectRefresh)
                 {
-                    var rejected = Json(new { error = "invalid_grant", error_description = "offline token revoked" });
+                    var rejected = Json(new
+                    {
+                        error = "invalid_grant",
+                        error_description = "offline token revoked"
+                    });
                     rejected.StatusCode = HttpStatusCode.BadRequest;
                     return rejected;
                 }
@@ -286,7 +340,14 @@ internal sealed class FakeServer : HttpMessageHandler
             {
                 throw new InvalidOperationException("测试令牌交换未使用注册凭据。");
             }
-            return Json(new { access_token = AccessToken, refresh_token = "offline-docs-refresh-token", token_type = "Bearer", expires_in = 3600, scope = "read:user" });
+            return Json(new
+            {
+                access_token = AccessToken,
+                refresh_token = "offline-docs-refresh-token",
+                token_type = "Bearer",
+                expires_in = 3600,
+                scope = "read:user"
+            });
         }
         if (path != "/docs")
         {
@@ -311,14 +372,33 @@ internal sealed class FakeServer : HttpMessageHandler
         }
         if (method is not ("initialize" or "tools/list" or "tools/call"))
         {
-            return Json(new { jsonrpc = "2.0", id = id.Clone(), error = new { code = -32601, message = "Method not found" } });
+            return Json(new
+            {
+                jsonrpc = "2.0",
+                id = id.Clone(),
+                error = new
+                {
+                    code = -32601,
+                    message = "Method not found"
+                }
+            });
         }
         object result = method switch
         {
             "initialize" => new
             {
                 protocolVersion = root.GetProperty("params").GetProperty("protocolVersion").GetString(),
-                capabilities = new { tools = new { } }, serverInfo = new { name = "offline Espressif", version = "1" }
+                capabilities = new
+                {
+                    tools = new
+                    {
+                    }
+                },
+                serverInfo = new
+                {
+                    name = "offline Espressif",
+                    version = "1"
+                }
             },
             "tools/list" => new
             {
@@ -346,7 +426,12 @@ internal sealed class FakeServer : HttpMessageHandler
             limit.Headers.TryAddWithoutValidation("Retry-After", "120");
             return limit;
         }
-        return Json(new { jsonrpc = "2.0", id = id.Clone(), result });
+        return Json(new
+        {
+            jsonrpc = "2.0",
+            id = id.Clone(),
+            result
+        });
     }
 
     private object Search(JsonElement root)
@@ -359,7 +444,8 @@ internal sealed class FakeServer : HttpMessageHandler
             {
                 new { type = "text", text = "GPIO docs https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/gpio.html\n" +
                     "Unsafe https://invalid.example/docs\n" + AccessToken + " client_secret=" + ClientSecret }
-            }, isError = false
+            },
+            isError = false
         };
     }
 

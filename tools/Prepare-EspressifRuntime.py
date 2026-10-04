@@ -26,9 +26,7 @@ def copy_tree(source, destination):
     if not source.is_dir():
         raise FileNotFoundError(source)
     for current, directories, files in os.walk(source):
-        directories[:] = sorted(
-            name for name in directories if name not in IGNORED_DIRECTORIES
-        )
+        directories[:] = sorted(name for name in directories if name not in IGNORED_DIRECTORIES)
         relative = Path(current).relative_to(source)
         target = destination / relative
         target.mkdir(parents=True, exist_ok=True)
@@ -106,9 +104,7 @@ def hash_and_deduplicate(output):
         # 同一只读组件内相同内容只占一份磁盘块；索引仍校验每个逻辑路径。
         key = (size, digest)
         if size >= 65536 and key in shared:
-            temporary = require_contained(
-                output, path.with_name(path.name + ".studiox-link")
-            )
+            temporary = require_contained(output, path.with_name(path.name + ".studiox-link"))
             try:
                 os.link(shared[key], temporary)
                 os.replace(temporary, path)
@@ -164,17 +160,25 @@ def main():
     arguments = parser.parse_args()
     sdk_version = arguments.sdk_version
     component_version = arguments.component_version or sdk_version
-    if not re.fullmatch(r"[56]\.\d+\.\d+", sdk_version) or not re.fullmatch(r"\d+\.\d+\.\d+", component_version):
+    if not re.fullmatch(r"[56]\.\d+\.\d+", sdk_version) or not re.fullmatch(
+        r"\d+\.\d+\.\d+", component_version
+    ):
         raise ValueError("Specify exact SDK and component release versions")
     version_cmake = (arguments.idf_root / "tools/cmake/version.cmake").read_text(encoding="utf-8")
-    source_version = ".".join(re.search(r"set\(IDF_VERSION_" + part + r"\s+(\d+)\)", version_cmake).group(1)
-        for part in ("MAJOR", "MINOR", "PATCH"))
+    source_version = ".".join(
+        re.search(r"set\(IDF_VERSION_" + part + r"\s+(\d+)\)", version_cmake).group(1)
+        for part in ("MAJOR", "MINOR", "PATCH")
+    )
     if source_version != sdk_version:
         raise ValueError("SDK source version differs from the requested release: " + source_version)
     spec = json.loads((arguments.idf_root / "tools/tools.json").read_text(encoding="utf-8"))
+
     def recommended(name):
         tool = next(tool for tool in spec["tools"] if tool["name"] == name)
-        return next(version["name"] for version in tool["versions"] if version["status"] == "recommended")
+        return next(
+            version["name"] for version in tool["versions"] if version["status"] == "recommended"
+        )
+
     tool_version = recommended("xtensa-esp-elf")
     if recommended("riscv32-esp-elf") != tool_version:
         raise ValueError("Different compiler revisions need an explicit layout recipe")
@@ -192,8 +196,7 @@ def main():
         arguments.git_root,
     ]
     if output == Path(output.anchor) or any(
-        output.is_relative_to(source.resolve())
-        or source.resolve().is_relative_to(output)
+        output.is_relative_to(source.resolve()) or source.resolve().is_relative_to(output)
         for source in sources
     ):
         raise ValueError("组件输出必须在来源目录外，且不能是盘符根目录。")
@@ -203,14 +206,8 @@ def main():
     print(f"Preparing ESP-IDF {sdk_version} SDK (without history/examples)...", flush=True)
     copy_sdk(arguments.idf_root, output / "sdk", sdk_version)
     sources = {
-        "xtensa": arguments.tools_root
-        / "xtensa-esp-elf"
-        / tool_version
-        / "xtensa-esp-elf",
-        "riscv": arguments.tools_root
-        / "riscv32-esp-elf"
-        / tool_version
-        / "riscv32-esp-elf",
+        "xtensa": arguments.tools_root / "xtensa-esp-elf" / tool_version / "xtensa-esp-elf",
+        "riscv": arguments.tools_root / "riscv32-esp-elf" / tool_version / "riscv32-esp-elf",
         "cmake": arguments.tools_root / "cmake" / cmake_version,
         "ninja": arguments.tools_root / "ninja" / ninja_version,
         "git": arguments.git_root,
@@ -219,7 +216,10 @@ def main():
         print(f"Preparing shared {role}...", flush=True)
         copy_tree(source, output / role)
     # CoreDump 分析使用与 IDF tools.json 对应的官方 GDB，不能回退到系统工具。
-    for folder, package in (("xtensa-gdb", "xtensa-esp-elf-gdb"), ("riscv-gdb", "riscv32-esp-elf-gdb")):
+    for folder, package in (
+        ("xtensa-gdb", "xtensa-esp-elf-gdb"),
+        ("riscv-gdb", "riscv32-esp-elf-gdb"),
+    ):
         copy_tree(arguments.tools_root / package / gdb_version / package, output / folder)
     print("Preparing relocatable Python...", flush=True)
     prepare_python(
@@ -230,7 +230,8 @@ def main():
     state = output / "idf-tools"
     state.mkdir(exist_ok=True)
     shutil.copy2(
-        arguments.tools_root.parent / ("espidf.constraints.v" + ".".join(sdk_version.split(".")[:2]) + ".txt"),
+        arguments.tools_root.parent
+        / ("espidf.constraints.v" + ".".join(sdk_version.split(".")[:2]) + ".txt"),
         state / ("espidf.constraints.v" + ".".join(sdk_version.split(".")[:2]) + ".txt"),
     )
     esptool = run_python(
@@ -300,12 +301,12 @@ def main():
         "gcc": tool_version,
     }
     if (arguments.idf_root / "release-source.json").exists():
-        provenance["releaseSource"] = json.loads((arguments.idf_root / "release-source.json").read_text(encoding="utf-8"))
+        provenance["releaseSource"] = json.loads(
+            (arguments.idf_root / "release-source.json").read_text(encoding="utf-8")
+        )
     if (arguments.python_env / "pip-report.json").exists():
         shutil.copy2(arguments.python_env / "pip-report.json", output / "python-packages.json")
-    (output / "SOURCE.json").write_text(
-        json.dumps(provenance, indent=2) + "\n", encoding="utf-8"
-    )
+    (output / "SOURCE.json").write_text(json.dumps(provenance, indent=2) + "\n", encoding="utf-8")
     print("Indexing and deduplicating immutable runtime files...", flush=True)
     hashes, size, saved = hash_and_deduplicate(output)
     manifest = {
@@ -330,9 +331,7 @@ def main():
         "resourceDirectories": resources,
         "purpose": "esp-idf",
     }
-    (output / "toolset.json").write_text(
-        json.dumps(manifest, indent=2) + "\n", encoding="utf-8"
-    )
+    (output / "toolset.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
     print(
         json.dumps(
             {

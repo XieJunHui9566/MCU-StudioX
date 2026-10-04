@@ -22,7 +22,10 @@ public sealed partial class ProjectFileService(Editing.LocalHistoryService? hist
         foreach (var item in new DirectoryInfo(directory).EnumerateFileSystemInfos())
         {
             token.ThrowIfCancellationRequested();
-            if (item.Name == ".git" || item.Name.StartsWith(".studiox-copy-", StringComparison.Ordinal) || item.Name.StartsWith(".studiox-rename-", StringComparison.Ordinal)) { continue; }
+            if (item.Name == ".git" || item.Name.StartsWith(".studiox-copy-", StringComparison.Ordinal) || item.Name.StartsWith(".studiox-rename-", StringComparison.Ordinal))
+            {
+                continue;
+            }
             yield return new(item.Name, Path.GetRelativePath(project, item.FullName).Replace('\\', '/'),
                 (item.Attributes & FileAttributes.Directory) != 0, (item.Attributes & FileAttributes.ReparsePoint) != 0);
         }

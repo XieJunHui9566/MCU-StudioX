@@ -20,7 +20,10 @@ internal sealed class EspressifBuildBackend
         var cachePath = PathBoundary.Resolve(build, "studiox-idf-runtime.json");
         var streamed = new ToolOutput(text =>
         {
-            lock (logGate) { log.Append(text); }
+            lock (logGate)
+            {
+                log.Append(text);
+            }
             output?.Report(text);
         });
         try
@@ -30,7 +33,10 @@ internal sealed class EspressifBuildBackend
             var module = await EspressifModuleConfiguration.ReadAsync(root, token);
             var identity = new CacheIdentity(root, tools.RootDirectory, tools.Fingerprint, sdk, settings, module.Settings, EspressifNativeTools.Revision);
             var moduleBase = await EspressifModuleSdkConfig.PrepareAsync(root, module, token);
-            if (moduleBase is not null) { log.AppendLine("模块配置保留原生选项：" + Path.GetRelativePath(root, moduleBase)); }
+            if (moduleBase is not null)
+            {
+                log.AppendLine("模块配置保留原生选项：" + Path.GetRelativePath(root, moduleBase));
+            }
             var environment = await EspressifBuildEnvironment.CreateAsync(root, tools, sdk, token);
             var nativeRoot = EspressifNativePath.For(root);
             var nativeBuild = EspressifNativePath.For(build);
@@ -73,6 +79,11 @@ internal sealed class EspressifBuildBackend
             {
                 progress?.Report("构建环境已变化，重建原生 CMake 缓存…");
                 log.AppendLine("构建环境已变化，重建原生 CMake 缓存；保留源码与 sdkconfig。");
+                var parameterBackup = await BackupParameterCachesAsync(root, token);
+                if (parameterBackup is not null)
+                {
+                    log.AppendLine("原生参数缓存已备份：" + parameterBackup);
+                }
                 ClearCMakeCache(build, token);
             }
             if (File.Exists(cachePath))
@@ -118,7 +129,10 @@ internal sealed class EspressifBuildBackend
         }
         catch (Exception exception)
         {
-            lock (logGate) { log.AppendLine().AppendLine(exception.ToString()); }
+            lock (logGate)
+            {
+                log.AppendLine().AppendLine(exception.ToString());
+            }
             InvalidateReceipt(root);
             throw;
         }
@@ -126,7 +140,10 @@ internal sealed class EspressifBuildBackend
         {
             // 取消同样保留原始诊断；删除凭据已由统一构建入口在启动前完成。
             string text;
-            lock (logGate) { text = log.ToString(); }
+            lock (logGate)
+            {
+                text = log.ToString();
+            }
             try
             {
                 await File.WriteAllTextAsync(logPath, text, CancellationToken.None);
@@ -153,7 +170,10 @@ internal sealed class EspressifBuildBackend
         string root, Dictionary<string, string> environment, StringBuilder log, object logGate,
         IProgress<string> output, CancellationToken token)
     {
-        lock (logGate) { log.AppendLine("[" + phase + "]"); }
+        lock (logGate)
+        {
+            log.AppendLine("[" + phase + "]");
+        }
         var result = await new ProcessRunner().RunAsync(new(python, arguments, root, TimeSpan.FromMinutes(20),
             environment, RemoveEnvironment: ToolsetEnvironment.AmbientVariables, Output: output), token);
         lock (logGate)
@@ -181,6 +201,11 @@ internal sealed class EspressifBuildBackend
                 }
                 if (item is DirectoryInfo)
                 {
+                    // 备份是恢复证据，不是当前构建输入；不能递归清掉此前健康检查保存的 CMake 缓存。
+                    if (item.Name == ".studiox-cache-backups")
+                    {
+                        continue;
+                    }
                     pending.Push(owned);
                     if (item.Name == "CMakeFiles" || item.Name.EndsWith("-stamp", StringComparison.Ordinal))
                     {
@@ -219,6 +244,64 @@ internal sealed class EspressifBuildBackend
             File.Delete(receipt);
         }
     }
+    private static async Task<string?> BackupParameterCachesAsync(string root, CancellationToken token)
+    {
+        var entries = BuildService.EspressifParameterCaches.Select(relative => BuildService.CacheEntry(root, relative, token))
+            .OfType<ConfigurationCacheEntry>().ToArray();
+        if (entries.Length == 0)
+        {
+            return null;
+        }
+        var backup = PathBoundary.Resolve(root, ".build/.studiox-cache-backups/idf-parameters-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(backup);
+        var moved = new List<(string Source, string Destination, bool Directory)>();
+        try
+        {
+            foreach (var entry in entries)
+            {
+                token.ThrowIfCancellationRequested();
+                var source = PathBoundary.Resolve(root, entry.RelativePath);
+                var destination = PathBoundary.Resolve(backup, entry.RelativePath[".build/".Length..]);
+                Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
+                if (entry.Directory)
+                {
+                    Directory.Move(source, destination);
+                }
+                else
+                {
+                    File.Move(source, destination);
+                }
+                moved.Add((source, destination, entry.Directory));
+            }
+            await JsonStore.WriteAsync(PathBoundary.Resolve(backup, "cache-backup.json"), new ConfigurationCachePlan(root, entries), token);
+            return backup;
+        }
+        catch (Exception failure)
+        {
+            var errors = new List<Exception> { failure };
+            foreach (var entry in moved.AsEnumerable().Reverse())
+            {
+                try
+                {
+                    if (entry.Directory)
+                    {
+                        Directory.Move(entry.Destination, entry.Source);
+                    }
+                    else
+                    {
+                        File.Move(entry.Destination, entry.Source);
+                    }
+                }
+                catch (Exception restore) { errors.Add(restore); }
+            }
+            if (errors.Count > 1)
+            {
+                throw new AggregateException("原生参数缓存备份失败且部分回退失败，文件保留在备份目录。", errors);
+            }
+            throw;
+        }
+    }
+
     private sealed record CacheIdentity(string ProjectDirectory, string ToolsetDirectory, string Fingerprint,
         EspressifProjectSettings Sdk, ProjectBuildSettings BuildSettings, EspressifModuleSettings ModuleSettings, int NativeToolsRevision);
     private sealed class ToolOutput(Action<string> report) : IProgress<string>

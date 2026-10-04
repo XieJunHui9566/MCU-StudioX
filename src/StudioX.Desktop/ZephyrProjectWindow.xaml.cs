@@ -40,7 +40,10 @@ public partial class ZephyrProjectWindow : Window
                 StatusText.ToolTip = string.Join("\n\n", report.Failures.Select(failure =>
                     failure.Directory + "\n" + failure.Diagnostic));
             }
-            else { StatusText.ToolTip = null; }
+            else
+            {
+                StatusText.ToolTip = null;
+            }
             return report;
         }
         catch (Exception ex)

@@ -41,7 +41,10 @@ try
             }
             Check(tool == "validation.echo", "host tool identity");
             await Task.Delay(10, token);
-            return JsonSerializer.SerializeToElement(new { echoed = input.GetProperty("value").GetInt32() });
+            return JsonSerializer.SerializeToElement(new
+            {
+                echoed = input.GetProperty("value").GetInt32()
+            });
         }, (item, _) =>
         {
             events.Enqueue(item);
@@ -50,32 +53,49 @@ try
         await using (client)
         {
             Check(client.Contribution.Commands.Length == 8, "contribution handshake");
-            var one = await client.InvokeAsync("command", "increment", JsonSerializer.SerializeToElement(new { }));
-            var two = await client.InvokeAsync("agentTool", "counter", JsonSerializer.SerializeToElement(new { }));
+            var one = await client.InvokeAsync("command", "increment", JsonSerializer.SerializeToElement(new
+            {
+            }));
+            var two = await client.InvokeAsync("agentTool", "counter", JsonSerializer.SerializeToElement(new
+            {
+            }));
             Check(one.GetProperty("count").GetInt32() == 1 && two.GetProperty("count").GetInt32() == 2, "persistent state");
-            var echo = await client.InvokeAsync("command", "callback", JsonSerializer.SerializeToElement(new { value = 73 }));
+            var echo = await client.InvokeAsync("command", "callback", JsonSerializer.SerializeToElement(new
+            {
+                value = 73
+            }));
             Check(echo.GetProperty("echoed").GetInt32() == 73, "nested bidirectional callback");
-            var environment = await client.InvokeAsync("command", "environment", JsonSerializer.SerializeToElement(new { }));
+            var environment = await client.InvokeAsync("command", "environment", JsonSerializer.SerializeToElement(new
+            {
+            }));
             Check(environment.GetProperty("secret").ValueKind == JsonValueKind.Null, "environment secrecy");
             await ExpectFailureAsync(() => client.InvokeAsync("command", "throw", JsonSerializer.SerializeToElement(new { })), "validation-original-error");
             await ExpectFailureAsync(() => client.InvokeAsync("command", "reenter", JsonSerializer.SerializeToElement(new { })), "PLUGIN_REENTRANT");
             using var cancellation = new CancellationTokenSource(TimeSpan.FromMilliseconds(100));
             try
             {
-                _ = await client.InvokeAsync("command", "cancel", JsonSerializer.SerializeToElement(new { }), cancellation.Token);
+                _ = await client.InvokeAsync("command", "cancel", JsonSerializer.SerializeToElement(new
+                {
+                }), cancellation.Token);
                 throw new InvalidOperationException("调用取消未传播。");
             }
             catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
             {
                 results.Add(kind + ": caller cancellation propagated");
             }
-            var afterCancel = await client.InvokeAsync("command", "increment", JsonSerializer.SerializeToElement(new { }));
+            var afterCancel = await client.InvokeAsync("command", "increment", JsonSerializer.SerializeToElement(new
+            {
+            }));
             Check(afterCancel.GetProperty("count").GetInt32() == 3, "session survives cooperative cancellation");
             for (var iteration = 0; iteration < 200; iteration++)
             {
-                _ = await client.InvokeAsync("command", "increment", JsonSerializer.SerializeToElement(new { }));
+                _ = await client.InvokeAsync("command", "increment", JsonSerializer.SerializeToElement(new
+                {
+                }));
             }
-            var total = await client.InvokeAsync("agentTool", "counter", JsonSerializer.SerializeToElement(new { }));
+            var total = await client.InvokeAsync("agentTool", "counter", JsonSerializer.SerializeToElement(new
+            {
+            }));
             Check(total.GetProperty("count").GetInt32() == 204, "no fixed total plugin call count limit");
             results.Add(kind + ": more than 200 sequential plugin calls remain usable without a total-call cap");
             Check(events.Any(item => item.Kind == "panel") && events.Any(item => item.Kind == "log"), "panel/log events");
@@ -85,7 +105,10 @@ try
         }
         if (kind == "process")
         {
-            await JsonStore.WriteAsync(manifestPath, manifest with { Arguments = ["--process-bad-version"] });
+            await JsonStore.WriteAsync(manifestPath, manifest with
+            {
+                Arguments = ["--process-bad-version"]
+            });
             await ExpectFailureAsync(async () =>
             {
                 await using var invalid = await PluginRuntimeClient.StartAsync(hostExecutable, manifestPath,
@@ -111,7 +134,11 @@ try
     var decoded = await new PluginClient(hostExecutable).DecodeAsync(legacyManifestPath, Encoding.UTF8.GetBytes("1.2,1"));
     Check(decoded.Signals.Count > 0, "API 1 decoder preserved");
     results.Add("API 1: legacy decoder remains explicit and functional");
-    await JsonStore.WriteAsync(Path.Combine(scratch, "results.json"), new { success = true, results });
+    await JsonStore.WriteAsync(Path.Combine(scratch, "results.json"), new
+    {
+        success = true,
+        results
+    });
     foreach (var result in results)
     {
         Console.WriteLine(result);

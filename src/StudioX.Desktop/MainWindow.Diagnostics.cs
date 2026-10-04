@@ -60,8 +60,17 @@ public partial class MainWindow
         {
             problemRows = current;
             ProblemsGrid.ItemsSource = current;
-            ProblemsTab.Header = $"问题 ({current.Length})";
         }
+        var batches = services.Intelligence.GetDiagnostics();
+        var state = projectDirectory is not null && currentProjectManifest?.Kind != StudioX.Engine.ProjectKind.MicroPython
+            ? services.Debugger.IsActive || diagnosticsPausedForDebug ? " · 实时分析已暂停"
+            : !services.Intelligence.IsReady ? " · 实时分析未就绪"
+            : batches.Any(batch => !batch.IsComplete) ? " · 诊断数据不完整"
+            : activeEditor is { } currentEditor && StudioX.Application.CodeIntelligence.CodeIntelligenceService.Supports(currentEditor.Source.RelativePath) &&
+                !batches.Any(batch => batch.Path.Equals(currentEditor.Source.RelativePath, StringComparison.OrdinalIgnoreCase) && batch.Text == currentEditor.Buffer.Text)
+                ? " · 正在分析" : ""
+            : "";
+        ProblemsTab.Header = $"问题 ({current.Length})" + state;
         diagnosticRenderer?.Set(!services.Debugger.IsActive && !diagnosticsPausedForDebug && activeEditor is { } editor ? current.Where(r => r.File.Equals(editor.Source.RelativePath, StringComparison.OrdinalIgnoreCase))
             .Select(r => r.Offset is { } offset ? new EditorDiagnostic(r.Diagnostic, offset, Math.Min(r.Length, Math.Max(0, editor.Buffer.TextLength - offset))) : EditorDiagnosticRenderer.Locate(editor.Buffer, r.Diagnostic))
             .OfType<EditorDiagnostic>().ToArray() : []);

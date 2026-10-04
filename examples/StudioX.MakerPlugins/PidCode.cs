@@ -8,8 +8,8 @@ public static class PidCode
     {
         static string F(double value)
         {
-            var text=value.ToString("G9",CultureInfo.InvariantCulture);
-            return (text.Contains('.') || text.Contains('E') ? text : text+".0")+"f";
+            var text = value.ToString("G9", CultureInfo.InvariantCulture);
+            return (text.Contains('.') || text.Contains('E') ? text : text + ".0") + "f";
         }
         return $$"""
             #include <math.h>
@@ -26,7 +26,7 @@ public static class PidCode
             static float pid_step(StudioXPid *p, float target, float measured)
             {
                 const float dt={{F(s.Dt)}}, kp={{F(s.Kp)}}, ki={{F(s.Ki)}}, kd={{F(s.Kd)}};
-                const float tf={{F(s.FilterMs/1000)}}, lo={{F(s.Minimum)}}, hi={{F(s.Maximum)}};
+                const float tf={{F(s.FilterMs / 1000)}}, lo={{F(s.Minimum)}}, hi={{F(s.Maximum)}};
                 float error, proportional, derivative, candidate, proposed, raw;
                 if (!isfinite(target) || !isfinite(measured)) return 0.0f;
                 if (!p->ready) pid_reset(p, measured);

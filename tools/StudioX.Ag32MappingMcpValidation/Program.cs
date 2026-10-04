@@ -167,8 +167,14 @@ await File.WriteAllTextAsync(Path.Combine(output, "result.json"), JsonSerializer
 internal sealed class TestAuthorizer : IStudioXMcpAuthorizer
 {
     public List<StudioXMcpApprovalRequest> Requests { get; } = [];
-    public bool AllowEnable { get; set; }
-    public Action<StudioXMcpApprovalRequest>? OnApproval { get; set; }
+    public bool AllowEnable
+    {
+        get; set;
+    }
+    public Action<StudioXMcpApprovalRequest>? OnApproval
+    {
+        get; set;
+    }
 
     public Task<bool> ApproveAsync(StudioXMcpApprovalRequest request, CancellationToken token)
     {

@@ -14,3 +14,7 @@
 *.md text eol=lf
 # AGM 原始驱动/IP 按字节核验，不能在提交或检出时转换换行。
 src/StudioX.Engine/Resources/Ag32/Peripherals/* -text -whitespace
+# 这些文件的多行字面量包含生成内容；提交和检出也不能改变字面量的换行值。
+src/StudioX.Cli/Program.cs -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+src/StudioX.Engine/CMakeGenerator.cs -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+tools/StudioX.LvglValidation/CustomUiFixtures.cs -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol

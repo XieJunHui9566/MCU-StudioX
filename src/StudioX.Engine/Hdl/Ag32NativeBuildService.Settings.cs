@@ -12,7 +12,10 @@ public sealed partial class Ag32NativeBuildService
     {
         var project = await HdlSchematicInputs.RequireProjectAsync(root, token);
         var path = PathBoundary.Resolve(root, Ag32NativeBuildSettings.RelativePath);
-        if (File.Exists(path)) return await JsonStore.ReadAsync<Ag32NativeBuildSettings>(path, token);
+        if (File.Exists(path))
+        {
+            return await JsonStore.ReadAsync<Ag32NativeBuildSettings>(path, token);
+        }
         // 自动发现只作初始值；厂商生成物和 testbench 不进入实际硬件综合。
         var sources = HdlSchematicInputs.DiscoverSources(root, project.Logic!.VerilogFile)
             .Where(source => !source.Split('/').Any(part => part is "alta_db" or "logic_db" or "sim" or "tb"))
@@ -33,13 +36,21 @@ public sealed partial class Ag32NativeBuildService
     {
         if (settings.FormatVersion != 1 || settings.SdcFiles is null || settings.Sources is null ||
             settings.IncludeDirectories is null || settings.Defines is null)
+        {
             throw new StudioXException("AG32_LOGIC_SETTINGS", "逻辑构建配置格式应为 1。");
+        }
         HdlSchematicInputs.Validate(root, settings.Inputs);
         if (!settings.Sources.Contains("logic/user_logic.v", StringComparer.OrdinalIgnoreCase))
+        {
             throw new StudioXException("AG32_LOGIC_ENTRY", "逻辑构建必须包含 logic/user_logic.v，模块名为 user_logic。");
+        }
         foreach (var file in settings.SdcFiles)
+        {
             if (!File.Exists(PathBoundary.Resolve(root, file)) || Path.GetExtension(file) != ".sdc")
+            {
                 throw new StudioXException("AG32_LOGIC_SDC", "时序约束不存在或不是 .sdc：" + file);
+            }
+        }
     }
 
     private static async Task RequireDeviceAsync(string root, ProjectManifest project, CancellationToken token)
@@ -51,7 +62,9 @@ public sealed partial class Ag32NativeBuildService
             device is null || !profile.Matches(device) || device.ToolsetId != project.ToolsetId ||
             device.ToolsetVersion != project.ToolsetVersion || device.CompilerId != project.CompilerId ||
             project.Logic?.TargetDevice != profile.TargetDevice || project.PinMapping?.TargetDevice != profile.TargetDevice)
+        {
             throw new StudioXException("AG32_LOGIC_DEVICE", "自定义逻辑的器件、封装、容量和工具必须匹配已核实的 AGM 器件包。");
+        }
     }
 
     internal static async Task<string> HashAsync(string path, CancellationToken token)
@@ -63,13 +76,18 @@ public sealed partial class Ag32NativeBuildService
     public static void Invalidate(string root)
     {
         var path = PathBoundary.Resolve(root, Ag32NativeBuildReceipt.RelativePath);
-        if (File.Exists(path)) File.Delete(path);
+        if (File.Exists(path))
+        {
+            File.Delete(path);
+        }
     }
 
     public async Task<string> ReportPathAsync(string root, string report, CancellationToken token = default)
     {
         if (report is not ("setup.rpt" or "hold.rpt" or "fmax.rpt" or "coverage.rpt"))
+        {
             throw new StudioXException("AG32_LOGIC_REPORT", "请选择 setup、hold、Fmax 或覆盖率报告。");
+        }
         var image = await RequireImageAsync(root, token);
         return Path.GetRelativePath(root, Path.Combine(Path.GetDirectoryName(image.Path)!, report)).Replace('\\', '/');
     }
@@ -79,7 +97,10 @@ public sealed partial class Ag32NativeBuildService
         var project = await HdlSchematicInputs.RequireProjectAsync(root, token);
         await RequireDeviceAsync(root, project, token);
         var path = PathBoundary.Resolve(root, Ag32NativeBuildReceipt.RelativePath);
-        if (!File.Exists(path)) throw new StudioXException("AG32_LOGIC_STALE", "自定义逻辑尚未成功联合构建，请先编译。");
+        if (!File.Exists(path))
+        {
+            throw new StudioXException("AG32_LOGIC_STALE", "自定义逻辑尚未成功联合构建，请先编译。");
+        }
         var receipt = await JsonStore.ReadAsync<Ag32NativeBuildReceipt>(path, token);
         var mappingSettings = project.PinMapping!;
         var logicSettings = project.Logic!;
@@ -90,19 +111,27 @@ public sealed partial class Ag32NativeBuildService
             !receipt.Inputs.ContainsKey(ToolLockPath) ||
             receipt.ImageRelativePath is null || !Regex.IsMatch(receipt.ImageRelativePath, @"^\.build/ag32-logic/[a-f0-9]{32}/pins\.bin$") ||
             !receipt.Artifacts.ContainsKey(receipt.ImageRelativePath))
+        {
             throw new StudioXException("AG32_LOGIC_STALE", "逻辑工具或凭据已变化，请重新编译。");
+        }
         ValidateSettings(root, receipt.Settings);
         foreach (var (relative, expected) in receipt.Inputs.Concat(receipt.Artifacts))
         {
             var file = PathBoundary.Resolve(root, relative);
             if ((File.Exists(file) ? await HashAsync(file, token) : "") != expected)
+            {
                 throw new StudioXException("AG32_LOGIC_STALE", "逻辑输入或产物已变化，请重新编译：" + relative);
+            }
         }
         if (!await InputsCurrentAsync(root, receipt.Inputs, receipt.Settings, token))
+        {
             throw new StudioXException("AG32_LOGIC_STALE", "逻辑源文件集合已变化，请重新编译。");
+        }
         var image = PathBoundary.Resolve(root, receipt.ImageRelativePath);
         if (new FileInfo(image).Length is <= 0 or > 102400)
+        {
             throw new StudioXException("AG32_LOGIC_IMAGE", "逻辑镜像必须位于保留的 100 KiB 区域内。");
+        }
         return new(image, receipt.Artifacts[receipt.ImageRelativePath], new FileInfo(image).Length,
             receipt.SourceDigest, native.Fingerprint, Ag32DeviceCatalog.Require(project.DeviceId).LogicImageAddress!.Value);
     }

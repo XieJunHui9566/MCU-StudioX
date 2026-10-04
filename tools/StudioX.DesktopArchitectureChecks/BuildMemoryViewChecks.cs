@@ -100,7 +100,10 @@ internal static class BuildMemoryViewChecks
         {
             var child = VisualTreeHelper.GetChild(root, index);
             yield return child;
-            foreach (var nested in Descendants(child)) { yield return nested; }
+            foreach (var nested in Descendants(child))
+            {
+                yield return nested;
+            }
         }
     }
 }

@@ -1,78 +1,247 @@
-<UserControl x:Class="StudioX.Desktop.HdlWorkflowView"
- xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
- xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
- xmlns:local="clr-namespace:StudioX.Desktop">
- <Grid Margin="18">
-  <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
-  <StackPanel>
-   <TextBlock Text="AG32 联合构建与仿真" FontSize="22" FontWeight="SemiBold"/>
-   <TextBlock Text="顶部编译生成 MCU 固件与 FPGA 位流。RTL 仿真在电脑执行 testbench，可观察时钟、总线和 X/Z；当前不包含 SDF 布局后延迟。"
-     TextWrapping="Wrap" Foreground="{DynamicResource Muted}" Margin="0,8,0,12"/>
-  </StackPanel>
-  <Expander Grid.Row="1" Header="工程配置与 testbench" IsExpanded="True" x:Name="ConfigurationPanel" Foreground="{DynamicResource Text}">
-   <TabControl Margin="0,8,0,10" MaxHeight="300">
-    <TabItem Header="联合构建">
-     <Grid Margin="10" x:Name="BuildSettingsPanel">
-      <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-      <StackPanel Margin="0,0,14,0">
-       <TextBlock Text="Verilog 源文件（每行一个工程相对路径）"/>
-       <TextBox x:Name="BuildSources" AcceptsReturn="True" Height="92" VerticalScrollBarVisibility="Auto" TextChanged="BuildChanged"/>
-       <TextBlock Text="附加 SDC 文件（每行一个）" Margin="0,8,0,0"/>
-       <TextBox x:Name="SdcFiles" AcceptsReturn="True" Height="45" TextChanged="BuildChanged"/>
-      </StackPanel>
-      <StackPanel Grid.Column="1">
-       <TextBlock Text="包含目录（每行一个）"/>
-       <TextBox x:Name="BuildIncludes" AcceptsReturn="True" Height="55" TextChanged="BuildChanged"/>
-       <TextBlock Text="宏（每行 NAME 或 NAME=值）" Margin="0,8,0,0"/>
-       <TextBox x:Name="BuildDefines" AcceptsReturn="True" Height="55" TextChanged="BuildChanged"/>
-       <WrapPanel Margin="0,10,0,0">
-        <Button x:Name="SaveBuildButton" Content="保存构建配置" Click="SaveBuild_Click" Margin="0,0,10,0"/>
-        <ComboBox x:Name="TimingReport" SelectedIndex="0" Width="118" Margin="0,0,8,0">
-         <ComboBoxItem Content="setup.rpt"/><ComboBoxItem Content="hold.rpt"/><ComboBoxItem Content="fmax.rpt"/><ComboBoxItem Content="coverage.rpt"/>
-        </ComboBox>
-        <Button Content="打开时序报告" Click="TimingReport_Click"/>
-       </WrapPanel>
-      </StackPanel>
-     </Grid>
-    </TabItem>
-    <TabItem Header="RTL 仿真">
-     <Grid Margin="10" x:Name="SimulationSettingsPanel" TextBoxBase.TextChanged="SimulationChanged">
-      <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-      <StackPanel Margin="0,0,14,0">
-       <TextBlock Text="设计源文件（不含 testbench，每行一个）"/>
-       <TextBox x:Name="SimulationSources" AcceptsReturn="True" Height="65" VerticalScrollBarVisibility="Auto"/>
-       <TextBlock Text="testbench 文件" Margin="0,8,0,0"/>
-       <TextBox x:Name="TestbenchFile"/>
-       <TextBlock Text="testbench 顶层模块" Margin="0,8,0,0"/>
-       <TextBox x:Name="TestbenchTop"/>
-      </StackPanel>
-      <StackPanel Grid.Column="1">
-       <TextBlock Text="包含目录（每行一个）"/><TextBox x:Name="SimulationIncludes"/>
-       <TextBlock Text="宏（每行一个）" Margin="0,6,0,0"/><TextBox x:Name="SimulationDefines"/>
-       <WrapPanel Margin="0,8,0,8">
-        <TextBlock Text="最长时间（ns）" VerticalAlignment="Center"/><TextBox x:Name="Duration" Width="110" Margin="8,0,14,0"/>
-        <TextBlock Text="超时（秒）" VerticalAlignment="Center"/><TextBox x:Name="Timeout" Width="55" Margin="8,0,0,0"/>
-       </WrapPanel>
-       <WrapPanel><Button x:Name="RunButton" Content="保存并运行 RTL 仿真" Click="Run_Click" Margin="0,0,8,0"/>
-        <Button x:Name="EditBenchButton" Content="编辑 testbench" Click="EditBench_Click"/>
-        <Button Content="新建 testbench 模板" Click="CreateBench_Click" Margin="8,0,0,0"/></WrapPanel>
-      </StackPanel>
-     </Grid>
-    </TabItem>
-   </TabControl>
-  </Expander>
-  <Grid Grid.Row="2">
-   <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-   <WrapPanel Margin="0,0,0,8">
-    <TextBlock Text="筛选信号" VerticalAlignment="Center"/><TextBox x:Name="SignalFilter" Width="200" Margin="8,0,12,0" TextChanged="FilterChanged"/>
-    <Button Content="−" Click="ZoomOut_Click"/><Button Content="+" Click="ZoomIn_Click" Margin="8,0,12,0"/>
-    <Button x:Name="LogButton" Content="仿真日志" Click="Log_Click" IsEnabled="False"/>
-   </WrapPanel>
-   <TextBlock Grid.Row="1" x:Name="Summary" Text="尚未运行。testbench 中可使用断言与 $fatal；VCD 由 IDE 自动记录。" TextWrapping="Wrap" Margin="0,0,0,8"/>
-   <ScrollViewer Grid.Row="2" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
-    <local:HdlWaveformSurface x:Name="Surface"/>
-   </ScrollViewer>
-   <TextBlock Grid.Row="3" x:Name="CursorText" Text="点击定位，按住左键拖动时间光标；筛选结果最多显示 128 条。" TextWrapping="Wrap" Margin="0,8,0,0"/>
+<UserControl
+  x:Class="StudioX.Desktop.HdlWorkflowView"
+  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:local="clr-namespace:StudioX.Desktop">
+  <Grid
+    Margin="18">
+    <Grid.RowDefinitions>
+      <RowDefinition
+        Height="Auto" />
+      <RowDefinition
+        Height="Auto" />
+      <RowDefinition
+        Height="*" />
+    </Grid.RowDefinitions>
+    <StackPanel>
+      <TextBlock
+        Text="AG32 联合构建与仿真"
+        FontSize="22"
+        FontWeight="SemiBold" />
+      <TextBlock
+        Text="顶部编译生成 MCU 固件与 FPGA 位流。RTL 仿真在电脑执行 testbench，可观察时钟、总线和 X/Z；当前不包含 SDF 布局后延迟。"
+        TextWrapping="Wrap"
+        Foreground="{DynamicResource Muted}"
+        Margin="0,8,0,12" />
+    </StackPanel>
+    <Expander
+      Grid.Row="1"
+      Header="工程配置与 testbench"
+      IsExpanded="True"
+      x:Name="ConfigurationPanel"
+      Foreground="{DynamicResource Text}">
+      <TabControl
+        Margin="0,8,0,10"
+        MaxHeight="300">
+        <TabItem
+          Header="联合构建">
+          <Grid
+            Margin="10"
+            x:Name="BuildSettingsPanel">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition
+                Width="*" />
+              <ColumnDefinition
+                Width="*" />
+            </Grid.ColumnDefinitions>
+            <StackPanel
+              Margin="0,0,14,0">
+              <TextBlock
+                Text="Verilog 源文件（每行一个工程相对路径）" />
+              <TextBox
+                x:Name="BuildSources"
+                AcceptsReturn="True"
+                Height="92"
+                VerticalScrollBarVisibility="Auto"
+                TextChanged="BuildChanged" />
+              <TextBlock
+                Text="附加 SDC 文件（每行一个）"
+                Margin="0,8,0,0" />
+              <TextBox
+                x:Name="SdcFiles"
+                AcceptsReturn="True"
+                Height="45"
+                TextChanged="BuildChanged" />
+            </StackPanel>
+            <StackPanel
+              Grid.Column="1">
+              <TextBlock
+                Text="包含目录（每行一个）" />
+              <TextBox
+                x:Name="BuildIncludes"
+                AcceptsReturn="True"
+                Height="55"
+                TextChanged="BuildChanged" />
+              <TextBlock
+                Text="宏（每行 NAME 或 NAME=值）"
+                Margin="0,8,0,0" />
+              <TextBox
+                x:Name="BuildDefines"
+                AcceptsReturn="True"
+                Height="55"
+                TextChanged="BuildChanged" />
+              <WrapPanel
+                Margin="0,10,0,0">
+                <Button
+                  x:Name="SaveBuildButton"
+                  Content="保存构建配置"
+                  Click="SaveBuild_Click"
+                  Margin="0,0,10,0" />
+                <ComboBox
+                  x:Name="TimingReport"
+                  SelectedIndex="0"
+                  Width="118"
+                  Margin="0,0,8,0">
+                  <ComboBoxItem
+                    Content="setup.rpt" />
+                  <ComboBoxItem
+                    Content="hold.rpt" />
+                  <ComboBoxItem
+                    Content="fmax.rpt" />
+                  <ComboBoxItem
+                    Content="coverage.rpt" />
+                </ComboBox>
+                <Button
+                  Content="打开时序报告"
+                  Click="TimingReport_Click" />
+              </WrapPanel>
+            </StackPanel>
+          </Grid>
+        </TabItem>
+        <TabItem
+          Header="RTL 仿真">
+          <Grid
+            Margin="10"
+            x:Name="SimulationSettingsPanel"
+            TextBoxBase.TextChanged="SimulationChanged">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition
+                Width="*" />
+              <ColumnDefinition
+                Width="*" />
+            </Grid.ColumnDefinitions>
+            <StackPanel
+              Margin="0,0,14,0">
+              <TextBlock
+                Text="设计源文件（不含 testbench，每行一个）" />
+              <TextBox
+                x:Name="SimulationSources"
+                AcceptsReturn="True"
+                Height="65"
+                VerticalScrollBarVisibility="Auto" />
+              <TextBlock
+                Text="testbench 文件"
+                Margin="0,8,0,0" />
+              <TextBox
+                x:Name="TestbenchFile" />
+              <TextBlock
+                Text="testbench 顶层模块"
+                Margin="0,8,0,0" />
+              <TextBox
+                x:Name="TestbenchTop" />
+            </StackPanel>
+            <StackPanel
+              Grid.Column="1">
+              <TextBlock
+                Text="包含目录（每行一个）" />
+              <TextBox
+                x:Name="SimulationIncludes" />
+              <TextBlock
+                Text="宏（每行一个）"
+                Margin="0,6,0,0" />
+              <TextBox
+                x:Name="SimulationDefines" />
+              <WrapPanel
+                Margin="0,8,0,8">
+                <TextBlock
+                  Text="最长时间（ns）"
+                  VerticalAlignment="Center" />
+                <TextBox
+                  x:Name="Duration"
+                  Width="110"
+                  Margin="8,0,14,0" />
+                <TextBlock
+                  Text="超时（秒）"
+                  VerticalAlignment="Center" />
+                <TextBox
+                  x:Name="Timeout"
+                  Width="55"
+                  Margin="8,0,0,0" />
+              </WrapPanel>
+              <WrapPanel>
+                <Button
+                  x:Name="RunButton"
+                  Content="保存并运行 RTL 仿真"
+                  Click="Run_Click"
+                  Margin="0,0,8,0" />
+                <Button
+                  x:Name="EditBenchButton"
+                  Content="编辑 testbench"
+                  Click="EditBench_Click" />
+                <Button
+                  Content="新建 testbench 模板"
+                  Click="CreateBench_Click"
+                  Margin="8,0,0,0" />
+              </WrapPanel>
+            </StackPanel>
+          </Grid>
+        </TabItem>
+      </TabControl>
+    </Expander>
+    <Grid
+      Grid.Row="2">
+      <Grid.RowDefinitions>
+        <RowDefinition
+          Height="Auto" />
+        <RowDefinition
+          Height="Auto" />
+        <RowDefinition
+          Height="*" />
+        <RowDefinition
+          Height="Auto" />
+      </Grid.RowDefinitions>
+      <WrapPanel
+        Margin="0,0,0,8">
+        <TextBlock
+          Text="筛选信号"
+          VerticalAlignment="Center" />
+        <TextBox
+          x:Name="SignalFilter"
+          Width="200"
+          Margin="8,0,12,0"
+          TextChanged="FilterChanged" />
+        <Button
+          Content="−"
+          Click="ZoomOut_Click" />
+        <Button
+          Content="+"
+          Click="ZoomIn_Click"
+          Margin="8,0,12,0" />
+        <Button
+          x:Name="LogButton"
+          Content="仿真日志"
+          Click="Log_Click"
+          IsEnabled="False" />
+      </WrapPanel>
+      <TextBlock
+        Grid.Row="1"
+        x:Name="Summary"
+        Text="尚未运行。testbench 中可使用断言与 $fatal；VCD 由 IDE 自动记录。"
+        TextWrapping="Wrap"
+        Margin="0,0,0,8" />
+      <ScrollViewer
+        Grid.Row="2"
+        HorizontalScrollBarVisibility="Auto"
+        VerticalScrollBarVisibility="Auto">
+        <local:HdlWaveformSurface
+          x:Name="Surface" />
+      </ScrollViewer>
+      <TextBlock
+        Grid.Row="3"
+        x:Name="CursorText"
+        Text="点击定位，按住左键拖动时间光标；筛选结果最多显示 128 条。"
+        TextWrapping="Wrap"
+        Margin="0,8,0,0" />
+    </Grid>
   </Grid>
- </Grid>
 </UserControl>

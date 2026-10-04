@@ -9,8 +9,14 @@ using StudioX.Engine.Hdl;
 public partial class HdlWorkflowView : UserControl
 {
     private bool loading;
-    public bool BuildDirty { get; private set; }
-    public HdlSimulationResult? Result { get; private set; }
+    public bool BuildDirty
+    {
+        get; private set;
+    }
+    public HdlSimulationResult? Result
+    {
+        get; private set;
+    }
     public event EventHandler? SaveBuildRequested;
     public event EventHandler? RunRequested;
     public event EventHandler? EditBenchRequested;
@@ -44,7 +50,10 @@ public partial class HdlWorkflowView : UserControl
     public HdlSimulationSettings ReadSimulation() => new(1, Lines(SimulationSources), Lines(SimulationIncludes), Lines(SimulationDefines),
         TestbenchFile.Text.Trim(), TestbenchTop.Text.Trim(), long.Parse(Duration.Text, CultureInfo.InvariantCulture), int.Parse(Timeout.Text, CultureInfo.InvariantCulture));
     public void MarkBuildSaved() => BuildDirty = false;
-    public void SetBusy(bool busy) { BuildSettingsPanel.IsEnabled = SimulationSettingsPanel.IsEnabled = !busy; }
+    public void SetBusy(bool busy)
+    {
+        BuildSettingsPanel.IsEnabled = SimulationSettingsPanel.IsEnabled = !busy;
+    }
     public void ClearResult(string message)
     {
         Result = null;
@@ -64,13 +73,31 @@ public partial class HdlWorkflowView : UserControl
         ConfigurationPanel.IsExpanded = false;
     }
     private static string[] Lines(TextBox box) => box.Text.Split(['\r', '\n'], StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
-    private void BuildChanged(object sender, TextChangedEventArgs e) { if (!loading) BuildDirty = true; }
+    private void BuildChanged(object sender, TextChangedEventArgs e)
+    {
+        if (!loading)
+        {
+            BuildDirty = true;
+        }
+    }
     public void MarkStale()
     {
-        if (Result is not null) Summary.Text = "上次仿真快照：源码或配置已变化，请重新运行。\nVCD：" + Result.VcdPath;
+        if (Result is not null)
+        {
+            Summary.Text = "上次仿真快照：源码或配置已变化，请重新运行。\nVCD：" + Result.VcdPath;
+        }
     }
-    private void SimulationChanged(object sender, TextChangedEventArgs e) { if (!loading) MarkStale(); }
-    private void FilterChanged(object sender, TextChangedEventArgs e) { Surface?.Filter(SignalFilter.Text); }
+    private void SimulationChanged(object sender, TextChangedEventArgs e)
+    {
+        if (!loading)
+        {
+            MarkStale();
+        }
+    }
+    private void FilterChanged(object sender, TextChangedEventArgs e)
+    {
+        Surface?.Filter(SignalFilter.Text);
+    }
     private void SaveBuild_Click(object sender, RoutedEventArgs e) => SaveBuildRequested?.Invoke(this, EventArgs.Empty);
     private void Run_Click(object sender, RoutedEventArgs e) => RunRequested?.Invoke(this, EventArgs.Empty);
     private void EditBench_Click(object sender, RoutedEventArgs e) => EditBenchRequested?.Invoke(this, EventArgs.Empty);

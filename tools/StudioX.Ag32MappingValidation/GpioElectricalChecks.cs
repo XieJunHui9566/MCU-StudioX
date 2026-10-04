@@ -8,7 +8,10 @@ internal static class GpioElectricalChecks
     internal static async Task RunAsync(string toolsets, string directory, string archive)
     {
         var output = Path.GetFullPath(directory);
-        if (Directory.Exists(output)) { throw new IOException("Use a new output directory."); }
+        if (Directory.Exists(output))
+        {
+            throw new IOException("Use a new output directory.");
+        }
         Directory.CreateDirectory(output);
         var pack = await new PackRepository(Path.Combine(output, "packs")).ImportAsync(Path.GetFullPath(archive));
         var root = Path.Combine(output, "电气配置 fixture");
@@ -21,8 +24,12 @@ internal static class GpioElectricalChecks
         var checks = new List<string>();
         void Check(bool okay, string message)
         {
-            if (!okay) { throw new InvalidOperationException(message); }
-            checks.Add(message); Console.WriteLine("PASS " + message);
+            if (!okay)
+            {
+                throw new InvalidOperationException(message);
+            }
+            checks.Add(message);
+            Console.WriteLine("PASS " + message);
         }
         var hashes = new HashSet<string>();
         foreach (var pin in new[]
@@ -52,7 +59,9 @@ internal static class GpioElectricalChecks
             var image = await builder.ValidateBuiltAsync(root);
             hashes.Add(image.Sha256);
             foreach (var file in new[] { "studiox-gpio.asf", "pins_routed.v", "logic_db/io.asf" })
+            {
                 File.Copy(Path.Combine(root, ".build/ag32-mapping", file), Path.Combine(output, name + "-" + Path.GetFileName(file)));
+            }
         }
         Check(hashes.Count >= 6, "electrical choices change actual bitstreams, not just UI metadata");
         Check(!File.ReadAllText(source).Contains("#@StudioX:GPIO"), "returning to default removes electrical metadata without removing user comments");
@@ -66,24 +75,42 @@ internal static class GpioElectricalChecks
         })
         {
             var before = await planner.ReadAsync(root);
-            try { await planner.ApplyAsync(root, before, [invalid], before.Clocks); throw new InvalidOperationException("Invalid GPIO options accepted."); }
+            try
+            {
+                await planner.ApplyAsync(root, before, [invalid], before.Clocks);
+                throw new InvalidOperationException("Invalid GPIO options accepted.");
+            }
             catch (StudioXException error) when (error.Code == "AG32_PIN_PLAN_CONFLICT")
-            { Check(original.SequenceEqual(File.ReadAllBytes(source)), "invalid GPIO options rejected transactionally: " + invalid); }
+            {
+                Check(original.SequenceEqual(File.ReadAllBytes(source)), "invalid GPIO options rejected transactionally: " + invalid);
+            }
         }
         var asf = Path.Combine(root, ".build/ag32-mapping/studiox-gpio.asf");
         var asfText = await File.ReadAllTextAsync(asf);
         await File.AppendAllTextAsync(asf, "\n# changed\n");
-        try { await builder.ValidateBuiltAsync(root); throw new InvalidOperationException("Changed ASF accepted"); }
+        try
+        {
+            await builder.ValidateBuiltAsync(root);
+            throw new InvalidOperationException("Changed ASF accepted");
+        }
         catch (StudioXException error) when (error.Code == "AG32_GPIO_OPTIONS") { Check(true, "changed electrical constraint rejects old image receipt"); }
         await File.WriteAllTextAsync(asf, asfText);
         var routed = Path.Combine(root, ".build/ag32-mapping/pins_routed.v");
         var routedText = await File.ReadAllTextAsync(routed);
         await File.WriteAllTextAsync(routed, routedText.Replace("PIN_2_iobuf.CFG_KEEP = 2'b00", "PIN_2_iobuf.CFG_KEEP = 2'b10"));
-        try { await builder.ValidateBuiltAsync(root); throw new InvalidOperationException("Changed physical IO accepted"); }
+        try
+        {
+            await builder.ValidateBuiltAsync(root);
+            throw new InvalidOperationException("Changed physical IO accepted");
+        }
         catch (StudioXException error) when (error.Code == "AG32_GPIO_OPTIONS") { Check(true, "wrong actual IO pull setting rejects old image receipt"); }
         await File.WriteAllTextAsync(routed, routedText);
         await File.WriteAllTextAsync(source, File.ReadAllText(source).Replace(" #LED1", " #@StudioX:GPIO pull=BAD output=PUSH_PULL #LED1"));
-        try { await planner.ReadAsync(root); throw new InvalidOperationException("Malformed GPIO metadata accepted"); }
+        try
+        {
+            await planner.ReadAsync(root);
+            throw new InvalidOperationException("Malformed GPIO metadata accepted");
+        }
         catch (StudioXException error) when (error.Code == "AG32_GPIO_OPTIONS") { Check(true, "malformed metadata cannot silently become floating push-pull"); }
         await File.WriteAllBytesAsync(source, original);
         var fresh = await planner.ReadAsync(root);
@@ -91,7 +118,12 @@ internal static class GpioElectricalChecks
         var fullBuild = await new BuildService(tools).BuildAsync(root);
         await File.WriteAllTextAsync(Path.Combine(output, "joint-build.log"), fullBuild.Log);
         Check(fullBuild.Success && File.Exists(Path.Combine(root, ".build/firmware.elf")), "actual MCU compiler links generated system code and matching open-drain mapping");
-        await JsonStore.WriteAsync(Path.Combine(output, "result.json"), new { success = true, checks, hardwareAccessed = false });
+        await JsonStore.WriteAsync(Path.Combine(output, "result.json"), new
+        {
+            success = true,
+            checks,
+            hardwareAccessed = false
+        });
         Console.WriteLine($"PASS {checks.Count} GPIO electrical checks; converter, GCC and Supra only; no hardware access.");
     }
 }

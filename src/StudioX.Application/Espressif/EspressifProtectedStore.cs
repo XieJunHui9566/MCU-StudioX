@@ -82,7 +82,11 @@ internal sealed class EspressifProtectedStore : ITokenCache
             if (name == "results.dat")
             {
                 // 旧缓存可能采用条目数限制而超过字节预算；删除可重建资料，不删除授权。
-                WriteCore("diagnostic.dat", new { observedAtUtc = DateTimeOffset.UtcNow, code = "ESPRESSIF_CACHE_OVERSIZE" });
+                WriteCore("diagnostic.dat", new
+                {
+                    observedAtUtc = DateTimeOffset.UtcNow,
+                    code = "ESPRESSIF_CACHE_OVERSIZE"
+                });
                 File.Delete(path);
                 return default;
             }

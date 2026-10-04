@@ -12,7 +12,8 @@ public sealed class ProtocolLabPlugin : LabPlugin
     protected override string Introduction => "粘贴十六进制或 UTF-8 文本，观察字节、CRC 和校验和。计算输入中的全部字节；已有校验尾字节请先移除。";
     protected override JsonElement Schema => LabPanel.Schema(new()
     {
-        ["encoding"] = EnumSchema("hex", "utf8"), ["data"] = StringSchema(4096)
+        ["encoding"] = EnumSchema("hex", "utf8"),
+        ["data"] = StringSchema(4096)
     });
     protected override PluginPanelWidget[] Inputs(JsonElement values) =>
     [
@@ -25,10 +26,14 @@ public sealed class ProtocolLabPlugin : LabPlugin
         var text = LabInput.Text(values, "data", "01 03 00 00 00 0A");
         var bytes = LabInput.Text(values, "encoding", "hex") switch
         {
-            "hex" => HexBytes(text), "utf8" => new UTF8Encoding(false, true).GetBytes(text),
+            "hex" => HexBytes(text),
+            "utf8" => new UTF8Encoding(false, true).GetBytes(text),
             _ => throw new ArgumentException("请选择 HEX 或 UTF-8。")
         };
-        if (bytes.Length is < 1 or > 512) throw new ArgumentException("报文须包含 1–512 字节。");
+        if (bytes.Length is < 1 or > 512)
+        {
+            throw new ArgumentException("报文须包含 1–512 字节。");
+        }
         uint modbus = 0xffff, ccitt = 0xffff, crc32 = 0xffffffff;
         var sum = 0;
         var xor = 0;
@@ -56,7 +61,18 @@ public sealed class ProtocolLabPlugin : LabPlugin
             (row * 8).ToString("X4"), string.Join(" ", chunk.Select(value => value.ToString("X2"))),
             new string(chunk.Select(value => value is >= 32 and <= 126 ? (char)value : '.').ToArray())
         });
-        return new(new { byteCount = bytes.Length, modbus, ccittFalse = ccitt, crc32, sum8 = sum, xor8 = xor, lrc8 = lrc, modbusTail, normalized },
+        return new(new
+        {
+            byteCount = bytes.Length,
+            modbus,
+            ccittFalse = ccitt,
+            crc32,
+            sum8 = sum,
+            xor8 = xor,
+            lrc8 = lrc,
+            modbusTail,
+            normalized
+        },
             $"/* {bytes.Length} bytes; CRC16/MODBUS tail (low byte first): {modbusTail} */\n#include <stdint.h>\nstatic const uint8_t packet[{bytes.Length}] = {{ {string.Join(", ", bytes.Select(value => $"0x{value:X2}"))} }};",
         [
             Table("checksums", "校验值", ["算法", "数值", "说明"],
@@ -78,13 +94,21 @@ public sealed class ProtocolLabPlugin : LabPlugin
         foreach (var item in tokens)
         {
             var token = item.StartsWith("0x", StringComparison.OrdinalIgnoreCase) ? item[2..] : item;
-            if (token.Length == 0 || token.Length % 2 != 0) throw new ArgumentException("HEX 每个字节需两位数字，不接受单个半字节。");
+            if (token.Length == 0 || token.Length % 2 != 0)
+            {
+                throw new ArgumentException("HEX 每个字节需两位数字，不接受单个半字节。");
+            }
             for (var index = 0; index < token.Length; index += 2)
             {
                 if (!byte.TryParse(token.AsSpan(index, 2), NumberStyles.AllowHexSpecifier, CultureInfo.InvariantCulture, out var value))
+                {
                     throw new ArgumentException("HEX 含非法字符；仅接受 00–FF 字节及分隔符。");
+                }
                 result.Add(value);
-                if (result.Count > 512) throw new ArgumentException("报文最多 512 字节。");
+                if (result.Count > 512)
+                {
+                    throw new ArgumentException("报文最多 512 字节。");
+                }
             }
         }
         return result.ToArray();

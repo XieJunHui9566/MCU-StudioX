@@ -41,7 +41,28 @@ internal static class SourceStyleChecks
             var formatted = XmlSourceFormatter.Format(xml);
             Require(XmlSourceFormatter.Format(formatted) == formatted, "XML formatting is semantically equal and idempotent");
         }
-        Console.WriteLine("PASS 13 source formatter boundary checks.");
+        foreach (var literal in new[]
+        {
+            "\"\"\"\r\nline1\r\nline2\r\n\"\"\"",
+            "$\"\"\"\r\nline1 {1 + 2}\r\nline2\r\n\"\"\"",
+            "\"\"\"\r\n    generated text\r\n    \"\"\""
+        })
+        {
+            var source = "class C { string Value = " + literal + "; }";
+            var sdkFormatted = source.Replace("\r\n", "\n");
+            Require(CSharpWhitespace.PreserveLiterals(source, sdkFormatted) == source,
+                "SDK whitespace preserves raw and interpolated string tokens and CRLF values");
+        }
+        try
+        {
+            _ = CSharpWhitespace.PreserveLiterals("class C { int Value = 1; }", "class C { int Other = 1; }");
+            throw new InvalidOperationException("Formatter accepted a changed identifier.");
+        }
+        catch (InvalidOperationException error) when (error.Message.Contains("非字面量"))
+        {
+            Require(true, "SDK whitespace rejects executable token changes");
+        }
+        Console.WriteLine("PASS 17 source formatter boundary checks.");
     }
 
     private static void Require(bool condition, string description)

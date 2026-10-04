@@ -14,7 +14,10 @@ public partial class MainWindow
         {
             StudioX.Application.Health.ProjectHealthReport health;
             var checking = true;
-            try { health = await services.ProjectHealth.InspectAsync(directory, progress: new Progress<string>(text => { if (checking) Status.Text = text; }), token: token); }
+            try
+            {
+                health = await services.ProjectHealth.InspectAsync(directory, progress: new Progress<string>(text => { if (checking) { Status.Text = text; } }), token: token);
+            }
             finally { checking = false; }
             Log("编译前健康检查：" + health.Summary);
             guideHealthPassed = health.Errors == 0;
@@ -46,7 +49,10 @@ public partial class MainWindow
             if (report.Success)
             {
                 await RefreshBuildMemoryAsync(directory, token);
-                try { await services.BuildHistory.CaptureAsync(directory, buildClock.Elapsed.TotalSeconds, token); }
+                try
+                {
+                    await services.BuildHistory.CaptureAsync(directory, buildClock.Elapsed.TotalSeconds, token);
+                }
                 catch (Exception error) when (error is not OperationCanceledException) { Log("构建历史保存失败，原始编译结果保持有效：" + error); }
                 if (currentProjectManifest?.Espressif is not null &&
                     string.Equals(projectDirectory, directory, StringComparison.OrdinalIgnoreCase))
@@ -94,7 +100,10 @@ public partial class MainWindow
         {
             if (currentProjectManifest?.PinMapping is not null && currentProjectManifest.Logic is null && projectDirectory == directory)
             {
-                try { await RefreshAg32PinMappingStatusAsync(CancellationToken.None); }
+                try
+                {
+                    await RefreshAg32PinMappingStatusAsync(CancellationToken.None);
+                }
                 catch (Exception error) { Log("时序状态刷新失败，原始构建结果保留：" + error); }
             }
         }

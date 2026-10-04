@@ -39,12 +39,21 @@ internal static class Ag32LogicUsageChecks
             }
             catch (InvalidDataException) { check(true, "malformed final count rejects stale earlier data: " + invalid); }
         }
-        project = project with { DeviceId = "AG32VF303CCT6", PinMapping = new("AGRV2KL48") };
+        project = project with
+        {
+            DeviceId = "AG32VF303CCT6",
+            PinMapping = new("AGRV2KL48")
+        };
         await JsonStore.WriteAsync(Path.Combine(root, ".studiox", "project.json"), project);
-        async Task ReceiptAsync() => await JsonStore.WriteAsync(receiptPath, new { Project = project, ToolFingerprint = "test", Images = new[]
+        async Task ReceiptAsync() => await JsonStore.WriteAsync(receiptPath, new
+        {
+            Project = project,
+            ToolFingerprint = "test",
+            Images = new[]
         {
             new { RelativePath = ".build/firmware.elf", Format = "elf", Sha256 = "test", SymbolsPath = ".build/firmware.elf" }
-        } });
+        }
+        });
         await ReceiptAsync();
         await File.WriteAllTextAsync(logPath, statistics);
         var report = await service.ReadAsync(root);
@@ -57,7 +66,10 @@ internal static class Ag32LogicUsageChecks
         report = await service.ReadAsync(root);
         check(report.LogicUsage is null && report.LogicDiagnostic is not null && report.Targets.Count == 1,
             "missing Supra statistics preserves MCU memory and reports unknown logic usage");
-        try { await new BuildService(new ToolsetCatalog(Path.Combine(root, "missing-tools"))).BuildAsync(root); }
+        try
+        {
+            await new BuildService(new ToolsetCatalog(Path.Combine(root, "missing-tools"))).BuildAsync(root);
+        }
         catch (StudioXException) { }
         report = await service.ReadAsync(root);
         check(report.LogicUsage is null && report.Targets.Count == 0 && !File.Exists(snapshotPath), "failed build clears both logic and memory snapshots");

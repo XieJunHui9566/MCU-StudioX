@@ -111,8 +111,9 @@ function Remove-OuterTrailingWhitespace([string]$Source)
 }
 
 $results = [Collections.Generic.List[object]]::new()
-foreach ($file in Get-ChildItem -LiteralPath $PSScriptRoot -Filter '*.ps1' -File |
-        Where-Object { $_.Name -notin $ExcludeFile } | Sort-Object Name)
+$ownedScripts = @(Get-ChildItem -LiteralPath $PSScriptRoot -Filter '*.ps1' -File) +
+@(Get-ChildItem -LiteralPath (Join-Path $PSScriptRoot 'acceptance') -Filter '*.ps1' -File)
+foreach ($file in $ownedScripts | Where-Object { $_.Name -notin $ExcludeFile } | Sort-Object FullName)
 {
     $original = [IO.File]::ReadAllText($file.FullName)
     $expanded = Expand-StatementSeparators $original
@@ -125,7 +126,9 @@ foreach ($file in Get-ChildItem -LiteralPath $PSScriptRoot -Filter '*.ps1' -File
     $changed = $original -cne $formatted
     if ($Write -and $changed)
     {
-        [IO.File]::WriteAllText($file.FullName, $formatted, [Text.UTF8Encoding]::new($false))
+        # 来宾验收入口由 Windows PowerShell 5.1 执行，中文源码必须保留 UTF-8 BOM。
+        $isGuestScript = $file.DirectoryName -eq (Join-Path $PSScriptRoot 'acceptance')
+        [IO.File]::WriteAllText($file.FullName, $formatted, [Text.UTF8Encoding]::new($isGuestScript))
     }
     $results.Add([ordered]@{
             file                       = [IO.Path]::GetRelativePath($repository, $file.FullName).Replace('\', '/')

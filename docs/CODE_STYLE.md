@@ -55,7 +55,11 @@ await files.SaveAsync(project, document, token);
 ./tools/Build.ps1                 # 常规解决方案构建
 ```
 
-结构工具复用本机 .NET SDK 的 Roslyn，校验 token 和注释，补花括号并拆分同文件公开类型；再由 SDK 排版。格式检查不会构建厂商工程、烧录、升级版本或发布。
+隔离构建后可向格式入口传入相同的 `-BuildArtifactsDirectory`，复用已还原的工程资产，不在源码目录生成构建产物。窗口回调、外部输入和路径边界的安全回归使用 `tools/StudioX.SecurityValidation`；常规回归入口会同时检查该门禁与 C#/XML 格式。
+
+包仓库的导入、列举、完整校验与打包共用根目录及祖先链接检查，遍历时也拒绝未索引的目录链接。路径规则须覆盖 [Win32 保留设备名](https://learn.microsoft.com/en-us/windows/win32/fileio/naming-a-file)，包括使用上标数字的端口别名。工具输出回调失败后要及时结束进程树并传播原始异常；插件响应写完之前不得释放请求容量，阻塞响应仍属于在途操作。这些规则属于应用边界保护，不把同用户权限的插件进程或本地文件访问描述为权限沙箱。
+
+结构工具复用本机 .NET SDK 的 Roslyn，校验 token 和注释，补花括号并拆分同文件公开类型；再由 SDK 排版隔离副本，恢复原始字符串与插值字符串并比较全部可执行 token。字面量内的 CRLF 属于字符串值，不受文件 LF 规则影响。格式检查不会构建厂商工程、烧录、升级版本或发布。
 
 第一方 Python、PowerShell 和 C/H 的排版入口、固定格式器及检查方式见 `tools/Format-FirstPartySources.ps1`。Python 比较 AST，C/H 核对 token，PowerShell 校验语法；字符串中的生成内容保留原值。嵌入式 C/C++ 还要遵循 MCU 技能中的并发、超时、容量和准确料号约束。
 

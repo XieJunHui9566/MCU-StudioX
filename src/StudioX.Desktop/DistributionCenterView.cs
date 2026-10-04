@@ -93,7 +93,8 @@ public sealed class DistributionCenterView : UserControl
         // 主要安装/验证操作固定在滚动区之外，小窗口也能直接找到；来源设置仍可滚动。
         SizeChanged += (_, _) => controls.MaxHeight = Math.Max(70, Math.Min((ActualHeight - 32) * .40, ActualHeight - 32 - primary.ActualHeight - 180));
         body.Children.Add(controls);
-        Grid.SetRow(primary, 1); body.Children.Add(primary);
+        Grid.SetRow(primary, 1);
+        body.Children.Add(primary);
         Grid.SetRow(detail, 3);
         body.Children.Add(detail);
         foreach (var (header, property, width) in new[] { ("类型", "Kind", 70d), ("名称", "Name", 180d), ("ID", "Id", 180d), ("版本", "Version", 85d), ("下载字节", "DownloadBytes", 110d), ("许可证", "License", 100d) })
@@ -112,7 +113,10 @@ public sealed class DistributionCenterView : UserControl
     }
     public void SetListing(DistributionListing? listing)
     {
-        if (listing is not null) Source = listing.Source;
+        if (listing is not null)
+        {
+            Source = listing.Source;
+        }
         Listing = listing;
         status.Text = listing is null ? "尚未读取目录。已验证组件库固定校验 IDE 内置发布者公钥。"
             : $"发布者：{listing.Catalog.Publisher} · {listing.Verification}\n目录 SHA-256：{listing.CatalogSha256}";
@@ -145,11 +149,17 @@ public sealed class DistributionCenterView : UserControl
     public void SetStatus(string text) => status.Text = text;
     public void SetBusy(bool value)
     {
-        busy = value; source.IsEnabled = !value; entries.IsEnabled = !value; UpdateActions();
+        busy = value;
+        source.IsEnabled = !value;
+        entries.IsEnabled = !value;
+        UpdateActions();
     }
     private void UpdateActions()
     {
-        foreach (var button in buttons.Values) button.IsEnabled = !busy;
+        foreach (var button in buttons.Values)
+        {
+            button.IsEnabled = !busy;
+        }
         buttons["install"].IsEnabled = !busy && Listing is not null && Selected is not null;
         buttons["preview-tool"].IsEnabled = !busy && Listing is not null && Selected is { Kind: "tool" };
     }

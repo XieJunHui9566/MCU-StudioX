@@ -27,24 +27,36 @@ public sealed partial class CodeTemplateService(string dataDirectory)
         ArgumentOutOfRangeException.ThrowIfNegative(offset);
         ArgumentOutOfRangeException.ThrowIfGreaterThan(offset, text.Length);
         var start = offset;
-        while (start > 0 && (char.IsLetterOrDigit(text[start - 1]) || text[start - 1] == '_')) { start--; }
+        while (start > 0 && (char.IsLetterOrDigit(text[start - 1]) || text[start - 1] == '_'))
+        {
+            start--;
+        }
         var prefix = text[start..offset];
         var matches = (await LoadAsync(projectDirectory, token).ConfigureAwait(false)).Entries.Where(entry => Supports(entry.Template, language) &&
             entry.Template.Shortcut.Length > 0 && entry.Template.Shortcut.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)).ToArray();
         if (matches.Length > 0 && language is "Python" or "CMake")
         {
             // 复用已有词法规则且在后台判断，避免三引号、括号注释误弹出模板或阻塞编辑器。
-            if (text.Length > 1024 * 1024 || !await Task.Run(() => language == "Python" ? !PythonSyntax.Scan(text, offset, token).Suppressed : !CMakeSyntax.Read(text, offset, token).Suppressed, token).ConfigureAwait(false)) { return []; }
+            if (text.Length > 1024 * 1024 || !await Task.Run(() => language == "Python" ? !PythonSyntax.Scan(text, offset, token).Suppressed : !CMakeSyntax.Read(text, offset, token).Suppressed, token).ConfigureAwait(false))
+            {
+                return [];
+            }
         }
         return matches;
     }
 
     public async Task SaveAsync(string? projectDirectory, CodeTemplateScope scope, string expectedRevision, IReadOnlyList<CodeTemplate> templates, CancellationToken token = default)
     {
-        if (scope == CodeTemplateScope.BuiltIn) { throw Error("内置模板请先复制为个人或工程模板。"); }
+        if (scope == CodeTemplateScope.BuiltIn)
+        {
+            throw Error("内置模板请先复制为个人或工程模板。");
+        }
         Validate(templates);
         var bytes = JsonSerializer.SerializeToUtf8Bytes(new TemplateFile(1, templates.ToArray()), JsonStore.Options);
-        if (bytes.Length > MaximumFileBytes) { throw Error("模板文件超过 4 MiB 上限。"); }
+        if (bytes.Length > MaximumFileBytes)
+        {
+            throw Error("模板文件超过 4 MiB 上限。");
+        }
         var path = GetPath(projectDirectory, scope);
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         path = GetPath(projectDirectory, scope);
@@ -69,7 +81,10 @@ public sealed partial class CodeTemplateService(string dataDirectory)
 
     public static void Validate(IReadOnlyList<CodeTemplate> templates)
     {
-        if (templates.Count > MaximumTemplates) { throw Error("每个模板库最多保存 500 个模板。"); }
+        if (templates.Count > MaximumTemplates)
+        {
+            throw Error("每个模板库最多保存 500 个模板。");
+        }
         var ids = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var shortcuts = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var template in templates)
@@ -82,7 +97,10 @@ public sealed partial class CodeTemplateService(string dataDirectory)
             {
                 throw Error("模板字段无效：名称最多 100 字，缩写应为字母/下划线开头的标识符，正文最多 65,536 字符。");
             }
-            if (template.Shortcut.Length > 0 && !shortcuts.Add(template.Language + ":" + template.Shortcut)) { throw Error("同一模板库、同一语言不能重复使用缩写：" + template.Shortcut); }
+            if (template.Shortcut.Length > 0 && !shortcuts.Add(template.Language + ":" + template.Shortcut))
+            {
+                throw Error("同一模板库、同一语言不能重复使用缩写：" + template.Shortcut);
+            }
             CodeTemplateExpander.Describe(template.Body);
         }
     }
@@ -96,21 +114,33 @@ public sealed partial class CodeTemplateService(string dataDirectory)
 
     private static async Task<CodeTemplateStore> LoadStoreAsync(string path, CodeTemplateScope scope, CancellationToken token)
     {
-        if (!File.Exists(path)) { return new(scope, path, "missing", []); }
+        if (!File.Exists(path))
+        {
+            return new(scope, path, "missing", []);
+        }
         await using var input = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, 4096, FileOptions.Asynchronous);
         using var output = new MemoryStream();
         var buffer = new byte[8192];
         int count;
         while ((count = await input.ReadAsync(buffer, token).ConfigureAwait(false)) > 0)
         {
-            if (output.Length + count > MaximumFileBytes) { throw Error("模板文件超过 4 MiB 上限：" + path); }
+            if (output.Length + count > MaximumFileBytes)
+            {
+                throw Error("模板文件超过 4 MiB 上限：" + path);
+            }
             output.Write(buffer, 0, count);
         }
         var bytes = output.ToArray();
         TemplateFile file;
-        try { file = JsonSerializer.Deserialize<TemplateFile>(bytes, JsonStore.Options) ?? throw Error("模板文件为空：" + path); }
+        try
+        {
+            file = JsonSerializer.Deserialize<TemplateFile>(bytes, JsonStore.Options) ?? throw Error("模板文件为空：" + path);
+        }
         catch (JsonException ex) { throw new StudioXException("CODE_TEMPLATE_JSON", "模板 JSON 无效：" + path, ex); }
-        if (file.FormatVersion != 1 || file.Templates is null) { throw Error("仅支持代码模板格式 1：" + path); }
+        if (file.FormatVersion != 1 || file.Templates is null)
+        {
+            throw Error("仅支持代码模板格式 1：" + path);
+        }
         Validate(file.Templates);
         return new(scope, path, Convert.ToHexString(SHA256.HashData(bytes)), Array.AsReadOnly(file.Templates));
     }

@@ -20,7 +20,9 @@ internal sealed class PluginActivityIconView : FrameworkElement
             {
                 context.BeginFigure(new Point(stroke[0], stroke[1]), false, false);
                 for (var index = 2; index < stroke.Length; index += 2)
+                {
                     context.LineTo(new Point(stroke[index], stroke[index + 1]), true, false);
+                }
             }
         }
         geometry.Freeze();

@@ -15,10 +15,31 @@ internal static class BuildChecks
         check(timings.Count == 1 && timings[0].Milliseconds == 15, "Ninja compile timing uses latest object record and excludes links/invalid intervals");
         var project = new ProjectManifest(1, "fixture", "", "", "", "STM32F407ZGT6", "", "arm.gnu", "1.0.0", "arm-gnu-15.2.rel1");
         var before = new BuildHistorySnapshot("before", DateTimeOffset.UtcNow, new(project, "before", "before", rows, timings), new([new("firmware", "Debug", DateTime.UtcNow, [new("FLASH", 0x08000000, 1024, 32)])], "fixture"), 1.2);
-        var after = before with { Id = "after", Details = before.Details with { Contributions = rows.Select(r => r.Name == "main" ? r with { Bytes = 48 } : r).ToArray() }, Memory = new([new("firmware", "Debug", DateTime.UtcNow, [new("FLASH", 0x08000000, 1024, 48)])], "fixture") };
+        var after = before with
+        {
+            Id = "after",
+            Details = before.Details with
+            {
+                Contributions = rows.Select(r => r.Name == "main" ? r with { Bytes = 48 } : r).ToArray()
+            },
+            Memory = new([new("firmware", "Debug", DateTime.UtcNow, [new("FLASH", 0x08000000, 1024, 48)])], "fixture")
+        };
         var comparison = BuildHistoryService.Compare(before, after);
         check(comparison.Any(r => r.Category == "存储区/字节" && r.Difference == 16) && comparison.Any(r => r.Category == "符号/字节" && r.Difference == 16), "comparison relates region growth to file and symbol changes");
-        try { _ = BuildHistoryService.Compare(before, after with { Details = after.Details with { Project = project with { DeviceId = "other" } } }); check(false, "incompatible compare"); }
+        try
+        {
+            _ = BuildHistoryService.Compare(before, after with
+            {
+                Details = after.Details with
+                {
+                    Project = project with
+                    {
+                        DeviceId = "other"
+                    }
+                }
+            });
+            check(false, "incompatible compare");
+        }
         catch (StudioXException error) { check(error.Code == "BUILD_COMPARE_TARGET", "cross-device build comparison rejected"); }
     }
 }

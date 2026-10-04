@@ -12,16 +12,28 @@ internal sealed class ToolComponentActivation(string userDataDirectory)
     public bool IsEnabled(string id, string version) => !Read().Disabled.Contains(id + "/" + version + "/win-x64", StringComparer.Ordinal);
     private State Read()
     {
-        if (!File.Exists(StatePath)) return new(1, []);
-        if (new FileInfo(StatePath).Length > 256 * 1024) throw new StudioXException("TOOLS_ACTIVATION", "组件启用记录过大，停止运行工具。");
+        if (!File.Exists(StatePath))
+        {
+            return new(1, []);
+        }
+        if (new FileInfo(StatePath).Length > 256 * 1024)
+        {
+            throw new StudioXException("TOOLS_ACTIVATION", "组件启用记录过大，停止运行工具。");
+        }
         var state = JsonSerializer.Deserialize<State>(File.ReadAllText(StatePath), JsonStore.Options);
         if (state is not { FormatVersion: 1, Disabled: not null } || state.Disabled.Length > 2048)
+        {
             throw new StudioXException("TOOLS_ACTIVATION", "组件启用记录格式无效，停止运行工具。");
+        }
         foreach (var key in state.Disabled)
         {
             var parts = key.Split('/');
-            if (parts.Length != 3 || parts[2] != "win-x64") throw new StudioXException("TOOLS_ACTIVATION", "组件启用记录身份无效。");
-            PackValidator.Token(parts[0]); PackValidator.Version(parts[1]);
+            if (parts.Length != 3 || parts[2] != "win-x64")
+            {
+                throw new StudioXException("TOOLS_ACTIVATION", "组件启用记录身份无效。");
+            }
+            PackValidator.Token(parts[0]);
+            PackValidator.Version(parts[1]);
         }
         return state;
     }

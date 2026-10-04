@@ -15,7 +15,9 @@ internal sealed record Ag32TimingEvidence(int Version, string ProjectSha256, str
     {
         var hashes = new Dictionary<string, string>(StringComparer.Ordinal);
         foreach (var name in InputNames)
+        {
             hashes[name] = await HashAsync(PathBoundary.Resolve(root, ".build/ag32-mapping/" + name), token);
+        }
         var evidence = new Ag32TimingEvidence(1, await HashAsync(PathBoundary.Resolve(root, ".studiox/project.json"), token),
             sourceHash, toolFingerprint, report.Sha256, hashes);
         await JsonStore.WriteAsync(PathBoundary.Resolve(root, RelativePath), evidence, token);
@@ -23,12 +25,21 @@ internal sealed record Ag32TimingEvidence(int Version, string ProjectSha256, str
 
     internal async Task<bool> InputsMatchAsync(string root, CancellationToken token)
     {
-        if (Inputs is null || Inputs.Count != InputNames.Length) return false;
+        if (Inputs is null || Inputs.Count != InputNames.Length)
+        {
+            return false;
+        }
         foreach (var name in InputNames)
         {
-            if (!Inputs.TryGetValue(name, out var expected)) return false;
+            if (!Inputs.TryGetValue(name, out var expected))
+            {
+                return false;
+            }
             var path = PathBoundary.Resolve(root, ".build/ag32-mapping/" + name);
-            if (!File.Exists(path) || await HashAsync(path, token) != expected) return false;
+            if (!File.Exists(path) || await HashAsync(path, token) != expected)
+            {
+                return false;
+            }
         }
         return true;
     }
@@ -42,6 +53,9 @@ internal sealed record Ag32TimingEvidence(int Version, string ProjectSha256, str
     internal static void Clear(string root)
     {
         var path = PathBoundary.Resolve(root, RelativePath);
-        if (File.Exists(path)) File.Delete(path);
+        if (File.Exists(path))
+        {
+            File.Delete(path);
+        }
     }
 }

@@ -27,11 +27,23 @@ internal static class StcComponentPackChecks
         foreach (var file in Directory.EnumerateFiles(oldPack.RootDirectory, "*", SearchOption.AllDirectories))
         {
             var relative = Path.GetRelativePath(oldPack.RootDirectory, file).Replace('\\', '/');
-            if (relative is "manifest.json" or "files.sha256.json") continue;
-            var target = PathBoundary.Resolve(source, relative); Directory.CreateDirectory(Path.GetDirectoryName(target)!); File.Copy(file, target);
+            if (relative is "manifest.json" or "files.sha256.json")
+            {
+                continue;
+            }
+            var target = PathBoundary.Resolve(source, relative);
+            Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+            File.Copy(file, target);
         }
-        var updated = oldPack.Manifest with { Version = "0.1.1", Devices = oldPack.Manifest.Devices.Select(d => d with
-            { ToolsetVersion = candidate.Version, DevelopmentComponents = [new(candidate.Id, candidate.Version, candidate.CompilerId, Purpose: "STC 8 位工程编译")] }).ToArray() };
+        var updated = oldPack.Manifest with
+        {
+            Version = "0.1.1",
+            Devices = oldPack.Manifest.Devices.Select(d => d with
+            {
+                ToolsetVersion = candidate.Version,
+                DevelopmentComponents = [new(candidate.Id, candidate.Version, candidate.CompilerId, Purpose: "STC 8 位工程编译")]
+            }).ToArray()
+        };
         await JsonStore.WriteAsync(Path.Combine(source, "manifest.json"), updated);
         var archive = Path.Combine(output, "stc.stc8-0.1.1.mcupack");
         await PackArchiveWriter.WriteAsync(source, archive);
@@ -54,7 +66,11 @@ internal static class StcComponentPackChecks
             && legacyPreview.RemovedFileExamples.Any(p => p.EndsWith(".h", StringComparison.OrdinalIgnoreCase)),
             "real SDCC old-to-new preview identifies removed local header files and does not declare automatic compatibility");
         var builder = new BuildService(tools);
-        try { await builder.BuildAsync(legacyProject); throw new InvalidOperationException("Old requirement accepted new component"); }
+        try
+        {
+            await builder.BuildAsync(legacyProject);
+            throw new InvalidOperationException("Old requirement accepted new component");
+        }
         catch (StudioXException error) when (error.Code == "TOOLSET_MISSING")
         {
             check(await HashAsync(legacyFile) == legacyHash && !File.Exists(Path.Combine(legacyProject, DevelopmentComponentLock.RelativePath)),
@@ -67,21 +83,48 @@ internal static class StcComponentPackChecks
             await new ProjectService().CreateAsync(newPack, device.Id, device.Templates.Single().Id, "component_check", directory);
             var plan = await service.InspectAsync(directory);
             var compatible = await service.PreviewCompatibilityAsync(plan, candidate);
-            if (compatible.State != ComponentProjectCompatibility.ExactRequirement) throw new InvalidOperationException(compatible.ToText());
+            if (compatible.State != ComponentProjectCompatibility.ExactRequirement)
+            {
+                throw new InvalidOperationException(compatible.ToText());
+            }
             var report = await builder.BuildAsync(directory);
-            if (!report.Success) throw new InvalidOperationException(report.Log);
+            if (!report.Success)
+            {
+                throw new InvalidOperationException(report.Log);
+            }
             var pin = await JsonStore.ReadAsync<DevelopmentComponentLock>(Path.Combine(directory, DevelopmentComponentLock.RelativePath));
             var ihx = Path.Combine(directory, ".build/firmware.ihx");
             if (!File.Exists(ihx) || pin.Components.Single().Version != "1.0.1" || !pin.Components.Single().Fingerprint.Equals(candidate.Fingerprint, StringComparison.OrdinalIgnoreCase))
+            {
                 throw new InvalidOperationException("Generated project did not lock the exact imported component.");
-            rows.Add(new { device = device.Id, component = "stc.sdcc/1.0.1", firmwareSha256 = await HashAsync(ihx), buildLog = report.LogPath });
+            }
+            rows.Add(new
+            {
+                device = device.Id,
+                component = "stc.sdcc/1.0.1",
+                firmwareSha256 = await HashAsync(ihx),
+                buildLog = report.LogPath
+            });
             Console.WriteLine("BUILD " + device.Id);
         }
         await JsonStore.WriteAsync(Path.Combine(output, "build-matrix.json"), rows);
         check(rows.Count == 24, "all 24 generated STC projects compile with public component and establish exact component content locks");
         check(await HashAsync(oldPackArchive) == originalArchiveHash && await HashAsync(legacyFile) == legacyHash,
             "old published pack and legacy project bytes remain unchanged");
-        await JsonStore.WriteAsync(Path.Combine(output, "matched-pack.json"), new { id = updated.Id, version = updated.Version, archive, sha256 = await HashAsync(archive), component = candidate.Identity, hardware = false, published = false });
+        await JsonStore.WriteAsync(Path.Combine(output, "matched-pack.json"), new
+        {
+            id = updated.Id,
+            version = updated.Version,
+            archive,
+            sha256 = await HashAsync(archive),
+            component = candidate.Identity,
+            hardware = false,
+            published = false
+        });
     }
-    private static async Task<string> HashAsync(string file) { await using var stream = File.OpenRead(file); return Convert.ToHexString(await SHA256.HashDataAsync(stream)); }
+    private static async Task<string> HashAsync(string file)
+    {
+        await using var stream = File.OpenRead(file);
+        return Convert.ToHexString(await SHA256.HashDataAsync(stream));
+    }
 }

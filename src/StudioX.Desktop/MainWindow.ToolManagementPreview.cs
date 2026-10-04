@@ -1,11 +1,11 @@
 namespace StudioX.Desktop;
 
 using System.Text.Json;
-using System.Windows.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Threading;
 using StudioX.Application;
 using StudioX.Application.Tools;
 
@@ -15,7 +15,14 @@ public partial class MainWindow
     public async Task RenderToolManagementPreviewAsync(string directory, string project)
     {
         var checks = new List<string>();
-        void Check(bool value, string label) { if (!value) throw new InvalidOperationException(label); checks.Add(label); }
+        void Check(bool value, string label)
+        {
+            if (!value)
+            {
+                throw new InvalidOperationException(label);
+            }
+            checks.Add(label);
+        }
         await ShowToolManagementAsync(project);
         var report = toolManagementView!.Report!;
         Check(report.ReferencesComplete && report.Versions.Count > 0, "real installed toolsets expose complete space and dependency report");
@@ -32,20 +39,30 @@ public partial class MainWindow
         Check(ToolInventory.Text.Contains("使用此组件时校验") && !ToolInventory.Text.Contains("完整性与启动检查通过"), "startup inventory displays metadata without full hashing or version execution");
         foreach (var theme in new[] { ThemeService.Dark, ThemeService.Light })
         {
-            ApplyTheme(theme); Width = 1440; Height = 960;
+            ApplyTheme(theme);
+            Width = 1440;
+            Height = 960;
             await SettleAsync();
             Check(toolManagementView.VersionsGrid.ActualHeight > 100 && toolManagementView.DetailText.ActualHeight > 100, theme.Id + " keeps versions and dependency details readable");
             Render(this, Path.Combine(directory, "tools-" + theme.Id + ".png"));
         }
         var wallpaper = new DrawingVisual();
         using (var context = wallpaper.RenderOpen())
+        {
             context.DrawRectangle(new LinearGradientBrush(Color.FromRgb(23, 110, 168), Color.FromRgb(154, 61, 132), 25), null, new Rect(0, 0, 1440, 960));
-        var bitmap = new RenderTargetBitmap(1440, 960, 96, 96, PixelFormats.Pbgra32); bitmap.Render(wallpaper);
+        }
+        var bitmap = new RenderTargetBitmap(1440, 960, 96, 96, PixelFormats.Pbgra32);
+        bitmap.Render(wallpaper);
         var wallpaperPath = Path.Combine(directory, "wallpaper-fixture.png");
-        var encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(bitmap));
-        using (var stream = File.Create(wallpaperPath)) encoder.Save(stream);
+        var encoder = new PngBitmapEncoder();
+        encoder.Frames.Add(BitmapFrame.Create(bitmap));
+        using (var stream = File.Create(wallpaperPath))
+        {
+            encoder.Save(stream);
+        }
         var asset = await services.Appearance.ImportAsync(wallpaperPath, BackgroundKind.Image);
-        ApplyTheme(ThemeService.Dark); ApplyBackground(new(Kind: BackgroundKind.Image, Asset: asset, Opacity: 1, Dim: 0.12));
+        ApplyTheme(ThemeService.Dark);
+        ApplyBackground(new(Kind: BackgroundKind.Image, Asset: asset, Opacity: 1, Dim: 0.12));
         await SettleAsync();
         Check(toolManagementView.Background is SolidColorBrush { Color.A: 0 }
             && toolManagementView.DetailText.Background is SolidColorBrush { Color.A: < 255 }, "wallpaper remains visible through the management page and themed detail surface");
@@ -59,7 +76,24 @@ public partial class MainWindow
         await ShowToolManagementAsync(project);
         Check(toolManagementTab == originalTab && originalTab.Visibility == System.Windows.Visibility.Visible, "closed manager tab reopens without duplication");
         var fixture = new ManagedToolVersion("fixture.gcc", "1.0.0", "UI fixture", "fixture", 1024, 2, true, null, false, false, true, "fixture", "fixture", [], "fixture", "UI fixture only");
+        var recovery = new ToolRepairRecovery(Guid.NewGuid().ToString("N"), fixture.Id, fixture.Version, fixture.CompilerId,
+            "fixture", "fixture", "finish", "进程在备份后终止，恢复前完整校验。")
+        {
+            CanRestorePrevious = true
+        };
+        toolManagementView.SetReport(new(DateTimeOffset.UtcNow, [fixture with { SafeToManage = false }], [], [], true)
+        {
+            Recoveries = [recovery]
+        });
+        Check(toolManagementView.RecoveryButton.Visibility == Visibility.Visible && toolManagementView.RecoveryButton.IsEnabled
+            && !toolManagementView.PurgeButton.IsEnabled, "pending component transaction exposes recovery and prevents conflicting deletion");
+        await SettleAsync();
+        Render(this, Path.Combine(directory, "tools-recovery.png"));
+        toolManagementView.SetBusy(true);
+        Check(!toolManagementView.RecoveryButton.IsEnabled, "busy manager prevents concurrent transaction recovery");
+        toolManagementView.SetBusy(false);
         toolManagementView.SetReport(new(DateTimeOffset.UtcNow, [fixture], [], [], true));
+        Check(toolManagementView.RecoveryButton.Visibility == Visibility.Collapsed, "resolved recovery does not leave an irrelevant action visible");
         Check(toolManagementView.RetireButton.IsEnabled && !toolManagementView.RestoreButton.IsEnabled && toolManagementView.PurgeButton.IsEnabled && toolManagementView.ToggleButton.IsEnabled,
             "disable and delete are prominently available for selected installed versions");
         toolManagementView.SetReport(new(DateTimeOffset.UtcNow, [fixture with { References = ["closed project"] }], [], [], true));
@@ -80,12 +114,23 @@ public partial class MainWindow
         await toolManagementView.Requested!("help");
         Check(helpCenter?.SelectedArticle?.Id == "tool-environment", "management guide opens the actual bundled help topic");
         await ShowToolManagementAsync(project);
-        ApplyTheme(ThemeService.Dark); Width = MinWidth; Height = 720;
+        ApplyTheme(ThemeService.Dark);
+        Width = MinWidth;
+        Height = 720;
         await SettleAsync();
         Render(this, Path.Combine(directory, "tools-compact.png"));
         Check(toolManagementView.VersionsGrid.ActualHeight > 55 && toolManagementView.DetailText.ActualHeight > 55,
             $"compact manager keeps both result and detail scroll areas ({toolManagementView.VersionsGrid.ActualHeight:F0}/{toolManagementView.DetailText.ActualHeight:F0})");
-        await File.WriteAllTextAsync(Path.Combine(directory, "tool-management-ui-result.json"), JsonSerializer.Serialize(new { status = "passed", checks }, new JsonSerializerOptions { WriteIndented = true }));
-        async Task SettleAsync() { UpdateLayout(); await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ContextIdle); UpdateLayout(); }
+        await File.WriteAllTextAsync(Path.Combine(directory, "tool-management-ui-result.json"), JsonSerializer.Serialize(new
+        {
+            status = "passed",
+            checks
+        }, new JsonSerializerOptions { WriteIndented = true }));
+        async Task SettleAsync()
+        {
+            UpdateLayout();
+            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ContextIdle);
+            UpdateLayout();
+        }
     }
 }

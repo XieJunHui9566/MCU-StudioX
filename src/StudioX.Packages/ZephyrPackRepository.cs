@@ -164,7 +164,10 @@ public sealed class ZephyrPackRepository(string rootDirectory)
         foreach (var id in Directory.EnumerateDirectories(RootDirectory).Where(path => !Path.GetFileName(path).StartsWith('.')))
         {
             string[] versions;
-            try { versions = Directory.GetDirectories(id); }
+            try
+            {
+                versions = Directory.GetDirectories(id);
+            }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or StudioXException)
             {
                 failures.Add(new(id, ex.ToString()));
@@ -173,7 +176,10 @@ public sealed class ZephyrPackRepository(string rootDirectory)
             foreach (var version in versions)
             {
                 token.ThrowIfCancellationRequested();
-                try { result.Add((await ReadCatalogEntryAsync(version, token)).Pack); }
+                try
+                {
+                    result.Add((await ReadCatalogEntryAsync(version, token)).Pack);
+                }
                 catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Text.Json.JsonException or StudioXException)
                 {
                     failures.Add(new(version, ex.ToString()));

@@ -1,7 +1,6 @@
 namespace StudioX.Desktop;
 
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Threading;
 using StudioX.Application;
 using StudioX.Engine.Debugging;

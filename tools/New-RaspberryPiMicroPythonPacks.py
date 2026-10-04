@@ -44,33 +44,54 @@ def create(archive, chip, device_id, board, output, cli):
         shutil.copyfile(recipe / name, template_dir / name)
     for name, title, description in (
         ("minimal", "MicroPython · 最小脚本", "输出解释器信息和五次计数；不配置外部 GPIO。"),
-        ("blink", "MicroPython · LED 闪灯", "使用官方 Pico / Pico 2 LED 名称，每 500 ms 翻转；兼容板需核对接线。"),
+        (
+            "blink",
+            "MicroPython · LED 闪灯",
+            "使用官方 Pico / Pico 2 LED 名称，每 500 ms 翻转；兼容板需核对接线。",
+        ),
     ):
-        device["templates"].append({
-            "id": "micropython-" + name,
-            "displayName": title,
-            "description": description,
-            "entryFile": "micropython/" + name + ".py",
-            "files": {"boot.py": "micropython/boot.py", "README.md": "micropython/README.md"},
-            "microPython": {"board": board, "version": "1.29.0"},
-        })
+        device["templates"].append(
+            {
+                "id": "micropython-" + name,
+                "displayName": title,
+                "description": description,
+                "entryFile": "micropython/" + name + ".py",
+                "files": {"boot.py": "micropython/boot.py", "README.md": "micropython/README.md"},
+                "microPython": {"board": board, "version": "1.29.0"},
+            }
+        )
     manifest["version"] = "0.2.0"
     manifest["displayName"] = chip + " · Pico SDK C / MicroPython"
-    manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    manifest_path.write_text(
+        json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
     provenance = {
         "basePack": {"id": expected_id, "version": "0.1.0", "sha256": digest(archive.read_bytes())},
-        "microPythonVersion": "1.29.0", "board": board,
+        "microPythonVersion": "1.29.0",
+        "board": board,
         "firmwarePage": "https://micropython.org/download/" + board + "/",
-        "firmwareUrl": "https://micropython.org/resources/firmware/" + board + "-20260824-v1.29.0.uf2",
-        "boardSource": "https://github.com/micropython/micropython/blob/v1.29.0/ports/rp2/boards/" + board + "/mpconfigboard.h",
+        "firmwareUrl": "https://micropython.org/resources/firmware/"
+        + board
+        + "-20260824-v1.29.0.uf2",
+        "boardSource": "https://github.com/micropython/micropython/blob/v1.29.0/ports/rp2/boards/"
+        + board
+        + "/mpconfigboard.h",
         "documentation": "https://docs.micropython.org/en/v1.29.0/rp2/quickref.html",
         "firmwareBundled": False,
         "validation": "Offline software validation only; original C SDK sources and licenses retained.",
     }
-    (template_dir / "provenance.json").write_text(json.dumps(provenance, indent=2) + "\n", encoding="utf-8")
+    (template_dir / "provenance.json").write_text(
+        json.dumps(provenance, indent=2) + "\n", encoding="utf-8"
+    )
     packed = root / (expected_id + "-0.2.0.mcupack")
     subprocess.run(["dotnet", str(cli), "pack", str(source), str(packed)], check=True)
-    result = {"file": packed.name, "id": expected_id, "version": "0.2.0", "sha256": digest(packed.read_bytes()), "devices": [device_id]}
+    result = {
+        "file": packed.name,
+        "id": expected_id,
+        "version": "0.2.0",
+        "sha256": digest(packed.read_bytes()),
+        "devices": [device_id],
+    }
     (root / "index.json").write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(result))
 

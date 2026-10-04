@@ -20,11 +20,29 @@ public sealed record ProjectManifest(int FormatVersion, string Name, string Pack
     public override int GetHashCode()
     {
         var hash = new HashCode();
-        hash.Add(FormatVersion); hash.Add(Name); hash.Add(PackId); hash.Add(PackVersion); hash.Add(PackContentHash);
-        hash.Add(DeviceId); hash.Add(TemplateId); hash.Add(ToolsetId); hash.Add(ToolsetVersion); hash.Add(CompilerId); hash.Add(Kind);
-        hash.Add(CubeMx); hash.Add(Logic); hash.Add(Espressif); hash.Add(EntryFile); hash.Add(PinMapping); hash.Add(Zephyr); hash.Add(MicroPython);
+        hash.Add(FormatVersion);
+        hash.Add(Name);
+        hash.Add(PackId);
+        hash.Add(PackVersion);
+        hash.Add(PackContentHash);
+        hash.Add(DeviceId);
+        hash.Add(TemplateId);
+        hash.Add(ToolsetId);
+        hash.Add(ToolsetVersion);
+        hash.Add(CompilerId);
+        hash.Add(Kind);
+        hash.Add(CubeMx);
+        hash.Add(Logic);
+        hash.Add(Espressif);
+        hash.Add(EntryFile);
+        hash.Add(PinMapping);
+        hash.Add(Zephyr);
+        hash.Add(MicroPython);
         hash.Add(DevelopmentComponents is not null);
-        foreach (var item in DevelopmentComponents ?? []) hash.Add(item);
+        foreach (var item in DevelopmentComponents ?? [])
+        {
+            hash.Add(item);
+        }
         return hash.ToHashCode();
     }
 }

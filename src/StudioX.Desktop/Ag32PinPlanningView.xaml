@@ -28,36 +28,111 @@
         Click="Reload_Click"
         Margin="0,0,0,12" />
     </WrapPanel>
-    <Border x:Name="TimingBorder" BorderThickness="2,0,0,0" Padding="12,6" Margin="0,0,0,12" BorderBrush="{DynamicResource DiagnosticWarning}">
+    <Border
+      x:Name="TimingBorder"
+      BorderThickness="2,0,0,0"
+      Padding="12,6"
+      Margin="0,0,0,12"
+      BorderBrush="{DynamicResource DiagnosticWarning}">
       <StackPanel>
-        <TextBlock x:Name="TimingStateText" FontWeight="SemiBold" TextWrapping="Wrap" Foreground="{DynamicResource DiagnosticWarning}" />
-        <TextBlock x:Name="TimingSummaryText" TextWrapping="Wrap" Margin="0,5,0,0" />
-        <Expander x:Name="TimingDetails" Header="查看关键路径与原始报告" Foreground="{DynamicResource Text}" Margin="0,6,0,0">
+        <TextBlock
+          x:Name="TimingStateText"
+          FontWeight="SemiBold"
+          TextWrapping="Wrap"
+          Foreground="{DynamicResource DiagnosticWarning}" />
+        <TextBlock
+          x:Name="TimingSummaryText"
+          TextWrapping="Wrap"
+          Margin="0,5,0,0" />
+        <Expander
+          x:Name="TimingDetails"
+          Header="查看关键路径与原始报告"
+          Foreground="{DynamicResource Text}"
+          Margin="0,6,0,0">
           <StackPanel>
-            <TextBlock x:Name="TimingPathText" TextWrapping="Wrap" Margin="0,6,0,6" />
-            <Button x:Name="TimingReportButton" Content="打开 Supra 原始时序报告" HorizontalAlignment="Left" Click="TimingReport_Click" IsEnabled="False" />
-            <TextBlock Text="正余量表示满足本次片内时序约束；未包含外部器件采样时序，也不代表实板验收。" TextWrapping="Wrap" Foreground="{DynamicResource Muted}" Margin="0,6,0,0" />
+            <TextBlock
+              x:Name="TimingPathText"
+              TextWrapping="Wrap"
+              Margin="0,6,0,6" />
+            <Button
+              x:Name="TimingReportButton"
+              Content="打开 Supra 原始时序报告"
+              HorizontalAlignment="Left"
+              Click="TimingReport_Click"
+              IsEnabled="False" />
+            <TextBlock
+              Text="正余量表示满足本次片内时序约束；未包含外部器件采样时序，也不代表实板验收。"
+              TextWrapping="Wrap"
+              Foreground="{DynamicResource Muted}"
+              Margin="0,6,0,0" />
           </StackPanel>
         </Expander>
       </StackPanel>
     </Border>
-    <TextBlock x:Name="ConflictStatus" Visibility="Collapsed" Foreground="{DynamicResource ErrorColor}" TextWrapping="Wrap" Margin="0,4,0,10" />
-    <TabControl x:Name="PlannerTabs" SelectedIndex="1">
-      <TabItem Header="ADC / DAC / 比较器">
-        <StackPanel Margin="16">
-          <CheckBox x:Name="AnalogEnabled" Content="启用 ADC / DAC / CMP（官方模拟 IP）" Checked="Analog_Changed" Unchecked="Analog_Changed" Margin="0,0,0,12" />
-          <TextBlock Text="启用后随顶部编译、下载生成配套逻辑镜像。模拟引脚固定，下面选择需要预留的通道，不能与数字功能同时占用。" TextWrapping="Wrap" Margin="0,0,0,12" />
-          <TextBlock Text="ADC 外部通道（逗号分隔，例如 0,1,4；留空仅使用内部通道）" />
-          <TextBox x:Name="AnalogChannels" TextChanged="AnalogText_Changed" Margin="0,6,0,12" MaxWidth="480" HorizontalAlignment="Left" MinWidth="260" />
+    <TextBlock
+      x:Name="ConflictStatus"
+      Visibility="Collapsed"
+      Foreground="{DynamicResource ErrorColor}"
+      TextWrapping="Wrap"
+      Margin="0,4,0,10" />
+    <TabControl
+      x:Name="PlannerTabs"
+      SelectedIndex="1">
+      <TabItem
+        Header="ADC / DAC / 比较器">
+        <StackPanel
+          Margin="16">
+          <CheckBox
+            x:Name="AnalogEnabled"
+            Content="启用 ADC / DAC / CMP（官方模拟 IP）"
+            Checked="Analog_Changed"
+            Unchecked="Analog_Changed"
+            Margin="0,0,0,12" />
+          <TextBlock
+            Text="启用后随顶部编译、下载生成配套逻辑镜像。模拟引脚固定，下面选择需要预留的通道，不能与数字功能同时占用。"
+            TextWrapping="Wrap"
+            Margin="0,0,0,12" />
+          <TextBlock
+            Text="ADC 外部通道（逗号分隔，例如 0,1,4；留空仅使用内部通道）" />
+          <TextBox
+            x:Name="AnalogChannels"
+            TextChanged="AnalogText_Changed"
+            Margin="0,6,0,12"
+            MaxWidth="480"
+            HorizontalAlignment="Left"
+            MinWidth="260" />
           <WrapPanel>
-            <CheckBox x:Name="AnalogDac0" Content="DAC0" Checked="Analog_Changed" Unchecked="Analog_Changed" Margin="0,0,24,12" />
-            <CheckBox x:Name="AnalogDac1" Content="DAC1" Checked="Analog_Changed" Unchecked="Analog_Changed" Margin="0,0,24,12" />
-            <CheckBox x:Name="AnalogComparator" Content="CMP 比较器（预留输入脚）" Checked="Analog_Changed" Unchecked="Analog_Changed" Margin="0,0,0,12" />
+            <CheckBox
+              x:Name="AnalogDac0"
+              Content="DAC0"
+              Checked="Analog_Changed"
+              Unchecked="Analog_Changed"
+              Margin="0,0,24,12" />
+            <CheckBox
+              x:Name="AnalogDac1"
+              Content="DAC1"
+              Checked="Analog_Changed"
+              Unchecked="Analog_Changed"
+              Margin="0,0,24,12" />
+            <CheckBox
+              x:Name="AnalogComparator"
+              Content="CMP 比较器（预留输入脚）"
+              Checked="Analog_Changed"
+              Unchecked="Analog_Changed"
+              Margin="0,0,0,12" />
           </WrapPanel>
-          <ScrollViewer MaxHeight="190" VerticalScrollBarVisibility="Auto" Margin="0,0,0,12">
-            <TextBlock x:Name="AnalogPinDetails" TextWrapping="Wrap" />
+          <ScrollViewer
+            MaxHeight="190"
+            VerticalScrollBarVisibility="Auto"
+            Margin="0,0,0,12">
+            <TextBlock
+              x:Name="AnalogPinDetails"
+              TextWrapping="Wrap" />
           </ScrollViewer>
-          <TextBlock Text="主程序仅需包含 StudioX_System.h。可调用 StudioX_ADC_Read / StudioX_DAC_Write，也保留原厂 ADC_*、DAC_*、CMP_* 与 DMA 接口。DAC 输出在代码使能后开始；勾选配置本身不会输出电压。ADC2 与 DAC1 共用一个 DMA 请求，不能同时用于 DMA。" TextWrapping="Wrap" Foreground="{DynamicResource Muted}" />
+          <TextBlock
+            Text="主程序仅需包含 StudioX_System.h。可调用 StudioX_ADC_Read / StudioX_DAC_Write，也保留原厂 ADC_*、DAC_*、CMP_* 与 DMA 接口。DAC 输出在代码使能后开始；勾选配置本身不会输出电压。ADC2 与 DAC1 共用一个 DMA 请求，不能同时用于 DMA。"
+            TextWrapping="Wrap"
+            Foreground="{DynamicResource Muted}" />
         </StackPanel>
       </TabItem>
       <TabItem
@@ -120,36 +195,87 @@
               Foreground="{DynamicResource Muted}"
               TextWrapping="Wrap"
               Margin="0,0,0,18" />
-            <TextBlock Text="引脚名称 / GPIO 方向" FontWeight="SemiBold" />
-            <WrapPanel Margin="0,6,0,8">
-              <TextBox x:Name="PinName" Width="125" Margin="0,0,8,6" TextChanged="PinName_Changed"
-                       ToolTip="例如 LED1：生成 #LED1 注释及 LED1_Port / LED1_Bit。留空可清除名称。" />
-              <ComboBox x:Name="PinDirection" Width="135" SelectedValuePath="Tag" SelectionChanged="PinDirection_Changed" Margin="0,0,0,6">
-                <ComboBoxItem Content="不初始化方向" Tag="" />
-                <ComboBoxItem Content="输入" Tag="INPUT" />
-                <ComboBoxItem Content="输出（初始低）" Tag="OUTPUT" />
+            <TextBlock
+              Text="引脚名称 / GPIO 方向"
+              FontWeight="SemiBold" />
+            <WrapPanel
+              Margin="0,6,0,8">
+              <TextBox
+                x:Name="PinName"
+                Width="125"
+                Margin="0,0,8,6"
+                TextChanged="PinName_Changed"
+                ToolTip="例如 LED1：生成 #LED1 注释及 LED1_Port / LED1_Bit。留空可清除名称。" />
+              <ComboBox
+                x:Name="PinDirection"
+                Width="135"
+                SelectedValuePath="Tag"
+                SelectionChanged="PinDirection_Changed"
+                Margin="0,0,0,6">
+                <ComboBoxItem
+                  Content="不初始化方向"
+                  Tag="" />
+                <ComboBoxItem
+                  Content="输入"
+                  Tag="INPUT" />
+                <ComboBoxItem
+                  Content="输出（初始低）"
+                  Tag="OUTPUT" />
               </ComboBox>
             </WrapPanel>
-            <TextBlock Text="GPIO 电气配置" FontWeight="SemiBold" Margin="0,0,0,6" />
-            <WrapPanel Margin="0,0,0,8">
-              <StackPanel Width="150" Margin="0,0,8,6">
-                <TextBlock Text="上下拉" Foreground="{DynamicResource Muted}" Margin="0,0,0,4" />
-                <ComboBox x:Name="PinPull" SelectedValuePath="Tag" SelectionChanged="PinDirection_Changed">
-                  <ComboBoxItem Content="浮空（无上下拉）" Tag="NONE" />
-                  <ComboBoxItem Content="上拉" Tag="UP" />
-                  <ComboBoxItem Content="下拉" Tag="DOWN" />
+            <TextBlock
+              Text="GPIO 电气配置"
+              FontWeight="SemiBold"
+              Margin="0,0,0,6" />
+            <WrapPanel
+              Margin="0,0,0,8">
+              <StackPanel
+                Width="150"
+                Margin="0,0,8,6">
+                <TextBlock
+                  Text="上下拉"
+                  Foreground="{DynamicResource Muted}"
+                  Margin="0,0,0,4" />
+                <ComboBox
+                  x:Name="PinPull"
+                  SelectedValuePath="Tag"
+                  SelectionChanged="PinDirection_Changed">
+                  <ComboBoxItem
+                    Content="浮空（无上下拉）"
+                    Tag="NONE" />
+                  <ComboBoxItem
+                    Content="上拉"
+                    Tag="UP" />
+                  <ComboBoxItem
+                    Content="下拉"
+                    Tag="DOWN" />
                 </ComboBox>
               </StackPanel>
-              <StackPanel Width="135" Margin="0,0,0,6">
-                <TextBlock Text="输出类型" Foreground="{DynamicResource Muted}" Margin="0,0,0,4" />
-                <ComboBox x:Name="PinOutputType" SelectedValuePath="Tag" SelectionChanged="PinDirection_Changed">
-                  <ComboBoxItem Content="推挽" Tag="PUSH_PULL" />
-                  <ComboBoxItem Content="开漏" Tag="OPEN_DRAIN" />
+              <StackPanel
+                Width="135"
+                Margin="0,0,0,6">
+                <TextBlock
+                  Text="输出类型"
+                  Foreground="{DynamicResource Muted}"
+                  Margin="0,0,0,4" />
+                <ComboBox
+                  x:Name="PinOutputType"
+                  SelectedValuePath="Tag"
+                  SelectionChanged="PinDirection_Changed">
+                  <ComboBoxItem
+                    Content="推挽"
+                    Tag="PUSH_PULL" />
+                  <ComboBoxItem
+                    Content="开漏"
+                    Tag="OPEN_DRAIN" />
                 </ComboBox>
               </StackPanel>
             </WrapPanel>
-            <TextBlock Text="保存同步生成 StudioX_System.h / .c；方向由系统代码初始化，上下拉与输出类型随映射镜像下载后生效。" TextWrapping="Wrap"
-                       Foreground="{DynamicResource Muted}" Margin="0,0,0,8" />
+            <TextBlock
+              Text="保存同步生成 StudioX_System.h / .c；方向由系统代码初始化，上下拉与输出类型随映射镜像下载后生效。"
+              TextWrapping="Wrap"
+              Foreground="{DynamicResource Muted}"
+              Margin="0,0,0,8" />
             <TextBlock
               Text="已分配功能"
               FontWeight="SemiBold"
@@ -221,7 +347,10 @@
                 </Style>
               </DataGrid.CellStyle>
               <DataGrid.Columns>
-                <DataGridTextColumn Header="名称" Binding="{Binding Name}" Width="80" />
+                <DataGridTextColumn
+                  Header="名称"
+                  Binding="{Binding Name}"
+                  Width="80" />
                 <DataGridTextColumn
                   Header="内部功能"
                   Binding="{Binding Function}"
@@ -262,12 +391,31 @@
             x:Name="BusClock"
             TextChanged="Clock_Changed"
             Margin="0,6,0,12" />
-          <TextBlock x:Name="ClockGuidanceText" TextWrapping="Wrap" Foreground="{DynamicResource DiagnosticWarning}" Margin="0,0,0,12" />
-          <TextBlock Text="模拟 IP 推荐组合（SYS / BUS）" Margin="0,0,0,6" />
-          <ComboBox x:Name="RecommendedClocks" DisplayMemberPath="Name" SelectionChanged="Recommendation_Changed" Margin="0,0,0,8" />
-          <Button x:Name="ApplyRecommendedClockButton" Content="应用推荐时钟并保存" HorizontalAlignment="Left" Click="ApplyRecommendedClock_Click"
-                  ToolTip="保留当前 HSE、引脚和模拟设置，保存整份图形草稿并重新生成系统层；仍需点击顶部编译验证实际时序。" Margin="0,0,0,8" />
-          <TextBlock x:Name="RecommendationDetails" TextWrapping="Wrap" Foreground="{DynamicResource Muted}" Margin="0,0,0,14" />
+          <TextBlock
+            x:Name="ClockGuidanceText"
+            TextWrapping="Wrap"
+            Foreground="{DynamicResource DiagnosticWarning}"
+            Margin="0,0,0,12" />
+          <TextBlock
+            Text="模拟 IP 推荐组合（SYS / BUS）"
+            Margin="0,0,0,6" />
+          <ComboBox
+            x:Name="RecommendedClocks"
+            DisplayMemberPath="Name"
+            SelectionChanged="Recommendation_Changed"
+            Margin="0,0,0,8" />
+          <Button
+            x:Name="ApplyRecommendedClockButton"
+            Content="应用推荐时钟并保存"
+            HorizontalAlignment="Left"
+            Click="ApplyRecommendedClock_Click"
+            ToolTip="保留当前 HSE、引脚和模拟设置，保存整份图形草稿并重新生成系统层；仍需点击顶部编译验证实际时序。"
+            Margin="0,0,0,8" />
+          <TextBlock
+            x:Name="RecommendationDetails"
+            TextWrapping="Wrap"
+            Foreground="{DynamicResource Muted}"
+            Margin="0,0,0,14" />
           <TextBlock
             Text="保存时生成厂商 VEX 引脚约束数据与 SDC 输入时钟约束。顶部编译会生成最终 ASF、映射镜像，并核对实际 PLL 和时钟连接。"
             TextWrapping="Wrap"

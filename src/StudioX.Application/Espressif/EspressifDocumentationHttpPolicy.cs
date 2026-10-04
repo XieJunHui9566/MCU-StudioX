@@ -5,8 +5,14 @@ using System.Net;
 /// <summary>限制 OAuth 和 MCP 请求至固定官方服务，拒绝重定向及过大正文。</summary>
 internal sealed class EspressifDocumentationHttpPolicy(HttpMessageHandler innerHandler) : DelegatingHandler(innerHandler)
 {
-    public int? FailureStatusCode { get; private set; }
-    public string? RetryAfter { get; private set; }
+    public int? FailureStatusCode
+    {
+        get; private set;
+    }
+    public string? RetryAfter
+    {
+        get; private set;
+    }
 
     public void ResetFailure()
     {

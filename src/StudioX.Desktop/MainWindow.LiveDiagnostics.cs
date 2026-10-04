@@ -3,7 +3,6 @@ namespace StudioX.Desktop;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
-using StudioX.Application;
 using StudioX.Application.CodeIntelligence;
 
 public partial class MainWindow
@@ -12,20 +11,28 @@ public partial class MainWindow
     private readonly DispatcherTimer diagnosticPoll = new() { Interval = TimeSpan.FromMilliseconds(600) };
     private CancellationTokenSource? liveDiagnosticCancellation;
     private Task liveDiagnosticTask = Task.CompletedTask;
+    private Task analysisEnvironmentTask = Task.CompletedTask;
+    private CancellationTokenSource? analysisEnvironmentCancellation;
     private EditorProblemRow[] problemRows = [];
     private bool diagnosticsPausedForDebug;
 
     private void UpdateDebugDiagnosticState()
     {
         var paused = services.Debugger.IsActive;
-        if (diagnosticsPausedForDebug == paused) return;
+        if (diagnosticsPausedForDebug == paused)
+        {
+            return;
+        }
         diagnosticsPausedForDebug = paused;
         diagnosticDebounce.Stop();
         liveDiagnosticCancellation?.Cancel();
         services.Intelligence.SetDiagnosticsSuspended(paused);
         HideSymbolHover();
         RefreshDiagnosticMarkers();
-        if (!paused) QueueLiveDiagnostics();
+        if (!paused)
+        {
+            QueueLiveDiagnostics();
+        }
     }
 
     private void InitializeLiveDiagnostics()
@@ -62,7 +69,64 @@ public partial class MainWindow
                 }
             }
         };
-        diagnosticPoll.Tick += (_, _) => { if (!closing) { RefreshDiagnosticMarkers(); } };
+        diagnosticPoll.Tick += (_, _) =>
+        {
+            if (closing)
+            {
+                return;
+            }
+            RefreshDiagnosticMarkers();
+            if (projectDirectory is null || currentProjectManifest?.Kind == StudioX.Engine.ProjectKind.MicroPython ||
+                projectActionsBusy || services.Debugger.IsActive || !analysisEnvironmentTask.IsCompleted)
+            {
+                return;
+            }
+            var root = projectDirectory;
+            var cancellation = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+            analysisEnvironmentCancellation = cancellation;
+            analysisEnvironmentTask = RefreshAsync();
+            async Task RefreshAsync()
+            {
+                try
+                {
+                    var refreshed = await services.Intelligence.RefreshEnvironmentAsync(cancellation.Token);
+                    if (projectDirectory == root && !closing)
+                    {
+                        if (refreshed)
+                        {
+                            QueueLiveDiagnostics();
+                            QueueOutlineRefresh(clear: true);
+                        }
+                        if (refreshed || !services.Intelligence.IsReady)
+                        {
+                            Status.Text = services.Intelligence.StatusDescription;
+                        }
+                        foreach (var line in services.Intelligence.DrainLog())
+                        {
+                            Log(line);
+                        }
+                    }
+                }
+                catch (OperationCanceledException) when (cancellation.IsCancellationRequested) { }
+                catch (Exception error)
+                {
+                    if (projectDirectory == root && !closing)
+                    {
+                        RefreshDiagnosticMarkers();
+                        Status.Text = services.Intelligence.StatusDescription;
+                        Log("分析环境需要修复，请打开工程健康检查：" + error);
+                    }
+                }
+                finally
+                {
+                    if (analysisEnvironmentCancellation == cancellation)
+                    {
+                        analysisEnvironmentCancellation = null;
+                    }
+                    cancellation.Dispose();
+                }
+            }
+        };
         diagnosticPoll.Start();
     }
     private void QueueLiveDiagnostics()
@@ -84,7 +148,10 @@ public partial class MainWindow
             {
                 continue;
             }
-            liveFiles.Add(batch.Path);
+            if (batch.IsComplete)
+            {
+                liveFiles.Add(batch.Path);
+            }
             foreach (var item in batch.Items.Where(d => d.Severity is 1 or 2))
             {
                 var start = CodePositions.ToOffset(batch.Text, item.Range.Start);
@@ -131,6 +198,7 @@ public partial class MainWindow
     {
         diagnosticDebounce.Stop();
         liveDiagnosticCancellation?.Cancel();
-        await liveDiagnosticTask;
+        analysisEnvironmentCancellation?.Cancel();
+        await Task.WhenAll(liveDiagnosticTask, analysisEnvironmentTask);
     }
 }

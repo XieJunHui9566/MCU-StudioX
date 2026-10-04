@@ -38,15 +38,15 @@ function Get-Ag32ReleasePacks([string]$CatalogRoot)
             version = '0.1.5'
             devices = @('AG32VF303KCU6', 'AG32VF303CCT6', 'AG32VF303VCT6')
         }
-        'agm.ag32vf407' = @{
+        'agm.ag32vf407'             = @{
             version = '0.1.3'
             devices = @('AG32VF407RGT6', 'AG32VF407VGT6')
         }
-        'agm.ag32vh303' = @{
+        'agm.ag32vh303'             = @{
             version = '0.1.3'
             devices = @('AG32VH303RCT6')
         }
-        'agm.ag32vh407' = @{
+        'agm.ag32vh407'             = @{
             version = '0.1.3'
             devices = @('AG32VH407VGT6')
         }
@@ -55,8 +55,8 @@ function Get-Ag32ReleasePacks([string]$CatalogRoot)
     $index = @(Get-Content -LiteralPath $indexPath -Raw -Encoding UTF8 -ErrorAction Stop | ConvertFrom-Json)
     # 开发目录的总索引同时包含其它厂商；AGM 候选中的未知、重复和旧包必须拒绝。
     $entries = @($index | Where-Object {
-        $_.id -eq 'studiox.preview.ag32vf303' -or $_.id -like 'agm.*' -or $_.file -like 'AGM/*'
-    })
+            $_.id -eq 'studiox.preview.ag32vf303' -or $_.id -like 'agm.*' -or $_.file -like 'AGM/*'
+        })
     if ($entries.Count -ne 4)
     {
         throw 'AG32 release requires exactly four current device packs.'

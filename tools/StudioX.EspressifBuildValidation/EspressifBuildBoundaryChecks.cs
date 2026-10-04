@@ -17,7 +17,10 @@ internal static class EspressifBuildBoundaryChecks
         var results = new List<string>();
         await builds.SaveSettingsAsync(root, new(Optimization: CompilerOptimization.O0, DebugInfo: CompilerDebugInfo.Full));
         var configured = await builds.ConfigureAsync(root);
-        if (!configured.Success) { throw new InvalidOperationException(configured.Log); }
+        if (!configured.Success)
+        {
+            throw new InvalidOperationException(configured.Log);
+        }
         Check(true, "Actual -O0/-g3 native compile commands verified");
         Check(File.Exists(Path.Combine(root, ".build/compile_commands.json")), "Native database generated for a project path containing spaces");
         Check(!File.Exists(Path.Combine(root, ".build/studiox-build-receipt.json")), "Configure does not authorize stale images");
@@ -50,8 +53,15 @@ internal static class EspressifBuildBoundaryChecks
             Check(!File.Exists(Path.Combine(root, ".build/studiox-build-receipt.json")), "Cancellation removes previous receipt");
             Check((await File.ReadAllTextAsync(Path.Combine(root, ".build/studiox-build.log"))).Contains("OperationCanceledException", StringComparison.Ordinal), "Cancellation preserves raw build log");
         }
-        if (competing is null) { throw new InvalidOperationException("Concurrent operation was not started"); }
-        try { await competing; throw new InvalidOperationException("Expected concurrent build rejection"); }
+        if (competing is null)
+        {
+            throw new InvalidOperationException("Concurrent operation was not started");
+        }
+        try
+        {
+            await competing;
+            throw new InvalidOperationException("Expected concurrent build rejection");
+        }
         catch (StudioXException exception) when (exception.Code == "BUILD_BUSY") { Check(true, "Concurrent native operation rejected by build ownership gate"); }
         await builds.SaveSettingsAsync(root, new());
         var resource = PathBoundary.Resolve(root, componentDirectory + "/stamp-resource.bin");
@@ -59,21 +69,38 @@ internal static class EspressifBuildBoundaryChecks
         await File.AppendAllTextAsync(componentCMake,
             "\ntarget_add_binary_data(${COMPONENT_LIB} \"${CMAKE_CURRENT_LIST_DIR}/stamp-resource.bin\" BINARY)\n");
         var embedded = await builds.BuildAsync(root);
-        if (!embedded.Success) { throw new InvalidOperationException(embedded.Log); }
+        if (!embedded.Success)
+        {
+            throw new InvalidOperationException(embedded.Log);
+        }
         var flash = new EspressifFlashService(catalog);
         _ = await flash.PreviewAsync(root, new(Port: "COM999"));
         Check(true, "Real embedded binary build produces a complete read-only flash preview");
         await File.WriteAllBytesAsync(resource, [4, 3, 2, 1]);
-        try { await flash.PreviewAsync(root, new(Port: "COM999")); throw new InvalidOperationException("Expected embedded asset modification rejection"); }
+        try
+        {
+            await flash.PreviewAsync(root, new(Port: "COM999"));
+            throw new InvalidOperationException("Expected embedded asset modification rejection");
+        }
         catch (StudioXException exception) when (exception.Code == "ESP_FLASH_BUILD") { Check(true, "Changing only an embedded .bin resource invalidates the receipt without opening hardware"); }
         var external = Path.Combine(output, "external-include");
         Directory.CreateDirectory(external);
         await File.AppendAllTextAsync(componentCMake,
             "\ntarget_include_directories(${COMPONENT_LIB} PRIVATE \"" + external.Replace('\\', '/') + "\")\n");
-        try { await builds.ConfigureAsync(root); throw new InvalidOperationException("Expected untracked external input rejection"); }
+        try
+        {
+            await builds.ConfigureAsync(root);
+            throw new InvalidOperationException("Expected untracked external input rejection");
+        }
         catch (StudioXException exception) when (exception.Code == "ESPRESSIF_EXTERNAL_INPUT")
-        { Check(!File.Exists(Path.Combine(root, ".build/studiox-build-receipt.json")), "Canonical external include directory is rejected without leaving a download receipt"); }
-        await File.WriteAllTextAsync(Path.Combine(output, "result.json"), JsonSerializer.Serialize(new { count = results.Count, results }, JsonStore.Options));
+        {
+            Check(!File.Exists(Path.Combine(root, ".build/studiox-build-receipt.json")), "Canonical external include directory is rejected without leaving a download receipt");
+        }
+        await File.WriteAllTextAsync(Path.Combine(output, "result.json"), JsonSerializer.Serialize(new
+        {
+            count = results.Count,
+            results
+        }, JsonStore.Options));
         return 0;
 
         void CopyProject(string destinationRoot)
@@ -91,7 +118,10 @@ internal static class EspressifBuildBoundaryChecks
         Task SeedReceiptAsync() => File.WriteAllTextAsync(Path.Combine(root, ".build/studiox-build-receipt.json"), "{\"testSentinel\":true}");
         void Check(bool passed, string message)
         {
-            if (!passed) { throw new InvalidOperationException(message); }
+            if (!passed)
+            {
+                throw new InvalidOperationException(message);
+            }
             results.Add(message);
             Console.WriteLine("PASS " + message);
         }

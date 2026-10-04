@@ -33,14 +33,26 @@ public sealed class HdlWaveformSurface : FrameworkElement
         visible = waveform?.Signals.Where(signal => signal.Name.Contains(text, StringComparison.OrdinalIgnoreCase)).Take(128).ToArray() ?? [];
         UpdateSize();
     }
-    public void Zoom(double factor) { zoom = Math.Clamp(zoom * factor, .25, 16); UpdateSize(); }
-    private void UpdateSize() { Width = LabelWidth + 1000 * zoom; Height = Math.Max(200, 50 + visible.Length * RowHeight); InvalidateVisual(); }
+    public void Zoom(double factor)
+    {
+        zoom = Math.Clamp(zoom * factor, .25, 16);
+        UpdateSize();
+    }
+    private void UpdateSize()
+    {
+        Width = LabelWidth + 1000 * zoom;
+        Height = Math.Max(200, 50 + visible.Length * RowHeight);
+        InvalidateVisual();
+    }
 
     protected override void OnMouseDown(MouseButtonEventArgs e)
     {
         base.OnMouseDown(e);
         var position = e.GetPosition(this);
-        if (waveform is null || e.ChangedButton != MouseButton.Left || position.X < LabelWidth) return;
+        if (waveform is null || e.ChangedButton != MouseButton.Left || position.X < LabelWidth)
+        {
+            return;
+        }
         draggedSignalRow = (int)Math.Floor((position.Y - 40) / RowHeight);
         MoveCursor(position, draggedSignalRow);
         // 捕获鼠标后，即使拖出波形区域，松开左键也能结束操作，不留下粘住的光标。
@@ -55,20 +67,33 @@ public sealed class HdlWaveformSurface : FrameworkElement
         var position = e.GetPosition(this);
         if (draggingCursor)
         {
-            if (e.LeftButton != MouseButtonState.Pressed) { StopCursorDrag(); return; }
+            if (e.LeftButton != MouseButtonState.Pressed)
+            {
+                StopCursorDrag();
+                return;
+            }
             MoveCursor(position, draggedSignalRow);
             e.Handled = true;
             return;
         }
         var cursorX = LabelWidth + (waveform?.EndTick > 0 ? (double)cursor / waveform.EndTick * 1000 * zoom : 0);
-        if (waveform is not null && Math.Abs(position.X - cursorX) <= 6) Cursor = Cursors.SizeWE;
-        else ClearValue(CursorProperty);
+        if (waveform is not null && Math.Abs(position.X - cursorX) <= 6)
+        {
+            Cursor = Cursors.SizeWE;
+        }
+        else
+        {
+            ClearValue(CursorProperty);
+        }
     }
 
     protected override void OnMouseUp(MouseButtonEventArgs e)
     {
         base.OnMouseUp(e);
-        if (!draggingCursor || e.ChangedButton != MouseButton.Left) return;
+        if (!draggingCursor || e.ChangedButton != MouseButton.Left)
+        {
+            return;
+        }
         MoveCursor(e.GetPosition(this), draggedSignalRow);
         StopCursorDrag();
         e.Handled = true;
@@ -84,19 +109,28 @@ public sealed class HdlWaveformSurface : FrameworkElement
     protected override void OnMouseLeave(MouseEventArgs e)
     {
         base.OnMouseLeave(e);
-        if (!draggingCursor) ClearValue(CursorProperty);
+        if (!draggingCursor)
+        {
+            ClearValue(CursorProperty);
+        }
     }
 
     private void StopCursorDrag()
     {
         draggingCursor = false;
-        if (IsMouseCaptured) ReleaseMouseCapture();
+        if (IsMouseCaptured)
+        {
+            ReleaseMouseCapture();
+        }
         ClearValue(CursorProperty);
     }
 
     private void MoveCursor(Point position, int row)
     {
-        if (waveform is null) return;
+        if (waveform is null)
+        {
+            return;
+        }
         cursor = (long)(Math.Clamp((position.X - LabelWidth) / (1000 * zoom), 0, 1) * waveform.EndTick);
         var sample = row >= 0 && row < visible.Length ? visible[row] : null;
         CursorChanged?.Invoke($"光标 {cursor * waveform.NanosecondsPerTick:0.###} ns" + (sample is null
@@ -108,7 +142,11 @@ public sealed class HdlWaveformSurface : FrameworkElement
     protected override void OnRender(DrawingContext context)
     {
         context.DrawRectangle(new SolidColorBrush(Color.FromRgb(20, 27, 39)), null, new Rect(0, 0, ActualWidth, ActualHeight));
-        if (waveform is null) { Text("运行 testbench 后显示 RTL 波形", 14, 20, Brushes.LightGray); return; }
+        if (waveform is null)
+        {
+            Text("运行 testbench 后显示 RTL 波形", 14, 20, Brushes.LightGray);
+            return;
+        }
         double X(long tick) => LabelWidth + (waveform.EndTick == 0 ? 0 : (double)tick / waveform.EndTick * 1000 * zoom);
         var grid = new Pen(new SolidColorBrush(Color.FromRgb(55, 65, 80)), 1);
         var highLowPen = new Pen(Brushes.LightGreen, 1.4);
@@ -139,9 +177,16 @@ public sealed class HdlWaveformSurface : FrameworkElement
                 {
                     var column = Math.Floor(x);
                     var first = i;
-                    while (i + 1 < signal.Changes.Length && Math.Floor(X(signal.Changes[i + 1].Tick)) == column) i++;
+                    while (i + 1 < signal.Changes.Length && Math.Floor(X(signal.Changes[i + 1].Tick)) == column)
+                    {
+                        i++;
+                    }
                     context.DrawLine(highImpedancePen, new(column, y + 3), new(column, y + 23));
-                    if (i > first) { i--; continue; }
+                    if (i > first)
+                    {
+                        i--;
+                        continue;
+                    }
                 }
                 var unknown = change.Value.Contains('x');
                 var color = unknown ? Brushes.OrangeRed : change.Value.Contains('z') ? Brushes.Gold : Brushes.LightGreen;
@@ -150,14 +195,20 @@ public sealed class HdlWaveformSurface : FrameworkElement
                 {
                     var level = change.Value == "1" ? y + 3 : y + 23;
                     context.DrawLine(pen, new(x, level), new(right, level));
-                    if (i > 0) context.DrawLine(pen, new(x, y + 3), new(x, y + 23));
+                    if (i > 0)
+                    {
+                        context.DrawLine(pen, new(x, y + 3), new(x, y + 23));
+                    }
                 }
                 else
                 {
                     context.DrawLine(pen, new(x, y + 3), new(right, y + 3));
                     context.DrawLine(pen, new(x, y + 23), new(right, y + 23));
                     context.DrawLine(pen, new(x, y + 3), new(x + Math.Min(4, right - x), y + 23));
-                    if (right - x > 22) Text(change.Value, x + 5, y + 4, color, right - x - 7);
+                    if (right - x > 22)
+                    {
+                        Text(change.Value, x + 5, y + 4, color, right - x - 7);
+                    }
                 }
             }
         }
@@ -167,7 +218,11 @@ public sealed class HdlWaveformSurface : FrameworkElement
         {
             var formatted = new FormattedText(text, CultureInfo.CurrentUICulture, FlowDirection.LeftToRight,
                 new Typeface("Consolas"), 12, brush, VisualTreeHelper.GetDpi(this).PixelsPerDip)
-            { MaxTextWidth = Math.Max(1, width), MaxLineCount = 1, Trimming = TextTrimming.CharacterEllipsis };
+            {
+                MaxTextWidth = Math.Max(1, width),
+                MaxLineCount = 1,
+                Trimming = TextTrimming.CharacterEllipsis
+            };
             context.DrawText(formatted, new(x, y));
         }
     }

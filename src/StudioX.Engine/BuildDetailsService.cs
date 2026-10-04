@@ -1,7 +1,7 @@
 namespace StudioX.Engine;
 
-using StudioX.Foundation;
 using System.Security.Cryptography;
+using StudioX.Foundation;
 
 public static class BuildDetailsService
 {

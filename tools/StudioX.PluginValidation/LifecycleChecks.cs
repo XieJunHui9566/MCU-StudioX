@@ -42,7 +42,12 @@ internal static class LifecycleChecks
         checks.Check(workspace.Contributions.Count == 1, "lifecycle fixture passes validated activation");
         var document = await services.Files.ReadAsync(project, "src/main.c");
         var invocation = workspace.InvokeAsync(manifest.Id, "command", "write",
-            JsonSerializer.SerializeToElement(new { path = "src/main.c", originalSha256 = document.DiskHash, content = "int must_not_be_written;\n" }));
+            JsonSerializer.SerializeToElement(new
+            {
+                path = "src/main.c",
+                originalSha256 = document.DiskHash,
+                content = "int must_not_be_written;\n"
+            }));
         await authorizer.Entered.Task.WaitAsync(TimeSpan.FromSeconds(10));
         await services.PluginManager.SetEnabledAsync(manifest.Id, false);
         authorizer.Release.TrySetResult(true);
@@ -75,7 +80,9 @@ internal static class LifecycleChecks
                 (_, _, _) =>
                 {
                     Interlocked.Increment(ref activationCalls);
-                    return Task.FromResult(JsonSerializer.SerializeToElement(new { }));
+                    return Task.FromResult(JsonSerializer.SerializeToElement(new
+                    {
+                    }));
                 }, (_, _) => Task.CompletedTask, contribution => PluginContributionValidator.Validate(invalidManifest, contribution));
         }, "invalid executable UI contribution rejected before activation", "PLUGIN_CONTRIBUTION");
         checks.Check(activationCalls == 0, "invalid contribution never reaches Activate host callback");

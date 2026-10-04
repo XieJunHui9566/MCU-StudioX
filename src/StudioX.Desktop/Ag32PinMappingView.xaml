@@ -18,8 +18,18 @@
         Foreground="{DynamicResource Muted}"
         Margin="0,10,0,16" />
       <WrapPanel>
-        <Button x:Name="SchematicButton" Content="Verilog 电路图" Click="Schematic_Click" Visibility="Collapsed" Margin="0,0,8,8" />
-        <Button x:Name="WorkflowButton" Content="构建配置与波形仿真" Click="Workflow_Click" Visibility="Collapsed" Margin="0,0,8,8" />
+        <Button
+          x:Name="SchematicButton"
+          Content="Verilog 电路图"
+          Click="Schematic_Click"
+          Visibility="Collapsed"
+          Margin="0,0,8,8" />
+        <Button
+          x:Name="WorkflowButton"
+          Content="构建配置与波形仿真"
+          Click="Workflow_Click"
+          Visibility="Collapsed"
+          Margin="0,0,8,8" />
         <Button
           x:Name="LicenseButton"
           Content="配置 Supra 许可"

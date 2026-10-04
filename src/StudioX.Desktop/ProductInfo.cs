@@ -11,11 +11,19 @@ public static class ProductInfo
             var product = assembly.GetCustomAttributes(typeof(System.Reflection.AssemblyMetadataAttribute), false)
                 .Cast<System.Reflection.AssemblyMetadataAttribute>()
                 .SingleOrDefault(attribute => attribute.Key == "StudioXProductVersion")?.Value;
-            if (!string.IsNullOrWhiteSpace(product)) return product;
+            if (!string.IsNullOrWhiteSpace(product))
+            {
+                return product;
+            }
             var version = assembly.GetName().Version!;
             return version.ToString(version.Revision > 0 ? 4 : 3);
         }
     }
     public static string DisplayName => "MCU StudioX " + Version;
-    public static string PreviewVersion => Version + " · 预览版";
+    public static string PreviewVersion => Version.EndsWith("LTS", StringComparison.Ordinal)
+        ? Version
+        : Version + " · 预览版";
+    public static string ReleaseDescription => Version.EndsWith("LTS", StringComparison.Ordinal)
+        ? "LTS 维护版"
+        : "预览版";
 }

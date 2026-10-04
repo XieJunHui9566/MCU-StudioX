@@ -195,7 +195,11 @@
               Padding="10,3"
               Margin="5,0"
               Click="DeleteBreakpoint_Click" />
-            <TextBlock Text="空心橙色：请求位置 · 实心：实际断点" Foreground="{DynamicResource Muted}" VerticalAlignment="Center" Margin="10,0,0,0" />
+            <TextBlock
+              Text="空心橙色：请求位置 · 实心：实际断点"
+              Foreground="{DynamicResource Muted}"
+              VerticalAlignment="Center"
+              Margin="10,0,0,0" />
           </StackPanel>
           <DataGrid
             x:Name="Breakpoints"
@@ -234,7 +238,11 @@
                 Header="类型"
                 Binding="{Binding Kind}"
                 Width="55" />
-              <DataGridTextColumn Header="请求位置" Binding="{Binding RequestedLocation}" Width="*" MinWidth="100" />
+              <DataGridTextColumn
+                Header="请求位置"
+                Binding="{Binding RequestedLocation}"
+                Width="*"
+                MinWidth="100" />
               <DataGridTextColumn
                 Header="实际文件"
                 Binding="{Binding File}"

@@ -1,10 +1,13 @@
-<Project Sdk="Microsoft.NET.Sdk">
+<Project
+  Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="../../examples/StudioX.MakerPlugins/StudioX.MakerPlugins.csproj" />
+    <ProjectReference
+      Include="../../examples/StudioX.MakerPlugins/StudioX.MakerPlugins.csproj" />
     <!-- 直接引用当前源码，清理中间构建后仍可独立还原与验证。 -->
-    <ProjectReference Include="../../src/StudioX.Application/StudioX.Application.csproj" />
+    <ProjectReference
+      Include="../../src/StudioX.Application/StudioX.Application.csproj" />
   </ItemGroup>
 </Project>

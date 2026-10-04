@@ -1,5 +1,15 @@
-<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup><OutputType>Exe</OutputType></PropertyGroup>
-  <ItemGroup><ProjectReference Include="../../src/StudioX.Application/StudioX.Application.csproj" /></ItemGroup>
-  <ItemGroup><None Include="native/*" CopyToOutputDirectory="PreserveNewest" /></ItemGroup>
+<Project
+  Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference
+      Include="../../src/StudioX.Application/StudioX.Application.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <None
+      Include="native/*"
+      CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
 </Project>

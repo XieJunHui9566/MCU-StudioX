@@ -1,10 +1,15 @@
-using System.Text;
 using StudioX.Application;
 using StudioX.Application.CodeIntelligence;
 using StudioX.Application.Editing;
 using StudioX.Engine;
 using StudioX.Foundation;
 using StudioX.Packages;
+
+if (args.Any(a => a.StartsWith("--compile-commands-dir=", StringComparison.Ordinal)))
+{
+    await DiagnosticServerFixture.RunAsync();
+    return;
+}
 
 if (args.Length != 2) { throw new ArgumentException("runtime directory, new output directory required"); }
 var runtime = Path.GetFullPath(args[0]);
@@ -191,5 +196,6 @@ var cppRename = await intelligence.RenameAsync("src/meter.cpp", cpp, memberOffse
 Check(cppRename.Count == 1 && cppRename[0].Matches.Count == 3 && cppRename[0].After.Contains("m.reading + other.value", StringComparison.Ordinal), "C++ semantic member rename preserves unrelated type member");
 await intelligence.StopAsync();
 Check(intelligence.GetDiagnostics().Count == 0, "project stop clears language diagnostics");
+await LiveDiagnosticChecks.RunAsync(runtime, fixture, Path.Combine(root, "live-reliability"), Check);
 await File.WriteAllTextAsync(Path.Combine(root, "result.txt"), $"PASS {checks.Count}; no hardware or firmware build.\n" + string.Join('\n', checks));
 Console.WriteLine($"PASS {checks.Count}; real clangd, isolated files and recovery stores; no hardware.");

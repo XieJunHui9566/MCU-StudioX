@@ -1,18 +1,18 @@
 using System.Security.Cryptography;
-using StudioX.Application;
 using StudioX.Engine;
 using StudioX.Foundation;
 
 internal static class CoreDumpChecks
 {
-    internal static async Task RunAsync(string root, string toolsets, string fixtures, Action<bool,string> check)
+    internal static async Task RunAsync(string root, string toolsets, string fixtures, Action<bool, string> check)
     {
         var catalog = new ToolsetCatalog(toolsets);
         var service = new FirmwareFaultService(catalog);
         foreach (var (target, suffix, hashed) in new[] { ("esp32", "", true), ("esp32s3", "_bin", false) })
         {
-            var project = Path.Combine(root, target); Directory.CreateDirectory(Path.Combine(project, ".studiox"));
-            await JsonStore.WriteAsync(Path.Combine(project, ".studiox/project.json"), new ProjectManifest(1, target, "fixture", "1.0.0", new string('a',64),
+            var project = Path.Combine(root, target);
+            Directory.CreateDirectory(Path.Combine(project, ".studiox"));
+            await JsonStore.WriteAsync(Path.Combine(project, ".studiox/project.json"), new ProjectManifest(1, target, "fixture", "1.0.0", new string('a', 64),
                 target == "esp32" ? "ESP32" : "ESP32-S3", "hello", "espressif.idf", "5.5.4", "esp-idf", Espressif: new("esp-idf", target, "5.5.4")));
             var dump = Path.Combine(fixtures, $"tests_{target}_coredump{suffix}.b64");
             var elf = Path.Combine(fixtures, $"tests_test_apps_built_apps_{target}{suffix}.elf");
@@ -22,8 +22,14 @@ internal static class CoreDumpChecks
             check(report.CoreDump!.Tasks.Count > 0 && report.CoreDump.CrashedTask is not null && report.SymbolInformation.Contains("CURRENT THREAD STACK", StringComparison.OrdinalIgnoreCase) && report.SymbolInformation.Contains("#0", StringComparison.Ordinal), target + " real GDB decodes crashed task and call stack");
             if (hashed)
             {
-                var wrong = Path.Combine(root, "wrong.elf"); File.Copy(elf, wrong); await File.AppendAllTextAsync(wrong, "changed");
-                try { await service.DecodeCoreDumpAsync(project, dump, "b64", wrong); throw new InvalidOperationException("Expected mismatch rejection"); }
+                var wrong = Path.Combine(root, "wrong.elf");
+                File.Copy(elf, wrong);
+                await File.AppendAllTextAsync(wrong, "changed");
+                try
+                {
+                    await service.DecodeCoreDumpAsync(project, dump, "b64", wrong);
+                    throw new InvalidOperationException("Expected mismatch rejection");
+                }
                 catch (StudioXException e) when (e.Code == "FAULT_DUMP") { check(e.Message.Contains("SHA256", StringComparison.OrdinalIgnoreCase), "mismatched ELF rejected with original tool diagnostic"); }
                 var raw = Path.Combine(root, "esp32.raw");
                 // IDF 正文按行独立填充 Base64；按官方加载器的方式逐行拼回二进制。
@@ -49,7 +55,8 @@ os.unlink(loader.core_elf_file)
                 var environment = ToolsetEnvironment.Create(resolved);
                 environment["IDF_PATH"] = resolved.ResourceDirectory("idf");
                 environment["PYTHONHOME"] = resolved.ResourceDirectory("python-env");
-                environment["TEMP"] = root; environment["TMP"] = root;
+                environment["TEMP"] = root;
+                environment["TMP"] = root;
                 environment["PYTHONPYCACHEPREFIX"] = Path.Combine(root, "converter-cache");
                 var conversion = await new ProcessRunner().RunAsync(new(resolved.Tool("python"), ["-I", "-B", converter, raw, elf, core], root,
                     TimeSpan.FromMinutes(1), environment, RemoveEnvironment: ToolsetEnvironment.AmbientVariables));
@@ -60,14 +67,25 @@ os.unlink(loader.core_elf_file)
                 check(coreReport.CoreDump is { Target: "esp32", HashMatches: true } && coreReport.CoreDump.Tasks.Count > 0,
                     "direct core ELF validates target and embedded hash before GDB decoding");
                 await JsonStore.WriteAsync(Path.Combine(root, "esp32-core-elf-report.json"), coreReport);
-                try { await service.DecodeCoreDumpAsync(project, core, "elf", wrong); throw new InvalidOperationException("Expected direct core mismatch rejection"); }
+                try
+                {
+                    await service.DecodeCoreDumpAsync(project, core, "elf", wrong);
+                    throw new InvalidOperationException("Expected direct core mismatch rejection");
+                }
                 catch (StudioXException e) when (e.Code == "FAULT_DUMP") { check(e.Message.Contains("SHA-256", StringComparison.OrdinalIgnoreCase), "direct core ELF with mismatched symbols rejected before GDB"); }
             }
             else
             {
                 var changedManifest = await ProjectService.ReadAsync(project);
-                await JsonStore.WriteAsync(Path.Combine(project, ".studiox/project.json"), changedManifest with { Espressif = new("esp-idf", "esp32", "5.5.4") });
-                try { await service.DecodeCoreDumpAsync(project, dump, "b64", elf); throw new InvalidOperationException("Expected target rejection"); }
+                await JsonStore.WriteAsync(Path.Combine(project, ".studiox/project.json"), changedManifest with
+                {
+                    Espressif = new("esp-idf", "esp32", "5.5.4")
+                });
+                try
+                {
+                    await service.DecodeCoreDumpAsync(project, dump, "b64", elf);
+                    throw new InvalidOperationException("Expected target rejection");
+                }
                 catch (StudioXException e) when (e.Code == "FAULT_DUMP") { check(e.Message.Contains("target", StringComparison.OrdinalIgnoreCase), "mismatched target rejected before GDB and never probes serial ports"); }
             }
         }

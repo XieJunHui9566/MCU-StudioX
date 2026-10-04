@@ -140,8 +140,12 @@ def main() -> None:
         help="Directory containing AiCube_sources_and_firmware_extracted",
     )
     parser.add_argument("--output", required=True, type=Path, help="New output directory")
-    parser.add_argument("--pack-version", default=PACK_VERSION, help="Explicit new device pack version")
-    parser.add_argument("--toolset-version", default="1.0.0", help="Exact SDCC development component version")
+    parser.add_argument(
+        "--pack-version", default=PACK_VERSION, help="Explicit new device pack version"
+    )
+    parser.add_argument(
+        "--toolset-version", default="1.0.0", help="Exact SDCC development component version"
+    )
     parser.add_argument(
         "--stage-only", action="store_true", help="Prepare source without invoking StudioX pack CLI"
     )
@@ -218,9 +222,21 @@ def main() -> None:
                 "toolsetId": "stc.sdcc",
                 "toolsetVersion": args.toolset_version,
                 "compilerId": "sdcc-4.5.0-15242",
-                **({"developmentComponents": [{"id": "stc.sdcc", "version": args.toolset_version,
-                    "compilerId": "sdcc-4.5.0-15242", "host": "win-x64", "purpose": "STC 8 位工程编译"}]}
-                    if args.toolset_version != "1.0.0" else {}),
+                **(
+                    {
+                        "developmentComponents": [
+                            {
+                                "id": "stc.sdcc",
+                                "version": args.toolset_version,
+                                "compilerId": "sdcc-4.5.0-15242",
+                                "host": "win-x64",
+                                "purpose": "STC 8 位工程编译",
+                            }
+                        ]
+                    }
+                    if args.toolset_version != "1.0.0"
+                    else {}
+                ),
                 "cpuFlags": ["-mmcs51", "--model-large"],
                 "defines": ["STUDIOX_" + family.upper(), device_id],
                 "includeDirectories": ["sdk/include"],

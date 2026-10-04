@@ -10,9 +10,10 @@ public static class PackArchiveWriter
     public static async Task WriteAsync(string sourceDirectory, string destination, CancellationToken cancellationToken = default)
     {
         var root = Path.GetFullPath(sourceDirectory);
+        PackFileTree.RejectLinkedAncestors(root);
         var manifest = await JsonStore.ReadAsync<PackManifest>(Path.Combine(root, "manifest.json"), cancellationToken);
         PackValidator.Validate(manifest, root);
-        var files = Directory.GetFiles(root, "*", SearchOption.AllDirectories)
+        var files = PackFileTree.EnumerateFiles(root, cancellationToken)
             .Select(p => Path.GetRelativePath(root, p).Replace('\\', '/')).Order(StringComparer.Ordinal).ToArray();
         if (files.Contains("files.sha256.json"))
         {

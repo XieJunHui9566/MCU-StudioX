@@ -11,11 +11,14 @@
       Condition="'$(RuntimeIdentifier)' == '' and $([MSBuild]::IsOSPlatform('Windows'))">win-x64</RuntimeIdentifier>
     <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
     <!-- 产品后缀用于发行修订；PE 文件与程序集版本必须保持四段数字。 -->
-    <Version>0.2.6.10</Version>
-    <ProductVersion Condition="'$(ProductVersion)' == ''">0.2.6.10</ProductVersion>
+    <Version>0.2.6.11</Version>
+    <ProductVersion
+      Condition="'$(ProductVersion)' == ''">0.2.6LTS</ProductVersion>
     <InformationalVersion>$(ProductVersion)</InformationalVersion>
   </PropertyGroup>
   <ItemGroup>
-    <AssemblyMetadata Include="StudioXProductVersion" Value="$(ProductVersion)" />
+    <AssemblyMetadata
+      Include="StudioXProductVersion"
+      Value="$(ProductVersion)" />
   </ItemGroup>
 </Project>

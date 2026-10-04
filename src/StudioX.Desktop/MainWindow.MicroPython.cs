@@ -1,7 +1,7 @@
 namespace StudioX.Desktop;
 
-using StudioX.Engine;
 using System.Windows;
+using StudioX.Engine;
 
 public partial class MainWindow
 {
@@ -10,7 +10,10 @@ public partial class MainWindow
 
     private async void MicroPythonRun_Click(object sender, RoutedEventArgs e)
     {
-        if (!IsMicroPythonProject || projectActionsBusy || MicroPythonPanel.IsBusy) { return; }
+        if (!IsMicroPythonProject || projectActionsBusy || MicroPythonPanel.IsBusy)
+        {
+            return;
+        }
         ShowDocument(MicroPythonTab);
         // 持续运行由页面持有，工程切换和关闭窗口仍可取消它。
         microPythonRunTask = MicroPythonPanel.StartScriptAsync();

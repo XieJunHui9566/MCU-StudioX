@@ -1,7 +1,6 @@
 namespace StudioX.Desktop;
 
 using StudioX.Application.Serial;
-using StudioX.Engine;
 using StudioX.Foundation;
 
 public partial class MainWindow

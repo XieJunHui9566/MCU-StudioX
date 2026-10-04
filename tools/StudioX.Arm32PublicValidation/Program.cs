@@ -37,9 +37,15 @@ if (check.UpToDate != expected || check.Updates.Count != 0 || second.Skipped != 
 }
 var report = new
 {
-    status = "PASS", offline = true, hardwareAccessed = false, packages = expected,
-    imported = first.Imported, repeatSkipped = second.Skipped, archiveRequests = handler.ArchiveRequests,
-    failures = first.Failures.Count, method = "Installed IDE GitHubPackSyncService and PackRepository; local HTTP snapshot"
+    status = "PASS",
+    offline = true,
+    hardwareAccessed = false,
+    packages = expected,
+    imported = first.Imported,
+    repeatSkipped = second.Skipped,
+    archiveRequests = handler.ArchiveRequests,
+    failures = first.Failures.Count,
+    method = "Installed IDE GitHubPackSyncService and PackRepository; local HTTP snapshot"
 };
 await File.WriteAllTextAsync(Path.Combine(output, "public-import.json"), JsonSerializer.Serialize(report, JsonStore.Options));
 Console.WriteLine(JsonSerializer.Serialize(report));
@@ -60,7 +66,10 @@ internal sealed class ImportProgress : IProgress<RemotePackSyncProgress>
 internal sealed class SnapshotHandler(string source) : HttpMessageHandler
 {
     private const string Commit = "0123456789abcdef0123456789abcdef01234567";
-    public int ArchiveRequests { get; private set; }
+    public int ArchiveRequests
+    {
+        get; private set;
+    }
 
     protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
@@ -77,7 +86,10 @@ internal sealed class SnapshotHandler(string source) : HttpMessageHandler
         }
         var relative = Uri.UnescapeDataString(uri.AbsolutePath[prefix.Length..]);
         var path = PathBoundary.Resolve(source, relative);
-        if (relative.EndsWith(".mcupack", StringComparison.Ordinal)) { ArchiveRequests++; }
+        if (relative.EndsWith(".mcupack", StringComparison.Ordinal))
+        {
+            ArchiveRequests++;
+        }
         return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new StreamContent(File.OpenRead(path)) });
     }
 }

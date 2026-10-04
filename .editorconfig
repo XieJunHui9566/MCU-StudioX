@@ -55,3 +55,7 @@ dotnet_naming_style.pascal_case.capitalization = pascal_case
 
 [*.md]
 trim_trailing_whitespace = false
+
+# Windows PowerShell 5.1 需 BOM 才能按 UTF-8 解析独立验收脚本中的中文。
+[tools/acceptance/*.ps1]
+charset = utf-8-bom

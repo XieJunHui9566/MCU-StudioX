@@ -17,30 +17,70 @@ internal static class MinimalSevenZip
             var extra = 0;
             for (; extra < 8; extra++)
             {
-                if (value < (1UL << (7 * (extra + 1)))) { first |= (byte)(value >> (8 * extra)); break; }
+                if (value < (1UL << (7 * (extra + 1))))
+                {
+                    first |= (byte)(value >> (8 * extra));
+                    break;
+                }
                 first |= (byte)(0x80 >> extra);
             }
             writer.Write(first);
-            for (var i = 0; i < extra; i++) writer.Write((byte)(value >> (8 * i)));
+            for (var i = 0; i < extra; i++)
+            {
+                writer.Write((byte)(value >> (8 * i)));
+            }
         }
         var streams = files.Where(file => file.Bytes.Length > 0).ToArray();
-        writer.Write(new byte[] { 1, 4, 6 }); Number(0); Number((ulong)streams.Length);
-        writer.Write((byte)9); foreach (var file in streams) Number((ulong)file.Bytes.Length); writer.Write((byte)0);
-        writer.Write(new byte[] { 7, 11 }); Number((ulong)streams.Length); writer.Write((byte)0);
+        writer.Write(new byte[] { 1, 4, 6 });
+        Number(0);
+        Number((ulong)streams.Length);
+        writer.Write((byte)9);
+        foreach (var file in streams)
+        {
+            Number((ulong)file.Bytes.Length);
+        }
+        writer.Write((byte)0);
+        writer.Write(new byte[] { 7, 11 });
+        Number((ulong)streams.Length);
+        writer.Write((byte)0);
         foreach (var file in streams)
         {
             Number(1);
-            if (file.Encrypted) writer.Write(new byte[] { 0x24, 0x06, 0xf1, 0x07, 0x01, 2, 0, 0 });
-            else if (file.Lzma2Properties is { } properties) { writer.Write(new byte[] { 0x21, 0x21 }); Number((ulong)properties.Length); writer.Write(properties); }
-            else writer.Write(new byte[] { 1, 0 });
+            if (file.Encrypted)
+            {
+                writer.Write(new byte[] { 0x24, 0x06, 0xf1, 0x07, 0x01, 2, 0, 0 });
+            }
+            else if (file.Lzma2Properties is { } properties)
+            {
+                writer.Write(new byte[] { 0x21, 0x21 });
+                Number((ulong)properties.Length);
+                writer.Write(properties);
+            }
+            else
+            {
+                writer.Write(new byte[] { 1, 0 });
+            }
         }
-        writer.Write((byte)12); foreach (var file in streams) Number((ulong)(file.Length ?? file.Bytes.Length));
-        writer.Write(new byte[] { 0, 8, 0, 0, 5 }); Number((ulong)(declaredFileCount ?? files.Length));
+        writer.Write((byte)12);
+        foreach (var file in streams)
+        {
+            Number((ulong)(file.Length ?? file.Bytes.Length));
+        }
+        writer.Write(new byte[] { 0, 8, 0, 0, 5 });
+        Number((ulong)(declaredFileCount ?? files.Length));
         void Bits(byte id, bool[] bits)
         {
             var data = new byte[(bits.Length + 7) / 8];
-            for (var i = 0; i < bits.Length; i++) if (bits[i]) data[i / 8] |= (byte)(0x80 >> (i % 8));
-            writer.Write(id); Number((ulong)data.Length); writer.Write(data);
+            for (var i = 0; i < bits.Length; i++)
+            {
+                if (bits[i])
+                {
+                    data[i / 8] |= (byte)(0x80 >> (i % 8));
+                }
+            }
+            writer.Write(id);
+            Number((ulong)data.Length);
+            writer.Write(data);
         }
         var empty = files.Where(file => file.Bytes.Length == 0).ToArray();
         if (empty.Length > 0)
@@ -50,9 +90,17 @@ internal static class MinimalSevenZip
             Bits(16, empty.Select(file => file.Anti).ToArray());
         }
         var names = Encoding.Unicode.GetBytes(string.Join('\0', files.Select(f => f.Name)) + '\0');
-        writer.Write((byte)17); Number((ulong)names.Length + 1); writer.Write((byte)0); writer.Write(names);
-        writer.Write((byte)21); Number((ulong)(2 + files.Length * 4)); writer.Write(new byte[] { 1, 0 });
-        foreach (var file in files) writer.Write(file.Attributes);
+        writer.Write((byte)17);
+        Number((ulong)names.Length + 1);
+        writer.Write((byte)0);
+        writer.Write(names);
+        writer.Write((byte)21);
+        Number((ulong)(2 + files.Length * 4));
+        writer.Write(new byte[] { 1, 0 });
+        foreach (var file in files)
+        {
+            writer.Write(file.Attributes);
+        }
         writer.Write(new byte[] { 0, 0 });
         WriteContainer(path, files.SelectMany(file => file.Bytes).ToArray(), header.ToArray());
     }
@@ -73,7 +121,8 @@ internal static class MinimalSevenZip
         using var output = System.IO.File.Create(path);
         using var outputWriter = new BinaryWriter(output);
         outputWriter.Write(new byte[] { 0x37, 0x7a, 0xbc, 0xaf, 0x27, 0x1c, 0, 4 });
-        outputWriter.Write(Crc(start.ToArray())); outputWriter.Write(start.ToArray());
+        outputWriter.Write(Crc(start.ToArray()));
+        outputWriter.Write(start.ToArray());
         outputWriter.Write(payload);
         outputWriter.Write(nextHeader);
     }
@@ -83,7 +132,10 @@ internal static class MinimalSevenZip
         foreach (var item in bytes)
         {
             value ^= item;
-            for (var bit = 0; bit < 8; bit++) value = (value >> 1) ^ (0xedb88320U & (uint)-(int)(value & 1));
+            for (var bit = 0; bit < 8; bit++)
+            {
+                value = (value >> 1) ^ (0xedb88320U & (uint)-(int)(value & 1));
+            }
         }
         return ~value;
     }

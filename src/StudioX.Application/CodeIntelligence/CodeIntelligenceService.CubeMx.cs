@@ -20,7 +20,10 @@ public sealed partial class CodeIntelligenceService
         {
             return null;
         }
-        if (inferredCommands.TryGetValue(path, out var inferred)) { return inferred; }
+        if (inferredCommands.TryGetValue(path, out var inferred))
+        {
+            return inferred;
+        }
         // 头文件沿用相邻翻译单元的宏和头文件路径，不给整个工程拼一套混合参数。
         ImportedAnalysis? best = null;
         var bestStem = false;
@@ -54,7 +57,10 @@ public sealed partial class CodeIntelligenceService
             Arguments = [arguments[0], "-x", IsCpp(path) ? "c++" : "c", .. arguments.Skip(1)]
         };
         // 只缓存当前数据库的少量打开文件；工程重载清空，不能沿用旧分支的宏与包含路径。
-        if (inferredCommands.Count >= 1024) { inferredCommands.Clear(); }
+        if (inferredCommands.Count >= 1024)
+        {
+            inferredCommands.Clear();
+        }
         inferredCommands[path] = inferred;
         return inferred;
     }
@@ -128,7 +134,7 @@ public sealed partial class CodeIntelligenceService
     }
 
     // CMake 在 Windows 导出的 command 使用双引号和反斜线转义；仅拆分参数，不交给 shell 执行。
-    private static string[] SplitCMakeCommand(string command)
+    internal static string[] SplitCMakeCommand(string command)
     {
         var result = new List<string>();
         var part = new StringBuilder();

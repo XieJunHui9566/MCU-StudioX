@@ -2,7 +2,6 @@ namespace StudioX.Desktop;
 
 using System.Text.Json;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Threading;
@@ -15,7 +14,10 @@ public partial class MainWindow
         var checks = new List<string>();
         void Check(bool value, string label)
         {
-            if (!value) throw new InvalidOperationException(label);
+            if (!value)
+            {
+                throw new InvalidOperationException(label);
+            }
             checks.Add(label);
         }
         var catalog = services.Help;
@@ -71,7 +73,12 @@ public partial class MainWindow
         await SettleAsync();
         Check(helpCenter.ArticleBody.Document.Blocks.OfType<Table>().Count() == 4, "shortcut reference has four real formatted tables");
         Render(this, Path.Combine(directory, "help-shortcuts.png"));
-        await File.WriteAllTextAsync(Path.Combine(directory, "help-result.json"), JsonSerializer.Serialize(new { status = "passed", topics = catalog.Articles.Count, checks }, new JsonSerializerOptions { WriteIndented = true }));
+        await File.WriteAllTextAsync(Path.Combine(directory, "help-result.json"), JsonSerializer.Serialize(new
+        {
+            status = "passed",
+            topics = catalog.Articles.Count,
+            checks
+        }, new JsonSerializerOptions { WriteIndented = true }));
 
         async Task SettleAsync()
         {

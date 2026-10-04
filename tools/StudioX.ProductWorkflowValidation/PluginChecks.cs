@@ -37,7 +37,11 @@ internal static class PluginChecks
         var restored = await manager.RollbackAsync(previous);
         check(restored.Version == one.Version && !restored.Enabled, "explicit plugin rollback restores bytes but requires trust again");
         await File.AppendAllTextAsync(previous.Archive, "changed");
-        try { await manager.RollbackAsync(previous); check(false, "rollback archive changed"); }
+        try
+        {
+            await manager.RollbackAsync(previous);
+            check(false, "rollback archive changed");
+        }
         catch (StudioXException error) { check(error.Code == "PLUGIN_ROLLBACK_CHANGED", "changed rollback archive rejected before replacing current plugin"); }
     }
 }

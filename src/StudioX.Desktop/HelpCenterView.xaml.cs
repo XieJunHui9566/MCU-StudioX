@@ -20,7 +20,11 @@ public partial class HelpCenterView : UserControl
         SizeChanged += (_, _) =>
         {
             var next = ActualWidth < 900;
-            if (next != compact) { compact = next; SetCatalogVisible(!compact); }
+            if (next != compact)
+            {
+                compact = next;
+                SetCatalogVisible(!compact);
+            }
         };
         Open("quick-start");
     }
@@ -46,18 +50,27 @@ public partial class HelpCenterView : UserControl
 
     private void Refresh(string? select = null)
     {
-        if (updating || CategoryPicker is null || SearchBox is null || ArticleList is null) return;
+        if (updating || CategoryPicker is null || SearchBox is null || ArticleList is null)
+        {
+            return;
+        }
         var results = content.Search(SearchBox.Text, CategoryPicker.SelectedIndex <= 0 ? null : CategoryPicker.SelectedItem as string);
         ArticleList.ItemsSource = results;
         ArticleList.SelectedItem = results.FirstOrDefault(article => article.Id == select) ?? results.FirstOrDefault();
         ResultStatus.Text = results.Count == 0 ? "没有匹配的主题。可清除搜索，或用“编译”“串口”“插件”等关键词。"
             : $"{results.Count} / {content.Articles.Count} 篇主题 · 离线可用 · 可搜索正文和错误代码";
-        if (results.Count == 0) ShowEmpty();
+        if (results.Count == 0)
+        {
+            ShowEmpty();
+        }
     }
 
     private void Article_Changed(object sender, SelectionChangedEventArgs e)
     {
-        if (SelectedArticle is not { } article) return;
+        if (SelectedArticle is not { } article)
+        {
+            return;
+        }
         ArticleTitle.Text = article.Title;
         ArticleSummary.Text = article.Summary;
         ArticleBody.Document = HelpDocumentRenderer.Render(article.Markdown);
@@ -70,7 +83,10 @@ public partial class HelpCenterView : UserControl
             button.Click += (_, _) => Open(next.Id);
             RelatedTopics.Children.Add(button);
         }
-        if (compact) SetCatalogVisible(false);
+        if (compact)
+        {
+            SetCatalogVisible(false);
+        }
     }
 
     private void ShowEmpty()
@@ -93,8 +109,15 @@ public partial class HelpCenterView : UserControl
     }
     private void CopyArticle_Click(object sender, RoutedEventArgs e)
     {
-        if (SelectedArticle is not { } article) return;
-        try { Clipboard.SetText(article.Markdown); ResultStatus.Text = "已复制：“" + article.Title + "”。"; }
+        if (SelectedArticle is not { } article)
+        {
+            return;
+        }
+        try
+        {
+            Clipboard.SetText(article.Markdown);
+            ResultStatus.Text = "已复制：“" + article.Title + "”。";
+        }
         catch (System.Runtime.InteropServices.COMException error) { ResultStatus.Text = "剪贴板暂时不可用，请重试：" + error.Message; }
     }
 }

@@ -6,7 +6,6 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Threading;
 using ICSharpCode.AvalonEdit.Document;
-using StudioX.Application;
 using StudioX.Engine.Debugging;
 using StudioX.Foundation;
 
@@ -286,9 +285,15 @@ public partial class MainWindow
             {
                 using var linked = CancellationTokenSource.CreateLinkedTokenSource(token, cancel);
                 await services.DebugLaunch.StartAsync(project, reset, linked.Token);
-            }) { Owner = this };
+            })
+        {
+            Owner = this
+        };
         dialog.ShowDialog();
-        if (services.Debugger.State != DebugState.Stopped) { return; }
+        if (services.Debugger.State != DebugState.Stopped)
+        {
+            return;
+        }
         await NavigateSelectedDebugFrameAsync();
         Status.Text = services.Debugger.Reason;
     });

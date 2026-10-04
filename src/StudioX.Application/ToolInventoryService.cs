@@ -50,23 +50,40 @@ public sealed class ToolInventoryService(ToolsetCatalog catalog)
                 ProjectDevelopmentComponents.CheckFingerprint(pins, need.Id, resolved.Fingerprint);
                 verified.Add(resolved);
                 using var lease = ToolUsageLease.Acquire(resolved.RootDirectory);
-                if (need.Id == project.ToolsetId && project.Espressif is { } sdk) resolved = resolved.ForEspressifTarget(sdk.Target);
+                if (need.Id == project.ToolsetId && project.Espressif is { } sdk)
+                {
+                    resolved = resolved.ForEspressifTarget(sdk.Target);
+                }
                 foreach (var role in new[] { "gcc", "gxx", "gdb", "cmake", "ninja", "openocd", "sdcc" })
                 {
-                    if (!resolved.Manifest.Executables.ContainsKey(role)) continue;
+                    if (!resolved.Manifest.Executables.ContainsKey(role))
+                    {
+                        continue;
+                    }
                     var arguments = role == "gdb" ? new[] { "--nx", "--nh", "--version" } : ["--version"];
                     var result = await new ProcessRunner().RunAsync(new(resolved.Tool(role), arguments, resolved.RootDirectory, TimeSpan.FromSeconds(20),
                         ToolsetEnvironment.Create(resolved), RemoveEnvironment: ToolsetEnvironment.AmbientVariables), token);
-                    if (!result.Success) throw new StudioXException("TOOL_EXECUTE", $"{need.Id} / {need.Version} · {role} 无法启动：\n{result.StandardOutput}\n{result.StandardError}");
+                    if (!result.Success)
+                    {
+                        throw new StudioXException("TOOL_EXECUTE", $"{need.Id} / {need.Version} · {role} 无法启动：\n{result.StandardOutput}\n{result.StandardError}");
+                    }
                 }
                 text.AppendLine($"✓ {resolved.Manifest.DisplayName ?? need.Id} · {need.Id} / {need.Version}：完整性与启动检查通过（{resolved.Manifest.Sha256.Count:N0} 个文件）");
             }
             var current = await ProjectService.ReadAsync(projectDirectory, token);
             if (current != project || !needs.SequenceEqual(await ProjectDevelopmentComponents.ReadAsync(projectDirectory, current, token)))
+            {
                 throw new StudioXException("TOOLS_PROJECT_CHANGED", "校验期间工程开发环境组件需求发生变化，请重试。");
+            }
             pins = await ProjectDevelopmentComponents.ReadPinsAsync(projectDirectory, needs, token);
-            foreach (var resolved in verified) ProjectDevelopmentComponents.CheckFingerprint(pins, resolved.Manifest.Id, resolved.Fingerprint);
-            if (needs.Count == 0) text.AppendLine("此工程未声明本机开发环境组件，无需校验。");
+            foreach (var resolved in verified)
+            {
+                ProjectDevelopmentComponents.CheckFingerprint(pins, resolved.Manifest.Id, resolved.Fingerprint);
+            }
+            if (needs.Count == 0)
+            {
+                text.AppendLine("此工程未声明本机开发环境组件，无需校验。");
+            }
             return text.ToString();
         }, token);
 }

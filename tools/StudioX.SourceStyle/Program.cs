@@ -10,6 +10,11 @@ if (args is ["--self-test"])
     return 0;
 }
 
+if (args is ["--finish-whitespace", var sourceRoot, var baseline, var formatted, var operation] && operation is "--write" or "--check")
+{
+    return CSharpWhitespace.Finish(sourceRoot, baseline, formatted, operation == "--write");
+}
+
 if (args is not [var mode, var workspace] || mode is not ("--write" or "--check"))
 {
     Console.Error.WriteLine("Usage: StudioX.SourceStyle --write|--check <workspace>");

@@ -11,13 +11,19 @@ internal static class EvidenceChecks
     {
         var matrixRoot = Path.GetFullPath(matrixDirectory);
         var output = Path.GetFullPath(outputDirectory);
-        if (Directory.Exists(output)) throw new IOException("Use a new validation output directory.");
+        if (Directory.Exists(output))
+        {
+            throw new IOException("Use a new validation output directory.");
+        }
         Directory.CreateDirectory(output);
         var timing = new Ag32TimingService(new ToolsetCatalog(Path.GetFullPath(toolsets)));
         var checks = new List<string>();
         void Check(bool value, string description)
         {
-            if (!value) throw new InvalidOperationException(description);
+            if (!value)
+            {
+                throw new InvalidOperationException(description);
+            }
             checks.Add(description);
             Console.WriteLine("PASS " + description);
         }
@@ -75,7 +81,13 @@ internal static class EvidenceChecks
         await ReplaceAsync(".build/ag32-mapping/studiox-mapping-receipt.json", Encoding.UTF8.GetBytes("{}"),
             Ag32TimingState.Unverified, "Positive attempt cannot replace a valid download receipt");
         Check((await timing.ReadAsync(root)).State == Ag32TimingState.Passed, "Restored fixture shows the original verified result");
-        await JsonStore.WriteAsync(Path.Combine(output, "result.json"), new { success = true, checks, count = checks.Count, hardwareConnected = false });
+        await JsonStore.WriteAsync(Path.Combine(output, "result.json"), new
+        {
+            success = true,
+            checks,
+            count = checks.Count,
+            hardwareConnected = false
+        });
 
         async Task ReplaceAsync(string relative, byte[] bytes, Ag32TimingState expected, string description)
         {
@@ -93,7 +105,10 @@ internal static class EvidenceChecks
     private static byte[] Gzip(byte[] bytes)
     {
         using var output = new MemoryStream();
-        using (var gzip = new GZipStream(output, CompressionLevel.Fastest, leaveOpen: true)) gzip.Write(bytes);
+        using (var gzip = new GZipStream(output, CompressionLevel.Fastest, leaveOpen: true))
+        {
+            gzip.Write(bytes);
+        }
         return output.ToArray();
     }
 }

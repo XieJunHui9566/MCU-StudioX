@@ -39,17 +39,29 @@ internal static class DistributionChecks
         check(!Directory.EnumerateFiles(Path.Combine(root, "corrupt-download/distribution-cache")).Any(p => !p.EndsWith(".lock", StringComparison.Ordinal)), "hash failure removes untrusted content and resume state");
         var local = Path.Combine(root, "local-catalog.json");
         await File.WriteAllBytesAsync(local, JsonSerializer.SerializeToUtf8Bytes(new DistributionCatalog(1, "Fixture", [entry with { Archive = "../escape.studioxplugin" }]), JsonStore.Options));
-        try { await service.ReadAsync(local); check(false, "local archive escape"); }
+        try
+        {
+            await service.ReadAsync(local);
+            check(false, "local archive escape");
+        }
         catch (StudioXException) { check(true, "local catalog archive cannot escape catalog directory"); }
         handler.Catalog = JsonSerializer.SerializeToUtf8Bytes(new DistributionCatalog(1, "Fixture", [entry, entry]), JsonStore.Options);
         await Reject(() => service.ReadAsync("https://example.test/catalog.json"), "CATALOG_ENTRY", "duplicate catalog identity rejected", check);
         handler.Status = HttpStatusCode.Redirect;
-        try { await service.ReadAsync("https://example.test/catalog.json"); check(false, "redirect"); }
+        try
+        {
+            await service.ReadAsync("https://example.test/catalog.json");
+            check(false, "redirect");
+        }
         catch (HttpRequestException) { check(true, "redirect response not treated as a valid catalog"); }
     }
     private static async Task Reject(Func<Task> action, string code, string message, Action<bool, string> check)
     {
-        try { await action(); check(false, message); }
+        try
+        {
+            await action();
+            check(false, message);
+        }
         catch (StudioXException error) { check(error.Code == code, message); }
     }
     private sealed class Handler(byte[] catalog, byte[] archive) : HttpMessageHandler
@@ -57,7 +69,10 @@ internal static class DistributionChecks
         public byte[] Catalog { get; set; } = catalog;
         public byte[] Signature { get; set; } = [];
         public HttpStatusCode Status { get; set; } = HttpStatusCode.OK;
-        public int Requests { get; private set; }
+        public int Requests
+        {
+            get; private set;
+        }
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             Requests++;

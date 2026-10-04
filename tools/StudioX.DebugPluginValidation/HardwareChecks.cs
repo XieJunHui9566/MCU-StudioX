@@ -1,6 +1,5 @@
 namespace StudioX.DebugPluginValidation;
 
-using System.Text.Json;
 using StudioX.Application;
 using StudioX.Application.Plugins;
 using StudioX.Engine;
@@ -13,33 +12,62 @@ internal static class HardwareChecks
     public static async Task RunAsync(string source, string toolRuntime, string host, string archive, string output, bool reset = false)
     {
         var root = Path.GetFullPath(output);
-        if (Directory.Exists(root)) { throw new InvalidOperationException("Use a new evidence directory."); }
+        if (Directory.Exists(root))
+        {
+            throw new InvalidOperationException("Use a new evidence directory.");
+        }
         Directory.CreateDirectory(root);
         var project = Path.Combine(root, "project");
         CopySource(Path.GetFullPath(source), project);
         var info = await ProjectService.ReadAsync(project);
-        if (info.DeviceId != "STM32F407ZGT6") { throw new InvalidOperationException("This acceptance is restricted to the confirmed STM32F407ZG board."); }
+        if (info.DeviceId != "STM32F407ZGT6")
+        {
+            throw new InvalidOperationException("This acceptance is restricted to the confirmed STM32F407ZG board.");
+        }
         var catalog = new ToolsetCatalog(Path.Combine(toolRuntime, "toolsets"));
         var downloads = new OpenOcdService(catalog);
         var configuration = await downloads.ConfigurationAsync(project) ?? throw new InvalidOperationException("Missing debug configuration.");
-        if (configuration.Options.ProbeId != "stlink") { throw new InvalidOperationException("This acceptance requires the explicitly connected ST-Link."); }
-        await JsonStore.WriteAsync(Path.Combine(root, "project-info.json"), new { original = source, isolated = project, info, configuration.Device, configuration.Options });
+        if (configuration.Options.ProbeId != "stlink")
+        {
+            throw new InvalidOperationException("This acceptance requires the explicitly connected ST-Link.");
+        }
+        await JsonStore.WriteAsync(Path.Combine(root, "project-info.json"), new
+        {
+            original = source,
+            isolated = project,
+            info,
+            configuration.Device,
+            configuration.Options
+        });
         Console.WriteLine("Building isolated source copy. No firmware download.");
         var build = await new BuildService(catalog).BuildAsync(project, output: new Progress<string>(Console.WriteLine));
         await JsonStore.WriteAsync(Path.Combine(root, "build.json"), build);
-        if (!build.Success) { throw new InvalidOperationException(build.Summary); }
+        if (!build.Success)
+        {
+            throw new InvalidOperationException(build.Summary);
+        }
         var preparation = await HardwareDebugPreparer.PrepareAsync(project, downloads);
         if (reset)
         {
             // 仅显式验收模式采用已授权的硬复位连接，不变成 IDE 自动重试或下载行为。
-            preparation = preparation with { ConnectUnderReset = true, Configuration = preparation.Configuration with
+            preparation = preparation with
             {
-                Options = preparation.Configuration.Options with { SpeedKhz = 400 }
-            } };
+                ConnectUnderReset = true,
+                Configuration = preparation.Configuration with
+                {
+                    Options = preparation.Configuration.Options with
+                    {
+                        SpeedKhz = 400
+                    }
+                }
+            };
         }
         var runtime = Path.Combine(root, "plugin-runtime");
         Directory.CreateDirectory(Path.Combine(runtime, "plugin-host"));
-        foreach (var file in Directory.EnumerateFiles(host)) { File.Copy(file, Path.Combine(runtime, "plugin-host", Path.GetFileName(file))); }
+        foreach (var file in Directory.EnumerateFiles(host))
+        {
+            File.Copy(file, Path.Combine(runtime, "plugin-host", Path.GetFileName(file)));
+        }
         await using var manager = new PluginManagerService(runtime, Path.Combine(root, "data"));
         var entry = await manager.ImportAsync(archive);
         await manager.SetEnabledAsync(entry.Id, true);
@@ -53,14 +81,20 @@ internal static class HardwareChecks
         var checks = new List<string>();
         void Check(bool passed, string label)
         {
-            if (!passed) { throw new InvalidOperationException(label); }
+            if (!passed)
+            {
+                throw new InvalidOperationException(label);
+            }
             checks.Add(label);
             Console.WriteLine("PASS " + label);
         }
         async Task WaitAsync(Func<bool> condition)
         {
             using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(20));
-            while (!condition()) { await Task.Delay(25, deadline.Token); }
+            while (!condition())
+            {
+                await Task.Delay(25, deadline.Token);
+            }
         }
         try
         {
@@ -68,12 +102,23 @@ internal static class HardwareChecks
             await debug.StartHardwareAsync(preparation);
             await WaitAsync(() => view.Current.Panel is not null);
             Check(debug.State == DebugState.Stopped && debug.IsHardware && view.Current.Hardware, "real F407/ST-Link attaches with verified board image and hardware-labelled plugin data");
-            await JsonStore.WriteAsync(Path.Combine(root, "stopped.json"), new { debug.Reason, debug.HardwareTargetName, debug.Snapshot, view = view.Current });
+            await JsonStore.WriteAsync(Path.Combine(root, "stopped.json"), new
+            {
+                debug.Reason,
+                debug.HardwareTargetName,
+                debug.Snapshot,
+                view = view.Current
+            });
             var revision = view.Current.Revision;
             await debug.ExecuteAsync(DebugAction.StepOver);
             Check(view.Current.Panel is null, "real resume immediately invalidates extension data");
             await WaitAsync(() => debug.State == DebugState.Stopped && view.Current.Panel is not null && view.Current.Revision > revision);
-            await JsonStore.WriteAsync(Path.Combine(root, "stepped.json"), new { debug.Reason, debug.Snapshot, view = view.Current });
+            await JsonStore.WriteAsync(Path.Combine(root, "stepped.json"), new
+            {
+                debug.Reason,
+                debug.Snapshot,
+                view = view.Current
+            });
             Check(view.Current.Panel!.Widgets.Any(w => w.Id == "registers") && view.Current.Panel.Widgets.Any(w => w.Id == "frames"), "real single-step produces refreshed register and stack tables");
             await debug.ExecuteAsync(DebugAction.Continue);
             Check(view.Current.State == DebugState.Running && view.Current.Panel is null, "real continue clears plugin snapshot");
@@ -84,12 +129,27 @@ internal static class HardwareChecks
         catch (Exception error)
         {
             await File.WriteAllTextAsync(Path.Combine(root, "error.txt"), error.ToString());
-            await JsonStore.WriteAsync(Path.Combine(root, "result.json"), new { success = false, hardware = true, downloaded = false, checks, diagnostic = error.ToString(), debug.SessionLogPath });
+            await JsonStore.WriteAsync(Path.Combine(root, "result.json"), new
+            {
+                success = false,
+                hardware = true,
+                downloaded = false,
+                checks,
+                diagnostic = error.ToString(),
+                debug.SessionLogPath
+            });
             throw;
         }
         finally { await debug.StopAsync(); }
         Check(view.Current.Panel is null && debug.State == DebugState.Disconnected, "real debug ends, clears plugin and resumes target without firmware download");
-        await JsonStore.WriteAsync(Path.Combine(root, "result.json"), new { success = true, hardware = true, downloaded = false, checks, debug.SessionLogPath });
+        await JsonStore.WriteAsync(Path.Combine(root, "result.json"), new
+        {
+            success = true,
+            hardware = true,
+            downloaded = false,
+            checks,
+            debug.SessionLogPath
+        });
     }
 
     private static void CopySource(string source, string target)
@@ -97,13 +157,22 @@ internal static class HardwareChecks
         Directory.CreateDirectory(target);
         foreach (var entry in new DirectoryInfo(source).EnumerateFileSystemInfos())
         {
-            if ((entry.Attributes & FileAttributes.ReparsePoint) != 0) { throw new IOException("Linked source requires manual review: " + entry.FullName); }
+            if ((entry.Attributes & FileAttributes.ReparsePoint) != 0)
+            {
+                throw new IOException("Linked source requires manual review: " + entry.FullName);
+            }
             if (entry is DirectoryInfo)
             {
-                if (entry.Name is ".build" or "build" or "Build" or "Debug" or "Release" or ".git") { continue; }
+                if (entry.Name is ".build" or "build" or "Build" or "Debug" or "Release" or ".git")
+                {
+                    continue;
+                }
                 CopySource(entry.FullName, Path.Combine(target, entry.Name));
             }
-            else { File.Copy(entry.FullName, Path.Combine(target, entry.Name)); }
+            else
+            {
+                File.Copy(entry.FullName, Path.Combine(target, entry.Name));
+            }
         }
     }
 }

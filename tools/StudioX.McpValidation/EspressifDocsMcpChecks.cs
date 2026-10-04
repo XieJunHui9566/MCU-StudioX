@@ -63,7 +63,11 @@ internal static class EspressifDocsMcpChecks
 
             var statusText = await session.CallToolAsync("espressif_docs_status", "{}");
             var status = ReadSafeStatus(statusText, Check, "built-in");
-            observations.Add(new { entry = "built-in", status });
+            observations.Add(new
+            {
+                entry = "built-in",
+                status
+            });
             var searchText = await session.CallToolAsync("espressif_docs_search", "{\"query\":\"ESP32-S3 GPIO\"}");
             using var searchResult = JsonDocument.Parse(searchText);
             Check(searchResult.RootElement.GetProperty("status").GetString() == "authentication_required",
@@ -190,7 +194,11 @@ internal static class EspressifDocsMcpChecks
             "external status is a successful read-only text response");
         var status = ReadSafeStatus(string.Join("\n", result.Content.OfType<TextContentBlock>().Select(block => block.Text)),
             check, "external");
-        observations.Add(new { entry = "external", status });
+        observations.Add(new
+        {
+            entry = "external",
+            status
+        });
         var search = await client.CallToolAsync("espressif_docs_search",
             new Dictionary<string, object?> { ["query"] = "ESP32-C6 GPIO" });
         using var searchResult = JsonDocument.Parse(string.Join("\n",

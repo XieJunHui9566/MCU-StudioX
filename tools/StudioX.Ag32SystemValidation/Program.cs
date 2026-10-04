@@ -12,8 +12,12 @@ Directory.CreateDirectory(output);
 var checks = new List<string>();
 void Check(bool value, string text)
 {
-    if (!value) { throw new InvalidOperationException(text); }
-    checks.Add(text); Console.WriteLine("PASS " + text);
+    if (!value)
+    {
+        throw new InvalidOperationException(text);
+    }
+    checks.Add(text);
+    Console.WriteLine("PASS " + text);
 }
 var tools = new ToolsetCatalog(Path.GetFullPath(toolsRoot));
 var packs = new PackRepository(Path.Combine(output, "packs"));
@@ -50,8 +54,12 @@ foreach (var archive in Directory.GetFiles(Path.GetFullPath(packRoot), "*.mcupac
             TimeSpan.FromMinutes(2), ToolsetEnvironment.Create(gcc), RemoveEnvironment: ToolsetEnvironment.AmbientVariables));
         await File.WriteAllTextAsync(Path.Combine(root, "compile.log"), result.StandardOutput + result.StandardError);
         Check(result.Success && File.Exists(Path.Combine(root, ".build/firmware.elf")), device.Id + " actual RISC-V GCC links named GPIO, automatic init and both delay units");
-        nativeHeader ??= header; nativeSource ??= source;
-        if (device.Id != "AG32VF303CCT6") { continue; }
+        nativeHeader ??= header;
+        nativeSource ??= source;
+        if (device.Id != "AG32VF303CCT6")
+        {
+            continue;
+        }
         await using (var intelligence = new CodeIntelligenceService(Path.GetDirectoryName(Path.GetFullPath(toolsRoot))!, Path.Combine(output, "language-data")))
         {
             await intelligence.StartAsync(root);
@@ -68,7 +76,11 @@ foreach (var archive in Directory.GetFiles(Path.GetFullPath(packRoot), "*.mcupac
         async Task Reject(Ag32PinAssignment[] assignments, string code)
         {
             var fresh = await planner.ReadAsync(root);
-            try { await planner.ApplyAsync(root, fresh, assignments, fresh.Clocks); throw new InvalidOperationException("Not rejected " + code); }
+            try
+            {
+                await planner.ApplyAsync(root, fresh, assignments, fresh.Clocks);
+                throw new InvalidOperationException("Not rejected " + code);
+            }
             catch (StudioXException ex) when (ex.Code == code)
             {
                 Check(originalVe.SequenceEqual(File.ReadAllBytes(vePath)) && originalHeader.SequenceEqual(File.ReadAllBytes(header)), "invalid naming rejected without partial VE/system writes: " + assignments[0].Name);
@@ -80,7 +92,11 @@ foreach (var archive in Directory.GetFiles(Path.GetFullPath(packRoot), "*.mcupac
         await Reject([new("GPIO4_4", 2, "OUTPUT", "LED1"), new("GPIO4_5", 21, "INPUT", "LED1_Port")], "AG32_PIN_PLAN_CONFLICT");
         await File.AppendAllTextAsync(header, "\n/* user's external edit */\n");
         var changedHeader = await File.ReadAllBytesAsync(header);
-        try { await planner.ApplyAsync(root, plan.Snapshot, [new("GPIO4_4", 2, "OUTPUT", "LED2")], plan.Snapshot.Clocks); throw new InvalidOperationException("External edit overwritten"); }
+        try
+        {
+            await planner.ApplyAsync(root, plan.Snapshot, [new("GPIO4_4", 2, "OUTPUT", "LED2")], plan.Snapshot.Clocks);
+            throw new InvalidOperationException("External edit overwritten");
+        }
         catch (StudioXException ex) when (ex.Code == "AG32_SYSTEM_MODIFIED")
         {
             Check(File.ReadAllBytes(header).SequenceEqual(changedHeader) && File.ReadAllBytes(vePath).SequenceEqual(originalVe), "external generated-file edit preserved and VE transaction rejected");
@@ -99,8 +115,10 @@ foreach (var archive in Directory.GetFiles(Path.GetFullPath(packRoot), "*.mcupac
     }
 }
 if (nativeHeader is null || nativeSource is null) { throw new InvalidOperationException("No verified devices"); }
-var native = Path.Combine(output, "native"); Directory.CreateDirectory(native);
-File.Copy(nativeHeader, Path.Combine(native, "StudioX_System.h")); File.Copy(nativeSource, Path.Combine(native, "StudioX_System.c"));
+var native = Path.Combine(output, "native");
+Directory.CreateDirectory(native);
+File.Copy(nativeHeader, Path.Combine(native, "StudioX_System.h"));
+File.Copy(nativeSource, Path.Combine(native, "StudioX_System.c"));
 File.Copy(Path.Combine(Path.GetDirectoryName(nativeHeader)!, "StudioX_Board.h"), Path.Combine(native, "StudioX_Board.h"));
 foreach (var file in Directory.GetFiles(Path.Combine(AppContext.BaseDirectory, "native"))) { File.Copy(file, Path.Combine(native, Path.GetFileName(file))); }
 var compiled = await runner.RunAsync(new(Path.GetFullPath(hostGcc), ["-std=gnu17", "-O2", "-I.", "StudioX_System.c", "clock_checks.c", "-o", "clock_checks.exe"], native, TimeSpan.FromSeconds(30)));

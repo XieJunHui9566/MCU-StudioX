@@ -17,7 +17,10 @@ internal static class RemotePackSetChecks
         var checks = new List<string>();
         void Check(bool passed, string message)
         {
-            if (!passed) throw new InvalidOperationException(message);
+            if (!passed)
+            {
+                throw new InvalidOperationException(message);
+            }
             checks.Add(message);
         }
         Check(entries.Length == 24 && entries.All(entry => entry.GetProperty("retainVersion").GetBoolean()),
@@ -35,7 +38,11 @@ internal static class RemotePackSetChecks
             }
         }
         const string commit = "0123456789abcdef0123456789abcdef01234567";
-        var handler = new LocalCatalogHandler(commit, JsonSerializer.SerializeToUtf8Bytes(new { formatVersion = 1, packs = entries }), archives);
+        var handler = new LocalCatalogHandler(commit, JsonSerializer.SerializeToUtf8Bytes(new
+        {
+            formatVersion = 1,
+            packs = entries
+        }), archives);
         using var client = new HttpClient(handler);
         using var sync = new GitHubPackSyncService(repository, client);
         var check = await sync.CheckForUpdatesAsync();
@@ -58,7 +65,10 @@ internal static class RemotePackSetChecks
     private sealed class LocalCatalogHandler(string commit, byte[] index, IReadOnlyDictionary<string, byte[]> archives) : HttpMessageHandler
     {
         private const string Repository = "XieJunHui9566/MCU-StudioX-MCUPacks";
-        public int ArchiveRequests { get; private set; }
+        public int ArchiveRequests
+        {
+            get; private set;
+        }
 
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {

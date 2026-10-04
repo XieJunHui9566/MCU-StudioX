@@ -1,7 +1,6 @@
 namespace StudioX.Application.MicroPython;
 
 using System.Security.Cryptography;
-using System.Text;
 using System.Text.Json;
 using StudioX.Devices;
 using StudioX.Engine;

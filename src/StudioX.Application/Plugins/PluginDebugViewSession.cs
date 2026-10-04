@@ -42,7 +42,16 @@ public sealed class PluginDebugViewSession : IAsyncDisposable
     }
 
     public event Action? Changed;
-    public PluginDebugViewUpdate Current { get { lock (gate) { return current; } } }
+    public PluginDebugViewUpdate Current
+    {
+        get
+        {
+            lock (gate)
+            {
+                return current;
+            }
+        }
+    }
 
     public void Refresh() => QueueRefresh(force: true);
     private void DebuggerChanged() => QueueRefresh(force: false);
@@ -51,11 +60,17 @@ public sealed class PluginDebugViewSession : IAsyncDisposable
     {
         lock (gate)
         {
-            if (disposed || !available) { return; }
+            if (disposed || !available)
+            {
+                return;
+            }
             var matches = string.Equals(debugger.ProjectDirectory, workspace.Project, StringComparison.OrdinalIgnoreCase);
             var state = matches ? debugger.State : DebugState.Disconnected;
             if (!force && current.State == state && ReferenceEquals(lastSnapshot, debugger.Snapshot) &&
-                lastReason == debugger.Reason && lastProject == debugger.ProjectDirectory) { return; }
+                lastReason == debugger.Reason && lastProject == debugger.ProjectDirectory)
+            {
+                return;
+            }
             lastSnapshot = debugger.Snapshot;
             lastReason = debugger.Reason;
             lastProject = debugger.ProjectDirectory;
@@ -69,17 +84,26 @@ public sealed class PluginDebugViewSession : IAsyncDisposable
                 DebugState.Faulted => "调试失败，已清除快照；请查看调试输出。",
                 _ => "未连接调试目标。启动并暂停已有调试会话后自动显示。"
             });
-            if (state == DebugState.Stopped) { requests.Writer.TryWrite(current.Revision); }
+            if (state == DebugState.Stopped)
+            {
+                requests.Writer.TryWrite(current.Revision);
+            }
         }
         Changed?.Invoke();
     }
 
     private void WorkspaceChanged(object? sender, PluginWorkspaceEvent update)
     {
-        if (update.PluginId != pluginId || update.Kind is not ("stopped" or "crashed")) { return; }
+        if (update.PluginId != pluginId || update.Kind is not ("stopped" or "crashed"))
+        {
+            return;
+        }
         lock (gate)
         {
-            if (disposed) { return; }
+            if (disposed)
+            {
+                return;
+            }
             available = false;
             reading?.Cancel();
             current = new(current.Revision + 1, DebugState.Disconnected, false, "插件已停止，当前视图已失效。");
@@ -93,11 +117,17 @@ public sealed class PluginDebugViewSession : IAsyncDisposable
         {
             while (await requests.Reader.WaitToReadAsync(lifetime.Token).ConfigureAwait(false))
             {
-                if (!requests.Reader.TryRead(out var revision)) { continue; }
+                if (!requests.Reader.TryRead(out var revision))
+                {
+                    continue;
+                }
                 using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(lifetime.Token);
                 lock (gate)
                 {
-                    if (disposed || !available || current.Revision != revision) { continue; }
+                    if (disposed || !available || current.Revision != revision)
+                    {
+                        continue;
+                    }
                     reading = cancellation;
                 }
                 try
@@ -105,7 +135,10 @@ public sealed class PluginDebugViewSession : IAsyncDisposable
                     // 单一后台读取循环与有界队列合并连续单步，不把插件延迟放进调试命令回调。
                     await Task.Delay(80, cancellation.Token).ConfigureAwait(false);
                     var input = await debugger.CapturePluginSnapshotAsync(workspace.Project, revision, cancellation.Token).ConfigureAwait(false);
-                    if (input.State != nameof(DebugState.Stopped)) { continue; }
+                    if (input.State != nameof(DebugState.Stopped))
+                    {
+                        continue;
+                    }
                     var panel = await workspace.AdaptDebugSnapshotAsync(pluginId, adapterId,
                         JsonSerializer.SerializeToElement(input, JsonStore.Options), cancellation.Token).ConfigureAwait(false);
                     Complete(revision, panel, null);
@@ -114,7 +147,13 @@ public sealed class PluginDebugViewSession : IAsyncDisposable
                 catch (Exception error) { Complete(revision, null, error.ToString()); }
                 finally
                 {
-                    lock (gate) { if (ReferenceEquals(reading, cancellation)) { reading = null; } }
+                    lock (gate)
+                    {
+                        if (ReferenceEquals(reading, cancellation))
+                        {
+                            reading = null;
+                        }
+                    }
                 }
             }
         }
@@ -125,10 +164,18 @@ public sealed class PluginDebugViewSession : IAsyncDisposable
     {
         lock (gate)
         {
-            if (disposed || !available || current.Revision != revision || current.State != DebugState.Stopped) { return; }
-            current = current with { Panel = panel, Diagnostic = diagnostic, Status = diagnostic is null
+            if (disposed || !available || current.Revision != revision || current.State != DebugState.Stopped)
+            {
+                return;
+            }
+            current = current with
+            {
+                Panel = panel,
+                Diagnostic = diagnostic,
+                Status = diagnostic is null
                 ? "已刷新暂停快照 · " + (current.Hardware ? "实机" : "离线模拟，未连接芯片")
-                : "扩展解释失败；可以重试，原始诊断见下方。" };
+                : "扩展解释失败；可以重试，原始诊断见下方。"
+            };
         }
         Changed?.Invoke();
     }
@@ -137,7 +184,10 @@ public sealed class PluginDebugViewSession : IAsyncDisposable
     {
         lock (gate)
         {
-            if (disposed) { return; }
+            if (disposed)
+            {
+                return;
+            }
             disposed = true;
             current = new(current.Revision + 1, DebugState.Disconnected, false, "调试扩展视图已关闭。");
             reading?.Cancel();

@@ -1,6 +1,7 @@
 namespace StudioX.Application.Health;
 
 using System.Text;
+using StudioX.Application.CodeIntelligence;
 using StudioX.Engine;
 using StudioX.Foundation;
 
@@ -12,12 +13,24 @@ public sealed partial class ProjectHealthService
         {
             var settings = project.Espressif!;
             if (tools.Manifest.Purpose != settings.Framework || EspressifSdkIdentity.DeclaredVersion(tools.Manifest) != settings.SdkVersion)
+            {
                 throw new StudioXException("ESPRESSIF_TOOLSET", "SDK 用途或版本与工程锁定不一致。");
+            }
             foreach (var role in new[] { "idf", "tools", "python-env" })
-                if (!Directory.Exists(tools.ResourceDirectory(role))) throw new StudioXException("TOOL_RESOURCE", "SDK 资源目录缺失：" + role);
+            {
+                if (!Directory.Exists(tools.ResourceDirectory(role)))
+                {
+                    throw new StudioXException("TOOL_RESOURCE", "SDK 资源目录缺失：" + role);
+                }
+            }
             var sdkRoot = tools.ResourceDirectory("idf");
             foreach (var relative in new[] { "tools/idf.py", "tools/cmake/project.cmake" })
-                if (!File.Exists(PathBoundary.Resolve(sdkRoot, relative))) throw new StudioXException("TOOL_RESOURCE", "缺少原生 SDK 入口：" + relative);
+            {
+                if (!File.Exists(PathBoundary.Resolve(sdkRoot, relative)))
+                {
+                    throw new StudioXException("TOOL_RESOURCE", "缺少原生 SDK 入口：" + relative);
+                }
+            }
             checks.Add(new("HEALTH_SDK", "SDK 身份与入口", HealthState.Passed,
                 $"{settings.Framework} / {settings.SdkVersion} · target={settings.Target}\nSDK：{sdkRoot}\n版本来源为工程与工具清单；快速检查未校验 SDK 全部内容。", "esp-idf", HealthAction.SdkSettings));
             var config = PathBoundary.Resolve(root, "sdkconfig");
@@ -26,8 +39,10 @@ public sealed partial class ProjectHealthService
                 var text = Encoding.UTF8.GetString(await ReadLimitedAsync(config, 8 * 1024 * 1024, token));
                 var line = text.Split('\n').FirstOrDefault(line => line.TrimStart().StartsWith("CONFIG_IDF_TARGET=", StringComparison.Ordinal));
                 if (line is not null && line.Split('=', 2)[1].Trim().Trim('"') != settings.Target)
+                {
                     checks.Add(new("HEALTH_SDK_CONFIG_TARGET", "sdkconfig 的目标需要核对", HealthState.Warning,
-                        $"根 sdkconfig：{line.Trim()}；工程 target={settings.Target}。若选择了其他原生配置文件，以原生 SDK 设置为准；请核对后再构建，不自动删除 sdkconfig。", "esp-idf-errors", HealthAction.SdkSettings, line.Trim()));
+                    $"根 sdkconfig：{line.Trim()}；工程 target={settings.Target}。若选择了其他原生配置文件，以原生 SDK 设置为准；请核对后再构建，不自动删除 sdkconfig。", "esp-idf-errors", HealthAction.SdkSettings, line.Trim()));
+                }
             }
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }
@@ -64,7 +79,8 @@ public sealed partial class ProjectHealthService
                         "缓存记录的编译器路径已失效。构建使用工程锁定的内置工具；可预览并重建配置缓存。", "tool-environment", HealthAction.ResetCache, "CMAKE_C_COMPILER=" + compiler));
                     issues = true;
                 }
-                else if (tools is not null && tools.Manifest.Executables.ContainsKey("gcc") && !SamePath(compiler, tools.Tool("gcc")))
+                else if (tools is not null && tools.Manifest.Executables.ContainsKey("gcc") &&
+                    !(project.Espressif is { } esp ? AnalysisEnvironmentInspector.MatchesCompiler(compiler, tools, esp) : SamePath(compiler, tools.Tool("gcc"))))
                 {
                     checks.Add(new("HEALTH_CACHE_TOOLSET", "缓存与锁定编译器不同", HealthState.Warning,
                         "旧缓存可能来自其他开发环境组件。请核对并重建配置缓存，工程工具锁保持不变。", "tool-environment", HealthAction.ResetCache,
@@ -84,8 +100,11 @@ public sealed partial class ProjectHealthService
                     $"缓存 target={cachedTarget}；工程 target={sdk.Target}。缓存修复保留 sdkconfig，原生配置的目标仍需单独核对。", "esp-idf-errors", HealthAction.ResetCache));
                 issues = true;
             }
-            if (!issues) checks.Add(new("HEALTH_CACHE", "CMake 缓存身份", HealthState.Information,
+            if (!issues)
+            {
+                checks.Add(new("HEALTH_CACHE", "CMake 缓存身份", HealthState.Information,
                 "未发现已有缓存的目录、编译器或 target 冲突。原生构建仍会核对完整环境与配置，不把缓存存在当作构建成功。", "build", HealthAction.ResetCache));
+            }
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }
         catch (Exception error) { checks.Add(Failure("HEALTH_CACHE", "配置缓存无法检查", "build-errors", HealthAction.ResetCache, error)); }

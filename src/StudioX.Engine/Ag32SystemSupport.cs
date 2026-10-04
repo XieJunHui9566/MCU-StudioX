@@ -30,16 +30,23 @@ public static class Ag32SystemSupport
     public static async Task<IReadOnlyList<string>> CheckMigrationFilesAsync(string root, CancellationToken token = default)
     {
         var path = PathBoundary.Resolve(root, StatePath);
-        if (!File.Exists(path)) throw new StudioXException("AG32_SYSTEM_MODIFIED", "缺少系统生成文件记录，需要先核对系统文件。");
+        if (!File.Exists(path))
+        {
+            throw new StudioXException("AG32_SYSTEM_MODIFIED", "缺少系统生成文件记录，需要先核对系统文件。");
+        }
         var declared = await JsonStore.ReadAsync<Dictionary<string, string>>(path, token);
         var known = Render([], null, []).Keys.ToHashSet(StringComparer.Ordinal);
         if (declared.Count != known.Count || declared.Keys.Any(key => !known.Contains(key)))
+        {
             throw new StudioXException("AG32_SYSTEM_MODIFIED", "系统生成文件记录与受管目录不一致，需要人工审阅。");
+        }
         foreach (var (relative, expected) in declared)
         {
             var file = PathBoundary.Resolve(root, relative);
             if (!File.Exists(file) || Hash(await File.ReadAllBytesAsync(file, token)) != expected)
+            {
                 throw new StudioXException("AG32_SYSTEM_MODIFIED", "系统生成文件已改变或缺失，需要保留修改：" + relative);
+            }
         }
         return known.ToArray();
     }
@@ -61,7 +68,10 @@ public static class Ag32SystemSupport
     {
         var document = new Ag32PinPlanDocument(ve);
         var conflicts = Ag32PinPlanConflicts.Find(document.Assignments, functions);
-        if (conflicts.Length != 0) { throw new StudioXException("AG32_PIN_PLAN_CONFLICT", string.Join("\n", conflicts.Select(item => item.Message))); }
+        if (conflicts.Length != 0)
+        {
+            throw new StudioXException("AG32_PIN_PLAN_CONFLICT", string.Join("\n", conflicts.Select(item => item.Message)));
+        }
         var configured = document.Clocks.SysMhz is not null;
         if (document.Clocks.BusMhz is not null && !configured ||
             Regex.IsMatch(Encoding.UTF8.GetString(ve), @"(?m)^\s*(?:SYSCLK|HSECLK|BUSCLK)\s*,", RegexOptions.CultureInvariant))
@@ -74,7 +84,10 @@ public static class Ag32SystemSupport
         }
         uint Frequency(string name, uint fallback)
         {
-            if (vendorHeader is null) { return fallback; }
+            if (vendorHeader is null)
+            {
+                return fallback;
+            }
             var match = Regex.Match(vendorHeader, @"(?m)^#define BOARD_" + name + @"_FREQUENCY\s+([0-9]+)\s*$", RegexOptions.CultureInvariant);
             if (!match.Success || !uint.TryParse(match.Groups[1].Value, CultureInfo.InvariantCulture, out var value) || value == 0 || value > 248_000_000)
             {
@@ -120,7 +133,10 @@ public static class Ag32SystemSupport
             if (pin.Name is { } name)
             {
                 pins.AppendLine($"/* {pin.Function} → PIN_{pin.PinNumber} */");
-                if (direct) { pins.AppendLine($"/* 电气配置：{Ag32GpioElectrical.Describe(pin)}，由映射镜像生效。 */"); }
+                if (direct)
+                {
+                    pins.AppendLine($"/* 电气配置：{Ag32GpioElectrical.Describe(pin)}，由映射镜像生效。 */");
+                }
                 pins.AppendLine($"#define {name}_Pin {pin.PinNumber}u");
                 if (gpio.Success)
                 {
@@ -137,7 +153,10 @@ public static class Ag32SystemSupport
                 var bit = "GPIO_BIT" + gpio.Groups[2].Value;
                 init.AppendLine($"    /* PIN_{pin.PinNumber}：{Ag32GpioElectrical.Describe(pin)}；电气属性由映射镜像配置。 */");
                 init.AppendLine($"    SYS_EnableAPBClock(APB_MASK_{port});\n    GPIO_SetSoftwareMode({port}, {bit});");
-                if (pin.Direction == "OUTPUT") { init.AppendLine($"    GPIO_SetLow({port}, {bit});"); }
+                if (pin.Direction == "OUTPUT")
+                {
+                    init.AppendLine($"    GPIO_SetLow({port}, {bit});");
+                }
                 init.AppendLine($"    GPIO_Set{(pin.Direction == "OUTPUT" ? "Output" : "Input")}({port}, {bit});");
             }
             else if (!direct && gpio.Success)
@@ -192,7 +211,9 @@ public static class Ag32SystemSupport
             if (!text.Contains(PeripheralCMake, StringComparison.Ordinal))
             {
                 if (!CMakeGenerator.IsManagedFile(CMakeGenerator.DeviceListPath, text))
+                {
                     throw new StudioXException("AG32_SYSTEM_CMAKE", "器件 CMake 不是受管文件，不能接入完整外设驱动。");
+                }
                 var current = updates.TryGetValue(CMakeGenerator.DeviceListPath, out var updated) ? Encoding.UTF8.GetString(updated) : text;
                 updates[CMakeGenerator.DeviceListPath] = Encoding.UTF8.GetBytes(current + "\n" + PeripheralCMake + "\n");
                 before[CMakeGenerator.DeviceListPath] = bytes;
@@ -200,7 +221,11 @@ public static class Ag32SystemSupport
         }
         updates[StatePath] = System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(generated.ToDictionary(item => item.Key, item => Hash(item.Value)), JsonStore.Options);
         before[StatePath] = File.Exists(statePath) ? await File.ReadAllBytesAsync(statePath, token) : null;
-        if (newVe is not null) { updates[vePath] = newVe; before[vePath] = expectedVe; }
+        if (newVe is not null)
+        {
+            updates[vePath] = newVe;
+            before[vePath] = expectedVe;
+        }
         var currentVe = await File.ReadAllBytesAsync(PathBoundary.Resolve(root, vePath), token);
         if (!expectedVe.SequenceEqual(currentVe))
         {
@@ -214,7 +239,10 @@ public static class Ag32SystemSupport
                 token.ThrowIfCancellationRequested();
                 var path = PathBoundary.Resolve(root, relative);
                 var old = before[relative];
-                if (old is not null && old.SequenceEqual(bytes)) { continue; }
+                if (old is not null && old.SequenceEqual(bytes))
+                {
+                    continue;
+                }
                 var current = File.Exists(path) ? await File.ReadAllBytesAsync(path, token) : null;
                 if ((current is null) != (old is null) || old is not null && !old.SequenceEqual(current!))
                 {
@@ -229,9 +257,18 @@ public static class Ag32SystemSupport
             foreach (var relative in written.AsEnumerable().Reverse())
             {
                 var path = PathBoundary.Resolve(root, relative);
-                if (!File.ReadAllBytes(path).SequenceEqual(updates[relative])) { continue; }
-                if (before[relative] is { } old) { await ReplaceAsync(path, old, CancellationToken.None); }
-                else { File.Delete(path); }
+                if (!File.ReadAllBytes(path).SequenceEqual(updates[relative]))
+                {
+                    continue;
+                }
+                if (before[relative] is { } old)
+                {
+                    await ReplaceAsync(path, old, CancellationToken.None);
+                }
+                else
+                {
+                    File.Delete(path);
+                }
             }
             throw;
         }
@@ -241,7 +278,12 @@ public static class Ag32SystemSupport
     {
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         var temporary = path + ".tmp-" + Guid.NewGuid().ToString("N");
-        try { await File.WriteAllBytesAsync(temporary, bytes, token); token.ThrowIfCancellationRequested(); File.Move(temporary, path, true); }
+        try
+        {
+            await File.WriteAllBytesAsync(temporary, bytes, token);
+            token.ThrowIfCancellationRequested();
+            File.Move(temporary, path, true);
+        }
         finally { if (File.Exists(temporary)) { File.Delete(temporary); } }
     }
 

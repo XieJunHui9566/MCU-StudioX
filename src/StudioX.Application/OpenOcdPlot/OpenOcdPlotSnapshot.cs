@@ -7,5 +7,3 @@ public sealed record OpenOcdPlotSnapshot(bool Capturing, string Status, string? 
 {
     public PlotSample[] Samples => Records.Select(row => new PlotSample(row.Seconds, row.Values, row.Segment)).ToArray();
 }
-
-public sealed record OpenOcdPlotRecord(double Seconds, DateTimeOffset HostTime, bool TargetRunning, double[] Values, long Segment);

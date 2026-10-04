@@ -15,19 +15,62 @@ using StudioX.Packages;
 public sealed class WorkbenchService : IAsyncDisposable
 {
     public Help.HelpContentService Help { get; } = new();
-    public Onboarding.FirstProjectGuideService FirstProjectGuide { get; }
-    public Health.ProjectHealthService ProjectHealth { get; }
-    public Tools.ToolManagementService ToolManagement { get; }
-    public Tools.ProjectToolPreparationService ProjectTools { get; }
-    public Tools.ComponentMigrationService ComponentMigration { get; }
-    public Tools.EspressifProjectVersionService EspressifProjectVersions { get; }
-    public DebugLaunchService DebugLaunch { get; }
-    public FaultAnalysisService Faults { get; }
-    public Peripherals.PeripheralService Peripherals { get; }
-    public BuildHistoryService BuildHistory { get; }
-    public Distribution.DistributionService Distribution { get; }
-    public Components.ComponentService Components { get; }
-    public Editing.CodeTemplateService CodeTemplates { get; }
+    public Onboarding.FirstProjectGuideService FirstProjectGuide
+    {
+        get;
+    }
+    public Health.ProjectHealthService ProjectHealth
+    {
+        get;
+    }
+    public Tools.ToolManagementService ToolManagement
+    {
+        get;
+    }
+    public Tools.ProjectToolPreparationService ProjectTools
+    {
+        get;
+    }
+    public Tools.ComponentMigrationService ComponentMigration
+    {
+        get;
+    }
+    public Tools.EspressifProjectVersionService EspressifProjectVersions
+    {
+        get;
+    }
+    public DebugLaunchService DebugLaunch
+    {
+        get;
+    }
+    public FaultAnalysisService Faults
+    {
+        get;
+    }
+    public Peripherals.PeripheralService Peripherals
+    {
+        get;
+    }
+    public BuildHistoryService BuildHistory
+    {
+        get;
+    }
+    public Distribution.DistributionService Distribution
+    {
+        get;
+    }
+    public Components.ComponentService Components
+    {
+        get;
+    }
+    public Editing.CodeTemplateService CodeTemplates
+    {
+        get;
+    }
+    public PeripheralDevelopment.PeripheralDevelopmentService PeripheralDevelopment
+    {
+        get;
+    }
     public WorkbenchService(string runtimeDirectory, string dataDirectory)
     {
         RuntimeDirectory = Path.GetFullPath(runtimeDirectory);
@@ -51,6 +94,7 @@ public sealed class WorkbenchService : IAsyncDisposable
         ZephyrPacks = new ZephyrPackRepository(Path.Combine(DataDirectory, "zephyr-packs"));
         RemotePacks = new GitHubPackSyncService(Packs);
         Toolsets = new ToolsetCatalog(Path.Combine(RuntimeDirectory, "toolsets"), DataDirectory);
+        PeripheralDevelopment = new(Toolsets);
         ToolInventory = new ToolInventoryService(Toolsets);
         EspressifProjectVersions = new(Packs, Toolsets);
         ToolEnvironment = new ToolEnvironmentService(Toolsets);
@@ -231,7 +275,10 @@ public sealed class WorkbenchService : IAsyncDisposable
     {
         get;
     }
-    public OpenOcdPlot.OpenOcdPlotService OpenOcdPlot { get; }
+    public OpenOcdPlot.OpenOcdPlotService OpenOcdPlot
+    {
+        get;
+    }
     public DeviceHub Devices { get; } = new();
     public SimulationLabService Simulation
     {

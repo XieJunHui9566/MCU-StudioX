@@ -14,7 +14,12 @@ public sealed class FirstProjectGuideService(string dataDirectory)
     {
         var opened = p.ProjectDirectory is not null;
         var native = !p.Script && !p.Experimental;
-        var buildStatus = p.BuildSucceeded switch { true => "本次工程编译成功", false => "本次编译失败，请查看最早的错误和原始日志", _ => "尚未执行本次工程编译" };
+        var buildStatus = p.BuildSucceeded switch
+        {
+            true => "本次工程编译成功",
+            false => "本次编译失败，请查看最早的错误和原始日志",
+            _ => "尚未执行本次工程编译"
+        };
         return [
             new("准备目标与工具", "先确认板上完整芯片料号、容量与封装，再决定框架：普通 C/C++、HAL/SPL、RTOS、ESP-IDF 或 MicroPython。没有开发板也可以先完成创建、编辑与编译。\n\n内置工具由 IDE 管理，不需要把 GCC/Python 加入系统 PATH。缺少器件包时可从新建工程页导入或同步；创建或打开工程后，点击“准备工程开发环境组件”，按工程锁定的 ID、版本与编译器查看缺失项、下载大小和安装空间；支持继续下载与离线导入。已有工具损坏时进入工具校验与修复。", "知道准确目标与希望使用的框架；工具准备页列出当前工程的明确需求。", "准备步骤可随时回看", "tools", "准备工程开发环境组件", "distribution"),
             new("创建或打开工程", "点击“选择器件与模板”，依次选择厂商 → 器件包 → 完整型号 → 模板，填写工程名，再选择父目录。创建前核对模板说明和开发环境组件版本；不要用近似型号代替。\n\n已有 StudioX 工程可用“打开已有工程”；CubeMX 工程需要 CMake 工程入口。ESP-IDF 必须核对 target（例如 esp32s3），Flash/PSRAM 参数以实际模组为准。", "工程树出现文件，顶部显示工程名、器件和锁定开发环境组件版本。", opened ? "已打开：" + p.ProjectName + "\n目标：" + p.Target + "\n工具：" + p.Toolset + "\n目录：" + p.ProjectDirectory : "尚未打开工程", "create", "选择器件与模板", "project-create", opened),

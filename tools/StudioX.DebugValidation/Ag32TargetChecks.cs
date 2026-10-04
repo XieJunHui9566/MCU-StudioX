@@ -62,7 +62,10 @@ internal static class Ag32TargetChecks
             Check(plan.OpenOcdArguments.Contains("$_TARGETNAME configure -work-area-size 0 -work-area-backup 1"), "No live RAM checksum workspace");
             foreach (var probe in new[] { "agm-blaster", "cmsis-dap", "jlink" })
             {
-                Check(OpenOcdDebugPlanner.ResolveProbe(config with { Options = new(probe, 1000) }).Transport == "swd", "AG32 SWD probe accepted: " + probe);
+                Check(OpenOcdDebugPlanner.ResolveProbe(config with
+                {
+                    Options = new(probe, 1000)
+                }).Transport == "swd", "AG32 SWD probe accepted: " + probe);
             }
             foreach (var probe in new[] { "stlink" })
             {

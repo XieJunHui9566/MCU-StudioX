@@ -68,7 +68,7 @@ public partial class MainWindow
         label.Children.Add(new FileIcon { FileName = source.RelativePath, Width = 19, Height = 19, Margin = new Thickness(0, 0, 7, 0), VerticalAlignment = VerticalAlignment.Center });
         label.Children.Add(session.Label);
         session.Tab.Header = CreateTabHeader(session.Tab, label);
-        session.Changed = (_, _) => { UpdateEditorHeader(session); guideSaved = false; guideBuild = null; RefreshFirstProjectGuide(); QueuePluginDocumentEvent("document.changed", session); ClearBuildDiagnostics(); agentEditorSession?.InvalidateValidation(); QueueLiveDiagnostics(); CommandManager.InvalidateRequerySuggested(); };
+        session.Changed = (_, _) => { UpdateEditorHeader(session); guideSaved = false; guideBuild = null; RefreshFirstProjectGuide(); QueuePluginDocumentEvent("document.changed", session); services.Intelligence.InvalidateDiagnostics(); HideSymbolHover(); ClearBuildDiagnostics(); agentEditorSession?.InvalidateValidation(); QueueLiveDiagnostics(); CommandManager.InvalidateRequerySuggested(); };
         session.Buffer.TextChanged += session.Changed;
         editorDocuments.Add(session);
         WorkspaceTabs.Items.Insert(editorDocuments.Count(e => e.Group == 0), session.Tab);
@@ -97,7 +97,10 @@ public partial class MainWindow
         }
         if (tabs.SelectedItem is TabItem selected)
         {
-            if (ReferenceEquals(selected, firstProjectTab)) RefreshFirstProjectGuide();
+            if (ReferenceEquals(selected, firstProjectTab))
+            {
+                RefreshFirstProjectGuide();
+            }
             _ = Dispatcher.BeginInvoke(() => { if (tabs.SelectedItem == selected) { selected.BringIntoView(); } }, DispatcherPriority.Loaded);
         }
     }
@@ -286,7 +289,10 @@ public partial class MainWindow
 
     private async Task CloseWorkspaceTabAsync(TabItem tab, Func<SourceDocument, MessageBoxResult>? decide = null)
     {
-        if (await ClosePluginDebugViewAsync(tab)) { return; }
+        if (await ClosePluginDebugViewAsync(tab))
+        {
+            return;
+        }
         if (tab.Tag is EditorDocumentSession session)
         {
             if (!editorDocuments.Contains(session) || !await ConfirmEditorAsync(session, decide))
@@ -319,7 +325,10 @@ public partial class MainWindow
             {
                 await SerialPlotView.CloseSessionAsync();
             }
-            if (tab == OpenOcdPlotTab) { await OpenOcdPlotPanel.CloseSessionAsync(); }
+            if (tab == OpenOcdPlotTab)
+            {
+                await OpenOcdPlotPanel.CloseSessionAsync();
+            }
             var selected = WorkspaceTabs.SelectedItem == tab;
             tab.Visibility = Visibility.Collapsed;
             if (selected)
@@ -330,6 +339,7 @@ public partial class MainWindow
     }
     private void RemoveEditor(EditorDocumentSession session)
     {
+        services.Intelligence.InvalidateDiagnostics();
         QueuePluginDocumentEvent("document.closed", session);
         var wasChanging = changingEditor;
         changingEditor = true;
@@ -369,6 +379,8 @@ public partial class MainWindow
             ActivateEditor(selected);
         }
         RefreshSplitMirror();
+        RefreshDiagnosticMarkers();
+        QueueLiveDiagnostics();
     }
     private void ClearEditorDocuments()
     {

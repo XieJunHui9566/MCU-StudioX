@@ -1,9 +1,9 @@
 namespace StudioX.Foundation;
 
+using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
-using System.Collections.Concurrent;
 using Microsoft.Win32.SafeHandles;
 
 /// <summary>跨进程工具目录租约；共享使用与独占维护互斥，进程退出时由系统释放。</summary>
@@ -13,14 +13,29 @@ public sealed class ToolUsageLease : IDisposable
     private static readonly ConcurrentDictionary<string, Func<string, bool>> useGuards = new(StringComparer.OrdinalIgnoreCase);
     public static void RegisterUseGuard(string toolsetsRoot, Func<string, bool> isEnabled)
         => useGuards[Normalize(toolsetsRoot).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar] = isEnabled;
-    private ToolUsageLease(FileStream stream) => this.stream = stream;
+    private readonly string toolDirectory;
+    private readonly bool maintenance;
+    private ToolUsageLease(FileStream stream, string directory, bool maintenance)
+    {
+        this.stream = stream;
+        toolDirectory = Normalize(directory);
+        this.maintenance = maintenance;
+    }
+    /// <summary>维护校验复用已持有的独占租约，不能绕过占用检查或复用另一个目录的租约。</summary>
+    public void RequireMaintenance(string directory)
+    {
+        if (!maintenance || !stream.CanRead || !toolDirectory.Equals(Normalize(directory), StringComparison.OrdinalIgnoreCase))
+        {
+            throw new StudioXException("TOOLS_BUSY", "维护校验需要该组件仍有效的独占租约。");
+        }
+    }
     public static ToolUsageLease Acquire(string toolRoot, bool maintenance = false, bool ignoreActivation = false)
     {
         var path = LeasePath(toolRoot);
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         try
         {
-            var lease = new ToolUsageLease(new FileStream(path, FileMode.OpenOrCreate, FileAccess.ReadWrite, maintenance ? FileShare.None : FileShare.ReadWrite));
+            var lease = new ToolUsageLease(new FileStream(path, FileMode.OpenOrCreate, FileAccess.ReadWrite, maintenance ? FileShare.None : FileShare.ReadWrite), toolRoot, maintenance);
             try
             {
                 // 在共享租约内读启用状态；禁用需要独占租约，不能与新进程启动交错。
@@ -28,8 +43,12 @@ public sealed class ToolUsageLease : IDisposable
                 {
                     var root = Normalize(toolRoot);
                     foreach (var (prefix, enabled) in useGuards)
+                    {
                         if (root.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) && !enabled(root))
+                        {
                             throw new StudioXException("TOOLSET_DISABLED", "开发环境组件已禁用，请在“开发环境组件管理”中启用指定版本。");
+                        }
+                    }
                 }
                 return lease;
             }
@@ -40,15 +59,26 @@ public sealed class ToolUsageLease : IDisposable
     public static bool IsBusy(string toolRoot)
     {
         var path = LeasePath(toolRoot);
-        if (!File.Exists(path)) return false;
-        try { using var probe = new FileStream(path, FileMode.Open, FileAccess.ReadWrite, FileShare.None); return false; }
+        if (!File.Exists(path))
+        {
+            return false;
+        }
+        try
+        {
+            using var probe = new FileStream(path, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+            return false;
+        }
         catch (IOException) { return true; }
     }
     public static ToolUsageLease? ForExecutable(string executable)
     {
         for (var directory = Directory.GetParent(Normalize(executable)); directory?.Parent?.Parent is not null; directory = directory.Parent)
+        {
             if (directory.Parent.Parent.Name.Equals("toolsets", StringComparison.OrdinalIgnoreCase) && File.Exists(Path.Combine(directory.FullName, "toolset.json")))
+            {
                 return Acquire(directory.FullName);
+            }
+        }
         return null;
     }
     private static string LeasePath(string toolRoot)
@@ -61,19 +91,31 @@ public sealed class ToolUsageLease : IDisposable
     private static string Normalize(string path)
     {
         var full = Path.GetFullPath(path);
-        if (!OperatingSystem.IsWindows()) return full;
+        if (!OperatingSystem.IsWindows())
+        {
+            return full;
+        }
         var existing = full;
         while (!File.Exists(existing) && !Directory.Exists(existing))
         {
             var parent = Path.GetDirectoryName(existing);
-            if (parent is null || parent == existing) return full;
+            if (parent is null || parent == existing)
+            {
+                return full;
+            }
             existing = parent;
         }
         using var handle = CreateFile(existing, 0, 7, IntPtr.Zero, 3, 0x02000000, IntPtr.Zero);
-        if (handle.IsInvalid) return full;
+        if (handle.IsInvalid)
+        {
+            return full;
+        }
         var buffer = new StringBuilder(32768);
         var length = GetFinalPathNameByHandle(handle, buffer, (uint)buffer.Capacity, 0);
-        if (length == 0 || length >= buffer.Capacity) return full;
+        if (length == 0 || length >= buffer.Capacity)
+        {
+            return full;
+        }
         var resolved = buffer.ToString();
         resolved = resolved.StartsWith("\\\\?\\UNC\\", StringComparison.Ordinal) ? "\\\\" + resolved[8..]
             : resolved.StartsWith("\\\\?\\", StringComparison.Ordinal) ? resolved[4..] : resolved;

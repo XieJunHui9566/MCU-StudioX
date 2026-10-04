@@ -13,12 +13,16 @@ public sealed class InvalidContributionPlugin : IStudioXPlugin
 
     public async Task ActivateAsync(IPluginHost host, CancellationToken cancellationToken)
     {
-        _ = await host.CallAsync("validation.activation", JsonSerializer.SerializeToElement(new { }), cancellationToken);
+        _ = await host.CallAsync("validation.activation", JsonSerializer.SerializeToElement(new
+        {
+        }), cancellationToken);
     }
 
     public Task<JsonElement> InvokeAsync(string kind, string id, JsonElement arguments, CancellationToken cancellationToken)
     {
-        return Task.FromResult(JsonSerializer.SerializeToElement(new { }));
+        return Task.FromResult(JsonSerializer.SerializeToElement(new
+        {
+        }));
     }
 
     public Task DeactivateAsync(CancellationToken cancellationToken)

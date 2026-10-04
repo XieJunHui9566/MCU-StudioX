@@ -37,19 +37,21 @@ internal static class PythonRuntimeChecks
         var runtimeDll = Directory.GetFiles(home, "python*.dll")
             .Select(Path.GetFileNameWithoutExtension).First(name => name is not null && name.Length > "python3".Length)!;
         await using (var zipStream = File.Create(Path.Combine(directory, runtimeDll + ".zip")))
-        {using (var archive = new ZipArchive(zipStream, ZipArchiveMode.Create))
         {
-            foreach (var source in Directory.EnumerateFiles(library, "*.py", SearchOption.AllDirectories))
+            using (var archive = new ZipArchive(zipStream, ZipArchiveMode.Create))
             {
-                var relative = Path.GetRelativePath(library, source).Replace('\\', '/');
-                var first = relative.Split('/')[0];
-                if (new[] { "site-packages", "test", "idlelib", "tkinter", "turtledemo", "ensurepip", "__pycache__" }.Contains(first, StringComparer.Ordinal))
+                foreach (var source in Directory.EnumerateFiles(library, "*.py", SearchOption.AllDirectories))
                 {
-                    continue;
+                    var relative = Path.GetRelativePath(library, source).Replace('\\', '/');
+                    var first = relative.Split('/')[0];
+                    if (new[] { "site-packages", "test", "idlelib", "tkinter", "turtledemo", "ensurepip", "__pycache__" }.Contains(first, StringComparer.Ordinal))
+                    {
+                        continue;
+                    }
+                    archive.CreateEntryFromFile(source, relative, CompressionLevel.Fastest);
                 }
-                archive.CreateEntryFromFile(source, relative, CompressionLevel.Fastest);
             }
-        }}
+        }
         await File.WriteAllTextAsync(Path.Combine(directory, runtimeDll + "._pth"), runtimeDll + ".zip\n.\n");
         File.Copy(Path.Combine(repository, "examples/plugins/python/plugin.py"), Path.Combine(directory, "plugin.py"));
         var hashes = new Dictionary<string, string>(StringComparer.Ordinal);
@@ -69,13 +71,18 @@ internal static class PythonRuntimeChecks
             {
                 throw new InvalidOperationException("Python 请求了未声明工具。");
             }
-            return Task.FromResult(JsonSerializer.SerializeToElement(new { name = "isolated-python-project" }));
+            return Task.FromResult(JsonSerializer.SerializeToElement(new
+            {
+                name = "isolated-python-project"
+            }));
         }, (update, _) =>
         {
             events.Enqueue(update);
             return Task.CompletedTask;
         });
-        var empty = JsonSerializer.SerializeToElement(new { });
+        var empty = JsonSerializer.SerializeToElement(new
+        {
+        });
         var callback = await client.InvokeAsync("agentTool", "workspace", empty);
         if (callback.GetProperty("name").GetString() != "isolated-python-project")
         {

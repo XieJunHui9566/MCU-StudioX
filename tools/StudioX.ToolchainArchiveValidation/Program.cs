@@ -5,7 +5,6 @@ using StudioX.Application;
 using StudioX.Application.Tools;
 using StudioX.Engine;
 using StudioX.Foundation;
-using StudioX.Packages;
 using StudioX.ToolchainArchiveValidation;
 
 if (args.Length == 4 && args[0] is "--real" or "--metadata")
@@ -18,28 +17,38 @@ if (args is ["--build", var buildOutput, var toolsRoot, var pack, var device, va
     await RealArchiveChecks.BuildAsync(Path.GetFullPath(buildOutput), Path.GetFullPath(toolsRoot), Path.GetFullPath(pack), device, template);
     return;
 }
-if (args.Length != 3) throw new ArgumentException("Use <new-output> <repository> <7z.exe>.");
+if (args.Length != 3) { throw new ArgumentException("Use <new-output> <repository> <7z.exe>."); }
 var output = Path.GetFullPath(args[0]);
-if (Directory.Exists(output)) throw new ArgumentException("Use new output.");
+if (Directory.Exists(output)) { throw new ArgumentException("Use new output."); }
 Directory.CreateDirectory(output);
 var checks = new List<string>();
-void Check(bool condition, string text) { if (!condition) throw new InvalidOperationException(text); checks.Add(text); Console.WriteLine("PASS " + text); }
+void Check(bool condition, string text) { if (!condition) { throw new InvalidOperationException(text); } checks.Add(text); Console.WriteLine("PASS " + text); }
 async Task Reject(Func<Task> action, string code)
 {
-    try { await action(); throw new InvalidOperationException("Expected " + code); }
+    try
+    {
+        await action();
+        throw new InvalidOperationException("Expected " + code);
+    }
     catch (StudioXException error) when (error.Code == code) { Check(true, "reject " + code); }
 }
 async Task Run(string executable, params string[] arguments)
 {
     var start = new ProcessStartInfo(executable) { RedirectStandardOutput = true, RedirectStandardError = true, UseShellExecute = false, CreateNoWindow = true };
-    foreach (var argument in arguments) start.ArgumentList.Add(argument);
+    foreach (var argument in arguments)
+    {
+        start.ArgumentList.Add(argument);
+    }
     using var process = Process.Start(start)!;
     var stdout = process.StandardOutput.ReadToEndAsync();
     var stderr = process.StandardError.ReadToEndAsync();
     await process.WaitForExitAsync();
     var log = await stdout + await stderr;
     await File.AppendAllTextAsync(Path.Combine(output, "native-7z.log"), log);
-    if (process.ExitCode != 0) throw new InvalidOperationException(log);
+    if (process.ExitCode != 0)
+    {
+        throw new InvalidOperationException(log);
+    }
 }
 try
 {
@@ -68,18 +77,22 @@ try
     await new ToolEnvironmentService(catalog).ExportAsync(entry, exported, null);
     await Run(args[2], "t", "-bd", exported);
     using (var stream = File.OpenRead(exported))
-    using (var container = ToolchainArchive.Open(stream))
     {
-        Check(container.Container == "7z" && (await container.ReadManifestAsync()).SequenceEqual(original), "managed export is native-readable 7z and preserves BOM/whitespace manifest bytes");
+        using (var container = ToolchainArchive.Open(stream))
+        {
+            Check(container.Container == "7z" && (await container.ReadManifestAsync()).SequenceEqual(original), "managed export is native-readable 7z and preserves BOM/whitespace manifest bytes");
+        }
     }
     var solid = Path.Combine(output, "solid.mcutoolchain");
     await Run("pwsh", "-NoProfile", "-File", Path.Combine(Path.GetFullPath(args[1]), "tools/New-McuToolchain.ps1"),
         "-ToolsetDirectory", root, "-OutputFile", solid, "-SevenZipPath", Path.GetFullPath(args[2]));
     using (var stream = File.OpenRead(solid))
-    using (var container = ToolchainArchive.Open(stream))
     {
-        Check(container.Container == "7z" && container.Entries.Count == payload.Count + 1, "native release packing has exact file set and no directory entries");
-        Check((await container.ReadManifestAsync()).SequenceEqual(original), "solid release preserves original manifest bytes");
+        using (var container = ToolchainArchive.Open(stream))
+        {
+            Check(container.Container == "7z" && container.Entries.Count == payload.Count + 1, "native release packing has exact file set and no directory entries");
+            Check((await container.ReadManifestAsync()).SequenceEqual(original), "solid release preserves original manifest bytes");
+        }
     }
     var installed = new ToolsetCatalog(Path.Combine(output, "installed tools"), Path.Combine(output, "user-data"));
     var manager = new ToolManagementService(installed, new(Path.Combine(output, "packs")), new(output), output);
@@ -128,7 +141,10 @@ try
     await Reject(() => manager.PreviewInstallAsync(fake), "TOOLS_ARCHIVE_FORMAT");
     var truncated = Path.Combine(output, "truncated.mcutoolchain");
     File.Copy(solid, truncated);
-    using (var stream = File.OpenWrite(truncated)) stream.SetLength(stream.Length / 2);
+    using (var stream = File.OpenWrite(truncated))
+    {
+        stream.SetLength(stream.Length / 2);
+    }
     await Reject(() => manager.PreviewInstallAsync(truncated), "TOOLS_ARCHIVE_SIZE");
 
     var corruptRoot = Path.Combine(output, "corrupt-source");
@@ -152,7 +168,11 @@ try
     {
         var cancelOutput = Path.Combine(output, "cancelled.mcutoolchain");
         var progress = new ImmediateProgress(_ => cancelled.Cancel());
-        try { await new ToolEnvironmentService(catalog).ExportAsync(entry, cancelOutput, progress, cancelled.Token); throw new InvalidOperationException("Cancellation ignored"); }
+        try
+        {
+            await new ToolEnvironmentService(catalog).ExportAsync(entry, cancelOutput, progress, cancelled.Token);
+            throw new InvalidOperationException("Cancellation ignored");
+        }
         catch (OperationCanceledException) { Check(!File.Exists(cancelOutput) && !Directory.EnumerateFiles(output, "cancelled.mcutoolchain.tmp-*").Any(), "cancelled managed export removes partial archive"); }
     }
     using (var cancelled = new CancellationTokenSource())
@@ -161,7 +181,7 @@ try
         try
         {
             await new ToolEnvironmentService(new(cancelRoot)).RepairAsync(entry, solid,
-                new ImmediateProgress(text => { if (text.StartsWith("校验副本：", StringComparison.Ordinal)) cancelled.Cancel(); }), cancelled.Token);
+                new ImmediateProgress(text => { if (text.StartsWith("校验副本：", StringComparison.Ordinal)) { cancelled.Cancel(); } }), cancelled.Token);
             throw new InvalidOperationException("Cancellation ignored");
         }
         catch (OperationCanceledException)
@@ -170,12 +190,28 @@ try
                 "cancelled solid import leaves no installed component or partial staging");
         }
     }
-    await JsonStore.WriteAsync(Path.Combine(output, "result.json"), new { success = true, hardware = false, checks, managedBytes = new FileInfo(exported).Length, solidBytes = new FileInfo(solid).Length });
+    await JsonStore.WriteAsync(Path.Combine(output, "result.json"), new
+    {
+        success = true,
+        hardware = false,
+        checks,
+        managedBytes = new FileInfo(exported).Length,
+        solidBytes = new FileInfo(solid).Length
+    });
 }
 catch (Exception error)
 {
-    await JsonStore.WriteAsync(Path.Combine(output, "result.json"), new { success = false, hardware = false, checks, diagnostic = error.ToString() });
+    await JsonStore.WriteAsync(Path.Combine(output, "result.json"), new
+    {
+        success = false,
+        hardware = false,
+        checks,
+        diagnostic = error.ToString()
+    });
     throw;
 }
 
-sealed class ImmediateProgress(Action<string> callback) : IProgress<string> { public void Report(string value) => callback(value); }
+sealed class ImmediateProgress(Action<string> callback) : IProgress<string>
+{
+    public void Report(string value) => callback(value);
+}

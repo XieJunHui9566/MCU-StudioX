@@ -11,14 +11,20 @@ public partial class MainWindow
     private bool applyingIdfSelection;
     private void ClearIdfVersionSelection()
     {
-        if (IdfVersionPanel is null || applyingIdfSelection) return;
+        if (IdfVersionPanel is null || applyingIdfSelection)
+        {
+            return;
+        }
         idfSelectionRevision++;
         IdfVersionPanel.Visibility = Visibility.Collapsed;
         IdfVersionPicker.ItemsSource = null;
     }
     private async Task RefreshIdfVersionsAsync()
     {
-        if (IdfVersionPanel is null || applyingIdfSelection) return;
+        if (IdfVersionPanel is null || applyingIdfSelection)
+        {
+            return;
+        }
         var revision = ++idfSelectionRevision;
         if (PackPicker.SelectedItem is not InstalledPack pack || DevicePicker.SelectedItem is not DeviceDefinition device ||
             TemplatePicker.SelectedItem is not ProjectTemplate template || device.Espressif?.Framework != "esp-idf")
@@ -33,7 +39,10 @@ public partial class MainWindow
         try
         {
             var choices = await services.EspressifProjectVersions.ListAsync(pack, device.Id, template.Id);
-            if (revision != idfSelectionRevision) return;
+            if (revision != idfSelectionRevision)
+            {
+                return;
+            }
             applyingIdfSelection = true;
             try
             {
@@ -46,17 +55,23 @@ public partial class MainWindow
         }
         catch (Exception error)
         {
-            if (revision != idfSelectionRevision) return;
+            if (revision != idfSelectionRevision)
+            {
+                return;
+            }
             IdfVersionPicker.ItemsSource = null;
             IdfVersionDescription.Text = "读取版本失败：" + error.Message;
             CreateProjectButton.IsEnabled = false;
             Log(FailureDiagnostic(error));
         }
-        finally { if (revision == idfSelectionRevision) IdfVersionPicker.IsEnabled = true; }
+        finally { if (revision == idfSelectionRevision) { IdfVersionPicker.IsEnabled = true; } }
     }
     private void IdfVersionPicker_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (applyingIdfSelection || IdfVersionDescription is null) return;
+        if (applyingIdfSelection || IdfVersionDescription is null)
+        {
+            return;
+        }
         if (IdfVersionPicker.SelectedItem is EspressifProjectVersionChoice { Pack: { } pack } choice)
         {
             applyingIdfSelection = true;

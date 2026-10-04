@@ -1,6 +1,5 @@
 namespace StudioX.Application.Espressif;
 
-using System.Net;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
@@ -50,18 +49,35 @@ public sealed class EspressifDocumentationService : IAsyncDisposable
         {
             if (disposed)
             {
-                return status with { Status = "disposed", Operation = null };
+                return status with
+                {
+                    Status = "disposed",
+                    Operation = null
+                };
             }
             try
             {
                 var saved = HasSavedTokens();
                 if (!saved && status.Status is "connected" or "authorization_saved")
                 {
-                    return status with { Status = "authentication_required", AuthenticationSaved = false, Message = "乐鑫文档授权已撤销，请显式重新连接。" };
+                    return status with
+                    {
+                        Status = "authentication_required",
+                        AuthenticationSaved = false,
+                        Message = "乐鑫文档授权已撤销，请显式重新连接。"
+                    };
                 }
                 return saved && status.Status == "authentication_required" && status.LastErrorCode is null
-                    ? status with { Status = "authorization_saved", AuthenticationSaved = true, Message = "已安全保存乐鑫授权，查询时将按需连接。" }
-                    : status with { AuthenticationSaved = saved };
+                    ? status with
+                    {
+                        Status = "authorization_saved",
+                        AuthenticationSaved = true,
+                        Message = "已安全保存乐鑫授权，查询时将按需连接。"
+                    }
+                    : status with
+                    {
+                        AuthenticationSaved = saved
+                    };
             }
             catch (Exception error) when (error is not OutOfMemoryException)
             {

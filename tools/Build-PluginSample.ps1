@@ -15,7 +15,14 @@ if (!$BuildArtifactsDirectory)
     $BuildArtifactsDirectory = Join-Path $pluginOutput 'build'
 }
 $buildArguments = @('--artifacts-path', [IO.Path]::GetFullPath($BuildArtifactsDirectory))
-$pluginId = if ($Development) { 'studiox.development' } else { 'studiox.workspace-overview' }
+$pluginId = if ($Development)
+{
+    'studiox.development'
+}
+else
+{
+    'studiox.workspace-overview'
+}
 $publishDirectory = Join-Path $pluginOutput $pluginId
 & dotnet publish (Join-Path $projectRoot 'examples/StudioX.SamplePlugin/StudioX.SamplePlugin.csproj') -c Release --self-contained false -o $publishDirectory @buildArguments
 if ($LASTEXITCODE -ne 0)
@@ -24,7 +31,14 @@ if ($LASTEXITCODE -ne 0)
 }
 # 共享契约由宿主提供；归档只包含插件自身的发布文件，避免私有契约类型副本。
 Get-ChildItem -LiteralPath $publishDirectory -File | Where-Object { $_.Name -like 'StudioX.Extensions.Abstractions.*' -or $_.Extension -eq '.pdb' } | Remove-Item
-$template = if ($Development) { 'development.template.json' } else { 'plugin.template.json' }
+$template = if ($Development)
+{
+    'development.template.json'
+}
+else
+{
+    'plugin.template.json'
+}
 Copy-Item -LiteralPath (Join-Path $projectRoot "examples/StudioX.SamplePlugin/$template") -Destination (Join-Path $publishDirectory 'plugin.json')
 & dotnet pack (Join-Path $projectRoot 'src/StudioX.Extensions.Abstractions/StudioX.Extensions.Abstractions.csproj') -c Release -o (Join-Path $pluginOutput 'nuget') @buildArguments
 if ($LASTEXITCODE -ne 0)

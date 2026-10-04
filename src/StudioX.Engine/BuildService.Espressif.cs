@@ -21,7 +21,10 @@ public sealed partial class BuildService
 
     public async Task SaveEspressifModuleSettingsAsync(string root, EspressifModuleSettings settings, CancellationToken token = default)
     {
-        if (!await gate.WaitAsync(0, token)) { throw new StudioXException("BUILD_BUSY", "构建期间不能修改模块配置。"); }
+        if (!await gate.WaitAsync(0, token))
+        {
+            throw new StudioXException("BUILD_BUSY", "构建期间不能修改模块配置。");
+        }
         try
         {
             root = Path.GetFullPath(root);
@@ -31,7 +34,10 @@ public sealed partial class BuildService
             foreach (var relative in new[] { BuildReceipt.RelativePath, BuildMemoryService.SnapshotPath })
             {
                 var path = PathBoundary.Resolve(root, relative);
-                if (File.Exists(path)) { File.Delete(path); }
+                if (File.Exists(path))
+                {
+                    File.Delete(path);
+                }
             }
         }
         finally { gate.Release(); }

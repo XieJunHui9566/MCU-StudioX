@@ -45,13 +45,16 @@ internal static class AcquisitionChecks
                 "cancel before manual installation publishes nothing", check);
             check(!Directory.Exists(fixture.Tools.RootDirectory), "cancelled manual batch leaves component root untouched");
         }
-        await JsonStore.WriteAsync(fixture.ProjectFile, fixture.Manifest with { Name = "changed_snapshot" });
+        await JsonStore.WriteAsync(fixture.ProjectFile, fixture.Manifest with
+        {
+            Name = "changed_snapshot"
+        });
         await Reject(() => fixture.Service.InstallManualAsync(plan, previews), "TOOLS_PROJECT_CHANGED",
             "configuration change after batch preview prevents installation", check);
         await JsonStore.WriteAsync(fixture.ProjectFile, fixture.Manifest);
         using (var cancelled = new CancellationTokenSource())
         {
-            var progress = new ImmediateProgress(text => { if (text == "已安装 test.acquire/1.0.0") cancelled.Cancel(); });
+            var progress = new ImmediateProgress(text => { if (text == "已安装 test.acquire/1.0.0") { cancelled.Cancel(); } });
             await Cancel(() => fixture.Service.InstallManualAsync(plan, previews, progress, cancelled.Token),
                 "cancellation between components stops the remaining batch", check);
         }
@@ -97,7 +100,8 @@ internal static class AcquisitionChecks
         await JsonStore.WriteAsync(unavailable.ProjectFile, unavailable.Manifest);
         using (var cancelled = new CancellationTokenSource())
         {
-            cancelled.Cancel(); var requests = handler.Requests.Count;
+            cancelled.Cancel();
+            var requests = handler.Requests.Count;
             await Cancel(() => unavailable.Service.AcquireFromGithubAsync(unavailablePlan, distribution, token: cancelled.Token),
                 "cancelled automatic operation stops before network access", check);
             check(requests == handler.Requests.Count, "pre-cancelled acquisition performs no HTTP requests");
@@ -123,36 +127,69 @@ internal static class AcquisitionChecks
 
     private static async Task<string> ArchiveAsync(string output, string id, string version, bool sevenZip)
     {
-        var root = Path.Combine(output, "sources", id + "-" + version); Directory.CreateDirectory(root);
+        var root = Path.Combine(output, "sources", id + "-" + version);
+        Directory.CreateDirectory(root);
         byte[] bytes = [1, 2, 3, 4];
         var manifest = new ToolsetManifest(1, id, version, "win-x64", "test-gcc",
             new[] { "cmake", "ninja", "gcc", "gxx", "objcopy", "size" }.ToDictionary(r => r, _ => "probe.exe"),
-            new() { ["probe.exe"] = Convert.ToHexString(SHA256.HashData(bytes)) }, "Non-executable acquisition fixture");
+            new()
+            {
+                ["probe.exe"] = Convert.ToHexString(SHA256.HashData(bytes))
+            }, "Non-executable acquisition fixture");
         await JsonStore.WriteAsync(Path.Combine(root, "toolset.json"), manifest);
         await File.WriteAllBytesAsync(Path.Combine(root, "probe.exe"), bytes);
         var file = Path.Combine(output, id + "-" + version + ".mcutoolchain");
-        if (sevenZip) await ToolchainArchiveWriter.WriteAsync(root, ["toolset.json", "probe.exe"], file);
+        if (sevenZip)
+        {
+            await ToolchainArchiveWriter.WriteAsync(root, ["toolset.json", "probe.exe"], file);
+        }
         else
         {
             using var zip = System.IO.Compression.ZipFile.Open(file, System.IO.Compression.ZipArchiveMode.Create);
             foreach (var relative in new[] { "toolset.json", "probe.exe" })
-                using (var stream = zip.CreateEntry(relative).Open()) await stream.WriteAsync(await File.ReadAllBytesAsync(Path.Combine(root, relative)));
+            {
+                using (var stream = zip.CreateEntry(relative).Open())
+                {
+                    await stream.WriteAsync(await File.ReadAllBytesAsync(Path.Combine(root, relative)));
+                }
+            }
         }
         return file;
     }
 
     private static async Task Reject(Func<Task> action, string code, string label, Action<bool, string> check)
-    { try { await action(); throw new InvalidOperationException(label); } catch (StudioXException error) { check(error.Code == code, label + " · " + error.Code); } }
+    {
+        try
+        {
+            await action();
+            throw new InvalidOperationException(label);
+        }
+        catch (StudioXException error) { check(error.Code == code, label + " · " + error.Code); }
+    }
     private static async Task Cancel(Func<Task> action, string label, Action<bool, string> check)
-    { try { await action(); throw new InvalidOperationException(label); } catch (OperationCanceledException) { check(true, label); } }
-    private sealed class ImmediateProgress(Action<string> action) : IProgress<string> { public void Report(string value) => action(value); }
+    {
+        try
+        {
+            await action();
+            throw new InvalidOperationException(label);
+        }
+        catch (OperationCanceledException) { check(true, label); }
+    }
+    private sealed class ImmediateProgress(Action<string> action) : IProgress<string>
+    {
+        public void Report(string value) => action(value);
+    }
     private sealed record Context(string Project, string ProjectFile, ProjectManifest Manifest, ToolsetCatalog Tools, ProjectToolPreparationService Service)
     {
         internal static async Task<Context> CreateAsync(string root, string id = "test.acquire", string version = "1.0.0", string compiler = "test-gcc", bool secondary = true)
         {
-            var project = Path.Combine(root, "工程"); var file = Path.Combine(project, ".studiox/project.json");
+            var project = Path.Combine(root, "工程");
+            var file = Path.Combine(project, ".studiox/project.json");
             List<DevelopmentComponentRequirement> needs = [new(id, version, compiler)];
-            if (secondary) needs.Add(new("test.extra", "1.0.0", "test-gcc", Purpose: "additional component"));
+            if (secondary)
+            {
+                needs.Add(new("test.extra", "1.0.0", "test-gcc", Purpose: "additional component"));
+            }
             var manifest = new ProjectManifest(1, "acquisition_fixture", "test.pack", "1.0.0", "fixture", "TestDevice", "minimal", id, version, compiler, DevelopmentComponents: needs);
             await JsonStore.WriteAsync(file, manifest);
             await File.WriteAllTextAsync(Path.Combine(project, "sdkconfig"), "preserve settings");
@@ -164,11 +201,16 @@ internal static class AcquisitionChecks
     private sealed class Handler(byte[] catalog, byte[] signature) : HttpMessageHandler
     {
         internal byte[] Signature { get; set; } = signature;
-        internal Action<Uri>? BeforeRequest { get; set; }
+        internal Action<Uri>? BeforeRequest
+        {
+            get; set;
+        }
         internal List<Uri> Requests { get; } = [];
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken token)
         {
-            token.ThrowIfCancellationRequested(); Requests.Add(request.RequestUri!); BeforeRequest?.Invoke(request.RequestUri!);
+            token.ThrowIfCancellationRequested();
+            Requests.Add(request.RequestUri!);
+            BeforeRequest?.Invoke(request.RequestUri!);
             return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent(request.RequestUri!.AbsolutePath.EndsWith(".sig", StringComparison.Ordinal) ? Signature : catalog) });
         }
     }

@@ -8,10 +8,22 @@ public partial class FirstProjectGuideView : UserControl
 {
     private IReadOnlyList<FirstProjectStep> steps = [];
     private bool updating;
-    public Func<string, Task>? ActionRequested { get; init; }
-    public Func<string, Task>? HelpRequested { get; init; }
-    public Func<Task>? FinishRequested { get; init; }
-    public Action<Exception>? Failed { get; init; }
+    public Func<string, Task>? ActionRequested
+    {
+        get; init;
+    }
+    public Func<string, Task>? HelpRequested
+    {
+        get; init;
+    }
+    public Func<Task>? FinishRequested
+    {
+        get; init;
+    }
+    public Action<Exception>? Failed
+    {
+        get; init;
+    }
     public int SelectedStep => Math.Max(0, StepList.SelectedIndex);
     public FirstProjectGuideView() => InitializeComponent();
     public void Refresh(FirstProjectProgress progress)
@@ -28,7 +40,10 @@ public partial class FirstProjectGuideView : UserControl
     public void Select(int index) => StepList.SelectedIndex = Math.Clamp(index, 0, steps.Count - 1);
     private void Present()
     {
-        if (steps.Count == 0) return;
+        if (steps.Count == 0)
+        {
+            return;
+        }
         var step = steps[SelectedStep];
         StepTitle.Text = $"{SelectedStep + 1}. {step.Title}";
         InstructionsText.Text = step.Instructions;
@@ -43,7 +58,14 @@ public partial class FirstProjectGuideView : UserControl
         NextButton.IsEnabled = SelectedStep < steps.Count - 1;
         ProgressText.Text = $"第 {SelectedStep + 1} / {steps.Count} 步 · 可以回看或跳过阅读；完成标记依据实际操作";
     }
-    private void Step_Changed(object sender, SelectionChangedEventArgs e) { if (!updating) { Present(); BodyScroll.ScrollToTop(); } }
+    private void Step_Changed(object sender, SelectionChangedEventArgs e)
+    {
+        if (!updating)
+        {
+            Present();
+            BodyScroll.ScrollToTop();
+        }
+    }
     private void Back_Click(object sender, RoutedEventArgs e) => Select(SelectedStep - 1);
     private void Next_Click(object sender, RoutedEventArgs e) => Select(SelectedStep + 1);
     private async void Action_Click(object sender, RoutedEventArgs e) => await ExecuteAsync(() => ActionRequested?.Invoke(steps[SelectedStep].Action) ?? Task.CompletedTask);
@@ -53,7 +75,10 @@ public partial class FirstProjectGuideView : UserControl
     private async Task ExecuteAsync(Func<Task> action)
     {
         Actions.IsEnabled = false;
-        try { await action(); }
+        try
+        {
+            await action();
+        }
         catch (Exception error) { EvidenceText.Text = error.Message; Failed?.Invoke(error); }
         finally { Actions.IsEnabled = true; }
     }

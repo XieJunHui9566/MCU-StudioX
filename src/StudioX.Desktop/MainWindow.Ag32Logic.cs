@@ -17,7 +17,10 @@ public partial class MainWindow
         var custom = project?.Logic is not null;
         HdlSchematic.SetBusy(busy);
         HdlWorkflow.SetBusy(busy);
-        if (!supported || !custom) ClearHdlSchematic();
+        if (!supported || !custom)
+        {
+            ClearHdlSchematic();
+        }
         var mapped = project?.PinMapping is not null;
         var visibility = supported ? Visibility.Visible : Visibility.Collapsed;
         Ag32PinMappingRailButton.Visibility = BuildLogicButton.Visibility = DownloadLogicButton.Visibility = visibility;
@@ -210,7 +213,10 @@ public partial class MainWindow
         {
             if (projectDirectory == root)
             {
-                try { await RefreshAg32PinMappingStatusAsync(CancellationToken.None); }
+                try
+                {
+                    await RefreshAg32PinMappingStatusAsync(CancellationToken.None);
+                }
                 catch (Exception error) { Log("时序状态刷新失败：" + error); }
             }
         }

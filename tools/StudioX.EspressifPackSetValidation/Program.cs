@@ -11,11 +11,14 @@ if (args is not [var mode, var packDirectory, var runtimeDirectory, var outputDi
     return 2;
 }
 var output = Path.GetFullPath(outputDirectory);
-if (Directory.Exists(output)) throw new IOException("Use a new validation output directory.");
+if (Directory.Exists(output)) { throw new IOException("Use a new validation output directory."); }
 Directory.CreateDirectory(output);
 var versions = new Dictionary<string, string>
 {
-    ["5.5.4"] = "0.1.1", ["5.5.5"] = "0.2.0", ["6.0.3"] = "0.3.0", ["6.1.0"] = "0.4.0"
+    ["5.5.4"] = "0.1.1",
+    ["5.5.5"] = "0.2.0",
+    ["6.0.3"] = "0.3.0",
+    ["6.1.0"] = "0.4.0"
 };
 string[] targets = ["esp32", "esp32s3", "esp32p4", "esp32c3", "esp32c5", "esp32c6"];
 string[] templates = ["hello-world", "freertos"];
@@ -25,7 +28,10 @@ var checks = new List<string>();
 var builds = new List<object>();
 void Check(bool passed, string message)
 {
-    if (!passed) throw new InvalidOperationException(message);
+    if (!passed)
+    {
+        throw new InvalidOperationException(message);
+    }
     checks.Add(message);
 }
 foreach (var archive in Directory.GetFiles(Path.GetFullPath(packDirectory), "*.mcupack").Order(StringComparer.Ordinal))
@@ -36,7 +42,7 @@ var packs = (await repository.ListCatalogAsync()).Where(pack => pack.Manifest.De
 Check(packs.Length == 24, "24 exact SDK/target packs pass full import validation");
 Check(PackCatalogPolicy.SelectCurrentVersions(packs).Count == 24, "different SDK requirements coexist in the visible catalog");
 var selection = new EspressifProjectVersionService(repository, catalog);
-if (mode != "inspect" && !versions.ContainsKey(mode)) throw new ArgumentException("Select an exact supported SDK version.");
+if (mode != "inspect" && !versions.ContainsKey(mode)) { throw new ArgumentException("Select an exact supported SDK version."); }
 var buildService = new BuildService(catalog);
 if (mode == "inspect")
 {
@@ -71,7 +77,10 @@ foreach (var pack in packs.Where(pack => mode == "inspect" || pack.Manifest.Devi
         foreach (var file in evidence.RootElement.GetProperty("filesSha256").EnumerateObject())
         {
             // 根工程名及目标默认配置由生成器显式修改；其它官方文件必须逐字节保留。
-            if (file.Name is "CMakeLists.txt" or "sdkconfig.defaults") continue;
+            if (file.Name is "CMakeLists.txt" or "sdkconfig.defaults")
+            {
+                continue;
+            }
             var hash = Convert.ToHexString(SHA256.HashData(await File.ReadAllBytesAsync(PathBoundary.Resolve(projectDirectory, file.Name))));
             Check(hash.Equals(file.Value.GetString(), StringComparison.OrdinalIgnoreCase),
                 name + "/" + sdk.SdkVersion + " preserves " + file.Name);
@@ -80,7 +89,10 @@ foreach (var pack in packs.Where(pack => mode == "inspect" || pack.Manifest.Devi
         Check(cmake.Contains("include($ENV{IDF_PATH}/tools/cmake/project.cmake)", StringComparison.Ordinal) &&
             !cmake.Contains("E:/", StringComparison.OrdinalIgnoreCase) && !cmake.Contains("C:/", StringComparison.OrdinalIgnoreCase),
             name + "/" + sdk.SdkVersion + " uses the SDK native build without developer paths");
-        if (mode == "inspect") continue;
+        if (mode == "inspect")
+        {
+            continue;
+        }
         Console.WriteLine("BUILD " + sdk.SdkVersion + " " + name);
         var watch = System.Diagnostics.Stopwatch.StartNew();
         var report = await buildService.BuildAsync(projectDirectory);
@@ -89,13 +101,27 @@ foreach (var pack in packs.Where(pack => mode == "inspect" || pack.Manifest.Devi
         var bin = report.Artifacts.Single(path => Path.GetFileName(path) == name + ".bin");
         builds.Add(new
         {
-            sdkVersion = sdk.SdkVersion, componentVersion = device.ToolsetVersion, packId = pack.Manifest.Id,
-            packVersion = pack.Manifest.Version, target = sdk.Target, template = template.Id, success = report.Success,
-            exitCode = report.ExitCode, seconds = Math.Round(watch.Elapsed.TotalSeconds, 2),
+            sdkVersion = sdk.SdkVersion,
+            componentVersion = device.ToolsetVersion,
+            packId = pack.Manifest.Id,
+            packVersion = pack.Manifest.Version,
+            target = sdk.Target,
+            template = template.Id,
+            success = report.Success,
+            exitCode = report.ExitCode,
+            seconds = Math.Round(watch.Elapsed.TotalSeconds, 2),
             firmwareBytes = new FileInfo(bin).Length,
             firmwareSha256 = Convert.ToHexString(SHA256.HashData(await File.ReadAllBytesAsync(bin))).ToLowerInvariant()
         });
-        await JsonStore.WriteAsync(Path.Combine(output, "result.json"), new { formatVersion = 1, success = false, hardware = false, mode, checks, builds });
+        await JsonStore.WriteAsync(Path.Combine(output, "result.json"), new
+        {
+            formatVersion = 1,
+            success = false,
+            hardware = false,
+            mode,
+            checks,
+            builds
+        });
         Console.WriteLine("PASS " + sdk.SdkVersion + " " + name);
     }
 }

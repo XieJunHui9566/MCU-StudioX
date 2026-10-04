@@ -27,12 +27,18 @@ public sealed class BuildMemoryService(ToolsetCatalog? toolsets = null)
             // 没有构建记录和统计缓存时不启动整套 SDK 自检；已有缓存仍按原规则完整验证。
             var receiptPath = PathBoundary.Resolve(root, BuildReceipt.RelativePath);
             var snapshotPath = PathBoundary.Resolve(root, SnapshotPath);
-            if (!File.Exists(receiptPath) && !File.Exists(snapshotPath)) { return new([], "编译成功后显示各存储区占用。"); }
+            if (!File.Exists(receiptPath) && !File.Exists(snapshotPath))
+            {
+                return new([], "编译成功后显示各存储区占用。");
+            }
             ResolvedToolset? nativeTools = null;
             string? sourceStamp = null;
             if (project.Espressif is not null)
             {
-                if (toolsets is null) { return new([], "SDK 内存统计尚未绑定内置工具目录。"); }
+                if (toolsets is null)
+                {
+                    return new([], "SDK 内存统计尚未绑定内置工具目录。");
+                }
                 nativeTools = await toolsets.ResolveAsync(project.ToolsetId, project.ToolsetVersion, project.CompilerId, token, progress: progress);
                 sourceStamp = await Debugging.DebugSourceStamp.ComputeAsync(root, token);
             }
@@ -47,9 +53,15 @@ public sealed class BuildMemoryService(ToolsetCatalog? toolsets = null)
                     return snapshot.Report;
                 }
             }
-            if (!File.Exists(receiptPath)) { return new([], "编译成功后显示各存储区占用。"); }
+            if (!File.Exists(receiptPath))
+            {
+                return new([], "编译成功后显示各存储区占用。");
+            }
             var receipt = await JsonStore.ReadAsync<BuildReceipt>(receiptPath, token);
-            if (receipt.Project != project) { return new([], "工程配置已变化，请重新编译。"); }
+            if (receipt.Project != project)
+            {
+                return new([], "工程配置已变化，请重新编译。");
+            }
             if (nativeTools is not null && (receipt.ToolFingerprint != nativeTools.Fingerprint || receipt.SourceStamp != sourceStamp))
             {
                 return new([], "工程源码、SDK 配置或开发环境组件已变化，请重新编译后查看统计。");
@@ -93,7 +105,10 @@ public sealed class BuildMemoryService(ToolsetCatalog? toolsets = null)
             }
             var targets = new List<BuildMemoryTarget>();
             var inputs = new List<MemoryInput>();
-            if (nativeTools is not null) { inputs.Add(MemoryInput.Capture(root, receiptPath)); }
+            if (nativeTools is not null)
+            {
+                inputs.Add(MemoryInput.Capture(root, receiptPath));
+            }
             var configuration = "";
             var cachePath = Path.Combine(root, ".build", "CMakeCache.txt");
             if (File.Exists(cachePath))
@@ -134,11 +149,18 @@ public sealed class BuildMemoryService(ToolsetCatalog? toolsets = null)
                 try
                 {
                     var usage = await Ag32LogicUsageAnalyzer.AnalyzeAsync(Path.Combine(root, ".build", "studiox-build.log"), token);
-                    report = report with { LogicUsage = usage, LogicDiagnostic = usage is null ? "未取得 Supra 逻辑单元统计，请重新编译。" : null };
+                    report = report with
+                    {
+                        LogicUsage = usage,
+                        LogicDiagnostic = usage is null ? "未取得 Supra 逻辑单元统计，请重新编译。" : null
+                    };
                 }
                 catch (Exception ex) when (IsAnalysisError(ex))
                 {
-                    report = report with { LogicDiagnostic = "逻辑单元统计不可用：" + ex.Message };
+                    report = report with
+                    {
+                        LogicDiagnostic = "逻辑单元统计不可用：" + ex.Message
+                    };
                 }
             }
             if (targets.Count > 0 && targets.All(target => target.Diagnostic is null))

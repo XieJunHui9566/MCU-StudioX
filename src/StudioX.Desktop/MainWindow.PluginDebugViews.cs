@@ -14,7 +14,10 @@ public partial class MainWindow
             ShowDocument(existing.Tab);
             return Task.CompletedTask;
         }
-        if (pluginWorkspace is not { } workspace || !workspace.IsPluginRunning(pluginId)) { return Task.CompletedTask; }
+        if (pluginWorkspace is not { } workspace || !workspace.IsPluginRunning(pluginId))
+        {
+            return Task.CompletedTask;
+        }
         var plugin = workspace.Contributions.Single(p => p.Id == pluginId);
         var adapter = plugin.Contribution.DebugAdapters.Single(a => a.Id == adapterId);
         var session = new PluginDebugViewSession(workspace, services.Debugger, pluginId, adapterId);
@@ -42,7 +45,10 @@ public partial class MainWindow
     {
         foreach (var (key, item) in pluginDebugViews.ToArray())
         {
-            if (!ReferenceEquals(item.Tab, tab)) { continue; }
+            if (!ReferenceEquals(item.Tab, tab))
+            {
+                continue;
+            }
             pluginDebugViews.Remove(key);
             item.Session.Changed -= item.Changed;
             item.View.RefreshRequested = null;
@@ -55,7 +61,10 @@ public partial class MainWindow
 
     private async Task ClearPluginDebugViewsAsync()
     {
-        foreach (var item in pluginDebugViews.Values.ToArray()) { await ClosePluginDebugViewAsync(item.Tab); }
+        foreach (var item in pluginDebugViews.Values.ToArray())
+        {
+            await ClosePluginDebugViewAsync(item.Tab);
+        }
     }
 
     private void RefreshPluginContributionActions() => PluginManager.SetContributions(pluginWorkspace?.Contributions ?? [],

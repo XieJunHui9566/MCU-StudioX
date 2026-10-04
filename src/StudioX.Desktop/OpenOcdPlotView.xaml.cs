@@ -31,14 +31,24 @@ public partial class OpenOcdPlotView : UserControl
         Chart.ViewChanged += () => { FollowCheck.IsChecked = Chart.Follow; AutoYCheck.IsChecked = Chart.AutoY; };
     }
 
-    public void Attach(OpenOcdPlotService value) { service = value; RefreshView(); }
+    public void Attach(OpenOcdPlotService value)
+    {
+        service = value;
+        RefreshView();
+    }
     private async Task RunAsync(Func<Task> action)
     {
-        if (busy) { return; }
+        if (busy)
+        {
+            return;
+        }
         busy = true;
         Notice.Text = "";
         RefreshView();
-        try { await action(); }
+        try
+        {
+            await action();
+        }
         catch (Exception ex) { Notice.Text = ex.Message; Notice.ToolTip = ex.ToString(); }
         finally { busy = false; RefreshView(); }
     }
@@ -53,7 +63,10 @@ public partial class OpenOcdPlotView : UserControl
     private void ClearData_Click(object sender, RoutedEventArgs e) => operation = RunAsync(() => { service!.Clear(false); Chart.ResetView(); return Task.CompletedTask; });
     private void Start_Click(object sender, RoutedEventArgs e) => operation = RunAsync(async () =>
     {
-        if (!int.TryParse(IntervalInput.Text, out var interval)) { throw new ArgumentException("请输入 20–10000 ms 的整数采样间隔。"); }
+        if (!int.TryParse(IntervalInput.Text, out var interval))
+        {
+            throw new ArgumentException("请输入 20–10000 ms 的整数采样间隔。");
+        }
         await service!.StartAsync(interval);
         Chart.ResetView();
     });
@@ -68,13 +81,19 @@ public partial class OpenOcdPlotView : UserControl
     private void Export_Click(object sender, RoutedEventArgs e)
     {
         var dialog = new SaveFileDialog { Filter = "CSV 数据 (*.csv)|*.csv", FileName = "openocd-plot-" + DateTime.Now.ToString("yyyyMMdd-HHmmss") + ".csv" };
-        if (dialog.ShowDialog(Window.GetWindow(this)) != true) { return; }
+        if (dialog.ShowDialog(Window.GetWindow(this)) != true)
+        {
+            return;
+        }
         operation = RunAsync(() => File.WriteAllTextAsync(dialog.FileName, service!.ExportCsv(), new UTF8Encoding(true)));
     }
 
     internal void RefreshView()
     {
-        if (service is null) { return; }
+        if (service is null)
+        {
+            return;
+        }
         Display(service.Snapshot());
     }
     internal void Display(OpenOcdPlotSnapshot snapshot)
@@ -88,8 +107,11 @@ public partial class OpenOcdPlotView : UserControl
         var last = snapshot.Records.LastOrDefault();
         ChannelsGrid.ItemsSource = snapshot.Channels.Select((channel, index) => new
         {
-            Legend = "CH" + (index + 1), Brush = Chart.Palette[index], channel.Expression,
-            Address = channel.AddressText, Type = channel.Type.ToString(),
+            Legend = "CH" + (index + 1),
+            Brush = Chart.Palette[index],
+            channel.Expression,
+            Address = channel.AddressText,
+            Type = channel.Type.ToString(),
             Value = last is null ? "—" : last.Values[index].ToString("G9", CultureInfo.InvariantCulture)
         }).ToArray();
         ChannelsGrid.SelectedIndex = selected;
@@ -103,13 +125,21 @@ public partial class OpenOcdPlotView : UserControl
     internal bool HandlePlotMouseWheel(DependencyObject? hit, int delta, bool control)
     {
         for (var node = hit; node is not null; node = node is Visual ? VisualTreeHelper.GetParent(node) : LogicalTreeHelper.GetParent(node))
-        { if (node == Chart) { return Chart.HandleWheel(delta, control); } }
+        {
+            if (node == Chart)
+            {
+                return Chart.HandleWheel(delta, control);
+            }
+        }
         return false;
     }
     public async Task CloseSessionAsync()
     {
         await operation;
-        if (service is not null) { await service.StopAsync(); }
+        if (service is not null)
+        {
+            await service.StopAsync();
+        }
         RefreshView();
     }
     public void RefreshTheme()

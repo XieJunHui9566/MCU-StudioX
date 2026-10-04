@@ -25,7 +25,10 @@ public sealed class OpenOcdMemoryClient : IAsyncDisposable
         await gate.WaitAsync(token);
         try
         {
-            if (broken) { throw new IOException("OpenOCD 采样通道已关闭，请重新连接调试。"); }
+            if (broken)
+            {
+                throw new IOException("OpenOCD 采样通道已关闭，请重新连接调试。");
+            }
             using var timeout = CancellationTokenSource.CreateLinkedTokenSource(token);
             timeout.CancelAfter(TimeSpan.FromSeconds(2));
             // 显式绑定当前 GDB 目标。mem2array 兼容厂商旧版；清除数组防止短读复用旧数据。
@@ -37,9 +40,18 @@ public sealed class OpenOcdMemoryClient : IAsyncDisposable
             var one = new byte[1];
             while (true)
             {
-                if (await stream.ReadAsync(one, timeout.Token) == 0) { throw new IOException("OpenOCD Tcl 连接中断。"); }
-                if (one[0] == 0x1a) { break; }
-                if (response.Count >= 8192) { throw new IOException("OpenOCD Tcl 响应超过限制。"); }
+                if (await stream.ReadAsync(one, timeout.Token) == 0)
+                {
+                    throw new IOException("OpenOCD Tcl 连接中断。");
+                }
+                if (one[0] == 0x1a)
+                {
+                    break;
+                }
+                if (response.Count >= 8192)
+                {
+                    throw new IOException("OpenOCD Tcl 响应超过限制。");
+                }
                 response.Add(one[0]);
             }
             return ParseResponse(Encoding.UTF8.GetString(response.ToArray()), count);
@@ -61,7 +73,10 @@ public sealed class OpenOcdMemoryClient : IAsyncDisposable
             throw new StudioXException("OPENOCD_PLOT_READ", "OpenOCD 内存读取失败；当前目标可能不支持运行中读取。\n" + response);
         }
         var parts = response[3..].Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
-        if (parts.Length != count) { throw new IOException("OpenOCD 返回字节数不匹配：" + response); }
+        if (parts.Length != count)
+        {
+            throw new IOException("OpenOCD 返回字节数不匹配：" + response);
+        }
         return parts.Select(part =>
         {
             var hex = part.StartsWith("0x", StringComparison.OrdinalIgnoreCase);

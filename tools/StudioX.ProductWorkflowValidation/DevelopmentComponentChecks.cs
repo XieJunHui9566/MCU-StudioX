@@ -38,7 +38,11 @@ internal static class DevelopmentComponentChecks
             "DEVELOPMENT_COMPONENT_REQUIREMENT", "duplicate component declaration in one layer is rejected", check);
         Reject(() => DevelopmentComponentRequirements.ForTemplate(device, template with { DevelopmentComponents = [extra with { Version = "latest" }] }),
             "VERSION_INVALID", "floating component versions are rejected", check);
-        var micro = template with { MicroPython = new("RPI_PICO", "1.29.0"), DevelopmentComponents = null };
+        var micro = template with
+        {
+            MicroPython = new("RPI_PICO", "1.29.0"),
+            DevelopmentComponents = null
+        };
         check(DevelopmentComponentRequirements.ForTemplate(device, micro).Count == 0, "script template does not inherit native device components");
         Reject(() => DevelopmentComponentRequirements.ForTemplate(device, micro with { DevelopmentComponents = [extra] }),
             "DEVELOPMENT_COMPONENT_REQUIREMENT", "script template cannot silently ignore explicit native dependencies", check);
@@ -98,10 +102,16 @@ internal static class DevelopmentComponentChecks
         var changed = false;
         var progress = new ImmediateProgress(message =>
         {
-            if (changed || !message.StartsWith("检查开发环境组件：")) return;
+            if (changed || !message.StartsWith("检查开发环境组件："))
+            {
+                return;
+            }
             changed = true;
             File.WriteAllText(Path.Combine(project, ".studiox/project.json"),
-                JsonSerializer.Serialize(created with { Name = "changed_during_validation" }, JsonStore.Options));
+                JsonSerializer.Serialize(created with
+                {
+                    Name = "changed_during_validation"
+                }, JsonStore.Options));
         });
         await RejectAsync(() => builds.ConfigureAsync(project, progress), "TOOLS_PROJECT_CHANGED",
             "project change during full tool validation prevents stale lock creation and process execution", check);
@@ -124,7 +134,10 @@ internal static class DevelopmentComponentChecks
         var componentLockPath = Path.Combine(project, DevelopmentComponentLock.RelativePath);
         var primaryLockPath = Path.Combine(project, ".studiox/toolchain.lock.json");
         await JsonStore.WriteAsync(primaryLockPath, new ToolchainLock(1, gcc.Id, gcc.Version, primaryPreview.Fingerprint));
-        await JsonStore.WriteAsync(componentLockPath, pins with { Components = [pins.Components[0], pins.Components[1] with { Fingerprint = new string('f', 64) }] });
+        await JsonStore.WriteAsync(componentLockPath, pins with
+        {
+            Components = [pins.Components[0], pins.Components[1] with { Fingerprint = new string('f', 64) }]
+        });
         var beforeLock = await File.ReadAllBytesAsync(componentLockPath);
         check((await preparation.InspectAsync(project)).Requirements.Single(r => r.Id == extra.Id).State == ProjectToolState.RepairNeeded,
             "fast preparation detects secondary manifest content-lock mismatch");
@@ -135,10 +148,16 @@ internal static class DevelopmentComponentChecks
         check((await File.ReadAllBytesAsync(componentLockPath)).SequenceEqual(beforeLock) && !Directory.Exists(Path.Combine(project, ".build")),
             "content-lock failure preserves pins and does not generate a CMake cache");
         await JsonStore.WriteAsync(componentLockPath, pins);
-        await JsonStore.WriteAsync(Path.Combine(project, ".studiox/project.json"), created with { DevelopmentComponents = [gcc] });
+        await JsonStore.WriteAsync(Path.Combine(project, ".studiox/project.json"), created with
+        {
+            DevelopmentComponents = [gcc]
+        });
         await RejectAsync(() => preparation.InspectAsync(project), "DEVELOPMENT_COMPONENT_REQUIREMENT", "removing snapshot dependency cannot bypass explicit pack declarations", check);
         await JsonStore.WriteAsync(Path.Combine(project, ".studiox/project.json"), created);
-        await JsonStore.WriteAsync(componentLockPath, pins with { Components = [pins.Components[0], pins.Components[0]] });
+        await JsonStore.WriteAsync(componentLockPath, pins with
+        {
+            Components = [pins.Components[0], pins.Components[0]]
+        });
         await RejectAsync(() => preparation.InspectAsync(project), "TOOLCHAIN_LOCK", "duplicate aggregate pins are rejected", check);
         await JsonStore.WriteAsync(componentLockPath, pins);
         await JsonStore.WriteAsync(primaryLockPath, new ToolchainLock(1, extra.Id, extra.Version, preview.Fingerprint));
@@ -150,7 +169,10 @@ internal static class DevelopmentComponentChecks
             && (await health.InspectAsync(project)).CanBuild,
             "preparation and health treat uppercase and lowercase SHA-256 pins as the same unchanged content");
         await JsonStore.WriteAsync(primaryLockPath, new ToolchainLock(1, gcc.Id, gcc.Version, primaryPreview.Fingerprint));
-        var extraNewer = extra with { Version = "2.0.0" };
+        var extraNewer = extra with
+        {
+            Version = "2.0.0"
+        };
         await management.InstallAsync(await management.PreviewInstallAsync(await ToolArchive(data, extraNewer, "hdl-native")));
         await management.RegisterProjectAsync(project);
         var references = await management.InspectAsync(null);
@@ -161,12 +183,19 @@ internal static class DevelopmentComponentChecks
         check(references.ReferencesComplete && references.Versions.Single(v => v.Id == extra.Id && v.Version == "1.0.0").References.Any(r => r.StartsWith("器件包：")),
             "installed template component remains protected when no project is open or registered");
         var legacy = Path.Combine(data, "legacy-project");
-        await JsonStore.WriteAsync(Path.Combine(legacy, ".studiox/project.json"), created with { DevelopmentComponents = null });
+        await JsonStore.WriteAsync(Path.Combine(legacy, ".studiox/project.json"), created with
+        {
+            DevelopmentComponents = null
+        });
         check((await preparation.InspectAsync(legacy)).Requirements is { Count: 1 } legacyNeeds && legacyNeeds[0].Id == gcc.Id,
             "legacy project without copied metadata continues using explicit original primary tool fields");
         await JsonStore.WriteAsync(Path.Combine(legacy, "device/manifest.json"), manifest);
         check((await preparation.InspectAsync(legacy)).Requirements.Count == 2, "pack declarations remain enforceable if a project has no requirement snapshot");
-        await JsonStore.WriteAsync(Path.Combine(data, "ui-fixture.json"), new { project, archive = extraArchive });
+        await JsonStore.WriteAsync(Path.Combine(data, "ui-fixture.json"), new
+        {
+            project,
+            archive = extraArchive
+        });
     }
 
     private static async Task<string> ToolArchive(string data, DevelopmentComponentRequirement requirement, string? purpose)
@@ -174,18 +203,41 @@ internal static class DevelopmentComponentChecks
         byte[] payload = [1, 2, 3, 4]; // 不执行此文件；实际工具启动验证由真实 ARM 编译场景负责。
         var roles = purpose == "hdl-native" ? new[] { "mapper" } : new[] { "cmake", "ninja", "gcc", "gxx", "objcopy", "size" };
         var manifest = new ToolsetManifest(1, requirement.Id, requirement.Version, requirement.Host, requirement.CompilerId,
-            roles.ToDictionary(r => r, _ => "probe.exe"), new() { ["probe.exe"] = Convert.ToHexString(SHA256.HashData(payload)) }, Purpose: purpose);
+            roles.ToDictionary(r => r, _ => "probe.exe"), new()
+            {
+                ["probe.exe"] = Convert.ToHexString(SHA256.HashData(payload))
+            }, Purpose: purpose);
         var path = Path.Combine(data, requirement.Id + "-" + requirement.Version + ".mcutoolchain");
         using var zip = ZipFile.Open(path, ZipArchiveMode.Create);
-        await using (var content = zip.CreateEntry("toolset.json").Open()) await content.WriteAsync(JsonSerializer.SerializeToUtf8Bytes(manifest, JsonStore.Options));
-        await using (var content = zip.CreateEntry("probe.exe").Open()) await content.WriteAsync(payload);
+        await using (var content = zip.CreateEntry("toolset.json").Open())
+        {
+            await content.WriteAsync(JsonSerializer.SerializeToUtf8Bytes(manifest, JsonStore.Options));
+        }
+        await using (var content = zip.CreateEntry("probe.exe").Open())
+        {
+            await content.WriteAsync(payload);
+        }
         return path;
     }
 
     private static void Reject(Action action, string code, string label, Action<bool, string> check)
-    { try { action(); check(false, label); } catch (StudioXException error) { check(error.Code == code, label); } }
+    {
+        try
+        {
+            action();
+            check(false, label);
+        }
+        catch (StudioXException error) { check(error.Code == code, label); }
+    }
     private static async Task RejectAsync(Func<Task> action, string code, string label, Action<bool, string> check)
-    { try { await action(); check(false, label); } catch (StudioXException error) { check(error.Code == code, label); } }
+    {
+        try
+        {
+            await action();
+            check(false, label);
+        }
+        catch (StudioXException error) { check(error.Code == code, label); }
+    }
     private sealed class ImmediateProgress(Action<string> report) : IProgress<string>
     {
         public void Report(string value) => report(value);

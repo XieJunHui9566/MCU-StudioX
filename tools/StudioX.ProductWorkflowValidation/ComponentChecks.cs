@@ -37,23 +37,48 @@ internal static class ComponentChecks
         active = true;
         await Reject(() => service.InstallAsync(project, two, "firmware"), "COMPONENT_BUSY", "active debug blocks component mutation", check);
         active = false;
-        using (builds.AcquireMaintenance()) { await Reject(() => service.InstallAsync(project, two, "firmware"), "BUILD_BUSY", "build and component maintenance share exclusive lease", check); }
+        using (builds.AcquireMaintenance())
+        {
+            await Reject(() => service.InstallAsync(project, two, "firmware"), "BUILD_BUSY", "build and component maintenance share exclusive lease", check);
+        }
         await Reject(() => service.PreviewAsync(FixtureArchives.Component(root, "1.0.0", corrupt: true)), "COMPONENT_HASH", "corrupt component bytes rejected before project edits", check);
         await Reject(() => service.PreviewAsync(FixtureArchives.Component(root, "1.0.0", extra: "extra.txt")), "COMPONENT_INDEX", "unindexed component file rejected", check);
         await Reject(() => service.PreviewAsync(FixtureArchives.Component(root, "1.0.0", extra: "../escape.c")), "COMPONENT_PATH", "component traversal rejected", check);
         await Reject(() => service.InstallAsync(project, two, "firmware);execute_process("), "COMPONENT_TARGET", "component CMake target injection rejected", check);
         var sdkProject = Path.Combine(root, "idf-component-project");
-        await JsonStore.WriteAsync(Path.Combine(sdkProject, ".studiox/project.json"), manifest with { Kind = ProjectKind.Pack, CubeMx = null, ToolsetId = "espressif.idf", ToolsetVersion = "5.5.4", CompilerId = "esp-idf", DeviceId = "ESP32-S3", Espressif = new("esp-idf", "esp32s3", "5.5.4") });
+        await JsonStore.WriteAsync(Path.Combine(sdkProject, ".studiox/project.json"), manifest with
+        {
+            Kind = ProjectKind.Pack,
+            CubeMx = null,
+            ToolsetId = "espressif.idf",
+            ToolsetVersion = "5.5.4",
+            CompilerId = "esp-idf",
+            DeviceId = "ESP32-S3",
+            Espressif = new("esp-idf", "esp32s3", "5.5.4")
+        });
         await service.InstallAsync(sdkProject, one, "firmware");
         var registered = await File.ReadAllTextAsync(Path.Combine(sdkProject, "components/studiox_fixture_byte/CMakeLists.txt"));
         check(registered.Contains("idf_component_register") && registered.Contains("../../studiox-components/fixture.byte/1.0.0") && registered.Contains("MINIMAL_BUILD"), "IDF component registration uses pinned sources and explicit minimal build guidance");
         var otherSdk = Path.Combine(root, "esp8266-component-project");
-        await JsonStore.WriteAsync(Path.Combine(otherSdk, ".studiox/project.json"), manifest with { Kind = ProjectKind.Pack, CubeMx = null, ToolsetId = "espressif.esp8266-rtos", ToolsetVersion = "3.4.0", CompilerId = "esp8266-rtos", DeviceId = "ESP8266", Espressif = new("esp8266-rtos-sdk", "esp8266", "3.4.0") });
+        await JsonStore.WriteAsync(Path.Combine(otherSdk, ".studiox/project.json"), manifest with
+        {
+            Kind = ProjectKind.Pack,
+            CubeMx = null,
+            ToolsetId = "espressif.esp8266-rtos",
+            ToolsetVersion = "3.4.0",
+            CompilerId = "esp8266-rtos",
+            DeviceId = "ESP8266",
+            Espressif = new("esp8266-rtos-sdk", "esp8266", "3.4.0")
+        });
         await Reject(() => service.InstallAsync(otherSdk, one, "firmware"), "COMPONENT_FRAMEWORK", "other SDK is not silently treated as native CMake", check);
     }
     private static async Task Reject(Func<Task> action, string code, string message, Action<bool, string> check)
     {
-        try { await action(); check(false, message); }
+        try
+        {
+            await action();
+            check(false, message);
+        }
         catch (StudioXException error) { check(error.Code == code, message + " (" + error.Code + ")"); }
     }
 }

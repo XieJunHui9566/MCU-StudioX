@@ -9,7 +9,10 @@ internal static class ExistingProjectChecks
     {
         var root = Path.GetFullPath(project);
         var resultPath = Path.GetFullPath(output);
-        if (File.Exists(resultPath)) { throw new ArgumentException("Use a new result file."); }
+        if (File.Exists(resultPath))
+        {
+            throw new ArgumentException("Use a new result file.");
+        }
         var downloads = new OpenOcdService(new ToolsetCatalog(Path.Combine(Path.GetFullPath(runtime), "toolsets")));
         var configuration = await downloads.ConfigurationAsync(root) ?? throw new InvalidOperationException("No download configuration.");
         var preview = await downloads.PreviewAsync(root, configuration.Options);
@@ -22,7 +25,10 @@ internal static class ExistingProjectChecks
         }
         foreach (var probe in new[] { "cmsis-dap", "jlink" })
         {
-            _ = OpenOcdDebugPlanner.Create(root, debug.Configuration with { Options = new(probe, 1000) }, debug.Tools, debug.Elf);
+            _ = OpenOcdDebugPlanner.Create(root, debug.Configuration with
+            {
+                Options = new(probe, 1000)
+            }, debug.Tools, debug.Elf);
         }
         await JsonStore.WriteAsync(resultPath, new
         {

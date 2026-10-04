@@ -1,0 +1,8 @@
+<Project
+  Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <!-- 只引用运行库；被测服务必须从实际安装目录加载，避免测到工作区程序集。 -->
+    <AssemblyName>StudioX.ShippingInstallerValidation</AssemblyName>
+  </PropertyGroup>
+</Project>

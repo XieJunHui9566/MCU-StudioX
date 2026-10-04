@@ -15,8 +15,14 @@ public partial class PluginManagerView : UserControl
     private Task pendingOperation = Task.CompletedTask;
     private bool stopped;
     private readonly HashSet<string> settingsPlugins = [], debugPlugins = [];
-    public Func<string, Task>? ShowSettingsRequestedAsync { get; set; }
-    public Func<string, Task>? ShowDebugRequestedAsync { get; set; }
+    public Func<string, Task>? ShowSettingsRequestedAsync
+    {
+        get; set;
+    }
+    public Func<string, Task>? ShowDebugRequestedAsync
+    {
+        get; set;
+    }
     public Func<CancellationToken, Task>? WorkspaceChangedAsync
     {
         get; set;
@@ -49,7 +55,10 @@ public partial class PluginManagerView : UserControl
 
     private void ShowCatalog()
     {
-        if (CatalogList is null || CatalogFilter is null || CapabilityFilter is null) { return; }
+        if (CatalogList is null || CatalogFilter is null || CapabilityFilter is null)
+        {
+            return;
+        }
         var query = CatalogFilter.Text.Trim();
         var capability = (CapabilityFilter.SelectedItem as ComboBoxItem)?.Tag as string ?? "";
         var rows = entries.Select(entry => new PluginCatalogRow(entry, operation is not null || stopped, settingsPlugins.Contains(entry.Id), debugPlugins.Contains(entry.Id)))
@@ -69,8 +78,14 @@ public partial class PluginManagerView : UserControl
         debugPlugins.Clear();
         foreach (var plugin in contributions.Where(p => running(p.Id)))
         {
-            if (plugin.Contribution.Settings.Length > 0) { settingsPlugins.Add(plugin.Id); }
-            if (plugin.Contribution.DebugAdapters.Length > 0) { debugPlugins.Add(plugin.Id); }
+            if (plugin.Contribution.Settings.Length > 0)
+            {
+                settingsPlugins.Add(plugin.Id);
+            }
+            if (plugin.Contribution.DebugAdapters.Length > 0)
+            {
+                debugPlugins.Add(plugin.Id);
+            }
         }
         ShowCatalog();
     }
@@ -81,8 +96,14 @@ public partial class PluginManagerView : UserControl
     private async void Debug_Click(object sender, RoutedEventArgs e) => await ShowContributionAsync(sender, ShowDebugRequestedAsync);
     private async Task ShowContributionAsync(object sender, Func<string, Task>? action)
     {
-        if (operation is not null || stopped || action is null || (sender as Button)?.Tag is not PluginCatalogRow row) { return; }
-        try { await action(row.Entry.Id); }
+        if (operation is not null || stopped || action is null || (sender as Button)?.Tag is not PluginCatalogRow row)
+        {
+            return;
+        }
+        try
+        {
+            await action(row.Entry.Id);
+        }
         catch (Exception error) { Log(error.ToString()); OperationStatus.Text = "插件入口打开失败：" + error.Message; }
     }
 

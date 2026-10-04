@@ -4,7 +4,7 @@ param(
     [string]$OutputDirectory,
     [string]$DevicePackCatalogDirectory,
     [switch]$ExcludePlugins,
-    [ValidateSet('full','light','base')][string]$DistributionProfile='full',
+    [ValidateSet('full', 'light', 'base')][string]$DistributionProfile = 'full',
     [string]$DistributionCatalogDirectory,
     [string]$CompilerPath = (Join-Path $PSScriptRoot '../.artifacts/installer-tools/InnoSetup-7.1.0/ISCC.exe')
 )
@@ -43,7 +43,8 @@ if (!$PayloadDirectory)
     & (Join-Path $PSScriptRoot 'Publish.ps1') -OutputDirectory $PayloadDirectory -ReleaseVersion $ReleaseVersion -DevicePackCatalogDirectory $DevicePackCatalogDirectory -ExcludePlugins:$ExcludePlugins -DistributionProfile $DistributionProfile -DistributionCatalogDirectory $DistributionCatalogDirectory
 }
 $payload = [IO.Path]::GetFullPath($PayloadDirectory)
-if ($ExcludePlugins -and (Test-Path -LiteralPath (Join-Path $payload 'runtime/plugins'))) {
+if ($ExcludePlugins -and (Test-Path -LiteralPath (Join-Path $payload 'runtime/plugins')))
+{
     throw 'This installer was requested without bundled plugins; prepare a plugin-free payload.'
 }
 $release = Get-Content -LiteralPath (Join-Path $payload 'release.json') -Raw | ConvertFrom-Json
@@ -52,9 +53,22 @@ if ($release.version -ne $ReleaseVersion -or (Get-Item -LiteralPath $executable)
 {
     throw 'Payload and installer versions do not match.'
 }
-if (($release.distributionProfile -and $release.distributionProfile -ne $DistributionProfile) -or (!$release.distributionProfile -and $DistributionProfile -ne 'full')) { throw 'Payload distribution profile differs from the requested installer profile.' }
-if ($DistributionProfile -eq 'light' -and @('runtime/toolsets','runtime/hdl','runtime/stc-isp').Where({Test-Path -LiteralPath (Join-Path $payload $_)}).Count) { throw 'Light installer payload contains development tools.' }
-foreach ($id in $(if ($DistributionProfile -eq 'full') { @('agm.agrv', 'arm.gnu', 'riscv.xpack', 'wch.riscv') } else { @() }))
+if (($release.distributionProfile -and $release.distributionProfile -ne $DistributionProfile) -or (!$release.distributionProfile -and $DistributionProfile -ne 'full'))
+{
+    throw 'Payload distribution profile differs from the requested installer profile.'
+}
+if ($DistributionProfile -eq 'light' -and @('runtime/toolsets', 'runtime/hdl', 'runtime/stc-isp').Where({ Test-Path -LiteralPath (Join-Path $payload $_) }).Count)
+{
+    throw 'Light installer payload contains development tools.'
+}
+foreach ($id in $(if ($DistributionProfile -eq 'full')
+        {
+            @('agm.agrv', 'arm.gnu', 'riscv.xpack', 'wch.riscv')
+        }
+        else
+        {
+            @()
+        }))
 {
     if (!(Test-Path -LiteralPath (Join-Path $payload "runtime/toolsets/$id/1.0.0/toolset.json")))
     {
@@ -107,14 +121,14 @@ $setupHash = (Get-FileHash -LiteralPath $setup -Algorithm SHA256).Hash.ToLowerIn
 # 独立放一份包文件，方便作者单独更新和发送器件支持包。
 Copy-Item -LiteralPath (Join-Path $payload 'device-packs') -Destination $output -Recurse
 Copy-Item -LiteralPath (Join-Path $payload '使用说明.txt') -Destination $output
-@{ version        =$ReleaseVersion;
-    distributionProfile=$DistributionProfile;
-    installer     =[IO.Path]::GetFileName($setup);
-    sha256        =$setupHash;
-    bytes         =(Get-Item -LiteralPath $setup).Length;
-    sourceFiles   =$hashes.Count;
-    signingStatus ='unsigned';
-    upgrade       ='Run the newer installer at the existing location; downgrades blocked';
-    createdUtc    =[DateTimeOffset]::UtcNow.ToString('O')
+@{ version              =$ReleaseVersion;
+    distributionProfile =$DistributionProfile;
+    installer           =[IO.Path]::GetFileName($setup);
+    sha256              =$setupHash;
+    bytes               =(Get-Item -LiteralPath $setup).Length;
+    sourceFiles         =$hashes.Count;
+    signingStatus       ='unsigned';
+    upgrade             ='Run the newer installer at the existing location; downgrades blocked';
+    createdUtc          =[DateTimeOffset]::UtcNow.ToString('O')
 } | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $output 'release.json') -Encoding utf8
 Write-Output $setup

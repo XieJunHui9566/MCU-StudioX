@@ -1,6 +1,5 @@
 namespace StudioX.Desktop;
 
-using System.Windows;
 using System.Windows.Input;
 using StudioX.Application;
 using StudioX.Application.CodeIntelligence;

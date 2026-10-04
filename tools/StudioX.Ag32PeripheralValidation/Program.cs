@@ -3,15 +3,19 @@ using StudioX.Engine;
 using StudioX.Foundation;
 using StudioX.Packages;
 
-if (args.Length < 3) throw new ArgumentException("tools-root pack-root new-output [--route]");
+if (args.Length < 3) { throw new ArgumentException("tools-root pack-root new-output [--route]"); }
 var output = Path.GetFullPath(args[2]);
-if (Directory.Exists(output)) throw new IOException("Use a new output directory.");
+if (Directory.Exists(output)) { throw new IOException("Use a new output directory."); }
 Directory.CreateDirectory(output);
 var checks = new List<string>();
 void Check(bool value, string description)
 {
-    if (!value) throw new InvalidOperationException(description);
-    checks.Add(description); Console.WriteLine("PASS " + description);
+    if (!value)
+    {
+        throw new InvalidOperationException(description);
+    }
+    checks.Add(description);
+    Console.WriteLine("PASS " + description);
     File.WriteAllLines(Path.Combine(output, "checks.txt"), checks);
 }
 var tools = new ToolsetCatalog(Path.GetFullPath(args[0]));
@@ -87,7 +91,11 @@ foreach (var file in Directory.GetFiles(Path.GetFullPath(args[1]), "*.mcupack"))
             _ = await mapping.ValidateBuiltAsync(root);
             Check(true, "Analog image receipt validates for current configuration");
             var changed = await planner.ApplyAsync(root, await planner.ReadAsync(root), [], configured.Snapshot.Clocks, options);
-            try { await mapping.ValidateBuiltAsync(root); throw new InvalidOperationException("Stale image accepted"); }
+            try
+            {
+                await mapping.ValidateBuiltAsync(root);
+                throw new InvalidOperationException("Stale image accepted");
+            }
             catch (StudioXException ex) when (ex.Code == "AG32_MAPPING_STALE") { Check(true, "Changing analog plan invalidates the existing image"); }
             var analogOnly = await mapping.BuildAsync(root, new Progress<string>(Console.WriteLine));
             Check(analogOnly.Success, "Analog-only image with zero GPIO mappings routes: " + analogOnly.LogPath);
@@ -99,9 +107,15 @@ foreach (var file in Directory.GetFiles(Path.GetFullPath(args[1]), "*.mcupack"))
             var header = Path.Combine(root, "device/sdk/include/uart.h");
             var original = File.ReadAllBytes(header);
             await File.AppendAllTextAsync(header, "\n/* external change */\n");
-            try { await new BuildService(tools).ConfigureAsync(root); throw new InvalidOperationException("Modified SDK accepted"); }
+            try
+            {
+                await new BuildService(tools).ConfigureAsync(root);
+                throw new InvalidOperationException("Modified SDK accepted");
+            }
             catch (StudioXException error) when (error.Code == "AG32_PERIPHERAL_SDK")
-            { Check(true, "Modified SDK is rejected before driver replacement"); }
+            {
+                Check(true, "Modified SDK is rejected before driver replacement");
+            }
             File.WriteAllBytes(header, original);
             var enabledAgain = await planner.ReadAsync(root);
             await planner.ApplyAsync(root, enabledAgain, [], enabledAgain.Clocks, options);

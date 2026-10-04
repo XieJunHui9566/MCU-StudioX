@@ -43,5 +43,9 @@ public sealed class FaultAnalysisView : UserControl
         Report = report;
         output.Text = report.ToText();
     }
-    public void SetDiagnostic(string text) { Report = null; output.Text = text; }
+    public void SetDiagnostic(string text)
+    {
+        Report = null;
+        output.Text = text;
+    }
 }

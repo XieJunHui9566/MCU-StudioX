@@ -131,7 +131,10 @@ public partial class MainWindow
         if (await FindProjectNodeAsync(entry.RelativePath, token) is { } node)
         {
             node.IsExpanded = !node.IsExpanded;
-            if (node.IsExpanded) { await LoadChildrenAsync(node, token); }
+            if (node.IsExpanded)
+            {
+                await LoadChildrenAsync(node, token);
+            }
         }
     }
     private void CopyExplorerEntry(ProjectEntry entry)

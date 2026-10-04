@@ -33,7 +33,9 @@ internal static class EspressifBuildEnvironment
         environment["PYTHONUTF8"] = "1";
         environment["IDF_CCACHE_ENABLE"] = "0";
         if (EspressifXtensaBinding.Create(tools, settings) is { } xtensa)
+        {
             environment["XTENSA_GNU_CONFIG"] = EspressifNativePath.ForExecutable(xtensa.ConfigFile);
+        }
         // 编译生成物和 Python 缓存不写入共享 SDK；发行哈希在下次构建时仍可复用。
         environment["PYTHONDONTWRITEBYTECODE"] = "1";
         return environment;

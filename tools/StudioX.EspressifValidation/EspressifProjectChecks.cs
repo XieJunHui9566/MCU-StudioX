@@ -90,23 +90,68 @@ internal static class EspressifProjectChecks
             "all requested SDK targets are represented without ambiguous suffix guessing");
         var sample = installed.Single(pack => pack.Manifest.Devices[0].Espressif!.Target == "esp32c3");
         var deviceSample = sample.Manifest.Devices[0];
-        Reject(sample, deviceSample with { Espressif = null }, "PACK_DEVICE", "zero-size memory requires SDK metadata");
-        Reject(sample, deviceSample with { Espressif = deviceSample.Espressif! with { Target = "esp8266" } },
+        Reject(sample, deviceSample with
+        {
+            Espressif = null
+        }, "PACK_DEVICE", "zero-size memory requires SDK metadata");
+        Reject(sample, deviceSample with
+        {
+            Espressif = deviceSample.Espressif! with
+            {
+                Target = "esp8266"
+            }
+        },
             "PACK_ESPRESSIF_SDK", "ESP8266 cannot masquerade as an IDF 5.5 target");
-        Reject(sample, deviceSample with { Espressif = deviceSample.Espressif! with { SdkVersion = "latest" } },
+        Reject(sample, deviceSample with
+        {
+            Espressif = deviceSample.Espressif! with
+            {
+                SdkVersion = "latest"
+            }
+        },
             "PACK_ESPRESSIF_SDK", "SDK version must be an explicit supported release, never latest");
-        Reject(sample, deviceSample with { Architecture = "xtensa" }, "PACK_ESPRESSIF_TOOLSET", "RISC-V target cannot use Xtensa profile");
-        Reject(sample, deviceSample with { ToolsetId = "arm.gcc" }, "PACK_ESPRESSIF_TOOLSET", "SDK and tool identity must agree");
-        Reject(sample, deviceSample with { CompilerId = "riscv32-unknown-elf-gcc" }, "PACK_ESPRESSIF_TOOLSET", "generic GCC cannot bypass SDK lock");
-        Reject(sample, deviceSample with { CpuFlags = ["-march=rv32imac"] }, "PACK_ESPRESSIF_BUILD", "native SDK does not silently ignore bare-metal CPU flags");
-        Reject(sample, deviceSample with { LinkerScript = "linker/guessed.ld" }, "PACK_ESPRESSIF_BUILD", "native SDK owns linker layout");
-        var reservedTemplate = deviceSample.Templates[0] with { Files = new Dictionary<string, string> { ["src/CMakeLists.txt"] = deviceSample.Templates[0].EntryFile } };
-        Reject(sample, deviceSample with { Templates = [reservedTemplate] }, "PACK_ESPRESSIF_BUILD", "template cannot overwrite generated component declaration");
+        Reject(sample, deviceSample with
+        {
+            Architecture = "xtensa"
+        }, "PACK_ESPRESSIF_TOOLSET", "RISC-V target cannot use Xtensa profile");
+        Reject(sample, deviceSample with
+        {
+            ToolsetId = "arm.gcc"
+        }, "PACK_ESPRESSIF_TOOLSET", "SDK and tool identity must agree");
+        Reject(sample, deviceSample with
+        {
+            CompilerId = "riscv32-unknown-elf-gcc"
+        }, "PACK_ESPRESSIF_TOOLSET", "generic GCC cannot bypass SDK lock");
+        Reject(sample, deviceSample with
+        {
+            CpuFlags = ["-march=rv32imac"]
+        }, "PACK_ESPRESSIF_BUILD", "native SDK does not silently ignore bare-metal CPU flags");
+        Reject(sample, deviceSample with
+        {
+            LinkerScript = "linker/guessed.ld"
+        }, "PACK_ESPRESSIF_BUILD", "native SDK owns linker layout");
+        var reservedTemplate = deviceSample.Templates[0] with
+        {
+            Files = new Dictionary<string, string> { ["src/CMakeLists.txt"] = deviceSample.Templates[0].EntryFile }
+        };
+        Reject(sample, deviceSample with
+        {
+            Templates = [reservedTemplate]
+        }, "PACK_ESPRESSIF_BUILD", "template cannot overwrite generated component declaration");
         var projectRoot = Path.Combine(outputDirectory, "projects", "esp32c3_hello_world");
         var manifest = await ProjectService.ReadAsync(projectRoot);
-        await JsonStore.WriteAsync(Path.Combine(projectRoot, ".studiox", "project.json"), manifest with { Espressif = null });
+        await JsonStore.WriteAsync(Path.Combine(projectRoot, ".studiox", "project.json"), manifest with
+        {
+            Espressif = null
+        });
         await RejectProjectAsync(projectRoot, "PROJECT_ESPRESSIF_SETTINGS", "SDK project cannot lose target metadata and route into bare-metal build");
-        await JsonStore.WriteAsync(Path.Combine(projectRoot, ".studiox", "project.json"), manifest with { Espressif = manifest.Espressif! with { FormatVersion = 2 } });
+        await JsonStore.WriteAsync(Path.Combine(projectRoot, ".studiox", "project.json"), manifest with
+        {
+            Espressif = manifest.Espressif! with
+            {
+                FormatVersion = 2
+            }
+        });
         await RejectProjectAsync(projectRoot, "PROJECT_ESPRESSIF_SETTINGS", "unknown SDK project format is rejected");
         await JsonStore.WriteAsync(Path.Combine(projectRoot, ".studiox", "project.json"), manifest);
         var wroom = installed.Single(pack => pack.Manifest.Devices[0].Id == "ESP32-WROOM-32").Manifest.Devices[0];
@@ -122,7 +167,10 @@ internal static class EspressifProjectChecks
     {
         try
         {
-            PackValidator.Validate(pack.Manifest with { Devices = [device] }, pack.RootDirectory);
+            PackValidator.Validate(pack.Manifest with
+            {
+                Devices = [device]
+            }, pack.RootDirectory);
         }
         catch (StudioXException error) when (error.Code == expectedCode)
         {
