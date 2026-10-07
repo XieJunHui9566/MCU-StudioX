@@ -46,10 +46,40 @@ try
     }
 
     # folder 模式不还原包；文件逐个列入，避免目录 include 在 SDK 中只匹配目录本身。
-    $absoluteFiles = @(& rg --files (Join-Path $projectRoot 'src') (Join-Path $projectRoot 'tools') (Join-Path $projectRoot 'examples') -g '*.cs' -g '!**/bin/**' -g '!**/obj/**' -g '!**/vendor/**' -g '!**/third-party/**' -g '!**/runtime/**' -g '!**/artifacts/**')
-    if ($LASTEXITCODE -ne 0)
+    if (Get-Command rg -ErrorAction SilentlyContinue)
     {
-        throw 'Cannot enumerate first-party C# files.'
+        $absoluteFiles = @(& rg --files (Join-Path $projectRoot 'src') (Join-Path $projectRoot 'tools') (Join-Path $projectRoot 'examples') -g '*.cs' -g '!**/bin/**' -g '!**/obj/**' -g '!**/vendor/**' -g '!**/third-party/**' -g '!**/runtime/**' -g '!**/artifacts/**')
+        if ($LASTEXITCODE -ne 0)
+        {
+            throw 'Cannot enumerate first-party C# files.'
+        }
+    }
+    else
+    {
+        # 干净 Windows 和 CI 不要求全局安装 rg；只遍历第一方目录，产物和厂商子树不进入检查。
+        $excludedDirectories = @('bin', 'obj', 'vendor', 'third-party', 'runtime', 'artifacts')
+        $pendingDirectories = [Collections.Generic.Stack[string]]::new()
+        $fallbackFiles = [Collections.Generic.List[string]]::new()
+        foreach ($sourceName in @('src', 'tools', 'examples'))
+        {
+            $pendingDirectories.Push((Join-Path $projectRoot $sourceName))
+        }
+        while ($pendingDirectories.Count)
+        {
+            $directory = $pendingDirectories.Pop()
+            foreach ($file in Get-ChildItem -LiteralPath $directory -File -Filter '*.cs')
+            {
+                $fallbackFiles.Add($file.FullName)
+            }
+            foreach ($child in Get-ChildItem -LiteralPath $directory -Directory)
+            {
+                if ($child.Name -notin $excludedDirectories -and !($child.Attributes -band [IO.FileAttributes]::ReparsePoint))
+                {
+                    $pendingDirectories.Push($child.FullName)
+                }
+            }
+        }
+        $absoluteFiles = @($fallbackFiles | Sort-Object)
     }
     # SDK 的 LF 规则会改写原始字符串的 CRLF 值；先排版隔离副本，再校验并恢复字面量。
     # -Check 也只修改临时副本，避免误报字面量换行或改动产品源码。
