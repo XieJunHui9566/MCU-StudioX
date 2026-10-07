@@ -67,6 +67,6 @@ public partial class MainWindow
         }
     }
 
-    private void RefreshPluginContributionActions() => PluginManager.SetContributions(pluginWorkspace?.Contributions ?? [],
-        id => pluginWorkspace?.IsPluginRunning(id) == true && !pluginStopped.Contains(id));
+    private void RefreshPluginContributionActions() => PluginManager.SetContributions(ActivePluginContributions,
+        id => FindPluginSession(id) is not null && !pluginStopped.Contains(id));
 }

@@ -45,6 +45,7 @@ if (!File.Exists(Path.Combine(validProject, "src", "main.c")) || !File.Exists(Pa
 }
 Pass("PASS: catalog selection creates project after full verification");
 await ProjectDeviceInfoChecks.RunAsync(validProject, manifest, Pass);
+await EditorRecoveryChecks.RunAsync(output, validProject, Pass);
 
 async Task RejectCreate(string name)
 {

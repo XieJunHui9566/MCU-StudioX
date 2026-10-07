@@ -12,6 +12,10 @@ public sealed class EditorSessionStore : IDisposable
     private readonly SemaphoreSlim gate = new(1, 1);
     private FileStream? pendingRecoveryLease;
     private string? pendingRecoveryState;
+    public bool HasPreviousSession
+    {
+        get; private set;
+    }
     public EditorSessionStore(string dataDirectory)
     {
         root = Path.Combine(dataDirectory, "editor-sessions");
@@ -26,6 +30,11 @@ public sealed class EditorSessionStore : IDisposable
         await gate.WaitAsync(token).ConfigureAwait(false);
         try
         {
+            // 恢复尚未成功时，临时空窗口不能被误记成用户主动关闭工程。
+            if (pendingRecoveryLease is not null && snapshot.Project is null)
+            {
+                return;
+            }
             await JsonStore.WriteAsync(Path.Combine(directory, "state.json"), snapshot, token).ConfigureAwait(false);
         }
         finally { gate.Release(); }
@@ -65,9 +74,11 @@ public sealed class EditorSessionStore : IDisposable
                 }
                 var snapshot = await JsonStore.ReadAsync<EditorWorkspaceSnapshot>(state, token).ConfigureAwait(false);
                 Validate(snapshot);
+                HasPreviousSession = true;
                 if (snapshot.Project is null)
                 {
-                    continue;
+                    // 最近一次明确关闭工程的记录是恢复边界，不能重新打开更早的工程。
+                    return null;
                 }
                 // 窗口完成恢复之前保留旧记录与租约；工程打开失败不能吞掉原草稿。
                 await SaveAsync(snapshot with
@@ -100,6 +111,20 @@ public sealed class EditorSessionStore : IDisposable
         pendingRecoveryState = null;
         pendingRecoveryLease?.Dispose();
         pendingRecoveryLease = null;
+    }
+
+    public async Task<string> ArchiveUnavailableRecoveryAsync(CancellationToken token = default)
+    {
+        var state = pendingRecoveryState
+            ?? throw new StudioXException("SESSION_PENDING", "没有待保留的编辑现场。");
+        var snapshot = await JsonStore.ReadAsync<EditorWorkspaceSnapshot>(state, token).ConfigureAwait(false);
+        Validate(snapshot);
+        var archive = Path.Combine(root, "unavailable-projects", Guid.NewGuid().ToString("N") + ".json");
+        // 先保留完整草稿，再写入无工程现场；归档不参与自动恢复，后续启动也不回退到旧工程。
+        await JsonStore.WriteAsync(archive, snapshot, token).ConfigureAwait(false);
+        CompleteRecovery();
+        await SaveAsync(new(1, null, null, [], DateTimeOffset.UtcNow), token).ConfigureAwait(false);
+        return archive;
     }
 
     public async Task<IReadOnlyList<RecoveredEditorDocument>> RestoreDocumentsAsync(EditorWorkspaceSnapshot snapshot, CancellationToken token = default)

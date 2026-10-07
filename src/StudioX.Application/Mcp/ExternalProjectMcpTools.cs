@@ -19,9 +19,9 @@ internal sealed class ExternalProjectMcpTools(McpSessionContext context) : Studi
     private static readonly TimeSpan ExternalBrowseCursorLifetime = TimeSpan.FromMinutes(15);
 
     [McpServerTool(Name = "external_project_open")]
-    [Description("经用户确认后，把一个绝对路径的外部工程或通用库目录作为本次 MCP 会话的只读参考。返回 rootId；不能写入外部目录。")]
+    [Description("按当前宿主授权策略，把一个绝对路径的外部工程或通用库目录作为本次 MCP 会话的只读参考。返回 rootId；不能写入外部目录。")]
     public Task<string> ExternalProjectOpenAsync(
-        [Description("外部工程或通用库的绝对目录；授权卡会显示完整路径。")]
+        [Description("外部工程或通用库的绝对目录；只读范围限定为此路径。")]
         string directory, CancellationToken cancellationToken = default)
         => Context.ExternalProjects.OpenAsync(directory, cancellationToken);
 

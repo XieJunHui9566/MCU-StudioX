@@ -35,6 +35,8 @@ public partial class App : System.Windows.Application
         var pluginLabsPreview = e.Args is ["--preview-plugin-labs", _, _];
         var workspaceEditingPreview = e.Args is ["--preview-workspace-editor", _, _] or ["--preview-editor-recovery", _, _]
             or ["--preview-workspace-editor", _, _, _] or ["--preview-editor-recovery", _, _, _];
+        var startupRecoveryPreview = e.Args is ["--preview-startup-recovery", _, _];
+        var inactiveCodePreview = e.Args is ["--preview-inactive-code", _, _, _];
         var showDebugDemo = e.Args is ["--show-debug-demo", _] or ["--show-debug-demo", _, _];
         var showBreakpointsDemo = e.Args is ["--show-breakpoints-demo", _] or ["--show-breakpoints-demo", _, _];
         var preview = e.Args is ["--preview-ui", _];
@@ -61,6 +63,7 @@ public partial class App : System.Windows.Application
         var espressifPreview = e.Args is ["--preview-espressif", _, _];
         var espressifModulePreview = e.Args is ["--preview-espressif-module", _, _];
         var pluginsPreview = e.Args is ["--preview-plugins", _] or ["--preview-plugins", _, _];
+        var applicationPluginsPreview = e.Args is ["--preview-application-plugins", _, _, _];
         var debugPluginsPreview = e.Args is ["--preview-debug-plugins", _, _, _];
         var productWorkflowsPreview = e.Args is ["--preview-product-workflows", _, _, _];
         var debugPreview = e.Args is ["--preview-debug", _, _];
@@ -84,11 +87,16 @@ public partial class App : System.Windows.Application
         anyPreview |= peripheralDevelopmentPreview;
         anyPreview |= developmentComponentsPreview;
         anyPreview |= idfVersionsPreview;
+        anyPreview |= applicationPluginsPreview;
+        anyPreview |= startupRecoveryPreview;
+        anyPreview |= inactiveCodePreview;
         var data = (acceptanceWorkbench || showAgentWorkspace || showProductivity || showDebugDemo || showBreakpointsDemo) && e.Args.Length == 3 ? Path.GetFullPath(e.Args[2]) : smoke || anyPreview ? Path.Combine(Path.GetFullPath(e.Args[1]), "user-data") :
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MCUStudioX");
         var services = new WorkbenchService(acceptanceWorkbench ? Path.GetFullPath(e.Args[1])
             : peripheralDevelopmentPreview ? Path.GetFullPath(e.Args[3])
             : workspaceEditingPreview && e.Args.Length == 4 ? Path.GetFullPath(e.Args[3])
+            : startupRecoveryPreview ? Path.GetFullPath(e.Args[2])
+            : inactiveCodePreview ? Path.GetFullPath(e.Args[3])
             : toolManagementPreview && e.Args.Length == 4 ? Path.GetFullPath(e.Args[3])
             : idfVersionsPreview ? Path.GetFullPath(e.Args[3]) : Path.Combine(AppContext.BaseDirectory, "runtime"), data);
         var window = new MainWindow(services);
@@ -108,7 +116,15 @@ public partial class App : System.Windows.Application
             Directory.CreateDirectory(directory);
             try
             {
-                if (peripheralDevelopmentPreview)
+                if (startupRecoveryPreview)
+                {
+                    await window.RenderStartupRecoveryPreviewAsync(directory);
+                }
+                else if (inactiveCodePreview)
+                {
+                    await window.RenderInactiveCodePreviewAsync(directory, Path.GetFullPath(e.Args[2]));
+                }
+                else if (peripheralDevelopmentPreview)
                 {
                     await window.RenderPeripheralDevelopmentPreviewAsync(directory, Path.GetFullPath(e.Args[2]));
                 }
@@ -199,6 +215,10 @@ public partial class App : System.Windows.Application
                 else if (ag32MappingPreview)
                 {
                     await window.RenderAg32MappingPreviewAsync(directory, Path.GetFullPath(e.Args[2]));
+                }
+                else if (applicationPluginsPreview)
+                {
+                    await window.RenderApplicationPluginsPreviewAsync(directory, Path.GetFullPath(e.Args[2]), Path.GetFullPath(e.Args[3]));
                 }
                 else if (pluginsPreview)
                 {

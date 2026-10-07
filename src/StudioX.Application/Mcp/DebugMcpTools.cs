@@ -224,7 +224,7 @@ internal sealed class DebugMcpTools(McpSessionContext context) : StudioXMcpToolP
     }
 
     [McpServerTool(Name = "debug_control")]
-    [Description("经用户逐次批准后控制当前工程的调试会话：pause、continue、step_into、step_over、step_out 或 stop；不提供复位或下载。")]
+    [Description("按当前宿主授权策略控制当前工程的调试会话：pause、continue、step_into、step_over、step_out 或 stop；不提供复位或下载。")]
     public async Task<string> DebugControlAsync(
         [Description("pause、continue、step_into、step_over、step_out 或 stop。")]
         string action,
@@ -266,7 +266,7 @@ internal sealed class DebugMcpTools(McpSessionContext context) : StudioXMcpToolP
     }
 
     [McpServerTool(Name = "debug_breakpoint_set")]
-    [Description("经用户逐次批准后在当前工程源文件设置或更新断点；可设置条件和跳过次数，运行中不可修改。")]
+    [Description("按当前宿主授权策略在当前工程源文件设置或更新断点；可设置条件和跳过次数，运行中不可修改。")]
     public async Task<string> DebugBreakpointSetAsync(
         [Description("当前工程内使用正斜杠的相对源文件路径。")]
         string file,
@@ -310,7 +310,7 @@ internal sealed class DebugMcpTools(McpSessionContext context) : StudioXMcpToolP
     }
 
     [McpServerTool(Name = "debug_breakpoint_remove")]
-    [Description("经用户逐次批准后按 debug_status 返回的断点 ID 移除当前工程断点；运行中不可修改。")]
+    [Description("按当前宿主授权策略按 debug_status 返回的断点 ID 移除当前工程断点；运行中不可修改。")]
     public async Task<string> DebugBreakpointRemoveAsync(
         [Description("debug_status 返回的断点 ID。")]
         string id,

@@ -211,16 +211,28 @@ public sealed class PluginManagerService : IAsyncDisposable
             throw new StudioXException("PLUGIN_PROJECT", "插件会话需要存在的绝对工程目录。");
         }
         ArgumentNullException.ThrowIfNull(broker);
+        return await OpenSessionAsync(Path.GetFullPath(absoluteProject), broker, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>应用入口没有工程权限；未来全局工具须另立契约，不能复用工程代理。</summary>
+    public Task<PluginWorkspaceSession> OpenApplicationSessionAsync(CancellationToken cancellationToken = default) =>
+        OpenSessionAsync(null, (_, _, _, _) => throw new StudioXException("PLUGIN_SCOPE", "应用级会话不提供工程宿主工具。"), cancellationToken);
+
+    private async Task<PluginWorkspaceSession> OpenSessionAsync(string? project,
+        Func<string, string, JsonElement, CancellationToken, Task<JsonElement>> broker,
+        CancellationToken cancellationToken)
+    {
         await gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         PluginWorkspaceSession? session = null;
         try
         {
             ThrowIfDisposed();
             var catalog = await ListCoreAsync(cancellationToken).ConfigureAwait(false);
-            session = new PluginWorkspaceSession(Path.GetFullPath(absoluteProject), FindHostExecutable(), broker);
+            session = new PluginWorkspaceSession(project, FindHostExecutable(), broker);
             sessions.RemoveWhere(item => item.IsDisposed);
             sessions.Add(session);
-            await session.StartAsync(catalog.Where(entry => entry.Enabled && entry.Manifest?.ApiVersion is 2 or 3),
+            await session.StartAsync(catalog.Where(entry => entry.Enabled && entry.Manifest?.ApiVersion is 2 or 3 &&
+                entry.Manifest.Scope == (project is null ? "application" : "project")),
                 cancellationToken).ConfigureAwait(false);
             return session;
         }

@@ -191,6 +191,7 @@ public partial class MainWindow
             session.Tab.Content = null;
         }
         mirroredSession = null;
+        RefreshInactiveCode();
         var other = activeEditor?.Group == 1 ? WorkspaceTabs : secondaryTabs;
         if (other.SelectedItem is not TabItem { Tag: EditorDocumentSession candidate } || candidate == activeEditor)
         {
@@ -202,6 +203,7 @@ public partial class MainWindow
         mirrorEditor.FontSize = SourceEditor.FontSize;
         var color = (Color)ColorConverter.ConvertFromString(currentTheme.Colors["Background"]);
         mirrorEditor.SyntaxHighlighting = CodeLanguage.Get(CodeLanguage.ForFile(candidate.Source.RelativePath), color.R + color.G + color.B < 420);
+        RefreshInactiveCode();
         candidate.Tab.Content = mirrorEditor;
         mirrorEditor.CaretOffset = Math.Clamp(candidate.CaretOffset, 0, candidate.Buffer.TextLength);
         _ = Dispatcher.BeginInvoke(() => { if (mirroredSession == candidate) { mirrorEditor.ScrollToVerticalOffset(candidate.VerticalOffset); } }, DispatcherPriority.Loaded);

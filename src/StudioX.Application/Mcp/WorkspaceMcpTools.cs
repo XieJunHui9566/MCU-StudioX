@@ -280,7 +280,7 @@ internal sealed class WorkspaceMcpTools(McpSessionContext context) : StudioXMcpT
     }
 
     [McpServerTool(Name = "project_edit_file")]
-    [Description("用户逐次批准后替换一个已存在的安全源码文件。必须先读文件并提交原 SHA-256；磁盘变更时拒绝覆盖。")]
+    [Description("按当前宿主授权策略替换一个已存在的安全源码文件。必须先读文件并提交原 SHA-256；磁盘变更时拒绝覆盖。")]
     public async Task<string> ProjectEditFileAsync(
         [Description("工程内正斜杠分隔的相对源码路径。")]
         string path,
@@ -334,7 +334,7 @@ internal sealed class WorkspaceMcpTools(McpSessionContext context) : StudioXMcpT
     }
 
     [McpServerTool(Name = "project_patch_file")]
-    [Description("逐次批准后，以原文件 SHA-256 为条件，在一个安全源码文件中替换多个唯一匹配的文本块；最长 4 MiB 文件可局部修改。")]
+    [Description("按当前宿主授权策略，以原文件 SHA-256 为条件，在一个安全源码文件中替换多个唯一匹配的文本块；最长 4 MiB 文件可局部修改。")]
     public async Task<string> ProjectPatchFileAsync(
         [Description("工程内正斜杠分隔的相对源码路径。")]
         string path,
@@ -423,7 +423,7 @@ internal sealed class WorkspaceMcpTools(McpSessionContext context) : StudioXMcpT
     }
 
     [McpServerTool(Name = "project_create_file")]
-    [Description("用户逐次批准后在当前工程现有目录中新建安全源码文件；绝不覆盖同名文件。")]
+    [Description("按当前宿主授权策略在当前工程现有目录中新建安全源码文件；绝不覆盖同名文件。")]
     public async Task<string> ProjectCreateFileAsync(
         [Description("工程内正斜杠分隔的相对源码路径。")]
         string path,
@@ -458,7 +458,7 @@ internal sealed class WorkspaceMcpTools(McpSessionContext context) : StudioXMcpT
     }
 
     [McpServerTool(Name = "project_create_directory")]
-    [Description("逐次批准后在当前工程新建一个安全源码目录；父目录必须已存在，绝不覆盖同名项。")]
+    [Description("按当前宿主授权策略在当前工程新建一个安全源码目录；父目录必须已存在，绝不覆盖同名项。")]
     public async Task<string> ProjectCreateDirectoryAsync(
         [Description("工程内正斜杠分隔的相对目录路径，不能位于受保护的 device 或配置目录。")]
         string path, CancellationToken cancellationToken = default)

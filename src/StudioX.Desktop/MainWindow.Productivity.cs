@@ -206,13 +206,13 @@ public partial class MainWindow
         {
             Gather(menu, "");
         }
-        if (pluginWorkspace is { } workspace)
+        if (ActivePluginContributions.Length > 0)
         {
-            foreach (var plugin in workspace.Contributions)
+            foreach (var plugin in ActivePluginContributions)
             {
                 foreach (var command in plugin.Contribution.Commands)
                 {
-                    commands.Add(new("插件 · " + command.Title, command.Shortcut ?? plugin.Id, () => CanRunPluginCommand, () => InvokePluginCommandAsync(plugin.Id, command.Id, CapturePluginCommandContext())));
+                    commands.Add(new("插件 · " + command.Title, command.Shortcut ?? plugin.Id, () => CanRunPlugin(plugin.Id), () => InvokePluginCommandAsync(plugin.Id, command.Id, CapturePluginCommandContext(plugin.Id))));
                 }
             }
         }

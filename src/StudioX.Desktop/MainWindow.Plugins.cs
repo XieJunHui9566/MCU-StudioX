@@ -12,6 +12,9 @@ using StudioX.Extensions.Abstractions;
 public partial class MainWindow
 {
     private PluginWorkspaceSession? pluginWorkspace;
+    private PluginWorkspaceSession? pluginApplication;
+    private CancellationTokenSource? pluginApplicationCancellation;
+    private PluginWorkspaceSession? pluginInvocationSession;
     private PluginWorkspaceBroker? pluginBroker;
     private CancellationTokenSource? pluginWorkspaceCancellation;
     private CancellationTokenSource? pluginInvocationCancellation;
@@ -30,13 +33,21 @@ public partial class MainWindow
     private readonly DispatcherTimer pluginUiTimer = new() { Interval = TimeSpan.FromMilliseconds(150) };
     private readonly SemaphoreSlim pluginWorkspaceGate = new(1, 1);
     private static readonly JsonSerializerOptions PluginJson = new(JsonSerializerDefaults.Web);
-    private bool CanRunPluginCommand => !closing && !closed && projectDirectory is not null &&
-        pluginWorkspace is not null && pluginInvocationCancellation is null && aiCancellation is null && !projectActionsBusy;
+    private bool CanRunPluginCommand => !closing && !closed &&
+        (pluginWorkspace is not null || pluginApplication is not null) && pluginInvocationCancellation is null && aiCancellation is null && !projectActionsBusy;
+
+    private PluginWorkspaceSession? FindPluginSession(string id) => pluginApplication?.IsPluginRunning(id) == true
+        ? pluginApplication : pluginWorkspace?.IsPluginRunning(id) == true ? pluginWorkspace : null;
+
+    private PluginActiveContribution[] ActivePluginContributions =>
+        [.. pluginApplication?.Contributions ?? [], .. pluginWorkspace?.Contributions ?? []];
+
+    private bool CanRunPlugin(string id) => CanRunPluginCommand && !pluginStopped.Contains(id) && FindPluginSession(id) is not null;
 
     private void InitializePlugins()
     {
         PluginManager.Attach(services.PluginManager);
-        PluginManager.WorkspaceChangedAsync = ReloadPluginWorkspaceAsync;
+        PluginManager.WorkspaceChangedAsync = ReloadPluginSessionsAsync;
         PluginManager.CancelCommandRequested = () => pluginInvocationCancellation?.Cancel();
         PluginManager.ShowSettingsRequestedAsync = id => ShowPluginSettingsAsync(id);
         PluginManager.ShowDebugRequestedAsync = id => ShowPluginDebugAdaptersAsync(id);
@@ -70,6 +81,7 @@ public partial class MainWindow
         try
         {
             await StopPluginWorkspaceCoreAsync();
+            await EnsureApplicationPluginsAsync(token);
             if (closing || closed || projectDirectory is not { } project)
             {
                 return;
@@ -138,7 +150,7 @@ public partial class MainWindow
             }
             pluginWorkspace = workspace;
             workspace.Changed += PluginWorkspace_Changed;
-            AddPluginContributions(workspace.Contributions);
+            RebuildPluginCommandUi();
             RefreshPluginContributionActions();
             await InitializePluginProductivityAsync(workspace, cancellation.Token);
             foreach (var (key, panel) in workspace.LatestPanels)
@@ -203,8 +215,8 @@ public partial class MainWindow
             foreach (var definition in active.Contribution.Commands)
             {
                 var command = new PluginUiCommand(
-                    () => InvokePluginCommandAsync(active.Id, definition.Id, CapturePluginCommandContext()),
-                    () => CanRunPluginCommand && !pluginStopped.Contains(active.Id));
+                    () => InvokePluginCommandAsync(active.Id, definition.Id, CapturePluginCommandContext(active.Id)),
+                    () => CanRunPlugin(active.Id));
                 pluginCommands.Add(command);
                 var caption = active.Manifest.DisplayName + " · " + definition.Title;
                 var button = new Button { Content = caption, Command = command, Margin = new Thickness(0, 0, 8, 8), ToolTip = definition.Shortcut };
@@ -228,7 +240,11 @@ public partial class MainWindow
             }
             foreach (var panel in active.Contribution.Panels)
             {
-                UpdatePluginPanel(active.Id + "/" + panel.Id, panel);
+                var key = active.Id + "/" + panel.Id;
+                if (!pluginPanels.ContainsKey(key))
+                {
+                    UpdatePluginPanel(key, panel);
+                }
             }
         }
         PluginManager.FilterCommands();
@@ -277,17 +293,21 @@ public partial class MainWindow
         }
     }
 
-    private JsonElement CapturePluginCommandContext() => JsonSerializer.SerializeToElement(new
-    {
-        relativePath = activeEditor?.Source.RelativePath,
-        selectionStart = activeEditor is null ? 0 : SourceEditor.SelectionStart,
-        selectionLength = activeEditor is null ? 0 : SourceEditor.SelectionLength,
-        projectEntryRelativePath = explorerMenuEntry?.RelativePath
-    });
+    private JsonElement CapturePluginCommandContext(string? pluginId = null) =>
+        pluginId is not null && ReferenceEquals(FindPluginSession(pluginId), pluginApplication)
+        ? JsonSerializer.SerializeToElement(new
+        {
+        }) : JsonSerializer.SerializeToElement(new
+        {
+            relativePath = activeEditor?.Source.RelativePath,
+            selectionStart = activeEditor is null ? 0 : SourceEditor.SelectionStart,
+            selectionLength = activeEditor is null ? 0 : SourceEditor.SelectionLength,
+            projectEntryRelativePath = explorerMenuEntry?.RelativePath
+        });
 
     private async Task InvokePluginCommandAsync(string pluginId, string commandId, JsonElement arguments)
     {
-        if (!CanRunPluginCommand || pluginStopped.Contains(pluginId) || pluginWorkspace is not { } workspace || pluginWorkspaceCancellation is null)
+        if (!CanRunPlugin(pluginId) || FindPluginSession(pluginId) is not { } workspace)
         {
             return;
         }
@@ -298,8 +318,14 @@ public partial class MainWindow
         {
             ShowDocument(activity.Tab);
         }
-        using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(pluginWorkspaceCancellation.Token);
+        var lifetime = ReferenceEquals(workspace, pluginApplication) ? pluginApplicationCancellation : pluginWorkspaceCancellation;
+        if (lifetime is null)
+        {
+            return;
+        }
+        using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(lifetime.Token);
         pluginInvocationCancellation = cancellation;
+        pluginInvocationSession = workspace;
         RefreshPluginCommandState();
         try
         {
@@ -317,15 +343,16 @@ public partial class MainWindow
         finally
         {
             pluginInvocationCancellation = null;
+            pluginInvocationSession = null;
             RefreshPluginCommandState();
         }
     }
 
     private void PluginWorkspace_Changed(object? sender, PluginWorkspaceEvent update)
     {
-        var expected = pluginWorkspace;
-        var generation = pluginGeneration;
-        if (!ReferenceEquals(sender, expected) || closing || closed)
+        bool Current() => !closing && !closed && sender is PluginWorkspaceSession &&
+            (ReferenceEquals(sender, pluginWorkspace) || ReferenceEquals(sender, pluginApplication));
+        if (!Current())
         {
             return;
         }
@@ -336,7 +363,7 @@ public partial class MainWindow
                 var panel = update.Payload.Deserialize<PluginPanelDefinition>(PluginJson) ?? throw new InvalidDataException("插件面板数据为空。");
                 lock (pluginEventLock)
                 {
-                    if (generation == pluginGeneration && ReferenceEquals(sender, pluginWorkspace))
+                    if (Current())
                     {
                         pluginPendingPanels[update.PluginId + "/" + panel.Id] = panel;
                     }
@@ -351,7 +378,7 @@ public partial class MainWindow
         {
             Dispatcher.BeginInvoke(async () =>
             {
-                if (generation == pluginGeneration && ReferenceEquals(sender, pluginWorkspace))
+                if (Current())
                 {
                     if (update.Kind is "stopped" or "crashed")
                     {
@@ -373,7 +400,7 @@ public partial class MainWindow
                         RemovePluginActivity(update.PluginId);
                         RefreshPluginContributionActions();
                         RefreshPluginCommandState();
-                        if (pluginBroker is { } broker)
+                        if (ReferenceEquals(sender, pluginWorkspace) && pluginBroker is { } broker)
                         {
                             try
                             {
@@ -427,7 +454,7 @@ public partial class MainWindow
             body.Children.Add(existing.Host);
         }
         existing.Host.Content = existing.Renderer.Render(panel);
-        existing.Renderer.SetEnabled(CanRunPluginCommand);
+        existing.Renderer.SetEnabled(CanRunPlugin(key[..key.IndexOf('/')]));
     }
 
     private void RefreshPluginCommandState()
@@ -437,9 +464,9 @@ public partial class MainWindow
         {
             command.Refresh();
         }
-        foreach (var panel in pluginPanels.Values)
+        foreach (var (key, panel) in pluginPanels)
         {
-            panel.Renderer.SetEnabled(CanRunPluginCommand);
+            panel.Renderer.SetEnabled(CanRunPlugin(key[..key.IndexOf('/')]));
         }
     }
 
@@ -514,8 +541,12 @@ public partial class MainWindow
         pendingDocumentEvents.Clear();
         pluginGeneration++;
         pluginWorkspaceCancellation?.Cancel();
-        pluginInvocationCancellation?.Cancel();
         var workspace = pluginWorkspace;
+        var ownsInvocation = workspace is not null && ReferenceEquals(pluginInvocationSession, workspace);
+        if (ownsInvocation)
+        {
+            pluginInvocationCancellation?.Cancel();
+        }
         pluginWorkspace = null;
         RefreshPluginContributionActions();
         if (workspace is not null)
@@ -533,7 +564,10 @@ public partial class MainWindow
         }
         try
         {
-            await pluginInvocationTask;
+            if (ownsInvocation)
+            {
+                await pluginInvocationTask;
+            }
         }
         catch (Exception error)
         {
@@ -553,6 +587,25 @@ public partial class MainWindow
         }
         pluginWorkspaceCancellation?.Dispose();
         pluginWorkspaceCancellation = null;
+        RemovePluginSessionUi(workspace);
+        if (pluginApplication is null || pluginApplication.Contributions.Count == 0)
+        {
+            pluginPanels.Clear();
+            PluginManager.PanelsHost.Children.Clear();
+            ClearPluginActivities();
+            pluginStopped.Clear();
+            lock (pluginEventLock)
+            {
+                pluginPendingPanels.Clear();
+            }
+        }
+        RebuildPluginCommandUi();
+        PluginManager.WorkspaceHint.Text = pluginApplication?.Contributions.Count > 0
+            ? "应用级插件已加载，无需打开工程。" : "应用级插件在启动时加载；工程插件在打开工程后加载。";
+    }
+
+    private void RebuildPluginCommandUi()
+    {
         foreach (var binding in pluginBindings)
         {
             InputBindings.Remove(binding);
@@ -564,18 +617,39 @@ public partial class MainWindow
         }
         pluginBindings.Clear();
         pluginBindingOwners.Clear();
-        pluginStopped.Clear();
         pluginContextItems.Clear();
         pluginCommands.Clear();
-        pluginPanels.Clear();
-        ClearPluginActivities();
-        lock (pluginEventLock)
-        {
-            pluginPendingPanels.Clear();
-        }
         PluginToolbar.Children.Clear();
         PluginManager.CommandsHost.Children.Clear();
-        PluginManager.PanelsHost.Children.Clear();
-        PluginManager.WorkspaceHint.Text = "打开工程后加载已启用插件的命令与面板。";
+        AddPluginContributions(ActivePluginContributions.Where(active => FindPluginSession(active.Id) is not null).ToArray());
+        RefreshPluginContributionActions();
+    }
+
+    private void RemovePluginSessionUi(PluginWorkspaceSession? session)
+    {
+        if (session is null)
+        {
+            return;
+        }
+        foreach (var active in session.Contributions)
+        {
+            pluginStopped.Remove(active.Id);
+            foreach (var key in pluginPanels.Keys.Where(key => key.StartsWith(active.Id + "/", StringComparison.Ordinal)).ToArray())
+            {
+                if (pluginPanels[key].Host.Parent is Panel parent)
+                {
+                    parent.Children.Remove(pluginPanels[key].Host);
+                }
+                pluginPanels.Remove(key);
+            }
+            lock (pluginEventLock)
+            {
+                foreach (var key in pluginPendingPanels.Keys.Where(key => key.StartsWith(active.Id + "/", StringComparison.Ordinal)).ToArray())
+                {
+                    pluginPendingPanels.Remove(key);
+                }
+            }
+            RemovePluginActivity(active.Id);
+        }
     }
 }

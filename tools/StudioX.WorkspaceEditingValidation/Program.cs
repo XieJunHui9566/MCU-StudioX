@@ -11,6 +11,22 @@ if (args.Any(a => a.StartsWith("--compile-commands-dir=", StringComparison.Ordin
     return;
 }
 
+if (args is ["--verify-project-analysis", var analysisRuntime, var analysisProject, var analysisOutput])
+{
+    var verified = new List<string>();
+    await ProjectAnalysisChecks.RunAsync(Path.GetFullPath(analysisRuntime), Path.GetFullPath(analysisProject), Path.GetFullPath(analysisOutput), (value, message) =>
+    {
+        if (!value)
+        {
+            throw new InvalidOperationException(message);
+        }
+        verified.Add(message);
+        Console.WriteLine("PASS " + message);
+    });
+    await File.WriteAllLinesAsync(Path.Combine(analysisOutput, "result.txt"), verified);
+    return;
+}
+
 if (args.Length != 2) { throw new ArgumentException("runtime directory, new output directory required"); }
 var runtime = Path.GetFullPath(args[0]);
 var root = Path.GetFullPath(args[1]);
@@ -197,5 +213,8 @@ Check(cppRename.Count == 1 && cppRename[0].Matches.Count == 3 && cppRename[0].Af
 await intelligence.StopAsync();
 Check(intelligence.GetDiagnostics().Count == 0, "project stop clears language diagnostics");
 await LiveDiagnosticChecks.RunAsync(runtime, fixture, Path.Combine(root, "live-reliability"), Check);
+await KeilCompilationChecks.RunAsync(runtime, fixture, Path.Combine(root, "keil-compilation"), Check);
+await PackCompilationChecks.RunAsync(runtime, fixture, Path.Combine(root, "pack-compilation"), Check);
+await InactiveCodeChecks.RunAsync(runtime, fixture, Path.Combine(root, "inactive-code"), Check);
 await File.WriteAllTextAsync(Path.Combine(root, "result.txt"), $"PASS {checks.Count}; no hardware or firmware build.\n" + string.Join('\n', checks));
 Console.WriteLine($"PASS {checks.Count}; real clangd, isolated files and recovery stores; no hardware.");

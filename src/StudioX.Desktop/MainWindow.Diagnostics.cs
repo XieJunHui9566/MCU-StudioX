@@ -8,6 +8,8 @@ using StudioX.Application;
 public partial class MainWindow
 {
     private EditorDiagnosticRenderer? diagnosticRenderer;
+    private InactiveCodeColorizer? inactiveCode;
+    private InactiveCodeColorizer? mirrorInactiveCode;
     private long diagnosticRevision;
     private readonly Dictionary<string, (string Text, BuildDiagnostic[] Items)> buildDiagnostics = new(StringComparer.OrdinalIgnoreCase);
 
@@ -15,6 +17,9 @@ public partial class MainWindow
     {
         diagnosticRenderer = new(SourceEditor.TextArea.TextView);
         SourceEditor.TextArea.TextView.BackgroundRenderers.Add(diagnosticRenderer);
+        inactiveCode = new(SourceEditor);
+        mirrorInactiveCode = new(mirrorEditor);
+        Closed += (_, _) => { inactiveCode.Dispose(); mirrorInactiveCode.Dispose(); };
     }
     private void ClearBuildDiagnostics()
     {
@@ -74,6 +79,17 @@ public partial class MainWindow
         diagnosticRenderer?.Set(!services.Debugger.IsActive && !diagnosticsPausedForDebug && activeEditor is { } editor ? current.Where(r => r.File.Equals(editor.Source.RelativePath, StringComparison.OrdinalIgnoreCase))
             .Select(r => r.Offset is { } offset ? new EditorDiagnostic(r.Diagnostic, offset, Math.Min(r.Length, Math.Max(0, editor.Buffer.TextLength - offset))) : EditorDiagnosticRenderer.Locate(editor.Buffer, r.Diagnostic))
             .OfType<EditorDiagnostic>().ToArray() : []);
+        RefreshInactiveCode();
+    }
+    private void RefreshInactiveCode()
+    {
+        var background = (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(currentTheme.Colors["Background"]);
+        var dark = background.R * .299 + background.G * .587 + background.B * .114 < 140;
+        var batches = services.Intelligence.GetInactiveRegions();
+        StudioX.Application.CodeIntelligence.CodeInactiveRegionBatch? Find(EditorDocumentSession? session) => session is null ? null :
+            batches.FirstOrDefault(batch => batch.Project == projectDirectory && batch.Path.Equals(session.Source.RelativePath, StringComparison.OrdinalIgnoreCase) && batch.Text == session.Buffer.Text);
+        inactiveCode?.Set(Find(activeEditor), dark);
+        mirrorInactiveCode?.Set(Find(mirroredSession), dark);
     }
     private bool TryShowDiagnosticHover(Point point)
     {

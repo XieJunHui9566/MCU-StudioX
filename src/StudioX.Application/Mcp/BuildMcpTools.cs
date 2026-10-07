@@ -10,7 +10,7 @@ using StudioX.Foundation;
 internal sealed class BuildMcpTools(McpSessionContext context) : StudioXMcpToolProvider(context)
 {
     [McpServerTool(Name = "project_build")]
-    [Description("用户逐次批准后用工程锁定的内置开发环境组件执行配置或编译；不会下载或连接硬件。返回有界诊断和完整日志路径。")]
+    [Description("按当前宿主授权策略用工程锁定的内置开发环境组件执行配置或编译；不会下载或连接硬件。返回有界诊断和完整日志路径。")]
     public async Task<string> ProjectBuildAsync(
         [Description("configure 只配置 CMake；build 编译固件。")]
         string action = "build", CancellationToken cancellationToken = default)

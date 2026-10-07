@@ -81,8 +81,9 @@ public sealed partial class CodeIntelligenceService
         var database = Path.Combine(projectRoot, ".build", "compile_commands.json");
         if (!File.Exists(database))
         {
-            throw new StudioXException("CUBEMX_INDEX", "请先配置或编译 CubeMX 工程，以生成准确的代码提示参数。");
+            throw new StudioXException("LANGUAGE_DATABASE_MISSING", "请先配置或编译 CMake 工程，以生成准确的代码提示参数。");
         }
+        var responses = new CompilationResponseFiles();
         await using var stream = File.OpenRead(database);
         using var json = await JsonDocument.ParseAsync(stream, cancellationToken: token).ConfigureAwait(false);
         foreach (var entry in json.RootElement.EnumerateArray())
@@ -96,6 +97,7 @@ public sealed partial class CodeIntelligenceService
             }
             var original = entry.TryGetProperty("arguments", out var values) ? values.EnumerateArray().Select(value => value.GetString()!).ToArray()
                 : SplitCMakeCommand(entry.GetProperty("command").GetString()!);
+            original = responses.Expand(original, directory);
             var args = new List<string> { Path.Combine(runtimeDirectory, "languages/clangd/bin/clang.exe") };
             for (var i = 1; i < original.Length; i++)
             {
@@ -114,7 +116,8 @@ public sealed partial class CodeIntelligenceService
                 {
                     continue;
                 }
-                args.Add(argument);
+                // 与器件模板的语言兼容规则一致；厂商 XW 扩展仅在实际 GCC 构建中保留。
+                args.Add(argument == "-march=rv32imac_xw" ? "-march=rv32imac_zicsr" : argument);
             }
             args.AddRange(flags);
             args.Add(path);
@@ -122,7 +125,11 @@ public sealed partial class CodeIntelligenceService
         }
         if (importedCommands.Count == 0)
         {
-            throw new StudioXException("CUBEMX_INDEX", "编译数据库没有 C/C++ 源文件。");
+            throw new StudioXException("LANGUAGE_DATABASE_EMPTY", "编译数据库没有 C/C++ 源文件。");
+        }
+        if (!responses.Unchanged)
+        {
+            throw new StudioXException("LANGUAGE_INPUTS_CHANGED", "CMake 响应文件在加载期间变化，请稍后重试；未发布旧配置的诊断。");
         }
         await JsonStore.WriteAsync(Path.Combine(cache, "compile_commands.json"), importedCommands.Values.Select(item => new
         {

@@ -1,49 +1,24 @@
 namespace StudioX.Cli;
 
-using System.Runtime.InteropServices;
 using StudioX.Application.Mcp;
 
-/// <summary>外部目录只读会话授权与每次变更、设备动作都由本机用户在独立系统对话框中确认。</summary>
-internal sealed class ExternalMcpAuthorizer : IStudioXMcpAuthorizer
+/// <summary>启动 CLI MCP 即建立当前工程的外部 Agent 会话；不使用交互弹窗，保留逐次范围校验与审计。</summary>
+internal sealed class ExternalMcpAuthorizer(string projectDirectory) : IStudioXMcpAuthorizer
 {
-    private const uint YesNoWarningDefaultNoForeground = 0x00000004 | 0x00000030 |
-        0x00000100 | 0x00010000 | 0x00040000;
-    private readonly SemaphoreSlim gate = new(1, 1);
+    private readonly string project = Path.TrimEndingDirectorySeparator(Path.GetFullPath(projectDirectory));
 
-    public async Task<bool> ApproveAsync(StudioXMcpApprovalRequest request, CancellationToken token)
+    public Task<bool> ApproveAsync(StudioXMcpApprovalRequest request, CancellationToken token)
     {
         token.ThrowIfCancellationRequested();
-        // 没有可交互桌面时默认拒绝，避免无界面的 MCP 客户端隐式读取外部目录或修改工程与设备。
-        if (!OperatingSystem.IsWindows() || !Environment.UserInteractive)
+        // 会话只能授权启动时绑定的工程；具体路径、文件哈希、设备和发送参数仍由工具核验。
+        if (!Path.IsPathFullyQualified(request.Project) ||
+            !Path.TrimEndingDirectorySeparator(Path.GetFullPath(request.Project)).Equals(project, StringComparison.OrdinalIgnoreCase) ||
+            !Enum.IsDefined(request.Permission))
         {
-            return false;
+            return Task.FromResult(false);
         }
-        await gate.WaitAsync(token).ConfigureAwait(false);
-        try
-        {
-            return await Task.Run(() =>
-            {
-                token.ThrowIfCancellationRequested();
-                var description = $"外部 MCP 客户端请求执行操作：\n\n" +
-                    $"工程：{request.Project}\n" +
-                    $"工具：{request.Tool}\n" +
-                    $"权限：{request.Permission}\n" +
-                    $"动作：{request.Summary}\n\n" +
-                    (request.Permission == StudioXMcpPermission.ExternalRead
-                        ? "是否允许本 MCP 会话只读访问所列外部目录？会话结束后授权失效。"
-                        : "是否仅批准这一次调用？");
-                try
-                {
-                    return MessageBoxW(nint.Zero, description, "MCU StudioX MCP 授权",
-                        YesNoWarningDefaultNoForeground) == 6;
-                }
-                catch (DllNotFoundException) { return false; }
-                catch (EntryPointNotFoundException) { return false; }
-            }, token).ConfigureAwait(false);
-        }
-        finally { gate.Release(); }
+        // stdout 属于 MCP 协议；审计只能进入 stderr，避免破坏 JSON-RPC 帧。
+        Console.Error.WriteLine($"MCP_SESSION_AUTHORIZED {request.Permission} {request.Tool}");
+        return Task.FromResult(true);
     }
-
-    [DllImport("user32.dll", EntryPoint = "MessageBoxW", CharSet = CharSet.Unicode)]
-    private static extern int MessageBoxW(nint window, string text, string caption, uint type);
 }

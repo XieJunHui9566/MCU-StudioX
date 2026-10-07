@@ -91,6 +91,7 @@ public partial class MainWindow
             ReportHighlightingFailure(language, ex);
         }
         bracketColors?.Configure(CodeLanguage.ForFile(activeDocument?.RelativePath ?? ""), dark);
+        RefreshInactiveCode();
         InvalidateFileIcons(ProjectTree);
         foreach (var session in editorDocuments)
         {

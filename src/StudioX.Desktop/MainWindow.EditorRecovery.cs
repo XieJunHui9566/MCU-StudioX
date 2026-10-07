@@ -84,8 +84,25 @@ public partial class MainWindow
                 return;
             }
             recoveryPending = true;
-            var documents = await services.EditorSessions.RestoreDocumentsAsync(snapshot, token);
-            await OpenProjectAsync(snapshot.Project, token);
+            if (await SkipMissingEditorProjectAsync(snapshot.Project, token))
+            {
+                return;
+            }
+            IReadOnlyList<RecoveredEditorDocument> documents;
+            try
+            {
+                documents = await services.EditorSessions.RestoreDocumentsAsync(snapshot, token);
+                await OpenProjectAsync(snapshot.Project, token);
+            }
+            catch (Exception ex) when (ex is FileNotFoundException or DirectoryNotFoundException)
+            {
+                // 工程可能在检查后被删除；其它缺失文件仍保留原始错误，不当成正常空状态。
+                if (projectDirectory is not null || !await SkipMissingEditorProjectAsync(snapshot.Project, token))
+                {
+                    throw;
+                }
+                return;
+            }
             if (projectDirectory != snapshot.Project)
             {
                 return;
@@ -137,4 +154,19 @@ public partial class MainWindow
         }
         finally { restoringEditorSession = false; }
     });
+
+    private async Task<bool> SkipMissingEditorProjectAsync(string directory, CancellationToken token)
+    {
+        if (!await services.RecentProjects.RemoveIfMissingLocalAsync(directory, token))
+        {
+            return false;
+        }
+        var archive = await services.EditorSessions.ArchiveUnavailableRecoveryAsync(token);
+        recoveryPending = false;
+        await RefreshRecentAsync(token);
+        ShowDocument(WelcomeTab);
+        Status.Text = "就绪";
+        Log("上次工程已删除，已回到开始页；编辑现场保留于：" + archive);
+        return true;
+    }
 }

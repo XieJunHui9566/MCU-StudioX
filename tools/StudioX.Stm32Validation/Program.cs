@@ -10,6 +10,7 @@ using System.Text.RegularExpressions;
 // args: toolsets-root output-directory pack [device1,device2,...]
 Console.OutputEncoding = Encoding.UTF8;
 if (args is ["--language", var runtime, var projects]) { return await LanguageChecks.RunAsync(runtime, projects); }
+if (args is ["--keil-language", var keilRuntime, var keilProjects]) { return await LanguageChecks.KeilAsync(keilRuntime, keilProjects); }
 var root = Path.GetFullPath(args[1]);
 Directory.CreateDirectory(root);
 var pack = await new PackRepository(Path.Combine(root, "repository")).ImportAsync(Path.GetFullPath(args[2]));
@@ -25,7 +26,7 @@ var results = new List<object>();
 var failures = 0;
 foreach (var device in selected)
 {
-    foreach (var template in device.Templates)
+    foreach (var template in device.Templates.Where(t => args.Length < 5 || args[4].Split(',').Contains(t.Id, StringComparer.Ordinal)))
     {
         var name = device.Id + "_" + template.Id.Replace('-', '_');
         var project = Path.Combine(root, name);
@@ -33,11 +34,14 @@ foreach (var device in selected)
         {
             await new ProjectService().CreateAsync(pack, device.Id, template.Id, name, project);
             var hal = template.Id.StartsWith("hal", StringComparison.Ordinal);
+            var spl = template.Id.StartsWith("spl", StringComparison.Ordinal);
+            var ll = template.Id.StartsWith("ll", StringComparison.Ordinal);
             var rtos = template.Id.Contains("freertos", StringComparison.Ordinal);
             Check(Directory.Exists(Path.Combine(project, "device/sdk/hal")) == hal, "HAL isolation");
-            Check(Directory.Exists(Path.Combine(project, "device/sdk/spl")) != hal, "SPL isolation");
+            Check(Directory.Exists(Path.Combine(project, "device/sdk/spl")) == spl, "SPL isolation");
+            Check(Directory.Exists(Path.Combine(project, "device/sdk/ll")) == ll, "LL isolation");
             Check(Directory.Exists(Path.Combine(project, "device/sdk/freertos")) == rtos, "FreeRTOS isolation");
-            Check(device.Templates.Count == 4, "Expected four templates");
+            Check(device.Templates.Count == 6, "Expected HAL/SPL/LL with and without FreeRTOS");
             var build = Path.Combine(project, ".build");
             Directory.CreateDirectory(build);
             var configure = new List<string> { "-S", project, "-B", build, "-G", "Ninja", "-DCMAKE_BUILD_TYPE=Debug" };

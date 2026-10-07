@@ -38,7 +38,7 @@ Engine 生成分层 CMake：根 `CMakeLists.txt` 交给用户维护，`device/CM
 
 工程版本管理：WorkbenchService 向 ProjectService 注入内置 Git 初始化服务，在新工程 staging 内创建独立仓库后再发布到目标目录；失败不留下半成品工程。Git 位于 `runtime/git`，与芯片包、编译器工具锁分离。ProjectTerminalService 管理每工程一个持久 CMD 会话，Foundation 的 Windows ConPTY 提供标准控制台交互与 Job 进程树回收，Application 的 ConsoleScreen 解释 VT 显示，Desktop 仅负责输入、着色、滚动和入口。后台持续排空输出，有界历史与版本缓存避免无限内存增长。见 [Git 与工程终端](GIT-TERMINAL.md)。
 
-编辑工作区的代码提示由 Application/CodeIntelligence 管理内置 clangd 子进程、编译分析参数、工程源码索引、所有打开文档的同步和请求取消；Desktop 传递内存快照与位置，呈现补全、参数、悬停与声明/定义导航。Application 校验跳转目标，只读开放内置标准头文件；Desktop 维护标签和文本锚点导航历史。工程数据与语言缓存分离，不依赖 VS Code、Node 或全局 PATH。当前配色仍为本地词法规则，语言诊断界面和真实 CMake 编译数据库同步留待后续接入。
+编辑工作区的代码提示由 Application/CodeIntelligence 管理内置 clangd 子进程、编译分析参数、工程源码索引、所有打开文档的同步和请求取消；Desktop 传递内存快照与位置，呈现补全、参数、悬停与声明/定义导航。Application 校验跳转目标，只读开放内置标准头文件；Desktop 维护标签和文本锚点导航历史。工程数据与语言缓存分离，不依赖 VS Code、Node 或全局 PATH。已配置的普通器件 CMake、Keil 移植和 CubeMX 工程使用真实编译数据库；ESP 工程使用原生数据库与对应分析兼容配置，SDCC 保留专门的通用 C 分析。诊断与条件编译灰化共享当前工程和文档快照。
 
 当前文件结构同样通过 Application 获取 clangd `documentSymbol` 语义声明；展开函数时再请求 `textDocument/ast` 读取参数和局部变量。Desktop 负责分组、筛选、展开和导航，使用后台请求、编辑防抖、取消及文档版本检查，避免把旧文件结果显示到新标签。
 

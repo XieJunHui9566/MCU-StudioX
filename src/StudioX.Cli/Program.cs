@@ -169,7 +169,7 @@ static async Task RunMcpAsync(string project, string? runtimeArgument, string? d
         throw new StudioXException("MCP_DATA", "MCP 用户数据目录不能是文件或链接目录。");
     }
     await using var services = new WorkbenchService(runtimeDirectory, dataDirectory);
-    await using var tools = new StudioXMcpTools(services, projectDirectory, new ExternalMcpAuthorizer());
+    await using var tools = new StudioXMcpTools(services, projectDirectory, new ExternalMcpAuthorizer(projectDirectory));
     await tools.InitializePluginsAsync(token);
     await using var server = McpServer.Create(new StdioServerTransport("MCU StudioX"),
         new McpServerOptions { ToolCollection = [.. tools.CreateToolCollection()] });
@@ -197,7 +197,8 @@ static void ShowHelp() => Console.WriteLine("""
 
     The MCP command is a stdio server; stdout is reserved for protocol messages.
     MCP user data defaults to the current Windows user's MCUStudioX directory.
-    Mutating MCP tools require a separate Windows approval dialog for each call.
+    Starting MCP authorizes tools within the bound project session, without popup dialogs.
+    Tools still validate paths, hashes, device identity and explicit action arguments.
     Read-only commands return JSON on stdout. Paths within a project use forward slashes.
     Plugin enable trusts the installed code to execute with the current user's permissions.
     """);

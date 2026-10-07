@@ -22,7 +22,7 @@ public sealed partial class PluginWorkspaceSession : IAsyncDisposable
     private PluginActiveContribution[] contributions = [];
     private bool disposed;
 
-    internal PluginWorkspaceSession(string project, string hostExecutable,
+    internal PluginWorkspaceSession(string? project, string hostExecutable,
         Func<string, string, JsonElement, CancellationToken, Task<JsonElement>> broker)
     {
         Project = project;
@@ -30,10 +30,12 @@ public sealed partial class PluginWorkspaceSession : IAsyncDisposable
         this.broker = broker;
     }
 
-    public string Project
+    public string? Project
     {
         get;
     }
+
+    public bool IsApplicationSession => Project is null;
 
     public IReadOnlyList<PluginActiveContribution> Contributions
     {

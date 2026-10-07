@@ -62,7 +62,8 @@ public partial class MainWindow
     {
         try
         {
-            if (projectDirectory is null && (await services.RecentProjects.LoadAsync()).Count == 0 && !await services.FirstProjectGuide.IsDismissedAsync())
+            if (projectDirectory is null && !services.EditorSessions.HasPreviousSession &&
+                (await services.RecentProjects.LoadAsync()).Count == 0 && !await services.FirstProjectGuide.IsDismissedAsync())
             {
                 await ShowFirstProjectAsync();
             }

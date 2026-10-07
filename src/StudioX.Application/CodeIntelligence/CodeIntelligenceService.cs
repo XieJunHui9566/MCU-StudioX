@@ -73,7 +73,19 @@ public sealed partial class CodeIntelligenceService(string runtimeDirectory, str
             importedCommands.Clear();
             inferredCommands.Clear();
             espressifAnalysis = project.Espressif is not null;
-            StatusDescription = "C/C++ 代码提示已就绪";
+            var keilImport = project.Kind == ProjectKind.Pack && File.Exists(Path.Combine(projectRoot, ".studiox", "keil-import.json"));
+            // 用户添加的目录、宏和逐文件参数以 CMake 为准；器件模板只用于尚未配置的工程。
+            // SDCC 仍使用专门的通用 C 兼容配置，不能把 MCS-51 参数直接传给 clang。
+            var nativeDatabase = project.Kind == ProjectKind.CubeMx || keilImport ||
+                project.Kind == ProjectKind.Pack && project.ToolsetId != "stc.sdcc" &&
+                File.Exists(Path.Combine(projectRoot, ".build", "compile_commands.json"));
+            if (keilImport && !File.Exists(Path.Combine(projectRoot, ".build", "compile_commands.json")))
+            {
+                throw new StudioXException("LANGUAGE_DATABASE_MISSING", "Keil 移植工程缺少 CMake 编译数据库，请先配置或编译工程；不会使用器件包模板参数猜测原工程的头文件与宏。");
+            }
+            StatusDescription = nativeDatabase ? "C/C++ 代码提示使用 CMake 实际编译参数" :
+                project.Kind == ProjectKind.Pack && project.Espressif is null && project.ToolsetId != "stc.sdcc"
+                    ? "C/C++ 代码提示使用器件模板；请配置或编译工程以同步 CMake 参数。" : "C/C++ 代码提示已就绪";
             EspressifAnalysisProfile? espressifProfile = null;
             var executable = Path.Combine(runtimeDirectory, "languages", "clangd", "bin", "clangd.exe");
             if (!File.Exists(executable))
@@ -94,7 +106,8 @@ public sealed partial class CodeIntelligenceService(string runtimeDirectory, str
             {
                 var pack = await JsonStore.ReadAsync<PackManifest>(PathBoundary.Resolve(projectRoot, "device/manifest.json"), token).ConfigureAwait(false);
                 var device = TemplateResolver.Resolve(pack.Devices.Single(d => d.Id == project.DeviceId), project.TemplateId, project.Logic is not null);
-                flags = CreateFlags(device);
+                // 已配置工程的库、宏和源目录来自实际 CMake，不能重新套用新建模板的 SDK。
+                flags = CreateFlags(device, templateConfiguration: !nativeDatabase);
                 if (project.PinMapping is not null && Ag32DeviceCatalog.Find(project.DeviceId) is not null)
                 {
                     flags = [.. flags, "-I" + PathBoundary.Resolve(projectRoot, "device/studiox").Replace('\\', '/')];
@@ -129,7 +142,7 @@ public sealed partial class CodeIntelligenceService(string runtimeDirectory, str
             Directory.CreateDirectory(cache);
             IReadOnlyList<string> configuredResponses = [];
             string? configuredResponseStamp = null;
-            if (espressifProfile is not null || project.Kind == ProjectKind.CubeMx)
+            if (espressifProfile is not null || nativeDatabase)
             {
                 var environment = await AnalysisEnvironmentInspector.InspectAsync(projectRoot, project, espressifProfile?.Tools, token).ConfigureAwait(false);
                 configuredResponses = environment.ResponseFiles;
@@ -142,7 +155,7 @@ public sealed partial class CodeIntelligenceService(string runtimeDirectory, str
             }
             var analysisCommands = espressifProfile is not null
                 ? await CreateEspressifDatabaseAsync(cache, espressifProfile, token).ConfigureAwait(false)
-                : project.Kind == ProjectKind.CubeMx
+                : nativeDatabase
                 ? await CreateImportedDatabaseAsync(cache, token).ConfigureAwait(false)
                 : await CreateNavigationDatabaseAsync(cache, token).ConfigureAwait(false);
             var diagnosticRoot = projectRoot;
@@ -173,6 +186,18 @@ public sealed partial class CodeIntelligenceService(string runtimeDirectory, str
                         },
                         textDocument = new
                         {
+                            semanticTokens = new
+                            {
+                                requests = new
+                                {
+                                    full = true
+                                },
+                                tokenTypes = new[] { "comment" },
+                                tokenModifiers = Array.Empty<string>(),
+                                formats = new[] { "relative" },
+                                multilineTokenSupport = false,
+                                overlappingTokenSupport = false
+                            },
                             codeAction = new
                             {
                                 codeActionLiteralSupport = new
@@ -237,6 +262,7 @@ public sealed partial class CodeIntelligenceService(string runtimeDirectory, str
                 }, token).ConfigureAwait(false);
                 supportsAst = initialization.TryGetProperty("capabilities", out var serverCapabilities) &&
                     serverCapabilities.TryGetProperty("astProvider", out var astProvider) && astProvider.ValueKind == JsonValueKind.True;
+                ConfigureInactiveCode(initialization);
                 await server.NotifyAsync("initialized", new
                 {
                 }, token).ConfigureAwait(false);
@@ -262,7 +288,7 @@ public sealed partial class CodeIntelligenceService(string runtimeDirectory, str
         }
     }
 
-    private string[] CreateFlags(DeviceDefinition device)
+    private string[] CreateFlags(DeviceDefinition device, bool templateConfiguration = true)
     {
         var target = device.Architecture.ToLowerInvariant() switch
         {
@@ -293,12 +319,15 @@ public sealed partial class CodeIntelligenceService(string runtimeDirectory, str
         {
             cpuFlags = cpuFlags.Select(f => f == "-march=rv32imac_xw" ? "-march=rv32imac_zicsr" : f).ToArray();
         }
-        result.AddRange(cpuFlags.Where(f => f.StartsWith("-march=", StringComparison.Ordinal) || f.StartsWith("-mabi=", StringComparison.Ordinal) ||
-            f.StartsWith("-mcpu=", StringComparison.Ordinal) || f.StartsWith("-mfpu=", StringComparison.Ordinal) || f.StartsWith("-mfloat-abi=", StringComparison.Ordinal) || f == "-mthumb"));
-        result.AddRange(device.IncludeDirectories.Select(path => "-I" + PathBoundary.Resolve(projectRoot, "device/" + path).Replace('\\', '/')));
-        result.Add("-I" + Path.Combine(projectRoot, "src").Replace('\\', '/'));
-        result.Add("-I" + Path.Combine(projectRoot, "include").Replace('\\', '/'));
-        result.AddRange(device.Defines.Select(define => "-D" + define));
+        if (templateConfiguration)
+        {
+            result.AddRange(cpuFlags.Where(f => f.StartsWith("-march=", StringComparison.Ordinal) || f.StartsWith("-mabi=", StringComparison.Ordinal) ||
+                f.StartsWith("-mcpu=", StringComparison.Ordinal) || f.StartsWith("-mfpu=", StringComparison.Ordinal) || f.StartsWith("-mfloat-abi=", StringComparison.Ordinal) || f == "-mthumb"));
+            result.AddRange(device.IncludeDirectories.Select(path => "-I" + PathBoundary.Resolve(projectRoot, "device/" + path).Replace('\\', '/')));
+            result.Add("-I" + Path.Combine(projectRoot, "src").Replace('\\', '/'));
+            result.Add("-I" + Path.Combine(projectRoot, "include").Replace('\\', '/'));
+            result.AddRange(device.Defines.Select(define => "-D" + define));
+        }
         var standardHeaders = PathBoundary.Resolve(runtimeDirectory, "languages/sysroots/" + device.CompilerId + "/include");
         if (Directory.Exists(standardHeaders))
         {

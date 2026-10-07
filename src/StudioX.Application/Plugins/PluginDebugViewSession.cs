@@ -27,7 +27,7 @@ public sealed class PluginDebugViewSession : IAsyncDisposable
 
     public PluginDebugViewSession(PluginWorkspaceSession workspace, DebugSessionService debugger, string pluginId, string adapterId)
     {
-        if (!workspace.IsPluginRunning(pluginId) || !workspace.Contributions.Any(p => p.Id == pluginId && p.Contribution.DebugAdapters.Any(a => a.Id == adapterId)))
+        if (workspace.IsApplicationSession || !workspace.IsPluginRunning(pluginId) || !workspace.Contributions.Any(p => p.Id == pluginId && p.Contribution.DebugAdapters.Any(a => a.Id == adapterId)))
         {
             throw new StudioXException("PLUGIN_DEBUG", "插件未运行或未声明该调试视图。");
         }
@@ -134,7 +134,7 @@ public sealed class PluginDebugViewSession : IAsyncDisposable
                 {
                     // 单一后台读取循环与有界队列合并连续单步，不把插件延迟放进调试命令回调。
                     await Task.Delay(80, cancellation.Token).ConfigureAwait(false);
-                    var input = await debugger.CapturePluginSnapshotAsync(workspace.Project, revision, cancellation.Token).ConfigureAwait(false);
+                    var input = await debugger.CapturePluginSnapshotAsync(workspace.Project!, revision, cancellation.Token).ConfigureAwait(false);
                     if (input.State != nameof(DebugState.Stopped))
                     {
                         continue;

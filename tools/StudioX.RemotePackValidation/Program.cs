@@ -6,7 +6,7 @@ using StudioX.Application;
 using StudioX.Foundation;
 using StudioX.Packages;
 
-if (args.Length != 1) { throw new ArgumentException("Usage: StudioX.RemotePackValidation <new-output-directory>"); }
+if (args.Length is < 1 or > 2) { throw new ArgumentException("Usage: StudioX.RemotePackValidation <new-output-directory> [complete-stm32-pack]"); }
 var output = Path.GetFullPath(args[0]);
 if (Directory.Exists(output)) { throw new ArgumentException("Use a new output directory."); }
 Directory.CreateDirectory(output);
@@ -183,14 +183,46 @@ using (var client = new HttpClient(missingOlderHandler))
 
 await File.WriteAllTextAsync(Path.Combine(output, "result.txt"), "PASS: remote pack validation\n");
 
-async Task<Fixture> CreatePackAsync(string version)
+// 模拟可信哈希却缺少外设库的 STM32 包，不能让自动更新重新引入旧不完整版本。
+var invalidStm = await CreatePackAsync("4.0.0", "STM32F103C8");
+var stmRepository = new PackRepository(Path.Combine(output, "incomplete-stm32"));
+using (var stmClient = new HttpClient(new ScriptedHandler(commit, MakeIndex(invalidStm), new Dictionary<string, byte[]> { [invalidStm.Path] = invalidStm.Bytes })))
+{
+    using (var stmSync = new GitHubPackSyncService(stmRepository, stmClient))
+    {
+        var result = await stmSync.SyncAsync();
+        Require(result.Imported == 0 && result.Failures.Count == 1 && result.Failures[0].Message.Contains("外设库不完整", StringComparison.Ordinal), "incomplete STM32 rejected even when archive checksum is correct");
+        Require((await stmRepository.ListCatalogAsync()).Count == 0, "incomplete STM32 has no installed side effects");
+        Console.WriteLine("PASS: STM32 library matrix enforced before automatic update import");
+    }
+}
+
+if (args.Length == 2)
+{
+    var samplePath = Path.GetFullPath(args[1]);
+    var sampleBytes = await File.ReadAllBytesAsync(samplePath);
+    using var sampleZip = new System.IO.Compression.ZipArchive(new MemoryStream(sampleBytes));
+    using var sampleManifest = new StreamReader(sampleZip.GetEntry("manifest.json")!.Open());
+    var manifest = JsonSerializer.Deserialize<PackManifest>(await sampleManifest.ReadToEndAsync(), JsonStore.Options)!;
+    var sample = new Fixture($"STMicroelectronics/{manifest.Id}-{manifest.Version}.mcupack", manifest.Id, manifest.Version,
+        Convert.ToHexString(SHA256.HashData(sampleBytes)).ToLowerInvariant(), sampleBytes.Length, samplePath, sampleBytes);
+    var completeRepository = new PackRepository(Path.Combine(output, "complete-stm32"));
+    using var completeClient = new HttpClient(new ScriptedHandler(commit, MakeIndex(sample), new Dictionary<string, byte[]> { [sample.Path] = sampleBytes }));
+    using var completeSync = new GitHubPackSyncService(completeRepository, completeClient);
+    var result = await completeSync.SyncAsync();
+    Require(result.Imported == 1 && result.Failures.Count == 0, "complete STM32 passes automatic update library validation");
+    Require((await completeRepository.ListCatalogAsync()).Single().Manifest.Devices.All(d => d.Templates.Count == 6), "all imported STM32 devices have six actual templates");
+    Console.WriteLine("PASS: actual complete STM32 installs through the automatic update pipeline");
+}
+
+async Task<Fixture> CreatePackAsync(string version, string deviceId = "test-device")
 {
     var source = Path.Combine(output, "source-" + version);
     Directory.CreateDirectory(source);
     await File.WriteAllTextAsync(Path.Combine(source, "main.c"), "int main(void) { for (;;) {} }\n");
     await File.WriteAllTextAsync(Path.Combine(source, "support.c"), "int example;\n");
     await File.WriteAllTextAsync(Path.Combine(source, "link.ld"), "MEMORY { FLASH(rx): ORIGIN=0x08000000, LENGTH=128K }\n");
-    var device = new DeviceDefinition("test-device", "Test device", "arm", 0x08000000, 131072,
+    var device = new DeviceDefinition(deviceId, "Test device", "arm", 0x08000000, 131072,
         0x20000000, 20480, "test.toolset", "1.0.0", "test-gcc", ["-mcpu=cortex-m3", "-mthumb"],
         [], [], ["support.c"], "link.ld", [], [],
         [new ProjectTemplate("bare", "Bare", "Test", "main.c")]);

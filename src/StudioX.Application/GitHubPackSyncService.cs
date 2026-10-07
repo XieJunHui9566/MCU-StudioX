@@ -333,6 +333,8 @@ public sealed class GitHubPackSyncService : IDisposable
         {
             throw new StudioXException("PACK_REMOTE_ID", "器件包清单的 ID/版本与 GitHub 目录不一致。");
         }
+        using var document = JsonDocument.Parse(bytes.ToArray());
+        Stm32LibraryPolicy.Validate(manifest, document.RootElement, zip.Entries.Select(e => e.FullName).ToHashSet(StringComparer.Ordinal));
     }
 
     private static Uri RawUri(string commit, string path) =>

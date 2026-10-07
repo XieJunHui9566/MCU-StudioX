@@ -39,6 +39,7 @@ public sealed partial class CodeIntelligenceService
     {
         diagnosticRevision++;
         diagnosticBatches.Clear();
+        inactiveRegionBatches.Clear();
         pendingDiagnosticBatches.Clear();
         foreach (var uri in diagnosticDocuments.Keys)
         {
@@ -54,6 +55,7 @@ public sealed partial class CodeIntelligenceService
             var generation = Interlocked.Increment(ref languageGeneration);
             diagnosticDocuments.Clear();
             diagnosticBatches.Clear();
+            inactiveRegionBatches.Clear();
             pendingDiagnosticBatches.Clear();
             invalidatedDiagnostics.Clear();
             diagnosticWorkRevision = diagnosticRevision;
@@ -84,6 +86,7 @@ public sealed partial class CodeIntelligenceService
             diagnosticDocuments[uri] = (next, text, diagnosticWorkRevision);
             invalidatedDiagnostics.TryRemove(uri, out _);
             diagnosticBatches.TryRemove(uri, out _);
+            inactiveRegionBatches.Remove(uri);
             pendingDiagnosticBatches.Remove(uri);
             return next;
         }
@@ -97,6 +100,7 @@ public sealed partial class CodeIntelligenceService
             {
                 invalidatedDiagnostics[uri] = 0;
                 diagnosticBatches.TryRemove(uri, out _);
+                inactiveRegionBatches.Remove(uri);
                 pendingDiagnosticBatches.Remove(uri);
             }
         }
@@ -108,6 +112,7 @@ public sealed partial class CodeIntelligenceService
         {
             diagnosticDocuments.TryRemove(uri, out _);
             diagnosticBatches.TryRemove(uri, out _);
+            inactiveRegionBatches.Remove(uri);
             pendingDiagnosticBatches.Remove(uri);
             invalidatedDiagnostics.TryRemove(uri, out _);
         }
@@ -242,6 +247,14 @@ public sealed partial class CodeIntelligenceService
             {
                 await SynchronizeAsync(document.Path, document.Text, token, forceReparse: refresh && NeedsDiagnosticReparse(document.Path)).ConfigureAwait(false);
             }
+            var inactive = new List<CodeInactiveRegionBatch>();
+            foreach (var documentPath in documents.Select(d => d.Path).Append(path).Where(Supports).Distinct(StringComparer.OrdinalIgnoreCase))
+            {
+                if (await ReadInactiveCodeCoreAsync(documentPath, requestedRevision, token).ConfigureAwait(false) is { } batch)
+                {
+                    inactive.Add(batch);
+                }
+            }
             lock (diagnosticStateLock)
             {
                 if (requestedRevision == diagnosticRevision && !DiagnosticsSuspended)
@@ -253,6 +266,10 @@ public sealed partial class CodeIntelligenceService
                         {
                             diagnosticBatches[uri] = batch;
                         }
+                    }
+                    foreach (var batch in inactive)
+                    {
+                        inactiveRegionBatches[new Uri(ResolveDocumentPath(batch.Path)).AbsoluteUri] = batch;
                     }
                     deferDiagnosticPublication = false;
                 }

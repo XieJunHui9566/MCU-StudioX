@@ -120,7 +120,7 @@ internal sealed class GitMcpTools(McpSessionContext context) : StudioXMcpToolPro
     }
 
     [McpServerTool(Name = "git_stage")]
-    [Description("用户逐次批准后暂存或取消暂存 1–20 个安全源码路径；不接受通配符、绝对路径或凭据文件。")]
+    [Description("按当前宿主授权策略暂存或取消暂存 1–20 个安全源码路径；不接受通配符、绝对路径或凭据文件。")]
     public async Task<string> GitStageAsync(
         [Description("stage 或 unstage。")]
         string action,
@@ -158,7 +158,7 @@ internal sealed class GitMcpTools(McpSessionContext context) : StudioXMcpToolPro
     }
 
     [McpServerTool(Name = "git_commit")]
-    [Description("用户逐次批准后提交当前仓库已经暂存的内容；不会自动暂存、推送或强制修改历史。")]
+    [Description("按当前宿主授权策略提交当前仓库已经暂存的内容；不会自动暂存、推送或强制修改历史。")]
     public async Task<string> GitCommitAsync(
         [Description("Git 提交说明。")]
         string message, CancellationToken cancellationToken = default)

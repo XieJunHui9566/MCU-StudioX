@@ -29,6 +29,10 @@ public static partial class PluginContributionValidator
                 throw Invalid("命令 ID 为空或重复。");
             }
             Text(command.Title, 256, "命令标题");
+            if (manifest.Scope == "application" && command.Placement is "editorContext" or "projectContext" or "editor" or "project")
+            {
+                throw Invalid("应用级命令不能注册工程或编辑器上下文入口。");
+            }
             if (command.Placement is not ("palette" or "toolbar" or "editorContext" or "projectContext" or
                 "tools" or "project" or "editor" or "status"))
             {

@@ -59,7 +59,7 @@ internal sealed class SerialPlotMcpTools(McpSessionContext context) : StudioXMcp
     }
 
     [McpServerTool(Name = "serial_connect")]
-    [Description("经用户逐次批准后建立 Agent 独占串口会话；不会断开 IDE 已有连接，DTR 和 RTS 默认保持低电平。")]
+    [Description("按当前宿主授权策略建立 Agent 独占串口会话；不会断开 IDE 已有连接，DTR 和 RTS 默认保持低电平。")]
     public async Task<string> SerialConnectAsync(
         [Description("COM 端口名，例如 COM3。")]
         string portName,
@@ -110,7 +110,7 @@ internal sealed class SerialPlotMcpTools(McpSessionContext context) : StudioXMcp
     }
 
     [McpServerTool(Name = "serial_send")]
-    [Description("经用户逐次批准后向本 Agent 已连接的串口提交数据；可用 UTF-8、GB2312 或 HEX 原始字节。超时可能已发送部分字节，不得盲目重试。")]
+    [Description("按当前宿主授权策略向本 Agent 已连接的串口提交数据；可用 UTF-8、GB2312 或 HEX 原始字节。超时可能已发送部分字节，不得盲目重试。")]
     public async Task<string> SerialSendAsync(
         [Description("待发送文字；mode=Hex 时为十六进制字节，例如 01 A5 FF。")]
         string text,
@@ -295,7 +295,7 @@ internal sealed class SerialPlotMcpTools(McpSessionContext context) : StudioXMcp
     }
 
     [McpServerTool(Name = "plot_start")]
-    [Description("经用户逐次批准后开始本 Agent 的串口绘图采集；demo=true 使用本地演示数据，不连接硬件。不会断开 IDE 绘图窗口。")]
+    [Description("按当前宿主授权策略开始本 Agent 的串口绘图采集；demo=true 使用本地演示数据，不连接硬件。不会断开 IDE 绘图窗口。")]
     public async Task<string> PlotStartAsync(
         [Description("真实采集所用 COM 端口；demo=true 时可留空。")]
         string portName = "",

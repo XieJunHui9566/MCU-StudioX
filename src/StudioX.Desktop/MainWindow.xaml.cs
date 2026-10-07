@@ -103,6 +103,7 @@ public partial class MainWindow : Window
             ToolInventory.Text = await services.ToolInventory.DescribeAsync(token);
             PluginPicker.ItemsSource = services.PluginManifests.ToArray();
             await PluginManager.RefreshAsync(token);
+            await ReloadPluginWorkspaceAsync(token);
             try
             {
                 // 隔离截图与启动验证不读取系统凭据，避免将真实账号带入公开图片。
@@ -664,6 +665,7 @@ public partial class MainWindow : Window
             pluginUiTimer.Stop();
             services.PluginManager.Changed -= PluginCatalog_Changed;
             await StopPluginWorkspaceAsync();
+            await StopApplicationPluginsAsync();
             await PluginManager.ShutdownAsync();
             await DisposeAiMcpSessionAsync();
             await SerialView.ShutdownAsync();

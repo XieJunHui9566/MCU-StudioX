@@ -23,6 +23,9 @@ public sealed record PluginManifest(
     string? Description = null,
     PluginActivityDefinition? Activity = null)
 {
+    /// <summary>旧清单默认绑定工程；应用级入口必须显式声明，不借用虚构工程目录。</summary>
+    public string Scope { get; init; } = "project";
+
     /// <summary>校验清单、入口及目录中的全部文件；旧 decode API 1 保留其明确契约。</summary>
     public static async Task<PluginManifest> ReadAsync(string manifestPath, CancellationToken cancellationToken = default)
     {
@@ -42,6 +45,13 @@ public sealed record PluginManifest(
         if (manifest.FormatVersion != 1 || manifest.ApiVersion is not (1 or 2 or 3))
         {
             throw new StudioXException("PLUGIN_API", "插件 API 或清单版本不兼容。");
+        }
+        if (manifest.Scope is not ("project" or "application") ||
+            manifest.Scope == "application" && (manifest.ApiVersion == 1 ||
+                manifest.HostTools is { Length: > 0 } || manifest.Capabilities is null ||
+                manifest.Capabilities.Any(capability => capability is not ("commands" or "panels"))))
+        {
+            throw new StudioXException("PLUGIN_SCOPE", "应用级插件仅支持命令和面板，不能声明工程宿主工具；scope 必须为 project 或 application。");
         }
         PackValidator.Token(manifest.Id);
         PackValidator.Version(manifest.Version);
