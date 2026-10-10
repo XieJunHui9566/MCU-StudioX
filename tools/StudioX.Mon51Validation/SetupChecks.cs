@@ -9,13 +9,27 @@ internal static class SetupChecks
 {
     public static async Task<int> RunAsync(string packFile, string runtime, string source, string output)
     {
-        if (Directory.Exists(output)) {throw new InvalidOperationException("Use a new validation directory.");}
+        if (Directory.Exists(output))
+        {
+            throw new InvalidOperationException("Use a new validation directory.");
+        }
         Directory.CreateDirectory(output);
         var checks = new List<string>();
-        void Check(bool condition, string name) { if (!condition) {throw new InvalidOperationException(name);} checks.Add(name); }
+        void Check(bool condition, string name)
+        {
+            if (!condition)
+            {
+                throw new InvalidOperationException(name);
+            }
+            checks.Add(name);
+        }
         async Task Reject(Func<Task> action, string code, string name)
         {
-            try { await action(); throw new InvalidOperationException("Accepted: " + name); }
+            try
+            {
+                await action();
+                throw new InvalidOperationException("Accepted: " + name);
+            }
             catch (StudioXException ex) when (ex.Code == code) { checks.Add(name); }
         }
         var packs = new PackRepository(Path.Combine(output, "packs"));
@@ -35,7 +49,10 @@ internal static class SetupChecks
         foreach (var file in Directory.EnumerateFiles(source, "*", SearchOption.AllDirectories))
         {
             var relative = Path.GetRelativePath(source, file);
-            if (relative.StartsWith(".build" + Path.DirectorySeparatorChar) || relative.StartsWith(".git" + Path.DirectorySeparatorChar)) {continue;}
+            if (relative.StartsWith(".build" + Path.DirectorySeparatorChar) || relative.StartsWith(".git" + Path.DirectorySeparatorChar))
+            {
+                continue;
+            }
             var destination = PathBoundary.Resolve(project, relative.Replace('\\', '/'));
             Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
             File.Copy(file, destination);
@@ -71,7 +88,10 @@ internal static class SetupChecks
             (descriptor with { ImageSha256 = "garbage" }, "PACK_MONITOR")
         })
         {
-            var invalid = pack.Manifest with { Devices = pack.Manifest.Devices.Select(d => d.Id == device.Id ? d with { MonitorFirmware = bad } : d).ToArray() };
+            var invalid = pack.Manifest with
+            {
+                Devices = pack.Manifest.Devices.Select(d => d.Id == device.Id ? d with { MonitorFirmware = bad } : d).ToArray()
+            };
             await Reject(() => Task.Run(() => PackValidator.Validate(invalid, pack.RootDirectory)), code, "invalid monitor descriptor rejected: " + code + " / " + bad.ImageFile);
         }
         await isp.VerifyPreparedAsync(prepared);
@@ -84,7 +104,9 @@ internal static class SetupChecks
         await Reject(() => isp.DownloadPreparedAsync(prepared), "STC_ISP_CHANNEL", "ordinary ISP entry refuses monitor setup preparation");
         await Reject(() => setup.PrepareAsync(project, "COM18", "IAP15L2K61S2", selected), "MON51_SETUP_TARGET", "unconfirmed or different exact target rejected offline");
         using (await hub.ReserveAsync("serial:COM18"))
-            {await Reject(() => setup.ExecuteAsync(prepared, null), "DEVICE_OWNED", "setup cannot steal a reserved IDE serial connection");}
+        {
+            await Reject(() => setup.ExecuteAsync(prepared, null), "DEVICE_OWNED", "setup cannot steal a reserved IDE serial connection");
+        }
         await Reject(() => new Mon51SetupService(isp, hub, packs, () => true).ExecuteAsync(prepared, null),
             "MON51_SETUP_SESSION", "active debug session refuses monitor installation before device access");
         var altered = await File.ReadAllBytesAsync(prepared.Image);

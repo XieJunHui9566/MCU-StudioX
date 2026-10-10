@@ -39,7 +39,9 @@ public sealed class Mon51ConnectionWindow : Window
         // 仅有一个明确资源或工程锁定包提供资源时可默认；不猜测多个包中的最新版本。
         firmware.SelectedItem = firmwareSources.Count == 1 ? firmwareSources[0] : firmwareSources.SingleOrDefault(s => s.IsProjectPack);
         if (availablePorts.Contains(selectedPort, StringComparer.OrdinalIgnoreCase))
-            {ports.SelectedItem = availablePorts.First(p => p.Equals(selectedPort, StringComparison.OrdinalIgnoreCase));}
+        {
+            ports.SelectedItem = availablePorts.First(p => p.Equals(selectedPort, StringComparison.OrdinalIgnoreCase));
+        }
         var body = new StackPanel { Margin = new(18) };
         AddText(body, $"STC Mon51 仿真调试 · {projectName}", true);
         AddField(body, "确认实机型号（Mon51 协议不能读取准确料号）", target);
@@ -62,8 +64,14 @@ public sealed class Mon51ConnectionWindow : Window
         buttons.Children.Add(start);
         buttons.Children.Add(cancel);
         var layout = new Grid();
-        layout.RowDefinitions.Add(new() { Height = new(1, GridUnitType.Star) });
-        layout.RowDefinitions.Add(new() { Height = GridLength.Auto });
+        layout.RowDefinitions.Add(new()
+        {
+            Height = new(1, GridUnitType.Star)
+        });
+        layout.RowDefinitions.Add(new()
+        {
+            Height = GridLength.Auto
+        });
         layout.Children.Add(new ScrollViewer { Content = body, VerticalScrollBarVisibility = ScrollBarVisibility.Auto });
         Grid.SetRow(buttons, 1);
         layout.Children.Add(buttons);
@@ -85,9 +93,15 @@ public sealed class Mon51ConnectionWindow : Window
         {
             var selectedFirmware = firmware.SelectedItem as Mon51FirmwareSource;
             if (working || ports.SelectedItem is not string port || target.SelectedItem is not string model ||
-                making && selectedFirmware is null || !making && configured.IsChecked != true) {return;}
+                making && selectedFirmware is null || !making && configured.IsChecked != true)
+            {
+                return;
+            }
             working = true;
-            if (making) {configured.IsChecked = false;}
+            if (making)
+            {
+                configured.IsChecked = false;
+            }
             Update();
             ports.IsEnabled = baud.IsEnabled = target.IsEnabled = firmware.IsEnabled = configured.IsEnabled = false;
             cancel.Content = "取消操作";
@@ -96,9 +110,15 @@ public sealed class Mon51ConnectionWindow : Window
             attempt = operation;
             var progress = new Progress<string>(message =>
             {
-                if (!working) {return;}
+                if (!working)
+                {
+                    return;
+                }
                 detail.AppendText("\n" + message);
-                if (detail.Text.Length > 32000) {detail.Text = detail.Text[^16000..];}
+                if (detail.Text.Length > 32000)
+                {
+                    detail.Text = detail.Text[^16000..];
+                }
                 detail.ScrollToEnd();
             });
             try
@@ -128,17 +148,23 @@ public sealed class Mon51ConnectionWindow : Window
                 cancel.Content = "关闭";
                 cancel.IsEnabled = true;
                 Update();
-                if (closeWhenIdle) {Close();}
+                if (closeWhenIdle)
+                {
+                    Close();
+                }
             }
         }
-        cancel.Click += (_, _) => { if (working) { attempt?.Cancel(); cancel.IsEnabled = false; } else {Close();} };
+        cancel.Click += (_, _) => { if (working) { attempt?.Cancel(); cancel.IsEnabled = false; } else { Close(); } };
         Closing += (_, e) => { if (working) { e.Cancel = true; closeWhenIdle = true; attempt?.Cancel(); } };
         Closed += (_, _) => { lifetime.Cancel(); lifetime.Dispose(); };
     }
 
     private static void AddText(Panel body, string text, bool heading = false) => body.Children.Add(new TextBlock
     {
-        Text = text, TextWrapping = TextWrapping.Wrap, Margin = new(0, 9, 0, 0), FontSize = heading ? 16 : 12,
+        Text = text,
+        TextWrapping = TextWrapping.Wrap,
+        Margin = new(0, 9, 0, 0),
+        FontSize = heading ? 16 : 12,
         FontWeight = heading ? FontWeights.SemiBold : FontWeights.Normal
     });
     private static void AddField(Panel body, string label, Control control)

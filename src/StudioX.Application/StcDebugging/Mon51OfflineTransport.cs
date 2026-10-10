@@ -31,10 +31,22 @@ public sealed class Mon51OfflineTransport : IDeviceTransport
     {
         get; set;
     }
-    public bool AllowUserProgramDownload { get; set; }
-    public bool FailNextProgramWrite { get; set; }
-    public TimeSpan UserEraseReplyDelay { get; set; }
-    public ushort Pc { get; private set; }
+    public bool AllowUserProgramDownload
+    {
+        get; set;
+    }
+    public bool FailNextProgramWrite
+    {
+        get; set;
+    }
+    public TimeSpan UserEraseReplyDelay
+    {
+        get; set;
+    }
+    public ushort Pc
+    {
+        get; private set;
+    }
     public byte[] Code { get; } = new byte[0xdc00];
     public List<byte[]> Commands { get; } = [];
     public bool UseMemoryImage

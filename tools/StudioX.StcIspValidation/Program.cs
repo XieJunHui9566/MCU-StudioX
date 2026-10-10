@@ -79,8 +79,14 @@ try
 }
 finally
 {
-    if (savedBuildSettings is null) { File.Delete(buildSettingsPath); }
-    else { await File.WriteAllBytesAsync(buildSettingsPath, savedBuildSettings); }
+    if (savedBuildSettings is null)
+    {
+        File.Delete(buildSettingsPath);
+    }
+    else
+    {
+        await File.WriteAllBytesAsync(buildSettingsPath, savedBuildSettings);
+    }
 }
 await service.VerifyPreparedAsync(prepared);
 var originalSnapshot = await File.ReadAllBytesAsync(prepared.Image);

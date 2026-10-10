@@ -1,7 +1,7 @@
 namespace StudioX.Packages;
 
-using System.Text.RegularExpressions;
 using System.Security.Cryptography;
+using System.Text.RegularExpressions;
 using StudioX.Foundation;
 
 public static partial class PackValidator

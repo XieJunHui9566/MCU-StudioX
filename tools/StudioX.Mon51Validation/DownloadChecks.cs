@@ -9,13 +9,19 @@ internal static class DownloadChecks
 {
     public static async Task<int> RunAsync(string sourceProject, string output)
     {
-        if (Directory.Exists(output)) { throw new InvalidOperationException("Use a new validation directory."); }
+        if (Directory.Exists(output))
+        {
+            throw new InvalidOperationException("Use a new validation directory.");
+        }
         var project = Path.Combine(output, "project");
         Directory.CreateDirectory(project);
         foreach (var path in Directory.EnumerateFiles(sourceProject, "*", SearchOption.AllDirectories))
         {
             var relative = Path.GetRelativePath(sourceProject, path);
-            if (relative.StartsWith(".build" + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)) { continue; }
+            if (relative.StartsWith(".build" + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
             var target = PathBoundary.Resolve(project, relative.Replace('\\', '/'));
             Directory.CreateDirectory(Path.GetDirectoryName(target)!);
             File.Copy(path, target);
@@ -28,12 +34,19 @@ internal static class DownloadChecks
         var checks = new List<string>();
         void Check(bool value, string name)
         {
-            if (!value) { throw new InvalidOperationException(name); }
+            if (!value)
+            {
+                throw new InvalidOperationException(name);
+            }
             checks.Add(name);
         }
         async Task Reject(Func<Task> action, string code, string name)
         {
-            try { await action(); throw new InvalidOperationException("Accepted: " + name); }
+            try
+            {
+                await action();
+                throw new InvalidOperationException("Accepted: " + name);
+            }
             catch (StudioXException error) when (error.Code == code) { checks.Add(name); }
         }
         await using var hub = new DeviceHub();

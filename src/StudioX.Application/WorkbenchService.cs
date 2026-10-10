@@ -279,8 +279,14 @@ public sealed class WorkbenchService : IAsyncDisposable
     {
         get;
     }
-    public StcBuildWorkflowService StcBuilds { get; }
-    public StcDebugging.Mon51SetupService Mon51Setup { get; }
+    public StcBuildWorkflowService StcBuilds
+    {
+        get;
+    }
+    public StcDebugging.Mon51SetupService Mon51Setup
+    {
+        get;
+    }
     public EspressifDownloadService EspressifDownloads
     {
         get;

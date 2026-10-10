@@ -231,7 +231,10 @@ public sealed partial class StcIspService(ToolsetCatalog catalog, string runtime
     /// <summary>只使用用户预览并确认过的固件快照；启动前再核对散列、型号及保存的时钟设置。</summary>
     public Task<StcIspReport> DownloadPreparedAsync(StcIspPreparation prepared, IProgress<string>? output = null, CancellationToken token = default)
     {
-        if (prepared.MonitorSetup) {throw new StudioXException("STC_ISP_CHANNEL", "监控制作镜像必须由专用制作入口执行。");}
+        if (prepared.MonitorSetup)
+        {
+            throw new StudioXException("STC_ISP_CHANNEL", "监控制作镜像必须由专用制作入口执行。");
+        }
         return Task.Run(() => DownloadPreparedCoreAsync(prepared, output, token), token);
     }
 
@@ -258,7 +261,10 @@ public sealed partial class StcIspService(ToolsetCatalog catalog, string runtime
                 "--expected-code-bytes", prepared.ExpectedCodeBytes.ToString(System.Globalization.CultureInfo.InvariantCulture),
                 "--image", prepared.Image, "--baud", settings.TransferBaud.ToString(System.Globalization.CultureInfo.InvariantCulture),
                 "--clock-mode", settings.ClockMode switch { StcClockMode.InternalRc => "internal", StcClockMode.ExternalCrystal => "external", _ => "preserve" } };
-            if (prepared.MonitorSetup) {args.Add("--monitor-setup");}
+            if (prepared.MonitorSetup)
+            {
+                args.Add("--monitor-setup");
+            }
             if (settings.ClockMode == StcClockMode.InternalRc && settings.ClockFrequencyHz is { } frequency)
             {
                 args.AddRange(["--frequency-hz", frequency.ToString(System.Globalization.CultureInfo.InvariantCulture)]);
@@ -320,7 +326,9 @@ public sealed partial class StcIspService(ToolsetCatalog catalog, string runtime
             ValidateMonitorTarget(device, prepared.Settings);
             StcMonitorImage.ValidateSetup(bytes);
             if (prepared.DataBytes != 61440 || prepared.HighestAddress != 0xefff)
-                {throw new StudioXException("STC_ISP_PREPARE", "监控制作范围被修改。");}
+            {
+                throw new StudioXException("STC_ISP_PREPARE", "监控制作范围被修改。");
+            }
         }
         else
         {
@@ -329,7 +337,9 @@ public sealed partial class StcIspService(ToolsetCatalog catalog, string runtime
             var selectedLimit = buildSettings!.CodeRomSizeBytes ?? limit.MaximumBytes;
             var hex = StcIntelHex.Validate(bytes, checked((uint)Math.Min(limit.MaximumBytes, selectedLimit)));
             if (hex.DataBytes != prepared.DataBytes || hex.HighestAddress != prepared.HighestAddress)
-                {throw new StudioXException("STC_ISP_PREPARE", "确认后的固件内容或地址范围已变化。");}
+            {
+                throw new StudioXException("STC_ISP_PREPARE", "确认后的固件内容或地址范围已变化。");
+            }
         }
         // 防止预览到执行期间工程目录中的脚本被替换；始终重新写入程序集内置的型号门禁。
         await using var resource = typeof(StcIspService).Assembly.GetManifestResourceStream("StudioX.Engine.Resources.studiox-stcgal-guard.py")

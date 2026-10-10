@@ -2,9 +2,9 @@ namespace StudioX.Desktop;
 
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Threading;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Threading;
 using StudioX.Application;
 using StudioX.Application.StcDebugging;
 using StudioX.Engine;
@@ -53,7 +53,14 @@ public partial class MainWindow
         Check(!Mon51BreakpointInteriorOpaque(2), "unverified saved source breakpoint renders hollow before connection");
         var connection = new Mon51ConnectionWindow(["COM14"], "COM14", "my_firmware", [Mon51PreviewFirmware],
             (_, _, _, _, _) => throw new InvalidOperationException("Preview must never open a serial port"),
-            (_, _, _, _, _) => throw new InvalidOperationException("Preview must never install a monitor")) { Owner = this, ShowActivated = false, ShowInTaskbar = false, Left = -20000, WindowStartupLocation = WindowStartupLocation.Manual };
+            (_, _, _, _, _) => throw new InvalidOperationException("Preview must never install a monitor"))
+        {
+            Owner = this,
+            ShowActivated = false,
+            ShowInTaskbar = false,
+            Left = -20000,
+            WindowStartupLocation = WindowStartupLocation.Manual
+        };
         connection.Show();
         connection.UpdateLayout();
         Render(connection, Path.Combine(directory, "connection.png"));

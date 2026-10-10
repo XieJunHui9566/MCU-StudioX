@@ -16,7 +16,7 @@ public partial class MainWindow
     private int buildOutputFrame;
     private void InitializeBuildOutput()
     {
-        buildOutputTimer.Tick += (_, _) => { if (buildOutputActive) {buildOutputFrame++; RenderBuildProgress();} };
+        buildOutputTimer.Tick += (_, _) => { if (buildOutputActive) { buildOutputFrame++; RenderBuildProgress(); } };
         Closed += (_, _) => buildOutputTimer.Stop();
     }
     private void BeginBuildOutput()
@@ -33,12 +33,19 @@ public partial class MainWindow
     }
     private void ReportBuildActivity(string text)
     {
-        if (!buildOutputActive) {return;}
+        if (!buildOutputActive)
+        {
+            return;
+        }
         var phase = TerminalProgressFormatter.Phase(text);
         if (phase != buildOutputPhase)
         {
             // 无计数的准备步骤复用活动行，避免健康检查的每个小步骤再刷一行。
-            if (buildOutputMeasurement is not null) {RenderBuildProgress("阶段"); BuildLog.CommitProgress();}
+            if (buildOutputMeasurement is not null)
+            {
+                RenderBuildProgress("阶段");
+                BuildLog.CommitProgress();
+            }
             buildOutputTimestamp = DateTime.Now;
             buildOutputPhase = phase;
         }
@@ -47,7 +54,10 @@ public partial class MainWindow
     }
     private void ReportBuildToolLine(string text)
     {
-        if (!buildOutputActive) {return;}
+        if (!buildOutputActive)
+        {
+            return;
+        }
         if (BuildOutputParser.Measure(text) is { } measurement)
         {
             buildOutputMeasurement = measurement;
@@ -65,7 +75,12 @@ public partial class MainWindow
         buildOutputTimer.Stop();
         buildOutputClock.Stop();
         buildOutputPhase = message;
-        buildOutputState = success switch { true => "成功", false => "失败", null => "取消" };
+        buildOutputState = success switch
+        {
+            true => "成功",
+            false => "失败",
+            null => "取消"
+        };
         // 最终状态取实际报告；不把任务计数包装成整个构建的 100%。
         BuildLog.UpdateProgress($"[{DateTime.Now:HH:mm:ss}] [{buildOutputState}] {message} · 耗时 {buildOutputClock.Elapsed:hh\\:mm\\:ss}");
         BuildLog.CommitProgress();

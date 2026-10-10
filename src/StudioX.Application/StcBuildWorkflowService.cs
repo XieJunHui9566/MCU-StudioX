@@ -28,15 +28,25 @@ public sealed class StcBuildWorkflowService(BuildService builds, Func<bool> debu
         var settings = await builds.LoadSettingsAsync(directory, token);
         var preferencePath = PathBoundary.Resolve(directory, PreferencePath);
         if (debugging && !settings.Mon51Profile)
-            {await JsonStore.WriteAsync(preferencePath, new OrdinaryPreferences(settings.CodeRomSizeBytes, settings.DebugInfo), token);}
+        {
+            await JsonStore.WriteAsync(preferencePath, new OrdinaryPreferences(settings.CodeRomSizeBytes, settings.DebugInfo), token);
+        }
         var ordinary = !debugging && settings.Mon51Profile && File.Exists(preferencePath)
             ? await JsonStore.ReadAsync<OrdinaryPreferences>(preferencePath, token) : null;
         // 保留用户优化；监控构建限制实际可用内存并要求标准 CDB。
         var selected = debugging
-            ? settings with { Mon51Profile = true, DebugInfo = CompilerDebugInfo.Standard,
-                CodeRomSizeBytes = Math.Min(settings.CodeRomSizeBytes ?? 0xdbfd, 0xdbfd) }
-            : settings with { Mon51Profile = false, CodeRomSizeBytes = ordinary?.CodeRomSizeBytes ?? (ordinary is null ? settings.CodeRomSizeBytes : null),
-                DebugInfo = ordinary?.DebugInfo ?? settings.DebugInfo };
+            ? settings with
+            {
+                Mon51Profile = true,
+                DebugInfo = CompilerDebugInfo.Standard,
+                CodeRomSizeBytes = Math.Min(settings.CodeRomSizeBytes ?? 0xdbfd, 0xdbfd)
+            }
+            : settings with
+            {
+                Mon51Profile = false,
+                CodeRomSizeBytes = ordinary?.CodeRomSizeBytes ?? (ordinary is null ? settings.CodeRomSizeBytes : null),
+                DebugInfo = ordinary?.DebugInfo ?? settings.DebugInfo
+            };
         await builds.SaveSettingsAsync(directory, selected, token);
         return selected;
     }

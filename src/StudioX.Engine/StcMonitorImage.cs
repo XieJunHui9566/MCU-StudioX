@@ -15,7 +15,9 @@ public static class StcMonitorImage
     public static void ValidateSetup(byte[] bytes)
     {
         if (bytes.Length != 61440 || Hash(bytes) != SetupSha256)
-            {throw new StudioXException("MON51_FIRMWARE", "制作镜像与已核对的 IAP15F2K61S2 / 7.2.5S 固件身份不符。");}
+        {
+            throw new StudioXException("MON51_FIRMWARE", "制作镜像与已核对的 IAP15F2K61S2 / 7.2.5S 固件身份不符。");
+        }
     }
     public static byte[] CreateHex(byte[] monitor, byte[] reset)
     {

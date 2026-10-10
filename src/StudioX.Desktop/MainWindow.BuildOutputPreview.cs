@@ -7,7 +7,6 @@ using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using StudioX.Application;
 using StudioX.Application.Output;
-using StudioX.Application.Lvgl;
 using StudioX.Engine;
 using StudioX.Engine.Hdl;
 
@@ -66,7 +65,10 @@ public partial class MainWindow
         BeginBuildOutput();
         Check(BuildLog.Text.Contains("[进度] 工程检查 [<=>") && !BuildLog.Text.Contains('%'), "stages without measurements use an inline activity bar without fabricated percentages");
         var preparationLines = BuildLog.Document.LineCount;
-        foreach (var phase in new[] { "工程清单", "工程构建入口", "编译参数", "工程工具内容锁定" }) {ReportBuildActivity(phase);}
+        foreach (var phase in new[] { "工程清单", "工程构建入口", "编译参数", "工程工具内容锁定" })
+        {
+            ReportBuildActivity(phase);
+        }
         Check(BuildLog.Document.LineCount == preparationLines, "unmeasured preparation steps reuse one activity line without flooding output");
         ReportBuildActivity($"完整校验开发环境组件 {sourceManifest.ToolsetId} / {sourceManifest.ToolsetVersion}（10,512 个文件）…");
         var beforeUpdates = BuildLog.Document.LineCount;
@@ -151,7 +153,10 @@ public partial class MainWindow
         foreach (var path in Directory.EnumerateFiles(sourceProject, "*", SearchOption.AllDirectories))
         {
             var relative = Path.GetRelativePath(sourceProject, path).Replace('\\', '/');
-            if (relative.StartsWith(".build/", StringComparison.Ordinal) || relative.StartsWith(".git/", StringComparison.Ordinal)) {continue;}
+            if (relative.StartsWith(".build/", StringComparison.Ordinal) || relative.StartsWith(".git/", StringComparison.Ordinal))
+            {
+                continue;
+            }
             var destination = StudioX.Foundation.PathBoundary.Resolve(fixture, relative);
             Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
             File.Copy(path, destination);
@@ -238,7 +243,9 @@ public partial class MainWindow
             bitmap.CopyPixels(pixels, width * 4, 0);
             var colors = new HashSet<int>();
             for (var i = 0; i < pixels.Length && colors.Count < 9; i += 4)
-                {colors.Add(pixels[i] | pixels[i + 1] << 8 | pixels[i + 2] << 16);}
+            {
+                colors.Add(pixels[i] | pixels[i + 1] << 8 | pixels[i + 2] << 16);
+            }
             Check(colors.Count >= 9, "captured output contains actual rendered content: " + Path.GetFileName(path));
             var encoder = new PngBitmapEncoder();
             encoder.Frames.Add(BitmapFrame.Create(bitmap));

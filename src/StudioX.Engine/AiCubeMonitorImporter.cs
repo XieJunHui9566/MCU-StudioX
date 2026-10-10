@@ -32,7 +32,10 @@ public static class AiCubeMonitorImporter
         var monitor = Decode(ReadEntry(bytes, "res6.bin"), table);
         var reset = Decode(ReadEntry(bytes, "res2.bin"), table);
         var hex = StcMonitorImage.CreateHex(monitor, reset);
-        if (!setup) {return hex;}
+        if (!setup)
+        {
+            return hex;
+        }
         // 原厂制作通道发送连续编码镜像；F449 加 02，状态尾部高半字节非 50 时另加 10。
         var plain = Enumerable.Repeat((byte)0xff, 0xf000).ToArray();
         reset.CopyTo(plain, 0);
@@ -67,7 +70,10 @@ public static class AiCubeMonitorImporter
     {
         for (var at = 0; at + 30 <= executable.Length; at++)
         {
-            if (BinaryPrimitives.ReadUInt32LittleEndian(executable.AsSpan(at, 4)) != 0x04034b50) {continue;}
+            if (BinaryPrimitives.ReadUInt32LittleEndian(executable.AsSpan(at, 4)) != 0x04034b50)
+            {
+                continue;
+            }
             var header = executable.AsSpan(at, 30);
             var flags = BinaryPrimitives.ReadUInt16LittleEndian(header[6..]);
             var method = BinaryPrimitives.ReadUInt16LittleEndian(header[8..]);
@@ -76,28 +82,43 @@ public static class AiCubeMonitorImporter
             var nameSize = BinaryPrimitives.ReadUInt16LittleEndian(header[26..]);
             var extraSize = BinaryPrimitives.ReadUInt16LittleEndian(header[28..]);
             if (at + 30L + nameSize + extraSize + compressed > executable.Length || nameSize != name.Length ||
-                Encoding.ASCII.GetString(executable, at + 30, nameSize) != name) {continue;}
+                Encoding.ASCII.GetString(executable, at + 30, nameSize) != name)
+            {
+                continue;
+            }
             if (flags != 11 || method is not (0 or 8) || compressed is < 12 or > 65536 || expanded > 65536)
             {
                 throw Invalid("厂商 ZIP 资源结构未通过核对。");
             }
             var crypt = new ZipCipher(Convert.FromHexString("686A3132335F2360215F333431353932"));
             var packed = executable.AsSpan(at + 30 + nameSize + extraSize, (int)compressed).ToArray();
-            for (var i = 0; i < packed.Length; i++) {packed[i] = crypt.Decrypt(packed[i]);}
+            for (var i = 0; i < packed.Length; i++)
+            {
+                packed[i] = crypt.Decrypt(packed[i]);
+            }
             var crc = BinaryPrimitives.ReadUInt32LittleEndian(header[14..]);
             // 此归档使用数据描述符，ZipCrypto 校验字节取修改时间高字节，而非 CRC。
             var modifiedTime = BinaryPrimitives.ReadUInt16LittleEndian(header[10..]);
-            if (packed[11] != (byte)(modifiedTime >> 8)) {throw Invalid("厂商 ZIP 解码校验失败。");}
+            if (packed[11] != (byte)(modifiedTime >> 8))
+            {
+                throw Invalid("厂商 ZIP 解码校验失败。");
+            }
             using var input = new MemoryStream(packed, 12, packed.Length - 12);
             using var output = new MemoryStream();
-            if (method == 0) {input.CopyTo(output);}
+            if (method == 0)
+            {
+                input.CopyTo(output);
+            }
             else
             {
                 using var inflater = new DeflateStream(input, CompressionMode.Decompress);
                 inflater.CopyTo(output);
             }
             var result = output.ToArray();
-            if (result.Length != expanded || ZipCipher.Checksum(result) != crc) {throw Invalid("厂商 ZIP 资源长度或 CRC 不一致。");}
+            if (result.Length != expanded || ZipCipher.Checksum(result) != crc)
+            {
+                throw Invalid("厂商 ZIP 资源长度或 CRC 不一致。");
+            }
             return result;
         }
         throw Invalid("厂商 EXE 缺少所需监控资源。");
@@ -106,7 +127,13 @@ public static class AiCubeMonitorImporter
     private sealed class ZipCipher
     {
         private uint key0 = 0x12345678, key1 = 0x23456789, key2 = 0x34567890;
-        internal ZipCipher(byte[] password) { foreach (var value in password) {Update(value);} }
+        internal ZipCipher(byte[] password)
+        {
+            foreach (var value in password)
+            {
+                Update(value);
+            }
+        }
         internal byte Decrypt(byte value)
         {
             var temp = key2 | 2;
@@ -123,13 +150,19 @@ public static class AiCubeMonitorImporter
         private static uint Crc(uint crc, byte value)
         {
             crc ^= value;
-            for (var i = 0; i < 8; i++) {crc = (crc & 1) != 0 ? (crc >> 1) ^ 0xedb88320 : crc >> 1;}
+            for (var i = 0; i < 8; i++)
+            {
+                crc = (crc & 1) != 0 ? (crc >> 1) ^ 0xedb88320 : crc >> 1;
+            }
             return crc;
         }
         internal static uint Checksum(byte[] bytes)
         {
             var crc = uint.MaxValue;
-            foreach (var value in bytes) {crc = Crc(crc, value);}
+            foreach (var value in bytes)
+            {
+                crc = Crc(crc, value);
+            }
             return ~crc;
         }
     }

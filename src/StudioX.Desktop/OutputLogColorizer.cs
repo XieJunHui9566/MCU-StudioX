@@ -10,7 +10,10 @@ internal sealed class OutputLogColorizer(OutputLogView editor) : DocumentColoriz
 {
     protected override void ColorizeLine(DocumentLine line)
     {
-        if (line.Length == 0) {return;}
+        if (line.Length == 0)
+        {
+            return;
+        }
         var text = CurrentContext.Document.GetText(line);
         var tone = BuildOutputParser.Tone(text);
         var color = editor.BrushFor(tone);

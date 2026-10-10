@@ -1,8 +1,8 @@
 namespace StudioX.Desktop;
 
 using System.Windows.Threading;
-using StudioX.Engine;
 using StudioX.Application.Output;
+using StudioX.Engine;
 
 public partial class MainWindow
 {
@@ -10,8 +10,18 @@ public partial class MainWindow
     {
         BeginBuildOutput();
         var outputLines = new OutputLineBuffer();
-        void ToolLine(string text) { Log(text); ReportBuildToolLine(text); }
-        void FlushToolOutput() { if (outputLines.Flush() is { } tail) {ToolLine(tail);} }
+        void ToolLine(string text)
+        {
+            Log(text);
+            ReportBuildToolLine(text);
+        }
+        void FlushToolOutput()
+        {
+            if (outputLines.Flush() is { } tail)
+            {
+                ToolLine(tail);
+            }
+        }
         CancelBuildMemoryRefresh();
         ClearBuildDiagnostics();
         var revision = diagnosticRevision;
@@ -23,7 +33,11 @@ public partial class MainWindow
             {
                 health = await services.ProjectHealth.InspectAsync(directory, progress: new Progress<string>(text =>
                 {
-                    if (checking) { Status.Text = text; ReportBuildActivity(text); }
+                    if (checking)
+                    {
+                        Status.Text = text;
+                        ReportBuildActivity(text);
+                    }
                 }), token: token);
             }
             finally { checking = false; }
@@ -42,7 +56,7 @@ public partial class MainWindow
             var buildClock = System.Diagnostics.Stopwatch.StartNew();
             var report = await services.Builds.BuildAsync(directory,
                 new Progress<string>(text => { Status.Text = text; ReportBuildActivity(text); }), token,
-                new Progress<string>(text => { foreach (var line in outputLines.Append(text)) {ToolLine(line);} }));
+                new Progress<string>(text => { foreach (var line in outputLines.Append(text)) { ToolLine(line); } }));
             buildClock.Stop();
             // 等待 Progress 已投递的输出，避免工具尾部文本排到中文结论之后。
             await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Background);

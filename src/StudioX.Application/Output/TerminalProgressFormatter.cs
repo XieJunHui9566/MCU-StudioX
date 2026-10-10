@@ -9,7 +9,10 @@ public static partial class TerminalProgressFormatter
     public static string Phase(string text)
     {
         var component = Component().Match(text);
-        if (component.Success) {return "校验开发环境组件 " + component.Groups["id"].Value + " / " + component.Groups["version"].Value;}
+        if (component.Success)
+        {
+            return "校验开发环境组件 " + component.Groups["id"].Value + " / " + component.Groups["version"].Value;
+        }
         return text.Trim().TrimEnd('…');
     }
 
@@ -49,25 +52,54 @@ public static partial class TerminalProgressFormatter
             }
             phase = next;
             measurement = count;
-            if (active < 0) {active = lines.Count; lines.Add("");}
+            if (active < 0)
+            {
+                active = lines.Count;
+                lines.Add("");
+            }
             lines[active] = Render(phase, measurement);
         }
         var buffer = new OutputLineBuffer();
         foreach (var text in buffer.Append(raw).Concat(buffer.Flush() is { } tail ? [tail] : Array.Empty<string>()))
         {
             if (text.StartsWith("校验开发环境组件 ", StringComparison.Ordinal) || text.StartsWith("完整校验开发环境组件 ", StringComparison.Ordinal))
-                {Activity(Phase(text), BuildOutputParser.Measure(text)); continue;}
-            if (text.Trim() is "[PC 配置]" or "[PC 编译]") {Activity(text.Trim()[1..^1], null); continue;}
+            {
+                Activity(Phase(text), BuildOutputParser.Measure(text));
+                continue;
+            }
+            if (text.Trim() is "[PC 配置]" or "[PC 编译]")
+            {
+                Activity(text.Trim()[1..^1], null);
+                continue;
+            }
             // 编译任务行包含文件名和命令线索，保留正文；仅重复的组件百分比合并。
-            if (active < 0) {lines.Add(text);}
-            else {lines.Insert(active++, text);}
-            if (BuildOutputParser.Measure(text) is { } count) {Activity(phase, count);}
+            if (active < 0)
+            {
+                lines.Add(text);
+            }
+            else
+            {
+                lines.Insert(active++, text);
+            }
+            if (BuildOutputParser.Measure(text) is { } count)
+            {
+                Activity(phase, count);
+            }
         }
-        if (active >= 0 && !building) {lines[active] = Render(phase, measurement, state: "阶段");}
+        if (active >= 0 && !building)
+        {
+            lines[active] = Render(phase, measurement, state: "阶段");
+        }
         if (result is not null)
         {
-            if (active >= 0) {lines[active] = result;}
-            else {lines.Add(result);}
+            if (active >= 0)
+            {
+                lines[active] = result;
+            }
+            else
+            {
+                lines.Add(result);
+            }
         }
         return string.Join('\n', lines);
     }

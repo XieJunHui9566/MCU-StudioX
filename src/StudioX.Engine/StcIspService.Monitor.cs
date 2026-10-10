@@ -14,7 +14,10 @@ public sealed partial class StcIspService
         var settings = new StcIspSettings(Port: port, ClockMode: StcClockMode.Preserve);
         ValidateMonitorTarget(device, settings);
         var tool = await GetToolStatusAsync(token);
-        if (!tool.Available || tool.PythonExecutable is null) {throw new StudioXException("STC_ISP_TOOL", tool.Message);}
+        if (!tool.Available || tool.PythonExecutable is null)
+        {
+            throw new StudioXException("STC_ISP_TOOL", tool.Message);
+        }
         var session = PathBoundary.Resolve(root, ".build/stc-isp-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(session);
         var image = Path.Combine(session, "monitor.bin");
@@ -32,7 +35,10 @@ public sealed partial class StcIspService
 
     public Task<StcIspReport> SetupMonitorAsync(StcIspPreparation prepared, IProgress<string>? output = null, CancellationToken token = default)
     {
-        if (!prepared.MonitorSetup) {throw new StudioXException("STC_ISP_CHANNEL", "专用制作入口不接受普通用户固件。");}
+        if (!prepared.MonitorSetup)
+        {
+            throw new StudioXException("STC_ISP_CHANNEL", "专用制作入口不接受普通用户固件。");
+        }
         return Task.Run(() => DownloadPreparedCoreAsync(prepared, output, token), token);
     }
 
@@ -40,6 +46,8 @@ public sealed partial class StcIspService
     {
         settings.ValidateFor(StcIspCapabilities.For(device), requirePort: true);
         if (device.Id != "IAP15F2K61S2" || device.FlashBytes != 62464 || settings.ClockMode != StcClockMode.Preserve || settings.TransferBaud != 115200)
-            {throw new StudioXException("MON51_SETUP_TARGET", "制作通道当前仅核对 IAP15F2K61S2 / 7.2.5S，使用 115200 并保留当前时钟来源。其他目标不会擦写。");}
+        {
+            throw new StudioXException("MON51_SETUP_TARGET", "制作通道当前仅核对 IAP15F2K61S2 / 7.2.5S，使用 115200 并保留当前时钟来源。其他目标不会擦写。");
+        }
     }
 }

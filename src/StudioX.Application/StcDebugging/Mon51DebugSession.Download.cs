@@ -9,7 +9,10 @@ public sealed partial class Mon51DebugSession
 {
     private bool userProgramVerified = true;
     private string? downloadRecoveryPath;
-    internal bool UserDownloadRequested { get; init; }
+    internal bool UserDownloadRequested
+    {
+        get; init;
+    }
 
     internal async Task DownloadUserProgramAsync(StcDebugArtifact bundle, CancellationToken token)
     {
@@ -24,10 +27,16 @@ public sealed partial class Mon51DebugSession
             }
             // 从擦除前开始阻止失败清理续跑；只有完整回读及复位跳板核对通过才能恢复正常结束行为。
             userProgramVerified = false;
-            await JsonStore.WriteAsync(downloadRecoveryPath!, new { project = bundle.ProjectDirectory,
-                imageSha256 = bundle.ImageSha256, symbolsSha256 = bundle.SymbolsSha256,
-                sourceStamp = bundle.SourceStamp, bytes = bytes.Length, startedUtc = DateTimeOffset.UtcNow,
-                message = "用户程序写入未确认完成；禁止普通附加后续跑，须明确重新下载并完整核对" }, token);
+            await JsonStore.WriteAsync(downloadRecoveryPath!, new
+            {
+                project = bundle.ProjectDirectory,
+                imageSha256 = bundle.ImageSha256,
+                symbolsSha256 = bundle.SymbolsSha256,
+                sourceStamp = bundle.SourceStamp,
+                bytes = bytes.Length,
+                startedUtc = DateTimeOffset.UtcNow,
+                message = "用户程序写入未确认完成；禁止普通附加后续跑，须明确重新下载并完整核对"
+            }, token);
             Output?.Invoke($"Mon51 用户程序下载：{bytes.Length} 字节 · BIN SHA-256 {Convert.ToHexString(SHA256.HashData(bytes))} · 不写芯片配置");
             await client!.EraseUserProgramAsync(token);
             for (var address = 3; address < bytes.Length; address += 40)

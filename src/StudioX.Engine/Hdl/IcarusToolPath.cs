@@ -10,7 +10,10 @@ internal static class IcarusToolPath
     internal static string ForLibraryDirectory(string path)
     {
         var full = Path.GetFullPath(path);
-        if (!OperatingSystem.IsWindows() || !full.Any(char.IsWhiteSpace)) {return full;}
+        if (!OperatingSystem.IsWindows() || !full.Any(char.IsWhiteSpace))
+        {
+            return full;
+        }
         // 只使用已核实目录的 Windows 别名，不复制或修改已锁定的工具内容。
         var buffer = new StringBuilder(32768);
         var count = GetShortPathName(full, buffer, (uint)buffer.Capacity);

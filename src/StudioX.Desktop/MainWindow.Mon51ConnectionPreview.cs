@@ -31,7 +31,9 @@ public partial class MainWindow
             var selectors = body.Children.OfType<ComboBox>().ToArray();
             selectors[0].SelectedIndex = 0;
             if (body.Children.OfType<Button>().Single().IsEnabled)
-                {throw new InvalidOperationException("Missing package firmware must disable setup.");}
+            {
+                throw new InvalidOperationException("Missing package firmware must disable setup.");
+            }
             checks.Add("missing monitor package disables setup while configured targets can still debug");
             body.Children.OfType<CheckBox>().Single().IsChecked = true;
             var controls = layout.Children.OfType<StackPanel>().Single().Children.OfType<Button>().ToArray();
@@ -72,11 +74,19 @@ public partial class MainWindow
             (_, _, _, _, _) => { downloads++; throw new IOException("Fixture: selected download failed before mutation"); },
             (_, _, source, _, _) =>
             {
-                if (source != Mon51PreviewFirmware) {throw new InvalidOperationException("Selected package resource lost.");}
-                setups++; return Task.CompletedTask;
+                if (source != Mon51PreviewFirmware)
+                {
+                    throw new InvalidOperationException("Selected package resource lost.");
+                }
+                setups++;
+                return Task.CompletedTask;
             })
         {
-            Owner = this, ShowActivated = false, ShowInTaskbar = false, Left = -20000, WindowStartupLocation = WindowStartupLocation.Manual
+            Owner = this,
+            ShowActivated = false,
+            ShowInTaskbar = false,
+            Left = -20000,
+            WindowStartupLocation = WindowStartupLocation.Manual
         };
         downloadWindow.Show();
         try
@@ -85,7 +95,9 @@ public partial class MainWindow
             var body = (StackPanel)layout.Children.OfType<ScrollViewer>().Single().Content;
             if (body.Children.OfType<ComboBox>().ElementAt(2).SelectedItem is not Mon51FirmwareSource selected ||
                 selected.PackVersion != "0.1.2" || body.Children.OfType<TextBlock>().Any(t => t.Text.Contains(".exe")))
-                {throw new InvalidOperationException("Setup must select package firmware without a vendor executable prompt.");}
+            {
+                throw new InvalidOperationException("Setup must select package firmware without a vendor executable prompt.");
+            }
             checks.Add("setup displays the exact packaged firmware identity and requires no vendor executable");
             if (body.Children.OfType<RadioButton>().Any() || downloads != 0)
             {
@@ -107,12 +119,16 @@ public partial class MainWindow
             var confirmation = body.Children.OfType<CheckBox>().Single();
             var detail = body.Children.OfType<TextBox>().Single();
             if (setups != 1 || downloads != 1 || confirmation.IsChecked == true || start.IsEnabled || !detail.Text.Contains("断电约 2 秒"))
-                {throw new InvalidOperationException("Monitor setup must wait for power confirmation before starting or downloading.");}
+            {
+                throw new InvalidOperationException("Monitor setup must wait for power confirmation before starting or downloading.");
+            }
             checks.Add("successful setup prompts a power cycle and never automatically downloads or starts debugging");
             confirmation.IsChecked = true;
             body.Children.OfType<ComboBox>().ElementAt(1).SelectedItem = "COM15";
             if (confirmation.IsChecked == true || start.IsEnabled)
-                {throw new InvalidOperationException("Port changes must invalidate the power-cycle confirmation.");}
+            {
+                throw new InvalidOperationException("Port changes must invalidate the power-cycle confirmation.");
+            }
             checks.Add("changing the target port invalidates the previous power confirmation");
         }
         finally { downloadWindow.Close(); }

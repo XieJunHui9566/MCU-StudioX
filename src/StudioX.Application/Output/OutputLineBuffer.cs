@@ -26,14 +26,21 @@ public sealed class OutputLineBuffer
                 afterCarriageReturn = false;
                 pending.Append(character);
                 // 超长无换行诊断分段显示，不丢字符，也不让 UI 缓冲无界增长。
-                if (pending.Length >= 65536) {lines.Add(pending.ToString()); pending.Clear();}
+                if (pending.Length >= 65536)
+                {
+                    lines.Add(pending.ToString());
+                    pending.Clear();
+                }
             }
         }
         return lines;
     }
     public string? Flush()
     {
-        if (pending.Length == 0) {return null;}
+        if (pending.Length == 0)
+        {
+            return null;
+        }
         var text = pending.ToString();
         pending.Clear();
         return text;
