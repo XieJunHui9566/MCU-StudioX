@@ -53,11 +53,21 @@ internal sealed partial class RetentionChecks
         await CreateJunctionAsync(link, Path.Combine(externalRepository.RootDirectory, "fixture.id-link"));
         try
         {
-            var result = await new PackRepository(root).PruneSupersededAsync();
-            Require(result.Removed.Count == 0 && result.Failures.Count >= 1 && result.ReclaimedBytes == 0,
-                "junction ID blocks deletion");
+            try
+            {
+                await new PackRepository(root).PruneSupersededAsync();
+                throw new InvalidOperationException("Linked pack identity was accepted.");
+            }
+            catch (StudioXException ex) when (ex.Code == "PATH_LINK")
+            {
+                Require(ex.Message.Contains("fixture.id-link", StringComparison.Ordinal), "linked ID original diagnostic preserved");
+            }
             Require((await externalRepository.ListCatalogAsync()).Count == 2, "junction ID target remains intact");
-            Pass("junction in pack ID cannot lead cleanup outside repository");
+            foreach (var pack in await externalRepository.ListCatalogAsync())
+            {
+                await PackRepository.VerifyAsync(pack);
+            }
+            Pass("junction in pack ID rejects catalog before cleanup; both external versions remain fully valid");
         }
         finally { RemoveJunction(link); }
     }

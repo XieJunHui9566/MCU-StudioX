@@ -17,7 +17,9 @@ public partial class MainWindow
             HdlWorkflow.ClearResult("正在运行 RTL testbench，可使用顶部停止按钮取消…");
             try
             {
-                var result = await services.HdlWorkflow.SimulateAsync(root, settings, token);
+                var result = await RunBuildOutputOperationAsync("RTL 仿真",
+                    (progress, output) => services.HdlWorkflow.SimulateAsync(root, settings, token, progress, output),
+                    _ => true, _ => "RTL 仿真完成，波形已显示。", token);
                 if (projectDirectory == root)
                 {
                     HdlWorkflow.ShowResult(result);

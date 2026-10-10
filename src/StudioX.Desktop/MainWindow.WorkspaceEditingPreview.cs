@@ -15,6 +15,21 @@ public partial class MainWindow
         {
             if (!condition)
             {
+                File.WriteAllText(Path.Combine(directory, "failed-editor-state.json"), System.Text.Json.JsonSerializer.Serialize(new
+                {
+                    message,
+                    status = Status.Text,
+                    log = BuildLog.Text,
+                    languageReady = services.Intelligence.IsReady,
+                    CanNavigateCode,
+                    NavigationReady,
+                    offset = SourceEditor.CaretOffset,
+                    text = SourceEditor.Text,
+                    references = PythonReferences.Items.Count,
+                    referencesSelected = WorkspaceTabs.SelectedItem == PythonReferencesTab,
+                    referenceStatus = PythonReferencesStatus.Text,
+                    languageLog = services.Intelligence.DrainLog()
+                }, JsonStore.Options));
                 throw new InvalidOperationException(message);
             }
             checks.Add(message);
@@ -99,7 +114,7 @@ public partial class MainWindow
         var dependency = FindEditor("include/shared.h")!;
         dependency.Buffer.Text = dependency.Buffer.Text.Replace("helper", "renamed_helper", StringComparison.Ordinal);
         Check(problemRows.Length == 0 && diagnosticRenderer.Markers.Count == 0, "editing inactive header revokes displayed diagnostics immediately before debounce");
-        Check(ProblemsTab.Header.ToString()!.Contains("正在分析", StringComparison.Ordinal), "zero visible problems during refresh is explicitly labeled as analysis pending");
+        Check(ProblemsTab.Header.ToString()!.Contains("等待停笔", StringComparison.Ordinal), "zero visible problems while typing is explicitly labeled as waiting for idle");
         SourceEditor.Text = dirty;
         for (var attempt = 0; attempt < 60 && !problemRows.Any(r => r.Message.Contains("helper", StringComparison.Ordinal)); attempt++)
         {
@@ -120,6 +135,44 @@ public partial class MainWindow
             await Task.Delay(150);
         }
         Check(problemRows.Any(r => r.Message.Contains("missing_value", StringComparison.Ordinal)), "subsequent editor change still publishes a new real error");
+        var existingBuildLog = BuildLog.Text;
+        var existingBottomTab = BottomTabs.SelectedIndex;
+        var existingCaret = SourceEditor.CaretOffset;
+        var existingText = SourceEditor.Text;
+        services.Intelligence.RecordAnalysisLog("clangd: IncludeCleaner: Failed to get an entry for resolved path LED: no such file or directory");
+        await RecordAnalysisFailureAsync("实时诊断", new ArgumentOutOfRangeException("position", "OUT_OF_RANGE 原始诊断"));
+        await RecordAnalysisFailureAsync("悬停信息", new IOException("文件不是 UTF-8 / 带 BOM 的 UTF-16 文本，暂不支持此编码。"));
+        Check(BuildLog.Text == existingBuildLog && BottomTabs.SelectedIndex == existingBottomTab && SourceEditor.Text == existingText &&
+            SourceEditor.CaretOffset == existingCaret, "background analysis failures do not append build output, switch panels or disturb editor content and caret");
+        var logWindow = new AnalysisLogWindow(services.Intelligence) { Owner = this };
+        await logWindow.RefreshAsync();
+        Check(logWindow.LogText.IsReadOnly && logWindow.LogText.Text.Contains("IncludeCleaner", StringComparison.Ordinal) &&
+            logWindow.LogText.Text.Contains("ArgumentOutOfRangeException", StringComparison.Ordinal) && logWindow.LogText.Text.Contains("暂不支持此编码", StringComparison.Ordinal),
+            "explicit analysis log viewer retains tool messages and original exceptions");
+        logWindow.Show();
+        await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+        Render(logWindow, Path.Combine(directory, "language-analysis-log.png"));
+        logWindow.Close();
+        QueueLiveDiagnostics();
+        RefreshDiagnosticMarkers();
+        Check(services.Intelligence.GetDiagnostics().Any(b => b.Items.Any(i => i.Message.Contains("missing_value", StringComparison.Ordinal))) &&
+            problemRows.All(r => !r.Origin.StartsWith("实时", StringComparison.Ordinal)) && diagnosticRenderer.Markers.Count == 0,
+            "early clangd results from completion remain hidden until editing has been idle");
+        var typingChecks = true;
+        for (var edit = 0; edit < 5; edit++)
+        {
+            await Task.Delay(220);
+            QueueLiveDiagnostics();
+            RefreshDiagnosticMarkers();
+            typingChecks &= diagnosticDebounce.IsEnabled && problemRows.All(r => !r.Origin.StartsWith("实时", StringComparison.Ordinal));
+        }
+        Check(typingChecks && diagnosticDebounce.Interval == TimeSpan.FromMilliseconds(1500), "continued typing restarts the 1.5-second quiet interval without flashing early errors");
+        for (var attempt = 0; attempt < 60 && !problemRows.Any(r => r.Message.Contains("missing_value", StringComparison.Ordinal)); attempt++)
+        {
+            await Task.Delay(100);
+        }
+        Check(problemRows.Any(r => r.Message.Contains("missing_value", StringComparison.Ordinal)) && BuildLog.Text == existingBuildLog,
+            "valid errors return after idle while the build output stays unchanged");
         ShowBottom(4);
         UpdateLayout();
         await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ContextIdle);

@@ -200,6 +200,7 @@ public sealed class ToolsetCatalog
         }
         cancellationToken.ThrowIfCancellationRequested();
         verified[root] = new(fingerprint, after);
+        progress?.Report($"校验开发环境组件 {id} / {version}… 100%（{completed:N0}/{indexedCount:N0}）");
         return new ResolvedToolset(manifest, root, fingerprint);
     }
     public IEnumerable<string> ManifestPaths()

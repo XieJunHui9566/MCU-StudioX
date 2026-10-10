@@ -5,6 +5,7 @@ public partial class MainWindow
     private ProjectTransitionCoordinator CreateProjectTransitionCoordinator() => new(
         stopAgentAsync: async () =>
         {
+            await StopProjectSynchronizationAsync();
             await MicroPythonPanel.StopAsync();
             MicroPythonPanel.SetProject(null, null);
             PythonReferences.ItemsSource = null;

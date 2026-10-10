@@ -7,6 +7,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using Microsoft.Win32;
 using StudioX.Application.Lvgl;
+using StudioX.Application.Output;
 using StudioX.Engine.Lvgl;
 using StudioX.Foundation;
 
@@ -477,7 +478,7 @@ public partial class LvglPreviewView : UserControl
         }), DispatcherPriority.Background);
     }
 
-    private void RenderSnapshot(LvglPreviewSnapshot snapshot)
+    internal void RenderSnapshot(LvglPreviewSnapshot snapshot)
     {
         StateLabel.Text = snapshot.Message + (uiNotice.Length == 0 ? "" : "\n" + uiNotice);
         StaleBanner.Visibility = snapshot.IsStale ? Visibility.Visible : Visibility.Collapsed;
@@ -485,10 +486,14 @@ public partial class LvglPreviewView : UserControl
         {
             RenderStats(stats, snapshot.PointerBits, snapshot.LvglVersion);
         }
-        var log = snapshot.Log + (uiDiagnostic.Length == 0 ? "" : "\n" + uiDiagnostic);
+        var raw = snapshot.Log + (uiDiagnostic.Length == 0 ? "" : "\n" + uiDiagnostic);
+        var result = snapshot.State == "BuildFailed" ? "[失败] " + snapshot.Message
+            : snapshot.Message.StartsWith("PC 构建已取消", StringComparison.Ordinal) ? "[取消] " + snapshot.Message : null;
+        var log = TerminalProgressFormatter.CompactLog(raw, snapshot.State == "Building", result);
         if (DiagnosticLog.Text != log)
         {
-            var follow = DiagnosticLog.VerticalOffset >= DiagnosticLog.ExtentHeight - DiagnosticLog.ViewportHeight - 12;
+            var scroll = DiagnosticLog.Template.FindName("PART_ScrollViewer", DiagnosticLog) as ScrollViewer;
+            var follow = scroll is null || scroll.VerticalOffset >= scroll.ExtentHeight - scroll.ViewportHeight - 12;
             DiagnosticLog.Text = log;
             if (follow)
             {

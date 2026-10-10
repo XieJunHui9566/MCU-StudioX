@@ -1,6 +1,7 @@
 namespace StudioX.Packages;
 
 using System.Text.RegularExpressions;
+using System.Security.Cryptography;
 using StudioX.Foundation;
 
 public static partial class PackValidator
@@ -39,7 +40,7 @@ public static partial class PackValidator
             if (device.Architecture == "mcs51" && (device.ToolsetId != "stc.sdcc" || device.CompilerId != "sdcc-4.5.0-15242" ||
                 device.LinkerScript != "" || device.OpenOcd is not null))
             {
-                throw new StudioXException("PACK_DEVICE", "MCS-51 器件仅支持无调试配置的 STC SDCC 开发环境组件，且不使用 GCC 链接脚本。");
+                throw new StudioXException("PACK_DEVICE", "MCS-51 器件需要 STC SDCC 开发环境组件，不使用 OpenOCD 或 GCC 链接脚本。");
             }
             if (string.IsNullOrWhiteSpace(device.CompilerId) || device.CpuFlags is null || device.Defines is null ||
                 device.Sources is null || device.IncludeDirectories is null || device.CompileOptions is null || device.LinkOptions is null)
@@ -67,6 +68,10 @@ public static partial class PackValidator
                 {
                     throw new StudioXException("PACK_INCLUDE", $"包含目录不存在：{include}");
                 }
+            }
+            if (device.MonitorFirmware is { } monitor)
+            {
+                ValidateMonitorFirmware(monitor, root);
             }
             var templates = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             if (device.Templates is not { Count: > 0 })
@@ -199,6 +204,28 @@ public static partial class PackValidator
                     }
                 }
             }
+        }
+    }
+
+    private static void ValidateMonitorFirmware(MonitorFirmwareDefinition monitor, string root)
+    {
+        Token(monitor.Id);
+        Token(monitor.Protocol);
+        Version(monitor.Version);
+        if (string.IsNullOrWhiteSpace(monitor.DisplayName) || string.IsNullOrWhiteSpace(monitor.BootloaderVersion) ||
+            monitor.BootloaderStatus is < 0 or > 255 || monitor.ImageBytes is < 1 or > 67108864 ||
+            monitor.ImageSha256 is not { Length: 64 } || !monitor.ImageSha256.All(Uri.IsHexDigit))
+        {
+            throw new StudioXException("PACK_MONITOR", "监控固件名称、适用引导程序、长度或 SHA-256 无效。");
+        }
+        RequireFile(root, monitor.ImageFile);
+        RequireFile(root, monitor.ProvenanceFile);
+        var image = PathBoundary.Resolve(root, monitor.ImageFile);
+        using var stream = File.OpenRead(image);
+        if (stream.Length != monitor.ImageBytes ||
+            !Convert.ToHexString(SHA256.HashData(stream)).Equals(monitor.ImageSha256, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new StudioXException("PACK_MONITOR_HASH", "监控固件与器件包声明的长度或 SHA-256 不符。");
         }
     }
 

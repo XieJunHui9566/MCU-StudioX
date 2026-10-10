@@ -63,6 +63,7 @@ public partial class MainWindow
     private EditorDocumentSession AddEditor(SourceDocument source)
     {
         var session = new EditorDocumentSession(source);
+        projectChangeSession?.TrackPath(source.RelativePath);
         session.Tab.Tag = session;
         var label = new StackPanel { Orientation = Orientation.Horizontal };
         label.Children.Add(new FileIcon { FileName = source.RelativePath, Width = 19, Height = 19, Margin = new Thickness(0, 0, 7, 0), VerticalAlignment = VerticalAlignment.Center });
@@ -190,8 +191,8 @@ public partial class MainWindow
         var name = Path.GetFileName(session.Source.RelativePath);
         var duplicate = editorDocuments.Count(other => Path.GetFileName(other.Source.RelativePath).Equals(name, StringComparison.OrdinalIgnoreCase)) > 1;
         var directory = Path.GetDirectoryName(session.Source.RelativePath)?.Replace('\\', '/');
-        session.Label.Text = name + (duplicate ? " — " + (string.IsNullOrEmpty(directory) ? "根目录" : directory) : "") + (session.Source.IsReadOnly ? " [只读]" : "") + (session.IsDirty ? " •" : "");
-        session.Tab.ToolTip = session.Source.RelativePath + (session.IsDirty ? "（未保存）" : "") + (session.Source.ReadOnlyReason is { } reason ? "\n" + reason : "");
+        session.Label.Text = name + (duplicate ? " — " + (string.IsNullOrEmpty(directory) ? "根目录" : directory) : "") + (session.Source.IsMissing ? " [已删除]" : session.DiskConflict is not null ? " [磁盘冲突]" : "") + (session.Source.IsReadOnly ? " [只读]" : "") + (session.IsDirty ? " •" : "");
+        session.Tab.ToolTip = session.Source.RelativePath + (session.IsDirty ? "（未保存）" : "") + (session.DiskConflict is { } conflict ? "\n" + conflict : "") + (session.Source.ReadOnlyReason is { } reason ? "\n" + reason : "");
         AutomationProperties.SetName(session.Tab, session.Label.Text);
     }
 
@@ -204,6 +205,7 @@ public partial class MainWindow
         // 保存的是捕获的标签及其文本快照，异步期间切换文件不会写错文件。
         var text = session.Buffer.Text;
         session.Source = await services.Files.SaveAsync(directory, session.Source, text, token);
+        session.DiskConflict = null;
         guideSaved = true;
         guideBuild = null;
         RefreshFirstProjectGuide();
@@ -339,6 +341,7 @@ public partial class MainWindow
     }
     private void RemoveEditor(EditorDocumentSession session)
     {
+        projectChangeSession?.UntrackPath(session.Source.RelativePath);
         services.Intelligence.InvalidateDiagnostics();
         QueuePluginDocumentEvent("document.closed", session);
         var wasChanging = changingEditor;

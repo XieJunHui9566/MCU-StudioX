@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <Version>0.1.0</Version>
+    <ProductVersion>0.1.0</ProductVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Remove="Renderer/**/*.cs" />
+    <ProjectReference Include="../StudioX.KeilImporter.csproj" />
+    <Reference Include="StudioX.Extensions.Abstractions">
+      <HintPath>$(StudioXSdkPath)</HintPath>
+      <Private>true</Private>
+    </Reference>
+  </ItemGroup>
+</Project>

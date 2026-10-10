@@ -74,6 +74,10 @@
   <Folder
     Name="/workflow-validation/">
     <Project
+      Path="tools/StudioX.Mon51Validation/StudioX.Mon51Validation.csproj" />
+    <Project
+      Path="tools/StudioX.SourceRegistrationValidation/StudioX.SourceRegistrationValidation.csproj" />
+    <Project
       Path="tools/StudioX.SecurityValidation/StudioX.SecurityValidation.csproj" />
     <Project
       Path="tools/StudioX.PeripheralDevelopmentValidation/StudioX.PeripheralDevelopmentValidation.csproj" />

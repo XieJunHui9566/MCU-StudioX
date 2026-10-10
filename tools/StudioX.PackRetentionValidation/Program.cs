@@ -1,5 +1,11 @@
 using StudioX.Packages;
 
+if (args is ["--measure-catalog", var packRoot, var bundleRoot, var reportDirectory])
+{
+    await CatalogMeasurements.RunAsync(packRoot, bundleRoot, reportDirectory);
+    return;
+}
+
 if (args.Length == 2 && args[0] == "--prune")
 {
     if (!Path.IsPathFullyQualified(args[1]))

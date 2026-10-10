@@ -456,14 +456,17 @@
                 IsEnabled="False" />
               <Separator />
               <MenuItem
+                x:Name="DebugSourceBreakpointMenu"
                 Header="设置 / 删除断点"
                 InputGestureText="F9"
                 Click="DebugBreakpoint_Click" />
               <MenuItem
+                x:Name="DebugSourceEnableMenu"
                 Header="启用 / 禁用当前断点"
                 InputGestureText="Ctrl+F9"
                 Click="DebugEnableBreakpoint_Click" />
               <MenuItem
+                x:Name="DebugSourceSettingsMenu"
                 Header="条件 / 日志 / 临时断点…"
                 InputGestureText="Shift+F9"
                 Click="DebugBreakpointSettings_Click" />
@@ -484,9 +487,11 @@
                 Click="ShowFreeRtos_Click"
                 IsEnabled="False" />
               <MenuItem
+                x:Name="DebugPlotMenu"
                 Header="OpenOCD 变量绘图"
                 Click="OpenOcdPlot_Click" />
               <MenuItem
+                x:Name="DebugPeripheralMenu"
                 Header="外设寄存器（SVD）…"
                 Click="ShowPeripherals_Click" />
             </MenuItem>
@@ -552,6 +557,9 @@
               <MenuItem
                 Header="快速开始"
                 Click="QuickStart_Click" />
+              <MenuItem
+                Header="语言分析日志…"
+                Click="AnalysisLog_Click" />
               <MenuItem
                 Header="关于 MCU StudioX"
                 Click="About_Click" />
@@ -856,6 +864,7 @@
                     Foreground="{DynamicResource Accent}"
                     Margin="0,0,6,0" />
                   <TextBlock
+                    x:Name="DebugIntoLabel"
                     Text="进入" />
                 </StackPanel>
               </Button>
@@ -885,6 +894,7 @@
                     Kind="restart"
                     Margin="0,0,6,0" />
                   <TextBlock
+                    x:Name="DebugResetLabel"
                     Text="复位" />
                 </StackPanel>
               </Button>
@@ -2535,6 +2545,12 @@
                                 <StackPanel
                                   x:Name="StcCodeRomPanel"
                                   Visibility="Collapsed">
+                                  <CheckBox
+                                    x:Name="StcMon51Profile"
+                                    Content="IAP15F2K61S2 · Mon51 调试构建（保留监控资源）"
+                                    Margin="0,8,0,10"
+                                    Checked="StcMon51Profile_Changed"
+                                    Unchecked="StcMon51Profile_Changed" />
                                   <TextBlock
                                     Text="程序 Flash 容量上限（字节）"
                                     Style="{StaticResource SectionLabel}" />
@@ -2950,6 +2966,11 @@
                           Foreground="{DynamicResource Muted}"
                           TextWrapping="Wrap"
                           Margin="0,18,0,0" />
+                        <TextBlock
+                          x:Name="LocalPackStatus"
+                          Foreground="{DynamicResource Muted}"
+                          TextWrapping="Wrap"
+                          Margin="0,6,0,0" />
                       </StackPanel>
                     </Grid>
                   </ScrollViewer>
@@ -3303,28 +3324,31 @@
                 x:Name="BottomTabs">
                 <TabItem
                   Header="构建">
-                  <TextBox
+                  <local:OutputLogView
                     x:Name="BuildLog"
                     Text="构建输出将在这里显示。"
                     Background="Transparent"
+                    Foreground="{DynamicResource Text}"
                     BorderThickness="0"
-                    IsReadOnly="True"
                     FontFamily="Cascadia Mono, Consolas, Microsoft YaHei UI"
                     FontSize="12"
-                    TextWrapping="Wrap"
+                    WordWrap="True"
+                    HorizontalScrollBarVisibility="Disabled"
                     VerticalScrollBarVisibility="Auto"
                     Padding="14,10" />
                 </TabItem>
                 <TabItem
                   Header="设备输出">
-                  <TextBox
+                  <local:OutputLogView
                     x:Name="DeviceLog"
                     Text="尚未连接设备。"
                     Background="Transparent"
+                    Foreground="{DynamicResource Text}"
                     BorderThickness="0"
                     IsReadOnly="True"
                     FontFamily="Consolas"
                     FontSize="12"
+                    HorizontalScrollBarVisibility="Auto"
                     VerticalScrollBarVisibility="Auto"
                     Padding="14,10" />
                 </TabItem>
@@ -3332,8 +3356,13 @@
                   x:Name="DebugTab"
                   Header="调试"
                   Visibility="Collapsed">
-                  <local:DebugToolsView
-                    x:Name="DebugTools" />
+                  <Grid>
+                    <local:DebugToolsView
+                      x:Name="GeneralDebugTools" />
+                    <local:Mon51DebugView
+                      x:Name="Mon51Tools"
+                      Visibility="Collapsed" />
+                  </Grid>
                 </TabItem>
                 <TabItem
                   x:Name="ProjectTerminalTab"

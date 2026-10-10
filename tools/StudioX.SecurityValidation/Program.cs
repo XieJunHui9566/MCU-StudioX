@@ -26,6 +26,7 @@ var success = true;
 foreach (var (name, run) in new (string, Func<Task>)[]
 {
     ("windows-path-aliases", () => PathChecks.RunAsync(root)),
+    ("windows-directory-sharing", () => DirectoryMoveChecks.RunAsync(root)),
     ("pack-path-boundaries", () => PackChecks.RunAsync(root)),
     ("process-failure-cleanup", () => ProcessChecks.RunAsync(root)),
     ("plugin-protocol-backpressure", () => ProtocolChecks.RunAsync())

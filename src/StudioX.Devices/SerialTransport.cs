@@ -8,6 +8,7 @@ public sealed class SerialTransport(SerialSettings settings) : IDeviceTransport
 {
     private SerialPort? port;
     private readonly System.Collections.Concurrent.ConcurrentQueue<string> errors = new();
+    public SerialSettings Settings => settings;
     public string Key => "serial:" + settings.PortName.ToUpperInvariant();
     public bool IsSimulated => false;
     public static string[] GetPortNames() => SerialPort.GetPortNames().Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(p => p.Length).ThenBy(p => p).ToArray();

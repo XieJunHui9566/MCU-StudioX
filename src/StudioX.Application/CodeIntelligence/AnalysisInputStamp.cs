@@ -11,6 +11,7 @@ internal static class AnalysisInputStamp
     public static string Capture(string runtime, string root, ProjectManifest project, IEnumerable<string>? additionalFiles = null)
     {
         var files = new[] { ".studiox/project.json", ".studiox/build.json", ".studiox/keil-import.json", EspressifModuleSettings.RelativePath, "sdkconfig",
+            "CMakeLists.txt", "CMakePresets.json",
             ".build/compile_commands.json", ".build/CMakeCache.txt", ".build/studiox-idf-runtime.json",
             ".build/project_description.json", ".build/config/sdkconfig.json", ".build/config/sdkconfig.h", "device/manifest.json",
             ".build/toolchain/cflags", ".build/toolchain/cxxflags", ".build/toolchain/asmflags" }

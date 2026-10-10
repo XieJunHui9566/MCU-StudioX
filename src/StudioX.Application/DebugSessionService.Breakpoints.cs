@@ -61,6 +61,19 @@ public sealed partial class DebugSessionService
             ? $" · 实际位置 {location.File}:{location.Line}" : "") + ModeSuffix;
     public async Task ConfigureBreakpointAsync(string file, int line, BreakpointOptions options, CancellationToken token = default)
     {
+        if (MonitorSession is { } monitor)
+        {
+            ValidateLocation(file, line);
+            var oldPoint = breakpoints.FirstOrDefault(p => p.File.Equals(file, StringComparison.OrdinalIgnoreCase) && p.Line == line);
+            await monitor.ConfigureSourceBreakpointAsync((oldPoint ?? new(Guid.NewGuid().ToString("N"), file, line)) with
+            {
+                Condition = options.Condition.Trim(),
+                IgnoreCount = options.IgnoreCount,
+                Temporary = options.Temporary,
+                LogMessage = options.LogMessage
+            }, token);
+            return;
+        }
         options = options with
         {
             Condition = options.Condition.Trim()
@@ -114,6 +127,11 @@ public sealed partial class DebugSessionService
     }
     public async Task RunToCursorAsync(string file, int line, CancellationToken token = default)
     {
+        if (MonitorSession is { } monitor)
+        {
+            await monitor.RunToCursorAsync(file, line, token);
+            return;
+        }
         await gate.WaitAsync(token);
         try
         {

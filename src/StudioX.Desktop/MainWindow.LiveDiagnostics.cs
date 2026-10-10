@@ -7,7 +7,7 @@ using StudioX.Application.CodeIntelligence;
 
 public partial class MainWindow
 {
-    private readonly DispatcherTimer diagnosticDebounce = new() { Interval = TimeSpan.FromMilliseconds(450) };
+    private readonly DispatcherTimer diagnosticDebounce = new() { Interval = TimeSpan.FromMilliseconds(1500) };
     private readonly DispatcherTimer diagnosticPoll = new() { Interval = TimeSpan.FromMilliseconds(600) };
     private CancellationTokenSource? liveDiagnosticCancellation;
     private Task liveDiagnosticTask = Task.CompletedTask;
@@ -58,7 +58,7 @@ public partial class MainWindow
                     await services.Intelligence.SynchronizeDiagnosticsAsync(path, text, documents, cancellation.Token);
                 }
                 catch (OperationCanceledException) when (cancellation.IsCancellationRequested) { }
-                catch (Exception ex) { Log("实时诊断：" + ex); }
+                catch (Exception ex) { await RecordAnalysisFailureAsync("实时诊断", ex); }
                 finally
                 {
                     if (liveDiagnosticCancellation == cancellation)
@@ -101,10 +101,7 @@ public partial class MainWindow
                         {
                             Status.Text = services.Intelligence.StatusDescription;
                         }
-                        foreach (var line in services.Intelligence.DrainLog())
-                        {
-                            Log(line);
-                        }
+                        await FlushAnalysisLogQuietlyAsync();
                     }
                 }
                 catch (OperationCanceledException) when (cancellation.IsCancellationRequested) { }
@@ -114,7 +111,7 @@ public partial class MainWindow
                     {
                         RefreshDiagnosticMarkers();
                         Status.Text = services.Intelligence.StatusDescription;
-                        Log("分析环境需要修复，请打开工程健康检查：" + error);
+                        await RecordAnalysisFailureAsync("分析环境需要修复，请打开工程健康检查", error);
                     }
                 }
                 finally
@@ -136,13 +133,15 @@ public partial class MainWindow
         if (!closing && !changingEditor && !services.Debugger.IsActive && !diagnosticsPausedForDebug)
         {
             diagnosticDebounce.Start();
+            RefreshDiagnosticMarkers();
         }
     }
     private EditorProblemRow[] CurrentProblems()
     {
         var rows = new List<EditorProblemRow>();
         var liveFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var batch in services.Debugger.IsActive || diagnosticsPausedForDebug ? [] : services.Intelligence.GetDiagnostics())
+        // 补全也会同步文档并提前收到 clangd 诊断，显示必须同样等待停笔。
+        foreach (var batch in services.Debugger.IsActive || diagnosticsPausedForDebug || diagnosticDebounce.IsEnabled ? [] : services.Intelligence.GetDiagnostics())
         {
             if (batch.Project != projectDirectory || FindEditor(batch.Path)?.Buffer.Text != batch.Text)
             {
@@ -166,7 +165,7 @@ public partial class MainWindow
             {
                 continue;
             }
-            rows.AddRange(entry.Items.Select(d => new EditorProblemRow(d, "构建", entry.Text)));
+            rows.AddRange(entry.Items.Select(d => new EditorProblemRow(d, entry.Origin, entry.Text)));
         }
         return rows.OrderBy(r => r.Diagnostic.IsWarning).ThenBy(r => r.File, StringComparer.OrdinalIgnoreCase).ThenBy(r => r.Line).ThenBy(r => r.Column).Take(5000).ToArray();
     }

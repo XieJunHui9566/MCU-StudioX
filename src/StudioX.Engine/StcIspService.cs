@@ -6,7 +6,7 @@ using StudioX.Foundation;
 using StudioX.Packages;
 
 /// <summary>外部 stcgal 1.10 的受控串口下载；不把本机 Python 路径写进工程或开发环境组件。</summary>
-public sealed class StcIspService(ToolsetCatalog catalog, string runtimeDirectory, string dataDirectory)
+public sealed partial class StcIspService(ToolsetCatalog catalog, string runtimeDirectory, string dataDirectory)
 {
     private readonly SemaphoreSlim gate = new(1, 1);
     private readonly string runtime = Path.GetFullPath(runtimeDirectory);
@@ -176,6 +176,7 @@ public sealed class StcIspService(ToolsetCatalog catalog, string runtimeDirector
     {
         var root = Path.GetFullPath(directory);
         var (project, device) = await ReadProjectDeviceAsync(root, token);
+        var buildSettings = await ReadOrdinaryIspBuildSettingsAsync(root, token);
         settings.ValidateFor(StcIspCapabilities.For(device), requirePort: true);
         var saved = await StcIspSettings.ReadAsync(root, token);
         if (saved != settings)
@@ -212,7 +213,7 @@ public sealed class StcIspService(ToolsetCatalog catalog, string runtimeDirector
         // 与实际链接器 --code-size 取同一器件包上限；stcgal 的超界处理只是警告/截断。
         var limit = await StcCodeRomLimit.ReadAsync(root, project, token)
             ?? throw new StudioXException("STC_ISP_IMAGE", "缺少 STC 代码 Flash 容量配置。");
-        var selectedLimit = (await ProjectBuildSettings.ReadAsync(root, token)).CodeRomSizeBytes ?? limit.MaximumBytes;
+        var selectedLimit = buildSettings.CodeRomSizeBytes ?? limit.MaximumBytes;
         var hex = StcIntelHex.Validate(bytes, checked((uint)Math.Min(limit.MaximumBytes, selectedLimit)));
         var tool = await GetToolStatusAsync(token);
         if (!tool.Available || tool.PythonExecutable is null)
@@ -229,7 +230,10 @@ public sealed class StcIspService(ToolsetCatalog catalog, string runtimeDirector
 
     /// <summary>只使用用户预览并确认过的固件快照；启动前再核对散列、型号及保存的时钟设置。</summary>
     public Task<StcIspReport> DownloadPreparedAsync(StcIspPreparation prepared, IProgress<string>? output = null, CancellationToken token = default)
-        => Task.Run(() => DownloadPreparedCoreAsync(prepared, output, token), token);
+    {
+        if (prepared.MonitorSetup) {throw new StudioXException("STC_ISP_CHANNEL", "监控制作镜像必须由专用制作入口执行。");}
+        return Task.Run(() => DownloadPreparedCoreAsync(prepared, output, token), token);
+    }
 
     /// <summary>确认窗口可调用的无硬件复核；更改过的快照会在此被拒绝。</summary>
     public Task VerifyPreparedAsync(StcIspPreparation prepared, CancellationToken token = default)
@@ -254,6 +258,7 @@ public sealed class StcIspService(ToolsetCatalog catalog, string runtimeDirector
                 "--expected-code-bytes", prepared.ExpectedCodeBytes.ToString(System.Globalization.CultureInfo.InvariantCulture),
                 "--image", prepared.Image, "--baud", settings.TransferBaud.ToString(System.Globalization.CultureInfo.InvariantCulture),
                 "--clock-mode", settings.ClockMode switch { StcClockMode.InternalRc => "internal", StcClockMode.ExternalCrystal => "external", _ => "preserve" } };
+            if (prepared.MonitorSetup) {args.Add("--monitor-setup");}
             if (settings.ClockMode == StcClockMode.InternalRc && settings.ClockFrequencyHz is { } frequency)
             {
                 args.AddRange(["--frequency-hz", frequency.ToString(System.Globalization.CultureInfo.InvariantCulture)]);
@@ -279,6 +284,7 @@ public sealed class StcIspService(ToolsetCatalog catalog, string runtimeDirector
     {
         var root = Path.GetFullPath(prepared.ProjectRoot);
         var (project, device) = await ReadProjectDeviceAsync(root, token);
+        var buildSettings = prepared.MonitorSetup ? null : await ReadOrdinaryIspBuildSettingsAsync(root, token);
         prepared.Settings.ValidateFor(StcIspCapabilities.For(device), requirePort: true);
         if (prepared.ExpectedModel != project.DeviceId || prepared.ExpectedCodeBytes != device.FlashBytes ||
             !string.Equals(prepared.Port, prepared.Settings.Port, StringComparison.OrdinalIgnoreCase))
@@ -286,14 +292,14 @@ public sealed class StcIspService(ToolsetCatalog catalog, string runtimeDirector
             throw new StudioXException("STC_ISP_PREPARE", "下载准备的芯片型号、容量或串口与当前工程不符。");
         }
         var saved = await StcIspSettings.ReadAsync(root, token);
-        if (saved != prepared.Settings)
+        if (!prepared.MonitorSetup && saved != prepared.Settings)
         {
             throw new StudioXException("STC_ISP_PREPARE", "确认后串口、速度或时钟选项已变化，请重新准备并确认下载。");
         }
         var session = Path.GetDirectoryName(prepared.LogPath);
         if (session is null || !string.Equals(Path.GetDirectoryName(session), PathBoundary.Resolve(root, ".build"), StringComparison.OrdinalIgnoreCase) ||
             !Path.GetFileName(session).StartsWith("stc-isp-", StringComparison.Ordinal) ||
-            !string.Equals(prepared.Image, Path.Combine(session, "firmware.hex"), StringComparison.OrdinalIgnoreCase) ||
+            !string.Equals(prepared.Image, Path.Combine(session, prepared.MonitorSetup ? "monitor.bin" : "firmware.hex"), StringComparison.OrdinalIgnoreCase) ||
             !string.Equals(prepared.GuardScript, Path.Combine(session, "studiox-stcgal-guard.py"), StringComparison.OrdinalIgnoreCase) ||
             !File.Exists(prepared.Image) || !File.Exists(prepared.PythonExecutable))
         {
@@ -309,19 +315,38 @@ public sealed class StcIspService(ToolsetCatalog catalog, string runtimeDirector
         {
             throw new StudioXException("STC_ISP_PREPARE", "确认后的固件快照被修改；未连接开发板。");
         }
-        var limit = await StcCodeRomLimit.ReadAsync(root, project, token)
-            ?? throw new StudioXException("STC_ISP_IMAGE", "缺少 STC 代码 Flash 容量配置。");
-        var selectedLimit = (await ProjectBuildSettings.ReadAsync(root, token)).CodeRomSizeBytes ?? limit.MaximumBytes;
-        var hex = StcIntelHex.Validate(bytes, checked((uint)Math.Min(limit.MaximumBytes, selectedLimit)));
-        if (hex.DataBytes != prepared.DataBytes || hex.HighestAddress != prepared.HighestAddress)
+        if (prepared.MonitorSetup)
         {
-            throw new StudioXException("STC_ISP_PREPARE", "确认后的固件内容或地址范围已变化。");
+            ValidateMonitorTarget(device, prepared.Settings);
+            StcMonitorImage.ValidateSetup(bytes);
+            if (prepared.DataBytes != 61440 || prepared.HighestAddress != 0xefff)
+                {throw new StudioXException("STC_ISP_PREPARE", "监控制作范围被修改。");}
+        }
+        else
+        {
+            var limit = await StcCodeRomLimit.ReadAsync(root, project, token)
+                ?? throw new StudioXException("STC_ISP_IMAGE", "缺少 STC 代码 Flash 容量配置。");
+            var selectedLimit = buildSettings!.CodeRomSizeBytes ?? limit.MaximumBytes;
+            var hex = StcIntelHex.Validate(bytes, checked((uint)Math.Min(limit.MaximumBytes, selectedLimit)));
+            if (hex.DataBytes != prepared.DataBytes || hex.HighestAddress != prepared.HighestAddress)
+                {throw new StudioXException("STC_ISP_PREPARE", "确认后的固件内容或地址范围已变化。");}
         }
         // 防止预览到执行期间工程目录中的脚本被替换；始终重新写入程序集内置的型号门禁。
         await using var resource = typeof(StcIspService).Assembly.GetManifestResourceStream("StudioX.Engine.Resources.studiox-stcgal-guard.py")
             ?? throw new StudioXException("STC_ISP_TOOL", "STC ISP 型号防护脚本缺失。");
         await using var destination = new FileStream(prepared.GuardScript, FileMode.Create, FileAccess.Write, FileShare.None);
         await resource.CopyToAsync(destination, token);
+    }
+
+    private static async Task<ProjectBuildSettings> ReadOrdinaryIspBuildSettingsAsync(string root, CancellationToken token)
+    {
+        var settings = await ProjectBuildSettings.ReadAsync(root, token);
+        // STC15 的 ISP 擦除命令不接受用户代码区上界；HEX 容量限制不能保护 Mon51 监控区。
+        if (settings.Mon51Profile)
+        {
+            throw new StudioXException("STC_ISP_MON51", "当前产物是 Mon51 调试构建，不能直接用于普通 STC ISP 通道。请点击 IDE 的下载按钮生成普通构建，或点击调试按钮通过 Mon51 更新用户程序；普通 ISP 不能保证保留监控程序。");
+        }
+        return settings;
     }
 
     private static async Task<(ProjectManifest Project, DeviceDefinition Device)> ReadProjectDeviceAsync(string directory, CancellationToken token)

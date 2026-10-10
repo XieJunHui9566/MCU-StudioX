@@ -11,7 +11,7 @@ public partial class MainWindow
     private InactiveCodeColorizer? inactiveCode;
     private InactiveCodeColorizer? mirrorInactiveCode;
     private long diagnosticRevision;
-    private readonly Dictionary<string, (string Text, BuildDiagnostic[] Items)> buildDiagnostics = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, (string Text, BuildDiagnostic[] Items, string Origin)> buildDiagnostics = new(StringComparer.OrdinalIgnoreCase);
 
     private void InitializeDiagnostics()
     {
@@ -28,7 +28,8 @@ public partial class MainWindow
         RefreshDiagnosticMarkers();
         HideSymbolHover();
     }
-    private async Task PublishBuildDiagnosticsAsync(string directory, string log, long revision, CancellationToken token)
+    private async Task PublishBuildDiagnosticsAsync(string directory, string log, long revision, CancellationToken token,
+        IReadOnlyDictionary<string, string>? expectedHashes = null, string origin = "构建")
     {
         var parsed = await Task.Run(() => BuildDiagnostics.Parse(directory, log), token);
         foreach (var group in parsed.GroupBy(item => item.RelativePath, StringComparer.OrdinalIgnoreCase))
@@ -40,6 +41,12 @@ public partial class MainWindow
             try
             {
                 var source = await services.Files.ReadAsync(directory, group.Key, token);
+                if (expectedHashes is not null && (!expectedHashes.TryGetValue(group.Key, out var expected) ||
+                    !source.DiskHash.Equals(expected, StringComparison.OrdinalIgnoreCase)))
+                {
+                    Log($"{group.Key} 与移植编译快照不一致，只保留日志原文，不显示过期错误标记。");
+                    continue;
+                }
                 if (revision != diagnosticRevision)
                 {
                     return;
@@ -49,7 +56,7 @@ public partial class MainWindow
                 {
                     continue;
                 }
-                buildDiagnostics[group.Key] = (source.Text, group.ToArray());
+                buildDiagnostics[group.Key] = (source.Text, group.ToArray(), origin);
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException or ArgumentException)
             {
@@ -70,6 +77,7 @@ public partial class MainWindow
         var state = projectDirectory is not null && currentProjectManifest?.Kind != StudioX.Engine.ProjectKind.MicroPython
             ? services.Debugger.IsActive || diagnosticsPausedForDebug ? " · 实时分析已暂停"
             : !services.Intelligence.IsReady ? " · 实时分析未就绪"
+            : diagnosticDebounce.IsEnabled ? " · 等待停笔"
             : batches.Any(batch => !batch.IsComplete) ? " · 诊断数据不完整"
             : activeEditor is { } currentEditor && StudioX.Application.CodeIntelligence.CodeIntelligenceService.Supports(currentEditor.Source.RelativePath) &&
                 !batches.Any(batch => batch.Path.Equals(currentEditor.Source.RelativePath, StringComparison.OrdinalIgnoreCase) && batch.Text == currentEditor.Buffer.Text)

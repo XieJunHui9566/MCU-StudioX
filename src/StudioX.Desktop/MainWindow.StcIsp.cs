@@ -281,6 +281,7 @@ public partial class MainWindow
         }
         catch (StudioXException ex) { await ShowProjectDetailsAsync(); StcIspStatus.Text = ex.Message; return; }
         await SaveAllSourcesAsync(root, token);
+        ApplyBuildSettings(await services.StcBuilds.PrepareDownloadAsync(root, token));
         ShowBottom(0);
         BuildLog.Clear();
         var build = await BuildWithSummaryAsync(root, token);
@@ -301,7 +302,7 @@ public partial class MainWindow
             StcClockMode.ExternalCrystal => $"外部晶振 · {settings.ClockFrequencyHz / 1000000m:0.######} MHz（必须实装）",
             _ => "保留当前时钟来源；内部 RC 可能重新校准，频率略变"
         };
-        var message = $"目标型号：{prepared.ExpectedModel}\n串口：{prepared.Port}\n固件：{prepared.SourceImage}\nSHA-256：{prepared.ImageSha256}\n时钟：{clock}\n\n串口 ISP 会擦除并覆盖芯片现有程序，且无法读回旧程序备份。下载开始等待后，请按开发板的下载/上电按钮。\n\n确认写入这份固件吗？";
+        var message = $"目标型号：{prepared.ExpectedModel}\n串口：{prepared.Port}\n固件：{prepared.SourceImage}\nSHA-256：{prepared.ImageSha256}\n时钟：{clock}\n\n串口 ISP 会擦除并覆盖芯片现有程序，且无法读回旧程序备份。下载开始等待后，请按开发板的下载/上电按钮。完成后正常运行，不进入调试。\n普通 ISP 不能保证保留仿真监控；后续调试若无法连接，需在 STC-ISP 重新制作仿真芯片并重新上电。\n\n确认写入这份固件吗？";
         if (settings.ClockMode == StcClockMode.ExternalCrystal &&
             prepared.ExpectedModel.Equals("IAP15F2K61S2", StringComparison.OrdinalIgnoreCase))
         {
@@ -326,9 +327,21 @@ public partial class MainWindow
             return;
         }
         await Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Background);
+        PresentStcDownloadResult(prepared, result);
+    }
+
+    private void PresentStcDownloadResult(StcIspPreparation prepared, StcIspReport result)
+    {
         Log("下载日志：" + result.LogPath);
         Log(result.Summary);
-        Status.Text = result.Summary;
+        Status.Text = result.Success ? $"STC 下载成功 · {prepared.ExpectedModel} · {prepared.Port}" : result.Summary;
+        StcIspStatus.Text = result.Summary;
+        if (result.Success && !closing)
+        {
+            MessageBox.Show(this,
+                $"芯片：{prepared.ExpectedModel}\n串口：{prepared.Port}\n固件：{Path.GetFileName(prepared.SourceImage)}\n\n{result.Summary}\n\n下载日志：{result.LogPath}",
+                "STC 下载成功", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
     }
 
     private void FocusStcSettings()

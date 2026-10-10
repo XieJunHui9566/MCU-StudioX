@@ -15,6 +15,11 @@ internal sealed class PluginPanelRenderer(Func<string, JsonElement, Task> invoke
     private bool enabled = true;
     private FrameworkElement? current;
 
+    public Func<JsonElement, Task>? OpenProjectAsync
+    {
+        get; set;
+    }
+
     public FrameworkElement Render(PluginPanelDefinition panel)
     {
         var declaredInputs = new HashSet<string>(StringComparer.Ordinal);
@@ -70,7 +75,7 @@ internal sealed class PluginPanelRenderer(Func<string, JsonElement, Task> invoke
         foreach (var widget in widgets)
         {
             if (widget.Kind is not ("text" or "metric" or "table" or "tree" or "form" or "group" or
-                "plot" or "chart" or "button" or "input" or "number" or "checkbox" or "select"))
+                "plot" or "chart" or "button" or "input" or "number" or "checkbox" or "select" or "projectLink"))
             {
                 throw new InvalidDataException("不支持的插件控件：" + widget.Kind);
             }
@@ -125,7 +130,7 @@ internal sealed class PluginPanelRenderer(Func<string, JsonElement, Task> invoke
             group.Children.Add(new PluginPlotView(widget.Value) { Height = 190, Margin = new Thickness(0, 6, 0, 8) });
             return group;
         }
-        if (kind == "button")
+        if (kind is "button" or "projectLink")
         {
             var button = new Button { Content = widget.Label, HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 8, 0, 0) };
             button.Click += async (_, _) => await InvokeButtonAsync(widget);
@@ -170,12 +175,17 @@ internal sealed class PluginPanelRenderer(Func<string, JsonElement, Task> invoke
 
     private async Task InvokeButtonAsync(PluginPanelWidget widget)
     {
-        if (!enabled || widget.CommandId is not { Length: > 0 } command)
+        if (!enabled || widget.Kind != "projectLink" && widget.CommandId is not { Length: > 0 })
         {
             return;
         }
         try
         {
+            if (widget.Kind == "projectLink")
+            {
+                await (OpenProjectAsync ?? throw new InvalidOperationException("当前宿主未提供工程打开入口。"))(widget.Value!.Value);
+                return;
+            }
             var submitted = new Dictionary<string, object?>(values, StringComparer.Ordinal);
             foreach (var (id, input) in numbers)
             {
@@ -185,7 +195,7 @@ internal sealed class PluginPanelRenderer(Func<string, JsonElement, Task> invoke
                 }
                 submitted[id] = number;
             }
-            await invoke(command, JsonSerializer.SerializeToElement(new
+            await invoke(widget.CommandId!, JsonSerializer.SerializeToElement(new
             {
                 widgetId = widget.Id,
                 values = submitted

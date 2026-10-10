@@ -2,6 +2,8 @@
 
 ## 范围
 
+`stc.stc8/0.1.2` 在 0.1.0 的 SDK、模板和编译工具版本基础上增加 IAP15F2K61S2 的包内 Mon51 V2.5 制作固件；IDE 直接读取和下载，无需用户提供厂商程序。制作只接受 ISP 7.2.5S / 状态 70。旧工程编译锁不迁移，可在调试窗口独立选择此监控资源包。流程和边界见 [Mon51 界面](STC-MON51-UI.md) 与 [固件说明](STC-MON51-FIRMWARE.md)。
+
 `stc.stc8/0.1.0` 是单个 StudioX Pack，首批收录 STC89、STC12、STC15、STC8G、STC8H 共 24 个已核实型号，其中 IAP15F2K61S2 为代表型号。完整型号、容量与来源见 [包配方](../examples/packs/stc.stc8/README.md) 和 `artifacts/packs/STC8-0.1.0/source/vendor/provenance.json`。型号未列入包时，新建工程不猜测兼容型号或内存容量。
 
 直接运行随附发行目录时，首次进入“新建工程”会按 `device-packs/index.json` 校验并导入用户目录中缺失的器件包；已有同 ID 和版本的用户包保持不变。`STC / 宏晶科技` 在厂商选择器中显示为“宏晶科技”。

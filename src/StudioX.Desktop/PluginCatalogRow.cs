@@ -8,8 +8,7 @@ internal sealed class PluginCatalogRow(PluginCatalogEntry entry, bool busy, bool
     public PluginCatalogEntry Entry { get; } = entry;
     public string DisplayName => Entry.DisplayName;
     public string IdentityText => $"{Entry.Id}  ·  {Entry.Version}  ·  API {Entry.Manifest?.ApiVersion.ToString() ?? "未知"}";
-    public string Description => Entry.Manifest is null ? "清单读取失败；请查看诊断。"
-        : string.IsNullOrWhiteSpace(Entry.Manifest.Description) ? "此插件未提供说明。" : Entry.Manifest.Description;
+    public string Description => Entry.Manifest?.Description ?? "清单读取失败；请查看诊断。";
     public string CapabilityText => "声明能力：" + string.Join("、", Entry.Capabilities.Select(CapabilityName));
     public string StateText => Entry.Diagnostic ?? (Entry.Enabled
         ? Entry.Manifest?.Scope == "application" ? "已启用 · 无需工程" : "已启用 · 有工程时运行"

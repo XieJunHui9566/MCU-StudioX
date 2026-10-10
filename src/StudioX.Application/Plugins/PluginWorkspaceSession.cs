@@ -314,7 +314,7 @@ public sealed partial class PluginWorkspaceSession : IAsyncDisposable
                 throw new StudioXException("PLUGIN_PANEL", "插件不能发布未声明的面板：" + panel.Id);
             }
             PluginContributionValidator.ValidatePanel(panel,
-                contribution.Commands.Select(command => command.Id).ToHashSet(StringComparer.Ordinal));
+                contribution.Commands.Select(command => command.Id).ToHashSet(StringComparer.Ordinal), active.Manifest.Scope == "application");
             lock (gate)
             {
                 if (disposed || !active.Running)

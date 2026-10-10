@@ -449,6 +449,7 @@ public partial class MainWindow
         {
             var pluginId = key[..key.IndexOf('/')];
             existing = (new PluginPanelRenderer((command, arguments) => InvokePluginCommandAsync(pluginId, command, arguments), PluginManager.Log), new ContentControl());
+            existing.Renderer.OpenProjectAsync = target => OpenPluginProjectAsync(pluginId, target);
             pluginPanels.Add(key, existing);
             var body = pluginActivities.TryGetValue(pluginId, out var activity) ? activity.Body : PluginManager.PanelsHost;
             body.Children.Add(existing.Host);
@@ -478,37 +479,20 @@ public partial class MainWindow
 
     private async Task SynchronizePluginEditorsAsync(string project, int generation)
     {
-        foreach (var document in editorDocuments.ToArray())
+        if (!IsCurrentPluginProject(project, generation))
         {
-            if (!IsCurrentPluginProject(project, generation))
-            {
-                return;
-            }
-            if (!services.Files.FileExists(project, document.Source.RelativePath))
-            {
-                continue;
-            }
-            var disk = await services.Files.ReadAsync(project, document.Source.RelativePath);
-            if (!IsCurrentPluginProject(project, generation))
-            {
-                return;
-            }
-            if (EditorSynchronizer.Apply(document, disk) == EditorDiskSyncResult.UnsavedChangesPreserved)
-            {
-                PluginManager.Log(document.Source.RelativePath + " 磁盘已变化，未保存的编辑缓冲区已保留。");
-            }
+            return;
         }
+        var review = await ResynchronizeProjectFilesAsync();
         if (IsCurrentPluginProject(project, generation))
         {
-            await RefreshProjectTreeAsync();
             if (currentProjectManifest is not null && Ag32DeviceCatalog.Find(currentProjectManifest.DeviceId)?.CanMap == true)
             {
                 await RefreshAg32PinMappingStatusAsync(CancellationToken.None);
             }
-            Status.Text = "插件写入完成，编辑器和工程树已实时同步。";
+            Status.Text = review ? "插件写入完成，磁盘冲突的编辑内容已保留，请核对标签。" : "插件写入完成，工程文件已统一同步。";
         }
     }
-
     private async Task StopPluginWorkspaceAsync()
     {
         pluginWorkspaceCancellation?.Cancel();

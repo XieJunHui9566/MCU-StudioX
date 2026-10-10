@@ -9,12 +9,14 @@ public partial class MainWindow
     /// <summary>隔离目录验证同 ID 新旧包的选择器去重、旧归档再次导入和实际模板显示。</summary>
     public async Task RenderPackCatalogPreviewAsync(string directory, string oldArchive, string newArchive)
     {
+        await CheckPackCatalogLoadingAsync(directory, newArchive);
         var older = await services.Packs.ImportAsync(oldArchive);
         var newer = await services.Packs.ImportAsync(newArchive);
         if (!PackCatalogPolicy.Supersedes(newer.Manifest, older.Manifest))
         {
             throw new InvalidOperationException("预览需要新版完整覆盖旧版的同 ID 器件包。");
         }
+        await PrunePackVersionsAsync(CancellationToken.None);
         await BeginNewProjectAsync(CancellationToken.None);
         SelectPack(installedPacks.Single(pack => pack.Manifest.Id == newer.Manifest.Id));
         if (PackPicker.Items.Cast<InstalledPack>().Count(pack => pack.Manifest.Id == newer.Manifest.Id) != 1)

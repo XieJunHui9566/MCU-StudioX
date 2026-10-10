@@ -71,7 +71,7 @@ public sealed class WorkbenchService : IAsyncDisposable
     {
         get;
     }
-    public WorkbenchService(string runtimeDirectory, string dataDirectory)
+    public WorkbenchService(string runtimeDirectory, string dataDirectory, Func<SerialSettings, IDeviceTransport>? monitorTransportFactory = null)
     {
         RuntimeDirectory = Path.GetFullPath(runtimeDirectory);
         DataDirectory = Path.GetFullPath(dataDirectory);
@@ -79,6 +79,8 @@ public sealed class WorkbenchService : IAsyncDisposable
         FirstProjectGuide = new(DataDirectory);
         LocalHistory = new Editing.LocalHistoryService(DataDirectory);
         Files = new ProjectFileService(LocalHistory);
+        SourceRegistration = new BuildConfiguration.SourceRegistrationService(Files);
+        PluginProjectNavigation = new PluginProjectNavigationService(Files);
         WorkspaceDiscovery = new Editing.WorkspaceDiscoveryService(Files);
         WorkbenchLayout = new Editing.WorkbenchLayoutService(DataDirectory);
         Git = new GitRepositoryService(RuntimeDirectory);
@@ -112,7 +114,9 @@ public sealed class WorkbenchService : IAsyncDisposable
         Downloads = new OpenOcdService(Toolsets);
         EspressifDownloads = new EspressifDownloadService(new EspressifFlashService(Toolsets), Devices);
         StcIsp = new StcIspService(Toolsets, RuntimeDirectory, DataDirectory);
-        Debugger = new DebugSessionService(DataDirectory);
+        Debugger = new DebugSessionService(DataDirectory, Devices, monitorTransportFactory);
+        StcBuilds = new(Builds, () => Debugger.IsActive);
+        Mon51Setup = new(StcIsp, Devices, Packs, () => Debugger.IsActive);
         Components = new(() => Debugger.IsActive, Builds);
         Faults = new(Toolsets, Debugger);
         Peripherals = new(Debugger, DataDirectory);
@@ -155,7 +159,15 @@ public sealed class WorkbenchService : IAsyncDisposable
     {
         get;
     }
+    public PluginProjectNavigationService PluginProjectNavigation
+    {
+        get;
+    }
     public Editing.EditorSessionStore EditorSessions
+    {
+        get;
+    }
+    public BuildConfiguration.SourceRegistrationService SourceRegistration
     {
         get;
     }
@@ -267,6 +279,8 @@ public sealed class WorkbenchService : IAsyncDisposable
     {
         get;
     }
+    public StcBuildWorkflowService StcBuilds { get; }
+    public StcDebugging.Mon51SetupService Mon51Setup { get; }
     public EspressifDownloadService EspressifDownloads
     {
         get;
@@ -316,6 +330,7 @@ public sealed class WorkbenchService : IAsyncDisposable
     {
         get;
     }
+    public Editing.ProjectChangeService ProjectChanges { get; } = new();
     public Editing.WorkbenchLayoutService WorkbenchLayout
     {
         get;

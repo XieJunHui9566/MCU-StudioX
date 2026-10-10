@@ -155,10 +155,14 @@ public sealed class LvglPreviewBuilder(ToolsetCatalog toolsets)
             throw new StudioXException("LVGL_COMPILER", "原生开发环境组件缺少 g++.exe。");
         }
         arguments.Add("-DCMAKE_CXX_COMPILER=" + gxx.Replace('\\', '/'));
+        log.AppendLine("[PC 配置]");
+        progress?.Report("[PC 配置]\n");
         var configured = await RunAsync(tools.Tool("cmake"), arguments, root, environment, log, progress, token);
         var success = configured;
         if (configured)
         {
+            log.AppendLine("[PC 编译]");
+            progress?.Report("[PC 编译]\n");
             success = await RunAsync(tools.Tool("cmake"), ["--build", directory, "--parallel", Math.Min(Environment.ProcessorCount, 8).ToString()], root, environment, log, progress, token);
         }
         success &= File.Exists(executable);

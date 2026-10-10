@@ -6,7 +6,7 @@ using StudioX.Engine;
 
 public partial class MainWindow
 {
-    private async Task OpenProjectAsync(string directory, CancellationToken token)
+    private async Task OpenProjectAsync(string directory, CancellationToken token, Func<SourceDocument, MessageBoxResult>? decide = null)
     {
         directory = Path.GetFullPath(directory);
         if (string.Equals(projectDirectory, directory, StringComparison.OrdinalIgnoreCase))
@@ -19,7 +19,7 @@ public partial class MainWindow
         }
         // 先确认目标仍是工程，再关闭当前文档和调试会话。
         var project = await ProjectService.ReadAsync(directory, token);
-        if (!await ConfirmDocumentsAsync())
+        if (!await ConfirmDocumentsAsync(decide))
         {
             return;
         }
@@ -44,6 +44,7 @@ public partial class MainWindow
         GitHubWorkspace.SetProject(directory);
         BuildMemory.SetMessage("正在读取上次构建的占用…");
         SetProjectDetailsMode(project);
+        StartProjectSynchronization(directory);
         await ProjectTerminal.SetProjectAsync(directory);
         await services.Debugger.OpenProjectAsync(directory, token);
         ApplyDownloadConfiguration(null);
@@ -124,7 +125,7 @@ public partial class MainWindow
             QueueOutlineRefresh(clear: true);
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }
-        catch (Exception ex) { Log(ex.ToString()); Status.Text = "工程已打开；代码提示不可用：" + ex.Message; }
+        catch (Exception ex) { await RecordAnalysisFailureAsync("打开工程的代码索引", ex); Status.Text = "工程已打开；代码提示不可用：" + ex.Message; }
     }
 
     private async void CloseProject_Click(object sender, RoutedEventArgs e) => await RunAsync(async token =>
@@ -211,6 +212,7 @@ public partial class MainWindow
         DeviceSearch.Clear();
         ProjectName.Text = "my_firmware";
         Status.Text = "请选择器件厂商，创建新工程。";
+        StartBundledPackCheck();
     }
 
     private void UpdateProjectActions(bool busy)

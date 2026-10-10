@@ -55,7 +55,7 @@ public partial class MainWindow
             {
                 ZoomEditor(steps);
             }
-            else if (target is TextBox log)
+            else if (target is Control log)
             {
                 log.FontSize = Math.Clamp(log.FontSize + steps, 10, 28);
                 Status.Text = $"输出字号：{log.FontSize:0} px";

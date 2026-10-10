@@ -11,6 +11,7 @@ using StudioX.Foundation;
 
 public partial class MainWindow
 {
+    private DebugToolsView DebugTools => services.Debugger.MonitorSession is null ? GeneralDebugTools : Mon51Tools.SourceTools;
     private DebugMargin? debugMargin;
     private bool debugUiQueued, projectActionsBusy;
     private DebugState? lastStatusDebugState;
@@ -28,31 +29,58 @@ public partial class MainWindow
         debugMargin.SettingsRequested += line => EditCurrentBreakpoint(line);
         debugMargin.RunToCursorRequested += line => RunToCursor(line);
         services.Debugger.Changed += QueueDebugUpdate;
-        services.Debugger.Output += message => _ = Dispatcher.BeginInvoke(() => DebugTools.AppendOutput(message));
-        services.Debugger.BreakpointLog += message => _ = Dispatcher.BeginInvoke(() => DebugTools.AppendBreakpointLog(message));
-        DebugTools.FrameSelected += level => _ = RunAsync(async token => { await services.Debugger.RefreshAsync(level, token); await NavigateSelectedDebugFrameAsync(); });
-        DebugTools.WatchChanged += (expression, remove) => _ = RunAsync(token => services.Debugger.ChangeWatchAsync(expression, remove, token));
-        DebugTools.BreakpointChanged += (id, enabled) => _ = RunAsync(token => services.Debugger.ChangeBreakpointAsync(id, enabled, token));
-        DebugTools.BreakpointSettings += id =>
+        services.Debugger.Output += message => _ = Dispatcher.BeginInvoke(() =>
         {
-            var point = services.Debugger.Breakpoints.FirstOrDefault(b => b.Id == id && !b.SessionOnly);
-            if (point is not null)
-            {
-                _ = EditBreakpointSettingsAsync(point.File, point.Line, point);
-            }
-        };
-        DebugTools.Navigate += location => _ = RunAsync(token => NavigateDebugSourceAsync(location, token));
-        DebugTools.DisassemblyRequested += address => debugDisassemblyTask = ReadDebugDisassemblyAsync(address);
-        DebugTools.FreeRtosRequested += () => debugRtosTask = ReadDebugFreeRtosAsync();
-        DebugTools.FreeRtosView.CancelRequested += CancelFreeRtosRead;
-        DebugTools.MemoryRequested += address => _ = RunAsync(async token =>
-        {
-            if (!uint.TryParse(address.Trim().Replace("0x", "", StringComparison.OrdinalIgnoreCase), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var value))
-            {
-                throw new StudioXException("DEBUG_MEMORY", "请输入合法的十六进制地址。");
-            }
-            DebugTools.SetMemory(value, await services.Debugger.ReadMemoryAsync(value, token));
+            DebugTools.AppendOutput(message);
+            Mon51Tools.AppendOutput(message);
         });
+        Mon51Tools.MemoryRequested += (space, address, count) => _ = RunAsync(async token =>
+        {
+            if (services.Debugger.MonitorSession is { } monitor)
+            {
+                Mon51Tools.SetMemory(space, address, await monitor.ReadMemoryAsync(space, address, count, token));
+            }
+        });
+        Mon51Tools.AddBreakpointRequested += address => _ = RunAsync(token => services.Debugger.MonitorSession!.AddBreakpointAsync(address, token));
+        Mon51Tools.RemoveBreakpointRequested += address => _ = RunAsync(token => services.Debugger.MonitorSession!.RemoveBreakpointAsync(address, token));
+        Mon51Tools.PcRequested += address => _ = RunAsync(token => services.Debugger.MonitorSession!.SetPcAsync(address, token));
+        Mon51Tools.SymbolsRequested += () => _ = RunAsync(async token =>
+        {
+            await services.Debugger.LoadMon51SymbolsAsync(token);
+            Mon51Tools.ShowSourceTools();
+        });
+        Mon51Tools.InstructionRequested += () => _ = RunAsync(token => services.Debugger.MonitorSession!.StepInstructionAsync(token));
+        Mon51Tools.SourceStepChanged += enabled => { if (services.Debugger.MonitorSession is { } monitor) { monitor.SourceStepping = enabled; UpdateDebugControls(); } };
+        Mon51Tools.MemoryWriteRequested += (space, address, bytes) => _ = RunAsync(token => services.Debugger.MonitorSession!.WriteMemoryAsync(space, address, bytes, token));
+        Mon51Tools.RegisterWriteRequested += (register, value) => _ = RunAsync(token => services.Debugger.MonitorSession!.SetRegisterAsync(register, value, token));
+        Mon51Tools.VariableWriteRequested += (expression, value) => _ = RunAsync(token => services.Debugger.MonitorSession!.SetVariableAsync(expression, value, token));
+        services.Debugger.BreakpointLog += message => _ = Dispatcher.BeginInvoke(() => DebugTools.AppendBreakpointLog(message));
+        foreach (var view in new[] { GeneralDebugTools, Mon51Tools.SourceTools })
+        {
+            view.FrameSelected += level => _ = RunAsync(async token => { await services.Debugger.RefreshAsync(level, token); await NavigateSelectedDebugFrameAsync(); });
+            view.WatchChanged += (expression, remove) => _ = RunAsync(token => services.Debugger.ChangeWatchAsync(expression, remove, token));
+            view.BreakpointChanged += (id, enabled) => _ = RunAsync(token => services.Debugger.ChangeBreakpointAsync(id, enabled, token));
+            view.BreakpointSettings += id =>
+            {
+                var point = services.Debugger.Breakpoints.FirstOrDefault(b => b.Id == id && !b.SessionOnly);
+                if (point is not null)
+                {
+                    _ = EditBreakpointSettingsAsync(point.File, point.Line, point);
+                }
+            };
+            view.Navigate += location => _ = RunAsync(token => NavigateDebugSourceAsync(location, token));
+            view.DisassemblyRequested += address => debugDisassemblyTask = ReadDebugDisassemblyAsync(address);
+            view.FreeRtosRequested += () => debugRtosTask = ReadDebugFreeRtosAsync();
+            view.FreeRtosView.CancelRequested += CancelFreeRtosRead;
+            view.MemoryRequested += address => _ = RunAsync(async token =>
+            {
+                if (!uint.TryParse(address.Trim().Replace("0x", "", StringComparison.OrdinalIgnoreCase), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var value))
+                {
+                    throw new StudioXException("DEBUG_MEMORY", "请输入合法的十六进制地址。");
+                }
+                DebugTools.SetMemory(value, await services.Debugger.ReadMemoryAsync(value, token));
+            });
+        }
         if (sourceContextMenu is { } menu)
         {
             var toggle = new MenuItem { Header = "设置 / 删除断点", InputGestureText = "F9" };
@@ -156,7 +184,7 @@ public partial class MainWindow
         }
         var target = debug.IsActive && debug.IsHardware ? debug.HardwareTarget :
             downloadConfiguration is { } configuration ? DebugTargetProfile.Find(configuration.Device) : null;
-        RegisterTitle.Text = target?.RegisterTitle ?? "目标寄存器";
+        RegisterTitle.Text = debug.MonitorSession is not null ? "8051 寄存器" : target?.RegisterTitle ?? "目标寄存器";
         RegisterHint.Text = running ? "运行中 · 上次暂停快照" : debug.IsActive ? (debug.IsHardware ? "实机读数 · 变化值高亮" : "模拟数据 · 变化值高亮") : "暂停后读取";
         DebugModeBadge.Text = debug.IsActive ? (debug.IsHardware ? "实机 · " + debug.HardwareTargetName : "离线模拟 · 未连接芯片") : "未连接调试目标";
         RegisterGrid.ItemsSource = debug.Snapshot.Registers;
@@ -166,7 +194,16 @@ public partial class MainWindow
         {
             CancelFreeRtosRead();
         }
-        DebugTools.Refresh(debug.Snapshot, debug.Breakpoints, debug.Watches, state, debug.IsHardware);
+        GeneralDebugTools.Visibility = debug.MonitorSession is null ? Visibility.Visible : Visibility.Collapsed;
+        Mon51Tools.Visibility = debug.MonitorSession is null ? Visibility.Collapsed : Visibility.Visible;
+        if (debug.MonitorSession is { } monitor)
+        {
+            Mon51Tools.Refresh(monitor, projectActionsBusy);
+        }
+        else
+        {
+            DebugTools.Refresh(debug.Snapshot, debug.Breakpoints, debug.Watches, state, debug.IsHardware);
+        }
         UpdateDebugControls();
         UpdateBreakpointAnchors();
         RefreshDebugMarkers();
@@ -183,7 +220,8 @@ public partial class MainWindow
         }
         var debug = services.Debugger;
         var idle = !projectActionsBusy;
-        var sourceDebugUnsupported = IsStcSdccProject || IsEspressifProject || IsZephyrProject || IsMicroPythonProject;
+        var sourceDebugUnsupported = IsEspressifProject || IsZephyrProject || IsMicroPythonProject;
+        var addressDebug = IsStcSdccProject || debug.MonitorSession is not null;
         DebugTopMenu.Visibility = DebugStartButton.Visibility = sourceDebugUnsupported ? Visibility.Collapsed : Visibility.Visible;
         if (debugMargin is not null)
         {
@@ -192,14 +230,14 @@ public partial class MainWindow
         var stopped = debug.State == DebugState.Stopped && idle;
         DebugStartButton.IsEnabled = DebugStartMenu.IsEnabled = idle &&
             !sourceDebugUnsupported && (debug.IsActive || debug.State == DebugState.Faulted ||
-             (projectDirectory is not null && supportsDownload));
+             (projectDirectory is not null && (supportsDownload || IsStcSdccProject)));
         ShowDebugMenu.IsEnabled = debug.IsActive;
-        ShowFreeRtosMenu.IsEnabled = debug.IsActive;
+        ShowFreeRtosMenu.IsEnabled = debug.IsActive && !addressDebug;
         DebugContinueButton.IsEnabled = DebugContinueMenu.IsEnabled = stopped;
         DebugOverButton.IsEnabled = DebugOverMenu.IsEnabled = stopped;
         DebugIntoButton.IsEnabled = DebugIntoMenu.IsEnabled = stopped;
         DebugOutButton.IsEnabled = DebugOutMenu.IsEnabled = stopped && debug.Snapshot.Frames.Length > 1;
-        DebugPauseButton.IsEnabled = DebugPauseMenu.IsEnabled = idle && debug.State == DebugState.Running;
+        DebugPauseButton.IsEnabled = DebugPauseMenu.IsEnabled = debug.State == DebugState.Running && (idle || addressDebug);
         DebugResetButton.IsEnabled = DebugRefreshButton.IsEnabled = stopped;
         DebugStopButton.IsEnabled = idle && (debug.IsActive || debug.State == DebugState.Faulted);
         if (debugMargin is not null)
@@ -207,7 +245,19 @@ public partial class MainWindow
             debugMargin.CanEdit = idle && CanEditBreakpoints;
             debugMargin.CanRunToCursor = idle && CanEditBreakpoints && debug.State == DebugState.Stopped;
         }
-        DebugRunToMenu.IsEnabled = stopped;
+        DebugRunToMenu.IsEnabled = stopped && (!addressDebug || debug.MonitorSession is { HasSymbols: true });
+        foreach (var item in new[] { ShowFreeRtosMenu, DebugPlotMenu, DebugPeripheralMenu })
+        {
+            item.Visibility = addressDebug ? Visibility.Collapsed : Visibility.Visible;
+        }
+        DebugOverButton.Visibility = DebugOutButton.Visibility = DebugOverMenu.Visibility = DebugOutMenu.Visibility = Visibility.Visible;
+        var sourceSteps = debug.MonitorSession is { HasSymbols: true, SourceStepping: true };
+        DebugIntoLabel.Text = addressDebug && !sourceSteps ? "指令单步" : "进入";
+        DebugIntoMenu.Header = addressDebug && !sourceSteps ? "指令单步" : "单步进入";
+        DebugIntoButton.ToolTip = addressDebug && !sourceSteps ? "执行一条 8051 指令 (F11)" : "单步进入 (F11)";
+        DebugResetLabel.Text = addressDebug ? "逻辑复位" : "复位";
+        DebugResetButton.ToolTip = addressDebug ? "设置监控逻辑复位入口并暂停；不复位外设、不擦写程序" : "复位并暂停目标";
+        DebugStartButton.ToolTip = addressDebug ? "保存并编译最新程序，通过 Mon51 覆盖用户区后启动调试；再次点击结束调试" : "启动 / 结束调试";
         var available = projectDirectory is not null && idle && !debug.IsActive;
         BuildButton.IsEnabled = BuildMenu.IsEnabled = available && !IsZephyrProject && !IsMicroPythonProject;
         DownloadButton.IsEnabled = DownloadMenu.IsEnabled = available && supportsDownload;
@@ -253,13 +303,19 @@ public partial class MainWindow
     {
         if (services.Debugger.IsActive)
         {
+            var monitorSession = services.Debugger.MonitorSession is not null;
             await services.Debugger.StopAsync();
-            Status.Text = "调试已结束，烧录器已释放。";
+            Status.Text = monitorSession ? services.Debugger.Reason : "调试已结束，烧录器已释放。";
             return;
         }
         if (services.Debugger.State == DebugState.Faulted)
         {
             await services.Debugger.StopAsync();
+        }
+        if (IsStcSdccProject)
+        {
+            await StartMon51DebugAsync(token);
+            return;
         }
         if (projectDirectory is null)
         {
@@ -300,11 +356,19 @@ public partial class MainWindow
     private async void DebugStop_Click(object sender, RoutedEventArgs e) => await RunAsync(async _ =>
     {
         CancelFreeRtosRead();
+        var monitorSession = services.Debugger.MonitorSession is not null;
         await services.Debugger.StopAsync();
-        Status.Text = "调试已结束，烧录器已释放。";
+        Status.Text = monitorSession ? services.Debugger.Reason : "调试已结束，烧录器已释放。";
     });
     private void DebugContinue_Click(object sender, RoutedEventArgs e) => RunDebugAction(DebugAction.Continue);
-    private void DebugPause_Click(object sender, RoutedEventArgs e) => RunDebugAction(DebugAction.Pause);
+    private void DebugPause_Click(object sender, RoutedEventArgs e)
+    {
+        if (services.Debugger.MonitorSession?.RequestStepPause() == true)
+        {
+            return;
+        }
+        RunDebugAction(DebugAction.Pause);
+    }
     private void DebugInto_Click(object sender, RoutedEventArgs e) => RunDebugAction(DebugAction.StepInto);
     private void DebugOver_Click(object sender, RoutedEventArgs e) => RunDebugAction(DebugAction.StepOver);
     private void DebugOut_Click(object sender, RoutedEventArgs e) => RunDebugAction(DebugAction.StepOut);
@@ -353,6 +417,10 @@ public partial class MainWindow
         if (services.Debugger.IsActive)
         {
             ShowBottom(2);
+            if (services.Debugger.MonitorSession is not null)
+            {
+                Mon51Tools.ShowSourceTools();
+            }
             DebugTools.ShowBreakpoints();
         }
         RefreshDebugUi();
@@ -397,7 +465,7 @@ public partial class MainWindow
             await RunAsync(token => services.Debugger.ChangeBreakpointAsync(point.Id, !point.Enabled, token));
         }
     }
-    private bool CanEditBreakpoints => !IsStcSdccProject && !IsEspressifProject && !IsZephyrProject && !IsMicroPythonProject && projectDirectory is not null && activeDocument is not null && IsActiveSourceTab &&
+    private bool CanEditBreakpoints => (services.Debugger.MonitorSession is null || services.Debugger.MonitorSession.HasSymbols) && !IsEspressifProject && !IsZephyrProject && !IsMicroPythonProject && projectDirectory is not null && activeDocument is not null && IsActiveSourceTab &&
         !Path.IsPathRooted(activeDocument.RelativePath) && CodeLanguage.ForFile(activeDocument.RelativePath) is "C" or "C++" &&
         services.Debugger.State is DebugState.Disconnected or DebugState.Stopped or DebugState.Faulted;
     private async Task NavigateSelectedDebugFrameAsync()

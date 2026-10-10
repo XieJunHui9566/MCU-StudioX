@@ -8,4 +8,5 @@ public sealed record DeviceDefinition(string Id, string DisplayName, string Arch
     string LinkerScript, IReadOnlyList<string> CompileOptions, IReadOnlyList<string> LinkOptions,
     IReadOnlyList<ProjectTemplate> Templates, OpenOcdDefinition? OpenOcd = null,
     EspressifDeviceDefinition? Espressif = null,
-    IReadOnlyList<DevelopmentComponentRequirement>? DevelopmentComponents = null);
+    IReadOnlyList<DevelopmentComponentRequirement>? DevelopmentComponents = null,
+    MonitorFirmwareDefinition? MonitorFirmware = null);

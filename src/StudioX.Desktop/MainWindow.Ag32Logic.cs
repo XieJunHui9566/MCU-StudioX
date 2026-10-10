@@ -197,17 +197,13 @@ public partial class MainWindow
             await ShowAg32PinMappingAsync(token);
             return;
         }
-        ShowBottom(0);
-        BuildLog.Clear();
         try
         {
-            var report = await services.Ag32PinMapping.BuildAsync(root,
-                new Progress<string>(text => { Status.Text = text; Log(text); }), token,
-                new Progress<string>(text => Log(text.TrimEnd('\r', '\n'))));
-            await Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Background);
+            var report = await RunBuildOutputOperationAsync("引脚映射编译",
+                (progress, output) => services.Ag32PinMapping.BuildAsync(root, progress, token, output),
+                result => result.Success, result => result.Success ? "映射编译成功；尚未下载到芯片。" : "映射编译失败，请查看原始诊断。", token);
             Log("映射构建日志：" + report.LogPath);
             Status.Text = report.Success ? "映射编译成功；尚未下载到芯片。" : "映射编译失败，请查看原始诊断。";
-            Log(Status.Text);
         }
         finally
         {

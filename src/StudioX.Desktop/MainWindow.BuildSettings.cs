@@ -28,6 +28,9 @@ public partial class MainWindow
     private void ConfigureBuildSettingsForProject()
     {
         var stc = IsStcSdccProject;
+        BuildDebugInfoPicker.ItemsSource = stc
+            ? new[] { new BuildChoice<CompilerDebugInfo>(CompilerDebugInfo.ProjectDefault, "沿用工程默认"), new(CompilerDebugInfo.None, "不生成 CDB"), new(CompilerDebugInfo.Standard, "--debug · 生成源码调试 CDB") }
+            : new[] { new BuildChoice<CompilerDebugInfo>(CompilerDebugInfo.ProjectDefault, "沿用工程默认"), new(CompilerDebugInfo.None, "-g0 · 不生成调试信息"), new(CompilerDebugInfo.Standard, "-g2 · 标准调试信息"), new(CompilerDebugInfo.Full, "-g3 · 包含宏信息") };
         BuildOptimizationPicker.ItemsSource = stc
             ? new[]
             {
@@ -43,10 +46,11 @@ public partial class MainWindow
                 new(CompilerOptimization.O1, "-O1 · 基础优化"), new(CompilerOptimization.O2, "-O2 · 速度优化"),
                 new(CompilerOptimization.O3, "-O3 · 更高速度优化"), new(CompilerOptimization.Os, "-Os · 优先减小体积")
             };
-        BuildDebugInfoLabel.Visibility = BuildDebugInfoPicker.Visibility = stc ? Visibility.Collapsed : Visibility.Visible;
+        BuildDebugInfoLabel.Visibility = BuildDebugInfoPicker.Visibility = Visibility.Visible;
         StcCodeRomPanel.Visibility = stc ? Visibility.Visible : Visibility.Collapsed;
+        StcMon51Profile.Visibility = stc && currentProjectManifest?.DeviceId == "IAP15F2K61S2" ? Visibility.Visible : Visibility.Collapsed;
         BuildSettingsHelp.Text = stc
-            ? "SDCC 的优化选项不等同于 GCC 的 -O 等级；选择后由 IDE 转换为对应的 SDCC 参数。当前 STC 工程暂不提供源码调试。"
+            ? "源码调试请选择 --debug，并建议低优化。构建生成 CDB；Mon51 连接会核对源码、构建产物与目标 CODE。优化可能使变量或部分源码行不可用。"
             : "源码调试建议 -Og 与 -g3；较高优化可能使变量或源码行无法直接观察。";
     }
 
@@ -57,7 +61,8 @@ public partial class MainWindow
     {
         settings = new(Optimization:
             BuildOptimizationPicker.SelectedValue is CompilerOptimization optimization ? optimization : CompilerOptimization.ProjectDefault,
-            DebugInfo: !IsStcSdccProject && BuildDebugInfoPicker.SelectedValue is CompilerDebugInfo debug ? debug : CompilerDebugInfo.ProjectDefault);
+            DebugInfo: BuildDebugInfoPicker.SelectedValue is CompilerDebugInfo debug ? debug : CompilerDebugInfo.ProjectDefault,
+            Mon51Profile: IsStcSdccProject && StcMon51Profile.IsChecked == true);
         error = "";
         if (!IsStcSdccProject || StcCodeRomSizeBox is null)
         {
@@ -92,13 +97,14 @@ public partial class MainWindow
         var unsupportedOptimization = IsStcSdccProject && settings.Optimization is not
             (CompilerOptimization.ProjectDefault or CompilerOptimization.O0 or CompilerOptimization.O2 or CompilerOptimization.Os);
         BuildOptimizationPicker.SelectedValue = unsupportedOptimization ? CompilerOptimization.ProjectDefault : settings.Optimization;
-        BuildDebugInfoPicker.SelectedValue = IsStcSdccProject ? CompilerDebugInfo.ProjectDefault : settings.DebugInfo;
+        BuildDebugInfoPicker.SelectedValue = IsStcSdccProject && settings.DebugInfo == CompilerDebugInfo.Full ? CompilerDebugInfo.ProjectDefault : settings.DebugInfo;
         StcCodeRomSizeBox.Text = IsStcSdccProject ? settings.CodeRomSizeBytes?.ToString(CultureInfo.InvariantCulture) ?? "" : "";
+        StcMon51Profile.IsChecked = IsStcSdccProject && settings.Mon51Profile;
         StcCodeRomLimitText.Text = stcCodeRomLimit is { } limit
             ? $"留空使用器件包上限 {limit.MaximumBytes:N0} B（物理 {limit.PhysicalBytes:N0} B，保留 {limit.ReservedBytes} B）。"
             : "";
         applyingBuildSettings = false;
-        BuildSettingsStatus.Text = unsupportedOptimization || IsStcSdccProject && settings.DebugInfo != CompilerDebugInfo.ProjectDefault
+        BuildSettingsStatus.Text = unsupportedOptimization || IsStcSdccProject && settings.DebugInfo == CompilerDebugInfo.Full
             ? "已有参数不适用于 STC SDCC；请选择优化方式并保存，以移除旧设置。"
             : "修改后点击保存，下次编译生效。";
         UpdateBuildSettingsControls();
@@ -109,6 +115,19 @@ public partial class MainWindow
         if (BuildSettingsSummary is null)
         {
             return;
+        }
+        UpdateBuildSettingsControls();
+        UpdateBuildSettingsDirtyStatus();
+    }
+    private void StcMon51Profile_Changed(object sender, RoutedEventArgs e)
+    {
+        if (applyingBuildSettings || BuildSettingsSummary is null)
+        {
+            return;
+        }
+        if (StcMon51Profile.IsChecked == true)
+        {
+            BuildDebugInfoPicker.SelectedValue = CompilerDebugInfo.Standard;
         }
         UpdateBuildSettingsControls();
         UpdateBuildSettingsDirtyStatus();
@@ -155,7 +174,7 @@ public partial class MainWindow
             CompilerOptimization.Os => "STC SDCC · 代码尺寸",
             CompilerOptimization.O2 => "STC SDCC · 执行速度",
             _ => "STC SDCC · 默认"
-        }) + (selected.CodeRomSizeBytes is { } bytes ? $" · ROM 上限 {bytes:N0} B" :
+        }) + (selected.Mon51Profile ? " · Mon51：CODE ≤56317 B / XDATA ≤1024 B / CDB" : selected.CodeRomSizeBytes is { } bytes ? $" · ROM 上限 {bytes:N0} B" :
             stcCodeRomLimit is { } limit ? $" · ROM 上限 {limit.MaximumBytes:N0} B（器件包默认）" : "")
             : selected.Summary;
     }

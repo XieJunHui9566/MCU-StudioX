@@ -54,6 +54,7 @@ public partial class MainWindow
         InitializeDebugger();
         InitializeWorkspaceEditing();
         InitializePeripheralDevelopment();
+        InitializeSourceRegistration();
         InitializeLiveDiagnostics();
         InitializeEditorRecovery();
         ApplyEditorSettings(editorSettings);
@@ -216,6 +217,7 @@ public partial class MainWindow
             return;
         }
         using var lifetime = CancellationTokenSource.CreateLinkedTokenSource(projectTreeCancellation.Token, token);
+        projectChangeSession?.TrackPath(entry.RelativePath);
         var stop = lifetime.Token;
         parent.Items.Clear();
         var placeholder = new TreeViewItem { Header = "正在读取…", IsEnabled = false };
@@ -230,18 +232,7 @@ public partial class MainWindow
             foreach (var item in items)
             {
                 stop.ThrowIfCancellationRequested();
-                var deviceSupport = item.IsDirectory && item.RelativePath == "device";
-                var node = new TreeViewItem { Header = FileLabel(item.Name, item.IsDirectory, deviceSupport ? " · 器件支持" : ""), Tag = item, ToolTip = deviceSupport ? "厂商 SDK、寄存器定义、启动文件及内部构建配置；应用代码在 src 中维护。" : item.RelativePath, IsEnabled = !item.IsLink };
-                if (item.IsLink)
-                {
-                    node.ToolTip = item.RelativePath + "（链接目录或文件暂不展开）";
-                }
-                if (item.IsDirectory && !item.IsLink)
-                {
-                    node.Items.Add(new TreeViewItem { Header = "正在读取…", IsEnabled = false });
-                    node.Expanded += Directory_Expanded;
-                    node.Collapsed += (_, e) => { if (e.OriginalSource == node) { SetFolderIcon(node, false); } };
-                }
+                var node = CreateProjectNode(item);
                 parent.Items.Add(node);
                 // 大目录分批挂入节点，让输入和渲染在批次间得到调度；折叠后保留已加载的节点。
                 if (batch.ElapsedMilliseconds >= 8)
@@ -310,7 +301,7 @@ public partial class MainWindow
         if (e.Key == Key.F5 && projectDirectory is not null)
         {
             e.Handled = true;
-            await RunAsync(token => RefreshProjectTreeAsync(token: token));
+            await RunAsync(async token => { await ResynchronizeProjectFilesAsync(token); });
         }
         else if (e.Key == Key.Enter && ProjectTree.SelectedItem is TreeViewItem { Tag: ProjectEntry { IsLink: false } entry })
         {

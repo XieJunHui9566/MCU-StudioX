@@ -1,7 +1,6 @@
 namespace StudioX.Desktop;
 
 using System.Windows;
-using System.Windows.Threading;
 using Microsoft.Win32;
 
 public partial class MainWindow
@@ -52,13 +51,8 @@ public partial class MainWindow
     }
     private async Task<bool> ConfigureCubeMxAsync(string directory, CancellationToken token)
     {
-        ShowBottom(0);
         Status.Text = "正在配置 CubeMX 工程…";
-        var report = await services.Builds.ConfigureAsync(directory,
-            new Progress<string>(text => { Status.Text = text; Log(text); }), token,
-            new Progress<string>(text => Log(text.TrimEnd('\r', '\n'))));
-        await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Background);
-        Log($"CMake 配置{(report.Success ? "成功" : "失败")}，退出代码：{report.ExitCode}");
+        var report = await ConfigureWithOutputAsync(directory, token);
         return report.Success;
     }
 }

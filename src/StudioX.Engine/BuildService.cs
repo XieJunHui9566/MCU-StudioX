@@ -340,8 +340,12 @@ public sealed partial class BuildService(ToolsetCatalog catalog, string? ag32Map
                 {
                     throw new StudioXException("BUILD_ARTIFACT", "SDCC 报告成功，但 Intel HEX 或映射文件缺失。");
                 }
-                await stcRom!.VerifyBuildAsync(build, settings.CodeRomSizeBytes, cancellationToken);
-                var sdccArtifacts = required.Concat(new[] { Path.Combine(build, "firmware.mem") }.Where(File.Exists)).ToArray();
+                await stcRom!.VerifyBuildAsync(build, settings.Mon51Profile ? Math.Min(settings.CodeRomSizeBytes ?? 0xdbfd, 0xdbfd) : settings.CodeRomSizeBytes, cancellationToken);
+                if (settings.DebugInfo == CompilerDebugInfo.Standard && !File.Exists(Path.Combine(build, "firmware.cdb")))
+                {
+                    throw new StudioXException("BUILD_ARTIFACT", "SDCC --debug 构建缺少链接后的 firmware.cdb。");
+                }
+                var sdccArtifacts = required.Concat(new[] { Path.Combine(build, "firmware.mem"), Path.Combine(build, "firmware.cdb") }.Where(File.Exists)).ToArray();
                 return await CompleteAsync(buildResult!, sdccArtifacts);
             }
             var artifacts = new[] { "firmware.elf", "firmware.bin", "firmware.hex", "firmware.map" }.Select(p => Path.Combine(build, p)).ToArray();

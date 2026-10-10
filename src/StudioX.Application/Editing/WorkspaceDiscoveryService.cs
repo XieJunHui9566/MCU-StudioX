@@ -13,7 +13,6 @@ public sealed class WorkspaceDiscoveryService(ProjectFileService files)
         var pending = new Stack<string>();
         pending.Push("");
         var visited = 0;
-        var excluded = new HashSet<string>([".git", ".studiox", ".build", "build", "bin", "obj", "node_modules", ".venv", "__pycache__"], StringComparer.OrdinalIgnoreCase);
         while (pending.TryPop(out var directory))
         {
             token.ThrowIfCancellationRequested();
@@ -29,7 +28,7 @@ public sealed class WorkspaceDiscoveryService(ProjectFileService files)
                 }
                 if (entry.IsDirectory)
                 {
-                    if (!excluded.Contains(entry.Name) && !entry.Name.StartsWith("cmake-build-", StringComparison.OrdinalIgnoreCase))
+                    if (!ProjectChangePolicy.ExcludesDirectory(entry.Name))
                     {
                         pending.Push(entry.RelativePath);
                     }

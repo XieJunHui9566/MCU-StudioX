@@ -16,7 +16,6 @@ public partial class MainWindow : Window
 {
     private readonly WorkbenchService services;
     private InstalledPack[] installedPacks = [];
-    private bool bundledPacksChecked;
     private string? projectDirectory;
     private ThemeDefinition currentTheme = ThemeService.Dark;
     private CancellationTokenSource? operationCancellation;
@@ -29,6 +28,7 @@ public partial class MainWindow : Window
     {
         this.services = services;
         InitializeComponent();
+        InitializeBuildOutput();
         projectTransitions = CreateProjectTransitionCoordinator();
         InitializeSimulation();
         InitializeBuildSettings();
@@ -128,6 +128,9 @@ public partial class MainWindow : Window
         System.Windows.Application.Current.Resources[SystemColors.ControlBrushKey] = System.Windows.Application.Current.Resources["Surface"];
         currentTheme = theme;
         DiagnosticPalette.Apply(theme);
+        BuildLog.RefreshTheme();
+        DeviceLog.RefreshTheme();
+        LvglPreview.DiagnosticLog.RefreshTheme();
         RefreshSurfaceBrushes();
         ApplyEditorTheme();
         Plot.InvalidateVisual();
@@ -136,38 +139,7 @@ public partial class MainWindow : Window
     }
     private async Task RefreshPacksAsync(CancellationToken token, bool preserveSelection = false)
     {
-        if (!bundledPacksChecked)
-        {
-            try
-            {
-                var bundled = Path.Combine(AppContext.BaseDirectory, "device-packs");
-                var result = await services.Packs.ImportBundledMissingAsync(bundled, token);
-                bundledPacksChecked = true;
-                if (result.Imported > 0)
-                {
-                    Log($"已导入 {result.Imported} 个随附器件包。");
-                }
-                foreach (var failure in result.Failures)
-                {
-                    Log($"随附器件包导入失败：{failure.File}：{failure.Message}");
-                }
-            }
-            catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }
-            catch (Exception ex)
-            {
-                bundledPacksChecked = true;
-                Log("读取随附器件包失败，可手动导入：" + ex.Message);
-            }
-        }
-        var cleanup = await services.Packs.PruneSupersededAsync(token);
-        if (cleanup.Removed.Count > 0)
-        {
-            Log($"已清理 {cleanup.Removed.Count} 个重复旧器件包，释放 {cleanup.ReclaimedBytes / 1024d / 1024:F1} MiB。");
-        }
-        foreach (var failure in cleanup.Failures)
-        {
-            Log($"旧器件包清理失败：{failure.Id} {failure.Version}：{failure.Message}");
-        }
+        // 浏览只校验目录元数据；完整 SDK 校验留在导入、覆盖清理与创建工程前。
         var catalog = await services.Packs.ListCatalogAsync(token);
         // 目录读取期间允许用户继续选择；在实际重建列表前采集最新选择。
         var vendorId = preserveSelection ? (VendorPicker.SelectedItem as ManufacturerOption)?.Id : null;
@@ -176,7 +148,7 @@ public partial class MainWindow : Window
         var deviceId = preserveSelection ? (DevicePicker.SelectedItem as DeviceDefinition)?.Id : null;
         var templateId = preserveSelection ? (TemplatePicker.SelectedItem as ProjectTemplate)?.Id : null;
         var search = preserveSelection ? DeviceSearch.Text : "";
-        // 冗余旧版已清理；只有新版不覆盖的旧型号或模板继续保留，不能因版本更高而丢失 SPL 等能力。
+        // 不按版本号隐藏未验证的旧包，避免损坏新版或不同 SDK 遮蔽可用资源。
         installedPacks = catalog
             .OrderBy(p => p.Manifest.DisplayName, StringComparer.OrdinalIgnoreCase)
             .ThenByDescending(p => p.Manifest.Version, Comparer<string>.Create(PackVersion.Compare)).ToArray();
@@ -252,6 +224,7 @@ public partial class MainWindow : Window
     private async Task<InstalledPack> ImportPackForSelectionAsync(string archive, CancellationToken token)
     {
         var pack = await services.Packs.ImportAsync(archive, token);
+        await PrunePackVersionsAsync(token);
         await RefreshPacksAsync(token);
         var current = installedPacks.SingleOrDefault(p => p.Manifest.Id == pack.Manifest.Id && p.Manifest.Version == pack.Manifest.Version)
             ?? installedPacks.Where(p => PackCatalogPolicy.Supersedes(p.Manifest, pack.Manifest))
@@ -589,10 +562,10 @@ public partial class MainWindow : Window
     }
     private void Log(string text)
     {
-        BuildLog.AppendText($"[{DateTime.Now:HH:mm:ss}] {text}\n");
-        if (BuildLog.Text.Length > 500000)
+        BuildLog.AppendLogLine($"[{DateTime.Now:HH:mm:ss}] {text}");
+        if (BuildLog.Document.TextLength > 500000)
         {
-            BuildLog.Text = "[较早日志已截断]\n" + BuildLog.Text[^400000..];
+            BuildLog.Document.Replace(0, BuildLog.Document.TextLength - 400000, "[较早日志已截断；完整日志保存在构建日志文件中]\n");
         }
         BuildLog.ScrollToEnd();
     }
@@ -609,8 +582,10 @@ public partial class MainWindow : Window
             return;
         }
         closing = true;
+        projectSyncCancellation?.Cancel();
         IsEnabled = false;
         packSyncCancellation?.Cancel();
+        bundledPackCancellation?.Cancel();
         aiCancellation?.Cancel();
         pluginWorkspaceCancellation?.Cancel();
         pluginInvocationCancellation?.Cancel();
@@ -627,8 +602,10 @@ public partial class MainWindow : Window
         try
         {
             await pendingOperation;
+            await StopProjectSynchronizationAsync();
             await buildMemoryRefreshTask;
             await StopPackSyncAsync();
+            await StopBundledPackCheckAsync();
             await pendingZoomSave;
             try
             {
@@ -648,6 +625,11 @@ public partial class MainWindow : Window
             {
                 closing = false;
                 IsEnabled = true;
+                if (projectDirectory is { } directory)
+                {
+                    StartProjectSynchronization(directory);
+                    projectChangeSession?.RequestRescan();
+                }
                 QueueOutlineRefresh();
                 QueueLiveDiagnostics();
                 await ReloadPluginWorkspaceAsync(CancellationToken.None);
@@ -688,6 +670,11 @@ public partial class MainWindow : Window
                 QueueOutlineRefresh();
                 QueueLiveDiagnostics();
                 Status.Text = "未能保存修改，窗口保持打开。";
+                if (projectDirectory is { } directory && projectChangeSession is null)
+                {
+                    StartProjectSynchronization(directory);
+                    projectChangeSession?.RequestRescan();
+                }
                 await ReloadPluginWorkspaceAsync(CancellationToken.None);
             }
         }

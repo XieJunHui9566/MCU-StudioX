@@ -164,7 +164,6 @@ if (!$ExcludePlugins)
         id            = 'studiox.sensor-csv';
         version       = '0.1.0';
         displayName   = 'Sensor CSV decoder'
-        description   = '传感器 CSV 数据解码示例：将 temperature,0|1 解析为温度与数字状态。'
         entryAssembly = $dll;
         entryType     = 'StudioX.SampleDecoder.SensorCsvDecoder';
         capabilities  = @('decode')

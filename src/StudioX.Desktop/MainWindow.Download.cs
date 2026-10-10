@@ -31,7 +31,7 @@ public partial class MainWindow
             DownloadButton.ToolTip = IsMicroPythonProject ? "保存并下载 MicroPython 脚本；首次使用请在下载页面选择 USB 串口。连接会中断板上程序。" :
                 IsZephyrProject ? "Zephyr 实验模式：当前尚未开放板级下载，请勿使用裸机后端。" :
                 IsEspressifProject ? "保存、使用内置 SDK 编译并预检多映像布局；确认目标与 COM 端口后下载" :
-                IsStcSdccProject ? "保存、编译并通过 STC 串口 ISP 下载；请先在工程设置中配置 COM 口和时钟" :
+                IsStcSdccProject ? "保存、编译并通过普通串口 ISP 下载；完成后运行，不进入调试" :
                 configuration is null ? "当前器件尚未提供匹配的下载配置" :
                 $"保存、编译并下载 · {probe!.DisplayName} · {configuration.Options.SpeedKhz} kHz";
             DownloadSettingsButton.ToolTip = IsMicroPythonProject ? "MicroPython 串口、脚本与 REPL" :

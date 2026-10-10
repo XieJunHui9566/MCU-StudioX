@@ -1,0 +1,73 @@
+{
+  "formatVersion": 1,
+  "baselineGates": [
+    "build", "security-boundaries", "source-style", "mcp-validation-build",
+    "mcp-contracts-and-boundaries", "StudioX.DesktopArchitectureChecks-build",
+    "StudioX.DesktopArchitectureChecks", "StudioX.ArchitectureChecks-build",
+    "StudioX.ArchitectureChecks", "release-identity", "release-pipeline-guards",
+    "maintenance-gate-contracts", "debug-plugin-isolation", "keil-migration-workflow",
+    "project-file-synchronization", "source-registration", "openocd-plot-offline", "code-templates",
+    "peripheral-development", "fault-peripherals", "product-workflows",
+    "code-template-ui", "fault-peripheral-ui", "pack-retention-build", "pack-retention",
+    "pack-catalog-ui", "editable-combo-ui"
+  ],
+  "inputs": {
+    "LanguageRuntime": "directory",
+    "KeilValidationInputs": "file",
+    "SourceRegistrationInputs": "file",
+    "ProjectHealthNinja": "file",
+    "EnvironmentReliabilityNinja": "file",
+    "PeripheralRuntime": "directory",
+    "PeripheralPackInputs": "file",
+    "VendorSvd": "file",
+    "ToolsetsDirectory": "directory",
+    "CoreDumpFixtures": "directory"
+  },
+  "profiles": [
+    {
+      "id": "baseline", "requiredInputs": [], "gates": [],
+      "reports": [
+        { "path": "keil-workflow/result.json", "expected": { "success": true } },
+        { "path": "project-synchronization/result.json", "expected": { "success": true } },
+        { "path": "source-registration/result.json", "expected": { "success": true } },
+        { "path": "peripheral-development/result.json", "expected": { "success": true } },
+        { "path": "code-template-ui/result.json", "expected": { "success": true } },
+        { "path": "ui/result.json", "expected": { "success": true } },
+        { "path": "pack-catalog-ui/loading-result.json", "expected": { "success": true, "blockedBackground": true } },
+        { "path": "editable-combo-ui/result.json", "expected": { "success": true, "openedPort": false } }
+      ]
+    },
+    {
+      "id": "editor", "requiredInputs": ["LanguageRuntime"],
+      "gates": ["live-diagnostic-reliability", "live-diagnostic-ui"],
+      "reports": [{ "path": "project-synchronization/result.json", "expected": { "success": true, "language": "passed" } }]
+    },
+    {
+      "id": "keil", "requiredInputs": ["KeilValidationInputs"], "gates": [],
+      "reports": [
+        { "path": "keil-workflow/result.json", "expected": { "success": true, "realCompilation": "passed" } },
+        { "path": "keil-workflow/real-compilation/results.json", "expected": { "success": true } }
+      ]
+    },
+    {
+      "id": "sources", "requiredInputs": ["SourceRegistrationInputs"], "gates": [],
+      "reports": [
+        { "path": "source-registration/result.json", "expected": { "success": true, "realCompilation": "passed" } },
+        { "path": "source-registration/application/real-compilation/result.json", "expected": { "success": true } }
+      ]
+    },
+    {
+      "id": "environment", "requiredInputs": ["ProjectHealthNinja", "EnvironmentReliabilityNinja"],
+      "gates": ["project-health-build", "project-health-analysis", "environment-recovery"], "reports": []
+    },
+    {
+      "id": "peripheral", "requiredInputs": ["PeripheralRuntime", "PeripheralPackInputs"],
+      "gates": ["peripheral-development-diagnostics", "peripheral-development-ui"],
+      "reports": [{ "path": "peripheral-development-ui/result.json", "expected": { "success": true } }]
+    },
+    {
+      "id": "fault", "requiredInputs": ["VendorSvd", "ToolsetsDirectory", "CoreDumpFixtures"],
+      "gates": [], "reports": []
+    }
+  ]
+}

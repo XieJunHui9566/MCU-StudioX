@@ -39,5 +39,9 @@ internal sealed class EditorDocumentSession(SourceDocument source)
     {
         get; set;
     }
-    public bool IsDirty => !string.Equals(Buffer.Text, Source.Text, StringComparison.Ordinal);
+    public string? DiskConflict
+    {
+        get; set;
+    }
+    public bool IsDirty => Source.IsMissing || DiskConflict is not null || !string.Equals(Buffer.Text, Source.Text, StringComparison.Ordinal);
 }

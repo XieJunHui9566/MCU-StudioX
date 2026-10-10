@@ -50,7 +50,7 @@ public static partial class PluginContributionValidator
             {
                 throw Invalid("面板 ID 为空或重复。");
             }
-            ValidatePanel(panel, commands);
+            ValidatePanel(panel, commands, manifest.Scope == "application");
         }
         var tools = new HashSet<string>(StringComparer.Ordinal);
         foreach (var tool in contribution.AgentTools)
@@ -65,7 +65,7 @@ public static partial class PluginContributionValidator
         }
     }
 
-    public static void ValidatePanel(PluginPanelDefinition panel, IReadOnlySet<string> commandIds)
+    public static void ValidatePanel(PluginPanelDefinition panel, IReadOnlySet<string> commandIds, bool allowProjectLinks = false)
     {
         Identifier(panel.Id);
         Text(panel.Title, 256, "面板标题");
@@ -77,7 +77,7 @@ public static partial class PluginContributionValidator
         var ids = new HashSet<string>(StringComparer.Ordinal);
         foreach (var widget in panel.Widgets)
         {
-            ValidateWidget(widget, commandIds, ids, 0, ref count);
+            ValidateWidget(widget, commandIds, ids, 0, ref count, allowProjectLinks);
         }
         ValidateJson(JsonSerializer.SerializeToElement(panel), 1024 * 1024);
     }
@@ -102,7 +102,7 @@ public static partial class PluginContributionValidator
     }
 
     private static void ValidateWidget(PluginPanelWidget widget, IReadOnlySet<string> commands,
-        HashSet<string> ids, int depth, ref int count)
+        HashSet<string> ids, int depth, ref int count, bool allowProjectLinks)
     {
         if (widget is null || depth > 8 || ++count > 256 || !ids.Add(Identifier(widget.Id)))
         {
@@ -110,7 +110,7 @@ public static partial class PluginContributionValidator
         }
         Text(widget.Label, 256, "控件标签", allowEmpty: true);
         if (widget.Kind is not ("text" or "table" or "tree" or "form" or "plot" or "button" or
-            "input" or "number" or "checkbox" or "select" or "metric" or "chart" or "group"))
+            "input" or "number" or "checkbox" or "select" or "metric" or "chart" or "group" or "projectLink"))
         {
             throw Invalid("不支持的控件类型：" + widget.Kind);
         }
@@ -121,6 +121,14 @@ public static partial class PluginContributionValidator
         if (widget.Kind is "button" && widget.CommandId is null)
         {
             throw Invalid("按钮必须指定已注册命令。");
+        }
+        if (widget.Kind == "projectLink")
+        {
+            if (!allowProjectLinks || widget.CommandId is not null || widget.Value is not { } link)
+            {
+                throw Invalid("工程入口仅允许应用级面板声明目标数据，不执行插件命令。");
+            }
+            _ = PluginProjectLink.Parse(link);
         }
         if (widget.Columns is not null)
         {
@@ -161,7 +169,7 @@ public static partial class PluginContributionValidator
             }
             foreach (var child in widget.Children)
             {
-                ValidateWidget(child, commands, ids, depth + 1, ref count);
+                ValidateWidget(child, commands, ids, depth + 1, ref count, allowProjectLinks);
             }
         }
     }

@@ -94,7 +94,7 @@ public sealed partial class ComponentMigrationService(PackRepository packs, Buil
     }, token);
 
     public Task<ComponentMigrationResult> CreateAndBuildAsync(ComponentMigrationPreview preview, IProgress<string>? progress = null,
-        CancellationToken token = default) => Task.Run(async () =>
+        CancellationToken token = default, IProgress<string>? output = null) => Task.Run(async () =>
     {
         if (!await gate.WaitAsync(0, token))
         {
@@ -159,7 +159,7 @@ public sealed partial class ComponentMigrationService(PackRepository packs, Buil
                 }
             }
             progress?.Report("仅编译验证副本，不连接或下载硬件…");
-            var report = await builds.BuildAsync(fresh.DestinationDirectory, progress, token);
+            var report = await builds.BuildAsync(fresh.DestinationDirectory, progress, token, output);
             var result = new ComponentMigrationResult(fresh.SourceDirectory, fresh.DestinationDirectory, report.Success, false, report.Log, report.LogPath);
             await SaveResultAsync(result);
             return result;

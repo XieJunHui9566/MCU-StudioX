@@ -112,7 +112,7 @@ public sealed partial class PackRepository(string rootDirectory)
             await JsonStore.WriteAsync(Path.Combine(staging, HashIndex), hashes, cancellationToken);
             Directory.CreateDirectory(Path.GetDirectoryName(finalDirectory)!);
             cancellationToken.ThrowIfCancellationRequested();
-            Directory.Move(staging, finalDirectory);
+            await DirectoryMoves.MoveAsync(staging, finalDirectory, cancellationToken);
             staging = "";
             return new InstalledPack(manifest, Path.Combine(finalDirectory, "payload"), contentHash);
         }

@@ -11,12 +11,14 @@ internal sealed partial class RetentionChecks
         await FixturePack.WriteBundleIndexAsync(bundle, old, newer);
         var repository = new PackRepository(Path.Combine(directory, "packs"));
         var imported = await repository.ImportBundledMissingAsync(bundle);
+        ReportBundleImport(imported);
         Require(imported.Imported == 1 && imported.Skipped == 1 && imported.Failures.Count == 0,
             "old-first bundle index installs newest first and skips covered older");
         Require((await repository.ListCatalogAsync()).Single().Manifest.Version == "0.10.0", "bundle chooses numeric newest version");
         await repository.ImportAsync(old.Archive);
         Require((await repository.PruneSupersededAsync()).Removed.Count == 1, "manual old installation pruned");
         imported = await repository.ImportBundledMissingAsync(bundle);
+        ReportBundleImport(imported);
         Require(imported.Imported == 0 && imported.Skipped == 2 && imported.Failures.Count == 0,
             "repeat bundle does not resurrect pruned old version");
         Require((await repository.ListCatalogAsync()).Single().Manifest.Version == "0.10.0", "repeat bundle contains only latest");
@@ -33,6 +35,7 @@ internal sealed partial class RetentionChecks
         }
         repository = new PackRepository(Path.Combine(corruptDirectory, "packs"));
         imported = await repository.ImportBundledMissingAsync(corruptBundle);
+        ReportBundleImport(imported);
         Require(imported.Imported == 1 && imported.Failures.Count == 1 && imported.Skipped == 0,
             "bad latest bundle archive allows usable older archive");
         var available = (await repository.ListCatalogAsync()).Single();
@@ -49,6 +52,7 @@ internal sealed partial class RetentionChecks
         var installedNew = await repository.ImportAsync(newer.Archive);
         await File.WriteAllTextAsync(Path.Combine(installedNew.RootDirectory, "sdk", "common.c"), "broken SDK\n");
         imported = await repository.ImportBundledMissingAsync(damagedBundle);
+        ReportBundleImport(imported);
         Require(imported.Imported == 1 && imported.Failures.Count == 1 && imported.Skipped == 0,
             "damaged installed newer SDK does not suppress old bundle");
         available = (await repository.ListCatalogAsync()).Single(pack => pack.Manifest.Version == "0.9.0");
@@ -65,10 +69,21 @@ internal sealed partial class RetentionChecks
         await FixturePack.WriteBundleIndexAsync(uniqueBundle, old, newer);
         repository = new PackRepository(Path.Combine(uniqueDirectory, "packs"));
         imported = await repository.ImportBundledMissingAsync(uniqueBundle);
+        ReportBundleImport(imported);
         Require(imported.Imported == 2 && imported.Skipped == 0 && imported.Failures.Count == 0,
             "bundle keeps old unique SPL template alongside latest HAL");
         Require(PackCatalogPolicy.SelectCurrentVersions(await repository.ListCatalogAsync()).Count == 2,
             "unique bundled SPL remains selectable");
         Pass("bundle retains old unique SPL capability alongside newer HAL pack");
+    }
+
+    private static void ReportBundleImport(BundledPackImportResult result)
+    {
+        // 保留导入失败的原始诊断，不能只留下汇总断言而丢失文件名与系统错误。
+        Console.WriteLine($"Bundle: imported={result.Imported}; skipped={result.Skipped}; failures={result.Failures.Count}");
+        foreach (var failure in result.Failures)
+        {
+            Console.WriteLine($"Bundle diagnostic: {failure}");
+        }
     }
 }

@@ -48,7 +48,11 @@ public partial class MainWindow
         {
             return;
         }
-        var result = await services.ComponentMigration.CreateAndBuildAsync(preview, new Progress<string>(view.SetStatus), token);
+        var result = await RunBuildOutputOperationAsync("升级副本验证",
+            (progress, output) => services.ComponentMigration.CreateAndBuildAsync(preview,
+                new Progress<string>(text => { view.SetStatus(text); progress.Report(text); }), token, output),
+            report => report.Cancelled ? null : report.Success,
+            report => report.Success ? "验证副本编译成功。" : report.Cancelled ? "验证已取消；保留已创建副本。" : "验证副本编译失败；原始诊断见下方输出。", token);
         view.SetDetail(result.ToText());
         view.SetStatus(result.Success ? "副本编译通过；原工程保留。可从“文件 → 打开工程”检查副本。" : "副本验证未完成，详细诊断已保留；原工程仍可打开。 ");
         Log(result.ToText());

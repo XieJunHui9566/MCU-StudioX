@@ -52,6 +52,37 @@ Check(prepared.ExpectedModel == "IAP15F2K61S2" && prepared.ExpectedCodeBytes == 
     prepared.ImageSha256 == Convert.ToHexString(SHA256.HashData(await File.ReadAllBytesAsync(prepared.Image))), "实际包/构建产物离线准备");
 Check(prepared.Image != prepared.SourceImage && File.Exists(prepared.GuardScript) && !File.Exists(prepared.LogPath), "固件快照与门禁脚本；未启动下载");
 await service.VerifyPreparedAsync(prepared);
+var buildSettingsPath = Path.Combine(project, ProjectBuildSettings.RelativePath);
+var savedBuildSettings = File.Exists(buildSettingsPath) ? await File.ReadAllBytesAsync(buildSettingsPath) : null;
+var snapshotsBeforeMon51 = Directory.EnumerateDirectories(Path.Combine(project, ".build"), "stc-isp-*").Count();
+try
+{
+    await JsonStore.WriteAsync(buildSettingsPath, new ProjectBuildSettings(DebugInfo: CompilerDebugInfo.Standard,
+        CodeRomSizeBytes: 0xdbfd, Mon51Profile: true));
+    foreach (var action in new Func<Task>[]
+    {
+        async () => { await service.PreviewAsync(project, settings); },
+        async () => { await service.PrepareAsync(project, settings); },
+        () => service.VerifyPreparedAsync(prepared)
+    })
+    {
+        try
+        {
+            await action();
+            throw new InvalidOperationException("Mon51 工程进入了会擦除监控区的普通 ISP 通道。");
+        }
+        catch (StudioXException ex) when (ex.Code == "STC_ISP_MON51") { }
+    }
+    Check(Directory.EnumerateDirectories(Path.Combine(project, ".build"), "stc-isp-*").Count() == snapshotsBeforeMon51 &&
+        Convert.ToHexString(SHA256.HashData(await File.ReadAllBytesAsync(prepared.Image))) == prepared.ImageSha256,
+        "Mon51 构建在预检、准备和已有快照复核阶段均拒绝普通 ISP；未创建快照或改变固件");
+}
+finally
+{
+    if (savedBuildSettings is null) { File.Delete(buildSettingsPath); }
+    else { await File.WriteAllBytesAsync(buildSettingsPath, savedBuildSettings); }
+}
+await service.VerifyPreparedAsync(prepared);
 var originalSnapshot = await File.ReadAllBytesAsync(prepared.Image);
 await File.AppendAllTextAsync(prepared.Image, "\n");
 try
@@ -95,13 +126,18 @@ var scriptTest = await new ProcessRunner().RunAsync(new(prepared.PythonExecutabl
     Path.GetFullPath("."), TimeSpan.FromSeconds(15), RemoveEnvironment: ["PYTHONHOME", "PYTHONPATH"]));
 Check(scriptTest.Success && scriptTest.StandardOutput.Contains("STUDIOX_GUARD_OFFLINE_OK", StringComparison.Ordinal),
     "型号/容量/时钟门禁离线行为：" + scriptTest.StandardOutput + scriptTest.StandardError);
+var calibrationTest = await new ProcessRunner().RunAsync(new(prepared.PythonExecutable,
+    ["-B", Path.GetFullPath("tools/StudioX.StcIspValidation/calibration_offline.py"), prepared.GuardScript,
+        Path.Combine(output, "calibration-checks.json")],
+    Path.GetFullPath("."), TimeSpan.FromSeconds(15), RemoveEnvironment: ["PYTHONHOME", "PYTHONPATH"]));
+Check(calibrationTest.Success, "精确型号校准适配、超时及错误保留离线行为：" + calibrationTest.StandardOutput + calibrationTest.StandardError);
 var all = pack.Manifest.Devices.Select(StcIspCapabilities.For).ToDictionary(c => c.DeviceId);
 Check(all["STC89C52RC"].SupportedClockModes.SequenceEqual([StcClockMode.Preserve]) &&
     all["STC12C5A60S2"].SupportedClockModes.Contains(StcClockMode.ExternalCrystal) && !all["STC12C5A60S2"].SupportsRcTrim &&
     !all["STC8G1K08"].SupportedClockModes.Contains(StcClockMode.ExternalCrystal) && all["STC8G1K08"].SupportsRcTrim,
     "24 型号能力矩阵中的 STC89/STC12/STC8G 边界");
 await File.WriteAllTextAsync(Path.Combine(output, "result.txt"),
-    "PASS: IAP15F2K61S2 actual pack + SDCC build + HEX snapshot + exact-model guard offline checks. No COM access, erase, or write.\n");
+    "PASS: IAP15F2K61S2 actual pack + SDCC build + HEX snapshot + exact-model guard + Mon51 ISP rejection offline checks. No COM access, erase, or write.\n");
 Console.WriteLine("PASS STC ISP 离线验收：实际 IAP15 包与构建、快照、精确型号门禁；未连接串口或烧录。");
 return;
 

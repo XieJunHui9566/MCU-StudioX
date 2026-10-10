@@ -7,6 +7,10 @@ public sealed partial class DebugSessionService
 {
     public async Task<DebugDisassembly> ReadDisassemblyAsync(uint? address = null, int byteCount = 128, CancellationToken token = default)
     {
+        if (MonitorSession is { } monitor)
+        {
+            return await monitor.ReadDisassemblyAsync(address, byteCount, token);
+        }
         if (byteCount is < 1 or > 512)
         {
             throw new ArgumentOutOfRangeException(nameof(byteCount), "单次反汇编必须为 1–512 字节。");

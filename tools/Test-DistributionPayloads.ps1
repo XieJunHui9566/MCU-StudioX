@@ -92,7 +92,8 @@ function Get-CommonFiles([string]$Root)
         foreach ($file in [IO.Directory]::EnumerateFiles($directory))
         {
             $relative = [IO.Path]::GetRelativePath($Root, $file).Replace('\', '/')
-            if ($relative -in @('release.json', 'development-components.json', 'device-packs/index.json'))
+            # 安装器生成的清单覆盖各自独有工具文件，不能作为两种载荷的公共内容比较。
+            if ($relative -in @('release.json', 'development-components.json', 'device-packs/index.json', 'release-files.sha256.json'))
             {
                 continue
             }
