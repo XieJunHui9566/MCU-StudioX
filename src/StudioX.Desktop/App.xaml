@@ -11,6 +11,11 @@
         <ResourceDictionary
           Source="Assets/Manufacturers/Espressif.xaml" />
       </ResourceDictionary.MergedDictionaries>
+      <FontFamily
+        x:Key="WorkbenchFontFamily">Segoe UI, Microsoft YaHei UI</FontFamily>
+      <system:Double
+        xmlns:system="clr-namespace:System;assembly=mscorlib"
+        x:Key="WorkbenchFontSize">13</system:Double>
       <SolidColorBrush
         x:Key="Background"
         Color="#1E1F22" />
@@ -128,10 +133,10 @@
         TargetType="Window">
         <Setter
           Property="FontFamily"
-          Value="Segoe UI, Microsoft YaHei UI" />
+          Value="{DynamicResource WorkbenchFontFamily}" />
         <Setter
           Property="FontSize"
-          Value="13" />
+          Value="{DynamicResource WorkbenchFontSize}" />
         <Setter
           Property="Foreground"
           Value="{DynamicResource Text}" />

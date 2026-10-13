@@ -54,6 +54,7 @@ public partial class MainWindow
         InitializeDebugger();
         InitializeWorkspaceEditing();
         InitializePeripheralDevelopment();
+        InitializeStcTiming();
         InitializeSourceRegistration();
         InitializeLiveDiagnostics();
         InitializeEditorRecovery();
@@ -62,9 +63,12 @@ public partial class MainWindow
     private void ApplyEditorSettings(EditorSettings settings)
     {
         EditorSettingsService.Validate(settings);
+        settings = TextFontCatalog.Recover(settings);
         editorSettings = settings;
         SourceEditor.FontFamily = new FontFamily(settings.FontFamily + ", Consolas");
         SourceEditor.FontSize = settings.FontSize;
+        SourceEditor.FontWeight = settings.Bold ? FontWeights.Bold : FontWeights.Normal;
+        SourceEditor.FontStyle = settings.Italic ? FontStyles.Italic : FontStyles.Normal;
         ApplyEditorTheme();
     }
     private void ApplyEditorTheme()

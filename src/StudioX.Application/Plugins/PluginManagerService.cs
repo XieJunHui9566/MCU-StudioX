@@ -8,7 +8,7 @@ using StudioX.Foundation;
 using StudioX.Packages;
 
 /// <summary>管理用户插件内容、显式信任与工作区宿主；安装和发现均不执行代码。</summary>
-public sealed class PluginManagerService : IAsyncDisposable
+public sealed partial class PluginManagerService : IAsyncDisposable
 {
     private readonly string runtimeDirectory;
     private readonly string bundledDirectory;

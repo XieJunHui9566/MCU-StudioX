@@ -71,9 +71,9 @@ public static partial class BuildOutputParser
     [GeneratedRegex(@"(?:^|\s)warning(?:\s+[A-Z]*\d+)?\s*:|^CMake Warning(?:\s|:)", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)] private static partial Regex Warning();
     [GeneratedRegex(@"^E \(\d+\) \S+:", RegexOptions.CultureInvariant)] private static partial Regex IdfError();
     [GeneratedRegex(@"^W \(\d+\) \S+:", RegexOptions.CultureInvariant)] private static partial Regex IdfWarning();
-    [GeneratedRegex(@"^(?:编译|映射编译|验证副本编译|CMake 配置|RTL 仿真|Verilog 综合|引脚映射编译|升级副本验证|PC 构建)失败", RegexOptions.CultureInvariant)] private static partial Regex FailedOperation();
-    [GeneratedRegex(@"^(?:编译|映射编译|验证副本编译|CMake 配置|Verilog 综合|PC 构建)成功|^RTL 仿真完成", RegexOptions.CultureInvariant)] private static partial Regex SuccessfulOperation();
-    [GeneratedRegex(@"^(?:编译|验证|CMake 配置|RTL 仿真|Verilog 综合|引脚映射编译|升级副本验证|PC 构建)已取消", RegexOptions.CultureInvariant)] private static partial Regex CancelledOperation();
+    [GeneratedRegex(@"^(?:编译|映射编译|验证副本编译|CMake 配置|RTL 仿真|Verilog 综合|引脚映射编译|升级副本验证|PC 构建|STC(?: ISP)? 下载)失败|^STC ISP (?:未完成|等待或写入超时)", RegexOptions.CultureInvariant)] private static partial Regex FailedOperation();
+    [GeneratedRegex(@"^(?:编译|映射编译|验证副本编译|CMake 配置|Verilog 综合|PC 构建|STC(?: ISP)? 下载|Mon51 用户程序下载)成功|^RTL 仿真完成", RegexOptions.CultureInvariant)] private static partial Regex SuccessfulOperation();
+    [GeneratedRegex(@"^(?:编译|验证|CMake 配置|RTL 仿真|Verilog 综合|引脚映射编译|升级副本验证|PC 构建|STC(?: ISP)? 下载)已取消", RegexOptions.CultureInvariant)] private static partial Regex CancelledOperation();
     [GeneratedRegex(@"^\[(?<done>\d+)/(?<total>\d+)\](?:\s|$)", RegexOptions.CultureInvariant)] private static partial Regex Count();
     [GeneratedRegex(@"^校验开发环境组件 .*?\d+%[（(](?<done>[\d,]+)/(?<total>[\d,]+)[）)]", RegexOptions.CultureInvariant)] private static partial Regex ComponentCount();
     [GeneratedRegex(@"^\[(?<percent>\d{1,3})%\](?:\s|$)", RegexOptions.CultureInvariant)] private static partial Regex Percentage();

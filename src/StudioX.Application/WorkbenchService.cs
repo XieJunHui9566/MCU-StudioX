@@ -67,6 +67,7 @@ public sealed class WorkbenchService : IAsyncDisposable
     {
         get;
     }
+    public StcTiming.StcTimingService StcTiming { get; } = new();
     public PeripheralDevelopment.PeripheralDevelopmentService PeripheralDevelopment
     {
         get;
@@ -126,10 +127,12 @@ public sealed class WorkbenchService : IAsyncDisposable
         Debugger.Changed += OpenOcdPlot.StopIfSessionEnded;
         Themes = new ThemeService(DataDirectory);
         Appearance = new AppearanceService(DataDirectory);
-        RecentProjects = new RecentProjectService(DataDirectory);
+        RecentProjects = new RecentProjectService(DataDirectory, RuntimeDirectory);
         ToolManagement = new Tools.ToolManagementService(Toolsets, Packs, RecentProjects, DataDirectory, () => Debugger.IsActive);
         ProjectTools = new(Toolsets, ToolManagement);
         EditorSettings = new EditorSettingsService(DataDirectory);
+        Typography = new TypographyService(DataDirectory);
+        WorkbenchStyle = new WorkbenchStyleService(Themes, Typography, EditorSettings);
         CodeTemplates = new(DataDirectory);
         EditorSessions = new Editing.EditorSessionStore(DataDirectory);
         WorkspaceEdits = new Editing.WorkspaceEditService(Files);
@@ -346,6 +349,14 @@ public sealed class WorkbenchService : IAsyncDisposable
         get;
     }
     public EditorSettingsService EditorSettings
+    {
+        get;
+    }
+    public TypographyService Typography
+    {
+        get;
+    }
+    public WorkbenchStyleService WorkbenchStyle
     {
         get;
     }

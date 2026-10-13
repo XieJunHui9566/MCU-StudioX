@@ -1,0 +1,28 @@
+<Project
+  Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference
+      Include="../StudioX.Application/StudioX.Application.csproj" />
+    <PackageReference
+      Include="Avalonia.Desktop" />
+    <PackageReference
+      Include="Avalonia.Themes.Fluent" />
+    <PackageReference
+      Include="Avalonia.AvaloniaEdit" />
+    <!-- PDF 与桌面共用 Skia 托管程序集，Linux 原生库必须使用相同 ABI。 -->
+    <PackageReference
+      Include="SkiaSharp.NativeAssets.Linux" />
+  </ItemGroup>
+  <ItemGroup>
+    <AvaloniaResource
+      Include="../StudioX.Desktop/Assets/StudioX.png"
+      Link="Assets/StudioX.png" />
+    <AvaloniaResource
+      Include="../StudioX.Desktop/Assets/StudioX.ico"
+      Link="Assets/StudioX.ico" />
+  </ItemGroup>
+</Project>

@@ -18,6 +18,7 @@ public sealed class EditorSettingsService(string dataDirectory)
     }
     public static void Validate(EditorSettings settings)
     {
+        TypographyService.ValidateFontFamily(settings.FontFamily);
         if (settings.FormatVersion != 1 || string.IsNullOrWhiteSpace(settings.FontFamily) || settings.FontFamily.Length > 100 ||
             !double.IsFinite(settings.FontSize) || settings.FontSize is < 10 or > 28 ||
             !double.IsFinite(settings.GlowStrength) || settings.GlowStrength is < 0 or > 100)

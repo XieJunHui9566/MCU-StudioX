@@ -47,6 +47,19 @@ Claude Desktop 的 `%APPDATA%/Claude/claude_desktop_config.json` 中，在现有
 
 ## 授权与范围
 
+### 长操作状态与取消
+
+`project_build` 保持原来的结果契约，编译或配置开始后可从同一个 MCP 会话并发调用
+`project_operation_status`，查看 `operationId`、阶段、主机 UTC 开始时间、耗时、最近 4096 个字符的
+原始输出和截断标记。该入口也跟踪已授权的 ESP 下载；不会隐式启动硬件。
+完整日志路径仍由操作结果返回。编译/配置总时限 20 分钟，ESP 写入及独立校验总时限 10 分钟。
+
+需停止时，用查询得到的准确 `operationId` 调用 `project_operation_cancel`。
+`stopping` 表示已请求取消但工具仍在退出；只有 `canceled`、`timed_out`、`failed` 或 `succeeded`
+表示终态。错误/旧标识不能取消后续任务或其他会话的任务；关闭会话会取消并等待其拥有的操作。
+取消下载不会恢复已写入的 Flash，不自动重新下载。无输出本身不证明停滞，可依据阶段、耗时和最后输出时间判断。
+工具进程使用独立 stdin，未提供显式输入时发送 EOF，不继承 MCP 协议管道。
+
 - 读取绑定工程和已安装 StudioX Pack 元数据无需授权。`project_*` 源码工具仍限制在启动时绑定的工程，只接受规定类型的安全相对路径。
 - 需要查看别的工程、厂商 SDK 或 LVGL 示例时，调用 `external_project_open` 并提供该目录的绝对路径。MCP 主机显示完整目录并请求**当前 MCP 会话**的只读授权；同目录再次打开会复用已授权的 `rootId`，`external_project_roots` 可列出本会话的授权目录。成功后以该标识调用 `external_project_list_files`、`external_project_find_files`、`external_project_read_file` 和 `external_project_search`。已知文件名、库名或路径片段时，优先用 `external_project_find_files` 定位，无需逐层列目录；列表、文件名查找及内容搜索返回 `nextCursor` 时，带相同 `rootId` 和查询条件续页。游标属于本次会话，失效时从第一页重新查询。这些工具只访问获批目录内有界的安全内容；不会读取隐藏元数据、凭据或链接。会话结束后授权失效。
 - `project_read_file` 支持按行列分页读取大文件；`project_list_files` 和 `project_search` 也可通过 `nextCursor` 续页。修改现有源文件可用 `project_patch_file` 按原 SHA-256 和唯一匹配片段应用局部补丁，免于把完整大文件重新发给模型。`project_create_directory` 可在逐次授权后建立工程源码目录。工程内厂商 `Drivers`、`Middlewares` 和 `device` 的普通源码允许只读检查，受管理文件仍不可写。

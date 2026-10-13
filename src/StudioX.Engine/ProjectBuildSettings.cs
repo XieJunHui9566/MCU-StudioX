@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using StudioX.Foundation;
+using StudioX.Packages;
 
 /// <summary>工程级编译覆盖项；默认不改变模板、CMake 或预设中的参数。</summary>
 public sealed record ProjectBuildSettings(int FormatVersion = 1,
@@ -94,7 +95,7 @@ public sealed record ProjectBuildSettings(int FormatVersion = 1,
         {
             Mon51Profile ? "--code-size " + Math.Min(CodeRomSizeBytes ?? 0xdbfd, 0xdbfd).ToString(System.Globalization.CultureInfo.InvariantCulture) : CodeRomSizeBytes is { } size ? "--code-size " + size.ToString(System.Globalization.CultureInfo.InvariantCulture) : "",
             DebugInfo == CompilerDebugInfo.Standard ? "--debug" : "",
-            Mon51Profile ? "--xram-size 1024" : ""
+            Mon51Profile ? "--xram-size " + (await Mon51XramSizeAsync(build, project, token)).ToString(System.Globalization.CultureInfo.InvariantCulture) : ""
         }.Where(s => s.Length > 0)) : "";
         // <FLAGS> 包含目录、目标、接口库及源文件选项；在其后追加才能覆盖模板中的 -Os/-Og。
         // 不重写工程 CMake、预设或 SDK；对特殊自定义规则在生成后检查实际编译命令。
@@ -131,6 +132,30 @@ public sealed record ProjectBuildSettings(int FormatVersion = 1,
             set(CMAKE_PROJECT_INCLUDE "${CMAKE_PROJECT_INCLUDE}" CACHE STRING "Project include files" FORCE)
             """, token);
         return bootstrap;
+    }
+
+    private static async Task<int> Mon51XramSizeAsync(string build, ProjectManifest project, CancellationToken token)
+    {
+        var pack = await JsonStore.ReadAsync<PackManifest>(Path.Combine(Path.GetDirectoryName(build)!, "device", "manifest.json"), token);
+        var device = pack.Devices.Single(d => d.Id == project.DeviceId);
+        var options = TemplateResolver.Resolve(device, project.TemplateId).LinkOptions.ToList();
+        int Read(string option)
+        {
+            var index = options.IndexOf(option);
+            if (index < 0 || index + 1 >= options.Count || !int.TryParse(options[index + 1], out var value))
+            {
+                throw new StudioXException("BUILD_SETTINGS", "Mon51 模板缺少有效的 " + option);
+            }
+            return value;
+        }
+        var origin = Read("--xram-loc");
+        var bytes = Read("--xram-size");
+        if (origin < 0 || origin >= 1024 || bytes <= 0)
+        {
+            throw new StudioXException("BUILD_SETTINGS", "Mon51 用户 XRAM 必须位于 0000..03FF。");
+        }
+        // 某些模板保留地址 0 供 NULL 使用；不能把 1 起始的 1023 字节扩成 1024 字节。
+        return Math.Min(bytes, 1024 - origin);
     }
 
     internal async Task VerifyCommandsAsync(string build, ProjectManifest project, CancellationToken token, int? stcClockHz = null)

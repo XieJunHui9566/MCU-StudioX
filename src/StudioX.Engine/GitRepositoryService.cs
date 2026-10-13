@@ -6,13 +6,14 @@ using StudioX.Foundation;
 public sealed partial class GitRepositoryService(string runtimeDirectory)
 {
     public string RootDirectory { get; } = Path.GetFullPath(Path.Combine(runtimeDirectory, "git"));
-    public string Executable => Path.Combine(RootDirectory, "cmd", "git.exe");
-    public string CredentialManagerExecutable => Path.Combine(RootDirectory, "mingw64", "bin", "git-credential-manager.exe");
+    public string Executable => OperatingSystem.IsWindows() ? Path.Combine(RootDirectory, "cmd", "git.exe") : Path.Combine(RootDirectory, "bin", "git");
+    public string CredentialManagerExecutable => OperatingSystem.IsWindows() ? Path.Combine(RootDirectory, "mingw64", "bin", "git-credential-manager.exe") : Path.Combine(RootDirectory, "bin", "git-credential-manager");
     public void RequireAvailable()
     {
         if (!File.Exists(Executable))
         {
-            throw new StudioXException("GIT_MISSING", "内置 Git 组件缺失，请修复软件安装。开发环境请运行 tools/Prepare-GitRuntime.ps1 后重新编译。");
+            throw new StudioXException("GIT_MISSING", "内置 Git 组件缺失，请修复软件安装。"
+                + (OperatingSystem.IsWindows() ? "开发环境请运行 tools/Prepare-GitRuntime.ps1 后重新编译。" : "Linux 预览需要准备私有 Git 组件。"));
         }
     }
 
@@ -44,6 +45,21 @@ public sealed partial class GitRepositoryService(string runtimeDirectory)
     public Dictionary<string, string> Environment()
     {
         RequireAvailable();
+        if (OperatingSystem.IsLinux())
+        {
+            // 仅为子进程提供 IDE 私有 Git 路径；缺少凭据组件时仍由专门入口显式报错。
+            return new(StringComparer.Ordinal)
+            {
+                ["PATH"] = string.Join(Path.PathSeparator, Path.Combine(RootDirectory, "bin"), Path.Combine(RootDirectory, "libexec", "git-core"), "/usr/bin", "/bin"),
+                ["GIT_EXEC_PATH"] = Path.Combine(RootDirectory, "libexec", "git-core"),
+                ["GIT_TEMPLATE_DIR"] = Path.Combine(RootDirectory, "share", "git-core", "templates"),
+                ["GIT_PAGER"] = "cat",
+                ["GIT_EDITOR"] = "false",
+                ["GIT_SEQUENCE_EDITOR"] = "false",
+                ["TERM"] = "xterm-256color",
+                ["LANG"] = "C.UTF-8"
+            };
+        }
         return new(StringComparer.OrdinalIgnoreCase)
         {
             ["PATH"] = Path.Combine(RootDirectory, "cmd") + ";" + Path.Combine(RootDirectory, "mingw64", "bin") + ";" + Path.Combine(RootDirectory, "usr", "bin") + ";" + System.Environment.GetEnvironmentVariable("PATH"),

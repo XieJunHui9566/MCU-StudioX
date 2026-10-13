@@ -36,7 +36,7 @@ public partial class AppearanceWindow : Window
         InitializeComponent();
         ThemePicker.ItemsSource = themes;
         ThemePicker.SelectedItem = themes.Single(t => t.Id == theme.Id);
-        var installed = System.Windows.Media.Fonts.SystemFontFamilies.Select(f => f.Source).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var installed = TextFontCatalog.Families.ToHashSet(StringComparer.OrdinalIgnoreCase);
         FontPicker.ItemsSource = new[] { "Cascadia Mono", "Cascadia Code", "Consolas", "JetBrains Mono", editor.FontFamily }.Distinct().Where(installed.Contains).ToArray();
         FontPicker.SelectedItem = editor.FontFamily;
         if (FontPicker.SelectedItem is null)
@@ -51,13 +51,21 @@ public partial class AppearanceWindow : Window
         BlurSlider.Value = background.Blur;
         FitPicker.SelectedIndex = background.Fit == BackgroundFit.Fill ? 0 : 1;
         PauseCheck.IsChecked = background.PauseWhenInactive;
+        OpaqueWorkCheck.IsChecked = background.OpaqueWorkSurfaces;
         UpdateMediaLabel();
         ready = true;
     }
     private BackgroundSettings Draft => new(1, kind, asset, OpacitySlider.Value / 100, DimSlider.Value / 100, BlurSlider.Value,
-        FitPicker.SelectedIndex == 1 ? BackgroundFit.Fit : BackgroundFit.Fill, PauseCheck.IsChecked == true);
+        FitPicker.SelectedIndex == 1 ? BackgroundFit.Fit : BackgroundFit.Fill, PauseCheck.IsChecked == true,
+        OpaqueWorkCheck.IsChecked == true);
     private ThemeDefinition SelectedTheme => (ThemeDefinition)ThemePicker.SelectedItem;
-    private EditorSettings EditorDraft => new(1, FontPicker.SelectedItem as string ?? "Consolas", Math.Round(FontSizeSlider.Value), GlowCheck.IsChecked == true, Math.Round(GlowStrengthSlider.Value));
+    private EditorSettings EditorDraft => committedEditor with
+    {
+        FontFamily = FontPicker.SelectedItem as string ?? "Consolas",
+        FontSize = Math.Round(FontSizeSlider.Value),
+        SoftGlow = GlowCheck.IsChecked == true,
+        GlowStrength = Math.Round(GlowStrengthSlider.Value)
+    };
     private void Settings_Changed(object sender, RoutedEventArgs e)
     {
         if (!ready || ThemePicker.SelectedItem is not ThemeDefinition)

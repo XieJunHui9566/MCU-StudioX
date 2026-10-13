@@ -61,6 +61,12 @@ C/C++ 中没有参与当前编译的 `#if` / `#ifdef` / `#ifndef` / `#elif` / `#
 
 验证包含在 `tools/StudioX.WorkspaceEditingValidation`，输出 `inactive-code/project` 为隔离的 CMake 移植夹具。实际 WPF 验证入口为 `--preview-inactive-code <new-output> <fixture-project> <runtime-directory>`，检查真实字形亮度、主题、分屏、编辑、切换和关闭，输出截图及 `result.txt`。
 
+## 最近工程管理
+
+开始页的工程条目支持鼠标右键和键盘菜单键 / Shift+F10。菜单可打开工程目录、仅移除最近记录或确认后删除整个工程文件夹。删除走应用层的 Windows Shell 回收服务，不在 Desktop 执行文件删除；无法回收时系统保留永久删除警告。正在打开的工程及上下级目录、IDE / 用户数据 / 系统目录、链接根目录和非本地固定盘拒绝删除。路径必须仍在最近列表且有 `.studiox/project.json`，确认后再次校验；取消或失败保留记录，成功后刷新列表和空状态。
+
+离线边界验证纳入 `StudioX.StartupValidation`，WPF 验证入口为 `--preview-recent-projects <new-output> <fixture-project>`。只回收独立夹具，覆盖深浅菜单、同名条目、取消确认、移除记录保留文件、当前工程保护与空列表。
+
 ## 退出与恢复
 
 编辑现场在独立用户数据目录 `editor-sessions/<实例>/state.json` 原子保存，约每两秒记录一次，正常关闭等待最后一次写入。正常退出无需逐个确认源码草稿；手动关闭标签、切换工程仍按原有保存/放弃/取消选择处理。AG32 图形配置等工具文档不属于源码草稿，继续使用各自的关闭流程。

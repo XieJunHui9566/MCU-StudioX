@@ -98,7 +98,8 @@ public sealed class ToolsetCatalog
         var jsonOffset = manifestBytes is [0xef, 0xbb, 0xbf, ..] ? 3 : 0;
         var manifest = JsonSerializer.Deserialize<ToolsetManifest>(manifestBytes.AsSpan(jsonOffset), JsonStore.Options)
             ?? throw new StudioXException("TOOLSET_MANIFEST", "工具清单没有有效内容。");
-        if (manifest.FormatVersion != 1 || manifest.Id != id || manifest.Version != version || manifest.Host != "win-x64" || manifest.CompilerId != compilerId)
+        if (manifest.FormatVersion != 1 || manifest.Id != id || manifest.Version != version ||
+            !HostPlatform.IsSupported(manifest.Host) || manifest.Host != HostPlatform.Current || manifest.CompilerId != compilerId)
         {
             throw new StudioXException("TOOLSET_INCOMPATIBLE", "开发环境组件版本、宿主或编译器与器件要求不一致。");
         }

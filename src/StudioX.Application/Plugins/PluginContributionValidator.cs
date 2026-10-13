@@ -110,7 +110,7 @@ public static partial class PluginContributionValidator
         }
         Text(widget.Label, 256, "控件标签", allowEmpty: true);
         if (widget.Kind is not ("text" or "table" or "tree" or "form" or "plot" or "button" or
-            "input" or "number" or "checkbox" or "select" or "metric" or "chart" or "group" or "projectLink"))
+            "input" or "number" or "checkbox" or "select" or "metric" or "chart" or "group" or "projectLink" or "appearance"))
         {
             throw Invalid("不支持的控件类型：" + widget.Kind);
         }
@@ -129,6 +129,14 @@ public static partial class PluginContributionValidator
                 throw Invalid("工程入口仅允许应用级面板声明目标数据，不执行插件命令。");
             }
             _ = PluginProjectLink.Parse(link);
+        }
+        if (widget.Kind == "appearance")
+        {
+            if (!allowProjectLinks || widget.CommandId is not null || widget.Value is not { } appearance)
+            {
+                throw Invalid("外观控件仅允许应用级面板提供配色目录，由宿主处理用户的应用操作。");
+            }
+            _ = PluginAppearanceCatalog.Parse(appearance);
         }
         if (widget.Columns is not null)
         {

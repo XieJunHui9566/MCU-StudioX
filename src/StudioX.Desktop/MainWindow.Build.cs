@@ -73,6 +73,7 @@ public partial class MainWindow
             }
             if (report.Success)
             {
+                ResolveBuildTroubleshooting(directory);
                 ReportBuildActivity("分析构建产物");
                 await RefreshBuildMemoryAsync(directory, token);
                 try
@@ -100,7 +101,7 @@ public partial class MainWindow
             else
             {
                 BuildMemory.SetMessage("编译失败，暂无本次占用数据。");
-                ShowTroubleshooting(report.Log);
+                ShowTroubleshooting(report.Log, buildFailure: true);
             }
             FinishBuildOutput(report.Summary, report.Success);
             return report;
@@ -123,7 +124,7 @@ public partial class MainWindow
             FlushToolOutput();
             Log(ex.ToString());
             FinishBuildOutput("编译失败，原始诊断见下方输出", false);
-            ShowTroubleshooting(FailureDiagnostic(ex));
+            ShowTroubleshooting(FailureDiagnostic(ex), buildFailure: true);
             // 校验或启动异常没有工具退出码；保留完整诊断，让调用方最后统一输出失败结论。
             return new BuildReport(false, ex.ToString(), []);
         }

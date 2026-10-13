@@ -149,6 +149,11 @@ StudioX.Cli.exe plugin remove <runtime目录> <用户数据目录> <插件id>
 | `number` | 有限数值或 null |
 | `checkbox` | 布尔值或 null |
 | `select` | `value` 为 `{ "options":[{"label":"概览","value":"overview"}], "selected":"overview" }` |
+| `appearance` | 应用级外观目录：`value` 为 `{ "formatVersion":1, "themes":[{"id":"author.theme", "displayName":"主题名称", "colors":{八个语义颜色}}] }`，宿主提供主题与本机字体选择、局部预览及显式应用 |
+
+外观控件仅供 `scope: application` 的声明式面板使用，不指定 `commandId` 或子控件。目录最多 32 个主题，必须提供 `Background/Surface/Panel/Border/Text/Muted/Accent/OnAccent` 八个 `#RRGGBB` 颜色，ID 不得重复或覆盖 `studiox.dark/light`；未知字段、XAML、媒体和字体路径拒绝。点击“应用外观”由应用服务保存配色与界面/编辑器字体，不调用插件命令或宿主 MCP 工具。主题及字体在用户数据目录持久化，禁用插件不撤销已保存外观。动态壁纸、透明度、暂停规则和编辑器柔光继续使用原设置。
+
+完整示例与 IDE 本体改动范围见 [外观插件说明](APPEARANCE_PLUGINS.md)，源码在 `examples/StudioX.AppearancePlugin`，构建入口为 `tools/Build-AppearancePlugin.ps1`。旧宿主会明确拒绝未知控件，插件包需要配套的本轮宿主源码构建；产品版本号不自动变化。
 
 `metric`、`chart`、`group` 是可接受别名。单插件最多 128 个命令、32 个面板、128 个 Agent 工具；单面板最多 256 个控件、8 层嵌套、表格 2048 行和 32 列。面板 JSON 最多 1 MiB，单控件 `value` 最多 512 KiB，所有数值必须有限。未知控件、任意 XAML、未声明命令或异常 JSON 被拒绝。限制针对数据量及在途工作，不限制插件生命周期内的总调用次数。
 

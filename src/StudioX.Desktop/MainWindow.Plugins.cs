@@ -450,6 +450,8 @@ public partial class MainWindow
             var pluginId = key[..key.IndexOf('/')];
             existing = (new PluginPanelRenderer((command, arguments) => InvokePluginCommandAsync(pluginId, command, arguments), PluginManager.Log), new ContentControl());
             existing.Renderer.OpenProjectAsync = target => OpenPluginProjectAsync(pluginId, target);
+            var owner = FindPluginSession(pluginId);
+            existing.Renderer.CreateAppearanceView = value => CreatePluginAppearanceView(pluginId, owner, value);
             pluginPanels.Add(key, existing);
             var body = pluginActivities.TryGetValue(pluginId, out var activity) ? activity.Body : PluginManager.PanelsHost;
             body.Children.Add(existing.Host);

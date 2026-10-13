@@ -82,19 +82,24 @@
           x:Name="BackgroundDim"
           Background="Black" />
       </Grid>
+      <Image
+        x:Name="ThemeArtworkImage"
+        IsHitTestVisible="False"
+        Stretch="UniformToFill"
+        Visibility="Collapsed" />
       <Grid>
         <Grid.RowDefinitions>
           <RowDefinition
-            Height="38" />
+            Height="{local:WorkbenchLength TitleHeight}" />
           <RowDefinition
-            Height="30" />
+            Height="{local:WorkbenchLength MenuHeight}" />
           <RowDefinition
-            Height="39" />
+            Height="{local:WorkbenchLength ToolbarHeight}" />
           <RowDefinition
             Height="Auto" />
           <RowDefinition />
           <RowDefinition
-            Height="26" />
+            Height="{local:WorkbenchLength StatusHeight}" />
         </Grid.RowDefinitions>
         <Border
           Background="{DynamicResource ChromeSurface}"
@@ -936,10 +941,10 @@
           Grid.Row="4">
           <Grid.ColumnDefinitions>
             <ColumnDefinition
-              Width="44" />
+              Width="{local:WorkbenchLength ActivityWidth}" />
             <ColumnDefinition
               x:Name="ProjectColumn"
-              Width="230"
+              Width="{local:WorkbenchLength ProjectWidth}"
               MinWidth="0" />
             <ColumnDefinition
               x:Name="ProjectSplitterColumn"
@@ -955,7 +960,7 @@
               MinWidth="0"
               MaxWidth="620" />
             <ColumnDefinition
-              Width="32" />
+              Width="{local:WorkbenchLength UtilityWidth}" />
           </Grid.ColumnDefinitions>
           <Border
             Background="{DynamicResource ChromeSurface}"
@@ -1374,6 +1379,7 @@
                                 <Button
                                   Style="{StaticResource WelcomeAction}"
                                   Click="RecentProject_Click"
+                                  Loaded="RecentProject_Loaded"
                                   Tag="{Binding Directory}">
                                   <StackPanel>
                                     <TextBlock

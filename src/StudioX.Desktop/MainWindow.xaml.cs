@@ -92,9 +92,32 @@ public partial class MainWindow : Window
             catch (Exception ex) { Log("主题恢复失败，使用默认主题：" + ex.Message); ApplyTheme(ThemeService.Dark); }
             try
             {
-                ApplyEditorSettings(await services.EditorSettings.LoadAsync(token));
+                var saved = await services.EditorSettings.LoadAsync(token);
+                var readable = TextFontCatalog.Recover(saved);
+                ApplyEditorSettings(readable);
+                if (readable != saved)
+                {
+                    await services.EditorSettings.SaveAsync(readable, token);
+                    Log($"代码字体 {saved.FontFamily} 无法正常显示文本，已恢复为 {readable.FontFamily}。");
+                }
             }
-            catch (Exception ex) { Log("编辑器设置恢复失败：" + ex.Message); ApplyEditorSettings(new()); }
+            catch (Exception ex) { Log("编辑器设置恢复失败：" + ex); ApplyEditorSettings(new()); }
+            try
+            {
+                var saved = await services.Typography.LoadAsync(token);
+                var readable = TextFontCatalog.Recover(saved);
+                ApplyTypography(readable);
+                if (readable != saved)
+                {
+                    await services.Typography.SaveAsync(readable, token);
+                    Log($"界面字体 {saved.FontFamily} 无法正常显示文本，已恢复为 {readable.FontFamily}。");
+                }
+                foreach (var diagnostic in TextFontCatalog.Diagnostics)
+                {
+                    Log(diagnostic);
+                }
+            }
+            catch (Exception ex) { Log("界面字体恢复失败：" + ex); ApplyTypography(new()); }
             try
             {
                 ApplyBackground(await services.Appearance.LoadAsync(token));
@@ -127,6 +150,7 @@ public partial class MainWindow : Window
         }
         System.Windows.Application.Current.Resources[SystemColors.ControlBrushKey] = System.Windows.Application.Current.Resources["Surface"];
         currentTheme = theme;
+        ApplyThemeArtwork(theme);
         DiagnosticPalette.Apply(theme);
         BuildLog.RefreshTheme();
         DeviceLog.RefreshTheme();

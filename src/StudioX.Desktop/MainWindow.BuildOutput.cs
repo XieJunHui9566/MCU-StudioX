@@ -19,19 +19,19 @@ public partial class MainWindow
         buildOutputTimer.Tick += (_, _) => { if (buildOutputActive) { buildOutputFrame++; RenderBuildProgress(); } };
         Closed += (_, _) => buildOutputTimer.Stop();
     }
-    private void BeginBuildOutput()
+    private void BeginBuildOutput(string phase = "工程检查", string state = "构建中")
     {
         BuildLog.CommitProgress();
         buildOutputActive = true;
         buildOutputPhase = "";
         buildOutputMeasurement = null;
-        buildOutputState = "构建中";
+        buildOutputState = state;
         buildOutputFrame = 0;
         buildOutputClock.Restart();
         buildOutputTimer.Start();
-        ReportBuildActivity("工程检查");
+        ReportBuildActivity(phase);
     }
-    private void ReportBuildActivity(string text)
+    private void ReportBuildActivity(string text, OutputMeasurement? measurement = null)
     {
         if (!buildOutputActive)
         {
@@ -49,7 +49,7 @@ public partial class MainWindow
             buildOutputTimestamp = DateTime.Now;
             buildOutputPhase = phase;
         }
-        buildOutputMeasurement = BuildOutputParser.Measure(text);
+        buildOutputMeasurement = measurement ?? BuildOutputParser.Measure(text);
         RenderBuildProgress();
     }
     private void ReportBuildToolLine(string text)

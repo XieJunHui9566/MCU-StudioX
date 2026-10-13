@@ -1,0 +1,6 @@
+Use case: stylized-concept
+Asset type: wide 16:9 environment artwork for a desktop coding IDE theme.
+Primary request: an atmospheric environment inspired by the violet, silver and dark-gold palette associated with Hina from Blue Archive, WITHOUT drawing Hina or any person.
+Scene/backdrop: an empty quiet school rooftop at purple twilight, distant restrained Gothic campus architecture with lit windows, violet night sky, soft luminous geometric halo-shaped orbital rings on the right, a few silver glints and delicate violet particles, dark brass railing. Pure environmental scenery.
+Composition: right third contains the rooftop architectural detail and an elegant glowing purple angular ring motif high on the right but fully inside the canvas; left two thirds calm, unobtrusive indigo-violet negative space for readable code. Fine anime background painting, soft cel shading and atmospheric depth, quiet refined mood, no busy textures. Low contrast, muted colors.
+Constraints: ABSOLUTELY NO PEOPLE, NO PERSON, NO FACE, NO BODY, NO CHARACTER, NO FIGURE, NO SILHOUETTE, NO STATUE, no cherry blossom trees or pink sakura scenery. No weapons, no logos, no text, no UI, no watermark. This is an empty environment, not a character illustration or mockup.

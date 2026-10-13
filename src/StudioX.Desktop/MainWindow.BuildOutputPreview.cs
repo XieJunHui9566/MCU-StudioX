@@ -183,6 +183,43 @@ public partial class MainWindow
         await Layout();
         CaptureOutput(Path.Combine(directory, "real-build-failed.png"));
         await File.WriteAllTextAsync(Path.Combine(directory, "raw-display.log"), BuildLog.Text);
+        var failedDiagnostic = lastFailure;
+        main.Buffer.Remove(0, "#error STUDIOX_OUTPUT_EXPECTED_FAILURE\n".Length);
+        Build_Click(this, new RoutedEventArgs());
+        await pendingOperation;
+        Check(guideBuild is { Success: true } && lastFailure.Length == 0 &&
+            troubleshootingTab!.Content is System.Windows.Controls.DockPanel history &&
+            history.Children.OfType<System.Windows.Controls.TextBox>().Single().Text == failedDiagnostic &&
+            history.Children.OfType<System.Windows.Controls.StackPanel>().Single().Children
+                .OfType<System.Windows.Controls.TextBlock>().Any(text => text.Text == "本次编译已成功"),
+            "failure then successful real build marks prior diagnostics as history while retaining their exact raw text");
+        Render(this, Path.Combine(directory, "resolved-build-diagnostic.png"));
+        ShowTroubleshooting("port is busy: independent fixture error");
+        ResolveBuildTroubleshooting(fixture);
+        Check(lastFailure.Contains("port is busy", StringComparison.Ordinal), "build success never clears unrelated connection diagnostics");
+        var asset = await services.Appearance.ImportAsync(Path.Combine(directory, "real-build-success.png"), BackgroundKind.Image);
+        ShowDocument(main.Tab);
+        foreach (var theme in new[] { ThemeService.Dark, ThemeService.Light })
+        {
+            ApplyTheme(theme);
+            ApplyBackground(new(Kind: BackgroundKind.Image, Asset: asset));
+            Check(((SolidColorBrush)System.Windows.Application.Current.Resources["EditorSurface"]).Color.A == 255 &&
+                ((SolidColorBrush)System.Windows.Application.Current.Resources["ToolSurface"]).Color.A == 255,
+                "code and log surfaces are opaque with media in " + theme.Id);
+            // 主题与媒体触发延迟布局；截图必须等待真实文本和新底色完成绘制。
+            await Layout();
+            Render(this, Path.Combine(directory, "readable-background-" + theme.Id + ".png"));
+            ApplyBackground(backgroundSettings with
+            {
+                OpaqueWorkSurfaces = false
+            });
+            Check(((SolidColorBrush)System.Windows.Application.Current.Resources["EditorSurface"]).Color.A == 100,
+                "explicit transparent workspace remains selectable in " + theme.Id);
+        }
+        var legacyBackground = System.Text.Json.JsonSerializer.Deserialize<BackgroundSettings>("{}")!;
+        Check(legacyBackground.OpaqueWorkSurfaces, "legacy preferences default to readable work surfaces");
+        ApplyBackground(new());
+        ApplyTheme(ThemeService.Dark);
         await File.AppendAllTextAsync(Path.Combine(fixture, "CMakeLists.txt"), "\nstudiox_expected_configuration_failure()\n");
         var failedConfiguration = await ConfigureWithOutputAsync(fixture, CancellationToken.None);
         Check(!failedConfiguration.Success && buildOutputState == "失败" && BuildLog.Text.Contains("CMake Error"),

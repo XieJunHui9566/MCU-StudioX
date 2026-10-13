@@ -137,6 +137,10 @@ var calibrationTest = await new ProcessRunner().RunAsync(new(prepared.PythonExec
         Path.Combine(output, "calibration-checks.json")],
     Path.GetFullPath("."), TimeSpan.FromSeconds(15), RemoveEnvironment: ["PYTHONHOME", "PYTHONPATH"]));
 Check(calibrationTest.Success, "精确型号校准适配、超时及错误保留离线行为：" + calibrationTest.StandardOutput + calibrationTest.StandardError);
+var progressTest = await new ProcessRunner().RunAsync(new(prepared.PythonExecutable,
+    ["-B", Path.GetFullPath("tools/StudioX.StcIspValidation/progress_offline.py"), prepared.GuardScript],
+    Path.GetFullPath("."), TimeSpan.FromSeconds(15), RemoveEnvironment: ["PYTHONHOME", "PYTHONPATH"]));
+Check(progressTest.Success, "写入字节进度与应答失败离线边界：" + progressTest.StandardOutput + progressTest.StandardError);
 var all = pack.Manifest.Devices.Select(StcIspCapabilities.For).ToDictionary(c => c.DeviceId);
 Check(all["STC89C52RC"].SupportedClockModes.SequenceEqual([StcClockMode.Preserve]) &&
     all["STC12C5A60S2"].SupportedClockModes.Contains(StcClockMode.ExternalCrystal) && !all["STC12C5A60S2"].SupportsRcTrim &&

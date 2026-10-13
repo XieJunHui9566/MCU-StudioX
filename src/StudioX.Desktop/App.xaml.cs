@@ -27,6 +27,7 @@ public partial class App : System.Windows.Application
         var developmentComponentsPreview = e.Args is ["--preview-development-components", _, _, _];
         var faultPeripheralsPreview = e.Args is ["--preview-fault-peripherals", _, _];
         var codeTemplatesPreview = e.Args is ["--preview-code-templates", _];
+        var stcTimingPreview = e.Args is ["--preview-stc-timing", _, _];
         var peripheralDevelopmentPreview = e.Args is ["--preview-peripheral-development", _, _, _];
         var projectHealthPreview = e.Args is ["--preview-project-health", _, _];
         var toolManagementPreview = e.Args is ["--preview-tool-management", _, _] or ["--preview-tool-management", _, _, _];
@@ -40,6 +41,7 @@ public partial class App : System.Windows.Application
         var showDebugDemo = e.Args is ["--show-debug-demo", _] or ["--show-debug-demo", _, _];
         var showBreakpointsDemo = e.Args is ["--show-breakpoints-demo", _] or ["--show-breakpoints-demo", _, _];
         var preview = e.Args is ["--preview-ui", _];
+        var appearancePluginPreview = e.Args is ["--preview-appearance-plugin", _, _, _];
         var windowLayoutPreview = e.Args is ["--preview-window-layout", _];
         var editorPreview = e.Args is ["--preview-editor", _, _];
         var completionPreview = e.Args is ["--preview-completion", _, _];
@@ -53,8 +55,10 @@ public partial class App : System.Windows.Application
         var hdlWorkflowPreview = e.Args is ["--preview-hdl-workflow", _, _];
         var navigationPreview = e.Args is ["--preview-navigation", _, _];
         var explorerPreview = e.Args is ["--preview-explorer", _, _];
+        var recentProjectsPreview = e.Args is ["--preview-recent-projects", _, _];
         var buildPreview = e.Args is ["--preview-build", _, _];
         var buildOutputPreview = e.Args is ["--preview-build-output", _, _, _];
+        var stcDownloadOutputPreview = e.Args is ["--preview-stc-download-output", _];
         var buildMemoryPreview = e.Args is ["--preview-memory", _, _];
         var editingPreview = e.Args is ["--preview-editing", _, _];
         var bracketsPreview = e.Args is ["--preview-brackets", _, _];
@@ -90,6 +94,7 @@ public partial class App : System.Windows.Application
         anyPreview |= debugPluginsPreview || productWorkflowsPreview || projectToolsPreview;
         anyPreview |= faultPeripheralsPreview;
         anyPreview |= codeTemplatesPreview;
+        anyPreview |= stcTimingPreview;
         anyPreview |= peripheralDevelopmentPreview;
         anyPreview |= developmentComponentsPreview;
         anyPreview |= idfVersionsPreview;
@@ -101,6 +106,9 @@ public partial class App : System.Windows.Application
         anyPreview |= inactiveCodePreview;
         anyPreview |= mon51Preview;
         anyPreview |= buildOutputPreview;
+        anyPreview |= stcDownloadOutputPreview;
+        anyPreview |= appearancePluginPreview;
+        anyPreview |= recentProjectsPreview;
         var data = (acceptanceWorkbench || showAgentWorkspace || showProductivity || showDebugDemo || showBreakpointsDemo) && e.Args.Length >= 3 ? Path.GetFullPath(e.Args[2]) : smoke || anyPreview ? Path.Combine(Path.GetFullPath(e.Args[1]), "user-data") :
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MCUStudioX");
         var services = new WorkbenchService(acceptanceWorkbench ? Path.GetFullPath(e.Args[1])
@@ -129,7 +137,15 @@ public partial class App : System.Windows.Application
             Directory.CreateDirectory(directory);
             try
             {
-                if (buildOutputPreview)
+                if (appearancePluginPreview)
+                {
+                    await window.RenderAppearancePluginPreviewAsync(directory, Path.GetFullPath(e.Args[2]), Path.GetFullPath(e.Args[3]));
+                }
+                else if (stcDownloadOutputPreview)
+                {
+                    await window.RenderStcDownloadOutputPreviewAsync(directory);
+                }
+                else if (buildOutputPreview)
                 {
                     await window.RenderBuildOutputPreviewAsync(directory, Path.GetFullPath(e.Args[2]));
                 }
@@ -160,6 +176,10 @@ public partial class App : System.Windows.Application
                 else if (codeTemplatesPreview)
                 {
                     await window.RenderCodeTemplatesPreviewAsync(directory);
+                }
+                else if (stcTimingPreview)
+                {
+                    await window.RenderStcTimingPreviewAsync(directory, Path.GetFullPath(e.Args[2]));
                 }
                 else if (faultPeripheralsPreview)
                 {
@@ -344,6 +364,10 @@ public partial class App : System.Windows.Application
                 else if (explorerPreview)
                 {
                     await window.RenderExplorerPreviewAsync(directory, Path.GetFullPath(e.Args[2]));
+                }
+                else if (recentProjectsPreview)
+                {
+                    await window.RenderRecentProjectsPreviewAsync(directory, Path.GetFullPath(e.Args[2]));
                 }
                 else if (navigationPreview)
                 {

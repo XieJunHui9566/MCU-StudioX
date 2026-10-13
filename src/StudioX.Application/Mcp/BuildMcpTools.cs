@@ -31,11 +31,13 @@ internal sealed class BuildMcpTools(McpSessionContext context) : StudioXMcpToolP
             StudioXMcpPermission.Build, cancellationToken).ConfigureAwait(false);
         await RequireSavedDocumentsAsync().ConfigureAwait(false);
         var snapshot = Context.AgentEditor is { } beforeEditor ? await beforeEditor.SnapshotAsync(cancellationToken) : null;
+        using var operation = Context.Operations.Start("project_build", TimeSpan.FromMinutes(20), cancellationToken,
+            PathBoundary.Resolve(Project, ".build/studiox-build.log"));
         try
         {
             var report = action == "build"
-                ? await Services.Builds.BuildAsync(Project, cancellationToken: cancellationToken).ConfigureAwait(false)
-                : await Services.Builds.ConfigureAsync(Project, cancellationToken: cancellationToken).ConfigureAwait(false);
+                ? await Services.Builds.BuildAsync(Project, operation.Progress, operation.Token, operation.Output).ConfigureAwait(false)
+                : await Services.Builds.ConfigureAsync(Project, operation.Progress, operation.Token, operation.Output).ConfigureAwait(false);
             var stale = false;
             if (Context.AgentEditor is { } completedEditor && snapshot is not null)
             {
@@ -47,6 +49,7 @@ internal sealed class BuildMcpTools(McpSessionContext context) : StudioXMcpToolP
                     completedEditor.RecordValidation(report.Success, stale);
                 }
             }
+            operation.Complete(report.Success, report.ExitCode, report.LogPath, report.TimedOut);
             return JsonSerializer.Serialize(new
             {
                 action,
@@ -60,6 +63,19 @@ internal sealed class BuildMcpTools(McpSessionContext context) : StudioXMcpToolP
                 log = LimitOutput(report.Log, 12_000)
             });
         }
+        catch (OperationCanceledException error) when (operation.Token.IsCancellationRequested)
+        {
+            if (action == "build")
+            {
+                Context.AgentEditor?.RecordValidation(false, false);
+            }
+            var interruption = operation.Interrupted(error);
+            if (ReferenceEquals(interruption, error))
+            {
+                throw;
+            }
+            throw interruption;
+        }
         catch
         {
             if (action == "build")
@@ -68,6 +84,28 @@ internal sealed class BuildMcpTools(McpSessionContext context) : StudioXMcpToolP
             }
             throw;
         }
+    }
+
+    [McpServerTool(Name = "project_operation_status")]
+    [Description("查询本 MCP 会话当前或最近的编译/ESP 下载阶段、耗时、退出状态及有界原始输出；不连接设备。运行期间可并发查询，状态时间来自主机 UTC。")]
+    public async Task<string> ProjectOperationStatusAsync(CancellationToken cancellationToken = default)
+    {
+        await RequireWorkspaceProjectAsync(cancellationToken).ConfigureAwait(false);
+        return Context.Operations.Status();
+    }
+
+    [McpServerTool(Name = "project_operation_cancel")]
+    [Description("按操作标识请求取消本 MCP 会话的编译或 ESP 下载；不影响其他会话。返回 stopping 表示仍在清理，需查询终态；下载取消不代表 Flash 已恢复，不自动重试。")]
+    public async Task<string> ProjectOperationCancelAsync(
+        [Description("project_operation_status 返回的准确 operationId。")]
+        string operationId, CancellationToken cancellationToken = default)
+    {
+        await RequireWorkspaceProjectAsync(cancellationToken).ConfigureAwait(false);
+        var tool = Context.Operations.ToolFor(operationId);
+        await RequireApprovalAsync("project_operation_cancel", "请求停止本会话当前操作并等待工具进程退出。",
+            tool == "firmware_download" ? StudioXMcpPermission.FirmwareDownload : StudioXMcpPermission.Build,
+            cancellationToken).ConfigureAwait(false);
+        return Context.Operations.Cancel(operationId);
     }
 
     [McpServerTool(Name = "project_build_log")]

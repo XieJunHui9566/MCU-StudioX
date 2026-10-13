@@ -65,6 +65,16 @@ class GuardedStcGal(StcGal):
         self.monitor_setup = monitor_setup
         super().__init__(options)
 
+    def report_program_progress(self, current, written, maximum):
+        # 协议在块写入应答核对后调用；最后的哨兵回调不再额外累计一个块。
+        # 独立完整行便于 IDE 合并进度，避免 tqdm 在重定向输出中刷屏。
+        if maximum <= 0 or current < 0 or current > maximum or written <= 0:
+            return
+        measurement = (min(current + written, maximum), maximum)
+        if measurement != getattr(self, "_studiox_last_program_progress", None):
+            self._studiox_last_program_progress = measurement
+            print("STUDIOX_ISP_PROGRESS %d %d" % measurement, flush=True)
+
     def program_mcu(self):
         detected = self.protocol.model.name
         print("StudioX detected model: " + detected, flush=True)
@@ -102,6 +112,8 @@ class GuardedStcGal(StcGal):
             raise StcProtocolException(
                 "StudioX: external-to-internal RC trim needs a separate cold-start sequence; no erase/write"
             )
+        self._studiox_last_program_progress = None
+        self.protocol.progress_cb = self.report_program_progress
         print("STUDIOX_TARGET_VERIFIED " + self.expected_model, flush=True)
         configure_iap15_calibration(self.protocol)
         super().program_mcu()

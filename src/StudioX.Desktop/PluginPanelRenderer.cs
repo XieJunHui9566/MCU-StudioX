@@ -14,6 +14,12 @@ internal sealed class PluginPanelRenderer(Func<string, JsonElement, Task> invoke
     private readonly Dictionary<string, TextBox> inputs = new(StringComparer.Ordinal);
     private bool enabled = true;
     private FrameworkElement? current;
+    private readonly Dictionary<string, (string Definition, FrameworkElement View)> appearanceViews = new(StringComparer.Ordinal);
+
+    public Func<JsonElement, FrameworkElement>? CreateAppearanceView
+    {
+        get; set;
+    }
 
     public Func<JsonElement, Task>? OpenProjectAsync
     {
@@ -24,6 +30,10 @@ internal sealed class PluginPanelRenderer(Func<string, JsonElement, Task> invoke
     {
         var declaredInputs = new HashSet<string>(StringComparer.Ordinal);
         ValidateKinds(panel.Widgets, 0, declaredInputs);
+        foreach (var stale in appearanceViews.Keys.Where(id => !declaredInputs.Contains(id)).ToArray())
+        {
+            appearanceViews.Remove(stale);
+        }
         foreach (var stale in values.Keys.Where(id => !declaredInputs.Contains(id)).ToArray())
         {
             values.Remove(stale);
@@ -75,11 +85,11 @@ internal sealed class PluginPanelRenderer(Func<string, JsonElement, Task> invoke
         foreach (var widget in widgets)
         {
             if (widget.Kind is not ("text" or "metric" or "table" or "tree" or "form" or "group" or
-                "plot" or "chart" or "button" or "input" or "number" or "checkbox" or "select" or "projectLink"))
+                "plot" or "chart" or "button" or "input" or "number" or "checkbox" or "select" or "projectLink" or "appearance"))
             {
                 throw new InvalidDataException("不支持的插件控件：" + widget.Kind);
             }
-            if (widget.Kind is "input" or "number" or "checkbox" or "select")
+            if (widget.Kind is "input" or "number" or "checkbox" or "select" or "appearance")
             {
                 declaredInputs.Add(widget.Id);
             }
@@ -103,6 +113,20 @@ internal sealed class PluginPanelRenderer(Func<string, JsonElement, Task> invoke
             throw new InvalidDataException("插件面板嵌套过深。");
         }
         var kind = widget.Kind;
+        if (kind == "appearance")
+        {
+            var definition = widget.Value!.Value.GetRawText();
+            if (!appearanceViews.TryGetValue(widget.Id, out var existing) || existing.Definition != definition)
+            {
+                existing = (definition, (CreateAppearanceView ?? throw new InvalidOperationException("当前宿主未提供外观插件入口。"))(widget.Value.Value));
+                appearanceViews[widget.Id] = existing;
+            }
+            if (existing.View.Parent is Panel previous)
+            {
+                previous.Children.Remove(existing.View);
+            }
+            return existing.View;
+        }
         if (kind is "form" or "group")
         {
             var group = new StackPanel { Margin = new Thickness(0, 8, 0, 0) };

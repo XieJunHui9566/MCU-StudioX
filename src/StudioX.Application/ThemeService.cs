@@ -5,6 +5,7 @@ using StudioX.Foundation;
 using StudioX.Packages;
 public sealed partial class ThemeService(string dataDirectory)
 {
+    public ThemeArtworkService Artwork { get; } = new(dataDirectory);
     private static readonly string[] Keys = ["Background", "Surface", "Panel", "Border", "Text", "Muted", "Accent", "OnAccent"];
     public static ThemeDefinition Dark => new(1, "studiox.dark", "StudioX Dark", new()
     {
@@ -30,6 +31,10 @@ public sealed partial class ThemeService(string dataDirectory)
     });
     public static void Validate(ThemeDefinition theme)
     {
+        if (theme.Artwork is not null)
+        {
+            ThemeArtworkService.Validate(theme.Artwork);
+        }
         PackValidator.Token(theme.Id);
         if (theme.FormatVersion != 1 || string.IsNullOrWhiteSpace(theme.DisplayName) || theme.Colors is null ||
             !theme.Colors.Keys.ToHashSet(StringComparer.Ordinal).SetEquals(Keys) || theme.Colors.Values.Any(c => c is null || !HexColor().IsMatch(c)))

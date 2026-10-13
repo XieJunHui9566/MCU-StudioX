@@ -85,9 +85,13 @@ public partial class MainWindow
     private void RefreshSurfaceBrushes()
     {
         var media = backgroundSettings.Kind != BackgroundKind.None;
+        var illustrated = ThemeArtworkImage.Visibility == Visibility.Visible;
+        var transparentWork = media ? !backgroundSettings.OpaqueWorkSurfaces : illustrated;
+        RefreshThemeArtworkOpacity();
         Set("ChromeSurface", "Surface", media ? (byte)240 : (byte)255);
-        Set("ToolSurface", "Surface", media ? (byte)195 : (byte)255);
-        Set("EditorSurface", "Background", media ? (byte)100 : (byte)255);
+        Set("ToolSurface", "Surface", transparentWork ? (byte)195 : (byte)255);
+        // 无视频时插画使用更实的编辑背景，避免角色亮部降低代码对比度。
+        Set("EditorSurface", "Background", transparentWork ? (media ? (byte)100 : (byte)170) : (byte)255);
         Set("HoverSurface", "Panel", media ? (byte)205 : (byte)255);
         void Set(string key, string source, byte alpha)
         {
