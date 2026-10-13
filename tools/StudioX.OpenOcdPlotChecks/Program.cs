@@ -145,8 +145,14 @@ await using (var service = new OpenOcdPlotService(source, 16))
     Check(service.Snapshot().Records.All(r => r.Values.All(double.IsFinite)) && service.Snapshot().Records[0].Segment > 0, "NaN is counted and creates a gap without breaking chart");
     source.Failure = "raw OpenOCD failure: target not halted";
     await service.StartAsync(20);
-    await WaitUntil(() => service.Snapshot().Error is not null);
-    Check(!service.Snapshot().Capturing && service.Snapshot().Error!.Contains(source.Failure), "target failure stops capture and retains raw error");
+    // 错误先记录，采集标记在 worker 的 finally 中收尾；等待同一快照达到终态，避免抢先断言。
+    await WaitUntil(() =>
+    {
+        var snapshot = service.Snapshot();
+        return !snapshot.Capturing && snapshot.Error is not null;
+    });
+    var failureSnapshot = service.Snapshot();
+    Check(!failureSnapshot.Capturing && failureSnapshot.Error!.Contains(source.Failure), "target failure stops capture and retains raw error");
     source.Failure = null;
     await service.StartAsync(10000);
     await WaitUntil(() => service.Snapshot().Records.Length > 0);
