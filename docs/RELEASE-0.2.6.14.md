@@ -21,7 +21,7 @@
 - [51 延时与波特率生成](STC-TIMING.md)：读取准确型号、工程时钟和寄存器事实，预览/保存/插入代码；不自动调用生成函数或修改硬件。
 - [RT51](RT51.md)：8051 调度器、SDCC 端口、示例和边界验证源码；历史实板记录保持各自验收范围，本次发布不追加硬件验收。
 - MCP 操作状态跟踪、构建/下载进度显示与工具契约检查。
-- Avalonia Linux 预览工作台与准备脚本。此次安装包仍为 Windows；Linux 外观插件界面尚未接入，不以 Windows 验收替代 Linux 验收。
+- 已有 Avalonia Linux 预览工作台与准备脚本仅保留源码。**Linux 版本暂不支持**；本次不制作 Linux 安装包，也不进行 Linux 发行验收。
 
 ## IDE 本体源码改动
 
@@ -33,7 +33,7 @@
 | Windows 宿主 | 外观面板、真实文字字体筛选、动态字体资源、编辑器粗斜体、独立氛围图层与隔离验收入口 |
 | 最近工程应用服务 | `RecentProjectService.cs`、`RecentProjectService.Actions.cs`、`WindowsRecycleBin.cs`、`WorkbenchService.cs` |
 | 最近工程 Windows 界面 | `MainWindow.xaml`、`MainWindow.RecentProjects.cs`、`MainWindow.RecentProjectsPreview.cs`、`App.xaml.cs`；该功能共 8 个本体文件 |
-| 其它合入能力 | STC 时序服务/窗口、MCP 操作跟踪、STC 输出解析与 Linux 预览应用服务 |
+| 其它合入能力 | STC 时序服务/窗口、MCP 操作跟踪与 STC 输出解析；已有 Linux 预览应用服务仅保留源码，不在支持范围 |
 
 外观逐项文件说明见 [外观插件开发报告](APPEARANCE_PLUGINS.md)，最近工程行为见 [工程编辑工作区](EDITOR_WORKSPACE.md)。插件实现位于 `examples/StudioX.AppearancePlugin`；版本字段与插件交付分别在 `Directory.Build.props`、`tools/Publish.ps1` 管理。
 
