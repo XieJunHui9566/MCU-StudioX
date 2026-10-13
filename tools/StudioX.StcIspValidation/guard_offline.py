@@ -26,6 +26,7 @@ def check(model, code, expected, expected_code=None, source="internal", mode="pr
     obj.expected_code_bytes = expected_code if expected_code is not None else code
     obj.expected_hash = digest
     obj.clock_mode = mode
+    obj.monitor_setup = False
     obj.protocol = SimpleNamespace(
         model=SimpleNamespace(name=model, code=code),
         options=SimpleNamespace(get_clock_source=lambda: source),

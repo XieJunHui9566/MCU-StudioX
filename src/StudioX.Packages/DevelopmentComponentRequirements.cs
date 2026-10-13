@@ -23,9 +23,9 @@ public static class DevelopmentComponentRequirements
             {
                 throw Invalid("同一层不能重复声明开发环境组件：" + item.Id);
             }
-            if (item.Host != "win-x64")
+            if (!HostPlatform.IsSupported(item.Host))
             {
-                throw Invalid("当前仅支持 win-x64 开发环境组件：" + item.Id);
+                throw Invalid("不支持的开发环境组件宿主：" + item.Host + " / " + item.Id);
             }
             if (string.IsNullOrWhiteSpace(item.CompilerId) || item.CompilerId.Length > 128 || item.CompilerId.Any(char.IsControl)
                 || string.IsNullOrWhiteSpace(item.Purpose) || item.Purpose.Length > 160 || item.Purpose.Any(char.IsControl))
@@ -64,7 +64,7 @@ public static class DevelopmentComponentRequirements
     public static IReadOnlyList<DevelopmentComponentRequirement> ForTemplate(DeviceDefinition device, ProjectTemplate template)
     {
         // 格式 1 已发布包的三个工具字段本身就是明确需求，不按芯片或本机安装情况推断版本。
-        DevelopmentComponentRequirement primary = new(device.ToolsetId, device.ToolsetVersion, device.CompilerId);
+        var primary = Primary(device.ToolsetId, device.ToolsetVersion, device.CompilerId, device.DevelopmentComponents);
         var deviceNeeds = device.DevelopmentComponents ?? [primary];
         Validate(deviceNeeds);
         Validate(template.DevelopmentComponents ?? []);
@@ -84,4 +84,12 @@ public static class DevelopmentComponentRequirements
     }
 
     private static StudioXException Invalid(string message) => new("DEVELOPMENT_COMPONENT_REQUIREMENT", message);
+
+    public static DevelopmentComponentRequirement Primary(string id, string version, string compilerId,
+        IReadOnlyList<DevelopmentComponentRequirement>? declared)
+    {
+        // 未声明宿主的既有格式 1 包继续表示 Windows；Linux 必须由包显式声明，不能自动改锁。
+        return declared?.FirstOrDefault(item => item is not null && item.Id == id && item.Version == version && item.CompilerId == compilerId)
+            ?? new(id, version, compilerId);
+    }
 }

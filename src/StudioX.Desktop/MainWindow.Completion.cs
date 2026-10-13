@@ -216,7 +216,7 @@ public partial class MainWindow
                         templates = await services.CodeTemplates.CompleteAsync(projectDirectory, CodeLanguage.ForFile(path), text, offset, cancellation.Token);
                     }
                     catch (OperationCanceledException) when (cancellation.IsCancellationRequested) { throw; }
-                    catch (Exception ex) { if (Current()) { Status.Text = "代码模板：" + ex.Message; } Log(ex.ToString()); }
+                    catch (Exception ex) { if (manual && Current()) { Status.Text = "代码模板：" + ex.Message; } await RecordAnalysisFailureAsync("代码模板", ex); }
                     if (!Current())
                     {
                         return;
@@ -316,18 +316,15 @@ public partial class MainWindow
             catch (OperationCanceledException) when (cancellation.IsCancellationRequested) { }
             catch (Exception ex)
             {
-                if (revision == assistRevision)
+                if (manual && revision == assistRevision)
                 {
                     Status.Text = "代码提示：" + ex.Message;
-                    Log(ex.ToString());
                 }
+                await RecordAnalysisFailureAsync("代码提示", ex);
             }
             finally
             {
-                foreach (var line in services.Intelligence.DrainLog())
-                {
-                    Log("clangd：" + line);
-                }
+                await FlushAnalysisLogQuietlyAsync();
                 if (assistCancellation == cancellation)
                 {
                     assistCancellation = null;

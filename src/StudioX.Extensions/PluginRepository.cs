@@ -91,17 +91,18 @@ public sealed class PluginRepository
             if (Directory.Exists(destination))
             {
                 CheckTree(destination);
-                Directory.Move(destination, backup);
+                await DirectoryMoves.MoveAsync(destination, backup, token).ConfigureAwait(false);
             }
             try
             {
-                Directory.Move(staging, destination);
+                await DirectoryMoves.MoveAsync(staging, destination, token).ConfigureAwait(false);
             }
             catch
             {
                 if (Directory.Exists(backup))
                 {
-                    Directory.Move(backup, destination);
+                    // 已撤走旧目录时，即使用户取消也必须先恢复原版本。
+                    await DirectoryMoves.MoveAsync(backup, destination, CancellationToken.None).ConfigureAwait(false);
                 }
                 throw;
             }

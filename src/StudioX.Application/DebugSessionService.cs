@@ -10,7 +10,8 @@ using StudioX.Foundation;
 using StudioX.Packages;
 
 /// <summary>会话状态、串行命令、项目隔离与用户断点；离线和实机共用交互状态机。</summary>
-public sealed partial class DebugSessionService(string dataDirectory) : IAsyncDisposable
+public sealed partial class DebugSessionService(string dataDirectory, StudioX.Devices.DeviceHub? devices = null,
+    Func<StudioX.Devices.SerialSettings, StudioX.Devices.IDeviceTransport>? monitorTransportFactory = null) : IAsyncDisposable
 {
     private readonly SemaphoreSlim gate = new(1, 1);
     private GdbDebugAdapter? adapter;
@@ -35,7 +36,7 @@ public sealed partial class DebugSessionService(string dataDirectory) : IAsyncDi
     public DebugSnapshot Snapshot { get; private set; } = DebugSnapshot.Empty;
     public IReadOnlyList<SourceBreakpoint> Breakpoints => breakpoints;
     public IReadOnlyList<string> Watches => watches;
-    public bool IsActive => State is DebugState.Starting or DebugState.Stopped or DebugState.Running or DebugState.Stopping;
+    public bool IsActive => MonitorSession is { HasConnection: true } || State is DebugState.Starting or DebugState.Stopped or DebugState.Running or DebugState.Stopping;
     public event Action? Changed;
     public event Action<string>? Output;
     public event Action<string>? BreakpointLog;
@@ -49,10 +50,16 @@ public sealed partial class DebugSessionService(string dataDirectory) : IAsyncDi
             ProjectDirectory = directory is null ? null : Path.GetFullPath(directory);
             breakpoints = [];
             watches = ["app_counter", "app_input", "app_output", "$pc"];
+            var mon51Project = false;
             // 实机 RISC-V 工程不预填 F407 离线示例变量；已保存的用户观察项照常恢复。
             if (ProjectDirectory is not null)
             {
                 var project = await ProjectService.ReadAsync(ProjectDirectory, token);
+                if (project.ToolsetId == "stc.sdcc")
+                {
+                    mon51Project = true;
+                    watches = ["$PC", "$A", "$SP"];
+                }
                 if (project.ToolsetId is "wch.riscv" or "agm.agrv" || project.DeviceId == Rp2350DebugTarget.DeviceId)
                 {
                     watches = ["$pc"];
@@ -67,7 +74,7 @@ public sealed partial class DebugSessionService(string dataDirectory) : IAsyncDi
                     throw new StudioXException("DEBUG_SETTINGS", "不支持的调试设置版本。");
                 }
                 breakpoints = settings.Breakpoints.Where(b => !b.SessionOnly).Select(b => { ValidateLocation(b.File, b.Line); BreakpointOptions.From(b).Validate(); return Unbound(b); }).ToArray();
-                watches = settings.Watches.Where(ValidWatch).Distinct(StringComparer.Ordinal).Take(32).ToArray();
+                watches = settings.Watches.Where(w => ValidWatch(w) || mon51Project && ValidMon51Watch(w)).Distinct(StringComparer.Ordinal).Take(32).ToArray();
             }
             Changed?.Invoke();
         }
@@ -126,6 +133,11 @@ public sealed partial class DebugSessionService(string dataDirectory) : IAsyncDi
     }
     public async Task ExecuteAsync(DebugAction action, CancellationToken token = default)
     {
+        if (MonitorSession is { } monitor)
+        {
+            await monitor.ExecuteAsync(action, token);
+            return;
+        }
         if (action == DebugAction.Pause)
         {
             pauseRequested = true;
@@ -248,6 +260,11 @@ public sealed partial class DebugSessionService(string dataDirectory) : IAsyncDi
     }
     public async Task RefreshAsync(int? frame = null, CancellationToken token = default)
     {
+        if (MonitorSession is { } monitor)
+        {
+            await monitor.SelectFrameAsync(frame, token);
+            return;
+        }
         await gate.WaitAsync(token);
         try
         {
@@ -281,6 +298,20 @@ public sealed partial class DebugSessionService(string dataDirectory) : IAsyncDi
     }
     public async Task ToggleBreakpointAsync(string file, int line, CancellationToken token = default)
     {
+        if (MonitorSession is { } monitor)
+        {
+            ValidateLocation(file, line);
+            var previous = breakpoints.FirstOrDefault(p => p.File.Equals(file, StringComparison.OrdinalIgnoreCase) && p.Line == line);
+            if (previous is not null)
+            {
+                await monitor.ChangeSourceBreakpointAsync(previous.Id, null, token);
+            }
+            else
+            {
+                await monitor.ConfigureSourceBreakpointAsync(new(Guid.NewGuid().ToString("N"), file, line), token);
+            }
+            return;
+        }
         await gate.WaitAsync(token);
         try
         {
@@ -311,6 +342,11 @@ public sealed partial class DebugSessionService(string dataDirectory) : IAsyncDi
     }
     public async Task ChangeBreakpointAsync(string id, bool? enabled, CancellationToken token = default)
     {
+        if (MonitorSession is { } monitor)
+        {
+            await monitor.ChangeSourceBreakpointAsync(id, enabled, token);
+            return;
+        }
         await gate.WaitAsync(token);
         try
         {
@@ -361,6 +397,12 @@ public sealed partial class DebugSessionService(string dataDirectory) : IAsyncDi
     }
     public async Task ChangeWatchAsync(string expression, bool remove, CancellationToken token = default)
     {
+        if (MonitorSession is { } monitor)
+        {
+            await monitor.ChangeWatchAsync(expression, remove, token);
+            return;
+        }
+        RequireSourceDebugCapability();
         await gate.WaitAsync(token);
         try
         {
@@ -406,6 +448,23 @@ public sealed partial class DebugSessionService(string dataDirectory) : IAsyncDi
     }
     public async Task StopAsync()
     {
+        if (MonitorSession is { } monitor)
+        {
+            try
+            {
+                await monitor.StopAsync();
+                await SaveAsync(CancellationToken.None);
+                monitor.Changed -= UpdateMonitorState;
+                monitor.Output -= Trace;
+                MonitorSession = null;
+                IsHardware = false;
+                HardwareTargetName = null;
+                Snapshot = DebugSnapshot.Empty;
+                SetState(DebugState.Disconnected, monitor.Reason);
+            }
+            catch { UpdateMonitorState(); throw; }
+            return;
+        }
         pauseRequested = true;
         await gate.WaitAsync();
         try
@@ -459,6 +518,7 @@ public sealed partial class DebugSessionService(string dataDirectory) : IAsyncDi
     }
     private void RequireEditableBreakpoints()
     {
+        RequireSourceDebugCapability();
         if (State is not (DebugState.Disconnected or DebugState.Stopped or DebugState.Faulted))
         {
             throw Error("请先暂停目标，再修改断点。");
@@ -466,6 +526,7 @@ public sealed partial class DebugSessionService(string dataDirectory) : IAsyncDi
     }
     private void RequireStopped()
     {
+        RequireSourceDebugCapability();
         if (State != DebugState.Stopped || adapter is null)
         {
             throw Error("暂停后才可读取目标状态。");
@@ -484,6 +545,15 @@ public sealed partial class DebugSessionService(string dataDirectory) : IAsyncDi
     [GeneratedRegex(@"^(?:\$?[A-Za-z_]\w*)(?:(?:\.|->)[A-Za-z_]\w*|\[\d+\])*$", RegexOptions.CultureInvariant)]
     private static partial Regex WatchPattern();
     private static bool ValidWatch(string text) => text.Length is > 0 and < 200 && WatchPattern().IsMatch(text);
+    private static bool ValidMon51Watch(string text)
+    {
+        try
+        {
+            _ = DebugExpression.Parse(text);
+            return true;
+        }
+        catch (ArgumentException) { return false; }
+    }
     private static DebugSnapshot Highlight(DebugSnapshot next, DebugSnapshot previous)
     {
         return next with

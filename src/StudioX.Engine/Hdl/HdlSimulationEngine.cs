@@ -63,14 +63,17 @@ public sealed class HdlSimulationEngine(ToolsetCatalog catalog)
         HdlSchematicInputs.Validate(root, settings.Inputs);
     }
 
-    public Task<HdlSimulationResult> RunAsync(string projectDirectory, HdlSimulationSettings settings, CancellationToken token = default) =>
-        Task.Run(() => RunCoreAsync(Path.GetFullPath(projectDirectory), settings, token), token);
+    public Task<HdlSimulationResult> RunAsync(string projectDirectory, HdlSimulationSettings settings, CancellationToken token = default,
+        IProgress<string>? progress = null, IProgress<string>? output = null) =>
+        Task.Run(() => RunCoreAsync(Path.GetFullPath(projectDirectory), settings, token, progress, output), token);
 
-    private async Task<HdlSimulationResult> RunCoreAsync(string root, HdlSimulationSettings settings, CancellationToken token)
+    private async Task<HdlSimulationResult> RunCoreAsync(string root, HdlSimulationSettings settings, CancellationToken token,
+        IProgress<string>? progress, IProgress<string>? output)
     {
         await HdlSchematicInputs.RequireProjectAsync(root, token);
         Validate(root, settings);
-        var tools = await catalog.ResolveAsync("hdl.iverilog", "14.0.0", "iverilog", token);
+        progress?.Report("校验 RTL 仿真工具…");
+        var tools = await catalog.ResolveAsync("hdl.iverilog", "14.0.0", "iverilog", token, progress: progress);
         var run = PathBoundary.Resolve(root, ".build/hdl-simulation/" + Guid.NewGuid().ToString("N"));
         var source = Path.Combine(run, "source");
         Directory.CreateDirectory(source);
@@ -82,7 +85,8 @@ public sealed class HdlSimulationEngine(ToolsetCatalog catalog)
             settings.TestbenchTop + ");\n$dumplimit(33554432);\n#" + settings.DurationNanoseconds.ToString(CultureInfo.InvariantCulture) +
             ";\n$display(\"STUDIOX_SIMULATION_TIME_LIMIT\");\n$finish;\nend\nendmodule\n";
         await File.WriteAllTextAsync(Path.Combine(run, "capture.v"), capture, token);
-        var arguments = new List<string> { "-B", tools.ResourceDirectory("ivl"), "-g2012", "-gspecify", "-Wall", "-s", settings.TestbenchTop,
+        var library = IcarusToolPath.ForLibraryDirectory(tools.ResourceDirectory("ivl"));
+        var arguments = new List<string> { "-B", library, "-g2012", "-gspecify", "-Wall", "-s", settings.TestbenchTop,
             "-s", "studiox_capture", "-o", "simulation.vvp" };
         foreach (var directory in settings.IncludeDirectories)
         {
@@ -95,7 +99,7 @@ public sealed class HdlSimulationEngine(ToolsetCatalog catalog)
         arguments.AddRange(settings.Inputs.Sources.Select(file => "source/" + file));
         arguments.Add("capture.v");
         await ExecuteAsync(tools.Tool("iverilog"), arguments, "编译 testbench");
-        await ExecuteAsync(tools.Tool("vvp"), ["-M", tools.ResourceDirectory("ivl"), "simulation.vvp"], "RTL 事件仿真");
+        await ExecuteAsync(tools.Tool("vvp"), ["-M", library, "simulation.vvp"], "RTL 事件仿真");
         var current = hashes.Where(pair => pair.Key != HdlSimulationSettings.RelativePath).ToDictionary();
         if (!await HdlSchematicInputs.IsCurrentAsync(root, current, settings.Inputs, token) ||
             (File.Exists(settingsPath) ? await Ag32NativeBuildService.HashAsync(settingsPath, token) : "") != hashes[HdlSimulationSettings.RelativePath])
@@ -149,11 +153,12 @@ public sealed class HdlSimulationEngine(ToolsetCatalog catalog)
 
         async Task ExecuteAsync(string executable, IReadOnlyList<string> args, string phase)
         {
+            progress?.Report(phase);
             using var writer = new StreamWriter(logPath, true) { AutoFlush = true };
             writer.WriteLine("[" + phase + "]");
             var result = await new ProcessRunner().RunAsync(new(executable, args, run, TimeSpan.FromSeconds(settings.TimeoutSeconds),
                 ToolsetEnvironment.Create(tools), RemoveEnvironment: ["IVERILOG_ICONFIG", "IVERILOG_VPI_MODULE_PATH", "VVP_DUMPER"],
-                Output: new LogProgress(writer), StreamCompleteOutput: true), token);
+                Output: new LogProgress(writer, output), StreamCompleteOutput: true), token);
             writer.WriteLine($"exit={result.ExitCode}; timeout={result.TimedOut}");
             if (!result.Success)
             {
@@ -162,7 +167,7 @@ public sealed class HdlSimulationEngine(ToolsetCatalog catalog)
         }
     }
 
-    private sealed class LogProgress(StreamWriter writer) : IProgress<string>
+    private sealed class LogProgress(StreamWriter writer, IProgress<string>? output) : IProgress<string>
     {
         public void Report(string value)
         {
@@ -170,6 +175,7 @@ public sealed class HdlSimulationEngine(ToolsetCatalog catalog)
             {
                 writer.WriteLine(value);
             }
+            output?.Report(value);
         }
     }
 }

@@ -9,7 +9,8 @@ ZIP 的根包含 `manifest.json`、`files.sha256.json` 与器件资源。索引�
 清单由 `StudioX.Packages/PackManifest.cs` 和 `DeviceDefinition.cs` 定义：
 
 - 包：formatVersion=1、id、version、displayName、vendor、devices。
-- 器件：明确型号 id、displayName、architecture（arm/riscv）、flashOrigin/flashBytes、ramOrigin/ramBytes。
+- 器件：明确型号 id、displayName、architecture（arm/riscv/mcs51）、flashOrigin/flashBytes、ramOrigin/ramBytes。
+- 可选 `monitorFirmware`：精确 id/displayName/version/protocol、包内 imageFile/provenanceFile、imageSha256/imageBytes、适用 bootloaderVersion/bootloaderStatus。镜像和来源文件都受包路径、索引及大小限制；额外核对实际镜像长度和 SHA-256。旧包可不声明；声明不表示任意调试后端都支持它。Mon51 制作后端进一步固定已验证的准确器件、版本、状态和镜像身份，不将包声明作为擦写授权。
 - 构建：toolsetId/toolsetVersion/compilerId、cpuFlags、defines、includeDirectories、sources、linkerScript、compileOptions、linkOptions。
 - 器件与模板可选 `developmentComponents`：精确 `id/version/compilerId/host/purpose`，当前仅 win-x64，最多 64 项。器件需求包含主工具的相同身份，模板需求叠加；相同身份去重，冲突拒绝。不声明时沿用原三个工具字段，不改写旧包。详见 [开发环境组件](DEVELOPMENT_COMPONENTS.md)。
 - 模板：id、displayName、description、entryFile；入口固定生成 `src/main.c`。可选 `build` 叠加 defines/includeDirectories/sources/compileOptions/linkOptions；构建和语言服务采用同一解析结果。可选 `files` 将用户目标相对路径映射到包内源文件，只允许 `src/`、`include/`，不能覆盖 main.c 或工程元数据。

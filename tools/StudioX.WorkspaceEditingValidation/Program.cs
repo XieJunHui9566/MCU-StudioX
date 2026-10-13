@@ -213,6 +213,7 @@ Check(cppRename.Count == 1 && cppRename[0].Matches.Count == 3 && cppRename[0].Af
 await intelligence.StopAsync();
 Check(intelligence.GetDiagnostics().Count == 0, "project stop clears language diagnostics");
 await LiveDiagnosticChecks.RunAsync(runtime, fixture, Path.Combine(root, "live-reliability"), Check);
+await AnalysisLogChecks.RunAsync(runtime, Path.Combine(root, "analysis-logging"), Check);
 await KeilCompilationChecks.RunAsync(runtime, fixture, Path.Combine(root, "keil-compilation"), Check);
 await PackCompilationChecks.RunAsync(runtime, fixture, Path.Combine(root, "pack-compilation"), Check);
 await InactiveCodeChecks.RunAsync(runtime, fixture, Path.Combine(root, "inactive-code"), Check);

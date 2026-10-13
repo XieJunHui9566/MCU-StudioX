@@ -15,7 +15,7 @@ public partial class App : System.Windows.Application
         WindowMouseWheel.Install();
         installationMutex = new Mutex(false, "MCUStudioX.Desktop.InstallLock");
         var showProductivity = e.Args is ["--show-ide-next", _, _];
-        var acceptanceWorkbench = e.Args is ["--acceptance-workbench", _, _];
+        var acceptanceWorkbench = e.Args is ["--acceptance-workbench", _, _] or ["--acceptance-workbench", _, _, _];
         var showAgentWorkspace = e.Args is ["--show-agent-workspace", _, _];
         var agentWorkspacePreview = e.Args is ["--preview-agent-workspace", _, _];
         var productivityPreview = e.Args is ["--preview-ide-next", _, _] or ["--preview-ide-next-recovery", _, _];
@@ -27,6 +27,7 @@ public partial class App : System.Windows.Application
         var developmentComponentsPreview = e.Args is ["--preview-development-components", _, _, _];
         var faultPeripheralsPreview = e.Args is ["--preview-fault-peripherals", _, _];
         var codeTemplatesPreview = e.Args is ["--preview-code-templates", _];
+        var stcTimingPreview = e.Args is ["--preview-stc-timing", _, _];
         var peripheralDevelopmentPreview = e.Args is ["--preview-peripheral-development", _, _, _];
         var projectHealthPreview = e.Args is ["--preview-project-health", _, _];
         var toolManagementPreview = e.Args is ["--preview-tool-management", _, _] or ["--preview-tool-management", _, _, _];
@@ -40,6 +41,7 @@ public partial class App : System.Windows.Application
         var showDebugDemo = e.Args is ["--show-debug-demo", _] or ["--show-debug-demo", _, _];
         var showBreakpointsDemo = e.Args is ["--show-breakpoints-demo", _] or ["--show-breakpoints-demo", _, _];
         var preview = e.Args is ["--preview-ui", _];
+        var appearancePluginPreview = e.Args is ["--preview-appearance-plugin", _, _, _];
         var windowLayoutPreview = e.Args is ["--preview-window-layout", _];
         var editorPreview = e.Args is ["--preview-editor", _, _];
         var completionPreview = e.Args is ["--preview-completion", _, _];
@@ -53,7 +55,10 @@ public partial class App : System.Windows.Application
         var hdlWorkflowPreview = e.Args is ["--preview-hdl-workflow", _, _];
         var navigationPreview = e.Args is ["--preview-navigation", _, _];
         var explorerPreview = e.Args is ["--preview-explorer", _, _];
+        var recentProjectsPreview = e.Args is ["--preview-recent-projects", _, _];
         var buildPreview = e.Args is ["--preview-build", _, _];
+        var buildOutputPreview = e.Args is ["--preview-build-output", _, _, _];
+        var stcDownloadOutputPreview = e.Args is ["--preview-stc-download-output", _];
         var buildMemoryPreview = e.Args is ["--preview-memory", _, _];
         var editingPreview = e.Args is ["--preview-editing", _, _];
         var bracketsPreview = e.Args is ["--preview-brackets", _, _];
@@ -64,11 +69,16 @@ public partial class App : System.Windows.Application
         var espressifModulePreview = e.Args is ["--preview-espressif-module", _, _];
         var pluginsPreview = e.Args is ["--preview-plugins", _] or ["--preview-plugins", _, _];
         var applicationPluginsPreview = e.Args is ["--preview-application-plugins", _, _, _];
+        var projectSynchronizationPreview = e.Args is ["--preview-project-synchronization", _];
+        var sourceRegistrationPreview = e.Args is ["--preview-source-registration", _];
         var debugPluginsPreview = e.Args is ["--preview-debug-plugins", _, _, _];
         var productWorkflowsPreview = e.Args is ["--preview-product-workflows", _, _, _];
         var debugPreview = e.Args is ["--preview-debug", _, _];
+        var mon51Preview = e.Args is ["--preview-mon51", _];
+        var mon51Fixture = mon51Preview ? new StudioX.Application.StcDebugging.Mon51OfflineTransport() : null;
         var rtosPreview = e.Args is ["--preview-rtos", _, _];
         var packCatalogPreview = e.Args is ["--preview-pack-catalog", _, _, _];
+        var editableCombosPreview = e.Args is ["--preview-editable-combos", _];
         var breakpointsPreview = e.Args is ["--preview-breakpoints", _, _];
         var importPerformancePreview = e.Args is ["--preview-import-performance", _, _];
         var largeProjectPreview = e.Args is ["--preview-large-project", _, _];
@@ -84,21 +94,32 @@ public partial class App : System.Windows.Application
         anyPreview |= debugPluginsPreview || productWorkflowsPreview || projectToolsPreview;
         anyPreview |= faultPeripheralsPreview;
         anyPreview |= codeTemplatesPreview;
+        anyPreview |= stcTimingPreview;
         anyPreview |= peripheralDevelopmentPreview;
         anyPreview |= developmentComponentsPreview;
         anyPreview |= idfVersionsPreview;
         anyPreview |= applicationPluginsPreview;
+        anyPreview |= projectSynchronizationPreview;
+        anyPreview |= sourceRegistrationPreview;
+        anyPreview |= editableCombosPreview;
         anyPreview |= startupRecoveryPreview;
         anyPreview |= inactiveCodePreview;
-        var data = (acceptanceWorkbench || showAgentWorkspace || showProductivity || showDebugDemo || showBreakpointsDemo) && e.Args.Length == 3 ? Path.GetFullPath(e.Args[2]) : smoke || anyPreview ? Path.Combine(Path.GetFullPath(e.Args[1]), "user-data") :
+        anyPreview |= mon51Preview;
+        anyPreview |= buildOutputPreview;
+        anyPreview |= stcDownloadOutputPreview;
+        anyPreview |= appearancePluginPreview;
+        anyPreview |= recentProjectsPreview;
+        var data = (acceptanceWorkbench || showAgentWorkspace || showProductivity || showDebugDemo || showBreakpointsDemo) && e.Args.Length >= 3 ? Path.GetFullPath(e.Args[2]) : smoke || anyPreview ? Path.Combine(Path.GetFullPath(e.Args[1]), "user-data") :
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MCUStudioX");
         var services = new WorkbenchService(acceptanceWorkbench ? Path.GetFullPath(e.Args[1])
+            : buildOutputPreview ? Path.GetFullPath(e.Args[3])
             : peripheralDevelopmentPreview ? Path.GetFullPath(e.Args[3])
             : workspaceEditingPreview && e.Args.Length == 4 ? Path.GetFullPath(e.Args[3])
             : startupRecoveryPreview ? Path.GetFullPath(e.Args[2])
             : inactiveCodePreview ? Path.GetFullPath(e.Args[3])
             : toolManagementPreview && e.Args.Length == 4 ? Path.GetFullPath(e.Args[3])
-            : idfVersionsPreview ? Path.GetFullPath(e.Args[3]) : Path.Combine(AppContext.BaseDirectory, "runtime"), data);
+            : idfVersionsPreview ? Path.GetFullPath(e.Args[3]) : Path.Combine(AppContext.BaseDirectory, "runtime"), data,
+            mon51Fixture is null ? null : _ => mon51Fixture);
         var window = new MainWindow(services);
         MainWindow = window;
         if (smoke || anyPreview)
@@ -116,9 +137,29 @@ public partial class App : System.Windows.Application
             Directory.CreateDirectory(directory);
             try
             {
-                if (startupRecoveryPreview)
+                if (appearancePluginPreview)
+                {
+                    await window.RenderAppearancePluginPreviewAsync(directory, Path.GetFullPath(e.Args[2]), Path.GetFullPath(e.Args[3]));
+                }
+                else if (stcDownloadOutputPreview)
+                {
+                    await window.RenderStcDownloadOutputPreviewAsync(directory);
+                }
+                else if (buildOutputPreview)
+                {
+                    await window.RenderBuildOutputPreviewAsync(directory, Path.GetFullPath(e.Args[2]));
+                }
+                else if (mon51Preview)
+                {
+                    await window.RenderMon51PreviewAsync(directory, mon51Fixture!);
+                }
+                else if (startupRecoveryPreview)
                 {
                     await window.RenderStartupRecoveryPreviewAsync(directory);
+                }
+                else if (editableCombosPreview)
+                {
+                    await window.RenderEditableCombosPreviewAsync(directory);
                 }
                 else if (inactiveCodePreview)
                 {
@@ -135,6 +176,10 @@ public partial class App : System.Windows.Application
                 else if (codeTemplatesPreview)
                 {
                     await window.RenderCodeTemplatesPreviewAsync(directory);
+                }
+                else if (stcTimingPreview)
+                {
+                    await window.RenderStcTimingPreviewAsync(directory, Path.GetFullPath(e.Args[2]));
                 }
                 else if (faultPeripheralsPreview)
                 {
@@ -159,6 +204,14 @@ public partial class App : System.Windows.Application
                 else if (firstProjectPreview)
                 {
                     await window.RenderFirstProjectPreviewAsync(directory, Path.GetFullPath(e.Args[2]));
+                }
+                else if (sourceRegistrationPreview)
+                {
+                    await window.RenderSourceRegistrationPreviewAsync(directory);
+                }
+                else if (projectSynchronizationPreview)
+                {
+                    await window.RenderProjectSynchronizationPreviewAsync(directory);
                 }
                 else if (largeProjectPreview)
                 {
@@ -312,6 +365,10 @@ public partial class App : System.Windows.Application
                 {
                     await window.RenderExplorerPreviewAsync(directory, Path.GetFullPath(e.Args[2]));
                 }
+                else if (recentProjectsPreview)
+                {
+                    await window.RenderRecentProjectsPreviewAsync(directory, Path.GetFullPath(e.Args[2]));
+                }
                 else if (navigationPreview)
                 {
                     await window.RenderNavigationPreviewAsync(directory, Path.GetFullPath(e.Args[2]));
@@ -434,6 +491,11 @@ public partial class App : System.Windows.Application
             {
                 await window.OpenFromCommandLineAsync(lvglProject);
                 await window.ShowLvglPreviewAsync(start: true);
+            }
+            else if (acceptanceWorkbench && e.Args.Length == 4)
+            {
+                await window.OpenFromCommandLineAsync(e.Args[3]);
+                await window.CaptureMon51EntryAsync(data);
             }
             else if (e.Args is ["--open", var project])
             {

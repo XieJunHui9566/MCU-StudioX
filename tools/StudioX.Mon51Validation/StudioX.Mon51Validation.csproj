@@ -1,0 +1,17 @@
+<Project
+  Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+  <ItemGroup>
+    <Content
+      Include="MonitorGuardChecks.py"
+      CopyToOutputDirectory="PreserveNewest" />
+    <Content
+      Include="Fixtures/*"
+      Link="mon51-fixtures/%(Filename)%(Extension)"
+      CopyToOutputDirectory="PreserveNewest" />
+    <ProjectReference
+      Include="../../src/StudioX.Application/StudioX.Application.csproj" />
+  </ItemGroup>
+</Project>

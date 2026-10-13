@@ -19,6 +19,16 @@ internal static class ProcessChecks
 
     internal static async Task RunAsync(string root)
     {
+        foreach (var input in new string?[] { null, "explicit-tool-input" })
+        {
+            var result = await new ProcessRunner().RunAsync(new(Environment.ProcessPath!, ["--process-input"], root,
+                TimeSpan.FromSeconds(3), StandardInput: input));
+            if (!result.Success || result.StandardOutput.Trim() != "stdin=" + (input ?? ""))
+            {
+                throw new InvalidOperationException("Tool stdin must contain only explicit input and always reach EOF.");
+            }
+        }
+        Console.WriteLine("PASS tools receive independent stdin and EOF, with or without explicit input");
         foreach (var mode in new[] { "observer", "observer-cancel", "cancel", "timeout" })
         {
             var marker = Path.Combine(root, mode + "-processes.json");

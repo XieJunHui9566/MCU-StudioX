@@ -32,7 +32,7 @@ internal static class DevelopmentComponentChecks
             "DEVELOPMENT_COMPONENT_REQUIREMENT", "native pack cannot omit its primary component", check);
         Reject(() => DevelopmentComponentRequirements.ForTemplate(device, template with { DevelopmentComponents = [gcc with { Version = "2.0.0" }] }),
             "DEVELOPMENT_COMPONENT_REQUIREMENT", "template cannot silently override device component version", check);
-        Reject(() => DevelopmentComponentRequirements.ForTemplate(device, template with { DevelopmentComponents = [extra with { Host = "linux-x64" }] }),
+        Reject(() => DevelopmentComponentRequirements.ForTemplate(device, template with { DevelopmentComponents = [extra with { Host = "unknown-x64" }] }),
             "DEVELOPMENT_COMPONENT_REQUIREMENT", "unsupported component platform is rejected at pack validation", check);
         Reject(() => DevelopmentComponentRequirements.ForTemplate(device, template with { DevelopmentComponents = [extra, extra] }),
             "DEVELOPMENT_COMPONENT_REQUIREMENT", "duplicate component declaration in one layer is rejected", check);

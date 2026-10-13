@@ -3,19 +3,17 @@ using StudioX.Foundation;
 
 internal static class KeilCompilationChecks
 {
-    public static async Task RunAsync(string runtime, string templateProject, string output, Action<bool, string> check)
+    public static async Task RunAsync(string runtime, string sourceProject, string output, Action<bool, string> check)
     {
         Directory.CreateDirectory(output);
-        // 单独的移植夹具不能改变后续界面验收使用的普通工程配置。
+        // 缺库拒绝检查会删除数据库；使用独立工程，不能污染后续通用编辑器 UI 的夹具。
         var fixture = Path.Combine(output, "project");
         foreach (var relative in new[] { ".studiox/project.json", "device/manifest.json" })
         {
             var target = Path.Combine(fixture, relative);
             Directory.CreateDirectory(Path.GetDirectoryName(target)!);
-            File.Copy(Path.Combine(templateProject, relative), target);
+            File.Copy(Path.Combine(sourceProject, relative), target);
         }
-        Directory.CreateDirectory(Path.Combine(fixture, "src"));
-        Directory.CreateDirectory(Path.Combine(fixture, "include"));
         Directory.CreateDirectory(Path.Combine(fixture, ".build"));
         Directory.CreateDirectory(Path.Combine(fixture, "User"));
         Directory.CreateDirectory(Path.Combine(fixture, "Original Inc"));

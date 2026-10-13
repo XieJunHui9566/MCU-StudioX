@@ -26,6 +26,10 @@ public sealed partial class BuildService
             var pins = await ProjectDevelopmentComponents.ReadPinsAsync(root, needs, token);
             foreach (var need in needs)
             {
+                if (need.Host != HostPlatform.Current)
+                {
+                    throw new StudioXException("TOOLS_HOST", $"工程要求 {need.Host} 开发环境组件，当前宿主是 {HostPlatform.Current}。请使用明确支持当前宿主的器件包与工程，不会自动改写工具锁。");
+                }
                 progress?.Report($"检查开发环境组件：{need.Id} / {need.Version}…");
                 scope.Leases.Add(ToolUsageLease.Acquire(PathBoundary.Resolve(catalog.RootDirectory, need.Id + "/" + need.Version)));
                 var tools = await catalog.ResolveAsync(need.Id, need.Version, need.CompilerId, token, progress: progress);

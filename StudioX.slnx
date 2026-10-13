@@ -20,10 +20,14 @@
     <Project
       Path="src/StudioX.Desktop/StudioX.Desktop.csproj" />
     <Project
+      Path="src/StudioX.PortableDesktop/StudioX.PortableDesktop.csproj" />
+    <Project
       Path="src/StudioX.Cli/StudioX.Cli.csproj" />
   </Folder>
   <Folder
     Name="/examples/">
+    <Project
+      Path="examples/StudioX.AppearancePlugin/StudioX.AppearancePlugin.csproj" />
     <Project
       Path="examples/StudioX.LabPlugins/StudioX.LabPlugins.csproj" />
     <Project
@@ -38,6 +42,10 @@
   </Folder>
   <Folder
     Name="/validation/">
+    <Project
+      Path="tools/StudioX.AppearanceValidation/StudioX.AppearanceValidation.csproj" />
+    <Project
+      Path="tools/StudioX.PortableValidation/StudioX.PortableValidation.csproj" />
     <Project
       Path="tools/StudioX.LargeProjectValidation/StudioX.LargeProjectValidation.csproj" />
     <Project
@@ -73,6 +81,12 @@
   </Folder>
   <Folder
     Name="/workflow-validation/">
+    <Project
+      Path="tools/StudioX.StcTimingValidation/StudioX.StcTimingValidation.csproj" />
+    <Project
+      Path="tools/StudioX.Mon51Validation/StudioX.Mon51Validation.csproj" />
+    <Project
+      Path="tools/StudioX.SourceRegistrationValidation/StudioX.SourceRegistrationValidation.csproj" />
     <Project
       Path="tools/StudioX.SecurityValidation/StudioX.SecurityValidation.csproj" />
     <Project

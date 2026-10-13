@@ -76,6 +76,8 @@ bool RejectsSkillPath(Action action)
     catch (StudioXException) { return true; }
 }
 
+await McpOperationChecks.RunAsync(Check);
+
 try
 {
     var project = Path.Combine(root, "project");

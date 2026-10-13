@@ -13,11 +13,20 @@ internal sealed class EditorDocumentSynchronizer(
     {
         if (string.Equals(disk.DiskHash, session.Source.DiskHash, StringComparison.Ordinal))
         {
+            session.Source = disk;
+            session.DiskConflict = null;
+            refreshHeader(session);
             return EditorDiskSyncResult.Unchanged;
         }
 
         if (session.IsDirty)
         {
+            session.Source = session.Source with
+            {
+                IsMissing = false
+            };
+            session.DiskConflict = "磁盘文件已变化，未保存内容已保留；请核对磁盘与编辑内容后再保存。";
+            refreshHeader(session);
             return EditorDiskSyncResult.UnsavedChangesPreserved;
         }
 
@@ -35,6 +44,7 @@ internal sealed class EditorDocumentSynchronizer(
         try
         {
             session.Source = disk;
+            session.DiskConflict = null;
             session.Buffer.Text = disk.Text;
             // 磁盘变化使旧撤销基线失效，继续撤销可能把 AI 已写入的代码重新写成旧内容。
             session.Buffer.UndoStack.ClearAll();
@@ -54,5 +64,15 @@ internal sealed class EditorDocumentSynchronizer(
         }
 
         return EditorDiskSyncResult.Updated;
+    }
+
+    public void PreserveUnavailable(EditorDocumentSession session, bool missing, string diagnostic)
+    {
+        session.Source = session.Source with
+        {
+            IsMissing = missing
+        };
+        session.DiskConflict = diagnostic;
+        refreshHeader(session);
     }
 }

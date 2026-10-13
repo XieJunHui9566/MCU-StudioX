@@ -77,7 +77,7 @@ public sealed class DebugMargin : AbstractMargin, IBackgroundRenderer
             if (bp is not null)
             {
                 var color = new SolidColorBrush(bp.LogMessage is not null ? Color.FromRgb(65, 164, 244) : bp.Temporary || bp.SessionOnly ? Color.FromRgb(239, 170, 66) : Color.FromRgb(242, 89, 100));
-                var fill = bp.Enabled && (bp.Verified || bp.Message is null) ? color : Brushes.Transparent;
+                var fill = bp.Enabled && bp.Verified ? color : Brushes.Transparent;
                 var pen = new Pen(bp.Enabled ? color : Brushes.Gray, 1.6);
                 if (bp.LogMessage is not null)
                 {

@@ -30,6 +30,7 @@ internal sealed class McpSessionContext
     {
         get;
     }
+    internal McpOperationTracker Operations { get; } = new();
     internal Editing.AgentEditorSession? AgentEditor
     {
         get;

@@ -79,14 +79,10 @@ public partial class MainWindow
             if (copied || directoryCreated)
             {
                 // 目录与外部库可能包含二进制资源；刷新工程树和语言索引即可。
-                await RefreshProjectTreeAsync(path);
-                Status.Text = copied ? $"AI 已复制 {path} 到工程，工程树已更新。"
-                    : $"AI 已创建目录 {path}，工程树已更新。";
-                try
-                {
-                    await RefreshExplorerLanguageAsync(CancellationToken.None);
-                }
-                catch (Exception ex) { Log("AI 复制后语言服务刷新失败：" + ex); }
+                await SynchronizeProjectFilesAsync(new(project, 0,
+                    [new(path, StudioX.Application.Editing.ProjectFileChangeKind.Created)]));
+                Status.Text = copied ? $"AI 已复制 {path} 到工程，工程文件已同步。"
+                    : $"AI 已创建目录 {path}，工程文件已同步。";
             }
             else
             {
@@ -110,36 +106,33 @@ public partial class MainWindow
     private async Task SyncAiEditorAfterWriteAsync(string project, int generation,
         string path, bool created)
     {
-        var disk = await services.Files.ReadAsync(project, path);
         if (!IsCurrentAiEditorProject(project, generation))
         {
             return;
         }
-
-        if (FindEditor(path) is { } session)
+        var review = await SynchronizeProjectFilesAsync(new(project, 0,
+            [new(path, created ? StudioX.Application.Editing.ProjectFileChangeKind.Created : StudioX.Application.Editing.ProjectFileChangeKind.Changed)]));
+        if (!IsCurrentAiEditorProject(project, generation))
         {
-            if (EditorSynchronizer.Apply(session, disk) == EditorDiskSyncResult.UnsavedChangesPreserved)
+            return;
+        }
+        if (created && FindEditor(path) is null)
+        {
+            var disk = await services.Files.ReadAsync(project, path);
+            if (IsCurrentAiEditorProject(project, generation))
             {
-                AppendAiTranscript("IDE", $"{path} 已由 AI 写入磁盘，但编辑器有未保存修改。当前缓冲区已保留；请核对两份内容后再保存。");
-                Status.Text = $"{path}：磁盘文件已变化，编辑器中的未保存修改已保留。";
-                return;
+                ShowSource(disk);
             }
         }
-        else if (created)
+        if (review)
         {
-            // 新文件直接显示在源码标签，用户无需到资源树中再打开一次。
-            ShowSource(disk);
+            AppendAiTranscript("IDE", $"{path} 已写入磁盘，冲突的编辑内容已保留，请核对带标记的标签。");
         }
-
-        await RefreshProjectTreeAsync(created ? path : null);
-        Status.Text = $"AI 已写入 {path}，编辑器和工程树已更新。";
-        try
+        else
         {
-            await RefreshExplorerLanguageAsync(CancellationToken.None);
+            Status.Text = $"AI 已写入 {path}，工程文件已同步。";
         }
-        catch (Exception ex) { Log("AI 写入后语言服务刷新失败：" + ex); }
     }
-
     private async Task<bool> RefreshAiWorkspaceAfterToolsAsync(string project, AiAgentTurn turn, int generation)
     {
         var changedWorkspace = turn.ProtocolMessages?.Any(message =>
@@ -148,47 +141,10 @@ public partial class MainWindow
         {
             return false;
         }
-        var needsReview = false;
-        foreach (var session in editorDocuments.ToArray())
+        if (!IsCurrentAiEditorProject(project, generation))
         {
-            if (generation != aiProjectGeneration ||
-                !string.Equals(projectDirectory, project, StringComparison.OrdinalIgnoreCase))
-            {
-                return needsReview;
-            }
-            SourceDocument disk;
-            try
-            {
-                disk = await services.Files.ReadAsync(project, session.Source.RelativePath);
-            }
-            catch (Exception ex)
-            {
-                Log("AI 工具操作后刷新编辑器失败：" + session.Source.RelativePath + "：" + ex.Message);
-                needsReview = true;
-                continue;
-            }
-            if (generation != aiProjectGeneration ||
-                !string.Equals(projectDirectory, project, StringComparison.OrdinalIgnoreCase))
-            {
-                return needsReview;
-            }
-            if (EditorSynchronizer.Apply(session, disk) == EditorDiskSyncResult.UnsavedChangesPreserved)
-            {
-                needsReview = true;
-            }
+            return false;
         }
-        if (generation != aiProjectGeneration ||
-            !string.Equals(projectDirectory, project, StringComparison.OrdinalIgnoreCase))
-        {
-            return needsReview;
-        }
-        await RefreshProjectTreeAsync();
-        try
-        {
-            await RefreshExplorerLanguageAsync(CancellationToken.None);
-        }
-        catch (Exception ex) { Log("AI 工具操作后语言服务刷新失败：" + ex); }
-        return needsReview;
+        return await ResynchronizeProjectFilesAsync();
     }
-
 }

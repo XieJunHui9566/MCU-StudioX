@@ -8,6 +8,7 @@ public partial class MainWindow
 {
     private TabItem? troubleshootingTab;
     private string lastFailure = "";
+    private string? buildFailureProject;
     private static string FailureDiagnostic(Exception error) => error is StudioX.Foundation.StudioXException studio
         ? studio.Code + "\n" + error : error.ToString();
     private Task ShowToolEnvironmentAsync() => ShowToolManagementAsync();
@@ -25,9 +26,10 @@ public partial class MainWindow
         ShowTroubleshooting(lastFailure);
         return Task.CompletedTask;
     }
-    private void ShowTroubleshooting(string diagnostic, string? category = null)
+    private void ShowTroubleshooting(string diagnostic, string? category = null, bool buildFailure = false)
     {
         lastFailure = diagnostic;
+        buildFailureProject = buildFailure ? projectDirectory : null;
         var advice = TroubleshootingService.Explain(category ?? diagnostic);
         var root = new DockPanel { Margin = new(18) };
         var header = new StackPanel();
@@ -43,7 +45,7 @@ public partial class MainWindow
         foreach (var (title, sample) in new[] { ("工具缺失", "TOOLSET_MISSING"), ("头文件缺失", "file not found"), ("端口占用", "port is busy"), ("连接失败", "调试连接失败"), ("文件冲突", "EDITOR_FILE_CHANGED") })
         {
             var button = new Button { Content = title, Margin = new(0, 0, 8, 0) };
-            button.Click += (_, _) => ShowTroubleshooting(diagnostic, sample);
+            button.Click += (_, _) => ShowTroubleshooting(diagnostic, sample, buildFailure);
             categories.Children.Add(button);
         }
         header.Children.Add(categories);
@@ -66,7 +68,39 @@ public partial class MainWindow
         else
         {
             troubleshootingTab.Content = root;
+            troubleshootingTab.Header = CreateTabHeader(troubleshootingTab, new TextBlock { Text = "故障处理" });
         }
         ShowDocument(troubleshootingTab);
+    }
+
+    private void ResolveBuildTroubleshooting(string directory)
+    {
+        // 只解除同一工程的构建故障；编译成功不能替串口、连接或文件冲突作验收。
+        if (troubleshootingTab is null || buildFailureProject is null ||
+            !string.Equals(buildFailureProject, directory, StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+        var diagnostic = lastFailure;
+        lastFailure = "";
+        buildFailureProject = null;
+        var root = new DockPanel { Margin = new(18) };
+        var status = new StackPanel { Margin = new(0, 0, 0, 16) };
+        DockPanel.SetDock(status, Dock.Top);
+        status.Children.Add(new TextBlock { Text = "本次编译已成功", FontSize = 22, Margin = new(0, 0, 0, 10) });
+        status.Children.Add(new TextBlock { Text = "下方保留上一轮构建诊断供查阅。当前构建结果见构建输出与问题列表。", TextWrapping = TextWrapping.Wrap });
+        root.Children.Add(status);
+        var raw = new TextBox
+        {
+            Text = diagnostic,
+            IsReadOnly = true,
+            TextWrapping = TextWrapping.Wrap,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            FontFamily = new("Consolas")
+        };
+        System.Windows.Automation.AutomationProperties.SetName(raw, "历史构建诊断");
+        root.Children.Add(raw);
+        troubleshootingTab.Content = root;
+        troubleshootingTab.Header = CreateTabHeader(troubleshootingTab, new TextBlock { Text = "历史构建诊断" });
     }
 }

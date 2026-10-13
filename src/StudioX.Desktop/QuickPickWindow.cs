@@ -78,6 +78,7 @@ internal sealed class QuickPickWindow : Window
             DialogResult = true;
         }
     }
+    internal Task RefreshResultsAsync() => RefreshAsync();
     private async Task RefreshAsync()
     {
         cancellation?.Cancel();

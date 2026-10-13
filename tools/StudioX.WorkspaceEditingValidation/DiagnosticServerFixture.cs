@@ -21,6 +21,11 @@ internal static class DiagnosticServerFixture
         async Task Publish(string uri)
         {
             var (version, text) = documents[uri];
+            if (text.Contains("FAKE_INCLUDE_LOG", StringComparison.Ordinal))
+            {
+                await Console.Error.WriteLineAsync("clangd: IncludeCleaner: Failed to get an entry for resolved path L: no such file or directory");
+                await Console.Error.WriteLineAsync("clangd: IncludeCleaner: Failed to get an entry for resolved path LED: no such file or directory");
+            }
             var offset = text.IndexOf("FAKE_REAL_ERROR", StringComparison.Ordinal);
             object Error(string message, object? range = null) => new
             {

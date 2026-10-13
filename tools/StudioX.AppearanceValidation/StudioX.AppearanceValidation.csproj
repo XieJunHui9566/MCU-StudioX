@@ -1,0 +1,16 @@
+<Project
+  Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+  <ItemGroup>
+    <Content
+      Include="../../examples/StudioX.AppearancePlugin/assets/*.png"
+      Link="theme-fixtures/%(Filename)%(Extension)"
+      CopyToOutputDirectory="PreserveNewest" />
+    <ProjectReference
+      Include="../../src/StudioX.Application/StudioX.Application.csproj" />
+    <ProjectReference
+      Include="../../examples/StudioX.AppearancePlugin/StudioX.AppearancePlugin.csproj" />
+  </ItemGroup>
+</Project>

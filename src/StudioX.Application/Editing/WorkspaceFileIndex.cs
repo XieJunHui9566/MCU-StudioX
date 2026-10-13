@@ -4,8 +4,14 @@ namespace StudioX.Application.Editing;
 public sealed class WorkspaceFileIndex
 {
     private readonly string[] paths;
-    internal WorkspaceFileIndex(string[] paths) => this.paths = paths;
+    private readonly HashSet<string> knownPaths;
+    internal WorkspaceFileIndex(string[] paths)
+    {
+        this.paths = paths;
+        knownPaths = new(paths, StringComparer.OrdinalIgnoreCase);
+    }
     public int Count => paths.Length;
+    internal bool Contains(string path) => knownPaths.Contains(path);
     public Task<IReadOnlyList<string>> SearchAsync(string query, CancellationToken token = default)
         => Task.Run<IReadOnlyList<string>>(() =>
         {

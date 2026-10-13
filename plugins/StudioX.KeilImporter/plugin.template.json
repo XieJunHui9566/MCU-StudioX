@@ -1,0 +1,21 @@
+{
+  "formatVersion": 1,
+  "apiVersion": 2,
+  "id": "studiox.keil-importer",
+  "version": "0.1.6",
+  "scope": "application",
+  "displayName": "Keil5 工程移植",
+  "description": "读取现有 STM32 Keil5 Target 的源码、头文件路径和宏，自动配置 CMake 并验证编译，保留原目录和资源；原工程不动。需要信任插件的文件系统与工具执行。",
+  "kind": "dotnet",
+  "entryAssembly": "StudioX.KeilImporter.dll",
+  "entryType": "StudioX.KeilImporter.KeilImporterPlugin",
+  "capabilities": ["commands", "panels"],
+  "hostTools": [],
+  "activity": {
+    "version": 1,
+    "title": "Keil5 移植",
+    "tooltip": "将现有 STM32 Keil5 工程移植到 StudioX，保留原工程内容",
+    "icon": { "strokes": [[3,3,11,3,11,10,3,10,3,3],[13,14,21,14,21,21,13,21,13,14],[9,14,15,8],[11,8,15,8,15,12]] }
+  },
+  "sha256": {}
+}

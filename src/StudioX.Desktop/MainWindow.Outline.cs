@@ -129,7 +129,7 @@ public partial class MainWindow
             {
                 OutlineStatus.Text = "文件结构暂不可用，编辑或重新展开后重试";
                 OutlineStatus.ToolTip = ex.Message;
-                Log("文件结构：" + ex);
+                await RecordAnalysisFailureAsync("文件结构", ex);
             }
         }
         finally
@@ -335,7 +335,7 @@ public partial class MainWindow
             {
                 item.Items.Clear();
                 item.Items.Add(new TreeViewItem { Header = "局部变量暂不可用", ToolTip = ex.Message, IsEnabled = false });
-                Log("局部变量：" + ex);
+                await RecordAnalysisFailureAsync("局部变量", ex);
                 item.Expanded += OutlineFunction_Expanded;
             }
         }

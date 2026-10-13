@@ -279,9 +279,17 @@ if (args.Length == 3)
         "real MCP download requests all image hashes and respects denied authorization before hardware");
     var info = await mcp.CallToolAsync("project_info", "{}");
     var config = await mcp.CallToolAsync("project_read_file", "{\"path\":\"sdkconfig\",\"startLine\":1,\"maxLines\":20}");
-    Check(info.Contains("esp32c3", StringComparison.Ordinal) && config.Contains("sdkconfig", StringComparison.Ordinal) &&
+    Check(info.Contains(preview.Layout.Target, StringComparison.Ordinal) && config.Contains("sdkconfig", StringComparison.Ordinal) &&
         !config.Contains("MCP_PATH", StringComparison.Ordinal), "MCP exposes exact SDK identity and allows bounded sdkconfig read");
-    var create = await mcp.CallToolAsync("project_create_file", "{\"path\":\"partitions.csv\",\"content\":\"# Name, Type, SubType, Offset, Size\\n\"}");
+    var partitions = Path.Combine(project, "partitions.csv");
+    var create = File.Exists(partitions)
+        ? await mcp.CallToolAsync("project_edit_file", JsonSerializer.Serialize(new
+        {
+            path = "partitions.csv",
+            originalSha256 = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(await File.ReadAllBytesAsync(partitions))),
+            content = await File.ReadAllTextAsync(partitions) + "\n# denied validation edit\n"
+        }))
+        : await mcp.CallToolAsync("project_create_file", "{\"path\":\"partitions.csv\",\"content\":\"# Name, Type, SubType, Offset, Size\\n\"}");
     Check(create.Contains("MCP_APPROVAL_DENIED", StringComparison.Ordinal) && deny.Requests.Last().Permission == StudioXMcpPermission.FileWrite,
         "MCP native partition config requires FileWrite authorization");
 }

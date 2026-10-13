@@ -164,7 +164,6 @@ if (!$ExcludePlugins)
         id            = 'studiox.sensor-csv';
         version       = '0.1.0';
         displayName   = 'Sensor CSV decoder'
-        description   = '传感器 CSV 数据解码示例：将 temperature,0|1 解析为温度与数字状态。'
         entryAssembly = $dll;
         entryType     = 'StudioX.SampleDecoder.SensorCsvDecoder';
         capabilities  = @('decode')
@@ -188,6 +187,22 @@ if (!$ExcludePlugins)
     }
     $workspaceManifest.sha256 = $workspaceHashes
     $workspaceManifest | ConvertTo-Json -Depth 16 | Set-Content -LiteralPath (Join-Path $workspacePlugin 'plugin.json') -Encoding utf8
+    # 外观目录仍以受校验的独立插件交付；发布阶段只编译和打包，不隐式启用。
+    $appearanceBuild = Join-Path $output 'appearance-plugin-build'
+    $appearanceArguments = @{}
+    if ($BuildArtifactsDirectory)
+    {
+        $appearanceArguments.BuildArtifactsDirectory = $BuildArtifactsDirectory
+    }
+    & (Join-Path $PSScriptRoot 'Build-AppearancePlugin.ps1') -OutputDirectory $appearanceBuild -PackagingCli (Join-Path $runtime 'mcp-host/StudioX.Cli.exe') @appearanceArguments
+    Copy-Item -LiteralPath (Join-Path $appearanceBuild 'studiox.appearance-studio') -Destination (Join-Path $runtime 'plugins') -Recurse
+    # 暂存程序集与归档不属于发行载荷，仅保留实际插件目录。
+    $appearanceBuild = [IO.Path]::GetFullPath($appearanceBuild)
+    if (!$appearanceBuild.StartsWith($output.TrimEnd('\') + '\', [StringComparison]::OrdinalIgnoreCase))
+    {
+        throw 'Appearance build directory must remain inside the new publication directory.'
+    }
+    Remove-Item -LiteralPath $appearanceBuild -Recurse -Force
 }
 elseif (Test-Path -LiteralPath (Join-Path $runtime 'plugins'))
 {

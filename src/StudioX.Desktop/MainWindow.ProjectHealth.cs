@@ -147,11 +147,7 @@ public partial class MainWindow
                 await StopLiveDiagnosticsAsync();
                 await SaveAllSourcesAsync(root, token);
                 ClearBuildDiagnostics();
-                ShowBottom(0);
-                var configuration = await services.Builds.ConfigureAsync(root,
-                    new Progress<string>(text => { Status.Text = text; Log(text); }), token,
-                    new Progress<string>(text => Log(text.TrimEnd('\r', '\n'))));
-                Log(configuration.Summary);
+                var configuration = await ConfigureWithOutputAsync(root, token);
                 if (configuration.Success)
                 {
                     await services.Intelligence.StartAsync(root, token);

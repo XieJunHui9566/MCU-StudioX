@@ -44,7 +44,12 @@ public sealed record StcCodeRomLimit(int PhysicalBytes, int MaximumBytes)
         {
             throw new StudioXException("BUILD_SETTINGS", "STC 器件包缺少有效的程序容量。");
         }
-        var options = device.LinkOptions;
+        if (!device.Templates.Any(template => template.Id == project.TemplateId))
+        {
+            throw new StudioXException("BUILD_SETTINGS", "STC 器件包缺少工程指定的模板。");
+        }
+        // RTOS 等模板可扣除自己的保留区；容量校验必须和最终 CMake 使用相同的参数。
+        var options = TemplateResolver.Resolve(device, project.TemplateId).LinkOptions;
         var indexes = Enumerable.Range(0, options.Count).Where(i => options[i] == "--code-size").ToArray();
         if (indexes.Length != 1 || indexes[0] + 1 >= options.Count ||
             !int.TryParse(options[indexes[0] + 1], NumberStyles.None, CultureInfo.InvariantCulture, out var maximum) ||

@@ -13,7 +13,9 @@ public static class TemplateResolver
                 IncludeDirectories = device.IncludeDirectories.Concat(build.IncludeDirectories).Distinct().ToArray(),
                 Sources = device.Sources.Concat(build.Sources).Distinct().ToArray(),
                 CompileOptions = device.CompileOptions.Concat(build.CompileOptions).Distinct().ToArray(),
-                LinkOptions = device.LinkOptions.Concat(build.LinkOptions).Distinct().ToArray()
+                LinkOptions = device.Architecture == "mcs51"
+                    ? SdccLinkOptions.Merge(device.LinkOptions, build.LinkOptions)
+                    : device.LinkOptions.Concat(build.LinkOptions).Distinct().ToArray()
             };
         }
         return device;

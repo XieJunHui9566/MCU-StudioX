@@ -1,7 +1,7 @@
 namespace StudioX.Application;
 
 using StudioX.Foundation;
-public sealed class RecentProjectService(string dataDirectory)
+public sealed partial class RecentProjectService(string dataDirectory, string? runtimeDirectory = null)
 {
     private readonly string path = Path.Combine(dataDirectory, "recent-projects.json");
     private readonly SemaphoreSlim mutationGate = new(1, 1);
@@ -76,7 +76,7 @@ public sealed class RecentProjectService(string dataDirectory)
             }
             var missing = await Task.Run(() =>
             {
-                var result = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                var result = new HashSet<string>(HostPlatform.PathComparer);
                 foreach (var project in existing)
                 {
                     token.ThrowIfCancellationRequested();
@@ -99,7 +99,7 @@ public sealed class RecentProjectService(string dataDirectory)
     }
 
     private static bool SameDirectory(string left, string right) =>
-        string.Equals(left, right, StringComparison.OrdinalIgnoreCase);
+        string.Equals(Path.TrimEndingDirectorySeparator(left), Path.TrimEndingDirectorySeparator(right), HostPlatform.PathComparison);
 
     private static bool IsMissingLocalProject(string directory)
     {

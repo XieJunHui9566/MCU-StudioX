@@ -116,6 +116,11 @@ public sealed class StudioXMcpTools : IAsyncDisposable
             return;
         }
         List<Exception> errors = [];
+        try
+        {
+            await context.Operations.DisposeAsync().ConfigureAwait(false);
+        }
+        catch (Exception error) { errors.Add(error); }
         await pluginGate.WaitAsync().ConfigureAwait(false);
         try
         {

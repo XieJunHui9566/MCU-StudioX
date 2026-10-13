@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <Version>0.1.6</Version>
+    <ProductVersion>0.1.6</ProductVersion>
+    <InformationalVersion>0.1.6</InformationalVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="StudioX.Extensions.Abstractions">
+      <HintPath>$(StudioXSdkPath)</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Compile Remove="Validation/**/*.cs" />
+  </ItemGroup>
+  <Target Name="RequireInstalledSdk" BeforeTargets="ResolveReferences">
+    <Error Condition="!Exists('$(StudioXSdkPath)')" Text="请通过 StudioXSdkPath 指定已安装 IDE 的插件 SDK 契约 DLL。" />
+  </Target>
+</Project>

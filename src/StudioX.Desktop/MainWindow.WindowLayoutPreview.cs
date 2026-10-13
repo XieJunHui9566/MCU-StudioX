@@ -5,6 +5,8 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Interop;
 using System.Windows.Threading;
+using ICSharpCode.AvalonEdit;
+using ICSharpCode.AvalonEdit.Rendering;
 
 public partial class MainWindow
 {
@@ -34,8 +36,15 @@ public partial class MainWindow
                     await Layout();
                     log.ScrollToEnd();
                     await Layout();
-                    var line = log.GetRectFromCharacterIndex(log.Text.Length, true);
-                    var scroll = (ScrollViewer)log.Template.FindName("PART_ContentHost", log);
+                    var view = log.TextArea.TextView;
+                    view.EnsureVisualLines();
+                    var position = new TextViewPosition(log.Document.GetLocation(log.Document.TextLength));
+                    var top = view.GetVisualPosition(position, VisualYPosition.LineTop);
+                    var bottom = view.GetVisualPosition(position, VisualYPosition.LineBottom);
+                    var point = view.TranslatePoint(top - view.ScrollOffset, log);
+                    var line = new Rect(point, new Size(1, bottom.Y - top.Y));
+                    var scroll = log.Template.FindName("PART_ScrollViewer", log) as ScrollViewer
+                        ?? throw new InvalidOperationException("输出滚动容器未创建。");
                     var statusBottom = Status.PointToScreen(new Point(0, Status.ActualHeight)).Y;
                     var logBottom = log.PointToScreen(new Point(0, log.ActualHeight)).Y;
                     var lineBottom = log.PointToScreen(line.BottomLeft).Y;

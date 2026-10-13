@@ -80,6 +80,21 @@ internal static class LiveDiagnosticChecks
             var log = service.DrainLog().ToArray();
             Check(log.Any(l => l.Contains("OUT_OF_RANGE", StringComparison.Ordinal)) && log.Any(l => l.Contains("NULL_RANGE", StringComparison.Ordinal)), "invalid range original JSON and exception are retained");
             await File.WriteAllLinesAsync(Path.Combine(output, "invalid-ranges.log"), log, token);
+            var logged = broken + "// FAKE_INCLUDE_LOG\n";
+            await service.SynchronizeDiagnosticsAsync(path, logged, [new(path, logged)], token);
+            await WaitBatch(service, path, logged);
+            service.RecordAnalysisLog("源码导航：" + new IOException("文件不是 UTF-8 / 带 BOM 的 UTF-16 文本，暂不支持此编码。"));
+            var archived = await service.ReadAnalysisLogAsync(token);
+            Check(archived.Contains("OUT_OF_RANGE", StringComparison.Ordinal) && archived.Contains("NULL_RANGE", StringComparison.Ordinal) &&
+                archived.Contains("ArgumentOutOfRangeException", StringComparison.Ordinal), "malformed diagnostic JSON and exception survive independent log archival");
+            // stderr 与协议回调分别读取，允许后台 stderr 到达后再核对独立持久化。
+            for (var attempt = 0; attempt < 25 && !archived.Contains("IncludeCleaner", StringComparison.Ordinal); attempt++)
+            {
+                await Task.Delay(40, token);
+                archived = await service.ReadAnalysisLogAsync(token);
+            }
+            Check(archived.Contains("IncludeCleaner", StringComparison.Ordinal) && archived.Contains("暂不支持此编码", StringComparison.Ordinal) &&
+                File.Exists(service.AnalysisLogPath), "tool stderr and navigation encoding errors remain available outside build output");
             service.InvalidateDiagnostics();
             var slow = "int probe(void) { return FAKE_REAL_ERROR; } // FAKE_DELAY\n";
             using var cancelled = CancellationTokenSource.CreateLinkedTokenSource(token);

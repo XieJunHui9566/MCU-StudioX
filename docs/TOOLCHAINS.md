@@ -46,6 +46,16 @@ AG32 基础 GPIO / MCU 外设映射使用独立 `agm.pin-mapping/1.0.0`，明确
 
 准备输出默认是 `artifacts/tool-runtime`。Desktop 的 Content 项统一复制到开发输出与发布输出中的 `runtime/toolsets`。发布脚本生成 Windows x64 自包含应用，不要求用户安装 .NET；缺少开发环境组件或 clangd 时拒绝发布。全量运行组件会占用数 GB，安装器压缩与共享组件去重属于后续产品化工作。
 
+### Linux 编译预览
+
+`tools/Prepare-LinuxPreview.py` 读取明确提供的 Arm GNU 15.2.Rel1 官方归档、Ubuntu CMake/Ninja 程序及原始许可证、STM32F407 0.1.3 格式 1 包，生成独立 `linux-x64` 的 `arm.gnu/1.0.0` 完整哈希组件和 `studiox.stm32f407.linux-preview/0.1.3` 测试包。原有 Windows 包、工程与内容锁不会覆盖；预览包沿用原包的 SDK、时钟、内存和模板，仅为编译测试提供明确的 Linux 组件声明。脚本核对归档与输入包哈希，保留原始许可证及来源，并拒绝已有输出目录。
+
+Linux 预览构建也使用 `BuildService`，在校验组件和宿主后建立工程内容锁，再通过参数数组运行组件内 CMake/Ninja/GCC。子进程 PATH 只含组件入口目录及 `/usr/bin`、`/bin`，不修改系统 PATH。CMake/Ninja 来自 Ubuntu 已安装的软件包，当前组件依赖该系统的动态库；尚不是可面向所有发行版再分发的 Linux 工具组件，也没有 Linux 组件自动下载或更新支持。
+
+新建工程需要私有原生 Git。`tools/Prepare-LinuxGitPreview.py --executable /usr/bin/git --core /usr/lib/git-core --share /usr/share/git-core --license /usr/share/doc/git/copyright --version 2.53.0 --runtime <预览 runtime>` 将明确选择的 Git 复制到独立组件目录，核对版本并保存全量哈希、来源和许可证，拒绝覆盖已有 Git。该测试组件仍依赖当前 Ubuntu 动态库，尚不是跨发行版发行资源。Windows 的 Git 目录和启动环境保持既有规则，Linux 使用 `runtime/git/bin/git` 与组件内 `libexec/git-core`，不回退调用系统 Git。当前已验证本地工程初始化；GitHub 凭据与图形协作尚未接入 Linux 工作台。
+
+桌面入口：`StudioX.PortableDesktop --project <StudioX 工程目录> --runtime <组件目录> --data <独立用户数据目录>`。开发构建可使用 `dotnet build src/StudioX.PortableDesktop/StudioX.PortableDesktop.csproj`；软件验收入口为 `tools/StudioX.PortableValidation`，有 `--offline <新输出目录>` 和 `<新输出目录> <runtime> <Linux pack>` 两种模式。Linux 工作台提供导包、新建/打开/关闭工程、文件树、多文档编辑与独立撤销、欢迎页、最近工程、深浅主题、Ctrl+S、全部保存、F7 构建、停止与原始日志。显式 `--validate-workflow <新证据目录>` 仅用于隔离工程，会编辑保存并执行真实构建；硬件操作尚未接入该入口。
+
 工具资料见 `runtime/THIRD-PARTY-NOTICES.txt`、各开发环境组件的 `provenance.json` 和 `licenses/`。当前是本地开发预览资源；正式对外发行还应归档供应商对应源码、构建修改和再分发资料。
 
 沁恒资源单独追加，不覆盖上述开发环境组件：`tools/Prepare-WchToolRuntime.ps1 -WchComponentsDirectory '<MounRiver 的 WCH 组件目录>'`。

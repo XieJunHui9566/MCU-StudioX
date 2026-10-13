@@ -42,7 +42,7 @@ public partial class MainWindow
         Add("复制相对路径", "", (entry, _) => { Clipboard.SetText(entry.RelativePath.Length == 0 ? "." : entry.RelativePath); return Task.CompletedTask; });
         Add("在资源管理器中显示", "", (entry, _) => { services.Files.ShowInExplorer(RequireProject(), entry.RelativePath); return Task.CompletedTask; });
         menu.Items.Add(new Separator());
-        Add("刷新", "F5", (entry, token) => RefreshProjectTreeAsync(entry.RelativePath, token: token));
+        Add("刷新", "F5", async (entry, token) => { await ResynchronizeProjectFilesAsync(token); });
         menu.Opened += (_, _) =>
         {
             if (!explorerMouseContext)
@@ -159,15 +159,19 @@ public partial class MainWindow
     private async Task CreateExplorerEntryCoreAsync(string parent, string name, bool directory, CancellationToken token)
     {
         var path = await services.Files.CreateEntryAsync(RequireProject(), parent, name, directory, token);
-        await RefreshProjectTreeAsync(path, token: token);
+        await SynchronizeProjectFilesAsync(new(RequireProject(), 0,
+            [new(path, StudioX.Application.Editing.ProjectFileChangeKind.Created)]), token);
+        if (await FindProjectNodeAsync(path, token) is { } createdNode)
+        {
+            createdNode.IsSelected = true;
+        }
         if (!directory)
         {
             await OpenSourceAsync(path, token);
         }
-        await RefreshExplorerLanguageAsync(token);
         var sourceFile = Path.GetExtension(path).ToLowerInvariant() is ".c" or ".cpp" or ".cc" or ".cxx" or ".s" or ".asm";
         var logicFile = !directory && currentProjectManifest?.Logic is not null && Path.GetExtension(path).ToLowerInvariant() is ".v" or ".sv" or ".ve";
-        Status.Text = "已新建 " + path + (sourceFile ? " · 源文件需要在 CMakeLists.txt 中添加到目标" : logicFile ? " · 逻辑文件需加入厂商逻辑工程" : "");
+        Status.Text = "已新建 " + path + (sourceFile ? " · 工程与构建 → 源码登记与编译列表可预览加入编译" : logicFile ? " · 逻辑文件需加入厂商逻辑工程" : "");
     }
     private async Task PasteExplorerEntriesAsync(ProjectEntry entry, CancellationToken token)
     {
@@ -178,9 +182,13 @@ public partial class MainWindow
         }
         var sources = Clipboard.GetFileDropList().Cast<string>().ToArray();
         var paths = await services.Files.CopyEntriesAsync(RequireProject(), DestinationFolder(entry), sources, token);
-        await RefreshProjectTreeAsync(paths.LastOrDefault(), token: token);
-        await RefreshExplorerLanguageAsync(token);
-        Status.Text = $"已粘贴 {paths.Count} 项 · 同名文件保留为副本；C/C++ 源文件需加入 CMake" +
+        await SynchronizeProjectFilesAsync(new(RequireProject(), 0,
+            paths.Select(path => new StudioX.Application.Editing.ProjectFileChange(path, StudioX.Application.Editing.ProjectFileChangeKind.Created)).ToArray()), token);
+        if (paths.LastOrDefault() is { } last && await FindProjectNodeAsync(last, token) is { } pastedNode)
+        {
+            pastedNode.IsSelected = true;
+        }
+        Status.Text = $"已粘贴 {paths.Count} 项 · 同名文件保留为副本；可在源码登记与编译列表核对 C/C++ 源码" +
             (currentProjectManifest?.Logic is not null ? "，逻辑源文件需加入厂商逻辑工程" : "");
     }
     private async Task RenameExplorerEntryAsync(ProjectEntry entry, CancellationToken token)
@@ -213,45 +221,13 @@ public partial class MainWindow
             throw new StudioXException("EDITOR_PATH_OPEN", "目标路径已有打开的标签，请先处理该标签中的内容。");
         }
         var renamed = services.Files.RenameEntry(RequireProject(), previous, name);
-        ClearBuildDiagnostics();
-        string Remap(string path) => ProjectFileService.ContainsPath(previous, path) ? renamed + path[previous.Length..] : path;
-        foreach (var session in editorDocuments)
+        await SynchronizeProjectFilesAsync(new(RequireProject(), 0,
+            [new(renamed, StudioX.Application.Editing.ProjectFileChangeKind.Renamed, previous)]), token);
+        if (await FindProjectNodeAsync(renamed, token) is { } node)
         {
-            var path = Remap(session.Source.RelativePath);
-            if (path == session.Source.RelativePath)
-            {
-                continue;
-            }
-            session.Source = session.Source with
-            {
-                RelativePath = path
-            };
-            if (session.Tab.Header is StackPanel { Children.Count: > 0 } row && row.Children[0] is StackPanel { Children.Count: > 0 } label && label.Children[0] is FileIcon icon)
-            {
-                var replacement = new FileIcon { FileName = path, Width = icon.Width, Height = icon.Height, Margin = icon.Margin, VerticalAlignment = icon.VerticalAlignment };
-                label.Children.RemoveAt(0);
-                label.Children.Insert(0, replacement);
-            }
+            node.IsSelected = true;
         }
-        for (var i = 0; i < navigationBack.Count; i++)
-        {
-            navigationBack[i] = navigationBack[i] with
-            {
-                Path = Remap(navigationBack[i].Path)
-            };
-        }
-        for (var i = 0; i < navigationForward.Count; i++)
-        {
-            navigationForward[i] = navigationForward[i] with
-            {
-                Path = Remap(navigationForward[i].Path)
-            };
-        }
-        UpdateEditorHeaders();
-        RefreshActiveEditorMetadata();
-        await RefreshProjectTreeAsync(renamed, previous, token);
-        await RefreshExplorerLanguageAsync(token);
-        Status.Text = "已重命名为 " + renamed + " · 请同步修改 CMake 和 #include 中引用的路径";
+        Status.Text = "已重命名为 " + renamed + " · 可在源码登记与编译列表预览更新路径；#include 需另行核对";
     }
     private void RefreshActiveEditorMetadata()
     {
@@ -274,7 +250,7 @@ public partial class MainWindow
             QueueOutlineRefresh(clear: true);
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }
-        catch (Exception ex) { Log(ex.ToString()); Log("文件操作已完成，语言服务刷新失败；重新打开工程可重试。"); }
+        catch (Exception ex) { await RecordAnalysisFailureAsync("文件操作已完成，语言服务刷新失败；重新打开工程可重试", ex); }
     }
     private async Task<TreeViewItem?> FindProjectNodeAsync(string path, CancellationToken token = default)
     {

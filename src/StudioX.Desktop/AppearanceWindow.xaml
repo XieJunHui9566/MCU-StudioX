@@ -180,7 +180,7 @@
           Text="工作台背景"
           FontWeight="SemiBold" />
         <TextBlock
-          Text="背景覆盖编辑区和工具窗口，控件与文字保持独立。"
+          Text="默认为代码和日志保留纯色底色，可按需开启透明工作区。"
           Foreground="{DynamicResource Muted}"
           FontSize="12"
           Margin="0,7,0,16" />
@@ -215,7 +215,7 @@
             </StackPanel>
           </Button>
           <Button
-            Content="清除"
+            Content="使用纯色主题"
             Click="Clear_Click" />
         </StackPanel>
         <Border
@@ -237,6 +237,13 @@
               TextWrapping="Wrap" />
           </StackPanel>
         </Border>
+        <CheckBox
+          x:Name="OpaqueWorkCheck"
+          Content="代码和日志使用纯色底色（推荐）"
+          IsChecked="True"
+          Checked="Settings_Changed"
+          Unchecked="Settings_Changed"
+          Margin="0,0,0,12" />
         <Grid>
           <Grid.ColumnDefinitions>
             <ColumnDefinition

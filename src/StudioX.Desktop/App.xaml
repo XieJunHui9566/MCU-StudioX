@@ -11,6 +11,11 @@
         <ResourceDictionary
           Source="Assets/Manufacturers/Espressif.xaml" />
       </ResourceDictionary.MergedDictionaries>
+      <FontFamily
+        x:Key="WorkbenchFontFamily">Segoe UI, Microsoft YaHei UI</FontFamily>
+      <system:Double
+        xmlns:system="clr-namespace:System;assembly=mscorlib"
+        x:Key="WorkbenchFontSize">13</system:Double>
       <SolidColorBrush
         x:Key="Background"
         Color="#1E1F22" />
@@ -128,10 +133,10 @@
         TargetType="Window">
         <Setter
           Property="FontFamily"
-          Value="Segoe UI, Microsoft YaHei UI" />
+          Value="{DynamicResource WorkbenchFontFamily}" />
         <Setter
           Property="FontSize"
-          Value="13" />
+          Value="{DynamicResource WorkbenchFontSize}" />
         <Setter
           Property="Foreground"
           Value="{DynamicResource Text}" />
@@ -483,6 +488,7 @@
                   </ToggleButton.Template>
                 </ToggleButton>
                 <ContentPresenter
+                  x:Name="SelectionDisplay"
                   IsHitTestVisible="False"
                   Margin="10,6,30,6"
                   Content="{TemplateBinding SelectionBoxItem}"
@@ -490,6 +496,18 @@
                   ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
                   ContentStringFormat="{TemplateBinding SelectionBoxItemStringFormat}"
                   VerticalAlignment="Center" />
+                <!-- 可编辑选择框必须提供命名输入部件，否则选中项和手输文字不可见。 -->
+                <TextBox
+                  x:Name="PART_EditableTextBox"
+                  Visibility="Collapsed"
+                  Text="{Binding Text, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, RelativeSource={RelativeSource TemplatedParent}}"
+                  IsReadOnly="{TemplateBinding IsReadOnly}"
+                  Background="Transparent"
+                  Foreground="{TemplateBinding Foreground}"
+                  BorderThickness="0"
+                  Padding="0"
+                  Margin="10,6,30,6"
+                  VerticalContentAlignment="Center" />
                 <Path
                   IsHitTestVisible="False"
                   HorizontalAlignment="Right"
@@ -518,6 +536,21 @@
                 </Popup>
               </Grid>
               <ControlTemplate.Triggers>
+                <Trigger
+                  Property="IsEditable"
+                  Value="True">
+                  <Setter
+                    Property="IsTabStop"
+                    Value="False" />
+                  <Setter
+                    TargetName="SelectionDisplay"
+                    Property="Visibility"
+                    Value="Collapsed" />
+                  <Setter
+                    TargetName="PART_EditableTextBox"
+                    Property="Visibility"
+                    Value="Visible" />
+                </Trigger>
                 <Trigger
                   Property="IsEnabled"
                   Value="False">

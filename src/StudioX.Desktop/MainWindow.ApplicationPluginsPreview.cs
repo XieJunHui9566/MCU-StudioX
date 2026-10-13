@@ -175,6 +175,7 @@ public partial class MainWindow
         Height = 1080;
         await Layout();
         Render(this, Path.Combine(directory, "keil-welcome.png"));
+        await CheckPluginProjectLinksAsync(directory, installed.Id, Check, Layout);
         var finalSession = pluginApplication;
         await StopApplicationPluginsAsync();
         Check(!finalSession!.IsPluginRunning(keil.Id) && pluginPanels.Count == 0 && pluginActivities.Count == 0, "退出清理应用宿主及所有入口");

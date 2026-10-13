@@ -4,15 +4,16 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using StudioX.Foundation;
+using StudioX.Packages;
 
 /// <summary>工程级编译覆盖项；默认不改变模板、CMake 或预设中的参数。</summary>
 public sealed record ProjectBuildSettings(int FormatVersion = 1,
     CompilerOptimization Optimization = CompilerOptimization.ProjectDefault,
     CompilerDebugInfo DebugInfo = CompilerDebugInfo.ProjectDefault,
-    int? CodeRomSizeBytes = null)
+    int? CodeRomSizeBytes = null, bool Mon51Profile = false)
 {
     public const string RelativePath = ".studiox/build.json";
-    [JsonIgnore] public bool HasOverrides => Optimization != CompilerOptimization.ProjectDefault || DebugInfo != CompilerDebugInfo.ProjectDefault || CodeRomSizeBytes is not null;
+    [JsonIgnore] public bool HasOverrides => Optimization != CompilerOptimization.ProjectDefault || DebugInfo != CompilerDebugInfo.ProjectDefault || CodeRomSizeBytes is not null || Mon51Profile;
     [JsonIgnore] public string? OptimizationFlag => Optimization == CompilerOptimization.ProjectDefault ? null : "-" + Optimization;
     [JsonIgnore] public string? DebugFlag => DebugInfo switch { CompilerDebugInfo.None => "-g0", CompilerDebugInfo.Standard => "-g2", CompilerDebugInfo.Full => "-g3", _ => null };
     [JsonIgnore] public string[] Flags => new[] { OptimizationFlag, DebugFlag }.OfType<string>().ToArray();
@@ -33,10 +34,14 @@ public sealed record ProjectBuildSettings(int FormatVersion = 1,
     public void ValidateFor(ProjectManifest project)
     {
         Validate();
-        if (project.ToolsetId == "stc.sdcc" && (DebugInfo != CompilerDebugInfo.ProjectDefault ||
+        if (Mon51Profile && (project.ToolsetId != "stc.sdcc" || project.DeviceId != "IAP15F2K61S2" || DebugInfo != CompilerDebugInfo.Standard || CodeRomSizeBytes > 0xdbfd))
+        {
+            throw new StudioXException("BUILD_SETTINGS", "Mon51 V2.5 构建预设仅适用于 IAP15F2K61S2，须启用标准 CDB；用户 CODE 上限不能超过 56317 字节。");
+        }
+        if (project.ToolsetId == "stc.sdcc" && (DebugInfo == CompilerDebugInfo.Full ||
             Optimization is not (CompilerOptimization.ProjectDefault or CompilerOptimization.O0 or CompilerOptimization.Os or CompilerOptimization.O2)))
         {
-            throw new StudioXException("BUILD_SETTINGS", "STC SDCC 仅支持默认、低优化、体积优先与速度优先；当前不提供调试信息设置。");
+            throw new StudioXException("BUILD_SETTINGS", "STC SDCC 支持默认、低优化、体积优先、速度优先及标准 CDB 调试信息；不支持 GCC 宏调试档位。");
         }
         if (project.ToolsetId != "stc.sdcc" && CodeRomSizeBytes is not null)
         {
@@ -44,7 +49,7 @@ public sealed record ProjectBuildSettings(int FormatVersion = 1,
         }
     }
 
-    internal string[] FlagsFor(ProjectManifest project) => project.ToolsetId == "stc.sdcc" ? Optimization switch
+    private string[] StcOptimizationFlags => Optimization switch
     {
         CompilerOptimization.ProjectDefault => [],
         // SDCC 没有 GCC -O0 等价开关；此档仅关闭列出的优化过程。
@@ -52,7 +57,9 @@ public sealed record ProjectBuildSettings(int FormatVersion = 1,
         CompilerOptimization.Os => ["--opt-code-size"],
         CompilerOptimization.O2 => ["--opt-code-speed"],
         _ => throw new StudioXException("BUILD_SETTINGS", "不支持的 STC SDCC 优化档位。")
-    } : Flags;
+    };
+    internal string[] FlagsFor(ProjectManifest project) => project.ToolsetId == "stc.sdcc"
+        ? StcOptimizationFlags.Concat(DebugInfo == CompilerDebugInfo.Standard ? new[] { "--debug" } : []).Concat(Mon51Profile ? new[] { "--xram-size", "1024", "-DSTUDIOX_MON51_DEBUG=1" } : []).ToArray() : Flags;
 
     internal string SummaryFor(ProjectManifest project) => project.ToolsetId == "stc.sdcc"
         ? (Optimization switch
@@ -62,7 +69,8 @@ public sealed record ProjectBuildSettings(int FormatVersion = 1,
             CompilerOptimization.Os => "SDCC 体积优先（--opt-code-size）",
             CompilerOptimization.O2 => "SDCC 速度优先（--opt-code-speed）",
             _ => throw new StudioXException("BUILD_SETTINGS", "不支持的 STC SDCC 优化档位。")
-        }) + (CodeRomSizeBytes is { } bytes ? $"；代码 ROM 上限 {bytes} 字节" : "；代码 ROM 沿用器件包上限")
+        }) + (DebugInfo == CompilerDebugInfo.Standard ? "；标准 CDB（--debug）" : "")
+        + (Mon51Profile ? "；Mon51 用户 CODE ≤56317 字节 / XDATA ≤1024 字节" : CodeRomSizeBytes is { } bytes ? $"；代码 ROM 上限 {bytes} 字节" : "；代码 ROM 沿用器件包上限")
         : Summary;
 
     public static async Task<ProjectBuildSettings> ReadAsync(string root, CancellationToken token = default)
@@ -83,8 +91,12 @@ public sealed record ProjectBuildSettings(int FormatVersion = 1,
         var flags = string.Join(' ', stcClockHz is { } hz
             ? FlagsFor(project).Append("-DSTUDIOX_CLOCK_HZ=" + hz.ToString(System.Globalization.CultureInfo.InvariantCulture) + "UL")
             : FlagsFor(project));
-        var linkFlags = project.ToolsetId == "stc.sdcc" && CodeRomSizeBytes is { } size
-            ? "--code-size " + size.ToString(System.Globalization.CultureInfo.InvariantCulture) : "";
+        var linkFlags = project.ToolsetId == "stc.sdcc" ? string.Join(' ', new[]
+        {
+            Mon51Profile ? "--code-size " + Math.Min(CodeRomSizeBytes ?? 0xdbfd, 0xdbfd).ToString(System.Globalization.CultureInfo.InvariantCulture) : CodeRomSizeBytes is { } size ? "--code-size " + size.ToString(System.Globalization.CultureInfo.InvariantCulture) : "",
+            DebugInfo == CompilerDebugInfo.Standard ? "--debug" : "",
+            Mon51Profile ? "--xram-size " + (await Mon51XramSizeAsync(build, project, token)).ToString(System.Globalization.CultureInfo.InvariantCulture) : ""
+        }.Where(s => s.Length > 0)) : "";
         // <FLAGS> 包含目录、目标、接口库及源文件选项；在其后追加才能覆盖模板中的 -Os/-Og。
         // 不重写工程 CMake、预设或 SDK；对特殊自定义规则在生成后检查实际编译命令。
         var script = $$$"""
@@ -122,6 +134,30 @@ public sealed record ProjectBuildSettings(int FormatVersion = 1,
         return bootstrap;
     }
 
+    private static async Task<int> Mon51XramSizeAsync(string build, ProjectManifest project, CancellationToken token)
+    {
+        var pack = await JsonStore.ReadAsync<PackManifest>(Path.Combine(Path.GetDirectoryName(build)!, "device", "manifest.json"), token);
+        var device = pack.Devices.Single(d => d.Id == project.DeviceId);
+        var options = TemplateResolver.Resolve(device, project.TemplateId).LinkOptions.ToList();
+        int Read(string option)
+        {
+            var index = options.IndexOf(option);
+            if (index < 0 || index + 1 >= options.Count || !int.TryParse(options[index + 1], out var value))
+            {
+                throw new StudioXException("BUILD_SETTINGS", "Mon51 模板缺少有效的 " + option);
+            }
+            return value;
+        }
+        var origin = Read("--xram-loc");
+        var bytes = Read("--xram-size");
+        if (origin < 0 || origin >= 1024 || bytes <= 0)
+        {
+            throw new StudioXException("BUILD_SETTINGS", "Mon51 用户 XRAM 必须位于 0000..03FF。");
+        }
+        // 某些模板保留地址 0 供 NULL 使用；不能把 1 起始的 1023 字节扩成 1024 字节。
+        return Math.Min(bytes, 1024 - origin);
+    }
+
     internal async Task VerifyCommandsAsync(string build, ProjectManifest project, CancellationToken token, int? stcClockHz = null)
     {
         if (!HasOverrides && stcClockHz is null)
@@ -145,7 +181,7 @@ public sealed record ProjectBuildSettings(int FormatVersion = 1,
                 var flags = FlagsFor(project);
                 if (flags.Any(flag => !arguments.Contains(flag, StringComparer.Ordinal)) ||
                     Optimization is CompilerOptimization.Os or CompilerOptimization.O2 &&
-                    arguments.LastOrDefault(arg => arg is "--opt-code-size" or "--opt-code-speed") != flags[^1])
+                    arguments.LastOrDefault(arg => arg is "--opt-code-size" or "--opt-code-speed") != flags.First(arg => arg is "--opt-code-size" or "--opt-code-speed"))
                 {
                     throw new StudioXException("BUILD_SETTINGS_NOT_APPLIED", "SDCC 编译命令未应用所选优化档位：" + file);
                 }

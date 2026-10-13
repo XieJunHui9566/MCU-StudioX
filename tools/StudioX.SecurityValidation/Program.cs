@@ -11,6 +11,11 @@ if (args is ["--process-child"])
     await Task.Delay(Timeout.Infinite);
     return 0;
 }
+if (args is ["--process-input"])
+{
+    Console.WriteLine("stdin=" + await Console.In.ReadToEndAsync());
+    return 0;
+}
 if (args is not [var destination])
 {
     throw new ArgumentException("Usage: SecurityValidation <new-output>");
@@ -26,6 +31,7 @@ var success = true;
 foreach (var (name, run) in new (string, Func<Task>)[]
 {
     ("windows-path-aliases", () => PathChecks.RunAsync(root)),
+    ("windows-directory-sharing", () => DirectoryMoveChecks.RunAsync(root)),
     ("pack-path-boundaries", () => PackChecks.RunAsync(root)),
     ("process-failure-cleanup", () => ProcessChecks.RunAsync(root)),
     ("plugin-protocol-backpressure", () => ProtocolChecks.RunAsync())

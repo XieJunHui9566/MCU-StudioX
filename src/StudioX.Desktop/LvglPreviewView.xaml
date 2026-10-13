@@ -371,19 +371,21 @@
           Header="构建与运行诊断"
           Foreground="{DynamicResource Text}"
           IsExpanded="True">
-          <TextBox
-            x:Name="DiagnosticLog"
-            IsReadOnly="True"
-            AcceptsReturn="True"
-            FontFamily="Cascadia Mono, Consolas"
-            FontSize="11"
-            MinHeight="130"
-            MaxHeight="290"
-            VerticalScrollBarVisibility="Auto"
-            HorizontalScrollBarVisibility="Auto"
-            TextWrapping="NoWrap"
-            Margin="0,8,0,0"
-            AutomationProperties.Name="LVGL 预览构建与运行日志" />
+          <StackPanel>
+            <local:OutputLogView
+              x:Name="DiagnosticLog"
+              IsReadOnly="True"
+              Foreground="{DynamicResource Text}"
+              Background="{DynamicResource EditorSurface}"
+              FontFamily="Cascadia Mono, Consolas"
+              FontSize="11"
+              MinHeight="130"
+              MaxHeight="290"
+              VerticalScrollBarVisibility="Auto"
+              HorizontalScrollBarVisibility="Auto"
+              Margin="0,8,0,0"
+              AutomationProperties.Name="LVGL 预览构建与运行日志" />
+          </StackPanel>
         </Expander>
       </StackPanel>
     </ScrollViewer>

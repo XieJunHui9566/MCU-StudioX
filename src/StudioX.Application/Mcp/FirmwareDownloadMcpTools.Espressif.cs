@@ -62,16 +62,31 @@ internal sealed partial class FirmwareDownloadMcpTools
             StudioXMcpPermission.FirmwareDownload, token).ConfigureAwait(false);
         Context.Debug.EnsureCanStart();
         await RequireSavedDocumentsAsync().ConfigureAwait(false);
-        var report = await Services.EspressifDownloads.DownloadApprovedAsync(Project, settings, deviceId, layoutSha256,
-            token: token).ConfigureAwait(false);
-        return JsonSerializer.Serialize(new
+        using var operation = Context.Operations.Start("firmware_download", TimeSpan.FromMinutes(10), token);
+        try
         {
-            report.Success,
-            report.ExitCode,
-            report.TimedOut,
-            report.LogPath,
-            log = LimitOutput(report.Log),
-            message = report.Summary
-        });
+            operation.Progress.Report("下载预检、写入与独立校验");
+            var report = await Services.EspressifDownloads.DownloadApprovedAsync(Project, settings, deviceId, layoutSha256,
+                operation.Output, operation.Token).ConfigureAwait(false);
+            operation.Complete(report.Success, report.ExitCode, report.LogPath, report.TimedOut);
+            return JsonSerializer.Serialize(new
+            {
+                report.Success,
+                report.ExitCode,
+                report.TimedOut,
+                report.LogPath,
+                log = LimitOutput(report.Log),
+                message = report.Summary
+            });
+        }
+        catch (OperationCanceledException error) when (operation.Token.IsCancellationRequested)
+        {
+            var interruption = operation.Interrupted(error);
+            if (ReferenceEquals(interruption, error))
+            {
+                throw;
+            }
+            throw interruption;
+        }
     }
 }

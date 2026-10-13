@@ -110,6 +110,7 @@ public partial class MainWindow
             {
                 return;
             }
+            await PrunePackVersionsAsync(cancellation.Token);
             await RefreshPacksAsync(cancellation.Token, preserveSelection: true);
             var summary = $"GitHub 器件包同步完成：新增 {result.Imported}，已存在 {result.Skipped}，失败 {result.Failures.Count}。";
             PackSyncStatus.Text = summary;

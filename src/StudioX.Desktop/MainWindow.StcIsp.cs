@@ -115,7 +115,7 @@ public partial class MainWindow
                 (tool.ProgrammerExecutable is null ? "" : "\n" + tool.ProgrammerExecutable);
             UpdateStcClockHelp();
             StcIspStatus.Text = settings.Port.Length == 0 ? "请选择 COM 串口并保存；下载前还会核对芯片型号与固件。" :
-                "设置已加载。下载前将显示芯片型号、固件摘要和时钟选项供确认。";
+                "设置已加载。点击下载后自动保存、编译并下载；目标、固件和时钟信息显示在输出栏。";
         }
         finally { applyingStcIsp = false; }
         UpdateStcIspControls();
@@ -281,6 +281,7 @@ public partial class MainWindow
         }
         catch (StudioXException ex) { await ShowProjectDetailsAsync(); StcIspStatus.Text = ex.Message; return; }
         await SaveAllSourcesAsync(root, token);
+        ApplyBuildSettings(await services.StcBuilds.PrepareDownloadAsync(root, token));
         ShowBottom(0);
         BuildLog.Clear();
         var build = await BuildWithSummaryAsync(root, token);
@@ -301,34 +302,35 @@ public partial class MainWindow
             StcClockMode.ExternalCrystal => $"外部晶振 · {settings.ClockFrequencyHz / 1000000m:0.######} MHz（必须实装）",
             _ => "保留当前时钟来源；内部 RC 可能重新校准，频率略变"
         };
-        var message = $"目标型号：{prepared.ExpectedModel}\n串口：{prepared.Port}\n固件：{prepared.SourceImage}\nSHA-256：{prepared.ImageSha256}\n时钟：{clock}\n\n串口 ISP 会擦除并覆盖芯片现有程序，且无法读回旧程序备份。下载开始等待后，请按开发板的下载/上电按钮。\n\n确认写入这份固件吗？";
-        if (settings.ClockMode == StcClockMode.ExternalCrystal &&
-            prepared.ExpectedModel.Equals("IAP15F2K61S2", StringComparison.OrdinalIgnoreCase))
+        token.ThrowIfCancellationRequested();
+        if (closing || closed || projectDirectory != root)
         {
-            message += "\n\n注意：你先前使用的赛点 V3.1 开发板没有 MCU 外部晶振。如果仍是这块板，请取消下载并选择内部 RC。";
-        }
-        if (MessageBox.Show(this, message, "确认 STC 串口下载", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No) != MessageBoxResult.Yes)
-        {
-            Status.Text = "已取消 STC 下载，未打开串口。";
             return;
         }
-        Status.Text = "等待开发板进入 STC ISP…";
-        StcIspReport result;
-        try
+        EnsureNoActiveDebug();
+        if (editorDocuments.Any(document => document.IsDirty))
         {
-            result = await services.StcIsp.DownloadPreparedAsync(prepared,
-                new Progress<string>(line => Log(line.TrimEnd('\r', '\n'))), token);
-        }
-        catch (OperationCanceledException) when (token.IsCancellationRequested)
-        {
-            Status.Text = "STC 下载已取消；若已开始擦写，板内程序可能不完整。";
+            Status.Text = "编译期间出现未保存编辑，请保存后重新下载。";
             Log(Status.Text);
             return;
         }
-        await Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Background);
+        foreach (var line in new[] { $"目标型号：{prepared.ExpectedModel} · 串口：{prepared.Port}", $"固件：{prepared.SourceImage}",
+            $"SHA-256：{prepared.ImageSha256}", $"时钟：{clock}",
+            "串口 ISP 将擦除并覆盖现有程序。工具开始等待后，请按开发板电源/下载键；完成后正常运行。",
+            "普通 ISP 可能覆盖仿真监控；后续调试无法连接时，请在 IDE 中重新制作仿真芯片并重新上电。" })
+        {
+            Log(line);
+        }
+        Status.Text = "等待开发板进入 STC ISP…";
+        await DownloadStcWithOutputAsync(prepared, token);
+    }
+
+    private void PresentStcDownloadResult(StcIspPreparation prepared, StcIspReport result)
+    {
         Log("下载日志：" + result.LogPath);
-        Log(result.Summary);
-        Status.Text = result.Summary;
+        Status.Text = result.Success ? $"STC 下载成功 · {prepared.ExpectedModel} · {prepared.Port}" : result.Summary;
+        StcIspStatus.Text = result.Summary;
+        FinishBuildOutput(result.Summary, result.Success);
     }
 
     private void FocusStcSettings()

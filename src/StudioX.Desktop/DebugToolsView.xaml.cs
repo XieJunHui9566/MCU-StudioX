@@ -7,6 +7,15 @@ using System.Windows.Input;
 using StudioX.Engine.Debugging;
 public partial class DebugToolsView : UserControl
 {
+    private bool mon51Mode;
+    public void ConfigureMon51()
+    {
+        mon51Mode = true;
+        WatchExpression.Text = "$PC";
+        ((TabItem)DetailTabs.Items[3]).Visibility = Visibility.Collapsed;
+        RtosTab.Visibility = Visibility.Collapsed;
+    }
+    public void SetMon51StackHint(string text) => Frames.ToolTip = text;
     private DebugSnapshot? memorySnapshot;
     public DebugToolsView()
     {
@@ -67,6 +76,7 @@ public partial class DebugToolsView : UserControl
     }
     public void ShowBreakpoints() => DetailTabs.SelectedIndex = 2;
     public void ShowLocals() => DetailTabs.SelectedIndex = 1;
+    public void ShowWatches() => DetailTabs.SelectedIndex = 0;
     public void AppendBreakpointLog(string text)
     {
         BreakpointOutput.AppendText(text + "\n");

@@ -75,7 +75,8 @@ public static class ProjectDevelopmentComponents
             ? [new(pin.ToolsetId, pin.ToolsetVersion, pin.CompilerId, Purpose: "引脚映射")] : [];
         IReadOnlyList<DevelopmentComponentRequirement> logic = project.Logic is { } configuredLogic
             ? [new(configuredLogic.ToolsetId, configuredLogic.ToolsetVersion, configuredLogic.CompilerId, Purpose: "已启用的逻辑构建")] : [];
-        return DevelopmentComponentRequirements.Merge([Primary(project)], needs, mapping, logic);
+        var primary = DevelopmentComponentRequirements.Primary(project.ToolsetId, project.ToolsetVersion, project.CompilerId, needs);
+        return DevelopmentComponentRequirements.Merge([primary], needs, mapping, logic);
     }
 
     public static async Task<IReadOnlyDictionary<string, string>> ReadPinsAsync(string root,
@@ -176,7 +177,8 @@ public static class ProjectDevelopmentComponents
             ?? throw new StudioXException("DEVELOPMENT_COMPONENT_METADATA", "开发环境组件配置为空：" + path);
     }
 
-    private static DevelopmentComponentRequirement Primary(ProjectManifest project) => new(project.ToolsetId, project.ToolsetVersion, project.CompilerId);
+    private static DevelopmentComponentRequirement Primary(ProjectManifest project)
+        => DevelopmentComponentRequirements.Primary(project.ToolsetId, project.ToolsetVersion, project.CompilerId, project.DevelopmentComponents);
     private static bool IsFingerprint(string? value) => value is { Length: 64 } && value.All(Uri.IsHexDigit);
     private static StudioXException LockError(string message) => new("TOOLCHAIN_LOCK", message);
 }

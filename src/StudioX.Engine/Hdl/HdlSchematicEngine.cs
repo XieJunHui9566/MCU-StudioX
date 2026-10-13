@@ -28,11 +28,12 @@ public sealed class HdlSchematicEngine(string runtimeDirectory)
     }
 
     public async Task<HdlSchematicResult> GenerateAsync(string projectDirectory, HdlSchematicSettings settings,
-        CancellationToken token = default)
+        CancellationToken token = default, IProgress<string>? progress = null, IProgress<string>? output = null)
     {
         var root = Path.GetFullPath(projectDirectory);
         await HdlSchematicInputs.RequireProjectAsync(root, token);
         HdlSchematicInputs.Validate(root, settings);
+        progress?.Report("校验 Yosys 综合工具…");
         var toolRoot = PathBoundary.Resolve(runtimeDirectory, "hdl/yosys");
         var manifestPath = PathBoundary.Resolve(toolRoot, "runtime.json");
         if (!File.Exists(manifestPath))
@@ -63,8 +64,9 @@ public sealed class HdlSchematicEngine(string runtimeDirectory)
             + "proc\nopt\n" + (settings.Flatten ? "flatten\nopt\n" : "")
             + "memory_collect\nopt_clean\ncheck\nwrite_json ../netlist.json\n";
         await File.WriteAllTextAsync(script, commands, token);
+        progress?.Report("Verilog 综合与网表生成");
         var result = await new ProcessRunner().RunAsync(new(executable, ["-Q", "-T", "-l", "../yosys.log", "-s", "../preview.ys"],
-            sourceDirectory, Timeout.InfiniteTimeSpan), token);
+            sourceDirectory, Timeout.InfiniteTimeSpan, Output: output), token);
         await File.WriteAllTextAsync(Path.Combine(runDirectory, "process.log"), result.StandardOutput + "\n" + result.StandardError, token);
         if (!result.Success || !File.Exists(netlist))
         {

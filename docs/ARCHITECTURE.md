@@ -21,8 +21,15 @@
 | StudioX.PluginHost | 持久加载受用户信任的 .NET 插件，处理版本化双向协议与生命周期 |
 | StudioX.Application | 组合工作台用例、文件服务、clangd/LSP 生命周期、主题和用户偏好 |
 | StudioX.Desktop | WPF 工作台、命令与只读状态呈现 |
+| StudioX.PortableDesktop | Avalonia Linux 工作台迁移入口，工程创建/打开、多文档编辑、主题与原生构建 |
 
 依赖方向：Desktop → Application → Engine / Devices / Extensions → Foundation；Engine → Packages。PluginHost 与插件通过 Abstractions 合同通信；插件不引用 Desktop。
+
+Linux 迁移入口为 `StudioX.PortableDesktop`。它只调用 `Application.PortableWorkspaceService`，复用现有工程生成、器件包校验、文件哈希冲突保护、只读文件规则和 `BuildService`；工程切换与保存、构建、退出互斥，编辑快照绑定工程目录。多文件标签保留各自的文本、撤销和光标，取消关闭或保存失败不清除内存文档。桌面不生成编译参数，不访问设备，不执行插件程序集。
+
+两端使用相同的 `ThemeService` 数据、品牌图片和 `WorkbenchVisuals` 图标路径及区域尺寸。WPF 的 `WorkbenchLengthExtension` 将共享数值转换为网格长度，Avalonia 则在创建网格时转换；不把 WPF 类型带入应用层。Windows 工作台继续使用既有入口。Linux 已开始完整版本迁移，功能尚未齐全，阶段范围与后续顺序见 [工作台界面](WORKBENCH_UI.md#linux-完整版本迁移)；不能将软件编译、模拟器或 PTY 验证表述为实板验收。
+
+`Foundation.HostPlatform` 描述当前进程的 OS/架构。组件需求允许显式 `win-x64` 或 `linux-x64`，未声明宿主的格式 1 包继续表示 Windows；工程和工具清单必须匹配当前宿主，内容锁继续包含清单指纹。不会依据当前机器、文件后缀或已安装组件将 Windows 工程自动改成 Linux 工程。
 
 ## 独立原生核心
 

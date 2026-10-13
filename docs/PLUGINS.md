@@ -47,6 +47,10 @@ API 2 示例：
 
 创建工程、迁移工程等无需现有工程的入口可声明 `"scope": "application"`。应用会话目前仅提供 `commands`、`panels`，`hostTools` 必须为空，命令不能注册工程或编辑器上下文位置。宿主不会提供虚构工程目录，也不会把已打开工程的文件、调试或设备授权传给应用插件。应用插件从欢迎页、命令面板、工具栏或独立活动入口运行；普通工程插件保持原有生命周期。旧宿主不识别运行范围，需要安装应用级会话修复后使用新包。
 
+应用面板可声明 `projectLink` 控件，不指定 `commandId`，`value` 为 `{ "formatVersion": 1, "directory": "<本地工程绝对路径>" }`。发布面板不会打开工程；用户点击按钮后，宿主校验目标并走正常的未保存内容确认、旧会话退出和工程打开流程。工程级面板不能声明此入口，停用插件后旧按钮不可用。这个入口不授予插件工程宿主工具，也不执行插件导航代码。
+
+需要显示移植编译结果时，入口可同时提供工程内的 `buildLog`、`buildRecord` 相对路径。记录包含 `formatVersion: 1`、`log`、`logSha256` 和 `sourceHashes`（相对源码路径到 SHA-256 的对象）。原始日志可供查看；只有日志与记录一致、源码与编译快照一致时发布错误标记。记录失效仍允许打开工程。此控件需要支持工程入口的宿主，未支持的宿主会拒绝未知控件。
+
 `sha256` 必须索引插件目录中除 `plugin.json` 外的全部文件，路径使用正斜杠相对路径。打包工具重建完整索引，不需要开发者手工计算。清单格式、API 版本、未知能力、错误入口、丢失文件、额外文件、链接和哈希变化都会产生原始诊断。
 
 ## C#/.NET 10 SDK
@@ -145,6 +149,11 @@ StudioX.Cli.exe plugin remove <runtime目录> <用户数据目录> <插件id>
 | `number` | 有限数值或 null |
 | `checkbox` | 布尔值或 null |
 | `select` | `value` 为 `{ "options":[{"label":"概览","value":"overview"}], "selected":"overview" }` |
+| `appearance` | 应用级外观目录：`value` 为 `{ "formatVersion":1, "themes":[{"id":"author.theme", "displayName":"主题名称", "colors":{八个语义颜色}}] }`，宿主提供主题与本机字体选择、局部预览及显式应用 |
+
+外观控件仅供 `scope: application` 的声明式面板使用，不指定 `commandId` 或子控件。目录最多 32 个主题，必须提供 `Background/Surface/Panel/Border/Text/Muted/Accent/OnAccent` 八个 `#RRGGBB` 颜色，ID 不得重复或覆盖 `studiox.dark/light`；未知字段、XAML、媒体和字体路径拒绝。点击“应用外观”由应用服务保存配色与界面/编辑器字体，不调用插件命令或宿主 MCP 工具。主题及字体在用户数据目录持久化，禁用插件不撤销已保存外观。动态壁纸、透明度、暂停规则和编辑器柔光继续使用原设置。
+
+完整示例与 IDE 本体改动范围见 [外观插件说明](APPEARANCE_PLUGINS.md)，源码在 `examples/StudioX.AppearancePlugin`，构建入口为 `tools/Build-AppearancePlugin.ps1`。旧宿主会明确拒绝未知控件，插件包需要配套的本轮宿主源码构建；产品版本号不自动变化。
 
 `metric`、`chart`、`group` 是可接受别名。单插件最多 128 个命令、32 个面板、128 个 Agent 工具；单面板最多 256 个控件、8 层嵌套、表格 2048 行和 32 列。面板 JSON 最多 1 MiB，单控件 `value` 最多 512 KiB，所有数值必须有限。未知控件、任意 XAML、未声明命令或异常 JSON 被拒绝。限制针对数据量及在途工作，不限制插件生命周期内的总调用次数。
 

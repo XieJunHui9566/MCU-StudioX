@@ -159,14 +159,8 @@ public sealed partial class CodeIntelligenceService(string runtimeDirectory, str
                 ? await CreateImportedDatabaseAsync(cache, token).ConfigureAwait(false)
                 : await CreateNavigationDatabaseAsync(cache, token).ConfigureAwait(false);
             var diagnosticRoot = projectRoot;
-            var server = new LanguageServerConnection(executable, projectRoot, cache, line =>
-            {
-                log.Enqueue(line);
-                while (log.Count > 200)
-                {
-                    log.TryDequeue(out _);
-                }
-            }, (method, parameters) => ReceiveDiagnostics(generation, diagnosticRoot, method, parameters));
+            var server = new LanguageServerConnection(executable, projectRoot, cache, log.Enqueue,
+                (method, parameters) => ReceiveDiagnostics(generation, diagnosticRoot, method, parameters));
             try
             {
                 var initialization = await server.RequestAsync("initialize", new
@@ -568,5 +562,9 @@ public sealed partial class CodeIntelligenceService(string runtimeDirectory, str
         }
         finally { gate.Release(); }
     }
-    public async ValueTask DisposeAsync() => await StopAsync().ConfigureAwait(false);
+    public async ValueTask DisposeAsync()
+    {
+        await StopAsync().ConfigureAwait(false);
+        await FlushAnalysisLogAsync().ConfigureAwait(false);
+    }
 }

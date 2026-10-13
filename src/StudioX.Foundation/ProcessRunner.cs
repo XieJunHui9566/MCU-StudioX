@@ -22,7 +22,8 @@ public sealed class ProcessRunner
             CreateNoWindow = true,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
-            RedirectStandardInput = request.StandardInput is not null,
+            // 工具不能继承宿主的 MCP/终端输入管道；未提供输入时主动发送 EOF，禁止隐藏交互等待。
+            RedirectStandardInput = true,
             StandardOutputEncoding = Encoding.UTF8,
             StandardErrorEncoding = Encoding.UTF8
         };
@@ -55,7 +56,7 @@ public sealed class ProcessRunner
         }
         var output = DrainAsync(process.StandardOutput, linked.Token, request.Output, request.StreamCompleteOutput);
         var error = DrainAsync(process.StandardError, linked.Token, request.Output, request.StreamCompleteOutput);
-        var input = request.StandardInput is not null ? WriteInputAsync(process, request.StandardInput, linked.Token) : Task.CompletedTask;
+        var input = WriteInputAsync(process, request.StandardInput, linked.Token);
         var timedOut = false;
         try
         {
@@ -112,11 +113,14 @@ public sealed class ProcessRunner
         }
     }
 
-    private static async Task WriteInputAsync(Process process, string input, CancellationToken token)
+    private static async Task WriteInputAsync(Process process, string? input, CancellationToken token)
     {
         try
         {
-            await process.StandardInput.WriteLineAsync(input.AsMemory(), token);
+            if (input is not null)
+            {
+                await process.StandardInput.WriteLineAsync(input.AsMemory(), token);
+            }
         }
         catch (IOException) { /* 提前退出的宿主由退出码和原始诊断报告。 */ }
         finally { process.StandardInput.Close(); }

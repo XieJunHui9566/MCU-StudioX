@@ -12,7 +12,8 @@ public sealed class HdlWorkflowService(ToolsetCatalog catalog, string licenseDir
     public Task SaveBuildAsync(string root, Ag32NativeBuildSettings settings, CancellationToken token = default) => build.SaveSettingsAsync(root, settings, token);
     public Task<HdlSimulationSettings> ReadSimulationAsync(string root, CancellationToken token = default) => simulation.ReadSettingsAsync(root, token);
     public Task SaveSimulationAsync(string root, HdlSimulationSettings settings, CancellationToken token = default) => simulation.SaveSettingsAsync(root, settings, token);
-    public Task<HdlSimulationResult> SimulateAsync(string root, HdlSimulationSettings settings, CancellationToken token = default) => simulation.RunAsync(root, settings, token);
+    public Task<HdlSimulationResult> SimulateAsync(string root, HdlSimulationSettings settings, CancellationToken token = default,
+        IProgress<string>? progress = null, IProgress<string>? output = null) => simulation.RunAsync(root, settings, token, progress, output);
     public Task CreateTestbenchAsync(string root, string relative, string top, CancellationToken token = default) => simulation.CreateTestbenchAsync(root, relative, top, token);
     public Task<bool> IsCurrentAsync(HdlSimulationResult result, CancellationToken token = default) => simulation.IsCurrentAsync(result, token);
     public Task<string> ReportPathAsync(string root, string report, CancellationToken token = default) => build.ReportPathAsync(root, report, token);

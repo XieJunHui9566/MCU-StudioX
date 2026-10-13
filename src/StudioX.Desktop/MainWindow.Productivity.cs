@@ -122,33 +122,34 @@ public partial class MainWindow
         {
             return;
         }
-        using var discoveryLifetime = new CancellationTokenSource();
-        Task<WorkspaceFileIndex>? fileIndex = null;
+        await using var fileQuery = new WorkspaceFileQuerySession(services.WorkspaceDiscovery, project);
         var picker = new QuickPickWindow(symbols ? "搜索工程符号" : "快速打开文件", async (query, token) => symbols
             ? (await services.Intelligence.SearchSymbolsAsync(query, token)).Select(l => new QuickPickItem(l.DisplayPath, $"第 {l.Range.Start.Line + 1} 行", l)).ToArray()
-            : (await (await (fileIndex ??= services.WorkspaceDiscovery.CreateIndexAsync(project, discoveryLifetime.Token)).WaitAsync(token))
-                .SearchAsync(query, token)).Select(p => new QuickPickItem(Path.GetFileName(p), p, p)).ToArray())
+            : (await fileQuery.SearchAsync(query, token)).Select(p => new QuickPickItem(Path.GetFileName(p), p, p)).ToArray())
         {
             Owner = this
         };
         bool accepted;
+        void Changed(ProjectChangeBatch batch)
+        {
+            if (!symbols && batch.Directory == project && fileQuery.Invalidate(batch))
+            {
+                _ = picker.RefreshResultsAsync();
+            }
+        }
+        ProjectFilesSynchronized += Changed;
         try
         {
             accepted = picker.ShowDialog() == true;
         }
         finally
         {
-            // 输入取消只撤销旧查询，关闭窗口才停止共享扫描；任务结束前不释放其取消源。
-            discoveryLifetime.Cancel();
-            if (fileIndex is not null)
+            ProjectFilesSynchronized -= Changed;
+            try
             {
-                try
-                {
-                    await fileIndex;
-                }
-                catch (OperationCanceledException) when (discoveryLifetime.IsCancellationRequested) { }
-                catch (Exception ex) { Log(ex.ToString()); }
+                await fileQuery.DisposeAsync();
             }
+            catch (Exception error) { Log("快速打开文件发现失败：" + error); }
         }
         if (!accepted || project != projectDirectory)
         {

@@ -9,8 +9,9 @@ public sealed class HdlSchematicService(string runtimeDirectory)
     public Task<HdlSchematicSettings> ReadSettingsAsync(string project, CancellationToken token = default) =>
         Task.Run(() => engine.ReadSettingsAsync(project, token), token);
     public Task SaveSettingsAsync(string project, HdlSchematicSettings settings, CancellationToken token = default) => engine.SaveSettingsAsync(project, settings, token);
-    public Task<HdlSchematicResult> GenerateAsync(string project, HdlSchematicSettings settings, CancellationToken token = default) =>
-        Task.Run(() => engine.GenerateAsync(project, settings, token), token);
+    public Task<HdlSchematicResult> GenerateAsync(string project, HdlSchematicSettings settings, CancellationToken token = default,
+        IProgress<string>? progress = null, IProgress<string>? output = null) =>
+        Task.Run(() => engine.GenerateAsync(project, settings, token, progress, output), token);
     public Task<bool> IsCurrentAsync(HdlSchematicResult result, CancellationToken token = default) =>
         Task.Run(() => engine.IsCurrentAsync(result, token), token);
     public HdlDiagram CreateDiagram(HdlModule module) => HdlDiagramLayout.Create(module);

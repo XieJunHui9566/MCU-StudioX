@@ -1,5 +1,9 @@
 # 回归与发行流程
 
+源码登记统一门禁由 `tools/Test-SourceRegistration.ps1` 执行应用服务与真实 WPF 验证。传 `-SourceRegistrationInputs <JSON>` 加入明确已有器件包和工具的原生 MCU / ESP-IDF 实编，分别检查加入、改名和移除登记后的编译数据库。正式维护声明 `-MaintenanceAreas editor,sources`，缺少输入或真实编译未请求即失败；参数与边界见 [源码登记](SOURCE_REGISTRATION.md)。
+
+维护的公共必跑项、变更触发矩阵、失败处理与证据时效见 [维护门槛](MAINTENANCE_GATES.md)。`Test-Regression.ps1 -MaintenanceAreas editor,keil` 在构建前强制检查对应真实验证输入；每次报告记录声明领域及源码内容摘要。`Test-MaintenanceEvidence.ps1` 可只读复核报告是否仍适用于当前源码。机器清单位于 `tools/maintenance-gates.json`，任何缺项、失败或过期证据都不能形成该领域的通过结论。
+
 `-LanguageRuntime <已有 runtime 目录>` 将实时诊断可靠性纳入同一回归入口。使用该 runtime 的真实 clangd 验证未保存头文件、连续修正、放弃草稿和 UTF-16 定位，再用独立协议夹具验证旧版本、坏范围、取消、配置加载与编辑竞争、进程退出及恢复限流。协议夹具不是 C/C++ 编译器。随后运行真实 WPF 编辑页面检查诊断列表和波浪线；不会复制或修改安装中的 SDK，也不会连接硬件。可直接使用 `--preview-workspace-editor <新证据目录> <隔离工程> <已有 runtime>` 指定预览所需组件。
 
 tools/Test-Regression.ps1 -OutputDirectory <新目录> 使用 tools/Build.ps1 编译，并检查桌面/服务架构、版本规则、独立插件宿主、离线绘图、SVD 边界、产品工作流及深浅主题 UI。默认不需要固件 SDK，不启动硬件，不改全局 PATH。构建仅还原项目已有 .NET 依赖。
@@ -7,6 +11,8 @@ tools/Test-Regression.ps1 -OutputDirectory <新目录> 使用 tools/Build.ps1 �
 可传 -SamplePlugin 重用示例；否则生成内置 1.0.0 开发插件。显式传 -VendorSvd -ToolsetsDirectory -CoreDumpFixtures 验证官方已保存转储的真实 GDB 解码；加 -F407Pack 执行隔离模板的真实编译。不会自动下载这些输入。实板验收独立于普通 CI。
 
 每步保存日志、退出状态和耗时，regression.json 绑定源码提交及是否有改动；任一失败使总结果失败。UI 使用隔离用户目录、限时进程及截图。regression.yml 在 Windows runner 调用同一入口；release-plan.yml 手动触发版本审核与回归。工作流文件提交后才能远端运行，本地验证不等于远端运行。
+
+默认回归包含 `keil-migration-workflow`，通过 `Test-KeilWorkflow.ps1` 构建独立插件，检查无 SDK 的真实进程日志与取消边界，并验证真实应用级宿主、欢迎页、工程切换、停用/更新、工程打开、问题定位及过期诊断。可传 `-KeilValidationInputs <JSON>`，其中明确提供已有的 `cli`、`packs`、`toolsets`、`f407Project`、`f103Project` 路径，加入 F407 HAL / F103 SPL 的只读原工程迁移与实际编译；未传输入时，工作流报告明确记录 `realCompilation=not_requested`。全部输出写入新的隔离目录，不下载 SDK、不触发硬件连接。
 
 可传 `-ProjectHealthNinja <已有 ninja.exe>` 加入工程健康与分析配置故障检查；提供的 Ninja 仅用作隔离夹具的固定版本启动探针。`-LanguageValidationMatrix <JSON>` 加入真实 clangd 的 SDK/目标矩阵。JSON 是数组，每行明确提供 `runtimeDirectory` 和 `projectsDirectory`，后者包含已经配置的独立 ESP 工程。检查包含正确代码、真实错误和修正后的诊断，保留原生数据库哈希；不下载 SDK、不隐式配置或编译这些输入工程。
 
@@ -27,3 +33,5 @@ tools/Invoke-Release.ps1 -ReleaseVersion <已存在版本> -OutputDirectory <新
 未知发布结果须先检查 GitHub，不能直接重复创建。发行需核对 payload 的工具/器件来源及许可证，见 [INSTALLER.md](INSTALLER.md)。未配置代码签名时不声明已签名。
 
 语法依据：[GitHub Actions 触发文档](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow)、[setup-dotnet 官方说明](https://github.com/actions/setup-dotnet)。
+
+工程文件统一同步门禁由 `tools/Test-ProjectSynchronization.ps1` 执行，包含原生文件通知合并、连续写入时限、队列溢出、快开索引更新，以及真实 WPF 中的外部修改、脏缓冲区冲突、跨父目录移动、删除恢复、二进制替换和工程切换。统一入口传入 `-LanguageRuntime` 时额外用已有 clangd 检查未打开头文件变化、翻译单元增删和编译数据库新增/修改；不连接硬件，也不自动下载工具。Keil 缺库拒绝检查使用独立工程，不能把删除后的数据库状态留给后续通用编辑器夹具。

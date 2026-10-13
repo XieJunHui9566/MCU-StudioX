@@ -214,7 +214,7 @@ public partial class MainWindow
                 ShowSymbolHover(result, point);
             }
             catch (OperationCanceledException) when (cancellation.IsCancellationRequested) { }
-            catch (Exception ex) { if (!cancellation.IsCancellationRequested) { Status.Text = "悬停信息：" + ex.Message; Log(ex.ToString()); } }
+            catch (Exception ex) { if (!cancellation.IsCancellationRequested) { await RecordAnalysisFailureAsync("悬停信息", ex); } }
             finally { if (hoverCancellation == cancellation) { hoverCancellation = null; } cancellation.Dispose(); }
         }
     }
@@ -305,7 +305,7 @@ public partial class MainWindow
                 }
             }
             catch (OperationCanceledException) when (cancellation.IsCancellationRequested) { }
-            catch (Exception ex) { if (!cancellation.IsCancellationRequested) { Status.Text = "代码跳转：" + ex.Message; Log(ex.ToString()); } }
+            catch (Exception ex) { if (!cancellation.IsCancellationRequested) { Status.Text = "代码跳转：" + ex.Message; await RecordAnalysisFailureAsync("代码跳转", ex); } }
             finally { if (navigationCancellation == cancellation) { navigationCancellation = null; } cancellation.Dispose(); }
         }
     }

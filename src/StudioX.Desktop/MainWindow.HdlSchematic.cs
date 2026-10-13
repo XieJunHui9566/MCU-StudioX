@@ -90,7 +90,9 @@ public partial class MainWindow
         try
         {
             await services.HdlSchematic.SaveSettingsAsync(root, settings, token);
-            var result = await services.HdlSchematic.GenerateAsync(root, settings, token);
+            var result = await RunBuildOutputOperationAsync("Verilog 综合",
+                (progress, output) => services.HdlSchematic.GenerateAsync(root, settings, token, progress, output),
+                _ => true, _ => "Verilog 综合成功，电路图已生成。", token);
             if (projectDirectory != root || hdlSchematicProject != root)
             {
                 return;
