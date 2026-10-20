@@ -1,13 +1,13 @@
 {
   "formatVersion": 1,
   "id": "microchip.pic16hv",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "displayName": "Microchip PIC16HV · XC8",
   "vendor": "Microchip",
   "devices": [
     {
       "id": "PIC16HV540",
-      "displayName": "PIC16HV540 · 512×12-bit Flash / 25 B RAM",
+      "displayName": "PIC16HV540 · 512×12-bit EPROM 程序存储 / 25 B RAM",
       "architecture": "pic12",
       "flashOrigin": 0,
       "flashBytes": 768,

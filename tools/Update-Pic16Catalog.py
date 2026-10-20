@@ -36,6 +36,8 @@ for identity in pdsc.findall(".//device"):
     words = sum(size(e) for e in tree.findall("./" + ns + "ProgramSpace/" + ns + "CodeSector"))
     ram = sum(size(e) for e in tree.findall(".//" + ns + "GPRDataSector") if not attr(e, "shadowidref"))
     eeprom = sum(size(e) for e in tree.findall("./" + ns + "ProgramSpace/" + ns + "EEDataSector"))
+    technology = attr(tree.find("./" + ns + "Programming"), "memtech")
+    memory_label = "EPROM 程序存储" if technology == "eprom" else "Flash"
     assert words > 0 and ram > 0 and words * bits % 8 == 0, name
     header = dfp / "xc8/pic/include/proc" / (name.lower() + ".h")
     assert header.is_file(), name
@@ -45,7 +47,7 @@ for identity in pdsc.findall(".//device"):
     # Keep low-voltage variants with their numbered subfamily, without inventing package suffixes.
     number = name.removeprefix("PIC16").removeprefix("LF").removeprefix("F")
     group = "microchip.pic16hv" if name.startswith("PIC16HV") else "microchip.pic16f" + number[0] + "xx"
-    device = dict(id=name, displayName=f"{name} · {words}×{bits}-bit Flash / {ram} B RAM",
+    device = dict(id=name, displayName=f"{name} · {words}×{bits}-bit {memory_label} / {ram} B RAM",
                   architecture=f"pic{bits}", flashOrigin=0, flashBytes=words * bits // 8,
                   ramOrigin=0, ramBytes=ram, toolsetId="microchip.xc8", toolsetVersion="4.0.0",
                   compilerId="xc8-4.00-pic", cpuFlags=[], defines=[], includeDirectories=[], sources=[],
@@ -66,7 +68,7 @@ for group, entries in sorted(groups.items()):
     (destination / "templates").mkdir(exist_ok=True)
     shutil.copyfile(root / "examples/packs/microchip.pic16f877a/templates/basic.c", destination / "templates/basic.c")
     shutil.copyfile(dfp / "LICENSE.txt", destination / "LICENSE.txt")
-    manifest = dict(formatVersion=1, id=group, version="0.1.0",
+    manifest = dict(formatVersion=1, id=group, version="0.1.1" if group == "microchip.pic16hv" else "0.1.0",
                     displayName="Microchip " + group.split(".")[1].upper() + " · XC8",
                     vendor="Microchip", devices=[d for d, _ in entries])
     (destination / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

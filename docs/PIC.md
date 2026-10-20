@@ -19,6 +19,8 @@ PIC16F877A：8192 个 14 位程序字、368 B 分银行 RAM、256 B EEPROM，依
 
 完整型号表在 `src/StudioX.Packages/Pic16Catalog.json`。由 `tools/Update-Pic16Catalog.py` 从官方 DFP 的 PDSC/EDC 提取：程序空间统计 CodeSector，RAM 统计排除 shadowidref 镜像的 GPRDataSector，EEPROM 统计 EEDataSector。包括 9 个 12 位指令字型号和 113 个 14 位指令字型号；F/LF/HV 身份分别保留。七个包按 PIC16F5xx、6xx、7xx、8xx、9xx、HV 和原 PIC16F877A 单器件包交付；不能通过改名增加未核实型号。
 
+HV 包修订 0.1.1 单独标明 PIC16HV540 的 EPROM 程序存储，依据该型号 EDC 的 `memtech=eprom`；它不能被表述为可反复擦写的 Flash。通用 `flashBytes` 字段在 PIC 中仅承载程序存储物理位容量折算，烧录能力不能由该字段推断。
+
 固定组件为 `microchip.xc8/4.0.0`，编译器身份 `xc8-4.00-pic`：
 
 | 资产 | 版本 | SHA-256 |

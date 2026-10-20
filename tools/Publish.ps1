@@ -390,11 +390,12 @@ foreach ($entry in @(Get-Content -LiteralPath (Join-Path $arduinoCatalog 'index.
     Copy-Item -LiteralPath $source -Destination (Join-Path $packOutput $relative)
     $releasedPacks += @{ id = $entry.id; version = $entry.version; file = $relative; sha256 = $entry.sha256; devices = $entry.devices }
 }
-$picCatalog = Join-Path $preparedPacks 'PIC16-0.1.0'
+$picCatalog = Join-Path $preparedPacks 'PIC16-0.1.1'
 if (!(Test-Path -LiteralPath (Join-Path $picCatalog 'index.json'))) { throw 'Prepare the PIC catalog first: tools/New-PicPack.ps1' }
 foreach ($entry in @(Get-Content -LiteralPath (Join-Path $picCatalog 'index.json') -Raw | ConvertFrom-Json))
 {
-    if ($entry.id -notmatch '^microchip\.pic16[a-z0-9]+$' -or $entry.version -ne '0.1.0' -or $entry.file -ne ($entry.id + '-0.1.0.mcupack')) { throw 'Unexpected PIC catalog identity.' }
+    $expectedVersion = if ($entry.id -eq 'microchip.pic16hv') { '0.1.1' } else { '0.1.0' }
+    if ($entry.id -notmatch '^microchip\.pic16[a-z0-9]+$' -or $entry.version -ne $expectedVersion -or $entry.file -ne ($entry.id + '-' + $expectedVersion + '.mcupack')) { throw 'Unexpected PIC catalog identity.' }
     $source = Join-Path $picCatalog $entry.file
     if ((Get-FileHash -LiteralPath $source).Hash -ne $entry.sha256) { throw 'PIC pack hash mismatch.' }
     $relative = 'Microchip/' + $entry.file
