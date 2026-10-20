@@ -1,6 +1,8 @@
 <Project
   Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
+    <EmbeddedResource
+      Include="Pic16Catalog.json" />
     <ProjectReference
       Include="../StudioX.Foundation/StudioX.Foundation.csproj" />
   </ItemGroup>

@@ -101,7 +101,8 @@ public sealed class WorkbenchService : IAsyncDisposable
         ToolInventory = new ToolInventoryService(Toolsets);
         EspressifProjectVersions = new(Packs, Toolsets);
         ToolEnvironment = new ToolEnvironmentService(Toolsets);
-        Builds = new BuildService(Toolsets, Path.Combine(DataDirectory, "licenses", "ag32-pin-mapping"));
+        Builds = new BuildService(Toolsets, Path.Combine(DataDirectory, "licenses", "ag32-pin-mapping"), DataDirectory);
+        Arduino = new(Builds, Devices, Git.InitializeAsync);
         ComponentMigration = new(Packs, Builds);
         BuildMemory = new BuildMemoryService(Toolsets);
         BuildHistory = new(DataDirectory, BuildMemory);
@@ -155,6 +156,10 @@ public sealed class WorkbenchService : IAsyncDisposable
         Simulation = new SimulationLabService(Devices);
     }
     public string RuntimeDirectory
+    {
+        get;
+    }
+    public Arduino.ArduinoService Arduino
     {
         get;
     }

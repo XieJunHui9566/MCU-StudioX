@@ -16,6 +16,7 @@ public sealed partial class CodeIntelligenceService(string runtimeDirectory, str
     private string projectRoot = "";
     private string[] flags = [];
     private string? compilerHeaders;
+    private string? arduinoLibrariesRoot;
     private readonly Dictionary<string, string> synchronizedDocuments = new(StringComparer.OrdinalIgnoreCase);
     private readonly HashSet<string> documentsNeedingReparse = new(StringComparer.OrdinalIgnoreCase);
     private int version;
@@ -31,7 +32,7 @@ public sealed partial class CodeIntelligenceService(string runtimeDirectory, str
             yield return line;
         }
     }
-    public static bool Supports(string path) => Path.GetExtension(path).ToLowerInvariant() is ".c" or ".h" or ".cpp" or ".cc" or ".cxx" or ".hpp" or ".hh" or ".hxx";
+    public static bool Supports(string path) => Path.GetExtension(path).ToLowerInvariant() is ".ino" or ".c" or ".h" or ".cpp" or ".cc" or ".cxx" or ".hpp" or ".hh" or ".hxx";
 
     public Task StartAsync(string directory, CancellationToken token = default)
         => Task.Run(() => StartInBackgroundAsync(directory, token), token);
@@ -87,12 +88,28 @@ public sealed partial class CodeIntelligenceService(string runtimeDirectory, str
                 project.Kind == ProjectKind.Pack && project.Espressif is null && project.ToolsetId != "stc.sdcc"
                     ? "C/C++ 代码提示使用器件模板；请配置或编译工程以同步 CMake 参数。" : "C/C++ 代码提示已就绪";
             EspressifAnalysisProfile? espressifProfile = null;
+            ArduinoAnalysisProfile? arduinoProfile = null;
+            PicAnalysisProfile? picProfile = null;
+            arduinoLibrariesRoot = null;
             var executable = Path.Combine(runtimeDirectory, "languages", "clangd", "bin", "clangd.exe");
             if (!File.Exists(executable))
             {
                 throw new StudioXException("LANGUAGE_MISSING", "此安装缺少内置 clangd 组件，代码提示不可用。");
             }
-            if (project.Espressif is not null)
+            if (project.Kind == ProjectKind.Pic)
+            {
+                picProfile = await PicAnalysisProfile.ReadAsync(runtimeDirectory, dataDirectory, project, token).ConfigureAwait(false);
+                flags = [.. picProfile.Flags, "-I" + Path.Combine(projectRoot, "include"), "-I" + Path.Combine(projectRoot, "src")];
+                StatusDescription = "PIC 通用 C 与官方寄存器提示已就绪；位类型、地址及目标 ABI 以 XC8 编译为准。";
+            }
+            else if (project.Kind == ProjectKind.Arduino)
+            {
+                arduinoProfile = await ArduinoAnalysisProfile.ReadAsync(runtimeDirectory, dataDirectory, projectRoot, project, token).ConfigureAwait(false);
+                flags = arduinoProfile.Flags;
+                arduinoLibrariesRoot = arduinoProfile.LibrariesRoot;
+                StatusDescription = "Arduino C++ 代码提示已就绪；sketch 自动原型以官方编译结果为准。";
+            }
+            else if (project.Espressif is not null)
             {
                 projectRoot = EspressifPathIdentity.NormalizePath(projectRoot);
                 espressifProfile = await EspressifAnalysisProfile.ReadAsync(runtimeDirectory, projectRoot, project, token).ConfigureAwait(false);
@@ -113,7 +130,7 @@ public sealed partial class CodeIntelligenceService(string runtimeDirectory, str
                     flags = [.. flags, "-I" + PathBoundary.Resolve(projectRoot, "device/studiox").Replace('\\', '/')];
                 }
             }
-            compilerHeaders = espressifProfile?.HeaderRoot;
+            compilerHeaders = picProfile?.HeaderRoot ?? arduinoProfile?.HeaderRoot ?? espressifProfile?.HeaderRoot;
             var compilerTriple = project.CompilerId switch
             {
                 "arm-gnu-15.2.rel1" => "arm-none-eabi",

@@ -171,6 +171,7 @@ public partial class MainWindow : Window
         var packVersion = preserveSelection ? (PackPicker.SelectedItem as InstalledPack)?.Manifest.Version : null;
         var deviceId = preserveSelection ? (DevicePicker.SelectedItem as DeviceDefinition)?.Id : null;
         var templateId = preserveSelection ? (TemplatePicker.SelectedItem as ProjectTemplate)?.Id : null;
+        var arduinoBoardId = preserveSelection ? (ArduinoBoardPicker.SelectedItem as StudioX.Engine.Arduino.ArduinoBoard)?.Id : null;
         var search = preserveSelection ? DeviceSearch.Text : "";
         // 不按版本号隐藏未验证的旧包，避免损坏新版或不同 SDK 遮蔽可用资源。
         installedPacks = catalog
@@ -197,6 +198,8 @@ public partial class MainWindow : Window
                     .FirstOrDefault(device => device.Id == deviceId);
                 TemplatePicker.SelectedItem = TemplatePicker.Items.Cast<ProjectTemplate>()
                     .FirstOrDefault(template => template.Id == templateId);
+                ArduinoBoardPicker.SelectedItem = ArduinoBoardPicker.Items.Cast<StudioX.Engine.Arduino.ArduinoBoard>()
+                    .FirstOrDefault(board => board.Id == arduinoBoardId);
             }
         }
     }
@@ -328,6 +331,7 @@ public partial class MainWindow : Window
         DevicePicker.IsEnabled = DevicePicker.Items.Count > 0;
         TemplatePicker.ItemsSource = null;
         TemplatePicker.IsEnabled = false;
+        RefreshArduinoTemplateSelection();
         CreateProjectButton.IsEnabled = false;
         UpdateAg32LogicModeOption();
         ClearIdfVersionSelection();
@@ -362,10 +366,11 @@ public partial class MainWindow : Window
             return;
         }
         var device = DevicePicker.SelectedItem as DeviceDefinition;
-        TemplatePicker.ItemsSource = device?.Templates;
+        TemplatePicker.ItemsSource = device is null ? null : StudioX.Application.Arduino.ArduinoTemplateCatalog.Templates(device);
         TemplatePicker.SelectedIndex = -1;
         TemplatePicker.IsEnabled = TemplatePicker.Items.Count > 0;
         CreateProjectButton.IsEnabled = false;
+        RefreshArduinoTemplateSelection();
         if (SelectedDeviceCapability is not null)
         {
             var pack = PackPicker.SelectedItem as InstalledPack;
@@ -409,6 +414,7 @@ public partial class MainWindow : Window
         {
             CreateProjectButton.IsEnabled = TemplatePicker.SelectedItem is ProjectTemplate;
         }
+        RefreshArduinoTemplateSelection();
         UpdateSelectedComponents();
         await RefreshIdfVersionsAsync();
     }
@@ -417,6 +423,14 @@ public partial class MainWindow : Window
     {
         if (SelectedDevelopmentComponents is null)
         {
+            return;
+        }
+        if (StudioX.Application.Arduino.ArduinoTemplateCatalog.IsArduino(TemplatePicker?.SelectedItem as ProjectTemplate))
+        {
+            var board = ArduinoBoardPicker?.SelectedItem as StudioX.Engine.Arduino.ArduinoBoard;
+            SelectedDevelopmentComponents.Text = board is null ? "请选择 Arduino 开发板配置。" :
+                "所需开发环境组件\n" + board.Platform.ToolsetId + " " + board.Platform.CoreVersion +
+                "\n创建后可在“准备工程开发环境组件”安装此精确版本；ESP-IDF 与 Arduino 核心各自管理。";
             return;
         }
         SelectedDevelopmentComponents.Text = PackPicker?.SelectedItem is InstalledPack pack &&
@@ -436,8 +450,15 @@ public partial class MainWindow : Window
             return;
         }
         var enableAg32Logic = Ag32LogicModeCheckBox.IsChecked == true;
+        var isArduino = StudioX.Application.Arduino.ArduinoTemplateCatalog.IsArduino(template);
+        var arduinoBoard = ArduinoBoardPicker.SelectedItem as StudioX.Engine.Arduino.ArduinoBoard;
+        if (isArduino && arduinoBoard is null)
+        {
+            Status.Text = "请选择与芯片匹配的 Arduino 开发板配置。";
+            return;
+        }
         var idfSelection = IdfVersionPicker.SelectedItem as StudioX.Application.Tools.EspressifProjectVersionChoice;
-        if (device.Espressif?.Framework == "esp-idf" && idfSelection?.CanCreate != true)
+        if (!isArduino && device.Espressif?.Framework == "esp-idf" && idfSelection?.CanCreate != true)
         {
             Status.Text = "请选择可创建的 ESP-IDF 开发环境组件版本。";
             return;
@@ -449,13 +470,15 @@ public partial class MainWindow : Window
         }
         await RunAsync(async token =>
         {
-            if (idfSelection is not null)
+            if (!isArduino && idfSelection is not null)
             {
                 await services.EspressifProjectVersions.EnsureSelectionAsync(idfSelection, token);
             }
             PackValidator.Token(ProjectName.Text);
             var destination = Path.Combine(dialog.FolderName, ProjectName.Text);
-            var created = await services.Projects.CreateAsync(pack, device.Id, template.Id, ProjectName.Text, destination, token, enableAg32Logic);
+            var created = isArduino
+                ? await services.Arduino.CreateFromPackAsync(pack, device.Id, arduinoBoard!.Id, ProjectName.Text, destination, token)
+                : await services.Projects.CreateAsync(pack, device.Id, template.Id, ProjectName.Text, destination, token, enableAg32Logic);
             Log("工程已创建，Git 仓库已初始化（main 分支）；请在工程终端设置身份并提交。");
             await OpenProjectAsync(destination, token);
             if (created.Logic is { } logic)

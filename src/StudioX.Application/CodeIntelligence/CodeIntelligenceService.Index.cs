@@ -4,7 +4,7 @@ using StudioX.Foundation;
 
 public sealed partial class CodeIntelligenceService
 {
-    private static bool IsCpp(string path) => Path.GetExtension(path).ToLowerInvariant() is ".cpp" or ".cc" or ".cxx" or ".hpp" or ".hh" or ".hxx";
+    private static bool IsCpp(string path) => Path.GetExtension(path).ToLowerInvariant() is ".ino" or ".cpp" or ".cc" or ".cxx" or ".hpp" or ".hh" or ".hxx";
     private string[] AnalysisCommand(string path) => ImportedCommand(path)?.Arguments ?? new[]
     {
         Path.Combine(runtimeDirectory, "languages", "clangd", "bin", "clang.exe"),
@@ -50,7 +50,7 @@ public sealed partial class CodeIntelligenceService
                     }
                     continue;
                 }
-                if (Path.GetExtension(item.Name).ToLowerInvariant() is not (".c" or ".cpp" or ".cc" or ".cxx"))
+                if (Path.GetExtension(item.Name).ToLowerInvariant() is not (".ino" or ".c" or ".cpp" or ".cc" or ".cxx"))
                 {
                     continue;
                 }

@@ -14,7 +14,7 @@ public partial class MainWindow
     private void ApplyDownloadConfiguration(DownloadConfiguration? configuration)
     {
         // STC 使用串口 ISP；OpenOCD 烧录器列表与其互不通用。
-        if (IsStcSdccProject || IsEspressifProject || IsZephyrProject || IsMicroPythonProject)
+        if (IsStcSdccProject || IsEspressifProject || IsZephyrProject || IsMicroPythonProject || IsArduinoProject)
         {
             configuration = null;
         }
@@ -22,19 +22,19 @@ public partial class MainWindow
         try
         {
             downloadConfiguration = configuration;
-            supportsDownload = !IsZephyrProject && (IsMicroPythonProject || IsStcSdccProject || IsEspressifProject || configuration is not null);
-            DownloadProbeLabel.Visibility = DownloadProbePicker.Visibility = IsStcSdccProject || IsEspressifProject || IsZephyrProject || IsMicroPythonProject ? Visibility.Collapsed : Visibility.Visible;
+            supportsDownload = !IsZephyrProject && (IsArduinoProject || IsMicroPythonProject || IsStcSdccProject || IsEspressifProject || configuration is not null);
+            DownloadProbeLabel.Visibility = DownloadProbePicker.Visibility = IsArduinoProject || IsStcSdccProject || IsEspressifProject || IsZephyrProject || IsMicroPythonProject ? Visibility.Collapsed : Visibility.Visible;
             DownloadProbePicker.ItemsSource = configuration?.OpenOcd.Probes;
             DownloadProbePicker.SelectedValue = configuration?.Options.ProbeId;
             var probe = configuration?.OpenOcd.Probes.Single(p => p.Id == configuration.Options.ProbeId);
-            DownloadMenu.Header = IsMicroPythonProject ? "下载 MicroPython 脚本" : "下载固件";
-            DownloadButton.ToolTip = IsMicroPythonProject ? "保存并下载 MicroPython 脚本；首次使用请在下载页面选择 USB 串口。连接会中断板上程序。" :
+            DownloadMenu.Header = IsArduinoProject ? "上传 Arduino 固件" : IsMicroPythonProject ? "下载 MicroPython 脚本" : "下载固件";
+            DownloadButton.ToolTip = IsArduinoProject ? "保存并编译 Arduino sketch；明确选择 COM 串口、核对板型和固件后上传" : IsMicroPythonProject ? "保存并下载 MicroPython 脚本；首次使用请在下载页面选择 USB 串口。连接会中断板上程序。" :
                 IsZephyrProject ? "Zephyr 实验模式：当前尚未开放板级下载，请勿使用裸机后端。" :
                 IsEspressifProject ? "保存、使用内置 SDK 编译并预检多映像布局；确认目标与 COM 端口后下载" :
                 IsStcSdccProject ? "保存、编译并通过普通串口 ISP 下载；完成后运行，不进入调试" :
                 configuration is null ? "当前器件尚未提供匹配的下载配置" :
                 $"保存、编译并下载 · {probe!.DisplayName} · {configuration.Options.SpeedKhz} kHz";
-            DownloadSettingsButton.ToolTip = IsMicroPythonProject ? "MicroPython 串口、脚本与 REPL" :
+            DownloadSettingsButton.ToolTip = IsArduinoProject ? "Arduino 工程与库管理；上传时明确选择 USB 串口" : IsMicroPythonProject ? "MicroPython 串口、脚本与 REPL" :
                 IsZephyrProject ? "Zephyr 实验模式：调试器配置尚待板级验证。" :
                 IsEspressifProject ? "ESP 下载设置：COM 端口与波特率" :
                 IsStcSdccProject ? "STC 串口、时钟与下载设置" : "下载设置：速度与序列号";
@@ -73,6 +73,11 @@ public partial class MainWindow
     private async void DownloadSettings_Click(object sender, RoutedEventArgs e) => await RunAsync(async token =>
     {
         var root = RequireProject();
+        if (IsArduinoProject)
+        {
+            await ShowArduinoManagerAsync(root, token);
+            return;
+        }
         if (IsMicroPythonProject)
         {
             ShowDocument(MicroPythonTab);
@@ -117,6 +122,11 @@ public partial class MainWindow
     {
         EnsureNoActiveDebug();
         var root = RequireProject();
+        if (IsArduinoProject)
+        {
+            await DownloadArduinoAsync(root, token);
+            return;
+        }
         if (IsMicroPythonProject)
         {
             await DownloadMicroPythonAsync(root, token);

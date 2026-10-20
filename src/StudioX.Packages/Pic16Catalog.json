@@ -1,0 +1,856 @@
+[
+  {
+    "id": "PIC16F505",
+    "programWords": 1024,
+    "programWordBits": 12,
+    "ramBytes": 72,
+    "eepromBytes": 0
+  },
+  {
+    "id": "PIC16F506",
+    "programWords": 1024,
+    "programWordBits": 12,
+    "ramBytes": 67,
+    "eepromBytes": 0
+  },
+  {
+    "id": "PIC16F526",
+    "programWords": 1024,
+    "programWordBits": 12,
+    "ramBytes": 67,
+    "eepromBytes": 0
+  },
+  {
+    "id": "PIC16F527",
+    "programWords": 1024,
+    "programWordBits": 12,
+    "ramBytes": 68,
+    "eepromBytes": 0
+  },
+  {
+    "id": "PIC16F54",
+    "programWords": 512,
+    "programWordBits": 12,
+    "ramBytes": 25,
+    "eepromBytes": 0
+  },
+  {
+    "id": "PIC16F57",
+    "programWords": 2048,
+    "programWordBits": 12,
+    "ramBytes": 72,
+    "eepromBytes": 0
+  },
+  {
+    "id": "PIC16F570",
+    "programWords": 2048,
+    "programWordBits": 12,
+    "ramBytes": 132,
+    "eepromBytes": 0
+  },
+  {
+    "id": "PIC16F59",
+    "programWords": 2048,
+    "programWordBits": 12,
+    "ramBytes": 134,
+    "eepromBytes": 0
+  },
+  {
+    "id": "PIC16F610",
+    "programWords": 1024,
+    "programWordBits": 14,
+    "ramBytes": 64,
+    "eepromBytes": 0
+  },
+  {
+    "id": "PIC16F616",
+    "programWords": 2048,
+    "programWordBits": 14,
+    "ramBytes": 128,
+    "eepromBytes": 0
+  },
+  {
+    "id": "PIC16F627",
+    "programWords": 1024,
+    "programWordBits": 14,
+    "ramBytes": 224,
+    "eepromBytes": 128
+  },
+  {
+    "id": "PIC16F627A",
+    "programWords": 1024,
+    "programWordBits": 14,
+    "ramBytes": 224,
+    "eepromBytes": 128
+  },
+  {
+    "id": "PIC16F628",
+    "programWords": 2048,
+    "programWordBits": 14,
+    "ramBytes": 224,
+    "eepromBytes": 128
+  },
+  {
+    "id": "PIC16F628A",
+    "programWords": 2048,
+    "programWordBits": 14,
+    "ramBytes": 224,
+    "eepromBytes": 128
+  },
+  {
+    "id": "PIC16F630",
+    "programWords": 1024,
+    "programWordBits": 14,
+    "ramBytes": 64,
+    "eepromBytes": 128
+  },
+  {
+    "id": "PIC16F631",
+    "programWords": 1024,
+    "programWordBits": 14,
+    "ramBytes": 64,
+    "eepromBytes": 128
+  },
+  {
+    "id": "PIC16F636",
+    "programWords": 2048,
+    "programWordBits": 14,
+    "ramBytes": 128,
+    "eepromBytes": 256
+  },
+  {
+    "id": "PIC16F639",
+    "programWords": 2048,
+    "programWordBits": 14,
+    "ramBytes": 128,
+    "eepromBytes": 256
+  },
+  {
+    "id": "PIC16F648A",
+    "programWords": 4096,
+    "programWordBits": 14,
+    "ramBytes": 256,
+    "eepromBytes": 256
+  },
+  {
+    "id": "PIC16F676",
+    "programWords": 1024,
+    "programWordBits": 14,
+    "ramBytes": 64,
+    "eepromBytes": 128
+  },
+  {
+    "id": "PIC16F677",
+    "programWords": 2048,
+    "programWordBits": 14,
+    "ramBytes": 128,
+    "eepromBytes": 256
+  },
+  {
+    "id": "PIC16F684",
+    "programWords": 2048,
+    "programWordBits": 14,
+    "ramBytes": 128,
+    "eepromBytes": 256
+  },
+  {
+    "id": "PIC16F685",
+    "programWords": 4096,
+    "programWordBits": 14,
+    "ramBytes": 256,
+    "eepromBytes": 256
+  },
+  {
+    "id": "PIC16F687",
+    "programWords": 2048,
+    "programWordBits": 14,
+    "ramBytes": 128,
+    "eepromBytes": 256
+  },
+  {
+    "id": "PIC16F688",
+    "programWords": 4096,
+    "programWordBits": 14,
+    "ramBytes": 256,
+    "eepromBytes": 256
+  },
+  {
+    "id": "PIC16F689",
+    "programWords": 4096,
+    "programWordBits": 14,
+    "ramBytes": 256,
+    "eepromBytes": 256
+  },
+  {
+    "id": "PIC16F690",
+    "programWords": 4096,
+    "programWordBits": 14,
+    "ramBytes": 256,
+    "eepromBytes": 256
+  },
+  {
+    "id": "PIC16F707",
+    "programWords": 8192,
+    "programWordBits": 14,
+    "ramBytes": 363,
+    "eepromBytes": 0
+  },
+  {
+    "id": "PIC16F716",
+    "programWords": 2048,
+    "programWordBits": 14,
+    "ramBytes": 128,
+    "eepromBytes": 0
+  },
+  {
+    "id": "PIC16F72",
+    "programWords": 2048,
+    "programWordBits": 14,
+    "ramBytes": 128,
+    "eepromBytes": 0
+  },
+  {
+    "id": "PIC16F720",
+    "programWords": 2048,
+    "programWordBits": 14,
+    "ramBytes": 128,
+    "eepromBytes": 0
+  },
+  {
+    "id": "PIC16F721",
+    "programWords": 4096,
+    "programWordBits": 14,
+    "ramBytes": 256,
+    "eepromBytes": 0
+  },
+  {
+    "id": "PIC16F722",
+    "programWords": 2048,
+    "programWordBits": 14,
+    "ramBytes": 128,
+    "eepromBytes": 0
+  },
+  {
+    "id": "PIC16F722A",
+    "programWords": 2048,
+    "programWordBits": 14,
+    "ramBytes": 128,
+    "eepromBytes": 0
+  },
+  {
+    "id": "PIC16F723",
+    "programWords": 4096,
+    "programWordBits": 14,
+    "ramBytes": 192,
+    "eepromBytes": 0
+  },
+  {
+    "id": "PIC16F723A",
+    "programWords": 4096,
+    "programWordBits": 14,
+    "ramBytes": 192,
+    "eepromBytes": 0
+  },
+  {
+    "id": "PIC16F724",
+    "programWords": 4096,
+    "programWordBits": 14,
+    "ramBytes": 192,
+    "eepromBytes": 0
+  },
+  {
+    "id": "PIC16F726",
+    "programWords": 8192,
+    "programWordBits": 14,
+    "ramBytes": 368,
+    "eepromBytes": 0
+  },
+  {
+    "id": "PIC16F727",
+    "programWords": 8192,
+    "programWordBits": 14,
+    "ramBytes": 368,
+    "eepromBytes": 0
+  },
+  {
+    "id": "PIC16F73",
+    "programWords": 4096,
+    "programWordBits": 14,
+    "ramBytes": 192,
+    "eepromBytes": 0
+  },
+  {
+    "id": "PIC16F737",
+    "programWords": 4096,
+    "programWordBits": 14,
+    "ramBytes": 368,
+    "eepromBytes": 0
+  },
+  {
+    "id": "PIC16F74",
+    "programWords": 4096,
+    "programWordBits": 14,
+    "ramBytes": 192,
+    "eepromBytes": 0
+  },
+  {
+    "id": "PIC16F747",
+    "programWords": 4096,
+    "programWordBits": 14,
+    "ramBytes": 368,
+    "eepromBytes": 0
+  },
+  {
+    "id": "PIC16F753",
+    "programWords": 2048,
+    "programWordBits": 14,
+    "ramBytes": 128,
+    "eepromBytes": 0
+  },
+  {
+    "id": "PIC16F76",
+    "programWords": 8192,
+    "programWordBits": 14,
+    "ramBytes": 368,
+    "eepromBytes": 0
+  },
+  {
+    "id": "PIC16F767",
+    "programWords": 8192,
+    "programWordBits": 14,
+    "ramBytes": 368,
+    "eepromBytes": 0
+  },
+  {
+    "id": "PIC16F77",
+    "programWords": 8192,
+    "programWordBits": 14,
+    "ramBytes": 368,
+    "eepromBytes": 0
+  },
+  {
+    "id": "PIC16F777",
+    "programWords": 8192,
+    "programWordBits": 14,
+    "ramBytes": 368,
+    "eepromBytes": 0
+  },
+  {
+    "id": "PIC16F785",
+    "programWords": 2048,
+    "programWordBits": 14,
+    "ramBytes": 128,
+    "eepromBytes": 256
+  },
+  {
+    "id": "PIC16F818",
+    "programWords": 1024,
+    "programWordBits": 14,
+    "ramBytes": 128,
+    "eepromBytes": 128
+  },
+  {
+    "id": "PIC16F819",
+    "programWords": 2048,
+    "programWordBits": 14,
+    "ramBytes": 256,
+    "eepromBytes": 256
+  },
+  {
+    "id": "PIC16F83",
+    "programWords": 512,
+    "programWordBits": 14,
+    "ramBytes": 36,
+    "eepromBytes": 64
+  },
+  {
+    "id": "PIC16F84",
+    "programWords": 1024,
+    "programWordBits": 14,
+    "ramBytes": 68,
+    "eepromBytes": 64
+  },
+  {
+    "id": "PIC16F84A",
+    "programWords": 1024,
+    "programWordBits": 14,
+    "ramBytes": 68,
+    "eepromBytes": 64
+  },
+  {
+    "id": "PIC16F87",
+    "programWords": 4096,
+    "programWordBits": 14,
+    "ramBytes": 368,
+    "eepromBytes": 256
+  },
+  {
+    "id": "PIC16F870",
+    "programWords": 2048,
+    "programWordBits": 14,
+    "ramBytes": 128,
+    "eepromBytes": 64
+  },
+  {
+    "id": "PIC16F871",
+    "programWords": 2048,
+    "programWordBits": 14,
+    "ramBytes": 128,
+    "eepromBytes": 64
+  },
+  {
+    "id": "PIC16F872",
+    "programWords": 2048,
+    "programWordBits": 14,
+    "ramBytes": 128,
+    "eepromBytes": 64
+  },
+  {
+    "id": "PIC16F873",
+    "programWords": 4096,
+    "programWordBits": 14,
+    "ramBytes": 192,
+    "eepromBytes": 128
+  },
+  {
+    "id": "PIC16F873A",
+    "programWords": 4096,
+    "programWordBits": 14,
+    "ramBytes": 192,
+    "eepromBytes": 128
+  },
+  {
+    "id": "PIC16F874",
+    "programWords": 4096,
+    "programWordBits": 14,
+    "ramBytes": 192,
+    "eepromBytes": 128
+  },
+  {
+    "id": "PIC16F874A",
+    "programWords": 4096,
+    "programWordBits": 14,
+    "ramBytes": 192,
+    "eepromBytes": 128
+  },
+  {
+    "id": "PIC16F876",
+    "programWords": 8192,
+    "programWordBits": 14,
+    "ramBytes": 368,
+    "eepromBytes": 256
+  },
+  {
+    "id": "PIC16F876A",
+    "programWords": 8192,
+    "programWordBits": 14,
+    "ramBytes": 368,
+    "eepromBytes": 256
+  },
+  {
+    "id": "PIC16F877",
+    "programWords": 8192,
+    "programWordBits": 14,
+    "ramBytes": 368,
+    "eepromBytes": 256
+  },
+  {
+    "id": "PIC16F877A",
+    "programWords": 8192,
+    "programWordBits": 14,
+    "ramBytes": 368,
+    "eepromBytes": 256
+  },
+  {
+    "id": "PIC16F88",
+    "programWords": 4096,
+    "programWordBits": 14,
+    "ramBytes": 368,
+    "eepromBytes": 256
+  },
+  {
+    "id": "PIC16F882",
+    "programWords": 2048,
+    "programWordBits": 14,
+    "ramBytes": 128,
+    "eepromBytes": 128
+  },
+  {
+    "id": "PIC16F883",
+    "programWords": 4096,
+    "programWordBits": 14,
+    "ramBytes": 256,
+    "eepromBytes": 256
+  },
+  {
+    "id": "PIC16F884",
+    "programWords": 4096,
+    "programWordBits": 14,
+    "ramBytes": 256,
+    "eepromBytes": 256
+  },
+  {
+    "id": "PIC16F886",
+    "programWords": 8192,
+    "programWordBits": 14,
+    "ramBytes": 368,
+    "eepromBytes": 256
+  },
+  {
+    "id": "PIC16F887",
+    "programWords": 8192,
+    "programWordBits": 14,
+    "ramBytes": 368,
+    "eepromBytes": 256
+  },
+  {
+    "id": "PIC16F913",
+    "programWords": 4096,
+    "programWordBits": 14,
+    "ramBytes": 256,
+    "eepromBytes": 256
+  },
+  {
+    "id": "PIC16F914",
+    "programWords": 4096,
+    "programWordBits": 14,
+    "ramBytes": 256,
+    "eepromBytes": 256
+  },
+  {
+    "id": "PIC16F916",
+    "programWords": 8192,
+    "programWordBits": 14,
+    "ramBytes": 352,
+    "eepromBytes": 256
+  },
+  {
+    "id": "PIC16F917",
+    "programWords": 8192,
+    "programWordBits": 14,
+    "ramBytes": 352,
+    "eepromBytes": 256
+  },
+  {
+    "id": "PIC16F946",
+    "programWords": 8192,
+    "programWordBits": 14,
+    "ramBytes": 336,
+    "eepromBytes": 256
+  },
+  {
+    "id": "PIC16HV540",
+    "programWords": 512,
+    "programWordBits": 12,
+    "ramBytes": 25,
+    "eepromBytes": 0
+  },
+  {
+    "id": "PIC16HV610",
+    "programWords": 1024,
+    "programWordBits": 14,
+    "ramBytes": 64,
+    "eepromBytes": 0
+  },
+  {
+    "id": "PIC16HV616",
+    "programWords": 2048,
+    "programWordBits": 14,
+    "ramBytes": 128,
+    "eepromBytes": 0
+  },
+  {
+    "id": "PIC16HV753",
+    "programWords": 2048,
+    "programWordBits": 14,
+    "ramBytes": 128,
+    "eepromBytes": 0
+  },
+  {
+    "id": "PIC16HV785",
+    "programWords": 2048,
+    "programWordBits": 14,
+    "ramBytes": 128,
+    "eepromBytes": 256
+  },
+  {
+    "id": "PIC16LF627",
+    "programWords": 1024,
+    "programWordBits": 14,
+    "ramBytes": 224,
+    "eepromBytes": 128
+  },
+  {
+    "id": "PIC16LF627A",
+    "programWords": 1024,
+    "programWordBits": 14,
+    "ramBytes": 224,
+    "eepromBytes": 128
+  },
+  {
+    "id": "PIC16LF628",
+    "programWords": 2048,
+    "programWordBits": 14,
+    "ramBytes": 224,
+    "eepromBytes": 128
+  },
+  {
+    "id": "PIC16LF628A",
+    "programWords": 2048,
+    "programWordBits": 14,
+    "ramBytes": 224,
+    "eepromBytes": 128
+  },
+  {
+    "id": "PIC16LF648A",
+    "programWords": 4096,
+    "programWordBits": 14,
+    "ramBytes": 256,
+    "eepromBytes": 256
+  },
+  {
+    "id": "PIC16LF707",
+    "programWords": 8192,
+    "programWordBits": 14,
+    "ramBytes": 363,
+    "eepromBytes": 0
+  },
+  {
+    "id": "PIC16LF720",
+    "programWords": 2048,
+    "programWordBits": 14,
+    "ramBytes": 128,
+    "eepromBytes": 0
+  },
+  {
+    "id": "PIC16LF721",
+    "programWords": 4096,
+    "programWordBits": 14,
+    "ramBytes": 256,
+    "eepromBytes": 0
+  },
+  {
+    "id": "PIC16LF722",
+    "programWords": 2048,
+    "programWordBits": 14,
+    "ramBytes": 128,
+    "eepromBytes": 0
+  },
+  {
+    "id": "PIC16LF722A",
+    "programWords": 2048,
+    "programWordBits": 14,
+    "ramBytes": 128,
+    "eepromBytes": 0
+  },
+  {
+    "id": "PIC16LF723",
+    "programWords": 4096,
+    "programWordBits": 14,
+    "ramBytes": 192,
+    "eepromBytes": 0
+  },
+  {
+    "id": "PIC16LF723A",
+    "programWords": 4096,
+    "programWordBits": 14,
+    "ramBytes": 192,
+    "eepromBytes": 0
+  },
+  {
+    "id": "PIC16LF724",
+    "programWords": 4096,
+    "programWordBits": 14,
+    "ramBytes": 192,
+    "eepromBytes": 0
+  },
+  {
+    "id": "PIC16LF726",
+    "programWords": 8192,
+    "programWordBits": 14,
+    "ramBytes": 368,
+    "eepromBytes": 0
+  },
+  {
+    "id": "PIC16LF727",
+    "programWords": 8192,
+    "programWordBits": 14,
+    "ramBytes": 368,
+    "eepromBytes": 0
+  },
+  {
+    "id": "PIC16LF73",
+    "programWords": 4096,
+    "programWordBits": 14,
+    "ramBytes": 192,
+    "eepromBytes": 0
+  },
+  {
+    "id": "PIC16LF74",
+    "programWords": 4096,
+    "programWordBits": 14,
+    "ramBytes": 192,
+    "eepromBytes": 0
+  },
+  {
+    "id": "PIC16LF747",
+    "programWords": 4096,
+    "programWordBits": 14,
+    "ramBytes": 368,
+    "eepromBytes": 0
+  },
+  {
+    "id": "PIC16LF76",
+    "programWords": 8192,
+    "programWordBits": 14,
+    "ramBytes": 368,
+    "eepromBytes": 0
+  },
+  {
+    "id": "PIC16LF767",
+    "programWords": 8192,
+    "programWordBits": 14,
+    "ramBytes": 368,
+    "eepromBytes": 0
+  },
+  {
+    "id": "PIC16LF77",
+    "programWords": 8192,
+    "programWordBits": 14,
+    "ramBytes": 368,
+    "eepromBytes": 0
+  },
+  {
+    "id": "PIC16LF777",
+    "programWords": 8192,
+    "programWordBits": 14,
+    "ramBytes": 368,
+    "eepromBytes": 0
+  },
+  {
+    "id": "PIC16LF818",
+    "programWords": 1024,
+    "programWordBits": 14,
+    "ramBytes": 128,
+    "eepromBytes": 128
+  },
+  {
+    "id": "PIC16LF819",
+    "programWords": 2048,
+    "programWordBits": 14,
+    "ramBytes": 256,
+    "eepromBytes": 256
+  },
+  {
+    "id": "PIC16LF83",
+    "programWords": 512,
+    "programWordBits": 14,
+    "ramBytes": 36,
+    "eepromBytes": 64
+  },
+  {
+    "id": "PIC16LF84",
+    "programWords": 1024,
+    "programWordBits": 14,
+    "ramBytes": 68,
+    "eepromBytes": 64
+  },
+  {
+    "id": "PIC16LF84A",
+    "programWords": 1024,
+    "programWordBits": 14,
+    "ramBytes": 68,
+    "eepromBytes": 64
+  },
+  {
+    "id": "PIC16LF87",
+    "programWords": 4096,
+    "programWordBits": 14,
+    "ramBytes": 368,
+    "eepromBytes": 256
+  },
+  {
+    "id": "PIC16LF870",
+    "programWords": 2048,
+    "programWordBits": 14,
+    "ramBytes": 128,
+    "eepromBytes": 64
+  },
+  {
+    "id": "PIC16LF871",
+    "programWords": 2048,
+    "programWordBits": 14,
+    "ramBytes": 128,
+    "eepromBytes": 64
+  },
+  {
+    "id": "PIC16LF872",
+    "programWords": 2048,
+    "programWordBits": 14,
+    "ramBytes": 128,
+    "eepromBytes": 64
+  },
+  {
+    "id": "PIC16LF873",
+    "programWords": 4096,
+    "programWordBits": 14,
+    "ramBytes": 192,
+    "eepromBytes": 128
+  },
+  {
+    "id": "PIC16LF873A",
+    "programWords": 4096,
+    "programWordBits": 14,
+    "ramBytes": 192,
+    "eepromBytes": 128
+  },
+  {
+    "id": "PIC16LF874",
+    "programWords": 4096,
+    "programWordBits": 14,
+    "ramBytes": 192,
+    "eepromBytes": 128
+  },
+  {
+    "id": "PIC16LF874A",
+    "programWords": 4096,
+    "programWordBits": 14,
+    "ramBytes": 192,
+    "eepromBytes": 128
+  },
+  {
+    "id": "PIC16LF876",
+    "programWords": 8192,
+    "programWordBits": 14,
+    "ramBytes": 368,
+    "eepromBytes": 256
+  },
+  {
+    "id": "PIC16LF876A",
+    "programWords": 8192,
+    "programWordBits": 14,
+    "ramBytes": 368,
+    "eepromBytes": 256
+  },
+  {
+    "id": "PIC16LF877",
+    "programWords": 8192,
+    "programWordBits": 14,
+    "ramBytes": 368,
+    "eepromBytes": 256
+  },
+  {
+    "id": "PIC16LF877A",
+    "programWords": 8192,
+    "programWordBits": 14,
+    "ramBytes": 368,
+    "eepromBytes": 256
+  },
+  {
+    "id": "PIC16LF88",
+    "programWords": 4096,
+    "programWordBits": 14,
+    "ramBytes": 368,
+    "eepromBytes": 256
+  }
+]

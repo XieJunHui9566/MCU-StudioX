@@ -38,6 +38,10 @@
   <Folder
     Name="/tools/">
     <Project
+      Path="tools/StudioX.ArduinoValidation/StudioX.ArduinoValidation.csproj" />
+    <Project
+      Path="tools/StudioX.ArduinoTemplateValidation/StudioX.ArduinoTemplateValidation.csproj" />
+    <Project
       Path="tools/StudioX.ProductivityValidation/StudioX.ProductivityValidation.csproj" />
   </Folder>
   <Folder
@@ -98,4 +102,6 @@
     <Project
       Path="tools/StudioX.ProductWorkflowValidation/StudioX.ProductWorkflowValidation.csproj" />
   </Folder>
+  <Project
+    Path="tools/StudioX.PicValidation/StudioX.PicValidation.csproj" />
 </Solution>

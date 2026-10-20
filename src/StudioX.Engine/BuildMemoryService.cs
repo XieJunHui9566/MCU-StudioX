@@ -16,6 +16,10 @@ public sealed class BuildMemoryService(ToolsetCatalog? toolsets = null)
         try
         {
             var project = await ProjectService.ReadAsync(root, token);
+            if (project.Kind == ProjectKind.Pic)
+            {
+                return new([], project.DeviceId + "：" + project.Pic!.CapacityDescription + "；实际占用见 XC8 原始构建输出。");
+            }
             if (project.Kind == ProjectKind.MicroPython)
             {
                 return new([], "MicroPython 脚本工程不生成本机 ELF；内存信息可在 REPL 中查询 gc.mem_free()。");

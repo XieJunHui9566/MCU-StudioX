@@ -75,10 +75,24 @@ public partial class MainWindow
             {
                 ResolveBuildTroubleshooting(directory);
                 ReportBuildActivity("分析构建产物");
-                await RefreshBuildMemoryAsync(directory, token);
+                if (IsArduinoProject)
+                {
+                    BuildMemory.SetMessage("Arduino 编译成功；Flash / RAM 占用见构建输出。实板验证待进行。");
+                }
+                else if (currentProjectManifest?.Kind == ProjectKind.Pic)
+                {
+                    BuildMemory.SetMessage("PIC 编译成功，已生成 HEX / ELF；程序字、RAM 和 EEPROM 占用见 XC8 输出，未做实板验证。");
+                }
+                else
+                {
+                    await RefreshBuildMemoryAsync(directory, token);
+                }
                 try
                 {
-                    await services.BuildHistory.CaptureAsync(directory, buildClock.Elapsed.TotalSeconds, token);
+                    if (!IsArduinoProject && currentProjectManifest?.Kind != ProjectKind.Pic)
+                    {
+                        await services.BuildHistory.CaptureAsync(directory, buildClock.Elapsed.TotalSeconds, token);
+                    }
                 }
                 catch (Exception error) when (error is not OperationCanceledException) { Log("构建历史保存失败，原始编译结果保持有效：" + error); }
                 if (currentProjectManifest?.Espressif is not null &&

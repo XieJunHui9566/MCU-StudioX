@@ -108,12 +108,14 @@ try
             throw 'Installer build failed.'
         }
         $packaged = Get-Item -LiteralPath (Join-Path $output ('installer/' + $installerName))
+        $installerRelease = Get-Content -LiteralPath (Join-Path $output 'installer/release.json') -Raw | ConvertFrom-Json
         @{formatVersion      =1;
             sourceCommit     =$head;
             version          =$ReleaseVersion;
             profile          =$DistributionProfile;
             installer        =$packaged.Name;
             bytes            =$packaged.Length;
+            installerFiles   =$installerRelease.installerFiles;
             sha256           =(Get-FileHash -LiteralPath $packaged.FullName).Hash;
             regressionSha256 =(Get-FileHash -LiteralPath $RegressionReport).Hash
         } | ConvertTo-Json -Depth 5 | Set-Content (Join-Path $output 'artifact-record.json') -Encoding utf8
@@ -145,7 +147,20 @@ try
         throw 'Source archive failed.'
     }
     $checksum = Join-Path $output 'SHA256SUMS.txt'
-    Write-StudioXReleaseChecksums @($file.FullName, $sourceArchive) $checksum
+    $installerFiles = @($file.FullName)
+    if ($record.installerFiles)
+    {
+        $installerFiles = foreach ($part in $record.installerFiles)
+        {
+            if ($part.file -ne $file.Name -and $part.file -notlike ($file.BaseName + '-*.bin')) { throw 'Invalid installer part filename.' }
+            if ([IO.Path]::GetFileName($part.file) -ne $part.file) { throw 'Installer part must be adjacent to the executable.' }
+            $partPath = Join-Path $file.DirectoryName $part.file
+            $partFile = Get-Item -LiteralPath $partPath
+            if ($partFile.Length -ne $part.bytes -or $partFile.Length -ge 2GB -or (Get-FileHash -LiteralPath $partPath).Hash -ne $part.sha256) { throw 'Installer part checksum differs from package evidence.' }
+            $partPath
+        }
+    }
+    Write-StudioXReleaseChecksums @($installerFiles + $sourceArchive) $checksum
     $tag = $ReleaseTag
     # 不自动提交、打 tag、推送分支；已审核源码必须先有与 HEAD 对应的远端 tag。
     & git fetch origin "refs/tags/${tag}:refs/tags/${tag}"
@@ -153,7 +168,7 @@ try
     {
         throw 'Remote release tag must already resolve to this reviewed source commit.'
     }
-    & gh release create $tag $file.FullName $sourceArchive $checksum ([IO.Path]::GetFullPath($ArtifactRecord)) --repo $Repository --verify-tag --draft --title "MCU StudioX $ReleaseVersion" --notes-file ([IO.Path]::GetFullPath($ReleaseNotes))
+    & gh release create $tag @installerFiles $sourceArchive $checksum ([IO.Path]::GetFullPath($ArtifactRecord)) --repo $Repository --verify-tag --draft --title "MCU StudioX $ReleaseVersion" --notes-file ([IO.Path]::GetFullPath($ReleaseNotes))
     if ($LASTEXITCODE -ne 0)
     {
         throw 'GitHub draft release failed; inspect original diagnostics before retrying.'

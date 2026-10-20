@@ -259,6 +259,9 @@
                 Header="导入 CubeMX CMake 工程…"
                 Click="ImportCubeMx_Click" />
               <MenuItem
+                Header="导入 Arduino sketch 副本…"
+                Click="ImportArduino_Click" />
+              <MenuItem
                 Header="保存"
                 InputGestureText="Ctrl+S"
                 Click="Save_Click" />
@@ -520,6 +523,9 @@
                 <MenuItem
                   Header="LVGL PC 预览"
                   Click="LvglPreview_Click" />
+                <MenuItem
+                  Header="Arduino 工程与库管理…"
+                  Click="ArduinoManager_Click" />
               </MenuItem>
               <MenuItem
                 x:Name="DevelopmentComponentsMenu"
@@ -2886,6 +2892,31 @@
                           TextWrapping="Wrap"
                           Foreground="{DynamicResource Muted}"
                           Margin="0,8,0,0" />
+                        <Border
+                          x:Name="ArduinoTemplatePanel"
+                          BorderBrush="{DynamicResource Border}"
+                          BorderThickness="1"
+                          CornerRadius="4"
+                          Padding="12"
+                          Margin="0,14,0,0"
+                          Visibility="Collapsed">
+                          <StackPanel>
+                            <TextBlock
+                              Text="Arduino 开发板配置"
+                              FontWeight="SemiBold"
+                              Margin="0,0,0,8" />
+                            <ComboBox
+                              x:Name="ArduinoBoardPicker"
+                              DisplayMemberPath="DisplayName"
+                              AutomationProperties.Name="Arduino 开发板配置"
+                              SelectionChanged="ArduinoBoardPicker_SelectionChanged" />
+                            <TextBlock
+                              x:Name="ArduinoTemplateDescription"
+                              TextWrapping="Wrap"
+                              Foreground="{DynamicResource Muted}"
+                              Margin="0,8,0,0" />
+                          </StackPanel>
+                        </Border>
                         <Border
                           x:Name="IdfVersionPanel"
                           BorderBrush="{DynamicResource Border}"

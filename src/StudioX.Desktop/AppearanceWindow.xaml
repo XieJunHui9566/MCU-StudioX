@@ -168,7 +168,7 @@
             HorizontalAlignment="Right" />
         </Grid>
         <TextBlock
-          Text="轻微同色柔光贴近字边；强度调整亮度，保持字形清晰。"
+          Text="同色柔光随强度更明亮，清晰字形叠加在光晕上方。"
           Foreground="{DynamicResource Muted}"
           FontSize="11"
           TextWrapping="Wrap" />

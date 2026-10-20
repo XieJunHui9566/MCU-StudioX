@@ -10,6 +10,11 @@ public sealed record ProjectDeviceInfo(string Manufacturer, string DeviceName, s
 {
     public static ProjectDeviceInfo Recorded(ProjectManifest project) => project.Kind switch
     {
+        ProjectKind.Pic => new("Microchip", project.DeviceId, project.TemplateId,
+            "PIC 原生 C / XC8 4.00；" + project.Pic!.CapacityDescription + "。", project.PackId,
+            "仅软件编辑、编译和 HEX 导出验证；尚未接入 PICkit 烧录或实机调试。"),
+        ProjectKind.Arduino => new(project.Arduino!.Platform.Id == "esp32" ? "Espressif" : "Microchip", Engine.Arduino.ArduinoBoard.Require(project.Arduino.BoardId).DisplayName,
+            "Arduino sketch", "官方 Arduino 编译流程；库和工具版本按工程锁定。", project.Arduino!.Platform.DisplayName, "软件编译验证；实板上传待板卡到货后进行。"),
         ProjectKind.CubeMx => new("STMicroelectronics", project.DeviceId, "STM32CubeMX 生成工程",
             "保留 CubeMX 生成的工程配置，未使用 StudioX 起始模板。", "未使用 .mcupack", ""),
         ProjectKind.Zephyr => new("未记录", project.Zephyr!.BoardTarget, project.TemplateId,
@@ -22,7 +27,7 @@ public sealed record ProjectDeviceInfo(string Manufacturer, string DeviceName, s
         CancellationToken cancellationToken = default)
     {
         var recorded = Recorded(project);
-        if (project.Kind == ProjectKind.CubeMx)
+        if (project.Kind is ProjectKind.Arduino or ProjectKind.CubeMx)
         {
             return recorded;
         }

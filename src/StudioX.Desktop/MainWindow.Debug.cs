@@ -6,6 +6,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Threading;
 using ICSharpCode.AvalonEdit.Document;
+using StudioX.Engine;
 using StudioX.Engine.Debugging;
 using StudioX.Foundation;
 
@@ -220,7 +221,7 @@ public partial class MainWindow
         }
         var debug = services.Debugger;
         var idle = !projectActionsBusy;
-        var sourceDebugUnsupported = IsEspressifProject || IsZephyrProject || IsMicroPythonProject;
+        var sourceDebugUnsupported = IsArduinoProject || IsEspressifProject || IsZephyrProject || IsMicroPythonProject || currentProjectManifest?.Kind == ProjectKind.Pic;
         var addressDebug = IsStcSdccProject || debug.MonitorSession is not null;
         DebugTopMenu.Visibility = DebugStartButton.Visibility = sourceDebugUnsupported ? Visibility.Collapsed : Visibility.Visible;
         if (debugMargin is not null)
@@ -465,7 +466,7 @@ public partial class MainWindow
             await RunAsync(token => services.Debugger.ChangeBreakpointAsync(point.Id, !point.Enabled, token));
         }
     }
-    private bool CanEditBreakpoints => (services.Debugger.MonitorSession is null || services.Debugger.MonitorSession.HasSymbols) && !IsEspressifProject && !IsZephyrProject && !IsMicroPythonProject && projectDirectory is not null && activeDocument is not null && IsActiveSourceTab &&
+    private bool CanEditBreakpoints => (services.Debugger.MonitorSession is null || services.Debugger.MonitorSession.HasSymbols) && !IsArduinoProject && !IsEspressifProject && !IsZephyrProject && !IsMicroPythonProject && currentProjectManifest?.Kind != ProjectKind.Pic && projectDirectory is not null && activeDocument is not null && IsActiveSourceTab &&
         !Path.IsPathRooted(activeDocument.RelativePath) && CodeLanguage.ForFile(activeDocument.RelativePath) is "C" or "C++" &&
         services.Debugger.State is DebugState.Disconnected or DebugState.Stopped or DebugState.Faulted;
     private async Task NavigateSelectedDebugFrameAsync()

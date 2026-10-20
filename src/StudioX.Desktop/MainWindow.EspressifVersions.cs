@@ -27,7 +27,8 @@ public partial class MainWindow
         }
         var revision = ++idfSelectionRevision;
         if (PackPicker.SelectedItem is not InstalledPack pack || DevicePicker.SelectedItem is not DeviceDefinition device ||
-            TemplatePicker.SelectedItem is not ProjectTemplate template || device.Espressif?.Framework != "esp-idf")
+            TemplatePicker.SelectedItem is not ProjectTemplate template || device.Espressif?.Framework != "esp-idf" ||
+            StudioX.Application.Arduino.ArduinoTemplateCatalog.IsArduino(template))
         {
             ClearIdfVersionSelection();
             return;

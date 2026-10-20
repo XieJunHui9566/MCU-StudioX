@@ -33,11 +33,15 @@ Linux 迁移入口为 `StudioX.PortableDesktop`。它只调用 `Application.Port
 
 ## 独立原生核心
 
+PIC16F877A 使用独立的 XC8 C 后端，保留 14 位程序字、分银行 RAM 与 EEPROM 元数据，不套用 GCC、CMake 或 OpenOCD。官方编译器和 DFP 作为精确版本私有组件管理，不需要 MPLAB X 编辑界面；当前阶段仅开放 C 编辑、真实编译及 HEX 导出。软件与硬件边界、工具来源和本体改动见 [PIC 支持](PIC.md)。
+
 根据用户最新决定，本项目不要求兼容旧体系。所有核心模块使用 C#；不分发 Node，不复用旧 TypeScript 运行时，不迁移 PLC 工程。旧产品仅参考已验证的设计经验和芯片启动/链接参数。
 
 Packages 完整校验新的 ZIP 芯片包，Engine 从明确选择构造纯 BuildPlan，再生成 CMake 工程并执行内置工具。Pack 导入先在自身 staging 中校验所有文件 SHA-256，再发布到用户仓库；同 ID/版本的不同内容拒绝覆盖。哈希只提供完整性，不等于作者签名。外部工具取消/超时终止整个进程树，原始诊断保留。
 
 工程保存 `.studiox/project.json` 格式 1，工具锁独立保存于 `.studiox/toolchain.lock.json`。工具只按精确 ID/版本选择，不搜索 PATH，不将绝对安装路径写入工程。工具清单使用安装目录内相对路径，允许完整安装目录搬迁。
+
+Arduino 使用独立 `ProjectKind.Arduino`，在统一器件创建页作为起始模板选择；芯片型号、开发板配置和框架分别记录，保留官方 sketch 结构。AVR 与 ESP32 使用各自精确版本的 Arduino 工具组件，库版本与内容锁独立记录。上传前核对源码、依赖及完整镜像集合，Application 统一预约串口。支持范围与实板待验边界见 [Arduino 编程支持](ARDUINO.md)。
 
 Engine 生成分层 CMake：根 `CMakeLists.txt` 交给用户维护，`device/CMakeLists.txt` 与 `device/platform.cmake` 管理固定 SDK、器件参数和产物规则。Application 将带生成器标识的内部配置视为只读，Desktop 显示原因；器件包内容不承担开发环境组件分发。布局和维护约定见 [工程分层](PROJECT_LAYOUT.md)。
 

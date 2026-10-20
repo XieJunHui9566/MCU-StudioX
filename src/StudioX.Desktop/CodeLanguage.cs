@@ -16,7 +16,7 @@ internal static class CodeLanguage
         return Path.GetExtension(path).ToLowerInvariant() switch
         {
             ".c" or ".h" => "C",
-            ".cpp" or ".cc" or ".cxx" or ".hpp" or ".hh" or ".hxx" => "C++",
+            ".ino" or ".cpp" or ".cc" or ".cxx" or ".hpp" or ".hh" or ".hxx" => "C++",
             ".s" or ".asm" => "Assembly",
             ".ld" or ".lds" => "Linker",
             ".dts" or ".dtsi" or ".overlay" => "Devicetree",

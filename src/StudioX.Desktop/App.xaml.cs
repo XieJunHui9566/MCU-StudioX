@@ -56,6 +56,9 @@ public partial class App : System.Windows.Application
         var navigationPreview = e.Args is ["--preview-navigation", _, _];
         var explorerPreview = e.Args is ["--preview-explorer", _, _];
         var recentProjectsPreview = e.Args is ["--preview-recent-projects", _, _];
+        var arduinoPreview = e.Args is ["--preview-arduino", _, _, _];
+        var arduinoTemplatesPreview = e.Args is ["--preview-arduino-templates", _, _, _, _];
+        var picPreview = e.Args is ["--preview-pic", _, _, _, _];
         var buildPreview = e.Args is ["--preview-build", _, _];
         var buildOutputPreview = e.Args is ["--preview-build-output", _, _, _];
         var stcDownloadOutputPreview = e.Args is ["--preview-stc-download-output", _];
@@ -109,9 +112,15 @@ public partial class App : System.Windows.Application
         anyPreview |= stcDownloadOutputPreview;
         anyPreview |= appearancePluginPreview;
         anyPreview |= recentProjectsPreview;
+        anyPreview |= arduinoPreview;
+        anyPreview |= arduinoTemplatesPreview;
+        anyPreview |= picPreview;
         var data = (acceptanceWorkbench || showAgentWorkspace || showProductivity || showDebugDemo || showBreakpointsDemo) && e.Args.Length >= 3 ? Path.GetFullPath(e.Args[2]) : smoke || anyPreview ? Path.Combine(Path.GetFullPath(e.Args[1]), "user-data") :
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MCUStudioX");
         var services = new WorkbenchService(acceptanceWorkbench ? Path.GetFullPath(e.Args[1])
+            : arduinoPreview ? Path.GetFullPath(e.Args[3])
+            : arduinoTemplatesPreview ? Path.GetFullPath(e.Args[2])
+            : picPreview ? Path.GetFullPath(e.Args[2])
             : buildOutputPreview ? Path.GetFullPath(e.Args[3])
             : peripheralDevelopmentPreview ? Path.GetFullPath(e.Args[3])
             : workspaceEditingPreview && e.Args.Length == 4 ? Path.GetFullPath(e.Args[3])
@@ -137,7 +146,19 @@ public partial class App : System.Windows.Application
             Directory.CreateDirectory(directory);
             try
             {
-                if (appearancePluginPreview)
+                if (picPreview)
+                {
+                    await window.RenderPicPreviewAsync(directory, Path.GetFullPath(e.Args[3]), Path.GetFullPath(e.Args[4]));
+                }
+                else if (arduinoTemplatesPreview)
+                {
+                    await window.RenderArduinoTemplatesPreviewAsync(directory, Path.GetFullPath(e.Args[3]), Path.GetFullPath(e.Args[4]));
+                }
+                else if (arduinoPreview)
+                {
+                    await window.RenderArduinoPreviewAsync(directory, Path.GetFullPath(e.Args[2]));
+                }
+                else if (appearancePluginPreview)
                 {
                     await window.RenderAppearancePluginPreviewAsync(directory, Path.GetFullPath(e.Args[2]), Path.GetFullPath(e.Args[3]));
                 }

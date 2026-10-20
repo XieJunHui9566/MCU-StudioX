@@ -3,8 +3,18 @@ namespace StudioX.Engine;
 using System.Text;
 using StudioX.Foundation;
 
-public sealed partial class BuildService(ToolsetCatalog catalog, string? ag32MappingLicenseDirectory = null)
+public sealed partial class BuildService(ToolsetCatalog catalog, string? ag32MappingLicenseDirectory = null, string? userDataDirectory = null)
 {
+    public Pic.PicBuildService Pic
+    {
+        get;
+    } = new(catalog,
+        userDataDirectory ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MCUStudioX"));
+    public Arduino.ArduinoBuildService Arduino
+    {
+        get;
+    } = new(catalog,
+        userDataDirectory ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MCUStudioX"));
     private readonly SemaphoreSlim gate = new(1, 1);
     public bool IsBusy => gate.CurrentCount == 0;
     public IDisposable AcquireMaintenance(CancellationToken token = default)
@@ -44,6 +54,14 @@ public sealed partial class BuildService(ToolsetCatalog catalog, string? ag32Map
         {
             var root = Path.GetFullPath(directory);
             var project = await ProjectService.ReadAsync(root, token);
+            if (project.Kind == ProjectKind.Pic)
+            {
+                throw new StudioXException("PIC_BUILD_SETTINGS", "PIC 首阶段使用固定 XC8 C99 / O0 参数，不使用 GCC/CMake 编译设置。");
+            }
+            if (project.Kind == ProjectKind.Arduino)
+            {
+                throw new StudioXException("ARDUINO_BUILD_SETTINGS", "Arduino 编译参数由明确板型和固定核心管理，请使用 Arduino 工程管理。");
+            }
             if (project.Kind == ProjectKind.MicroPython)
             {
                 throw MicroPythonProject.NativeOperationUnavailable();
@@ -84,6 +102,24 @@ public sealed partial class BuildService(ToolsetCatalog catalog, string? ag32Map
         {
             var root = Path.GetFullPath(projectDirectory);
             var project = await ProjectService.ReadAsync(root, cancellationToken);
+            if (project.Kind == ProjectKind.Pic)
+            {
+                if (configureOnly)
+                {
+                    throw new StudioXException("PIC_CONFIGURE", "PIC 使用独立 XC8 编译，不执行 CMake 配置。");
+                }
+                StudioX.Engine.Pic.PicBuildService.Invalidate(root);
+                using var picComponents = await PrepareComponentsAsync(root, project, progress, cancellationToken);
+                return await Pic.ExecuteAsync(root, project, picComponents.Tools.Single(tool => tool.Manifest.Id == project.ToolsetId), output, cancellationToken);
+            }
+            if (project.Kind == ProjectKind.Arduino)
+            {
+                if (configureOnly)
+                {
+                    throw new StudioXException("ARDUINO_CONFIGURE", "Arduino 使用官方 sketch 构建流程，不生成 CMake 配置。");
+                }
+                return await Arduino.BuildAsync(root, output, cancellationToken);
+            }
             if (project.Kind == ProjectKind.MicroPython)
             {
                 throw MicroPythonProject.NativeOperationUnavailable();

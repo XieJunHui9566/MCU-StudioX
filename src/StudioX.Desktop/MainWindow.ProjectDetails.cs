@@ -31,7 +31,7 @@ public partial class MainWindow
         NewProjectPanel.IsEnabled = project is null;
         ProjectDetailsPanel.Visibility = project is null ? Visibility.Collapsed : Visibility.Visible;
         ProjectDetailsPanel.DataContext = null;
-        BuildSettingsCard.Visibility = project?.Kind is ProjectKind.Zephyr or ProjectKind.MicroPython ? Visibility.Collapsed : Visibility.Visible;
+        BuildSettingsCard.Visibility = project?.Kind is ProjectKind.Arduino or ProjectKind.Zephyr or ProjectKind.MicroPython or ProjectKind.Pic ? Visibility.Collapsed : Visibility.Visible;
         loadedBuildSettings = null;
         stcCodeRomLimit = null;
         ConfigureBuildSettingsForProject();
@@ -61,7 +61,7 @@ public partial class MainWindow
             ProjectKind.Zephyr => "Zephyr 实验板级配置（创建时）",
             _ => "模板默认配置（创建时）"
         };
-        TemplateDefaultsNote.Visibility = project.Kind is ProjectKind.CubeMx or ProjectKind.Zephyr or ProjectKind.MicroPython
+        TemplateDefaultsNote.Visibility = project.Kind is ProjectKind.Arduino or ProjectKind.CubeMx or ProjectKind.Zephyr or ProjectKind.MicroPython
             ? Visibility.Collapsed : Visibility.Visible;
         CurrentProjectPackVersion.Text = project.Kind == ProjectKind.CubeMx ? "不适用" : project.PackVersion;
         CurrentProjectToolset.Text = project.Kind == ProjectKind.Zephyr
@@ -77,6 +77,11 @@ public partial class MainWindow
         ConfigureEspressifModuleForProject();
         ShowDocument(PackagesTab);
         var details = await ProjectDeviceInfo.ReadAsync(directory, project);
+        if (project.Kind is ProjectKind.Arduino or ProjectKind.Pic)
+        {
+            ApplyProjectDetails(details);
+            return;
+        }
         if (project.Kind == ProjectKind.MicroPython)
         {
             CurrentProjectToolset.Text = $"MicroPython {project.MicroPython!.Version} · {project.MicroPython.Board}";

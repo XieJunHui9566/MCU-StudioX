@@ -17,7 +17,7 @@ public sealed partial class BuildService
         {
             var root = Path.GetFullPath(directory);
             var project = await ProjectService.ReadAsync(root, token);
-            if (project.Kind is ProjectKind.MicroPython or ProjectKind.Zephyr)
+            if (project.Kind is ProjectKind.Arduino or ProjectKind.MicroPython or ProjectKind.Zephyr)
             {
                 throw new StudioXException("HEALTH_CACHE_UNAVAILABLE", "此工程不使用当前原生 CMake 构建入口。");
             }

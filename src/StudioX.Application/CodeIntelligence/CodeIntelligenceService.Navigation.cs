@@ -164,6 +164,10 @@ public sealed partial class CodeIntelligenceService
         {
             return PathBoundary.Resolve(compilerHeaders, Path.GetRelativePath(compilerHeaders, full).Replace('\\', '/'));
         }
+        if (arduinoLibrariesRoot is not null && IsInside(arduinoLibrariesRoot, full) && Supports(full))
+        {
+            return PathBoundary.Resolve(arduinoLibrariesRoot, Path.GetRelativePath(arduinoLibrariesRoot, full).Replace('\\', '/'));
+        }
         throw new StudioXException("LANGUAGE_LOCATION", "跳转目标不在当前工程或内置头文件目录中。");
     }
 
@@ -175,7 +179,8 @@ public sealed partial class CodeIntelligenceService
         {
             return await files.ReadAsync(projectRoot, Path.GetRelativePath(projectRoot, path).Replace('\\', '/'), token).ConfigureAwait(false);
         }
-        var document = await files.ReadAsync(runtimeDirectory, Path.GetRelativePath(runtimeDirectory, path).Replace('\\', '/'), token).ConfigureAwait(false);
+        var readRoot = arduinoLibrariesRoot is not null && IsInside(arduinoLibrariesRoot, path) ? arduinoLibrariesRoot : runtimeDirectory;
+        var document = await files.ReadAsync(readRoot, Path.GetRelativePath(readRoot, path).Replace('\\', '/'), token).ConfigureAwait(false);
         return document with
         {
             RelativePath = path.Replace('\\', '/'),

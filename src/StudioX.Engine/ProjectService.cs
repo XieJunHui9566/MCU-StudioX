@@ -15,7 +15,22 @@ public sealed partial class ProjectService(Func<string, CancellationToken, Task>
             throw new StudioXException("PROJECT_TEMPLATE", "请选择明确的模板。");
         }
         var selectedTemplate = device.Templates.Single(template => template.Id == templateId);
+        if (selectedTemplate.Id == "arduino-sketch")
+        {
+            throw new StudioXException("ARDUINO_BOARD_SELECTION", "Arduino 模板还需要明确的开发板配置，请通过 Arduino 工程创建服务创建。");
+        }
         var components = DevelopmentComponentRequirements.ForTemplate(device, selectedTemplate);
+        if (device.Pic is not null)
+        {
+            PicDeviceDefinition.Validate(device);
+            if (enableAg32Logic)
+            {
+                throw new StudioXException("PROJECT_PIC", "PIC 工程不支持 AG32 逻辑模式。");
+            }
+            return new(new ProjectManifest(1, name, pack.Manifest.Id, pack.Manifest.Version, pack.ContentHash,
+                deviceId, templateId, device.ToolsetId, device.ToolsetVersion, device.CompilerId, ProjectKind.Pic,
+                EntryFile: "src/main.c", DevelopmentComponents: components, Pic: device.Pic), device);
+        }
         // 特殊模式只由创建选项开启，模板资源不能替用户勾选或锁定模式。
         if (enableAg32Logic && !IsAg32LogicDevice(pack, deviceId))
         {
@@ -160,7 +175,15 @@ public sealed partial class ProjectService(Func<string, CancellationToken, Task>
                     """ + "\n", cancellationToken);
                 }
             }
-            if (plan.Project.Espressif is not null)
+            if (plan.Project.Kind == ProjectKind.Pic)
+            {
+                await File.WriteAllTextAsync(Path.Combine(staging, "README.txt"),
+                    "PIC16F877A / XC8 4.00。顶部编译生成 .build/pic/<运行编号>/firmware.hex 和 ELF，直接调用独立 XC8，不需要 MPLAB X IDE。\n" +
+                    "程序 Flash 为 8192 个 14 位字，RAM 为分银行的 368 字节，EEPROM 为 256 字节。\n" +
+                    "基础模板不假设板级晶振和引脚，尚未设置配置位。GPIO 示例明确使用外部 4 MHz 晶振和 RD0；请先核对原理图。\n" +
+                    "当前仅验证编辑、编译及 HEX 导出；未接入 PICkit/IPECMD 烧录或硬件调试。\n", cancellationToken);
+            }
+            else if (plan.Project.Espressif is not null)
             {
                 await EspressifProjectScaffold.WriteAsync(staging, plan, cancellationToken);
             }
@@ -199,7 +222,7 @@ public sealed partial class ProjectService(Func<string, CancellationToken, Task>
         finally { if (Directory.Exists(staging)) { Directory.Delete(staging, recursive: true); } }
     }
 
-    private static async Task PublishDirectoryAsync(string staging, string target, CancellationToken token)
+    internal static async Task PublishDirectoryAsync(string staging, string target, CancellationToken token)
     {
         for (var attempt = 0; ; attempt++)
         {
@@ -226,6 +249,24 @@ public sealed partial class ProjectService(Func<string, CancellationToken, Task>
             throw new StudioXException("PROJECT_FORMAT", "不支持的工程格式。");
         }
         ProjectDevelopmentComponents.ValidateSnapshot(project);
+        if (project.Kind == ProjectKind.Pic)
+        {
+            await Pic.PicProject.ValidateAsync(directory, project, cancellationToken);
+            return project;
+        }
+        if (project.Pic is not null)
+        {
+            throw new StudioXException("PROJECT_PIC", "PIC 配置与工程类型不一致。");
+        }
+        if (project.Kind == ProjectKind.Arduino)
+        {
+            Arduino.ArduinoProjectSettings.ValidateProject(directory, project);
+            return project;
+        }
+        if (project.Arduino is not null)
+        {
+            throw new StudioXException("ARDUINO_PROJECT", "Arduino 配置与工程类型不一致。");
+        }
         if (project.Kind == ProjectKind.MicroPython)
         {
             await MicroPythonProject.ValidateAsync(directory, project, cancellationToken);

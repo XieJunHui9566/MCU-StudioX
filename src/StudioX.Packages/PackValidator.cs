@@ -32,10 +32,21 @@ public static partial class PackValidator
             {
                 EspressifPackProfile.Validate(device);
             }
-            if ((device.Espressif is null && (device.Architecture is not ("arm" or "riscv" or "mcs51") || device.FlashBytes == 0 || device.RamBytes == 0)) ||
+            if ((device.Espressif is null && (device.Architecture is not ("arm" or "riscv" or "mcs51" or "avr" or "pic12" or "pic14") || device.FlashBytes == 0 || device.RamBytes == 0)) ||
                 (ulong)device.FlashOrigin + device.FlashBytes > 0x100000000UL || (ulong)device.RamOrigin + device.RamBytes > 0x100000000UL)
             {
                 throw new StudioXException("PACK_DEVICE", "芯片架构或内存定义无效。");
+            }
+            if (device.Architecture is "pic12" or "pic14" || device.Pic is not null)
+            {
+                PicDeviceDefinition.Validate(device);
+            }
+            if (device.Architecture == "avr" && (device.Id != "ATmega328P" || device.ToolsetId != "arduino.avr" ||
+                device.ToolsetVersion != "1.8.8" || device.CompilerId != "avr-gcc-7.3.0-arduino7" ||
+                device.FlashOrigin != 0 || device.FlashBytes != 32768 || device.RamOrigin != 256 || device.RamBytes != 2048 || device.LinkerScript != "" ||
+                device.OpenOcd is not null || device.Espressif is not null || device.Templates is not { Count: 1 } || device.Templates[0].Id != "arduino-sketch"))
+            {
+                throw new StudioXException("PACK_AVR", "首批 AVR 器件只接受已核实的 ATmega328P Arduino 配置；链接由官方核心负责。");
             }
             if (device.Architecture == "mcs51" && (device.ToolsetId != "stc.sdcc" || device.CompilerId != "sdcc-4.5.0-15242" ||
                 device.LinkerScript != "" || device.OpenOcd is not null))
@@ -54,7 +65,7 @@ public static partial class PackValidator
                     throw new StudioXException("PACK_BUILD_VALUE", "构建参数包含不支持的字符。");
                 }
             }
-            if (device.Architecture != "mcs51" && device.Espressif is null)
+            if (device.Architecture is not ("mcs51" or "avr" or "pic12" or "pic14") && device.Espressif is null)
             {
                 RequireFile(root, device.LinkerScript);
             }

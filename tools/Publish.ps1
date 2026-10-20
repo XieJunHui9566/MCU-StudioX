@@ -375,6 +375,36 @@ foreach ($rpCatalog in @(
         devices               =$rpIndex.devices
     }
 }
+$arduinoCatalog = Join-Path $preparedPacks 'Arduino-0.1.0'
+if (!(Test-Path -LiteralPath (Join-Path $arduinoCatalog 'index.json')))
+{
+    throw 'Prepare the Arduino AVR catalog first: tools/New-ArduinoAvrPack.ps1'
+}
+foreach ($entry in @(Get-Content -LiteralPath (Join-Path $arduinoCatalog 'index.json') -Raw | ConvertFrom-Json))
+{
+    if ($entry.id -ne 'arduino.avr-boards' -or $entry.version -ne '0.1.0' -or $entry.file -ne 'arduino.avr-boards-0.1.0.mcupack') { throw 'Unexpected Arduino AVR catalog identity.' }
+    $source = Join-Path $arduinoCatalog $entry.file
+    if ((Get-FileHash -LiteralPath $source).Hash -ne $entry.sha256) { throw 'Arduino AVR pack hash mismatch.' }
+    $relative = 'Microchip/' + $entry.file
+    [IO.Directory]::CreateDirectory((Join-Path $packOutput 'Microchip')) | Out-Null
+    Copy-Item -LiteralPath $source -Destination (Join-Path $packOutput $relative)
+    $releasedPacks += @{ id = $entry.id; version = $entry.version; file = $relative; sha256 = $entry.sha256; devices = $entry.devices }
+}
+$picCatalog = Join-Path $preparedPacks 'PIC16-0.1.0'
+if (!(Test-Path -LiteralPath (Join-Path $picCatalog 'index.json'))) { throw 'Prepare the PIC catalog first: tools/New-PicPack.ps1' }
+foreach ($entry in @(Get-Content -LiteralPath (Join-Path $picCatalog 'index.json') -Raw | ConvertFrom-Json))
+{
+    if ($entry.id -notmatch '^microchip\.pic16[a-z0-9]+$' -or $entry.version -ne '0.1.0' -or $entry.file -ne ($entry.id + '-0.1.0.mcupack')) { throw 'Unexpected PIC catalog identity.' }
+    $source = Join-Path $picCatalog $entry.file
+    if ((Get-FileHash -LiteralPath $source).Hash -ne $entry.sha256) { throw 'PIC pack hash mismatch.' }
+    $relative = 'Microchip/' + $entry.file
+    [IO.Directory]::CreateDirectory((Join-Path $packOutput 'Microchip')) | Out-Null
+    Copy-Item -LiteralPath $source -Destination (Join-Path $packOutput $relative)
+    $releasedPacks += @{ id = $entry.id; version = $entry.version; file = $relative; sha256 = $entry.sha256; devices = $entry.devices }
+}
+# XC8 is prepared privately from official downloads; its proprietary payload is never included in public installers.
+if (Test-Path -LiteralPath (Join-Path $output 'runtime/toolsets/microchip.xc8')) { throw 'Public installer payload cannot redistribute the private XC8 component.' }
+Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Prepare-PicRuntime.ps1') -Destination (Join-Path $output '准备PIC工具.ps1')
 if ($DevicePackCatalogDirectory)
 {
     # 对外发行可以指定已审核的固定目录，避免把本地候选包或旧修订带入公开安装包。

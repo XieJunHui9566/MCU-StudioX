@@ -37,8 +37,66 @@ public sealed partial class ProjectHealthService(ToolsetCatalog catalog, BuildSe
             checks.Add(Failure("HEALTH_PROJECT", "工程清单无法读取或不一致", "project-open", HealthAction.None, error));
             return new(directory, "无法读取工程", "无法读取", DateTimeOffset.UtcNow, deep, false, checks);
         }
-        var native = project.Kind is ProjectKind.Pack or ProjectKind.CubeMx;
+        var native = project.Kind is ProjectKind.Pack or ProjectKind.CubeMx or ProjectKind.Arduino or ProjectKind.Pic;
         var target = project.Espressif is { } sdk ? $"{sdk.Framework} {sdk.SdkVersion} · target={sdk.Target}" : project.DeviceId;
+        if (project.Kind == ProjectKind.Pic)
+        {
+            await CheckAsync("HEALTH_PIC_ENTRY", "PIC C 源码入口", "build", HealthAction.None, () =>
+            {
+                var sourceRoot = PathBoundary.Resolve(root, "src");
+                if (!Directory.Exists(sourceRoot) || !Directory.EnumerateFiles(sourceRoot, "*.c", SearchOption.AllDirectories).Any())
+                {
+                    throw new StudioXException("PIC_ENTRY", "src/ 下缺少 C 源码，请恢复入口或在 src/ 下组织 C 源码。");
+                }
+                return Task.FromResult("独立 XC8 编译；不使用 CMake，不启动 MPLAB IDE。");
+            });
+            await CheckAsync("HEALTH_PIC_TOOLS", "XC8 4.00 / PIC16Fxxx DFP 1.9.176", "tool-environment", HealthAction.None, async () =>
+            {
+                catalog.RequireEnabled(project.ToolsetId, project.ToolsetVersion);
+                var manifest = deep ? (await catalog.ResolveAsync(project.ToolsetId, project.ToolsetVersion, project.CompilerId, token, true)).Manifest
+                    : await JsonStore.ReadAsync<ToolsetManifest>(PathBoundary.Resolve(catalog.RootDirectory,
+                        project.ToolsetId + "/" + project.ToolsetVersion + "/toolset.json"), token);
+                if (manifest.Id != project.ToolsetId || manifest.Version != project.ToolsetVersion || manifest.CompilerId != project.CompilerId ||
+                    manifest.Purpose != "pic-xc8" || manifest.ComponentVersions?.GetValueOrDefault("PIC16Fxxx_DFP") != project.Pic!.DfpVersion)
+                {
+                    throw new StudioXException("PIC_TOOLS", "PIC 开发环境组件身份或 DFP 版本不一致。");
+                }
+                return "独立官方编译器；构建前按工程内容锁完整校验。";
+            });
+            checks.Add(new("HEALTH_PIC_SCOPE", "PIC 支持范围", HealthState.Information,
+                project.Pic!.CapacityDescription + "。仅编辑、XC8 编译及 HEX 导出；未接入 PICkit 烧录或实机调试。", "build"));
+            return Report();
+        }
+        if (project.Kind == ProjectKind.Arduino)
+        {
+            await CheckAsync("HEALTH_ARDUINO_ENTRY", "Arduino sketch 入口", "build", HealthAction.None, () =>
+            {
+                if (!File.Exists(PathBoundary.Resolve(root, project.EntryFile!)))
+                {
+                    throw new StudioXException("ARDUINO_SKETCH", "缺少与工程同名的 .ino 入口。");
+                }
+                return Task.FromResult(project.EntryFile!);
+            });
+            await CheckAsync("HEALTH_ARDUINO_TOOLS", "固定 Arduino 开发环境", "build", HealthAction.None, async () =>
+            {
+                if (deep)
+                {
+                    _ = await catalog.ResolveAsync(project.ToolsetId, project.ToolsetVersion, project.CompilerId, token, true);
+                }
+                else
+                {
+                    catalog.RequireEnabled(project.ToolsetId, project.ToolsetVersion);
+                    var manifest = await JsonStore.ReadAsync<ToolsetManifest>(PathBoundary.Resolve(catalog.RootDirectory,
+                        project.ToolsetId + "/" + project.ToolsetVersion + "/toolset.json"), token);
+                    if (manifest.Id != project.ToolsetId || manifest.Version != project.ToolsetVersion || manifest.Purpose != "arduino")
+                    {
+                        throw new StudioXException("ARDUINO_RUNTIME", "Arduino 工具组件身份不一致。");
+                    }
+                }
+                return project.Arduino!.Platform.DisplayName + " / CLI 1.5.1；构建执行前完整校验工具和库。";
+            });
+            return Report();
+        }
         if (!native)
         {
             checks.Add(new("HEALTH_BUILD_MODE", "当前工程的构建方式", HealthState.Information,

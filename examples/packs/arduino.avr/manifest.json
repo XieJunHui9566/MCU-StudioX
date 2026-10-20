@@ -1,0 +1,19 @@
+{
+  "formatVersion": 1,
+  "id": "arduino.avr-boards",
+  "version": "0.1.0",
+  "displayName": "ATmega328P · Arduino AVR",
+  "vendor": "Microchip",
+  "devices": [
+    {
+      "id": "ATmega328P", "displayName": "ATmega328P · UNO R3 / 经典 Nano",
+      "architecture": "avr", "flashOrigin": 0, "flashBytes": 32768, "ramOrigin": 256, "ramBytes": 2048,
+      "toolsetId": "arduino.avr", "toolsetVersion": "1.8.8", "compilerId": "avr-gcc-7.3.0-arduino7",
+      "cpuFlags": [], "defines": [], "includeDirectories": [], "sources": [], "linkerScript": "",
+      "compileOptions": [], "linkOptions": [],
+      "templates": [
+        { "id": "arduino-sketch", "displayName": "Arduino", "description": "Arduino sketch（setup / loop）；在下方明确选择 UNO R3 或经典 Nano 的引导程序配置。可用程序容量由板卡核心定义。", "entryFile": "templates/Sketch.ino" }
+      ]
+    }
+  ]
+}

@@ -117,7 +117,10 @@ if (!(Test-Path -LiteralPath $setup))
     throw 'Compiler did not produce the installer.'
 }
 $setupHash = (Get-FileHash -LiteralPath $setup -Algorithm SHA256).Hash.ToLowerInvariant()
-"$setupHash  $([IO.Path]::GetFileName($setup))" | Set-Content -LiteralPath (Join-Path $output 'SHA256SUMS.txt') -Encoding ascii
+$installerFiles = @(Get-ChildItem -LiteralPath $output -File | Where-Object { $_.Name -eq [IO.Path]::GetFileName($setup) -or $_.Name -like ([IO.Path]::GetFileNameWithoutExtension($setup) + '-*.bin') } | Sort-Object Name)
+if (@($installerFiles | Where-Object Length -ge 2GB).Count) { throw 'An installer release asset exceeds GitHub 2 GiB limit.' }
+$parts = @($installerFiles | ForEach-Object { @{file=$_.Name;bytes=$_.Length;sha256=(Get-FileHash -LiteralPath $_.FullName).Hash.ToLowerInvariant()} })
+$parts | ForEach-Object { $_.sha256 + '  ' + $_.file } | Set-Content -LiteralPath (Join-Path $output 'SHA256SUMS.txt') -Encoding ascii
 # 独立放一份包文件，方便作者单独更新和发送器件支持包。
 Copy-Item -LiteralPath (Join-Path $payload 'device-packs') -Destination $output -Recurse
 Copy-Item -LiteralPath (Join-Path $payload '使用说明.txt') -Destination $output
@@ -126,6 +129,7 @@ Copy-Item -LiteralPath (Join-Path $payload '使用说明.txt') -Destination $out
     installer           =[IO.Path]::GetFileName($setup);
     sha256              =$setupHash;
     bytes               =(Get-Item -LiteralPath $setup).Length;
+    installerFiles      =$parts;
     sourceFiles         =$hashes.Count;
     signingStatus       ='unsigned';
     upgrade             ='Run the newer installer at the existing location; downgrades blocked';

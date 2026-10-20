@@ -86,7 +86,19 @@ public partial class MainWindow
             return;
         }
         MicroPythonPanel.SetProject(null, null);
-        if (project.Kind != ProjectKind.Zephyr)
+        if (project.Kind == ProjectKind.Arduino)
+        {
+            BuildConfiguration.Text = project.Name + " · Arduino";
+            DeviceLabel.Text = "开发板 / " + StudioX.Engine.Arduino.ArduinoBoard.Require(project.Arduino!.BoardId).DisplayName;
+            ToolsetLabel.Text = project.Arduino!.Platform.DisplayName + " / CLI " + StudioX.Engine.Arduino.ArduinoPlatform.CliVersion;
+            BuildMemory.SetMessage("Arduino 构建输出包含 Flash / RAM 占用；尚未进行实板验证。");
+        }
+        if (project.Kind == ProjectKind.Pic)
+        {
+            BuildConfiguration.Text = project.Name + " · PIC / XC8 C99";
+            BuildMemory.SetMessage(project.Pic!.CapacityDescription + "；占用见 XC8 输出。当前支持 HEX 导出，尚未接入烧录与调试。");
+        }
+        if (project.Kind is not (ProjectKind.Zephyr or ProjectKind.Arduino or ProjectKind.Pic))
         {
             QueueBuildMemoryRefresh(directory);
         }
@@ -226,7 +238,7 @@ public partial class MainWindow
         MicroPythonRunButton.Visibility = IsMicroPythonProject ? Visibility.Visible : Visibility.Collapsed;
         MicroPythonRunButton.IsEnabled = available && IsMicroPythonProject && !MicroPythonPanel.IsBusy;
         MicroPythonRunLabel.Text = MicroPythonPanel.IsScriptRunning ? "运行中…" : "开始运行";
-        DownloadProbePicker.IsEnabled = available && supportsDownload && !IsStcSdccProject && !IsEspressifProject && !IsZephyrProject && !IsMicroPythonProject;
+        DownloadProbePicker.IsEnabled = available && supportsDownload && !IsArduinoProject && !IsStcSdccProject && !IsEspressifProject && !IsZephyrProject && !IsMicroPythonProject;
         DownloadSettingsButton.IsEnabled = DownloadSettingsMenu.IsEnabled = available && supportsDownload;
         CancelButton.IsEnabled = !GitGraph.IsMutating && (operationCancellation is not null || buildMemoryCancellation is not null ||
             IsMicroPythonProject && (MicroPythonPanel.IsBusy || services.MicroPython.IsConnected));
