@@ -160,7 +160,7 @@ try
             $partPath
         }
     }
-    Write-StudioXReleaseChecksums @($installerFiles + $sourceArchive) $checksum
+    Write-StudioXReleaseChecksums @(@($installerFiles) + $sourceArchive) $checksum
     $tag = $ReleaseTag
     # 不自动提交、打 tag、推送分支；已审核源码必须先有与 HEAD 对应的远端 tag。
     & git fetch origin "refs/tags/${tag}:refs/tags/${tag}"
