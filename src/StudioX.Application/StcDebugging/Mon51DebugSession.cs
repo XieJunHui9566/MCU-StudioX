@@ -4,12 +4,14 @@ using System.Collections.Concurrent;
 using System.Security.Cryptography;
 using System.Text;
 using StudioX.Devices;
+using StudioX.Engine;
 using StudioX.Engine.Debugging;
 using StudioX.Foundation;
 
-/// <summary>IAP15F2K61S2 监控调试会话；源码须与目标匹配，断点原字节先落盘，结束时恢复并释放串口。</summary>
-public sealed partial class Mon51DebugSession(string dataDirectory) : IAsyncDisposable
+/// <summary>IAP15 F/L 监控调试会话；源码须与目标匹配，断点原字节先落盘，结束时恢复并释放串口。</summary>
+public sealed partial class Mon51DebugSession(string dataDirectory, string confirmedTarget = StcMon51Targets.HighVoltageDevice) : IAsyncDisposable
 {
+    public string TargetId => confirmedTarget;
     private readonly SemaphoreSlim gate = new(1, 1);
     private readonly ConcurrentDictionary<ushort, Mon51Breakpoint> points = new();
     private Mon51Client? client;
@@ -53,10 +55,20 @@ public sealed partial class Mon51DebugSession(string dataDirectory) : IAsyncDisp
             Port = transport.Key;
             IsSimulated = transport.IsSimulated;
             projectPath = Path.GetFullPath(project);
+            _ = StcMon51Targets.SetupSha256(TargetId);
             // 恢复记录按连接保存，换工程也不能绕过同一串口上的遗留断点。
-            var key = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes("IAP15F2K61S2|" + Port.ToUpperInvariant()))).ToLowerInvariant();
+            var key = RecoveryKey(TargetId);
             recoveryPath = Path.Combine(dataDirectory, "debug", "mon51-recovery", key + ".json");
             downloadRecoveryPath = Path.Combine(dataDirectory, "debug", "mon51-download-recovery", key + ".json");
+            foreach (var other in StcMon51Targets.DeviceIds.Where(id => id != TargetId))
+            {
+                var otherKey = RecoveryKey(other);
+                if (File.Exists(Path.Combine(dataDirectory, "debug", "mon51-recovery", otherKey + ".json")) ||
+                    File.Exists(Path.Combine(dataDirectory, "debug", "mon51-download-recovery", otherKey + ".json")))
+                {
+                    throw new StudioXException("MON51_RECOVERY", "同一串口存在另一型号的未完成恢复记录；不能更换型号绕过，也不能套用其原字节：" + other);
+                }
+            }
             if (File.Exists(downloadRecoveryPath))
             {
                 userProgramVerified = false;
@@ -90,6 +102,7 @@ public sealed partial class Mon51DebugSession(string dataDirectory) : IAsyncDisp
                 Output?.Invoke("冷启动用户入口已映射至 CODE 0xDBFD，保持暂停。");
             }
             SetState(DebugState.Stopped, $"Mon51 {Version} 已连接 · PC=0x{Pc:X4} · 地址调试");
+            Output?.Invoke(StcMon51Targets.Evidence(TargetId));
             Output?.Invoke("附加到已有程序；未执行下载。原始通信日志：" + LogPath);
         }
         catch (Exception ex)
@@ -370,12 +383,15 @@ public sealed partial class Mon51DebugSession(string dataDirectory) : IAsyncDisp
             FormatVersion = 1,
             Port,
             Project = projectPath,
-            Target = "IAP15F2K61S2",
+            Target = TargetId,
             Version,
             LogPath,
             Breakpoints = installed
         }, token);
     }
+
+    private string RecoveryKey(string target) => Convert.ToHexString(SHA256.HashData(
+        Encoding.UTF8.GetBytes(target + "|" + Port.ToUpperInvariant()))).ToLowerInvariant();
 
     private async Task InstallAsync(CancellationToken token)
     {

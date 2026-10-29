@@ -97,12 +97,8 @@ public partial class MainWindow
         try
         {
             await aiThinkingSaveTask;
-            var settings = await services.AiSettings.LoadAsync();
-            var dialog = new AiSettingsWindow(services.AiSettings, services.AiCredentials, services.WebCredentials, settings,
-                services.EspressifDocumentation)
-            {
-                Owner = this
-            };
+            var settings = await services.AiSettings.LoadForEditAsync();
+            var dialog = CreateAiSettingsWindow(settings);
             dialog.ShowDialog();
             await RefreshAiConfigurationAsync();
         }
@@ -110,6 +106,13 @@ public partial class MainWindow
     }
 
     private void AiClose_Click(object sender, RoutedEventArgs e) => HideAiSidebar();
+
+    private AiSettingsWindow CreateAiSettingsWindow(AiSettings settings) =>
+        new(services.AiSettings, services.AiCredentials, services.WebCredentials, settings,
+            services.EspressifDocumentation, services.AiMcp)
+        {
+            Owner = this
+        };
 
     private void CloseAiPopups()
     {
@@ -645,12 +648,12 @@ public partial class MainWindow
                 ? aiSteering?.IsAccepting == true
                 : available && !AiConversations.SaveFailed);
         var adjusting = aiCancellation is not null;
-        AiSendButton.ToolTip = adjusting ? "调整方向：下次模型请求前注入提示" : "发送";
+        AiSendButton.ToolTip = adjusting ? "调整方向：中断模型生成后应用；已开始的工具完成后应用" : "发送";
         System.Windows.Automation.AutomationProperties.SetName(AiSendButton,
             adjusting ? "运行中调整方向" : "发送 AI 消息");
         AiPromptInput.ToolTip = adjusting
-            ? "运行中输入提示，点击发送后会在下次模型请求前应用"
-            : "向 AI 助手提问；可读取未保存代码，操作按当前授权模式执行";
+            ? "Enter 调整方向，中断模型生成后应用；已开始的工具完成后应用。左 Shift+Enter 换行。"
+            : "Enter 发送；左 Shift+Enter 换行。可读取未保存代码，操作按当前授权模式执行。";
     }
 
     private async Task LoadAiConversationsForProjectAsync(string project, int generation)

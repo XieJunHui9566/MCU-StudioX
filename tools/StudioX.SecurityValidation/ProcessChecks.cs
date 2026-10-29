@@ -29,73 +29,76 @@ internal static class ProcessChecks
             }
         }
         Console.WriteLine("PASS tools receive independent stdin and EOF, with or without explicit input");
-        foreach (var mode in new[] { "observer", "observer-cancel", "cancel", "timeout" })
+        foreach (var contained in new[] { false, true })
         {
-            var marker = Path.Combine(root, mode + "-processes.json");
-            Exception expected = mode == "observer-cancel" ? new OperationCanceledException("fixture-original-observer-cancellation") :
-                new IOException("fixture-original-observer-failure");
-            var ready = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-            using var cancellation = new CancellationTokenSource();
-            var progress = new InlineProgress(text =>
+            foreach (var mode in new[] { "observer", "observer-cancel", "cancel", "timeout" })
             {
-                ready.TrySetResult();
-                if (mode.StartsWith("observer", StringComparison.Ordinal))
+                var marker = Path.Combine(root, (contained ? "job-" : "tree-") + mode + "-processes.json");
+                Exception expected = mode == "observer-cancel" ? new OperationCanceledException("fixture-original-observer-cancellation") :
+                    new IOException("fixture-original-observer-failure");
+                var ready = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+                using var cancellation = new CancellationTokenSource();
+                var progress = new InlineProgress(text =>
                 {
-                    throw expected;
-                }
-            });
-            var timer = Stopwatch.StartNew();
-            var run = new ProcessRunner().RunAsync(new(Environment.ProcessPath!, ["--process-fixture", marker], root,
-                mode == "timeout" ? TimeSpan.FromSeconds(1) : TimeSpan.FromSeconds(15), Output: progress), cancellation.Token);
-            int[] ids = [];
-            try
-            {
-                await ready.Task.WaitAsync(TimeSpan.FromSeconds(5));
-                ids = await JsonStore.ReadAsync<int[]>(marker);
-                if (mode == "cancel")
-                {
-                    cancellation.Cancel();
-                }
+                    ready.TrySetResult();
+                    if (mode.StartsWith("observer", StringComparison.Ordinal))
+                    {
+                        throw expected;
+                    }
+                });
+                var timer = Stopwatch.StartNew();
+                var run = new ProcessRunner().RunAsync(new(Environment.ProcessPath!, ["--process-fixture", marker], root,
+                    mode == "timeout" ? TimeSpan.FromSeconds(1) : TimeSpan.FromSeconds(15), Output: progress, ContainProcessTree: contained), cancellation.Token);
+                int[] ids = [];
                 try
                 {
-                    var result = await run.WaitAsync(TimeSpan.FromSeconds(3));
-                    if (mode != "timeout" || !result.TimedOut)
+                    await ready.Task.WaitAsync(TimeSpan.FromSeconds(5));
+                    ids = await JsonStore.ReadAsync<int[]>(marker);
+                    if (mode == "cancel")
                     {
-                        throw new InvalidOperationException("Expected timeout or original observer exception.");
+                        cancellation.Cancel();
                     }
-                }
-                catch (Exception error) when (mode.StartsWith("observer", StringComparison.Ordinal) && ReferenceEquals(error, expected)) { }
-                catch (OperationCanceledException) when (mode == "cancel" && cancellation.IsCancellationRequested) { }
-                if (ids.Any(IsRunning))
-                {
-                    throw new InvalidOperationException("Tool failure left its owned process tree running: " + mode);
-                }
-                Console.WriteLine("PASS process " + mode + " cleanup in " + timer.ElapsedMilliseconds + " ms");
-            }
-            finally
-            {
-                cancellation.Cancel();
-                // 故障夹具也必须自清理，避免改前复现把测试进程留在宿主。
-                foreach (var id in ids)
-                {
                     try
                     {
-                        using var process = Process.GetProcessById(id);
-                        if (!process.HasExited)
+                        var result = await run.WaitAsync(TimeSpan.FromSeconds(3));
+                        if (mode != "timeout" || !result.TimedOut)
                         {
-                            process.Kill(entireProcessTree: true);
-                            await process.WaitForExitAsync();
+                            throw new InvalidOperationException("Expected timeout or original observer exception.");
                         }
                     }
-                    catch (ArgumentException) { }
-                    catch (InvalidOperationException) { }
+                    catch (Exception error) when (mode.StartsWith("observer", StringComparison.Ordinal) && ReferenceEquals(error, expected)) { }
+                    catch (OperationCanceledException) when (mode == "cancel" && cancellation.IsCancellationRequested) { }
+                    if (ids.Any(IsRunning))
+                    {
+                        throw new InvalidOperationException("Tool failure left its owned process tree running: " + mode);
+                    }
+                    Console.WriteLine("PASS process " + mode + " contained=" + contained + " cleanup in " + timer.ElapsedMilliseconds + " ms");
                 }
-                try
+                finally
                 {
-                    await run;
+                    cancellation.Cancel();
+                    // 故障夹具也必须自清理，避免改前复现把测试进程留在宿主。
+                    foreach (var id in ids)
+                    {
+                        try
+                        {
+                            using var process = Process.GetProcessById(id);
+                            if (!process.HasExited)
+                            {
+                                process.Kill(entireProcessTree: true);
+                                await process.WaitForExitAsync();
+                            }
+                        }
+                        catch (ArgumentException) { }
+                        catch (InvalidOperationException) { }
+                    }
+                    try
+                    {
+                        await run;
+                    }
+                    catch (Exception error) when (ReferenceEquals(error, expected)) { }
+                    catch (OperationCanceledException) when (cancellation.IsCancellationRequested) { }
                 }
-                catch (Exception error) when (ReferenceEquals(error, expected)) { }
-                catch (OperationCanceledException) when (cancellation.IsCancellationRequested) { }
             }
         }
     }

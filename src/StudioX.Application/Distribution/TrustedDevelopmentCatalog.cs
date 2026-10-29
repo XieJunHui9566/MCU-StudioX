@@ -6,7 +6,7 @@ public static class TrustedDevelopmentCatalog
     public const string Source = "https://raw.githubusercontent.com/XieJunHui9566/MCU-StudioX-Toolchains/main/catalog/catalog.json";
     public const string Repository = "https://github.com/XieJunHui9566/MCU-StudioX-Toolchains";
     public const string Publisher = "XieJunHui9566/MCU-StudioX-Toolchains";
-    public const string KeySha256 = "02f415bbe0abdf7ffaf456731187354593de93663a66f3dc4b48bf1be3e7e594";
+    public const string KeySha256 = "02f415bbe0abdf7ffaf456731187354593de93663a66f3dc4b48bf1be3e7e594"; // gitleaks:allow -- 公开验签公钥的 SHA-256 指纹，不是凭据。
     internal static bool IsSource(string source) => Uri.TryCreate(source, UriKind.Absolute, out var uri) && uri == new Uri(Source);
     internal static string PublicKey()
     {

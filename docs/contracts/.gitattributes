@@ -1,0 +1,4 @@
+# 结构示例包含原始文件摘要，检出时必须保留 LF 字节。
+*.json text eol=lf
+*.mcuconfig text eol=lf
+*.txt text eol=lf

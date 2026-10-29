@@ -1,0 +1,279 @@
+{
+  "format": "studiox.mcuconfig",
+  "formatVersion": 1,
+  "documentKind": "project",
+  "target": {
+    "vendorId": "example",
+    "deviceId": "DEMO4",
+    "packageId": "DEMO-4",
+    "architecture": "synthetic"
+  },
+  "profile": {
+    "id": "example.demo.bare",
+    "version": "1.0.0",
+    "pluginId": "example.demo.configurator",
+    "providerId": "demo-configurator",
+    "dataSchema": {
+      "id": "example.demo.data",
+      "version": "1.0.0",
+      "sha256": "71647b3397ee124f5e1cb6bc9f444533891a3a3026fe99997904a5aa6ceeb328"
+    },
+    "framework": {
+      "id": "bare-metal",
+      "version": "1.0.0"
+    },
+    "sdk": null
+  },
+  "origin": {
+    "packId": "example.demo",
+    "packVersion": "1.0.0",
+    "packContentHash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "deviceId": "DEMO4",
+    "templateId": "bare",
+    "templateFile": "templates/bare/device.mcuconfig",
+    "templateSha256": "d94a29a730e7e7f466678cefa0d3896e47bb64a9b106d37b2299e27f8baa219e",
+    "definitionsSha256": "a69823572c7c227fa4896b33bf34f335911b31f822d25d06a6e714590c5dd6ad"
+  },
+  "definitions": {
+    "package": {
+      "id": "DEMO-4",
+      "displayName": "虚构四引脚演示封装",
+      "kind": "DEMO",
+      "pinCount": 4,
+      "width": 100,
+      "height": 100
+    },
+    "pins": [
+      {
+        "id": "pad-1",
+        "position": "1",
+        "displayName": "VDD",
+        "category": "supply",
+        "point": {
+          "x": 0,
+          "y": 25
+        },
+        "side": "left",
+        "functions": [],
+        "evidenceIds": [
+          "demo-source"
+        ],
+        "profileData": {}
+      },
+      {
+        "id": "pad-2",
+        "position": "2",
+        "displayName": "GND",
+        "category": "ground",
+        "point": {
+          "x": 0,
+          "y": 75
+        },
+        "side": "left",
+        "functions": [],
+        "evidenceIds": [
+          "demo-source"
+        ],
+        "profileData": {}
+      },
+      {
+        "id": "pad-3",
+        "position": "3",
+        "displayName": "PA0",
+        "category": "io",
+        "point": {
+          "x": 100,
+          "y": 75
+        },
+        "side": "right",
+        "functions": [
+          {
+            "id": "gpio",
+            "displayName": "GPIOA.PA0",
+            "peripheralId": "GPIOA",
+            "signalId": "PA0",
+            "profileData": {}
+          },
+          {
+            "id": "uart-tx",
+            "displayName": "UART0.TX",
+            "peripheralId": "UART0",
+            "signalId": "TX",
+            "profileData": {}
+          }
+        ],
+        "evidenceIds": [
+          "demo-source"
+        ],
+        "profileData": {}
+      },
+      {
+        "id": "pad-4",
+        "position": "4",
+        "displayName": "PA1",
+        "category": "io",
+        "point": {
+          "x": 100,
+          "y": 25
+        },
+        "side": "right",
+        "functions": [
+          {
+            "id": "gpio",
+            "displayName": "GPIOA.PA1",
+            "peripheralId": "GPIOA",
+            "signalId": "PA1",
+            "profileData": {}
+          },
+          {
+            "id": "uart-rx",
+            "displayName": "UART0.RX",
+            "peripheralId": "UART0",
+            "signalId": "RX",
+            "profileData": {}
+          }
+        ],
+        "evidenceIds": [
+          "demo-source"
+        ],
+        "profileData": {}
+      }
+    ],
+    "peripherals": [
+      {
+        "id": "GPIOA",
+        "kind": "gpio",
+        "displayName": "演示 GPIOA",
+        "signals": [
+          {
+            "id": "PA0",
+            "displayName": "PA0",
+            "direction": "bidirectional",
+            "profileData": {}
+          },
+          {
+            "id": "PA1",
+            "displayName": "PA1",
+            "direction": "bidirectional",
+            "profileData": {}
+          }
+        ],
+        "evidenceIds": [
+          "demo-source"
+        ],
+        "profileData": {}
+      },
+      {
+        "id": "UART0",
+        "kind": "uart",
+        "displayName": "演示 UART0",
+        "signals": [
+          {
+            "id": "TX",
+            "displayName": "TX",
+            "direction": "output",
+            "profileData": {}
+          },
+          {
+            "id": "RX",
+            "displayName": "RX",
+            "direction": "input",
+            "profileData": {}
+          }
+        ],
+        "evidenceIds": [
+          "demo-source"
+        ],
+        "profileData": {}
+      }
+    ],
+    "clockTree": {
+      "nodes": [
+        {
+          "id": "RC",
+          "kind": "source",
+          "displayName": "演示内部 RC",
+          "inputIds": [],
+          "point": {
+            "x": 0,
+            "y": 0
+          },
+          "evidenceIds": [
+            "demo-source"
+          ],
+          "profileData": {}
+        },
+        {
+          "id": "SYS",
+          "kind": "divider",
+          "displayName": "演示系统时钟",
+          "inputIds": [
+            "RC"
+          ],
+          "point": {
+            "x": 100,
+            "y": 0
+          },
+          "evidenceIds": [
+            "demo-source"
+          ],
+          "profileData": {}
+        }
+      ]
+    },
+    "evidence": [
+      {
+        "id": "demo-source",
+        "kind": "synthetic",
+        "title": "DEMO4 虚构结构样例",
+        "version": "1",
+        "locator": "demo-source.txt",
+        "sha256": "db881ace9e1a35b2fe16b2043a14b66d88cf1d33508bf2a319c1ee3878ecafa5",
+        "section": "全文；不是真实 MCU 资料"
+      }
+    ],
+    "profileData": {
+      "synthetic": true
+    }
+  },
+  "configuration": {
+    "pins": [
+      {
+        "pinId": "pad-3",
+        "functionId": "gpio",
+        "label": "LED",
+        "parameters": {
+          "mode": "output",
+          "initialLevel": 0
+        }
+      }
+    ],
+    "peripherals": [
+      {
+        "peripheralId": "GPIOA",
+        "enabled": true,
+        "parameters": {}
+      }
+    ],
+    "clocks": [
+      {
+        "nodeId": "RC",
+        "enabled": true,
+        "inputId": null,
+        "parameters": {
+          "frequencyHz": 1000000
+        }
+      },
+      {
+        "nodeId": "SYS",
+        "enabled": true,
+        "inputId": "RC",
+        "parameters": {
+          "divider": 1
+        }
+      }
+    ],
+    "profileData": {}
+  },
+  "generation": null
+}

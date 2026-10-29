@@ -10,8 +10,16 @@ public sealed record ProjectDeviceInfo(string Manufacturer, string DeviceName, s
 {
     public static ProjectDeviceInfo Recorded(ProjectManifest project) => project.Kind switch
     {
+        ProjectKind.Pic => new("Microchip", project.DeviceId, project.TemplateId,
+            "PIC 原生 C / XC8 4.00；" + project.Pic!.CapacityDescription + "。", project.PackId,
+            ProjectCapabilities.For(project).Scope),
+        ProjectKind.Arduino => new(project.Arduino!.Platform.Id == "esp32" ? "Espressif" : "Microchip", Engine.Arduino.ArduinoBoard.Require(project.Arduino.BoardId).DisplayName,
+            "Arduino sketch", "官方 Arduino 编译流程；库和工具版本按工程锁定。", project.Arduino!.Platform.DisplayName, ProjectCapabilities.For(project).Scope),
         ProjectKind.CubeMx => new("STMicroelectronics", project.DeviceId, "STM32CubeMX 生成工程",
             "保留 CubeMX 生成的工程配置，未使用 StudioX 起始模板。", "未使用 .mcupack", ""),
+        ProjectKind.Zephyr when project.Zephyr?.FormatVersion == 2 => new("STMicroelectronics", project.DeviceId, "Zephyr",
+            "Zephyr " + project.Zephyr.ZephyrVersion + "；内部时钟与最小线程，自定义板级配置随工程保存。", project.PackId,
+            "按实际 PCB 调整 DTS、app.overlay 和 prj.conf；编译不代表实板验证，下载与调试尚未接入。"),
         ProjectKind.Zephyr => new("未记录", project.Zephyr!.BoardTarget, project.TemplateId,
             "Zephyr 实验模式；板级配置仍待编译与实板验证。", project.PackId, "实验模式：未核实板卡丝印和全部外设。"),
         _ => new("未记录", project.DeviceId, project.TemplateId, "", project.PackId, "")
@@ -22,7 +30,7 @@ public sealed record ProjectDeviceInfo(string Manufacturer, string DeviceName, s
         CancellationToken cancellationToken = default)
     {
         var recorded = Recorded(project);
-        if (project.Kind == ProjectKind.CubeMx)
+        if (project.Kind is ProjectKind.Arduino or ProjectKind.CubeMx || project.Zephyr?.FormatVersion == 2)
         {
             return recorded;
         }

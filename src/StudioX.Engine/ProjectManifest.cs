@@ -5,14 +5,17 @@ public sealed record ProjectManifest(int FormatVersion, string Name, string Pack
     ProjectKind Kind = ProjectKind.Pack, CubeMxProjectSettings? CubeMx = null, Ag32LogicProjectSettings? Logic = null,
     EspressifProjectSettings? Espressif = null, string? EntryFile = null, Ag32PinMappingProjectSettings? PinMapping = null,
     ZephyrProjectSettings? Zephyr = null, StudioX.Packages.MicroPythonProfile? MicroPython = null,
-    IReadOnlyList<StudioX.Packages.DevelopmentComponentRequirement>? DevelopmentComponents = null)
+    IReadOnlyList<StudioX.Packages.DevelopmentComponentRequirement>? DevelopmentComponents = null,
+    Arduino.ArduinoProjectSettings? Arduino = null, StudioX.Packages.PicDeviceDefinition? Pic = null,
+    StudioX.Packages.GraphicalConfigurationReference? GraphicalConfiguration = null)
 {
     // 构建凭据会重新反序列化工程；数组引用相等会让有效 ELF 永久被误判为配置已变化。
     public bool Equals(ProjectManifest? other) => other is not null &&
         FormatVersion == other.FormatVersion && Name == other.Name && PackId == other.PackId && PackVersion == other.PackVersion &&
         PackContentHash == other.PackContentHash && DeviceId == other.DeviceId && TemplateId == other.TemplateId &&
         ToolsetId == other.ToolsetId && ToolsetVersion == other.ToolsetVersion && CompilerId == other.CompilerId && Kind == other.Kind &&
-        CubeMx == other.CubeMx && Logic == other.Logic && Espressif == other.Espressif && EntryFile == other.EntryFile &&
+        CubeMx == other.CubeMx && Logic == other.Logic && Espressif == other.Espressif && Arduino == other.Arduino && Pic == other.Pic && EntryFile == other.EntryFile &&
+        GraphicalConfiguration == other.GraphicalConfiguration &&
         PinMapping == other.PinMapping && Zephyr == other.Zephyr && MicroPython == other.MicroPython &&
         (DevelopmentComponents is null ? other.DevelopmentComponents is null
             : other.DevelopmentComponents is not null && DevelopmentComponents.SequenceEqual(other.DevelopmentComponents));
@@ -38,6 +41,9 @@ public sealed record ProjectManifest(int FormatVersion, string Name, string Pack
         hash.Add(PinMapping);
         hash.Add(Zephyr);
         hash.Add(MicroPython);
+        hash.Add(Arduino);
+        hash.Add(Pic);
+        hash.Add(GraphicalConfiguration);
         hash.Add(DevelopmentComponents is not null);
         foreach (var item in DevelopmentComponents ?? [])
         {

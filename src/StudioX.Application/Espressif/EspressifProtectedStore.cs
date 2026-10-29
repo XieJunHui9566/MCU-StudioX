@@ -284,16 +284,19 @@ internal sealed class EspressifProtectedStore : ITokenCache
         }
     }
 
+    [System.Runtime.InteropServices.DefaultDllImportSearchPaths(System.Runtime.InteropServices.DllImportSearchPath.System32)]
     [DllImport("Crypt32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool CryptProtectData(ref DataBlob data, string? description, ref DataBlob entropy,
         IntPtr reserved, IntPtr prompt, uint flags, out DataBlob output);
 
+    [System.Runtime.InteropServices.DefaultDllImportSearchPaths(System.Runtime.InteropServices.DllImportSearchPath.System32)]
     [DllImport("Crypt32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool CryptUnprotectData(ref DataBlob data, IntPtr description, ref DataBlob entropy,
         IntPtr reserved, IntPtr prompt, uint flags, out DataBlob output);
 
+    [System.Runtime.InteropServices.DefaultDllImportSearchPaths(System.Runtime.InteropServices.DllImportSearchPath.System32)]
     [DllImport("Kernel32.dll")]
     private static extern IntPtr LocalFree(IntPtr memory);
 }

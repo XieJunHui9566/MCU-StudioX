@@ -1,0 +1,2423 @@
+{
+  "format": "studiox.mcuconfig",
+  "formatVersion": 1,
+  "documentKind": "template",
+  "target": {
+    "vendorId": "STC",
+    "deviceId": "IAP15L2K61S2",
+    "packageId": "LQFP44",
+    "architecture": "mcs51"
+  },
+  "profile": {
+    "id": "stc.iap15l2k61s2.lqfp44.sdcc-preview",
+    "version": "3.0.0",
+    "pluginId": "studiox.stc15-configurator",
+    "providerId": "stc15-lqfp44-preview",
+    "dataSchema": {
+      "id": "stc15.preview.data",
+      "version": "3.0.0",
+      "sha256": "a186285cf3a1d98d40c900476318827406dccb192a65998b309408f2793e39d9"
+    },
+    "framework": {
+      "id": "bare-metal-sdcc",
+      "version": "4.5.0"
+    },
+    "sdk": null
+  },
+  "origin": null,
+  "definitions": {
+    "package": {
+      "id": "LQFP44",
+      "displayName": "LQFP44 · 顶视图",
+      "kind": "LQFP",
+      "pinCount": 44,
+      "width": 1000,
+      "height": 1000
+    },
+    "pins": [
+      {
+        "id": "pad-1",
+        "position": "1",
+        "displayName": "P0.5",
+        "category": "io",
+        "point": {
+          "x": 60,
+          "y": 1000
+        },
+        "side": "bottom",
+        "functions": [
+          {
+            "id": "gpio",
+            "displayName": "GPIO",
+            "peripheralId": "GPIO0",
+            "signalId": "P0.5",
+            "profileData": {}
+          }
+        ],
+        "evidenceIds": [
+          "datasheet"
+        ],
+        "profileData": {}
+      },
+      {
+        "id": "pad-2",
+        "position": "2",
+        "displayName": "P0.6",
+        "category": "io",
+        "point": {
+          "x": 148,
+          "y": 1000
+        },
+        "side": "bottom",
+        "functions": [
+          {
+            "id": "gpio",
+            "displayName": "GPIO",
+            "peripheralId": "GPIO0",
+            "signalId": "P0.6",
+            "profileData": {}
+          }
+        ],
+        "evidenceIds": [
+          "datasheet"
+        ],
+        "profileData": {}
+      },
+      {
+        "id": "pad-3",
+        "position": "3",
+        "displayName": "P0.7",
+        "category": "io",
+        "point": {
+          "x": 236,
+          "y": 1000
+        },
+        "side": "bottom",
+        "functions": [
+          {
+            "id": "gpio",
+            "displayName": "GPIO",
+            "peripheralId": "GPIO0",
+            "signalId": "P0.7",
+            "profileData": {}
+          }
+        ],
+        "evidenceIds": [
+          "datasheet"
+        ],
+        "profileData": {}
+      },
+      {
+        "id": "pad-4",
+        "position": "4",
+        "displayName": "P1.0",
+        "category": "io",
+        "point": {
+          "x": 324,
+          "y": 1000
+        },
+        "side": "bottom",
+        "functions": [
+          {
+            "id": "gpio",
+            "displayName": "GPIO",
+            "peripheralId": "GPIO1",
+            "signalId": "P1.0",
+            "profileData": {}
+          },
+          {
+            "id": "uart2",
+            "displayName": "UART2 RX-default",
+            "peripheralId": "UART2",
+            "signalId": "UART2 RX-default",
+            "profileData": {}
+          },
+          {
+            "id": "adc",
+            "displayName": "ADC0",
+            "peripheralId": "ADC",
+            "signalId": "ADC0",
+            "profileData": {}
+          },
+          {
+            "id": "ccp1",
+            "displayName": "CCP1",
+            "peripheralId": "PCA",
+            "signalId": "CCP1",
+            "profileData": {}
+          }
+        ],
+        "evidenceIds": [
+          "datasheet"
+        ],
+        "profileData": {}
+      },
+      {
+        "id": "pad-5",
+        "position": "5",
+        "displayName": "P1.1",
+        "category": "io",
+        "point": {
+          "x": 412,
+          "y": 1000
+        },
+        "side": "bottom",
+        "functions": [
+          {
+            "id": "gpio",
+            "displayName": "GPIO",
+            "peripheralId": "GPIO1",
+            "signalId": "P1.1",
+            "profileData": {}
+          },
+          {
+            "id": "uart2",
+            "displayName": "UART2 TX-default",
+            "peripheralId": "UART2",
+            "signalId": "UART2 TX-default",
+            "profileData": {}
+          },
+          {
+            "id": "adc",
+            "displayName": "ADC1",
+            "peripheralId": "ADC",
+            "signalId": "ADC1",
+            "profileData": {}
+          },
+          {
+            "id": "ccp0",
+            "displayName": "CCP0",
+            "peripheralId": "PCA",
+            "signalId": "CCP0",
+            "profileData": {}
+          }
+        ],
+        "evidenceIds": [
+          "datasheet"
+        ],
+        "profileData": {}
+      },
+      {
+        "id": "pad-6",
+        "position": "6",
+        "displayName": "P1.2",
+        "category": "io",
+        "point": {
+          "x": 500,
+          "y": 1000
+        },
+        "side": "bottom",
+        "functions": [
+          {
+            "id": "gpio",
+            "displayName": "GPIO",
+            "peripheralId": "GPIO1",
+            "signalId": "P1.2",
+            "profileData": {}
+          },
+          {
+            "id": "adc",
+            "displayName": "ADC2",
+            "peripheralId": "ADC",
+            "signalId": "ADC2",
+            "profileData": {}
+          },
+          {
+            "id": "eci",
+            "displayName": "ECI",
+            "peripheralId": "PCA",
+            "signalId": "ECI",
+            "profileData": {}
+          }
+        ],
+        "evidenceIds": [
+          "datasheet"
+        ],
+        "profileData": {}
+      },
+      {
+        "id": "pad-7",
+        "position": "7",
+        "displayName": "P1.3",
+        "category": "io",
+        "point": {
+          "x": 588,
+          "y": 1000
+        },
+        "side": "bottom",
+        "functions": [
+          {
+            "id": "gpio",
+            "displayName": "GPIO",
+            "peripheralId": "GPIO1",
+            "signalId": "P1.3",
+            "profileData": {}
+          },
+          {
+            "id": "adc",
+            "displayName": "ADC3",
+            "peripheralId": "ADC",
+            "signalId": "ADC3",
+            "profileData": {}
+          },
+          {
+            "id": "spi",
+            "displayName": "SPI MOSI-p1",
+            "peripheralId": "SPI",
+            "signalId": "SPI MOSI-p1",
+            "profileData": {}
+          }
+        ],
+        "evidenceIds": [
+          "datasheet"
+        ],
+        "profileData": {}
+      },
+      {
+        "id": "pad-8",
+        "position": "8",
+        "displayName": "P1.4",
+        "category": "io",
+        "point": {
+          "x": 676,
+          "y": 1000
+        },
+        "side": "bottom",
+        "functions": [
+          {
+            "id": "gpio",
+            "displayName": "GPIO",
+            "peripheralId": "GPIO1",
+            "signalId": "P1.4",
+            "profileData": {}
+          },
+          {
+            "id": "adc",
+            "displayName": "ADC4",
+            "peripheralId": "ADC",
+            "signalId": "ADC4",
+            "profileData": {}
+          },
+          {
+            "id": "spi",
+            "displayName": "SPI MISO-p1",
+            "peripheralId": "SPI",
+            "signalId": "SPI MISO-p1",
+            "profileData": {}
+          }
+        ],
+        "evidenceIds": [
+          "datasheet"
+        ],
+        "profileData": {}
+      },
+      {
+        "id": "pad-9",
+        "position": "9",
+        "displayName": "P1.5",
+        "category": "io",
+        "point": {
+          "x": 764,
+          "y": 1000
+        },
+        "side": "bottom",
+        "functions": [
+          {
+            "id": "gpio",
+            "displayName": "GPIO",
+            "peripheralId": "GPIO1",
+            "signalId": "P1.5",
+            "profileData": {}
+          },
+          {
+            "id": "adc",
+            "displayName": "ADC5",
+            "peripheralId": "ADC",
+            "signalId": "ADC5",
+            "profileData": {}
+          },
+          {
+            "id": "spi",
+            "displayName": "SPI SCLK-p1",
+            "peripheralId": "SPI",
+            "signalId": "SPI SCLK-p1",
+            "profileData": {}
+          }
+        ],
+        "evidenceIds": [
+          "datasheet"
+        ],
+        "profileData": {}
+      },
+      {
+        "id": "pad-10",
+        "position": "10",
+        "displayName": "P1.6",
+        "category": "io",
+        "point": {
+          "x": 852,
+          "y": 1000
+        },
+        "side": "bottom",
+        "functions": [
+          {
+            "id": "gpio",
+            "displayName": "GPIO",
+            "peripheralId": "GPIO1",
+            "signalId": "P1.6",
+            "profileData": {}
+          },
+          {
+            "id": "uart1",
+            "displayName": "UART1 RX-p16",
+            "peripheralId": "UART1",
+            "signalId": "RX-p16",
+            "profileData": {}
+          },
+          {
+            "id": "adc",
+            "displayName": "ADC6",
+            "peripheralId": "ADC",
+            "signalId": "ADC6",
+            "profileData": {}
+          }
+        ],
+        "evidenceIds": [
+          "datasheet"
+        ],
+        "profileData": {}
+      },
+      {
+        "id": "pad-11",
+        "position": "11",
+        "displayName": "P4.7",
+        "category": "io",
+        "point": {
+          "x": 940,
+          "y": 1000
+        },
+        "side": "bottom",
+        "functions": [
+          {
+            "id": "gpio",
+            "displayName": "GPIO",
+            "peripheralId": "GPIO4",
+            "signalId": "P4.7",
+            "profileData": {}
+          },
+          {
+            "id": "uart2",
+            "displayName": "UART2 TX-p46",
+            "peripheralId": "UART2",
+            "signalId": "UART2 TX-p46",
+            "profileData": {}
+          }
+        ],
+        "evidenceIds": [
+          "datasheet"
+        ],
+        "profileData": {}
+      },
+      {
+        "id": "pad-12",
+        "position": "12",
+        "displayName": "P1.7",
+        "category": "io",
+        "point": {
+          "x": 1000,
+          "y": 940
+        },
+        "side": "right",
+        "functions": [
+          {
+            "id": "gpio",
+            "displayName": "GPIO",
+            "peripheralId": "GPIO1",
+            "signalId": "P1.7",
+            "profileData": {}
+          },
+          {
+            "id": "uart1",
+            "displayName": "UART1 TX-p16",
+            "peripheralId": "UART1",
+            "signalId": "TX-p16",
+            "profileData": {}
+          },
+          {
+            "id": "adc",
+            "displayName": "ADC7",
+            "peripheralId": "ADC",
+            "signalId": "ADC7",
+            "profileData": {}
+          }
+        ],
+        "evidenceIds": [
+          "datasheet"
+        ],
+        "profileData": {}
+      },
+      {
+        "id": "pad-13",
+        "position": "13",
+        "displayName": "P5.4",
+        "category": "io",
+        "point": {
+          "x": 1000,
+          "y": 852
+        },
+        "side": "right",
+        "functions": [
+          {
+            "id": "gpio",
+            "displayName": "P5.4",
+            "peripheralId": "GPIO5",
+            "signalId": "P5.4",
+            "profileData": {}
+          },
+          {
+            "id": "mclko",
+            "displayName": "MCLKO",
+            "peripheralId": "MCLKO",
+            "signalId": "MCLKO",
+            "profileData": {}
+          }
+        ],
+        "evidenceIds": [
+          "datasheet"
+        ],
+        "profileData": {}
+      },
+      {
+        "id": "pad-14",
+        "position": "14",
+        "displayName": "VCC",
+        "category": "supply",
+        "point": {
+          "x": 1000,
+          "y": 764
+        },
+        "side": "right",
+        "functions": [],
+        "evidenceIds": [
+          "datasheet"
+        ],
+        "profileData": {}
+      },
+      {
+        "id": "pad-15",
+        "position": "15",
+        "displayName": "P5.5",
+        "category": "io",
+        "point": {
+          "x": 1000,
+          "y": 676
+        },
+        "side": "right",
+        "functions": [
+          {
+            "id": "gpio",
+            "displayName": "P5.5",
+            "peripheralId": "GPIO5",
+            "signalId": "P5.5",
+            "profileData": {}
+          }
+        ],
+        "evidenceIds": [
+          "datasheet"
+        ],
+        "profileData": {}
+      },
+      {
+        "id": "pad-16",
+        "position": "16",
+        "displayName": "GND",
+        "category": "ground",
+        "point": {
+          "x": 1000,
+          "y": 588
+        },
+        "side": "right",
+        "functions": [],
+        "evidenceIds": [
+          "datasheet"
+        ],
+        "profileData": {}
+      },
+      {
+        "id": "pad-17",
+        "position": "17",
+        "displayName": "P4.0",
+        "category": "io",
+        "point": {
+          "x": 1000,
+          "y": 500
+        },
+        "side": "right",
+        "functions": [
+          {
+            "id": "gpio",
+            "displayName": "GPIO",
+            "peripheralId": "GPIO4",
+            "signalId": "P4.0",
+            "profileData": {}
+          },
+          {
+            "id": "spi",
+            "displayName": "SPI MOSI-p4",
+            "peripheralId": "SPI",
+            "signalId": "SPI MOSI-p4",
+            "profileData": {}
+          }
+        ],
+        "evidenceIds": [
+          "datasheet"
+        ],
+        "profileData": {}
+      },
+      {
+        "id": "pad-18",
+        "position": "18",
+        "displayName": "P3.0",
+        "category": "io",
+        "point": {
+          "x": 1000,
+          "y": 412
+        },
+        "side": "right",
+        "functions": [
+          {
+            "id": "gpio",
+            "displayName": "GPIO",
+            "peripheralId": "GPIO3",
+            "signalId": "P3.0",
+            "profileData": {}
+          },
+          {
+            "id": "uart1",
+            "displayName": "UART1 RX-default",
+            "peripheralId": "UART1",
+            "signalId": "RX-default",
+            "profileData": {}
+          },
+          {
+            "id": "t2out",
+            "displayName": "T2CLKO",
+            "peripheralId": "TIMER2",
+            "signalId": "T2CLKO",
+            "profileData": {}
+          },
+          {
+            "id": "int4",
+            "displayName": "INT4",
+            "peripheralId": "EXTI",
+            "signalId": "INT4",
+            "profileData": {}
+          }
+        ],
+        "evidenceIds": [
+          "datasheet"
+        ],
+        "profileData": {}
+      },
+      {
+        "id": "pad-19",
+        "position": "19",
+        "displayName": "P3.1",
+        "category": "io",
+        "point": {
+          "x": 1000,
+          "y": 324
+        },
+        "side": "right",
+        "functions": [
+          {
+            "id": "gpio",
+            "displayName": "GPIO",
+            "peripheralId": "GPIO3",
+            "signalId": "P3.1",
+            "profileData": {}
+          },
+          {
+            "id": "uart1",
+            "displayName": "UART1 TX-default",
+            "peripheralId": "UART1",
+            "signalId": "TX-default",
+            "profileData": {}
+          },
+          {
+            "id": "t2in",
+            "displayName": "T2 外部计数",
+            "peripheralId": "TIMER2",
+            "signalId": "T2 外部计数",
+            "profileData": {}
+          }
+        ],
+        "evidenceIds": [
+          "datasheet"
+        ],
+        "profileData": {}
+      },
+      {
+        "id": "pad-20",
+        "position": "20",
+        "displayName": "P3.2",
+        "category": "io",
+        "point": {
+          "x": 1000,
+          "y": 236
+        },
+        "side": "right",
+        "functions": [
+          {
+            "id": "gpio",
+            "displayName": "GPIO",
+            "peripheralId": "GPIO3",
+            "signalId": "P3.2",
+            "profileData": {}
+          },
+          {
+            "id": "int0",
+            "displayName": "INT0",
+            "peripheralId": "EXTI",
+            "signalId": "INT0",
+            "profileData": {}
+          }
+        ],
+        "evidenceIds": [
+          "datasheet"
+        ],
+        "profileData": {}
+      },
+      {
+        "id": "pad-21",
+        "position": "21",
+        "displayName": "P3.3",
+        "category": "io",
+        "point": {
+          "x": 1000,
+          "y": 148
+        },
+        "side": "right",
+        "functions": [
+          {
+            "id": "gpio",
+            "displayName": "GPIO",
+            "peripheralId": "GPIO3",
+            "signalId": "P3.3",
+            "profileData": {}
+          },
+          {
+            "id": "int1",
+            "displayName": "INT1",
+            "peripheralId": "EXTI",
+            "signalId": "INT1",
+            "profileData": {}
+          }
+        ],
+        "evidenceIds": [
+          "datasheet"
+        ],
+        "profileData": {}
+      },
+      {
+        "id": "pad-22",
+        "position": "22",
+        "displayName": "P3.4",
+        "category": "io",
+        "point": {
+          "x": 1000,
+          "y": 60
+        },
+        "side": "right",
+        "functions": [
+          {
+            "id": "gpio",
+            "displayName": "GPIO",
+            "peripheralId": "GPIO3",
+            "signalId": "P3.4",
+            "profileData": {}
+          },
+          {
+            "id": "t0in",
+            "displayName": "T0 外部计数",
+            "peripheralId": "TIMER0",
+            "signalId": "T0 外部计数",
+            "profileData": {}
+          },
+          {
+            "id": "t1out",
+            "displayName": "T1CLKO",
+            "peripheralId": "TIMER1",
+            "signalId": "T1CLKO",
+            "profileData": {}
+          },
+          {
+            "id": "eci",
+            "displayName": "ECI",
+            "peripheralId": "PCA",
+            "signalId": "ECI",
+            "profileData": {}
+          }
+        ],
+        "evidenceIds": [
+          "datasheet"
+        ],
+        "profileData": {}
+      },
+      {
+        "id": "pad-23",
+        "position": "23",
+        "displayName": "P3.5",
+        "category": "io",
+        "point": {
+          "x": 940,
+          "y": 0
+        },
+        "side": "top",
+        "functions": [
+          {
+            "id": "gpio",
+            "displayName": "GPIO",
+            "peripheralId": "GPIO3",
+            "signalId": "P3.5",
+            "profileData": {}
+          },
+          {
+            "id": "t0out",
+            "displayName": "T0CLKO",
+            "peripheralId": "TIMER0",
+            "signalId": "T0CLKO",
+            "profileData": {}
+          },
+          {
+            "id": "t1in",
+            "displayName": "T1 外部计数",
+            "peripheralId": "TIMER1",
+            "signalId": "T1 外部计数",
+            "profileData": {}
+          },
+          {
+            "id": "ccp0",
+            "displayName": "CCP0",
+            "peripheralId": "PCA",
+            "signalId": "CCP0",
+            "profileData": {}
+          }
+        ],
+        "evidenceIds": [
+          "datasheet"
+        ],
+        "profileData": {}
+      },
+      {
+        "id": "pad-24",
+        "position": "24",
+        "displayName": "P3.6",
+        "category": "io",
+        "point": {
+          "x": 852,
+          "y": 0
+        },
+        "side": "top",
+        "functions": [
+          {
+            "id": "gpio",
+            "displayName": "GPIO",
+            "peripheralId": "GPIO3",
+            "signalId": "P3.6",
+            "profileData": {}
+          },
+          {
+            "id": "uart1",
+            "displayName": "UART1 RX-p36",
+            "peripheralId": "UART1",
+            "signalId": "RX-p36",
+            "profileData": {}
+          },
+          {
+            "id": "ccp1",
+            "displayName": "CCP1",
+            "peripheralId": "PCA",
+            "signalId": "CCP1",
+            "profileData": {}
+          },
+          {
+            "id": "int2",
+            "displayName": "INT2",
+            "peripheralId": "EXTI",
+            "signalId": "INT2",
+            "profileData": {}
+          }
+        ],
+        "evidenceIds": [
+          "datasheet"
+        ],
+        "profileData": {}
+      },
+      {
+        "id": "pad-25",
+        "position": "25",
+        "displayName": "P3.7",
+        "category": "io",
+        "point": {
+          "x": 764,
+          "y": 0
+        },
+        "side": "top",
+        "functions": [
+          {
+            "id": "gpio",
+            "displayName": "GPIO",
+            "peripheralId": "GPIO3",
+            "signalId": "P3.7",
+            "profileData": {}
+          },
+          {
+            "id": "uart1",
+            "displayName": "UART1 TX-p36",
+            "peripheralId": "UART1",
+            "signalId": "TX-p36",
+            "profileData": {}
+          },
+          {
+            "id": "ccp2",
+            "displayName": "CCP2",
+            "peripheralId": "PCA",
+            "signalId": "CCP2",
+            "profileData": {}
+          },
+          {
+            "id": "int3",
+            "displayName": "INT3",
+            "peripheralId": "EXTI",
+            "signalId": "INT3",
+            "profileData": {}
+          }
+        ],
+        "evidenceIds": [
+          "datasheet"
+        ],
+        "profileData": {}
+      },
+      {
+        "id": "pad-26",
+        "position": "26",
+        "displayName": "P4.1",
+        "category": "io",
+        "point": {
+          "x": 676,
+          "y": 0
+        },
+        "side": "top",
+        "functions": [
+          {
+            "id": "gpio",
+            "displayName": "GPIO",
+            "peripheralId": "GPIO4",
+            "signalId": "P4.1",
+            "profileData": {}
+          },
+          {
+            "id": "spi",
+            "displayName": "SPI MISO-p4",
+            "peripheralId": "SPI",
+            "signalId": "SPI MISO-p4",
+            "profileData": {}
+          }
+        ],
+        "evidenceIds": [
+          "datasheet"
+        ],
+        "profileData": {}
+      },
+      {
+        "id": "pad-27",
+        "position": "27",
+        "displayName": "P4.2",
+        "category": "io",
+        "point": {
+          "x": 588,
+          "y": 0
+        },
+        "side": "top",
+        "functions": [
+          {
+            "id": "gpio",
+            "displayName": "GPIO",
+            "peripheralId": "GPIO4",
+            "signalId": "P4.2",
+            "profileData": {}
+          }
+        ],
+        "evidenceIds": [
+          "datasheet"
+        ],
+        "profileData": {}
+      },
+      {
+        "id": "pad-28",
+        "position": "28",
+        "displayName": "P4.3",
+        "category": "io",
+        "point": {
+          "x": 500,
+          "y": 0
+        },
+        "side": "top",
+        "functions": [
+          {
+            "id": "gpio",
+            "displayName": "GPIO",
+            "peripheralId": "GPIO4",
+            "signalId": "P4.3",
+            "profileData": {}
+          },
+          {
+            "id": "spi",
+            "displayName": "SPI SCLK-p4",
+            "peripheralId": "SPI",
+            "signalId": "SPI SCLK-p4",
+            "profileData": {}
+          }
+        ],
+        "evidenceIds": [
+          "datasheet"
+        ],
+        "profileData": {}
+      },
+      {
+        "id": "pad-29",
+        "position": "29",
+        "displayName": "P4.4",
+        "category": "io",
+        "point": {
+          "x": 412,
+          "y": 0
+        },
+        "side": "top",
+        "functions": [
+          {
+            "id": "gpio",
+            "displayName": "GPIO",
+            "peripheralId": "GPIO4",
+            "signalId": "P4.4",
+            "profileData": {}
+          }
+        ],
+        "evidenceIds": [
+          "datasheet"
+        ],
+        "profileData": {}
+      },
+      {
+        "id": "pad-30",
+        "position": "30",
+        "displayName": "P2.0",
+        "category": "io",
+        "point": {
+          "x": 324,
+          "y": 0
+        },
+        "side": "top",
+        "functions": [
+          {
+            "id": "gpio",
+            "displayName": "GPIO",
+            "peripheralId": "GPIO2",
+            "signalId": "P2.0",
+            "profileData": {}
+          }
+        ],
+        "evidenceIds": [
+          "datasheet"
+        ],
+        "profileData": {}
+      },
+      {
+        "id": "pad-31",
+        "position": "31",
+        "displayName": "P2.1",
+        "category": "io",
+        "point": {
+          "x": 236,
+          "y": 0
+        },
+        "side": "top",
+        "functions": [
+          {
+            "id": "gpio",
+            "displayName": "GPIO",
+            "peripheralId": "GPIO2",
+            "signalId": "P2.1",
+            "profileData": {}
+          },
+          {
+            "id": "spi",
+            "displayName": "SPI SCLK-p2",
+            "peripheralId": "SPI",
+            "signalId": "SPI SCLK-p2",
+            "profileData": {}
+          }
+        ],
+        "evidenceIds": [
+          "datasheet"
+        ],
+        "profileData": {}
+      },
+      {
+        "id": "pad-32",
+        "position": "32",
+        "displayName": "P2.2",
+        "category": "io",
+        "point": {
+          "x": 148,
+          "y": 0
+        },
+        "side": "top",
+        "functions": [
+          {
+            "id": "gpio",
+            "displayName": "GPIO",
+            "peripheralId": "GPIO2",
+            "signalId": "P2.2",
+            "profileData": {}
+          },
+          {
+            "id": "spi",
+            "displayName": "SPI MISO-p2",
+            "peripheralId": "SPI",
+            "signalId": "SPI MISO-p2",
+            "profileData": {}
+          }
+        ],
+        "evidenceIds": [
+          "datasheet"
+        ],
+        "profileData": {}
+      },
+      {
+        "id": "pad-33",
+        "position": "33",
+        "displayName": "P2.3",
+        "category": "io",
+        "point": {
+          "x": 60,
+          "y": 0
+        },
+        "side": "top",
+        "functions": [
+          {
+            "id": "gpio",
+            "displayName": "GPIO",
+            "peripheralId": "GPIO2",
+            "signalId": "P2.3",
+            "profileData": {}
+          },
+          {
+            "id": "spi",
+            "displayName": "SPI MOSI-p2",
+            "peripheralId": "SPI",
+            "signalId": "SPI MOSI-p2",
+            "profileData": {}
+          }
+        ],
+        "evidenceIds": [
+          "datasheet"
+        ],
+        "profileData": {}
+      },
+      {
+        "id": "pad-34",
+        "position": "34",
+        "displayName": "P2.4",
+        "category": "io",
+        "point": {
+          "x": 0,
+          "y": 60
+        },
+        "side": "left",
+        "functions": [
+          {
+            "id": "gpio",
+            "displayName": "GPIO",
+            "peripheralId": "GPIO2",
+            "signalId": "P2.4",
+            "profileData": {}
+          },
+          {
+            "id": "eci",
+            "displayName": "ECI",
+            "peripheralId": "PCA",
+            "signalId": "ECI",
+            "profileData": {}
+          }
+        ],
+        "evidenceIds": [
+          "datasheet"
+        ],
+        "profileData": {}
+      },
+      {
+        "id": "pad-35",
+        "position": "35",
+        "displayName": "P2.5",
+        "category": "io",
+        "point": {
+          "x": 0,
+          "y": 148
+        },
+        "side": "left",
+        "functions": [
+          {
+            "id": "gpio",
+            "displayName": "GPIO",
+            "peripheralId": "GPIO2",
+            "signalId": "P2.5",
+            "profileData": {}
+          },
+          {
+            "id": "ccp0",
+            "displayName": "CCP0",
+            "peripheralId": "PCA",
+            "signalId": "CCP0",
+            "profileData": {}
+          }
+        ],
+        "evidenceIds": [
+          "datasheet"
+        ],
+        "profileData": {}
+      },
+      {
+        "id": "pad-36",
+        "position": "36",
+        "displayName": "P2.6",
+        "category": "io",
+        "point": {
+          "x": 0,
+          "y": 236
+        },
+        "side": "left",
+        "functions": [
+          {
+            "id": "gpio",
+            "displayName": "GPIO",
+            "peripheralId": "GPIO2",
+            "signalId": "P2.6",
+            "profileData": {}
+          },
+          {
+            "id": "ccp1",
+            "displayName": "CCP1",
+            "peripheralId": "PCA",
+            "signalId": "CCP1",
+            "profileData": {}
+          }
+        ],
+        "evidenceIds": [
+          "datasheet"
+        ],
+        "profileData": {}
+      },
+      {
+        "id": "pad-37",
+        "position": "37",
+        "displayName": "P2.7",
+        "category": "io",
+        "point": {
+          "x": 0,
+          "y": 324
+        },
+        "side": "left",
+        "functions": [
+          {
+            "id": "gpio",
+            "displayName": "GPIO",
+            "peripheralId": "GPIO2",
+            "signalId": "P2.7",
+            "profileData": {}
+          },
+          {
+            "id": "ccp2",
+            "displayName": "CCP2",
+            "peripheralId": "PCA",
+            "signalId": "CCP2",
+            "profileData": {}
+          }
+        ],
+        "evidenceIds": [
+          "datasheet"
+        ],
+        "profileData": {}
+      },
+      {
+        "id": "pad-38",
+        "position": "38",
+        "displayName": "P4.5",
+        "category": "io",
+        "point": {
+          "x": 0,
+          "y": 412
+        },
+        "side": "left",
+        "functions": [
+          {
+            "id": "gpio",
+            "displayName": "GPIO",
+            "peripheralId": "GPIO4",
+            "signalId": "P4.5",
+            "profileData": {}
+          }
+        ],
+        "evidenceIds": [
+          "datasheet"
+        ],
+        "profileData": {}
+      },
+      {
+        "id": "pad-39",
+        "position": "39",
+        "displayName": "P4.6",
+        "category": "io",
+        "point": {
+          "x": 0,
+          "y": 500
+        },
+        "side": "left",
+        "functions": [
+          {
+            "id": "gpio",
+            "displayName": "GPIO",
+            "peripheralId": "GPIO4",
+            "signalId": "P4.6",
+            "profileData": {}
+          },
+          {
+            "id": "uart2",
+            "displayName": "UART2 RX-p46",
+            "peripheralId": "UART2",
+            "signalId": "UART2 RX-p46",
+            "profileData": {}
+          }
+        ],
+        "evidenceIds": [
+          "datasheet"
+        ],
+        "profileData": {}
+      },
+      {
+        "id": "pad-40",
+        "position": "40",
+        "displayName": "P0.0",
+        "category": "io",
+        "point": {
+          "x": 0,
+          "y": 588
+        },
+        "side": "left",
+        "functions": [
+          {
+            "id": "gpio",
+            "displayName": "GPIO",
+            "peripheralId": "GPIO0",
+            "signalId": "P0.0",
+            "profileData": {}
+          }
+        ],
+        "evidenceIds": [
+          "datasheet"
+        ],
+        "profileData": {}
+      },
+      {
+        "id": "pad-41",
+        "position": "41",
+        "displayName": "P0.1",
+        "category": "io",
+        "point": {
+          "x": 0,
+          "y": 676
+        },
+        "side": "left",
+        "functions": [
+          {
+            "id": "gpio",
+            "displayName": "GPIO",
+            "peripheralId": "GPIO0",
+            "signalId": "P0.1",
+            "profileData": {}
+          }
+        ],
+        "evidenceIds": [
+          "datasheet"
+        ],
+        "profileData": {}
+      },
+      {
+        "id": "pad-42",
+        "position": "42",
+        "displayName": "P0.2",
+        "category": "io",
+        "point": {
+          "x": 0,
+          "y": 764
+        },
+        "side": "left",
+        "functions": [
+          {
+            "id": "gpio",
+            "displayName": "GPIO",
+            "peripheralId": "GPIO0",
+            "signalId": "P0.2",
+            "profileData": {}
+          }
+        ],
+        "evidenceIds": [
+          "datasheet"
+        ],
+        "profileData": {}
+      },
+      {
+        "id": "pad-43",
+        "position": "43",
+        "displayName": "P0.3",
+        "category": "io",
+        "point": {
+          "x": 0,
+          "y": 852
+        },
+        "side": "left",
+        "functions": [
+          {
+            "id": "gpio",
+            "displayName": "GPIO",
+            "peripheralId": "GPIO0",
+            "signalId": "P0.3",
+            "profileData": {}
+          }
+        ],
+        "evidenceIds": [
+          "datasheet"
+        ],
+        "profileData": {}
+      },
+      {
+        "id": "pad-44",
+        "position": "44",
+        "displayName": "P0.4",
+        "category": "io",
+        "point": {
+          "x": 0,
+          "y": 940
+        },
+        "side": "left",
+        "functions": [
+          {
+            "id": "gpio",
+            "displayName": "GPIO",
+            "peripheralId": "GPIO0",
+            "signalId": "P0.4",
+            "profileData": {}
+          }
+        ],
+        "evidenceIds": [
+          "datasheet"
+        ],
+        "profileData": {}
+      }
+    ],
+    "peripherals": [
+      {
+        "id": "GPIO0",
+        "kind": "gpio",
+        "displayName": "P0 GPIO",
+        "signals": [
+          {
+            "id": "P0.0",
+            "displayName": "P0.0",
+            "direction": "bidirectional",
+            "profileData": {}
+          },
+          {
+            "id": "P0.1",
+            "displayName": "P0.1",
+            "direction": "bidirectional",
+            "profileData": {}
+          },
+          {
+            "id": "P0.2",
+            "displayName": "P0.2",
+            "direction": "bidirectional",
+            "profileData": {}
+          },
+          {
+            "id": "P0.3",
+            "displayName": "P0.3",
+            "direction": "bidirectional",
+            "profileData": {}
+          },
+          {
+            "id": "P0.4",
+            "displayName": "P0.4",
+            "direction": "bidirectional",
+            "profileData": {}
+          },
+          {
+            "id": "P0.5",
+            "displayName": "P0.5",
+            "direction": "bidirectional",
+            "profileData": {}
+          },
+          {
+            "id": "P0.6",
+            "displayName": "P0.6",
+            "direction": "bidirectional",
+            "profileData": {}
+          },
+          {
+            "id": "P0.7",
+            "displayName": "P0.7",
+            "direction": "bidirectional",
+            "profileData": {}
+          }
+        ],
+        "evidenceIds": [
+          "datasheet",
+          "registers"
+        ],
+        "profileData": {}
+      },
+      {
+        "id": "GPIO1",
+        "kind": "gpio",
+        "displayName": "P1 GPIO",
+        "signals": [
+          {
+            "id": "P1.0",
+            "displayName": "P1.0",
+            "direction": "bidirectional",
+            "profileData": {}
+          },
+          {
+            "id": "P1.1",
+            "displayName": "P1.1",
+            "direction": "bidirectional",
+            "profileData": {}
+          },
+          {
+            "id": "P1.2",
+            "displayName": "P1.2",
+            "direction": "bidirectional",
+            "profileData": {}
+          },
+          {
+            "id": "P1.3",
+            "displayName": "P1.3",
+            "direction": "bidirectional",
+            "profileData": {}
+          },
+          {
+            "id": "P1.4",
+            "displayName": "P1.4",
+            "direction": "bidirectional",
+            "profileData": {}
+          },
+          {
+            "id": "P1.5",
+            "displayName": "P1.5",
+            "direction": "bidirectional",
+            "profileData": {}
+          },
+          {
+            "id": "P1.6",
+            "displayName": "P1.6",
+            "direction": "bidirectional",
+            "profileData": {}
+          },
+          {
+            "id": "P1.7",
+            "displayName": "P1.7",
+            "direction": "bidirectional",
+            "profileData": {}
+          }
+        ],
+        "evidenceIds": [
+          "datasheet",
+          "registers"
+        ],
+        "profileData": {}
+      },
+      {
+        "id": "GPIO2",
+        "kind": "gpio",
+        "displayName": "P2 GPIO",
+        "signals": [
+          {
+            "id": "P2.0",
+            "displayName": "P2.0",
+            "direction": "bidirectional",
+            "profileData": {}
+          },
+          {
+            "id": "P2.1",
+            "displayName": "P2.1",
+            "direction": "bidirectional",
+            "profileData": {}
+          },
+          {
+            "id": "P2.2",
+            "displayName": "P2.2",
+            "direction": "bidirectional",
+            "profileData": {}
+          },
+          {
+            "id": "P2.3",
+            "displayName": "P2.3",
+            "direction": "bidirectional",
+            "profileData": {}
+          },
+          {
+            "id": "P2.4",
+            "displayName": "P2.4",
+            "direction": "bidirectional",
+            "profileData": {}
+          },
+          {
+            "id": "P2.5",
+            "displayName": "P2.5",
+            "direction": "bidirectional",
+            "profileData": {}
+          },
+          {
+            "id": "P2.6",
+            "displayName": "P2.6",
+            "direction": "bidirectional",
+            "profileData": {}
+          },
+          {
+            "id": "P2.7",
+            "displayName": "P2.7",
+            "direction": "bidirectional",
+            "profileData": {}
+          }
+        ],
+        "evidenceIds": [
+          "datasheet",
+          "registers"
+        ],
+        "profileData": {}
+      },
+      {
+        "id": "GPIO3",
+        "kind": "gpio",
+        "displayName": "P3 GPIO",
+        "signals": [
+          {
+            "id": "P3.0",
+            "displayName": "P3.0",
+            "direction": "bidirectional",
+            "profileData": {}
+          },
+          {
+            "id": "P3.1",
+            "displayName": "P3.1",
+            "direction": "bidirectional",
+            "profileData": {}
+          },
+          {
+            "id": "P3.2",
+            "displayName": "P3.2",
+            "direction": "bidirectional",
+            "profileData": {}
+          },
+          {
+            "id": "P3.3",
+            "displayName": "P3.3",
+            "direction": "bidirectional",
+            "profileData": {}
+          },
+          {
+            "id": "P3.4",
+            "displayName": "P3.4",
+            "direction": "bidirectional",
+            "profileData": {}
+          },
+          {
+            "id": "P3.5",
+            "displayName": "P3.5",
+            "direction": "bidirectional",
+            "profileData": {}
+          },
+          {
+            "id": "P3.6",
+            "displayName": "P3.6",
+            "direction": "bidirectional",
+            "profileData": {}
+          },
+          {
+            "id": "P3.7",
+            "displayName": "P3.7",
+            "direction": "bidirectional",
+            "profileData": {}
+          }
+        ],
+        "evidenceIds": [
+          "datasheet",
+          "registers"
+        ],
+        "profileData": {}
+      },
+      {
+        "id": "GPIO4",
+        "kind": "gpio",
+        "displayName": "P4 GPIO",
+        "signals": [
+          {
+            "id": "P4.0",
+            "displayName": "P4.0",
+            "direction": "bidirectional",
+            "profileData": {}
+          },
+          {
+            "id": "P4.1",
+            "displayName": "P4.1",
+            "direction": "bidirectional",
+            "profileData": {}
+          },
+          {
+            "id": "P4.2",
+            "displayName": "P4.2",
+            "direction": "bidirectional",
+            "profileData": {}
+          },
+          {
+            "id": "P4.3",
+            "displayName": "P4.3",
+            "direction": "bidirectional",
+            "profileData": {}
+          },
+          {
+            "id": "P4.4",
+            "displayName": "P4.4",
+            "direction": "bidirectional",
+            "profileData": {}
+          },
+          {
+            "id": "P4.5",
+            "displayName": "P4.5",
+            "direction": "bidirectional",
+            "profileData": {}
+          },
+          {
+            "id": "P4.6",
+            "displayName": "P4.6",
+            "direction": "bidirectional",
+            "profileData": {}
+          },
+          {
+            "id": "P4.7",
+            "displayName": "P4.7",
+            "direction": "bidirectional",
+            "profileData": {}
+          }
+        ],
+        "evidenceIds": [
+          "datasheet",
+          "registers"
+        ],
+        "profileData": {}
+      },
+      {
+        "id": "UART1",
+        "kind": "uart",
+        "displayName": "UART1",
+        "signals": [
+          {
+            "id": "RX-default",
+            "displayName": "RX-default",
+            "direction": "input",
+            "profileData": {}
+          },
+          {
+            "id": "TX-default",
+            "displayName": "TX-default",
+            "direction": "output",
+            "profileData": {}
+          },
+          {
+            "id": "RX-p36",
+            "displayName": "RX-p36",
+            "direction": "input",
+            "profileData": {}
+          },
+          {
+            "id": "TX-p36",
+            "displayName": "TX-p36",
+            "direction": "output",
+            "profileData": {}
+          },
+          {
+            "id": "RX-p16",
+            "displayName": "RX-p16",
+            "direction": "input",
+            "profileData": {}
+          },
+          {
+            "id": "TX-p16",
+            "displayName": "TX-p16",
+            "direction": "output",
+            "profileData": {}
+          }
+        ],
+        "evidenceIds": [
+          "datasheet",
+          "registers"
+        ],
+        "profileData": {}
+      },
+      {
+        "id": "TIMER0",
+        "kind": "timer",
+        "displayName": "Timer 0",
+        "signals": [
+          {
+            "id": "T0 外部计数",
+            "displayName": "T0 外部计数",
+            "direction": "input",
+            "profileData": {}
+          },
+          {
+            "id": "T0CLKO",
+            "displayName": "T0CLKO",
+            "direction": "output",
+            "profileData": {}
+          }
+        ],
+        "evidenceIds": [
+          "datasheet",
+          "registers"
+        ],
+        "profileData": {}
+      },
+      {
+        "id": "TIMER1",
+        "kind": "timer",
+        "displayName": "Timer 1",
+        "signals": [
+          {
+            "id": "T1 外部计数",
+            "displayName": "T1 外部计数",
+            "direction": "input",
+            "profileData": {}
+          },
+          {
+            "id": "T1CLKO",
+            "displayName": "T1CLKO",
+            "direction": "output",
+            "profileData": {}
+          }
+        ],
+        "evidenceIds": [
+          "datasheet",
+          "registers"
+        ],
+        "profileData": {}
+      },
+      {
+        "id": "GPIO5",
+        "kind": "gpio",
+        "displayName": "P5 GPIO · P5.4 受 ISP 复位选项约束",
+        "signals": [
+          {
+            "id": "P5.4",
+            "displayName": "P5.4",
+            "direction": "bidirectional",
+            "profileData": {}
+          },
+          {
+            "id": "P5.5",
+            "displayName": "P5.5",
+            "direction": "bidirectional",
+            "profileData": {}
+          }
+        ],
+        "evidenceIds": [
+          "datasheet",
+          "registers"
+        ],
+        "profileData": {}
+      },
+      {
+        "id": "TIMER2",
+        "kind": "timer",
+        "displayName": "Timer 2 · 16 位自动重装",
+        "signals": [
+          {
+            "id": "T2 外部计数",
+            "displayName": "T2 外部计数",
+            "direction": "input",
+            "profileData": {}
+          },
+          {
+            "id": "T2CLKO",
+            "displayName": "T2CLKO",
+            "direction": "output",
+            "profileData": {}
+          }
+        ],
+        "evidenceIds": [
+          "datasheet",
+          "registers"
+        ],
+        "profileData": {}
+      },
+      {
+        "id": "UART2",
+        "kind": "uart",
+        "displayName": "UART2 · Timer2 波特率",
+        "signals": [
+          {
+            "id": "UART2 RX-default",
+            "displayName": "UART2 RX-default",
+            "direction": "input",
+            "profileData": {}
+          },
+          {
+            "id": "UART2 TX-default",
+            "displayName": "UART2 TX-default",
+            "direction": "output",
+            "profileData": {}
+          },
+          {
+            "id": "UART2 RX-p46",
+            "displayName": "UART2 RX-p46",
+            "direction": "input",
+            "profileData": {}
+          },
+          {
+            "id": "UART2 TX-p46",
+            "displayName": "UART2 TX-p46",
+            "direction": "output",
+            "profileData": {}
+          }
+        ],
+        "evidenceIds": [
+          "datasheet",
+          "registers"
+        ],
+        "profileData": {}
+      },
+      {
+        "id": "ADC",
+        "kind": "adc",
+        "displayName": "ADC · 8 路 10 位",
+        "signals": [
+          {
+            "id": "ADC0",
+            "displayName": "ADC0",
+            "direction": "input",
+            "profileData": {}
+          },
+          {
+            "id": "ADC1",
+            "displayName": "ADC1",
+            "direction": "input",
+            "profileData": {}
+          },
+          {
+            "id": "ADC2",
+            "displayName": "ADC2",
+            "direction": "input",
+            "profileData": {}
+          },
+          {
+            "id": "ADC3",
+            "displayName": "ADC3",
+            "direction": "input",
+            "profileData": {}
+          },
+          {
+            "id": "ADC4",
+            "displayName": "ADC4",
+            "direction": "input",
+            "profileData": {}
+          },
+          {
+            "id": "ADC5",
+            "displayName": "ADC5",
+            "direction": "input",
+            "profileData": {}
+          },
+          {
+            "id": "ADC6",
+            "displayName": "ADC6",
+            "direction": "input",
+            "profileData": {}
+          },
+          {
+            "id": "ADC7",
+            "displayName": "ADC7",
+            "direction": "input",
+            "profileData": {}
+          }
+        ],
+        "evidenceIds": [
+          "datasheet",
+          "registers"
+        ],
+        "profileData": {}
+      },
+      {
+        "id": "SPI",
+        "kind": "spi",
+        "displayName": "SPI · 主机 / 软件片选",
+        "signals": [
+          {
+            "id": "SPI MOSI-p1",
+            "displayName": "SPI MOSI-p1",
+            "direction": "output",
+            "profileData": {}
+          },
+          {
+            "id": "SPI MISO-p1",
+            "displayName": "SPI MISO-p1",
+            "direction": "input",
+            "profileData": {}
+          },
+          {
+            "id": "SPI SCLK-p1",
+            "displayName": "SPI SCLK-p1",
+            "direction": "output",
+            "profileData": {}
+          },
+          {
+            "id": "SPI MOSI-p2",
+            "displayName": "SPI MOSI-p2",
+            "direction": "output",
+            "profileData": {}
+          },
+          {
+            "id": "SPI MISO-p2",
+            "displayName": "SPI MISO-p2",
+            "direction": "input",
+            "profileData": {}
+          },
+          {
+            "id": "SPI SCLK-p2",
+            "displayName": "SPI SCLK-p2",
+            "direction": "output",
+            "profileData": {}
+          },
+          {
+            "id": "SPI MOSI-p4",
+            "displayName": "SPI MOSI-p4",
+            "direction": "output",
+            "profileData": {}
+          },
+          {
+            "id": "SPI MISO-p4",
+            "displayName": "SPI MISO-p4",
+            "direction": "input",
+            "profileData": {}
+          },
+          {
+            "id": "SPI SCLK-p4",
+            "displayName": "SPI SCLK-p4",
+            "direction": "output",
+            "profileData": {}
+          }
+        ],
+        "evidenceIds": [
+          "datasheet",
+          "registers"
+        ],
+        "profileData": {}
+      },
+      {
+        "id": "PCA",
+        "kind": "timer",
+        "displayName": "PCA · CCP0 / CCP1 / CCP2",
+        "signals": [
+          {
+            "id": "ECI",
+            "displayName": "ECI",
+            "direction": "input",
+            "profileData": {}
+          },
+          {
+            "id": "CCP0",
+            "displayName": "CCP0",
+            "direction": "bidirectional",
+            "profileData": {}
+          },
+          {
+            "id": "CCP1",
+            "displayName": "CCP1",
+            "direction": "bidirectional",
+            "profileData": {}
+          },
+          {
+            "id": "CCP2",
+            "displayName": "CCP2",
+            "direction": "bidirectional",
+            "profileData": {}
+          }
+        ],
+        "evidenceIds": [
+          "datasheet",
+          "registers"
+        ],
+        "profileData": {}
+      },
+      {
+        "id": "EXTI",
+        "kind": "other",
+        "displayName": "外部中断 INT0–INT4",
+        "signals": [
+          {
+            "id": "INT0",
+            "displayName": "INT0",
+            "direction": "input",
+            "profileData": {}
+          },
+          {
+            "id": "INT1",
+            "displayName": "INT1",
+            "direction": "input",
+            "profileData": {}
+          },
+          {
+            "id": "INT2",
+            "displayName": "INT2",
+            "direction": "input",
+            "profileData": {}
+          },
+          {
+            "id": "INT3",
+            "displayName": "INT3",
+            "direction": "input",
+            "profileData": {}
+          },
+          {
+            "id": "INT4",
+            "displayName": "INT4",
+            "direction": "input",
+            "profileData": {}
+          }
+        ],
+        "evidenceIds": [
+          "datasheet",
+          "registers"
+        ],
+        "profileData": {}
+      },
+      {
+        "id": "WDT",
+        "kind": "other",
+        "displayName": "看门狗",
+        "signals": [],
+        "evidenceIds": [
+          "datasheet",
+          "registers"
+        ],
+        "profileData": {}
+      },
+      {
+        "id": "WKT",
+        "kind": "other",
+        "displayName": "掉电唤醒定时器",
+        "signals": [],
+        "evidenceIds": [
+          "datasheet",
+          "registers"
+        ],
+        "profileData": {}
+      },
+      {
+        "id": "LVD",
+        "kind": "other",
+        "displayName": "低压检测",
+        "signals": [],
+        "evidenceIds": [
+          "datasheet",
+          "registers"
+        ],
+        "profileData": {}
+      },
+      {
+        "id": "IAP",
+        "kind": "other",
+        "displayName": "IAP / EEPROM 待机初始化",
+        "signals": [],
+        "evidenceIds": [
+          "datasheet",
+          "registers"
+        ],
+        "profileData": {}
+      },
+      {
+        "id": "MCLKO",
+        "kind": "other",
+        "displayName": "主时钟输出 · 仅内部 IRC",
+        "signals": [
+          {
+            "id": "MCLKO",
+            "displayName": "MCLKO",
+            "direction": "output",
+            "profileData": {}
+          }
+        ],
+        "evidenceIds": [
+          "datasheet",
+          "registers"
+        ],
+        "profileData": {}
+      }
+    ],
+    "clockTree": {
+      "nodes": [
+        {
+          "id": "IRC",
+          "kind": "source",
+          "displayName": "IRC",
+          "inputIds": [],
+          "point": {
+            "x": 0,
+            "y": 0
+          },
+          "evidenceIds": [
+            "datasheet",
+            "registers"
+          ],
+          "profileData": {}
+        },
+        {
+          "id": "XTAL",
+          "kind": "source",
+          "displayName": "XTAL",
+          "inputIds": [],
+          "point": {
+            "x": 0,
+            "y": 170
+          },
+          "evidenceIds": [
+            "datasheet",
+            "registers"
+          ],
+          "profileData": {}
+        },
+        {
+          "id": "SYS",
+          "kind": "divider",
+          "displayName": "SYS",
+          "inputIds": [
+            "IRC",
+            "XTAL"
+          ],
+          "point": {
+            "x": 240,
+            "y": 80
+          },
+          "evidenceIds": [
+            "datasheet",
+            "registers"
+          ],
+          "profileData": {}
+        },
+        {
+          "id": "T0",
+          "kind": "divider",
+          "displayName": "T0",
+          "inputIds": [
+            "SYS",
+            "EXT0"
+          ],
+          "point": {
+            "x": 480,
+            "y": 0
+          },
+          "evidenceIds": [
+            "datasheet",
+            "registers"
+          ],
+          "profileData": {}
+        },
+        {
+          "id": "T1",
+          "kind": "divider",
+          "displayName": "T1",
+          "inputIds": [
+            "SYS",
+            "EXT1"
+          ],
+          "point": {
+            "x": 480,
+            "y": 160
+          },
+          "evidenceIds": [
+            "datasheet",
+            "registers"
+          ],
+          "profileData": {}
+        },
+        {
+          "id": "T2",
+          "kind": "divider",
+          "displayName": "T2",
+          "inputIds": [
+            "SYS",
+            "EXT2"
+          ],
+          "point": {
+            "x": 720,
+            "y": 80
+          },
+          "evidenceIds": [
+            "datasheet",
+            "registers"
+          ],
+          "profileData": {}
+        },
+        {
+          "id": "EXT0",
+          "kind": "source",
+          "displayName": "T0 外部脉冲",
+          "inputIds": [],
+          "point": {
+            "x": 480,
+            "y": 400
+          },
+          "evidenceIds": [
+            "datasheet"
+          ],
+          "profileData": {}
+        },
+        {
+          "id": "EXT1",
+          "kind": "source",
+          "displayName": "T1 外部脉冲",
+          "inputIds": [],
+          "point": {
+            "x": 480,
+            "y": 500
+          },
+          "evidenceIds": [
+            "datasheet"
+          ],
+          "profileData": {}
+        },
+        {
+          "id": "EXT2",
+          "kind": "source",
+          "displayName": "T2 外部脉冲",
+          "inputIds": [],
+          "point": {
+            "x": 480,
+            "y": 600
+          },
+          "evidenceIds": [
+            "datasheet"
+          ],
+          "profileData": {}
+        }
+      ]
+    },
+    "evidence": [
+      {
+        "id": "datasheet",
+        "kind": "datasheet",
+        "title": "STC15 series MCU Data Sheet",
+        "version": "2015-10-10",
+        "locator": "https://www.stcmicro.com/datasheet/STC15F2K60S2-en.pdf",
+        "sha256": "c1df3cdb156465acc3f1d07b283b0c599d33cc170a7946a8cb9330aa84273801",
+        "section": "p15–24 exact family/package; p237–238 WDT; p383–400 interrupts; p432–504 T0/1/2; p550–552 WKT; p572/605–608 UART; p627–630 IAP; p661–665 ADC; p685–700 PCA; p792–805 SPI"
+      },
+      {
+        "id": "registers",
+        "kind": "devicePack",
+        "title": "AiCube 6.96V-plus STC15 SDCC register facts",
+        "version": "6.96V-plus",
+        "locator": "res33_split/slot_00083__off_000455f8__len_0010754.h",
+        "sha256": "d818bef2e23c6911cde6c1e3cc0f8d5f1471e4c6d3e8f89a0f89caf3397b22ef",
+        "section": "SFR names and addresses; original vendor source is not redistributed"
+      },
+      {
+        "id": "irc-presets",
+        "kind": "sdk",
+        "title": "STC-ISP IAP15L2K61S2 IRC frequency combo box",
+        "version": "6.97C",
+        "locator": "AiCube-ISP-v6.97C.exe / IAP15L2K61S2 / control 1045",
+        "sha256": "d857b147f2f4e527c5566a2dd40e63f875c94f4e344fa5ce800ab13a770db420",
+        "section": "Nine preset items observed in the UI; editable input is also supported, presets are not a hardware frequency enumeration"
+      },
+      {
+        "id": "vendor-selection",
+        "kind": "datasheet",
+        "title": "STC15F2K60S2 厂商选型表：SPI 仅主机；C 版 MCLKO 仅 IRC",
+        "version": "accessed 2026-10-22",
+        "locator": "https://stcmicro.com/cn/stc/stc15f2k60s2.html",
+        "sha256": null,
+        "section": "系列选型表 / 主时钟输出限制"
+      }
+    ],
+    "profileData": {
+      "previewOnly": false,
+      "codeGeneration": {
+        "contractVersion": 1,
+        "mainPath": "src/main.c",
+        "entryHeader": "generated/mcuconfig/mcuconfig.h",
+        "entryFunction": "sx_mcuconfig_init"
+      },
+      "ircFrequencyPresetsHz": [
+        5529600,
+        6000000,
+        11059200,
+        12000000,
+        18432000,
+        20000000,
+        22118400,
+        24000000,
+        27000000
+      ],
+      "projectClock": {
+        "contractVersion": 1,
+        "systemNodeId": "SYS",
+        "sourceKinds": {
+          "IRC": "internalRc",
+          "XTAL": "externalCrystal"
+        }
+      },
+      "peripheralInitialization": {
+        "version": 1,
+        "interrupts": "Configured but left disabled; application owns handlers and enabling",
+        "spi": "Master only: vendor selection table restricts this family despite the old English SPI chapter",
+        "adcClock": "Internal IRC before CLK_DIV; never infer ADC speed from external crystal",
+        "mclko": "Internal IRC only, <=8 MHz, P5.4 ISP reset option must be disabled"
+      }
+    }
+  },
+  "configuration": {
+    "pins": [],
+    "peripherals": [],
+    "clocks": [
+      {
+        "nodeId": "SYS",
+        "enabled": true,
+        "inputId": null,
+        "parameters": {
+          "divider": 1
+        }
+      }
+    ],
+    "profileData": {
+      "reserveMon51": true,
+      "projectClock": {
+        "managed": false,
+        "valid": false,
+        "inputSha256": null
+      },
+      "p54GpioConfirmed": false
+    }
+  },
+  "generation": null
+}

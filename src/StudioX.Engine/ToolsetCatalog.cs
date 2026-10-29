@@ -107,7 +107,7 @@ public sealed class ToolsetCatalog
         {
             throw new StudioXException("TOOLSET_MANIFEST", "工具清单不完整。");
         }
-        if (manifest.Purpose is not (null or "windows-native" or "esp-idf" or "esp8266-rtos-sdk" or "ag32-mapping" or "hdl-native" or "hdl-simulation"))
+        if (manifest.Purpose is not (null or "windows-native" or "esp-idf" or "esp8266-rtos-sdk" or "ag32-mapping" or "hdl-native" or "hdl-simulation" or "arduino" or "pic-xc8" or "pic-ipe" or "zephyr" or "mx251" or "cmake-build"))
         {
             throw new StudioXException("TOOLSET_PURPOSE", "工具清单包含不支持的用途。");
         }
@@ -123,6 +123,12 @@ public sealed class ToolsetCatalog
         }
         var requiredRoles = manifest.Purpose == "ag32-mapping"
             ? new[] { "python", "converter", "supra" }
+            : manifest.Purpose == "mx251" ? Mx251Profile.RequiredRoles
+            : manifest.Purpose == "cmake-build" ? new[] { "cmake", "ninja" }
+            : manifest.Purpose == "pic-xc8" ? new[] { "xc8-cc" }
+            : manifest.Purpose == "pic-ipe" ? new[] { "java", "ipecmd" }
+            : manifest.Purpose == "zephyr" ? new[] { "cmake", "ninja", "python", "gcc", "gxx", "objcopy", "size" }
+            : manifest.Purpose == "arduino" ? new[] { "arduino-cli", "gcc", "gxx", "objcopy", "size" }
             : manifest.Purpose == "hdl-native" ? new[] { "mapper" }
             : manifest.Purpose == "hdl-simulation" ? new[] { "iverilog", "vvp" }
             : manifest.Purpose is "esp-idf" or "esp8266-rtos-sdk"
@@ -147,6 +153,10 @@ public sealed class ToolsetCatalog
             {
                 throw new StudioXException("TOOL_MISSING", $"内置工具文件缺失：{relative}");
             }
+        }
+        if (manifest.Purpose == "mx251")
+        {
+            Mx251Profile.ValidateTools(new(manifest, root, fingerprint));
         }
         var snapshot = ToolsetSnapshot.Capture(root, cancellationToken);
         foreach (var relative in manifest.Executables.Values)

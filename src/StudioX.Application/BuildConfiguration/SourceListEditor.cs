@@ -7,16 +7,18 @@ using static LiteralCMakeSyntax;
 /// <summary>只改选定目标的字面量源码参数；不展开变量、条件、生成表达式或目录收集。</summary>
 internal sealed class SourceListEditor
 {
-    private sealed record Target(string Name, List<Argument> Sources, Call? AppendCall, int? InsertBefore);
+    private sealed record Target(string Name, List<Argument> Sources, Call? AppendCall, int? InsertBefore, string Scope = "PRIVATE");
     private static readonly HashSet<string> IdfKeywords = new(StringComparer.Ordinal)
     { "SRCS", "SRC_DIRS", "EXCLUDE_SRCS", "INCLUDE_DIRS", "PRIV_INCLUDE_DIRS", "REQUIRES", "PRIV_REQUIRES", "LDFRAGMENTS", "EMBED_FILES", "EMBED_TXTFILES", "REQUIRED_IDF_TARGETS", "KCONFIG", "KCONFIG_PROJBUILD", "WHOLE_ARCHIVE" };
     private readonly string text;
     private readonly bool idf;
+    private readonly bool allowInterface;
     private readonly List<Target> targets = [];
-    public SourceListEditor(string text, bool idf)
+    public SourceListEditor(string text, bool idf, bool allowInterface = false)
     {
         this.text = text;
         this.idf = idf;
+        this.allowInterface = allowInterface;
         var calls = Read(text);
         string[] commands = idf ? ["idf_component_register"] : ["target_sources", "add_executable", "add_library"];
         if (calls.Any(call => call.Name is "function" or "macro" && call.Arguments.FirstOrDefault() is { } argument && commands.Contains(argument.Value, StringComparer.OrdinalIgnoreCase)))
@@ -104,12 +106,12 @@ internal sealed class SourceListEditor
             var newline = text.Contains("\r\n", StringComparison.Ordinal) ? "\r\n" : "\n";
             if (target.AppendCall is null)
             {
-                edits.Add((text.Length, 0, newline + "target_sources(" + target.Name + " PRIVATE " + string.Join(' ', values) + ")" + newline));
+                edits.Add((text.Length, 0, newline + "target_sources(" + target.Name + " " + target.Scope + " " + string.Join(' ', values) + ")" + newline));
             }
             else
             {
                 var offset = target.InsertBefore ?? target.AppendCall.Close;
-                var prefix = idf ? idfHasSourcesKeyword ? "" : "SRCS " : "PRIVATE ";
+                var prefix = idf ? idfHasSourcesKeyword ? "" : "SRCS " : target.Scope + " ";
                 var lineStart = text.LastIndexOf('\n', Math.Max(0, offset - 1)) + 1;
                 var whitespace = text[lineStart..offset];
                 var inserted = whitespace.All(char.IsWhiteSpace)
@@ -134,7 +136,7 @@ internal sealed class SourceListEditor
                 throw Unsupported("目标名称缺失");
             }
             var name = Name(call.Arguments[0]);
-            if (call.Arguments.Skip(1).Any(argument => argument.Value is "IMPORTED" or "ALIAS" or "INTERFACE"))
+            if (call.Arguments.Skip(1).Any(argument => argument.Value is "IMPORTED" or "ALIAS" || !allowInterface && argument.Value == "INTERFACE"))
             {
                 continue;
             }
@@ -142,8 +144,9 @@ internal sealed class SourceListEditor
             {
                 throw Unsupported("目标被重复声明：" + name);
             }
-            string[] flags = ["WIN32", "MACOSX_BUNDLE", "EXCLUDE_FROM_ALL", "STATIC", "SHARED", "MODULE", "OBJECT"];
-            targets.Add(new(name, call.Arguments.Skip(1).SkipWhile(argument => flags.Contains(argument.Value)).ToList(), null, null));
+            string[] flags = ["WIN32", "MACOSX_BUNDLE", "EXCLUDE_FROM_ALL", "STATIC", "SHARED", "MODULE", "OBJECT", "INTERFACE"];
+            targets.Add(new(name, call.Arguments.Skip(1).SkipWhile(argument => flags.Contains(argument.Value)).ToList(), null, null,
+                call.Arguments.Any(a => a.Value == "INTERFACE") ? "INTERFACE" : "PRIVATE"));
         }
         foreach (var call in calls.Where(call => call.Name == "target_sources"))
         {
@@ -160,11 +163,11 @@ internal sealed class SourceListEditor
             var scope = false;
             foreach (var argument in call.Arguments.Skip(1))
             {
-                if (argument.Value is "FILE_SET" or "INTERFACE")
+                if (argument.Value == "FILE_SET" || argument.Value == "INTERFACE" && !allowInterface)
                 {
                     throw Unsupported("FILE_SET 或 INTERFACE 源码需要手工维护");
                 }
-                if (argument.Value is "PRIVATE" or "PUBLIC")
+                if (argument.Value is "PRIVATE" or "PUBLIC" || argument.Value == "INTERFACE" && allowInterface)
                 {
                     scope = true;
                     continue;

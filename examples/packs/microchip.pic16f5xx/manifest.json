@@ -1,0 +1,281 @@
+{
+  "formatVersion": 1,
+  "id": "microchip.pic16f5xx",
+  "version": "0.1.0",
+  "displayName": "Microchip PIC16F5XX · XC8",
+  "vendor": "Microchip",
+  "devices": [
+    {
+      "id": "PIC16F505",
+      "displayName": "PIC16F505 · 1024×12-bit Flash / 72 B RAM",
+      "architecture": "pic12",
+      "flashOrigin": 0,
+      "flashBytes": 1536,
+      "ramOrigin": 0,
+      "ramBytes": 72,
+      "toolsetId": "microchip.xc8",
+      "toolsetVersion": "4.0.0",
+      "compilerId": "xc8-4.00-pic",
+      "cpuFlags": [],
+      "defines": [],
+      "includeDirectories": [],
+      "sources": [],
+      "linkerScript": "",
+      "compileOptions": [],
+      "linkOptions": [],
+      "pic": {
+        "compilerTarget": "16F505",
+        "programWords": 1024,
+        "programWordBits": 12,
+        "eepromBytes": 0,
+        "dfpVersion": "1.9.176"
+      },
+      "templates": [
+        {
+          "id": "xc8-basic",
+          "displayName": "XC8 基础 C（板级配置待设置）",
+          "description": "不假设晶振、引脚及配置位；仅验证 C 编译和编辑，使用前需核对实际板级配置。",
+          "entryFile": "templates/basic.c"
+        }
+      ]
+    },
+    {
+      "id": "PIC16F506",
+      "displayName": "PIC16F506 · 1024×12-bit Flash / 67 B RAM",
+      "architecture": "pic12",
+      "flashOrigin": 0,
+      "flashBytes": 1536,
+      "ramOrigin": 0,
+      "ramBytes": 67,
+      "toolsetId": "microchip.xc8",
+      "toolsetVersion": "4.0.0",
+      "compilerId": "xc8-4.00-pic",
+      "cpuFlags": [],
+      "defines": [],
+      "includeDirectories": [],
+      "sources": [],
+      "linkerScript": "",
+      "compileOptions": [],
+      "linkOptions": [],
+      "pic": {
+        "compilerTarget": "16F506",
+        "programWords": 1024,
+        "programWordBits": 12,
+        "eepromBytes": 0,
+        "dfpVersion": "1.9.176"
+      },
+      "templates": [
+        {
+          "id": "xc8-basic",
+          "displayName": "XC8 基础 C（板级配置待设置）",
+          "description": "不假设晶振、引脚及配置位；仅验证 C 编译和编辑，使用前需核对实际板级配置。",
+          "entryFile": "templates/basic.c"
+        }
+      ]
+    },
+    {
+      "id": "PIC16F526",
+      "displayName": "PIC16F526 · 1024×12-bit Flash / 67 B RAM",
+      "architecture": "pic12",
+      "flashOrigin": 0,
+      "flashBytes": 1536,
+      "ramOrigin": 0,
+      "ramBytes": 67,
+      "toolsetId": "microchip.xc8",
+      "toolsetVersion": "4.0.0",
+      "compilerId": "xc8-4.00-pic",
+      "cpuFlags": [],
+      "defines": [],
+      "includeDirectories": [],
+      "sources": [],
+      "linkerScript": "",
+      "compileOptions": [],
+      "linkOptions": [],
+      "pic": {
+        "compilerTarget": "16F526",
+        "programWords": 1024,
+        "programWordBits": 12,
+        "eepromBytes": 0,
+        "dfpVersion": "1.9.176"
+      },
+      "templates": [
+        {
+          "id": "xc8-basic",
+          "displayName": "XC8 基础 C（板级配置待设置）",
+          "description": "不假设晶振、引脚及配置位；仅验证 C 编译和编辑，使用前需核对实际板级配置。",
+          "entryFile": "templates/basic.c"
+        }
+      ]
+    },
+    {
+      "id": "PIC16F527",
+      "displayName": "PIC16F527 · 1024×12-bit Flash / 68 B RAM",
+      "architecture": "pic12",
+      "flashOrigin": 0,
+      "flashBytes": 1536,
+      "ramOrigin": 0,
+      "ramBytes": 68,
+      "toolsetId": "microchip.xc8",
+      "toolsetVersion": "4.0.0",
+      "compilerId": "xc8-4.00-pic",
+      "cpuFlags": [],
+      "defines": [],
+      "includeDirectories": [],
+      "sources": [],
+      "linkerScript": "",
+      "compileOptions": [],
+      "linkOptions": [],
+      "pic": {
+        "compilerTarget": "16F527",
+        "programWords": 1024,
+        "programWordBits": 12,
+        "eepromBytes": 0,
+        "dfpVersion": "1.9.176"
+      },
+      "templates": [
+        {
+          "id": "xc8-basic",
+          "displayName": "XC8 基础 C（板级配置待设置）",
+          "description": "不假设晶振、引脚及配置位；仅验证 C 编译和编辑，使用前需核对实际板级配置。",
+          "entryFile": "templates/basic.c"
+        }
+      ]
+    },
+    {
+      "id": "PIC16F54",
+      "displayName": "PIC16F54 · 512×12-bit Flash / 25 B RAM",
+      "architecture": "pic12",
+      "flashOrigin": 0,
+      "flashBytes": 768,
+      "ramOrigin": 0,
+      "ramBytes": 25,
+      "toolsetId": "microchip.xc8",
+      "toolsetVersion": "4.0.0",
+      "compilerId": "xc8-4.00-pic",
+      "cpuFlags": [],
+      "defines": [],
+      "includeDirectories": [],
+      "sources": [],
+      "linkerScript": "",
+      "compileOptions": [],
+      "linkOptions": [],
+      "pic": {
+        "compilerTarget": "16F54",
+        "programWords": 512,
+        "programWordBits": 12,
+        "eepromBytes": 0,
+        "dfpVersion": "1.9.176"
+      },
+      "templates": [
+        {
+          "id": "xc8-basic",
+          "displayName": "XC8 基础 C（板级配置待设置）",
+          "description": "不假设晶振、引脚及配置位；仅验证 C 编译和编辑，使用前需核对实际板级配置。",
+          "entryFile": "templates/basic.c"
+        }
+      ]
+    },
+    {
+      "id": "PIC16F57",
+      "displayName": "PIC16F57 · 2048×12-bit Flash / 72 B RAM",
+      "architecture": "pic12",
+      "flashOrigin": 0,
+      "flashBytes": 3072,
+      "ramOrigin": 0,
+      "ramBytes": 72,
+      "toolsetId": "microchip.xc8",
+      "toolsetVersion": "4.0.0",
+      "compilerId": "xc8-4.00-pic",
+      "cpuFlags": [],
+      "defines": [],
+      "includeDirectories": [],
+      "sources": [],
+      "linkerScript": "",
+      "compileOptions": [],
+      "linkOptions": [],
+      "pic": {
+        "compilerTarget": "16F57",
+        "programWords": 2048,
+        "programWordBits": 12,
+        "eepromBytes": 0,
+        "dfpVersion": "1.9.176"
+      },
+      "templates": [
+        {
+          "id": "xc8-basic",
+          "displayName": "XC8 基础 C（板级配置待设置）",
+          "description": "不假设晶振、引脚及配置位；仅验证 C 编译和编辑，使用前需核对实际板级配置。",
+          "entryFile": "templates/basic.c"
+        }
+      ]
+    },
+    {
+      "id": "PIC16F570",
+      "displayName": "PIC16F570 · 2048×12-bit Flash / 132 B RAM",
+      "architecture": "pic12",
+      "flashOrigin": 0,
+      "flashBytes": 3072,
+      "ramOrigin": 0,
+      "ramBytes": 132,
+      "toolsetId": "microchip.xc8",
+      "toolsetVersion": "4.0.0",
+      "compilerId": "xc8-4.00-pic",
+      "cpuFlags": [],
+      "defines": [],
+      "includeDirectories": [],
+      "sources": [],
+      "linkerScript": "",
+      "compileOptions": [],
+      "linkOptions": [],
+      "pic": {
+        "compilerTarget": "16F570",
+        "programWords": 2048,
+        "programWordBits": 12,
+        "eepromBytes": 0,
+        "dfpVersion": "1.9.176"
+      },
+      "templates": [
+        {
+          "id": "xc8-basic",
+          "displayName": "XC8 基础 C（板级配置待设置）",
+          "description": "不假设晶振、引脚及配置位；仅验证 C 编译和编辑，使用前需核对实际板级配置。",
+          "entryFile": "templates/basic.c"
+        }
+      ]
+    },
+    {
+      "id": "PIC16F59",
+      "displayName": "PIC16F59 · 2048×12-bit Flash / 134 B RAM",
+      "architecture": "pic12",
+      "flashOrigin": 0,
+      "flashBytes": 3072,
+      "ramOrigin": 0,
+      "ramBytes": 134,
+      "toolsetId": "microchip.xc8",
+      "toolsetVersion": "4.0.0",
+      "compilerId": "xc8-4.00-pic",
+      "cpuFlags": [],
+      "defines": [],
+      "includeDirectories": [],
+      "sources": [],
+      "linkerScript": "",
+      "compileOptions": [],
+      "linkOptions": [],
+      "pic": {
+        "compilerTarget": "16F59",
+        "programWords": 2048,
+        "programWordBits": 12,
+        "eepromBytes": 0,
+        "dfpVersion": "1.9.176"
+      },
+      "templates": [
+        {
+          "id": "xc8-basic",
+          "displayName": "XC8 基础 C（板级配置待设置）",
+          "description": "不假设晶振、引脚及配置位；仅验证 C 编译和编辑，使用前需核对实际板级配置。",
+          "entryFile": "templates/basic.c"
+        }
+      ]
+    }
+  ]
+}

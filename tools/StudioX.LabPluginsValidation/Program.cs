@@ -1,10 +1,14 @@
 using System.Text.Json;
 using StudioX.Application.Plugins;
 using StudioX.Extensions;
+using StudioX.Extensions.Abstractions;
 using StudioX.Foundation;
 using StudioX.LabPlugins;
 
-if (args is not [var archives, var runtime, var output]) { throw new ArgumentException("Usage: <archives> <runtime> <new-output>"); }
+if (args.Length is not (3 or 4)) { throw new ArgumentException("Usage: <archives> <runtime> <new-output> [legacy-calculator-archive]"); }
+var archives = args[0];
+var runtime = args[1];
+var output = args[2];
 output = Path.GetFullPath(output);
 if (Directory.Exists(output)) { throw new ArgumentException("Use a new validation directory."); }
 Directory.CreateDirectory(output);
@@ -49,6 +53,7 @@ InvalidActivity(() => new PluginActivityIcon([[0, 0, -1, 1]]).Validate(), "rejec
 InvalidActivity(() => new PluginActivityIcon(Enumerable.Repeat(new double[256], 9).ToArray()).Validate(), "reject excessive vector complexity");
 var bits = new BitLabPlugin();
 await ProgrammerChecks.RunAsync(bits, Check, Invalid);
+ProgrammerPanelChecks.Run(bits, Check);
 var protocol = new ProtocolLabPlugin();
 var wave = new WaveLabPlugin();
 var pixel = new PixelLabPlugin();
@@ -117,6 +122,7 @@ foreach (var archive in Directory.GetFiles(archives, "*.studioxplugin").Order(St
     await manager.SetEnabledAsync(entry.Id, true);
 }
 Check(imported.Count == 4, "four separate installable archives");
+await ProgrammerPanelChecks.RunCompatibilityAsync(archives, runtime, output, args.Length == 4 ? args[3] : null, Check);
 await using (var workspace = await manager.OpenWorkspaceAsync(project, (_, _, _, _) => throw new InvalidOperationException("Unexpected host call")))
 {
     async Task AwaitPanel(string id, Func<StudioX.Extensions.Abstractions.PluginPanelDefinition, bool> ready)
@@ -147,14 +153,16 @@ await using (var workspace = await manager.OpenWorkspaceAsync(project, (_, _, _,
         {
             values = bad
         }));
-        await AwaitPanel(entry.Id, panel => panel.Widgets.Any(x => x.Id == "error"));
-        Check(!invalid.GetProperty("ok").GetBoolean() && workspace.LatestPanels[entry.Id + "/lab"].Widgets.Any(x => x.Id == "error"), entry.Id + " malformed form displays an error without killing host");
+        bool HasError(PluginPanelDefinition panel) => entry.Id == "studiox.bit-lab" ? PluginProgrammerCalculator.Parse(panel.Widgets.Single().Value!.Value).Error is not null : panel.Widgets.Any(x => x.Id == "error");
+        string? CopyText(PluginPanelDefinition panel) => entry.Id == "studiox.bit-lab" ? PluginProgrammerCalculator.Parse(panel.Widgets.Single().Value!.Value).CopyText : panel.Widgets.Last().Value!.Value.GetString();
+        await AwaitPanel(entry.Id, HasError);
+        Check(!invalid.GetProperty("ok").GetBoolean() && HasError(workspace.LatestPanels[entry.Id + "/lab"]), entry.Id + " malformed form displays an error without killing host");
         var after = workspace.LatestPanels[entry.Id + "/lab"];
-        Check(before.Widgets.Last().Value!.Value.GetString() == after.Widgets.Last().Value!.Value.GetString(), entry.Id + " keeps previous successful output on failure");
+        Check(CopyText(before) == CopyText(after), entry.Id + " keeps previous successful output on failure");
         await workspace.InvokeAsync(entry.Id, "agentTool", "calculate", Json(new
         {
         }));
-        await AwaitPanel(entry.Id, panel => !panel.Widgets.Any(x => x.Id == "error"));
+        await AwaitPanel(entry.Id, panel => !HasError(panel));
         Check(!workspace.LatestPanels[entry.Id + "/lab"].Widgets.Any(x => x.Id == "error"), entry.Id + " recovers after bad input");
     }
     var manifestPath = imported[0].ManifestPath;

@@ -16,13 +16,15 @@ public sealed partial class PluginManagerService : IAsyncDisposable
     private readonly string settingsPath;
     private readonly string rollbackDirectory;
     private readonly PluginRepository repository;
+    private readonly PluginHostCapabilities hostCapabilities;
     private readonly SemaphoreSlim gate = new(1, 1);
     private readonly HashSet<PluginWorkspaceSession> sessions = [];
     private bool disposed;
 
-    public PluginManagerService(string runtimeDirectory, string dataDirectory)
+    public PluginManagerService(string runtimeDirectory, string dataDirectory, PluginHostCapabilities? hostCapabilities = null)
     {
         this.runtimeDirectory = Path.GetFullPath(runtimeDirectory);
+        this.hostCapabilities = hostCapabilities ?? PluginHostCapabilities.Current;
         bundledDirectory = Path.Combine(this.runtimeDirectory, "plugins");
         userDirectory = Path.Combine(Path.GetFullPath(dataDirectory), "plugins");
         settingsPath = Path.Combine(Path.GetFullPath(dataDirectory), "plugins.json");
@@ -64,7 +66,8 @@ public sealed partial class PluginManagerService : IAsyncDisposable
                 }
                 // 仓储已完整校验 staging；撤销授权后才允许原子替换内容。
                 await StopPluginAsync(manifest.Id).ConfigureAwait(false);
-                if (existing is { Manifest: not null, CanEnable: true })
+                // 宿主能力缺失只限制运行，不能让内容已校验的旧插件失去回退备份。
+                if (existing is { Manifest: not null, ContentFingerprint: not null })
                 {
                     await BackupAsync(existing, token).ConfigureAwait(false);
                 }
@@ -231,9 +234,16 @@ public sealed partial class PluginManagerService : IAsyncDisposable
             session = new PluginWorkspaceSession(project, FindHostExecutable(), broker);
             sessions.RemoveWhere(item => item.IsDisposed);
             sessions.Add(session);
-            await session.StartAsync(catalog.Where(entry => entry.Enabled && entry.Manifest?.ApiVersion is 2 or 3 &&
-                entry.Manifest.Scope == (project is null ? "application" : "project")),
-                cancellationToken).ConfigureAwait(false);
+            var eligible = new List<PluginCatalogEntry>();
+            foreach (var entry in catalog.Where(entry => entry.Enabled && entry.Manifest?.ApiVersion is 2 or 3 &&
+                entry.Manifest.Scope == (project is null ? "application" : "project")))
+            {
+                if (await PluginProjectMatcher.MatchesAsync(entry.Manifest!, project, cancellationToken).ConfigureAwait(false))
+                {
+                    eligible.Add(entry);
+                }
+            }
+            await session.StartAsync(eligible, cancellationToken).ConfigureAwait(false);
             return session;
         }
         catch
@@ -308,10 +318,13 @@ public sealed partial class PluginManagerService : IAsyncDisposable
                         _ = PathBoundary.Resolve(root, Path.GetFileName(directory));
                         var manifest = await PluginManifest.ReadAsync(path, cancellationToken).ConfigureAwait(false);
                         var fingerprint = await FingerprintAsync(path, cancellationToken).ConfigureAwait(false);
-                        var enabled = settings.Enabled.TryGetValue(manifest.Id, out var trusted) && trusted == fingerprint;
-                        candidates.Add(new PluginCatalogEntry(manifest.Id, manifest, path, bundled, enabled, true, null)
+                        var compatibility = InspectCompatibility(manifest);
+                        var enabled = compatibility.Compatible && settings.Enabled.TryGetValue(manifest.Id, out var trusted) && trusted == fingerprint;
+                        candidates.Add(new PluginCatalogEntry(manifest.Id, manifest, path, bundled, enabled, compatibility.Compatible,
+                            compatibility.Compatible ? null : compatibility.Summary)
                         {
-                            ContentFingerprint = fingerprint
+                            ContentFingerprint = fingerprint,
+                            Compatibility = compatibility
                         });
                     }
                     catch (Exception ex) when (ex is not OperationCanceledException)
@@ -389,6 +402,30 @@ public sealed partial class PluginManagerService : IAsyncDisposable
         return candidates.FirstOrDefault(candidate => File.Exists(candidate) &&
             new[] { ".dll", ".deps.json", ".runtimeconfig.json" }.All(suffix =>
                 File.Exists(Path.Combine(Path.GetDirectoryName(candidate)!, "StudioX.PluginHost" + suffix)))) ?? candidates[0];
+    }
+
+    private PluginCompatibilityReport InspectCompatibility(PluginManifest manifest)
+    {
+        var missing = new List<string>();
+        if (manifest.ApiVersion > hostCapabilities.MaximumApiVersion)
+        {
+            missing.Add($"插件需要 API {manifest.ApiVersion}，宿主最高提供 API {hostCapabilities.MaximumApiVersion}");
+        }
+        missing.AddRange(manifest.Capabilities.Where(capability => !hostCapabilities.Contributions.Contains(capability, StringComparer.Ordinal))
+            .Select(capability => "贡献能力 " + capability));
+        if (manifest.Kind == "dotnet")
+        {
+            var host = FindHostExecutable();
+            foreach (var suffix in new[] { ".exe", ".dll", ".deps.json", ".runtimeconfig.json" })
+            {
+                var file = Path.Combine(Path.GetDirectoryName(host)!, "StudioX.PluginHost" + suffix);
+                if (!File.Exists(file))
+                {
+                    missing.Add("插件宿主组件 " + file);
+                }
+            }
+        }
+        return new(missing);
     }
 
     private static async Task<string> FingerprintAsync(string path, CancellationToken cancellationToken)

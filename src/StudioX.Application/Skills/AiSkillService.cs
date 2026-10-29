@@ -4,12 +4,13 @@ using System.Text.Json;
 using StudioX.Foundation;
 
 /// <summary>保存工程技能的显式启用状态；用户级技能始终可发现。</summary>
-public sealed class AiSkillService
+public sealed partial class AiSkillService
 {
     private const int MaxSettingsBytes = 128 * 1024;
     private const int MaxTrustedProjects = 256;
     private readonly string settingsPath;
     private readonly string? bundledSkillsRoot;
+    private readonly string importedSkillsRoot;
     private readonly object gate = new();
 
     public AiSkillService(string dataDirectory, string? runtimeDirectory = null)
@@ -19,6 +20,7 @@ public sealed class AiSkillService
             throw new ArgumentException("用户数据目录不能为空。", nameof(dataDirectory));
         }
         settingsPath = Path.Combine(Path.GetFullPath(dataDirectory), "ai-skills.json");
+        importedSkillsRoot = Path.Combine(Path.GetFullPath(dataDirectory), "skills");
         bundledSkillsRoot = runtimeDirectory is null ? null :
             Path.Combine(Path.GetFullPath(runtimeDirectory), "skills");
     }
@@ -64,7 +66,7 @@ public sealed class AiSkillService
 
     private AgentSkillCatalog CreateCatalog(string project) =>
         new(NormalizeProject(project), includeProjectSkills: IsProjectEnabled(project),
-            bundledSkillsRoot: bundledSkillsRoot);
+            bundledSkillsRoot: bundledSkillsRoot, importedSkillsRoot: importedSkillsRoot);
 
     private AiSkillSettings ReadSettings()
     {

@@ -22,7 +22,10 @@ public static class PortBuildSupport
         if (device.TryGetProperty("openOcd", out var openOcd) && openOcd.ValueKind == JsonValueKind.Object)
         {
             resources.Add(openOcd.GetProperty("targetScript").GetString()!);
-            foreach (var entry in index.EnumerateObject().Where(entry => entry.Name.StartsWith("debug/", StringComparison.Ordinal))) { resources.Add(entry.Name); }
+            foreach (var entry in index.EnumerateObject().Where(entry => entry.Name.StartsWith("debug/", StringComparison.Ordinal)))
+            {
+                resources.Add(entry.Name);
+            }
         }
         if (preview.PackSources.Any(source => Path.GetFileName(source).StartsWith("system_stm32", StringComparison.OrdinalIgnoreCase)))
         {
@@ -30,7 +33,10 @@ public static class PortBuildSupport
                 ? ImportPlanner.Strings(build, "includeDirectories") : []);
             foreach (var include in includes)
             {
-                foreach (var entry in index.EnumerateObject().Where(entry => entry.Name.StartsWith(include.TrimEnd('/') + "/", StringComparison.Ordinal))) { resources.Add(entry.Name); }
+                foreach (var entry in index.EnumerateObject().Where(entry => entry.Name.StartsWith(include.TrimEnd('/') + "/", StringComparison.Ordinal)))
+                {
+                    resources.Add(entry.Name);
+                }
             }
         }
         foreach (var relative in resources.Order(StringComparer.Ordinal))
@@ -48,7 +54,10 @@ public static class PortBuildSupport
         var components = new List<JsonElement>();
         foreach (var layer in new[] { device, template })
         {
-            if (!layer.TryGetProperty("developmentComponents", out var needs) || needs.ValueKind != JsonValueKind.Array) { continue; }
+            if (!layer.TryGetProperty("developmentComponents", out var needs) || needs.ValueKind != JsonValueKind.Array)
+            {
+                continue;
+            }
             foreach (var need in needs.EnumerateArray())
             {
                 var previous = components.FirstOrDefault(item => item.GetProperty("id").GetString() == need.GetProperty("id").GetString());
@@ -59,18 +68,38 @@ public static class PortBuildSupport
                 {
                     throw new InvalidOperationException("器件与构建配置的开发环境组件身份冲突。");
                 }
-                if (previous.ValueKind == JsonValueKind.Undefined) { components.Add(need.Clone()); }
+                if (previous.ValueKind == JsonValueKind.Undefined)
+                {
+                    components.Add(need.Clone());
+                }
             }
         }
         if (!components.Any(item => item.GetProperty("id").GetString() == device.GetProperty("toolsetId").GetString()))
         {
-            components.Add(JsonSerializer.SerializeToElement(new { id = device.GetProperty("toolsetId").GetString(), version = device.GetProperty("toolsetVersion").GetString(),
-                compilerId = device.GetProperty("compilerId").GetString(), host = "win-x64", purpose = "构建" }));
+            components.Add(JsonSerializer.SerializeToElement(new
+            {
+                id = device.GetProperty("toolsetId").GetString(),
+                version = device.GetProperty("toolsetVersion").GetString(),
+                compilerId = device.GetProperty("compilerId").GetString(),
+                host = "win-x64",
+                purpose = "构建"
+            }));
         }
-        var manifest = new { formatVersion = 1, name = request.ProjectName, packId = request.Device.PackId, packVersion = request.Device.PackVersion,
-            packContentHash = request.Device.ContentHash, deviceId = request.Device.Id, templateId = request.TemplateId,
-            toolsetId = device.GetProperty("toolsetId").GetString(), toolsetVersion = device.GetProperty("toolsetVersion").GetString(),
-            compilerId = device.GetProperty("compilerId").GetString(), kind = "Pack", developmentComponents = components };
+        var manifest = new
+        {
+            formatVersion = 1,
+            name = request.ProjectName,
+            packId = request.Device.PackId,
+            packVersion = request.Device.PackVersion,
+            packContentHash = request.Device.ContentHash,
+            deviceId = request.Device.Id,
+            templateId = request.TemplateId,
+            toolsetId = device.GetProperty("toolsetId").GetString(),
+            toolsetVersion = device.GetProperty("toolsetVersion").GetString(),
+            compilerId = device.GetProperty("compilerId").GetString(),
+            kind = "Pack",
+            developmentComponents = components
+        };
         await File.WriteAllTextAsync(Path.Combine(project, ".studiox", "project.json"), JsonSerializer.Serialize(manifest, DeviceCatalog.Json), new UTF8Encoding(false), token);
     }
 
@@ -93,7 +122,10 @@ public static class PortBuildSupport
         void Append(string command, IEnumerable<string> values)
         {
             text.AppendLine(command + "(studiox_device INTERFACE");
-            foreach (var entry in values) { text.AppendLine("    " + ImportPaths.CMakeValue(entry)); }
+            foreach (var entry in values)
+            {
+                text.AppendLine("    " + ImportPaths.CMakeValue(entry));
+            }
             text.AppendLine(")");
         }
     }

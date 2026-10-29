@@ -41,6 +41,26 @@ if ($lines.Count -ne 2 -or $lines[0] -notmatch '^[0-9a-f]{64}  checksum-a.txt$' 
     throw 'Checksums concatenated or invalid.'
 }
 $checks.Add('installer/source checksum entries remain separate and correctly formatted')
+$releaseAst = [Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot 'Invoke-Release.ps1'), [ref]$null, [ref]$null)
+$checksumCall = @($releaseAst.FindAll({ param($node) $node -is [Management.Automation.Language.CommandAst] -and $node.GetCommandName() -eq 'Write-StudioXReleaseChecksums' -and $node.Extent.Text -match '\$installerFiles' }, $true))
+if ($checksumCall.Count -ne 1)
+{
+    throw 'Release checksum invocation was not found uniquely.'
+}
+$sampleC = Join-Path $output 'checksum-c.txt'
+'third' | Set-Content $sampleC -Encoding ascii
+$sourceArchive = $sampleB
+foreach ($case in @(@{ files = $sampleA; count = 2 }, @{ files = @($sampleA, $sampleC); count = 3 }))
+{
+    $installerFiles = $case.files
+    $checksum = Join-Path $output ('SHA256SUMS-' + $case.count + '.txt')
+    & ([scriptblock]::Create($checksumCall[0].Extent.Text))
+    if (@(Get-Content $checksum).Count -ne $case.count)
+    {
+        throw 'Release lost a single or multipart checksum entry.'
+    }
+}
+$checks.Add('actual release invocation handles scalar and multipart installer paths')
 & (Join-Path $PSScriptRoot 'Invoke-Release.ps1') -ReleaseVersion $version -OutputDirectory (Join-Path $output 'plan')
 $plan = Get-Content (Join-Path $output 'plan/plan.json') -Raw | ConvertFrom-Json
 if ($plan.stage -ne 'Plan' -or $plan.version -ne $version -or $plan.releaseTag -ne ('v' + $version) -or $plan.automaticVersionChange -or $plan.profile -ne 'light')

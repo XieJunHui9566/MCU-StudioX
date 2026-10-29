@@ -38,11 +38,12 @@ internal static class EspressifNativePath
     {
         if (native.Any(character => character > 127 || char.IsWhiteSpace(character)) || native.Contains(';'))
         {
-            throw new StudioXException("ESPRESSIF_PATH", "此 IDF 开发环境组件需要不含空格、分号或非 ASCII 字符的路径，" +
+            throw new StudioXException("ESPRESSIF_PATH", "此 ESP 开发环境组件需要不含空格、分号或非 ASCII 字符的工具路径，" +
                 "当前磁盘没有可用的 Windows 短路径：" + full + "。工程内容与 SDK 配置未改动。");
         }
     }
 
+    [System.Runtime.InteropServices.DefaultDllImportSearchPaths(System.Runtime.InteropServices.DllImportSearchPath.System32)]
     [DllImport("kernel32.dll", EntryPoint = "GetShortPathNameW", CharSet = CharSet.Unicode, SetLastError = true)]
     private static extern uint GetShortPathName(string path, StringBuilder shortPath, uint length);
 }

@@ -45,7 +45,7 @@ public partial class MainWindow
                 progress.Report("专用制作通道开始等待；请给 MCU 断电再上电进入 ISP。制作完成后还需再断电上电激活监控。");
                 var result = await services.Mon51Setup.ExecuteAsync(prepared, progress, linked.Token);
                 Log("仿真芯片制作日志：" + result.LogPath);
-            })
+            }, projectDeviceId: currentProjectManifest!.DeviceId)
         {
             Owner = this
         };

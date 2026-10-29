@@ -54,6 +54,11 @@ public partial class MainWindow
             {
                 var activity = pluginActivities[id];
                 Check(AutomationProperties.GetName(activity.Button).StartsWith("插件：", StringComparison.Ordinal), id + " accessible named icon");
+                if (id == "studiox.bit-lab")
+                {
+                    await CheckProgrammerWindowAsync(directory, Check);
+                    continue;
+                }
                 activity.Button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
                 await Layout();
                 Check(WorkspaceTabs.SelectedItem == activity.Tab && activity.Body.IsVisible, id + " rail click opens corresponding page");
@@ -119,7 +124,7 @@ public partial class MainWindow
             Render(this, Path.Combine(directory, "plugin-labs-compact.png"));
             // 运行后才创建一个未知 ID、名称和图案的包，证明入口不依赖 IDE 中的插件名单。
             var external = Path.Combine(directory, "external-package");
-            ZipFile.ExtractToDirectory(Directory.GetFiles(archives, "*.studioxplugin").First(), external);
+            ZipFile.ExtractToDirectory(Directory.GetFiles(archives, "studiox.protocol-lab-*.studioxplugin").Single(), external);
             var externalManifestPath = Path.Combine(external, "plugin.json");
             var externalManifest = await PluginManifest.ReadAsync(externalManifestPath);
             externalManifest = externalManifest with
@@ -147,9 +152,22 @@ public partial class MainWindow
             await services.PluginManager.SetEnabledAsync("studiox.protocol-lab", false);
             await ReloadPluginWorkspaceAsync(CancellationToken.None);
             Check(pluginActivities.Count == 3 && !pluginActivities.ContainsKey("studiox.protocol-lab") && PluginActivityRail.Children.Count == 3, "disabling plugin removes its icon and page");
+            var calculatorWindow = pluginWindows["studiox.bit-lab/lab"].Window;
+            calculatorWindow.ShowOrActivate();
+            await services.PluginManager.SetEnabledAsync("studiox.bit-lab", false);
+            using (var stopTimeout = new CancellationTokenSource(TimeSpan.FromSeconds(5)))
+            {
+                while (pluginWindows.ContainsKey("studiox.bit-lab/lab"))
+                {
+                    await Layout();
+                    await Task.Delay(20, stopTimeout.Token);
+                }
+            }
+            Check(!calculatorWindow.IsVisible && calculatorWindow.Content is null, "disabling plugin closes a visible calculator window and releases its content");
             var oldWorkspace = pluginWorkspace!;
             await StopPluginWorkspaceAsync();
-            Check(pluginActivities.Count == 0 && PluginActivityRail.Children.Count == 0 && pluginPanels.Count == 0, "closing workspace clears all plugin pages and icons");
+            Check(pluginActivities.Count == 0 && PluginActivityRail.Children.Count == 0 && pluginPanels.Count == 0 && pluginWindows.Count == 0, "closing workspace clears all plugin pages, icons and windows");
+            Check(!System.Windows.Application.Current.Windows.OfType<PluginToolWindow>().Any(), "workspace shutdown closes hidden and visible plugin windows");
             Check(oldWorkspace.Contributions.All(active => !oldWorkspace.IsPluginRunning(active.Id)), "workspace shutdown stops real plugin processes");
             await File.WriteAllTextAsync(Path.Combine(directory, "result.txt"), $"PASS {checks.Count}\n" + string.Join("\n", checks));
         }

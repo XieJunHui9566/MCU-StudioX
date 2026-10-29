@@ -272,6 +272,20 @@ internal static class RecoveryChecks
                     await Task.Delay(40);
                 }
             }
+            if (arguments[0] == "--download-child")
+            {
+                var leasePath = Path.Combine(arguments[1], "distribution-cache", arguments[4] + ".mcutoolchain.lock");
+                for (var attempt = 0; attempt < 50; attempt++)
+                {
+                    try
+                    {
+                        using var released = new FileStream(leasePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+                        break;
+                    }
+                    catch (FileNotFoundException) { break; }
+                    catch (IOException) when (attempt < 49) { await Task.Delay(40); }
+                }
+            }
         }
     }
     private static (DistributionListing, DistributionEntry) DownloadFixture(string source, long length, string hash)

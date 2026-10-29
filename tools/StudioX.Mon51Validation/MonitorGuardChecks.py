@@ -76,6 +76,35 @@ try:
     raise AssertionError("bad ACK accepted")
 except StcProtocolException:
     check("options" not in events and len(packets) == 1, "failed write ACK stops programming before options and success")
+if len(sys.argv) > 4:
+    low_data = open(sys.argv[4], "rb").read()
+    programmer, events, packets = fixture(model="IAP15L2K61S2")
+    programmer.expected_model = "IAP15L2K61S2"
+    programmer.expected_hash = guard.MONITOR_SETUP_HASHES[programmer.expected_model]
+    programmer.opts.code_image = io.BytesIO(low_data)
+    programmer.program_mcu()
+    check(events == ["handshake", ("erase", 61440, 62464), "options", "disconnect"], "exact L target follows dedicated monitor lifecycle")
+    check(b"".join(packet[5:] for packet in packets[:-1]) == low_data, "L packet stream contains only exact L encoding")
+    check(programmer.protocol._fixture_pulses == [(b"\xfe", 1)], "F-only hardware calibration override is not applied to L")
+    programmer, events, packets = fixture(model="IAP15L2K61S2")
+    programmer.expected_model = "IAP15L2K61S2"
+    programmer.expected_hash = guard.MONITOR_SETUP_HASHES[programmer.expected_model]
+    try:
+        programmer.program_mcu()
+        raise AssertionError("F bytes accepted for L target")
+    except StcProtocolException:
+        check(not events and not packets, "F bytes rejected for L target before handshake/erase")
+    for version, variant in [("7.2.4S", 0x70), ("7.2.5S", 0x50)]:
+        programmer, events, packets = fixture(version=version, model="IAP15L2K61S2", variant=variant)
+        programmer.expected_model = "IAP15L2K61S2"
+        programmer.expected_hash = guard.MONITOR_SETUP_HASHES[programmer.expected_model]
+        programmer.opts.code_image = io.BytesIO(low_data)
+        try:
+            programmer.program_mcu()
+            raise AssertionError("unmatched L BSL/status accepted")
+        except StcProtocolException:
+            check(not events and not packets, "unmatched L BSL/status rejected before erase: " + version + "/" + hex(variant))
+
 result = dict(hardware=False, serial_ports_opened=0, count=len(checks), checks=checks)
 with open(sys.argv[3], "w", encoding="utf-8") as output:
     json.dump(result, output, ensure_ascii=False, indent=2)

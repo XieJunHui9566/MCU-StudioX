@@ -11,8 +11,18 @@ internal static class DebugSourceStamp
     internal static async Task<string> ComputeAsync(string root, CancellationToken token)
     {
         var projectPath = Path.Combine(root, ".studiox", "project.json");
-        var espressif = File.Exists(projectPath) && (await ProjectService.ReadAsync(root, token)).Espressif is not null;
+        var project = File.Exists(projectPath) ? await ProjectService.ReadAsync(root, token) : null;
+        var espressif = project?.Espressif is not null;
+        var allProjectInputs = espressif || project?.ToolsetId == Mx251Profile.ToolsetId;
         var files = new List<string>();
+        if (project?.GraphicalConfiguration is { } graphical)
+        {
+            var configuration = PathBoundary.Resolve(root, graphical.Path);
+            if (File.Exists(configuration))
+            {
+                files.Add(configuration);
+            }
+        }
         var pending = new Stack<string>();
         pending.Push(root);
         while (pending.TryPop(out var directory))
@@ -26,20 +36,22 @@ internal static class DebugSourceStamp
                 }
                 if (entry is DirectoryInfo)
                 {
-                    var excluded = espressif
-                        ? entry.Name == ".git" || directory.Equals(root, StringComparison.OrdinalIgnoreCase) && entry.Name is ".build" or ".studiox"
+                    var excluded = allProjectInputs
+                        ? entry.Name.Equals(".git", StringComparison.OrdinalIgnoreCase) ||
+                            directory.Equals(root, StringComparison.OrdinalIgnoreCase) &&
+                            (entry.Name.Equals(".build", StringComparison.OrdinalIgnoreCase) || entry.Name.Equals(".studiox", StringComparison.OrdinalIgnoreCase))
                         : entry.Name is ".build" or ".git" or ".studiox" or "build" or "Build" or "Debug" or "Release";
                     if (!excluded)
                     {
                         pending.Push(entry.FullName);
                     }
                 }
-                // IDF 可以将任意后缀的字体、图片、证书或预编库嵌入固件，不能只按 C/C++ 扩展名过滤输入。
-                else if (espressif || entry.Name.Equals("CMakeLists.txt", StringComparison.OrdinalIgnoreCase) ||
-                    entry.Name is "sdkconfig" or "dependencies.lock" or "idf_component.yml" or "idf_component.yaml" ||
+                // IDF 可嵌入任意资源；MX251 的 CMake 可读取任意后缀配置。暂以保守全量签名避免漏掉真实输入。
+                else if (allProjectInputs || entry.Name.Equals("CMakeLists.txt", StringComparison.OrdinalIgnoreCase) ||
+                    entry.Name is "sdkconfig" or "dependencies.lock" or "idf_component.yml" or "idf_component.yaml" or Mx251Profile.ConfigurationFile ||
                     entry.Name.StartsWith("sdkconfig.defaults", StringComparison.Ordinal) ||
                     entry.Name.StartsWith("Kconfig", StringComparison.Ordinal) ||
-                    new[] { ".c", ".h", ".s", ".cpp", ".cc", ".cxx", ".hpp", ".inc", ".ld", ".cmake", ".ioc" }.Contains(entry.Extension.ToLowerInvariant()))
+                    new[] { ".c", ".h", ".s", ".asm", ".cpp", ".cc", ".cxx", ".hpp", ".inc", ".ld", ".cmake", ".ioc" }.Contains(entry.Extension.ToLowerInvariant()))
                 {
                     files.Add(entry.FullName);
                 }
@@ -47,7 +59,7 @@ internal static class DebugSourceStamp
         }
         using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
         var componentLock = PathBoundary.Resolve(root, DevelopmentComponentLock.RelativePath);
-        if (File.Exists(componentLock) || File.Exists(projectPath) && (await ProjectService.ReadAsync(root, token)).DevelopmentComponents is not null)
+        if (File.Exists(componentLock) || project?.DevelopmentComponents is not null)
         {
             // 额外构建组件及声明变化也会改变二进制；旧工程尚无组件锁时维持原有凭据算法。
             foreach (var path in new[] { componentLock, PathBoundary.Resolve(root, "device/manifest.json") })

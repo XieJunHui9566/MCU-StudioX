@@ -35,3 +35,5 @@ tools/Invoke-Release.ps1 -ReleaseVersion <已存在版本> -OutputDirectory <新
 语法依据：[GitHub Actions 触发文档](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow)、[setup-dotnet 官方说明](https://github.com/actions/setup-dotnet)。
 
 工程文件统一同步门禁由 `tools/Test-ProjectSynchronization.ps1` 执行，包含原生文件通知合并、连续写入时限、队列溢出、快开索引更新，以及真实 WPF 中的外部修改、脏缓冲区冲突、跨父目录移动、删除恢复、二进制替换和工程切换。统一入口传入 `-LanguageRuntime` 时额外用已有 clangd 检查未打开头文件变化、翻译单元增删和编译数据库新增/修改；不连接硬件，也不自动下载工具。Keil 缺库拒绝检查使用独立工程，不能把删除后的数据库状态留给后续通用编辑器夹具。
+
+PIC/Arduino 维护通过统一入口的 `-MaintenanceAreas pic,arduino` 声明，分别提供 `-PicInputs`、`-ArduinoInputs`；明确输入、编译矩阵、WPF 证据与范围见 [维护门槛](MAINTENANCE_GATES.md)。发布身份门禁同时检查源码产品版本、README 当前版本和当次构建的 Desktop 文件/产品版本。

@@ -72,6 +72,7 @@ internal static class WindowsRecycleBin
         }
     }
 
+    [System.Runtime.InteropServices.DefaultDllImportSearchPaths(System.Runtime.InteropServices.DllImportSearchPath.System32)]
     [DllImport("shell32.dll", CharSet = CharSet.Unicode, PreserveSig = true)]
     private static extern int SHCreateItemFromParsingName(string path, nint bindContext, ref Guid interfaceId, out IShellItem item);
 

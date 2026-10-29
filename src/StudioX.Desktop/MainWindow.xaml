@@ -259,6 +259,9 @@
                 Header="导入 CubeMX CMake 工程…"
                 Click="ImportCubeMx_Click" />
               <MenuItem
+                Header="导入 Arduino sketch 副本…"
+                Click="ImportArduino_Click" />
+              <MenuItem
                 Header="保存"
                 InputGestureText="Ctrl+S"
                 Click="Save_Click" />
@@ -520,6 +523,9 @@
                 <MenuItem
                   Header="LVGL PC 预览"
                   Click="LvglPreview_Click" />
+                <MenuItem
+                  Header="Arduino 工程与库管理…"
+                  Click="ArduinoManager_Click" />
               </MenuItem>
               <MenuItem
                 x:Name="DevelopmentComponentsMenu"
@@ -1113,8 +1119,8 @@
                       x:Name="ZephyrDeviceTreeButton"
                       Grid.Row="0"
                       Style="{StaticResource LinkButton}"
-                      Content="设备树 · 板级 DTS（实验）"
-                      ToolTip="打开工程内的板级设备树源文件；合成后的 zephyr.dts 需要先通过 west 构建。"
+                      Content="设备树 · 板级 DTS"
+                      ToolTip="打开工程内的板级设备树源文件；编译后在 .build/zephyr/zephyr.dts 查看合成结果。"
                       AutomationProperties.Name="打开 Zephyr 板级设备树源文件"
                       Visibility="Collapsed"
                       IsEnabled="False"
@@ -2529,7 +2535,22 @@
                               <StackPanel
                                 x:Name="BuildSettingsEditor"
                                 IsEnabled="False">
+                                <StackPanel
+                                  x:Name="Mx251ModelPanel"
+                                  Visibility="Collapsed">
+                                  <TextBlock
+                                    Text="内存模型"
+                                    Style="{StaticResource SectionLabel}" />
+                                  <ComboBox
+                                    x:Name="Mx251ModelPicker"
+                                    DisplayMemberPath="Label"
+                                    SelectedValuePath="Value"
+                                    MinHeight="36"
+                                    SelectionChanged="BuildSettings_SelectionChanged"
+                                    AutomationProperties.Name="MX251 内存模型" />
+                                </StackPanel>
                                 <TextBlock
+                                  x:Name="BuildOptimizationLabel"
                                   Text="编译器优化等级"
                                   Style="{StaticResource SectionLabel}" />
                                 <ComboBox
@@ -2553,7 +2574,7 @@
                                   Visibility="Collapsed">
                                   <CheckBox
                                     x:Name="StcMon51Profile"
-                                    Content="IAP15F2K61S2 · Mon51 调试构建（保留监控资源）"
+                                    Content="IAP15 F/L · Mon51 调试构建（保留监控资源）"
                                     Margin="0,8,0,10"
                                     Checked="StcMon51Profile_Changed"
                                     Unchecked="StcMon51Profile_Changed" />
@@ -2607,6 +2628,73 @@
                                 Foreground="{DynamicResource Muted}"
                                 Margin="0,14,0,0" />
                               <Border
+                                x:Name="Mx251IspPanel"
+                                BorderBrush="{DynamicResource Border}"
+                                BorderThickness="0,1,0,0"
+                                Margin="0,20,0,0"
+                                Visibility="Collapsed">
+                                <StackPanel
+                                  Margin="0,18,0,0">
+                                  <TextBlock
+                                    Text="STC251 USB 下载与时钟"
+                                    FontSize="18"
+                                    FontWeight="SemiBold" />
+                                  <TextBlock
+                                    Text="时钟在下一次成功下载时写入芯片；保存设置不会改变当前芯片。"
+                                    Foreground="{DynamicResource Muted}"
+                                    TextWrapping="Wrap"
+                                    Margin="0,6,0,4" />
+                                  <TextBlock
+                                    Text="CPU 运行模式"
+                                    Style="{StaticResource SectionLabel}" />
+                                  <TextBox
+                                    x:Name="Mx251CpuModeBox"
+                                    Text="32 位（本器件固定）"
+                                    IsReadOnly="True"
+                                    MinHeight="36"
+                                    AutomationProperties.Name="AI8051U 固定32位运行模式" />
+                                  <TextBlock
+                                    Text="内部 IRC 目标频率（MHz）"
+                                    Style="{StaticResource SectionLabel}" />
+                                  <TextBox
+                                    x:Name="Mx251ClockFrequencyBox"
+                                    Text="40"
+                                    MinHeight="36"
+                                    TextChanged="Mx251ClockFrequency_Changed"
+                                    AutomationProperties.Name="AI8051U IRC 频率 MHz" />
+                                  <TextBlock
+                                    Text="1–48 MHz，例如 11.0592、24、40。保存后重新编译，Delay_MS 会按此频率计算；下载时校准并应用。自行编写的延时、定时器及串口参数需相应调整。"
+                                    Foreground="{DynamicResource Muted}"
+                                    TextWrapping="Wrap"
+                                    Margin="0,6,0,4" />
+                                  <TextBlock
+                                    Text="USB 下载器"
+                                    Style="{StaticResource SectionLabel}" />
+                                  <ComboBox
+                                    x:Name="Mx251DevicePicker"
+                                    DisplayMemberPath="Label"
+                                    SelectedValuePath="Value"
+                                    MinHeight="36"
+                                    SelectionChanged="Mx251DevicePicker_Changed"
+                                    AutomationProperties.Name="AI8051U USB下载器" />
+                                  <WrapPanel
+                                    Margin="0,8,0,0">
+                                    <Button
+                                      Content="刷新 USB 下载器"
+                                      Click="RefreshMx251Devices_Click" />
+                                    <Button
+                                      Content="保存下载设置"
+                                      Click="SaveMx251Isp_Click"
+                                      Margin="8,0,0,0" />
+                                  </WrapPanel>
+                                  <TextBlock
+                                    x:Name="Mx251IspStatus"
+                                    Foreground="{DynamicResource Muted}"
+                                    TextWrapping="Wrap"
+                                    Margin="0,10,0,0" />
+                                </StackPanel>
+                              </Border>
+                              <Border
                                 x:Name="StcIspPanel"
                                 BorderBrush="{DynamicResource Border}"
                                 BorderThickness="0,1,0,0"
@@ -2647,6 +2735,19 @@
                                     Foreground="{DynamicResource Muted}"
                                     TextWrapping="Wrap"
                                     Margin="0,6,0,2" />
+                                  <WrapPanel
+                                    x:Name="StcClockActions"
+                                    Visibility="Collapsed"
+                                    Margin="0,8,0,4">
+                                    <Button
+                                      Content="前往时钟树配置"
+                                      Click="OpenManagedClock_Click"
+                                      Margin="0,0,8,0" />
+                                    <Button
+                                      x:Name="ReleaseManagedClockButton"
+                                      Content="解除时钟托管"
+                                      Click="ReleaseManagedClock_Click" />
+                                  </WrapPanel>
                                   <TextBlock
                                     Text="下载串口"
                                     Style="{StaticResource SectionLabel}" />
@@ -2709,14 +2810,71 @@
                           Text="选择器件厂商，再选择器件包、芯片型号与起始模板。"
                           Foreground="{DynamicResource Muted}"
                           Margin="0,8,0,20" />
+                        <Border
+                          BorderBrush="{DynamicResource Border}"
+                          BorderThickness="1"
+                          CornerRadius="4"
+                          Padding="12"
+                          Margin="0,0,0,14">
+                          <StackPanel>
+                            <TextBlock
+                              Text="★ MCU 收藏夹"
+                              FontWeight="SemiBold"
+                              Margin="0,0,0,8" />
+                            <DockPanel>
+                              <Button
+                                x:Name="RemoveMcuFavoriteButton"
+                                DockPanel.Dock="Right"
+                                Content="移除收藏"
+                                IsEnabled="False"
+                                Click="RemoveMcuFavorite_Click" />
+                              <Grid>
+                                <ComboBox
+                                  x:Name="McuFavoritesPicker"
+                                  DisplayMemberPath="Label"
+                                  ToolTip="{Binding SelectedItem.Label, RelativeSource={RelativeSource Self}}"
+                                  MaxDropDownHeight="280"
+                                  IsEnabled="False"
+                                  SelectionChanged="McuFavoritesPicker_SelectionChanged"
+                                  AutomationProperties.Name="MCU 收藏夹" />
+                                <TextBlock
+                                  Text="选择收藏的 MCU…"
+                                  IsHitTestVisible="False"
+                                  Margin="10,0,30,0"
+                                  VerticalAlignment="Center"
+                                  Foreground="{DynamicResource Muted}">
+                                  <TextBlock.Style>
+                                    <Style
+                                      TargetType="TextBlock">
+                                      <Setter
+                                        Property="Visibility"
+                                        Value="Collapsed" />
+                                      <Style.Triggers>
+                                        <DataTrigger
+                                          Binding="{Binding SelectedIndex, ElementName=McuFavoritesPicker}"
+                                          Value="-1">
+                                          <Setter
+                                            Property="Visibility"
+                                            Value="Visible" />
+                                        </DataTrigger>
+                                      </Style.Triggers>
+                                    </Style>
+                                  </TextBlock.Style>
+                                </TextBlock>
+                              </Grid>
+                            </DockPanel>
+                            <TextBlock
+                              x:Name="McuFavoritesHint"
+                              Text="选择型号后点击“☆ 收藏”，下次可从这里快速选择。"
+                              Foreground="{DynamicResource Muted}"
+                              TextWrapping="Wrap"
+                              Margin="0,8,0,0" />
+                          </StackPanel>
+                        </Border>
                         <WrapPanel>
                           <Button
                             Content="导入 .mcupack…"
                             Click="ImportPack_Click" />
-                          <Button
-                            Content="Zephyr 实验模式…"
-                            Margin="10,0,0,0"
-                            Click="ZephyrExperimental_Click" />
                         </WrapPanel>
                         <Grid>
                           <Grid.ColumnDefinitions>
@@ -2860,12 +3018,21 @@
                           IsEnabled="False"
                           TextChanged="DeviceSearch_TextChanged"
                           Margin="0,0,0,6" />
-                        <ComboBox
-                          x:Name="DevicePicker"
-                          DisplayMemberPath="DisplayName"
-                          MaxDropDownHeight="300"
-                          IsEnabled="False"
-                          SelectionChanged="DevicePicker_SelectionChanged" />
+                        <DockPanel>
+                          <Button
+                            x:Name="ToggleMcuFavoriteButton"
+                            DockPanel.Dock="Right"
+                            Content="☆ 收藏"
+                            MinWidth="92"
+                            IsEnabled="False"
+                            Click="ToggleMcuFavorite_Click" />
+                          <ComboBox
+                            x:Name="DevicePicker"
+                            DisplayMemberPath="DisplayName"
+                            MaxDropDownHeight="300"
+                            IsEnabled="False"
+                            SelectionChanged="DevicePicker_SelectionChanged" />
+                        </DockPanel>
                         <TextBlock
                           x:Name="SelectedDeviceCapability"
                           Text="可创建和编译工程；下载与调试待实板验证，暂未启用。"
@@ -2886,6 +3053,31 @@
                           TextWrapping="Wrap"
                           Foreground="{DynamicResource Muted}"
                           Margin="0,8,0,0" />
+                        <Border
+                          x:Name="ArduinoTemplatePanel"
+                          BorderBrush="{DynamicResource Border}"
+                          BorderThickness="1"
+                          CornerRadius="4"
+                          Padding="12"
+                          Margin="0,14,0,0"
+                          Visibility="Collapsed">
+                          <StackPanel>
+                            <TextBlock
+                              Text="Arduino 开发板配置"
+                              FontWeight="SemiBold"
+                              Margin="0,0,0,8" />
+                            <ComboBox
+                              x:Name="ArduinoBoardPicker"
+                              DisplayMemberPath="DisplayName"
+                              AutomationProperties.Name="Arduino 开发板配置"
+                              SelectionChanged="ArduinoBoardPicker_SelectionChanged" />
+                            <TextBlock
+                              x:Name="ArduinoTemplateDescription"
+                              TextWrapping="Wrap"
+                              Foreground="{DynamicResource Muted}"
+                              Margin="0,8,0,0" />
+                          </StackPanel>
+                        </Border>
                         <Border
                           x:Name="IdfVersionPanel"
                           BorderBrush="{DynamicResource Border}"
@@ -3812,7 +4004,7 @@
                     <StackPanel>
                       <TextBlock
                         x:Name="AiSteeringCount"
-                        Text="待注入 · 当前步骤完成后应用"
+                        Text="调整方向 · 中断生成，工具完成后应用"
                         Foreground="{DynamicResource Muted}"
                         FontSize="10" />
                       <TextBlock
@@ -3839,6 +4031,8 @@
                         Height="Auto" />
                       <RowDefinition
                         Height="Auto" />
+                      <RowDefinition
+                        Height="Auto" />
                     </Grid.RowDefinitions>
                     <TextBox
                       x:Name="AiPromptInput"
@@ -3847,15 +4041,26 @@
                       MaxHeight="130"
                       TextWrapping="Wrap"
                       AcceptsReturn="True"
+                      PreviewKeyDown="AiPrompt_PreviewKeyDown"
+                      TextCompositionManager.PreviewTextInputStart="AiPrompt_CompositionStarted"
+                      TextCompositionManager.PreviewTextInputUpdate="AiPrompt_CompositionStarted"
+                      PreviewTextInput="AiPrompt_CompositionCompleted"
+                      LostKeyboardFocus="AiPrompt_LostKeyboardFocus"
                       VerticalScrollBarVisibility="Auto"
                       Padding="4"
                       Background="Transparent"
                       BorderThickness="0"
-                      ToolTip="向 AI 助手提问；工程修改会逐次请求授权" />
+                      ToolTip="Enter 发送；左 Shift+Enter 换行；运行中发送可调整方向" />
+                    <TextBlock
+                      Grid.Row="3"
+                      Text="Enter 发送 · 左 Shift+Enter 换行"
+                      Foreground="{DynamicResource Muted}"
+                      FontSize="10"
+                      Margin="4,5,4,0" />
                     <TextBlock
                       x:Name="AiCacheUsageText"
                       Grid.Row="1"
-                      Text="缓存：发送后显示 API 用量"
+                      Text="Enter 发送 · 左 Shift+Enter 换行"
                       Foreground="{DynamicResource Muted}"
                       FontSize="11"
                       Margin="4,2,4,0"
@@ -3877,6 +4082,16 @@
                         <ColumnDefinition
                           Width="Auto" />
                       </Grid.ColumnDefinitions>
+                      <Button
+                        Grid.Column="0"
+                        Content="✦ 技能"
+                        Click="AiSkills_Click"
+                        HorizontalAlignment="Left"
+                        Padding="5,3"
+                        Background="Transparent"
+                        BorderBrush="Transparent"
+                        ToolTip="导入技能或使用内置代码风格技能"
+                        AutomationProperties.Name="AI 技能和导入" />
                       <Button
                         x:Name="AiModelButton"
                         Grid.Column="1"

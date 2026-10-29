@@ -2,15 +2,22 @@
 
 StudioX 插件提供命令、声明式面板和 Agent 工具。应用核心与正式 SDK 使用 C#/.NET 10；Python、Rust 和 C++ 使用相同的进程协议。插件和安装内容独立于芯片包、工程、主题及采集记录。
 
+图形化 MCU 配置的可选插件扩展处于契约设计阶段，见 [MCU 配置插件契约 v1](GRAPHICAL_CONFIGURATION_PLUGIN.md)和[配置文件标准](GRAPHICAL_CONFIGURATION.md)。拟用能力 `mcuConfigurationV1` 及配置提供者调用尚未实现，不能按本文现有 API 2/3 的支持能力发布或启用。
+
+[STC 配置试行版](../plugins/StudioX.StcConfigurator/README.md)使用另行声明的 `mcuConfigurationPreview` 与单独 `mcuConfiguration` 控件，数据类型为 `PluginMcuConfigurationState`。宿主校验有界封装、引脚/功能、时钟、表单和文本，仅转发声明的命令；首次启用仍核对宿主能力。它支持单配置文件保存和代码预览，完整 `mcuConfigurationV1` 的贡献、生成计划及多文件事务没有开放。旧宿主拒绝该新能力，现有插件行为保持不变。
+
 ## 已实现的边界
+
+MCU 配置插件可另行声明 `projectMatching` 和 `projectClockV1`，通过准确工程组合限制进程启动和功能入口，并由 `.mcuconfig` 托管时钟。清单、生命周期和停用后的显式解除规则见[工程范围与时钟托管](GRAPHICAL_CONFIGURATION_CLOCK.md)；全局插件管理目录仍显示安装记录。
 
 | 能力 | 行为 |
 |---|---|
 | 安装 | `.studioxplugin` ZIP 完整哈希校验、路径和链接校验、原子发布；安装不执行代码 |
-| 启用 | 用户显式信任当前清单及文件索引；首次安装和更新默认禁用 |
+| 启用 | 用户显式信任当前清单及文件索引；首次安装和更新默认禁用；启用前核对宿主 API、贡献能力及 .NET 宿主组件，缺项在插件目录列出并阻止启用 |
 | .NET 插件 | 独立 `StudioX.PluginHost` 进程加载 `IStudioXPlugin` |
 | 进程插件 | 运行插件目录中已索引的固定 EXE；参数中的脚本文件也须在归档内 |
 | UI | 宿主渲染纯 JSON 控件，不加载插件 XAML、WPF 程序集或 Web 页面 |
+| 独立窗口 | 声明 `panelWindows` 后，面板可指定 `presentation: "window"`；活动入口或命令打开无模态窗口，同一面板复用窗口；关闭保留会话状态，停用、崩溃、工程退出时关闭并释放 |
 | Agent | 会话启动时固定注册 `AgentTools` 定义；同会话中不动态改写工具说明 |
 | 宿主工具 | `hostTools` 白名单经真实应用服务 MCP 路由；保留审批、工程、文件哈希、编辑缓冲和设备所有权检查 |
 | 运行范围 | 省略 `scope` 或指定 `project` 时绑定工程；显式 `application` 时在欢迎页加载，切换或关闭工程保留会话 |
@@ -45,6 +52,8 @@ API 2 示例：
 
 `formatVersion` 保持 1，`apiVersion: 1` 原有 `decode` 插件和 `PluginClient` 短生命周期协议保留。它不会自动迁移到 API 2，也不会作为通用工作区插件启动。API 2 使用 `commands`、`panels`、`agentTools` 能力；能力名称区分大小写，实际贡献必须与清单相符。
 
+清单可选 `displayVersion`，用于插件管理页展示作者指定的版本标签，例如 `"version": "0.0.1", "displayVersion": "0.01"`。标签须为 1–64 个可见字符，不含控制字符或首尾空白；省略时显示 `version`。兼容性、升级/回退排序、生成凭据仍使用三段整数 `version`，显示标签不能绕过版本或内容校验。
+
 创建工程、迁移工程等无需现有工程的入口可声明 `"scope": "application"`。应用会话目前仅提供 `commands`、`panels`，`hostTools` 必须为空，命令不能注册工程或编辑器上下文位置。宿主不会提供虚构工程目录，也不会把已打开工程的文件、调试或设备授权传给应用插件。应用插件从欢迎页、命令面板、工具栏或独立活动入口运行；普通工程插件保持原有生命周期。旧宿主不识别运行范围，需要安装应用级会话修复后使用新包。
 
 应用面板可声明 `projectLink` 控件，不指定 `commandId`，`value` 为 `{ "formatVersion": 1, "directory": "<本地工程绝对路径>" }`。发布面板不会打开工程；用户点击按钮后，宿主校验目标并走正常的未保存内容确认、旧会话退出和工程打开流程。工程级面板不能声明此入口，停用插件后旧按钮不可用。这个入口不授予插件工程宿主工具，也不执行插件导航代码。
@@ -52,6 +61,14 @@ API 2 示例：
 需要显示移植编译结果时，入口可同时提供工程内的 `buildLog`、`buildRecord` 相对路径。记录包含 `formatVersion: 1`、`log`、`logSha256` 和 `sourceHashes`（相对源码路径到 SHA-256 的对象）。原始日志可供查看；只有日志与记录一致、源码与编译快照一致时发布错误标记。记录失效仍允许打开工程。此控件需要支持工程入口的宿主，未支持的宿主会拒绝未知控件。
 
 `sha256` 必须索引插件目录中除 `plugin.json` 外的全部文件，路径使用正斜杠相对路径。打包工具重建完整索引，不需要开发者手工计算。清单格式、API 版本、未知能力、错误入口、丢失文件、额外文件、链接和哈希变化都会产生原始诊断。
+
+## 程序员计算器视图
+
+API 2/3 增加可选能力 `panelWindows`、`programmerCalculator`、`calculatorRealtime`，不改变原有 API 2/3 插件的能力要求。当前宿主在启用前检查这些能力；旧宿主会拒绝未知能力，需要同时更新 IDE。`PluginPanelDefinition` 保留原有三参数构造函数，以兼容已编译插件；新增 `Presentation` 属性默认 `panel`。
+
+`programmerCalculator` 控件必须声明已注册的 `commandId`，`value` 为 `PluginProgrammerCalculatorState` 格式 1。宿主校验 8/16/32/64 位、2/8/10/16 进制、位域范围、字符串长度以及 HEX/BIN 显示长度；不加载插件界面代码。计算器键盘、逐位按钮和设置通过命令提交 `action`、`values`，实际定宽整数运算仍在独立插件进程中完成。
+
+程序员助手 1.0.4 声明 `calculatorRealtime` 并在显示数据中设置 `realtime: true`，使用此视图及独立窗口；旧计算器数据默认不开启实时请求，保留原命令交互，保留原 `calculate` 命令、Agent 工具与结构化计算参数。输入自动更新结果和四进制读数，移位键立即执行一位；Enter 或 = 保留显式提交，Esc/CE/清空立即归零。计算器对预览输入进行 45 ms 合并，队列串行保留即时操作；请求序号拒绝旧结果，预览不改变输入和光标。只声明数据界面且没有宿主工具权限的计算器交互直接使用原隔离会话，不激活窗口、不刷新整批全局命令，保留会话取消并设置 2 秒响应上限。未完成表达式显示输入中，真实除零等错误仍保留。进制切换保持数值，主动缩窄位宽保留低位，直接输入超出位宽仍拒绝。计算器和位域页分别保留本次会话输入；窗口仍遵循插件原有工程生命周期。
 
 ## C#/.NET 10 SDK
 

@@ -83,6 +83,7 @@ internal static class DirectoryMoveChecks
         return handle;
     }
 
+    [System.Runtime.InteropServices.DefaultDllImportSearchPaths(System.Runtime.InteropServices.DllImportSearchPath.System32)]
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode, EntryPoint = "CreateFileW", SetLastError = true)]
     private static extern SafeFileHandle CreateFile(string path, uint access, uint sharing, IntPtr security,
         uint creation, uint attributes, IntPtr template);

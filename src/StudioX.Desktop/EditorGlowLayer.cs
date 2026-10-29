@@ -26,10 +26,10 @@ internal sealed class EditorGlowLayer : FrameworkElement
     public void Configure(bool enabled, double strength, double fontSize)
     {
         Visibility = enabled && strength > 0 ? Visibility.Visible : Visibility.Collapsed;
-        // 强度只调亮度，并限制最浓的光晕；避免旧设置 80–100% 将字边叠成一片。
-        Opacity = Math.Clamp(strength / 100, 0, 1) * .25;
-        // 扩散范围随字号缓慢变化，不随强度扩大，保持相邻字符间的空隙。
-        blur.Radius = Math.Clamp(fontSize * .09, 1, 2);
+        // 字形会遮住光晕中心，需要足够的亮度与扩散范围才能看见字边之外的柔光。
+        Opacity = Math.Clamp(strength / 100, 0, 1) * .9;
+        // 只模糊下方副本；扩散跟随字号并限制上限，清晰原文字仍由 TextView 绘制。
+        blur.Radius = Math.Clamp(fontSize * .24, 2.5, 6);
         InvalidateVisual();
     }
 

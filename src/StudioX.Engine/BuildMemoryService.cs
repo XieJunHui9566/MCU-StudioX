@@ -16,13 +16,24 @@ public sealed class BuildMemoryService(ToolsetCatalog? toolsets = null)
         try
         {
             var project = await ProjectService.ReadAsync(root, token);
+            if (project.ToolsetId == Mx251Profile.ToolsetId)
+            {
+                // MX251 使用 ASlink 的独立地址空间；每次核验输入哈希，不能命中 ELF 的旧统计缓存。
+                return await Mx251MemoryAnalyzer.ReadAsync(root, project, token);
+            }
+            if (project.Kind == ProjectKind.Pic)
+            {
+                return new([], project.DeviceId + "：" + project.Pic!.CapacityDescription + "；实际占用见 XC8 原始构建输出。");
+            }
             if (project.Kind == ProjectKind.MicroPython)
             {
                 return new([], "MicroPython 脚本工程不生成本机 ELF；内存信息可在 REPL 中查询 gc.mem_free()。");
             }
             if (project.Kind == ProjectKind.Zephyr)
             {
-                return new([], "Zephyr 实验工程运行时尚未准备，暂无构建内存统计。");
+                return new([], project.Zephyr?.FormatVersion == 2
+                    ? "Zephyr 存储区占用见构建输出的 Memory region 表；完整映射保存在 .build/zephyr/zephyr.map。"
+                    : "历史 Zephyr 实验工程未配置 IDE 构建环境。");
             }
             // 没有构建记录和统计缓存时不启动整套 SDK 自检；已有缓存仍按原规则完整验证。
             var receiptPath = PathBoundary.Resolve(root, BuildReceipt.RelativePath);

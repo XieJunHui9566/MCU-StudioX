@@ -202,8 +202,10 @@ internal static class ProgrammerChecks
             var mask = (BigInteger.One << width) - 1;
             for (var i = 0; i < 30; i++)
             {
+#pragma warning disable CA5394 // 固定种子的算术测试样本，不生成凭据或安全标识。
                 var a = (ulong)(new BigInteger(random.NextInt64()) & mask);
                 var b = (ulong)(new BigInteger(random.NextInt64()) & mask);
+#pragma warning restore CA5394
                 var expected = (ulong)((new BigInteger(a) * b + a) & mask);
                 if (Value(new
                 {
@@ -218,6 +220,8 @@ internal static class ProgrammerChecks
         check(true, "120 fixed-width arithmetic comparisons with BigInteger reference");
         var host = new CaptureHost();
         await plugin.ActivateAsync(host, CancellationToken.None);
+        PluginProgrammerCalculatorState State() => host.Panel!.Widgets.Single().Value!.Value.Deserialize<PluginProgrammerCalculatorState>(new JsonSerializerOptions(JsonSerializerDefaults.Web))!;
+        check(host.Panel!.Presentation == "window" && host.Panel.Widgets.Single().Kind == "programmerCalculator", "calculator requests a host-owned standalone window");
         JsonElement Form(object value) => Json(new
         {
             values = value
@@ -230,12 +234,12 @@ internal static class ProgrammerChecks
             operation = "and"
         }), CancellationToken.None);
         check(computed.GetProperty("data").GetProperty("updated").GetUInt64() == 0x30, "legacy structured form arguments remain accepted");
-        var successful = host.Panel!.Widgets.Last().Value!.Value.GetString();
+        var successful = State().CopyText;
         var failed = await plugin.InvokeAsync("command", "calculate", Form(new
         {
             value = "1/0"
         }), CancellationToken.None);
-        check(!failed.GetProperty("ok").GetBoolean() && host.Panel!.Widgets.Any(w => w.Id == "error") && host.Panel.Widgets.Last().Value!.Value.GetString() == successful, "calculator failure preserves successful output and host");
+        check(!failed.GetProperty("ok").GetBoolean() && State().Error is not null && State().CopyText == successful, "calculator failure preserves successful output and host");
         await plugin.InvokeAsync("command", "open", Json(new
         {
         }), CancellationToken.None);
@@ -243,25 +247,188 @@ internal static class ProgrammerChecks
         await plugin.InvokeAsync("command", "use-result", Json(new
         {
         }), CancellationToken.None);
-        check(host.Panel!.Widgets.Single(w => w.Id == "controls").Children!.Any(w => w.Id.EndsWith("_value", StringComparison.Ordinal) && w.Value!.Value.GetString() == "0x30"), "continue result updates actual input value");
+        check(State().Expression == "0x30", "continue result updates actual input value");
         await plugin.InvokeAsync("command", "bitfield", Json(new
         {
         }), CancellationToken.None);
-        check(host.Panel!.Widgets.Any(w => w.Id == "bits"), "switch to retained bitfield tool");
+        check(State().FieldMode, "switch to retained bitfield tool");
         await plugin.InvokeAsync("command", "calculator", Json(new
         {
         }), CancellationToken.None);
-        check(!host.Panel!.Widgets.Any(w => w.Id == "bits") && host.Panel.Widgets.Last().Value!.Value.GetString()!.Contains("0x30", StringComparison.Ordinal), "calculator values survive bitfield round trip");
+        check(!State().FieldMode && State().CopyText.Contains("0x30", StringComparison.Ordinal), "calculator values survive bitfield round trip");
         await plugin.InvokeAsync("command", "clear", Json(new
         {
         }), CancellationToken.None);
-        check(host.Panel!.Widgets.Single(w => w.Id == "answer").Value!.Value.GetString() == "0x00", "clear preserves selected width and resets result");
-        var inputs = host.Panel.Widgets.Single(w => w.Id == "controls").Children!.Where(w => w.Id.StartsWith("input", StringComparison.Ordinal))
-            .ToDictionary(w => w.Id, w => w.Kind == "select" ? w.Value!.Value.GetProperty("selected") : w.Value!.Value);
-        var valueId = inputs.Keys.Single(id => id.EndsWith("_value", StringComparison.Ordinal));
-        inputs[valueId] = Json("0x80 OR 1");
-        computed = await plugin.InvokeAsync("command", "calculate", Form(inputs), CancellationToken.None);
-        check(computed.GetProperty("data").GetProperty("updated").GetUInt64() == 129, "revision-qualified WPF input IDs submit correctly");
+        check(State().Hex == "00", "clear preserves selected width and resets result");
+        async Task<JsonElement> Interact(object request) => await plugin.InvokeAsync("command", "calculate", Json(request), CancellationToken.None);
+        computed = await Interact(new
+        {
+            action = "calculate",
+            values = new
+            {
+                width = "64",
+                radix = "16",
+                value = "FFFFFFFFFFFFFFFF"
+            }
+        });
+        check(computed.GetProperty("data").GetProperty("updated").GetUInt64() == ulong.MaxValue, "standalone interaction preserves all 64 bits over JSON");
+        await Interact(new
+        {
+            action = "configure",
+            setting = "radix",
+            choice = "10"
+        });
+        check(State().Expression == ulong.MaxValue.ToString() && State().Radix == 10, "switching HEX to DEC preserves QWORD value exactly");
+        await Interact(new
+        {
+            action = "configure",
+            setting = "signedMode",
+            choice = "true"
+        });
+        check(State().Expression == "-1" && State().SignedMode, "signed toggle changes interpretation without losing bits");
+        await Interact(new
+        {
+            action = "configure",
+            setting = "width",
+            choice = "8"
+        });
+        check(State().Hex == "FF" && State().Width == 8, "explicit width reduction keeps low byte");
+        await Interact(new
+        {
+            action = "bit",
+            bit = 7
+        });
+        check(State().Hex == "7F", "bit toggle modifies the selected register bit");
+        successful = State().CopyText;
+        failed = await Interact(new
+        {
+            action = "bit",
+            bit = 8
+        });
+        check(!failed.GetProperty("ok").GetBoolean() && State().CopyText == successful, "out-of-width bit toggle preserves result");
+        failed = await Interact(new
+        {
+            action = "configure",
+            setting = "radix",
+            choice = "3"
+        });
+        check(!failed.GetProperty("ok").GetBoolean() && State().Radix == 10, "invalid radix cannot corrupt calculator settings");
+        await Interact(new
+        {
+            action = "calculate",
+            values = new
+            {
+                width = "64",
+                value = "0"
+            }
+        });
+        await Interact(new
+        {
+            action = "bit",
+            bit = 63
+        });
+        check(State().Hex == "8000000000000000" && State().LittleEndian.EndsWith("80", StringComparison.Ordinal), "highest QWORD bit and byte order survive interaction");
+        computed = await Interact(new
+        {
+            action = "preview",
+            requestId = 101,
+            values = new
+            {
+                width = "32",
+                radix = "16",
+                value = "51"
+            }
+        });
+        check(State().Preview && State().RequestId == 101 && State().DecimalText == "81" && computed.GetProperty("view").ValueKind == JsonValueKind.Object, "live preview returns correlated state and exact conversions");
+        successful = State().CopyText;
+        foreach (var expression in new[] { "1 <<", "0x", "(", "1 +", "NOT", "1 <" })
+        {
+            computed = await Interact(new
+            {
+                action = "preview",
+                requestId = 102,
+                values = new
+                {
+                    value = expression
+                }
+            });
+            check(computed.GetProperty("pending").GetBoolean() && State().Error is null && State().CopyText == successful, "unfinished live expression remains editable: " + expression);
+        }
+        computed = await Interact(new
+        {
+            action = "preview",
+            values = new
+            {
+                value = "1/0"
+            }
+        });
+        check(!computed.GetProperty("ok").GetBoolean() && State().Error is not null, "real live arithmetic errors remain visible");
+        await Interact(new
+        {
+            action = "preview",
+            values = new
+            {
+                width = "8",
+                value = "0x81",
+                signedMode = true
+            }
+        });
+        await Interact(new
+        {
+            action = "shift",
+            operation = "shr"
+        });
+        check(State().Hex == "C0", "instant right shift respects signed mode");
+        await Interact(new
+        {
+            action = "shift",
+            operation = ">>>"
+        });
+        check(State().Hex == "60", "instant logical right shift clears sign bit");
+        await Interact(new
+        {
+            action = "preview",
+            values = new
+            {
+                width = "8",
+                value = "1"
+            }
+        });
+        await Interact(new
+        {
+            action = "shift",
+            operation = "ror"
+        });
+        check(State().Hex == "80", "instant rotate wraps into top bit");
+        await Interact(new
+        {
+            action = "shift",
+            operation = "rol"
+        });
+        check(State().Hex == "01", "instant rotate back restores bit");
+        await Interact(new
+        {
+            action = "calculate",
+            values = new
+            {
+                width = "8",
+                value = "0",
+                start = 0,
+                count = 1,
+                operation = "set"
+            }
+        });
+        await Interact(new
+        {
+            action = "shift",
+            operation = "shl"
+        });
+        check(State().Hex == "02", "instant operation continues the modified field result instead of its old input");
+        await Interact(new
+        {
+            action = "clear"
+        });
+        check(State().Hex == "00" && !State().Preview && !State().Pending, "clear resets live input status and result");
         await plugin.DeactivateAsync(CancellationToken.None);
     }
 

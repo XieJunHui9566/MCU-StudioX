@@ -37,9 +37,15 @@ internal static class PickerValidation
                 var title = "StudioX 自有窗口选择验证 " + Guid.NewGuid().ToString("N");
                 using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(8));
                 var choose = NativeDialogProbe.PressOwnDialogAsync(title, 1, deadline.Token);
-                var result = await new WindowsPathPicker().PickAsync(request with { Title = title }, deadline.Token).WaitAsync(TimeSpan.FromSeconds(12));
+                var result = await new WindowsPathPicker().PickAsync(request with
+                {
+                    Title = title
+                }, deadline.Token).WaitAsync(TimeSpan.FromSeconds(12));
                 await choose;
-                if (!string.Equals(result, request.InitialPath, StringComparison.OrdinalIgnoreCase)) { throw new InvalidOperationException("Native selected path mismatch: " + result); }
+                if (!string.Equals(result, request.InitialPath, StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException("Native selected path mismatch: " + result);
+                }
                 checks.Add("native selection returns exact path: " + Path.GetFileName(request.InitialPath));
             }
             var cancelTitle = "StudioX 自有窗口取消验证 " + Guid.NewGuid().ToString("N");
@@ -49,7 +55,10 @@ internal static class PickerValidation
                 var result = await new WindowsPathPicker().PickAsync(new(cancelTitle, false, project, "Keil 工程", "*.uvprojx;*.uvproj"), deadline.Token)
                     .WaitAsync(TimeSpan.FromSeconds(12));
                 await cancel;
-                if (result is not null) { throw new InvalidOperationException("Native cancel returned a path."); }
+                if (result is not null)
+                {
+                    throw new InvalidOperationException("Native cancel returned a path.");
+                }
                 checks.Add("native Cancel button returns no selection");
             }
             foreach (var folder in new[] { false, true })
@@ -63,15 +72,27 @@ internal static class PickerValidation
                 }
                 catch (OperationCanceledException) { checks.Add(folder ? "native folder dialog opens on STA and cancellation closes it" : "native Keil file dialog accepts file filters and cancellation closes it"); }
             }
-            if (Directory.Exists(Path.Combine(scratch, "%SystemDrive%"))) { throw new InvalidOperationException("Shell wrote caches under plugin working directory."); }
+            if (Directory.Exists(Path.Combine(scratch, "%SystemDrive%")))
+            {
+                throw new InvalidOperationException("Shell wrote caches under plugin working directory.");
+            }
             checks.Add("minimal host environment does not create literal SystemDrive cache directory");
-            await File.WriteAllTextAsync(Path.Combine(scratch, "native-picker.json"), JsonSerializer.Serialize(new { success = true, checks }, DeviceCatalog.Json));
+            await File.WriteAllTextAsync(Path.Combine(scratch, "native-picker.json"), JsonSerializer.Serialize(new
+            {
+                success = true,
+                checks
+            }, DeviceCatalog.Json));
             Console.WriteLine("PASS native dialogs: " + checks.Count);
             return 0;
         }
         catch (Exception error)
         {
-            await File.WriteAllTextAsync(Path.Combine(scratch, "native-picker.json"), JsonSerializer.Serialize(new { success = false, checks, error = error.ToString() }, DeviceCatalog.Json));
+            await File.WriteAllTextAsync(Path.Combine(scratch, "native-picker.json"), JsonSerializer.Serialize(new
+            {
+                success = false,
+                checks,
+                error = error.ToString()
+            }, DeviceCatalog.Json));
             Console.Error.WriteLine(error);
             return 1;
         }
@@ -142,7 +163,10 @@ internal static class PickerValidation
         // stale confirmation is deliberately submitted as boolean like the actual desktop.
         var values = fields.ToDictionary(pair => pair.Key, pair => (object?)pair.Value);
         values[confirmation] = true;
-        var refused = await plugin.InvokeAsync("command", "create", JsonSerializer.SerializeToElement(new { values }), token);
+        var refused = await plugin.InvokeAsync("command", "create", JsonSerializer.SerializeToElement(new
+        {
+            values
+        }), token);
         check(!refused.GetProperty("success").GetBoolean() && !Directory.Exists(Path.Combine(nextParent, "picker-project")),
             "browse change cannot reuse previous migration confirmation", null);
         picker.Result = cli;
@@ -152,13 +176,22 @@ internal static class PickerValidation
         await plugin.DeactivateAsync(token);
 
         Task<JsonElement> InvokeAsync(string command, Dictionary<string, string> values) =>
-            plugin.InvokeAsync("command", command, JsonSerializer.SerializeToElement(new { values }), token);
+            plugin.InvokeAsync("command", command, JsonSerializer.SerializeToElement(new
+            {
+                values
+            }), token);
     }
 
     private sealed class ScriptedPicker : IPathPicker
     {
-        public string? Result { get; set; }
-        public PathPickerRequest? Last { get; private set; }
+        public string? Result
+        {
+            get; set;
+        }
+        public PathPickerRequest? Last
+        {
+            get; private set;
+        }
         public Task<string?> PickAsync(PathPickerRequest request, CancellationToken token)
         {
             token.ThrowIfCancellationRequested();
@@ -169,12 +202,19 @@ internal static class PickerValidation
 
     private sealed class PanelHost : IPluginHost
     {
-        public PluginPanelDefinition? Latest { get; private set; }
+        public PluginPanelDefinition? Latest
+        {
+            get; private set;
+        }
         public Dictionary<string, string> Values() => Latest!.Widgets.Single(widget => widget.Kind == "form").Children!
             .Where(widget => widget.Kind is "input" or "select").ToDictionary(widget => widget.Id,
                 widget => widget.Kind == "select" ? widget.Value!.Value.GetProperty("selected").GetString()! : widget.Value!.Value.GetString()!);
         public Task<JsonElement> CallAsync(string tool, JsonElement arguments, CancellationToken token) => throw new InvalidOperationException("No host tools expected.");
-        public Task PublishPanelAsync(PluginPanelDefinition panel, CancellationToken token) { Latest = panel; return Task.CompletedTask; }
+        public Task PublishPanelAsync(PluginPanelDefinition panel, CancellationToken token)
+        {
+            Latest = panel;
+            return Task.CompletedTask;
+        }
         public Task LogAsync(string level, string message, CancellationToken token) => Task.CompletedTask;
     }
 }

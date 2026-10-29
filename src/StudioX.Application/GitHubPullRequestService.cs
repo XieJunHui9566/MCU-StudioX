@@ -22,7 +22,7 @@ public sealed class GitHubPullRequestService : IDisposable
     public GitHubPullRequestService(Func<string?, CancellationToken, Task<string>> tokenProvider, HttpClient? client = null)
     {
         this.tokenProvider = tokenProvider ?? throw new ArgumentNullException(nameof(tokenProvider));
-        this.client = client ?? new HttpClient(new HttpClientHandler { AllowAutoRedirect = false });
+        this.client = client ?? new HttpClient(new HttpClientHandler { CheckCertificateRevocationList = true, AllowAutoRedirect = false });
         ownsClient = client is null;
         if (ownsClient)
         {

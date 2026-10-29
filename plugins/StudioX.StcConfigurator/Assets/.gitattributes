@@ -1,0 +1,3 @@
+# 已索引的 profile 和初始文件必须在不同机器上保留相同字节。
+*.json text eol=lf
+*.mcuconfig text eol=lf

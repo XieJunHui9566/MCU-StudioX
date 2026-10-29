@@ -14,7 +14,7 @@ public sealed partial class ProjectToolPreparationService(ToolsetCatalog catalog
     private sealed record Need(string Id, string Version, string Compiler, string Purpose);
     private static readonly string[] ConfigurationFiles = [".studiox/project.json", ".studiox/toolchain.lock.json",
         DevelopmentComponentLock.RelativePath, "device/manifest.json", ".studiox/ag32-mapping-toolchain.lock.json",
-        ".studiox/ag32-logic-toolchain.lock.json", HdlSimulationSettings.RelativePath];
+        ".studiox/ag32-logic-toolchain.lock.json", HdlSimulationSettings.RelativePath, StudioX.Engine.Pic.PicDownloadSettings.RelativePath];
 
     public Task<ProjectToolPlan> InspectAsync(string? directory, DistributionListing? listing = null, CancellationToken token = default)
         => Task.Run(async () =>
@@ -27,7 +27,7 @@ public sealed partial class ProjectToolPreparationService(ToolsetCatalog catalog
             var root = Path.GetFullPath(directory);
             var fingerprint = await FingerprintAsync(root, token);
             var project = await ProjectService.ReadAsync(root, token);
-            if (project.Kind is ProjectKind.MicroPython or ProjectKind.Zephyr)
+            if (project.Kind == ProjectKind.MicroPython || project.Kind == ProjectKind.Zephyr && project.Zephyr?.FormatVersion != 2)
             {
                 return new ProjectToolPlan(root, project.Name, fingerprint, project.Kind == ProjectKind.MicroPython
                 ? "MicroPython 脚本工程不需要安装原生 GCC/CMake 开发环境组件。请使用 MicroPython 页面。"
@@ -35,8 +35,22 @@ public sealed partial class ProjectToolPreparationService(ToolsetCatalog catalog
             }
             var components = await ProjectDevelopmentComponents.ReadAsync(root, project, token);
             var recovery = await ToolRepairTransactions.InspectAsync(catalog.RootDirectory, token);
-            var pins = await ProjectDevelopmentComponents.ReadPinsAsync(root, components, token);
+            var pins = new Dictionary<string, string>(await ProjectDevelopmentComponents.ReadPinsAsync(root, components, token), StringComparer.Ordinal);
             var needs = components.Select(item => new Need(item.Id, item.Version, item.CompilerId, item.Purpose)).ToList();
+            if (project.Kind == ProjectKind.Pic && project.DeviceId == "PIC16F877A")
+            {
+                needs.Add(new(StudioX.Engine.Pic.PicDownloadSettings.ToolsetId, "6.20.0", StudioX.Engine.Pic.PicDownloadSettings.CompilerId, "PICkit3 下载"));
+                var downloadPath = PathBoundary.Resolve(root, StudioX.Engine.Pic.PicDownloadSettings.RelativePath);
+                if (File.Exists(downloadPath))
+                {
+                    var settings = await JsonStore.ReadAsync<StudioX.Engine.Pic.PicDownloadSettings>(downloadPath, token);
+                    settings.Validate(false);
+                    if (settings.ToolFingerprint.Length > 0)
+                    {
+                        pins[StudioX.Engine.Pic.PicDownloadSettings.ToolsetId] = settings.ToolFingerprint;
+                    }
+                }
+            }
             if (File.Exists(PathBoundary.Resolve(root, HdlSimulationSettings.RelativePath)))
             {
                 needs.Add(new("hdl.iverilog", "14.0.0", "iverilog", "已配置的 RTL 仿真"));
@@ -168,7 +182,10 @@ public sealed partial class ProjectToolPreparationService(ToolsetCatalog catalog
             "ag32-mapping" => new[] { "python", "converter", "supra" },
             "hdl-native" => ["mapper"],
             "hdl-simulation" => ["iverilog", "vvp"],
+            "pic-xc8" => ["xc8-cc"],
+            "pic-ipe" => ["java", "ipecmd"],
             "windows-native" => ["gcc", "gxx", "ar", "ranlib", "as", "ld", "objcopy", "objdump", "size"],
+            _ when need.Id == Mx251Profile.ToolsetId => Mx251Profile.RequiredRoles,
             _ when need.Id == "stc.sdcc" => ["cmake", "ninja", "sdcc", "sdar", "sdas8051", "sdld", "packihx"],
             _ => ["cmake", "ninja", "gcc", "gxx", "objcopy", "size"]
         };

@@ -4,11 +4,31 @@
 
 ## API 设置
 
-未保存当前接口的 API Key 时，聊天栏提示“未配置 API”，已保存的工程历史仍可查看。从「工具 → AI 接口设置…」打开独立设置窗口，可填写兼容服务的 API 路由地址、模型标识和 API Key，以及可选的 Tavily 联网检索 Key。默认服务为 DeepSeek，默认 Base URL 是 `https://api.deepseek.com`，默认模型是 `deepseek-flash`。Base URL 应为 HTTPS 基础地址，不带账号、查询参数或片段。模型 API Key 与 Tavily Key 分别保存在当前 Windows 用户的凭据管理器中，不写入工程文件或源码仓库。提问内容及 Agent 读取的工程内容会按会话需要发送给所选 API 服务。
+未保存当前接口的 API Key 时，聊天栏提示“未配置 API”，已保存的工程历史仍可查看。从「工具 → AI 接口设置…」打开独立设置窗口，可填写兼容服务的 API 路由地址、模型标识和 API Key，以及可选的 Tavily 联网检索 Key。默认服务为 DeepSeek，默认 Base URL 是 `https://api.deepseek.com`，默认模型是 `deepseek-flash`。Base URL 可为 HTTPS 基础地址或完整 /chat/completions 地址，不带账号、查询参数或片段。仅支持 OpenAI 兼容的 Chat Completions API（包括 DeepSeek），不支持 Anthropic Messages API。模型 API Key 与 Tavily Key 分别保存在当前 Windows 用户的凭据管理器中，不写入工程文件或源码仓库。提问内容及 Agent 读取的工程内容会按会话需要发送给所选 API 服务。
 
 右侧 AI 聊天栏用气泡区分用户、助手与 IDE 操作。输入框右下角显示模型名和当前思考强度，点击后才展开强度滑条。DeepSeek 官方接口可选择「关闭、低、高、最大」，最高档发送 `reasoning_effort=max`；其他兼容接口不自动发送该专有参数。强度保存在用户 AI 设置中。模型名旁的小圆环显示上下文占比，悬停可查看具体用量；它采用 API 返回的最近一次请求 `prompt_tokens`，不把历次请求相加。较早的工具批次压缩后，圆环会随实际请求用量下降。输入框下方常驻显示最近一轮 API 报告的缓存命中 token、已报告总量和比例；只有部分字段时显示已返回的数值，不推算比例。旧对话未保存缓存字段或接口未返回数据时，明确显示暂无记录。DeepSeek 已知模型使用其公开的上下文窗口大小；其他模型或接口若没有配置窗口上限，圆环不显示比例，悬停仍可查看已用 token 数。可在接口设置中填写服务商公布的上下文窗口 token 数。
 
-Agent 工作时输入框仍可使用：发送的新文字会显示为「待注入」，在当前模型响应和已开始的工具调用结束后作为新用户消息加入同一轮。模型若已给出最终回答但排队提示已经接受，会先处理提示再结束。待注入提示可从输入框上方撤回；请求取消或失败时尚未注入的文字会放回输入框。已注入的「调整方向」会作为用户气泡保存在本工程的对话历史中。
+Enter 直接发送，左 Shift+Enter 换行；右 Shift 不触发换行。中文输入法的候选确认不会发送消息，按住 Enter 不会重复发送。
+
+Agent 工作时输入框仍可使用：发送的新文字会显示为「待注入」。正在进行的模型生成会被取消，随后将方向调整作为用户消息继续同一任务；已经开始的工具批次先完整结束，保持工具调用和结果配对。中断请求可能不返回 usage，不能将其视为零用量或保证停止服务端计费。模型若已给出最终回答但排队提示已经接受，会先处理提示再结束。待注入提示可从输入框上方撤回；请求取消或失败时尚未注入的文字会放回输入框。已注入的「调整方向」会作为用户气泡保存在本工程的对话历史中。
+
+## 技能入口与自定义 MCP
+
+聊天输入区的「✦ 技能」可选择 `SKILL.md` 或完整技能文件夹导入，也可将选中技能加入输入框。默认随程序发布 `mcu-code-style` 代码风格技能；发现阶段仅加入名称、简介，正文和引用由模型按需读取。导入技能保存于 StudioX 用户数据目录的 `skills` 下，不修改其他应用的技能目录。导入拒绝链接、重名覆盖、非法 frontmatter 和过大目录，失败清除临时文件；不会执行技能脚本或自动信任工程技能。工程技能仍在插件管理中显式启用。
+
+「工具 → AI 接口设置 → 自定义 MCP」支持添加、编辑、测试、禁用和删除服务。`http` 为 Streamable HTTP，`sse` 为旧式 SSE，`stdio` 为本地 `.exe` 的直接启动，参数逐行填写。远端必须 HTTPS，本机回环可 HTTP；不会安装 Node 或全局运行环境。Bearer Token 使用当前 Windows 用户凭据管理器，按服务连接身份隔离，不进入 `ai-mcp.json`、模型上下文或工程。改变地址/程序需重新授权连接；缓存客户端不会继续调用旧地址。
+
+Agent 通过 `mcp_server_list`、`mcp_server_tools`、`mcp_server_call` 按需使用自定义服务。连接和每次调用使用 `CustomMcp` 授权：逐次确认和全面授权均显示卡片，完全访问沿用用户选定的自动授权。远端 `readOnlyHint` 不授予权限，不开放服务端采样和本地资源回调。测试连接只做初始化及列工具，但 stdio 会实际启动选定程序。自定义服务支持工具文本结果，尚不转发远端资源、提示词、图片或 OAuth 登录；OAuth 服务仍可使用独立的内置授权集成。
+
+## DeepSeek 输入与缓存
+
+工具定义采用固定小前缀：常用编辑工具直接提供，其余用 `studiox_tool_search` 获取 schema，再经 `studiox_tool_call` 调用相同 MCP 工具，不改变权限和校验。固定样例 97 个工具的定义载荷由 92,774 降至 7,749 字节（91.6%）；这不是总 token 或费用的同比估计。工具结果按 JSON 值无损去除缩进和中文 Unicode 转义；按行检索和局部修改继续优先，避免反复读取全文。
+
+系统提示、技能目录、已选历史和工具定义在同一次任务中固定；动态消息追加在尾部。活动协议约 96,000 字符越过高水位时向 48,000 回收，保留最近完整工具批次、方向调整及有界执行回执；大批次可超过低水位，仍须满足整体请求限制。摘要保留实际工具名、文件定位及外部 rootId，源码和状态缺失时必须重新读取，不缓存文件读取、编译或硬件操作结果来冒充实时状态。
+
+DeepSeek 前缀缓存默认由服务端自动管理，依据官方规则复用稳定前缀；不添加 OpenAI 专用缓存字段，不使用 GitHub 提议但未正式提供的显式缓存句柄。UI 只显示 API 实际返回的 prompt/cache hit/cache miss，缓存命中降低计费不等于输入 token 消失。未调用付费 API，在线命中率、回答质量和实际账单节约比例待实际使用观察。研究来源及验证见 [本轮记录](AI_ASSISTANT_REDESIGN_20261030.md)。
+
+新增 `arduino_upload_plan/arduino_upload` 和 `pic_download_plan/pic_download` 补齐 IDE 已有下载能力。预检不连接设备，下载需复述绑定固件/设备设置的 approvalId，复用应用层授权、设备租约和校验，PIC 保留原备份与 EEPROM/用户 ID 范围。新增工具的离线验收不构成烧录授权。
 
 ## 工程对话历史
 
@@ -51,7 +71,7 @@ Agent 工作时输入框仍可使用：发送的新文字会显示为「待注�
 | 范围 | 工具 | 行为 |
 |---|---|---|
 | 工程与编程 | `project_info`、`project_list_files`、`project_read_file`、`project_search`、`project_edit_file`、`project_patch_file`、`project_create_file`、`project_create_directory` | 当前工程内安全路径；大文件分段读取，局部补丁以原文件 SHA-256 和唯一匹配校验防止误写；器件与厂商源码可读，但受管理文件仍不可修改 |
-| 本地源码检索 | `project_qmd_search` | 可选调用已安装的 QMD，以 BM25 检索当前工程的安全源码快照并返回短片段；无 QMD 时仍可用 `project_search` |
+| 本地源码检索 | `project_qmd_search` | 内置 C# BM25 按完整单词和标识符检索安全源码快照，返回短片段；部分匹配和正则使用 `project_search` |
 | 互联网资料 | `web_search`、`web_fetch` | 用 Tavily 搜索公开网页并按需读取页面内容；结果按需续页，返回原始 URL 供核对；不访问本机或内网地址 |
 | PDF 数据手册与原理图 | `pdf_list`、`pdf_inspect`、`pdf_page` | 在当前工程或已授权的外部目录内发现 PDF、查页码与文字、按页读取；原理图可按页面区域返回图像供视觉模型核对连线 |
 | 外部示例 | `external_project_open`、`external_project_roots`、`external_project_list_files`、`external_project_find_files`、`external_project_read_file`、`external_project_search`、`external_project_copy` | 授权目录在当前 MCP 会话内只读；同目录复用授权标识，目录与搜索结果可用 `nextCursor` 续页；复制到当前工程须逐次授权且不覆盖已有文件 |
@@ -71,7 +91,7 @@ Agent 工作时输入框仍可使用：发送的新文字会显示为「待注�
 
 对于宽目录，优先用 `external_project_find_files` 按文件名或路径片段定位，减少逐层列目录的模型调用；返回 `nextCursor` 时可用同一查询继续。`project_list_files`、`project_search` 也支持续页，`project_read_file` 支持行列范围；避免一次读取大型源文件后只收到截断预览。Agent 不按单轮工具次数或模型轮次设置固定上限；长任务在高水位时回收较早的完整工具调用与结果，保留最近批次，降低每次只回收一小段引起的前缀变动。压缩后的源码内容如仍需使用，模型应重新读取。单次 API 请求仍受服务端和本机消息体大小约束。先前对话中的外部目录标识可能随 MCP 会话关闭而失效，届时需要重新批准目录。
 
-`project_qmd_search` 使用本机已安装的 [QMD](https://github.com/tobi/qmd)；StudioX 不自动安装 Node.js、QMD 或下载嵌入及重排模型。它只使用 QMD 的 BM25 索引与 `search`，为当前工程建立最多 400 个文件、8 MiB 源码的安全快照；超出时应指定更窄的 `directory`。索引复用未变更的快照，按工程保存在用户数据目录的 `qmd-bm25` 下，每工程最多 64 MiB、最多保留三个工程的托管索引。外部授权目录不进入该索引。QMD 有助于先定位相关片段，减少重复全文读取和输入 token；它不会直接增加 API 的前缀缓存命中率。
+`project_qmd_search` 保留旧工具名，后端为 StudioX 内置 C# BM25，不再运行 Node.js 或外部 QMD，也不需要 SQLite、嵌入模型或重排模型。它只对当前工程最多 400 个文件、8 MiB 安全源码建立快照；超出时应指定更窄的 `directory`。按完整单词/标识符匹配，不区分大小写；不提供语义、向量或子串检索，部分匹配与正则使用 `project_search`。未变更快照复用前重新核对真实源码与映射；修改和删除会使快照失效。缓存位于用户数据目录的 `qmd-bm25`，每工程最多 64 MiB、最多保留三个工程，旧版外部后端的托管配置和数据库不再使用。外部授权目录不进入索引。返回片段有助于减少重复全文读取及输入 token，不直接改变 API 前缀缓存命中率。
 
 联网工具使用 [Tavily Search](https://docs.tavily.com/documentation/api-reference/endpoint/search) 与 [Extract](https://docs.tavily.com/documentation/api-reference/endpoint/extract)。默认使用 Tavily 提供的免密钥试用模式；该模式有共享额度和速率限制，耗尽或服务不可用时工具会报告实际错误。需要独立额度时，可在「AI 接口设置」填写单独的 Tavily API Key；未填写时也可从启动进程的 `TAVILY_API_KEY` 环境变量读取。两者均未配置时使用免密钥模式。联网调用会向 Tavily 发送搜索词或目标 URL，请勿把工程源码、凭据、个人敏感信息放进查询。结果和网页按工具返回的续页信息分段读取，避免一次将整页送入模型；网页内容是不可信资料，回答应附原始 URL 并核对准确型号和资料版本。工具仅用于公开互联网资料，不用于访问本机或内网资源。免密钥模式和额度以 [Tavily 官方说明](https://www.tavily.com/blog/agentic-distribution-your-stairway-to-heaven) 为准。
 

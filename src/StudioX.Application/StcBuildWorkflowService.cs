@@ -21,9 +21,9 @@ public sealed class StcBuildWorkflowService(BuildService builds, Func<bool> debu
             throw new StudioXException("STC_BUILD_SESSION", "请先结束当前调试，再准备下载或新的调试构建。");
         }
         var project = await ProjectService.ReadAsync(directory, token);
-        if (project.ToolsetId != "stc.sdcc" || debugging && project.DeviceId != "IAP15F2K61S2")
+        if (project.ToolsetId != "stc.sdcc" || debugging && !StcMon51Targets.Supports(project.DeviceId))
         {
-            throw new StudioXException("STC_BUILD_TARGET", "普通下载仅适用于 STC SDCC 工程；Mon51 调试目前仅适用于 IAP15F2K61S2。");
+            throw new StudioXException("STC_BUILD_TARGET", "普通下载仅适用于 STC SDCC 工程；Mon51 调试适用于 " + StcMon51Targets.DisplayNames + "。");
         }
         var settings = await builds.LoadSettingsAsync(directory, token);
         var preferencePath = PathBoundary.Resolve(directory, PreferencePath);

@@ -37,7 +37,7 @@ public sealed class EspressifDocumentationService : IAsyncDisposable
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(dataDirectory);
         store = new EspressifProtectedStore(dataDirectory);
-        policy = new EspressifDocumentationHttpPolicy(httpHandler ?? new HttpClientHandler { AllowAutoRedirect = false });
+        policy = new EspressifDocumentationHttpPolicy(httpHandler ?? new HttpClientHandler { CheckCertificateRevocationList = true, AllowAutoRedirect = false });
         http = new HttpClient(policy) { Timeout = TimeSpan.FromSeconds(60) };
         http.DefaultRequestHeaders.UserAgent.ParseAdd("MCU-StudioX/1.0");
         this.timeProvider = timeProvider ?? TimeProvider.System;

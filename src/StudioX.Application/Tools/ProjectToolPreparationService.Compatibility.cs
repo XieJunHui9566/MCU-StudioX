@@ -154,6 +154,7 @@ public sealed partial class ProjectToolPreparationService
             "agm.pin-mapping" => new[] { "python", "converter", "supra" },
             "agm.logic" => ["mapper"],
             "hdl.iverilog" => ["iverilog", "vvp"],
+            Mx251Profile.ToolsetId => Mx251Profile.RequiredRoles,
             "stc.sdcc" => ["cmake", "ninja", "sdcc", "sdar", "sdas8051", "sdld", "packihx"],
             "pc.mingw" => ["gcc", "gxx", "ar", "ranlib", "as", "ld", "objcopy", "objdump", "size"],
             _ => ["cmake", "ninja", "gcc", "gxx", "objcopy", "size"]

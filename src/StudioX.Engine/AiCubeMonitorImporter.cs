@@ -10,8 +10,9 @@ public static class AiCubeMonitorImporter
 {
     public static Task<byte[]> ReadHexAsync(string executable, CancellationToken token = default) => ReadAsync(executable, false, token);
     public static Task<byte[]> ReadSetupImageAsync(string executable, CancellationToken token = default) => ReadAsync(executable, true, token);
+    public static Task<byte[]> ReadSetupImageAsync(string executable, string targetId, CancellationToken token = default) => ReadAsync(executable, true, token, targetId);
 
-    private static async Task<byte[]> ReadAsync(string executable, bool setup, CancellationToken token)
+    private static async Task<byte[]> ReadAsync(string executable, bool setup, CancellationToken token, string targetId = StcMon51Targets.HighVoltageDevice)
     {
         var info = new FileInfo(executable);
         if (!info.Exists || info.Length != 10395648)
@@ -36,11 +37,12 @@ public static class AiCubeMonitorImporter
         {
             return hex;
         }
-        // 原厂制作通道发送连续编码镜像；F449 加 02，状态尾部高半字节非 50 时另加 10。
+        // 原厂制作分支：F449(F) 加 02、F4C9(L) 加 01；当前状态 70 对应高位 10。
+        _ = StcMon51Targets.SetupSha256(targetId);
         var plain = Enumerable.Repeat((byte)0xff, 0xf000).ToArray();
         reset.CopyTo(plain, 0);
         monitor.CopyTo(plain, 0xe000);
-        plain[^1] = 0x12;
+        plain[^1] = targetId == StcMon51Targets.LowVoltageDevice ? (byte)0x11 : (byte)0x12;
         var result = new byte[plain.Length];
         byte state = 0x4c, counter = 0;
         for (var i = 0; i < result.Length; i++)
@@ -49,6 +51,7 @@ public static class AiCubeMonitorImporter
             state = unchecked((byte)((plain[i] ^ state) + counter));
             counter = unchecked((byte)(counter + 1));
         }
+        StcMonitorImage.ValidateSetup(result, targetId);
         return result;
     }
 

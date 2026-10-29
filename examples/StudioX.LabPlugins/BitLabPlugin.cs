@@ -5,15 +5,17 @@ using StudioX.Extensions.Abstractions;
 using static LabPanel;
 
 /// <summary>保留已安装插件的 ID 与入口类型，提供程序员计算器和独立位域工具页。</summary>
-public sealed class BitLabPlugin : LabPlugin
+public sealed partial class BitLabPlugin : LabPlugin
 {
     private IPluginHost? activeHost;
     private JsonElement calculatorInput = Json(new { });
     private JsonElement fieldInput = Json(new { operation = "inspect" });
     private LabResult? current;
     private bool fieldMode;
-    private long revision;
     private long inputRevision;
+    private int requestId;
+    private bool preview;
+    private bool pending;
 
     public override string Title => "程序员助手";
     protected override string Introduction => "程序员计算器：四种进制、定宽整数、按位运算与位域工具。";
@@ -100,6 +102,13 @@ public sealed class BitLabPlugin : LabPlugin
         }
         try
         {
+            requestId = LabInput.Integer(arguments, "requestId", 0, 0, int.MaxValue);
+            preview = kind == "command" && LabInput.Text(arguments, "action", "") == "preview";
+            pending = false;
+            if (kind == "command" && id == "calculate" && arguments.TryGetProperty("action", out _))
+            {
+                (id, arguments) = PrepareInteraction(arguments);
+            }
             var values = arguments.TryGetProperty("values", out var submitted) ? NormalizeInputs(submitted) :
                 kind == "command" ? CurrentInput : arguments;
             if (values.ValueKind != JsonValueKind.Object)
@@ -164,16 +173,31 @@ public sealed class BitLabPlugin : LabPlugin
             {
                 ok = true,
                 data = current!.Data,
-                copyText = current.CopyText
+                copyText = current.CopyText,
+                view = Panel().Widgets[0].Value
+            });
+        }
+        catch (ProgrammerIncompleteExpressionException) when (kind == "command" && preview)
+        {
+            pending = true;
+            var panel = Panel();
+            await host.PublishPanelAsync(panel, token);
+            return Json(new
+            {
+                ok = false,
+                pending = true,
+                view = panel.Widgets[0].Value
             });
         }
         catch (ArgumentException error) when (kind == "command")
         {
-            await host.PublishPanelAsync(Panel(error.Message), token);
+            var panel = Panel(error.Message);
+            await host.PublishPanelAsync(panel, token);
             return Json(new
             {
                 ok = false,
-                error = error.Message
+                error = error.Message,
+                view = panel.Widgets[0].Value
             });
         }
     }
@@ -215,29 +239,29 @@ public sealed class BitLabPlugin : LabPlugin
 
     private PluginPanelDefinition Panel(string? error = null)
     {
-        var widgets = new List<PluginPanelWidget>
+        var result = current ?? Calculate(CurrentInput);
+        var data = Json(result.Data);
+        var width = data.GetProperty("width").GetInt32();
+        var start = LabInput.Integer(CurrentInput, "start", Math.Min(8, width - 1), 0, width - 1);
+        var state = new PluginProgrammerCalculatorState(1, width, data.GetProperty("radix").GetInt32(),
+            data.GetProperty("signedMode").GetBoolean(), LabInput.Text(CurrentInput, "value", "0x12345678"),
+            data.GetProperty("hex").GetString()!, data.GetProperty("decimalText").GetString()!,
+            data.GetProperty("octal").GetString()!, data.GetProperty("binary").GetString()!,
+            data.GetProperty("unsigned").GetString()!, data.GetProperty("signed").GetInt64().ToString(System.Globalization.CultureInfo.InvariantCulture),
+            data.GetProperty("littleEndian").GetString()!, data.GetProperty("bigEndian").GetString()!, result.CopyText,
+            fieldMode, start, LabInput.Integer(CurrentInput, "count", Math.Min(8, width - start), 1, width - start),
+            fieldMode ? LabInput.Text(CurrentInput, "operation", "inspect") : "inspect", LabInput.Text(CurrentInput, "operand", "0"), error,
+            data.GetProperty("extracted").GetUInt64().ToString(System.Globalization.CultureInfo.InvariantCulture),
+            data.GetProperty("mask").GetUInt64().ToString("X", System.Globalization.CultureInfo.InvariantCulture))
         {
-            new("calculator", "button", fieldMode ? "切换到程序员计算器" : "程序员计算器", CommandId: "calculator"),
-            new("bitfield", "button", fieldMode ? "位域工具" : "切换到位域工具", CommandId: "bitfield")
+            RequestId = requestId,
+            Preview = preview,
+            Pending = pending,
+            Realtime = true
         };
-        if (error is not null)
+        return new("lab", Title, [new("calculator-view", "programmerCalculator", Title, Json(state), CommandId: "calculate")])
         {
-            widgets.Add(Text("error", "输入错误 / Error", error + " 保留上次成功结果。"));
-        }
-        if (current is { } result)
-        {
-            widgets.AddRange(result.Widgets);
-        }
-        widgets.Add(new("controls", "form", fieldMode ? "位域工具" : "程序员计算器", Children:
-            [.. Inputs(CurrentInput).Select(w => w with { Id = "input" + inputRevision + "_" + w.Id }),
-             new("calculate", "button", "计算 / 生成", CommandId: "calculate"),
-             .. fieldMode ? Array.Empty<PluginPanelWidget>() : new PluginPanelWidget[]
-             { new("use-result", "button", "结果作为 A（继续计算）", CommandId: "use-result"), new("clear", "button", "C · 清空", CommandId: "clear") }]));
-        widgets.Add(Text("help", "输入提示", "无前缀数字使用所选进制；0x / 0d / 0o / 0b 可混合输入。例：(0xF0 & 0x3C) | (1 << 0d8)。支持 + − × ÷ %、括号和 AND / OR / XOR / NOT / NAND / NOR / ROL / ROR（除号使用 /，乘号使用 *）。输入须在位宽范围内；运算溢出保留低位，整数除法向 0 截断。移位量为 0–位宽。"));
-        if (current is { } output)
-        {
-            widgets.Add(Input("output_" + ++revision, "复制结果（Ctrl+A / Ctrl+C）", output.CopyText));
-        }
-        return new("lab", Title, widgets.ToArray());
+            Presentation = "window"
+        };
     }
 }

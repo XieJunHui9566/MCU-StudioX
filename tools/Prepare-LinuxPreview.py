@@ -20,9 +20,7 @@ def sha256(path):
 
 
 def version(executable, expected):
-    actual = subprocess.check_output(
-        [str(executable), "--version"], text=True
-    ).splitlines()[0]
+    actual = subprocess.check_output([str(executable), "--version"], text=True).splitlines()[0]
     if expected not in actual:
         raise ValueError(f"工具版本不匹配：{actual}；要求 {expected}")
     return actual
@@ -33,17 +31,13 @@ def prepare(args):
     output.mkdir(parents=True, exist_ok=False)
     tools = output / "runtime/toolsets/arm.gnu/1.0.0"
     tools.mkdir(parents=True)
-    expected_arm_hash = (
-        "597893282ac8c6ab1a4073977f2362990184599643b4c5ee34870a8215783a16"
-    )
+    expected_arm_hash = "597893282ac8c6ab1a4073977f2362990184599643b4c5ee34870a8215783a16"
     if sha256(args.arm_archive) != expected_arm_hash:
         raise ValueError("Arm 官方工具链归档哈希不匹配")
     with tempfile.TemporaryDirectory(prefix=".arm-extract-", dir=output) as temporary:
         with tarfile.open(args.arm_archive) as archive:
             archive.extractall(temporary, filter="data")
-        arm_root = (
-            pathlib.Path(temporary) / "arm-gnu-toolchain-15.2.rel1-x86_64-arm-none-eabi"
-        )
+        arm_root = pathlib.Path(temporary) / "arm-gnu-toolchain-15.2.rel1-x86_64-arm-none-eabi"
         shutil.copytree(arm_root, tools / "gcc", symlinks=False)
     versions = {
         "gcc": version(tools / "gcc/bin/arm-none-eabi-gcc", "15.2.1"),
@@ -53,9 +47,7 @@ def prepare(args):
     # 组件边界拒绝链接。复制时解析厂商内部别名，保留执行位、库、头文件和原始许可证。
     (tools / "cmake/bin").mkdir(parents=True)
     shutil.copy2(args.cmake, tools / "cmake/bin/cmake")
-    shutil.copytree(
-        args.cmake_share, tools / "cmake/share" / args.cmake_share.name, symlinks=False
-    )
+    shutil.copytree(args.cmake_share, tools / "cmake/share" / args.cmake_share.name, symlinks=False)
     (tools / "ninja").mkdir()
     shutil.copy2(args.ninja, tools / "ninja/ninja")
     (tools / "licenses").mkdir()
@@ -120,10 +112,7 @@ def prepare(args):
     if (manifest["id"], manifest["version"]) != ("studiox.stm32f407", "0.1.3"):
         raise ValueError("预览只使用明确的 STM32F407 0.1.3 输入包")
     source_hash = sha256(args.pack)
-    if (
-        source_hash
-        != "df30af07db39bb161a5aac7ae1aaf3cceb4769afd043741b6ecc797cfee2ae86"
-    ):
+    if source_hash != "df30af07db39bb161a5aac7ae1aaf3cceb4769afd043741b6ecc797cfee2ae86":
         raise ValueError("STM32F407 输入包哈希不匹配")
     manifest.update(
         id="studiox.stm32f407.linux-preview",
@@ -144,9 +133,7 @@ def prepare(args):
         for template in device["templates"]:
             for need in template.get("developmentComponents") or []:
                 need["host"] = "linux-x64"
-    files["manifest.json"] = json.dumps(manifest, ensure_ascii=False, indent=2).encode(
-        "utf-8"
-    )
+    files["manifest.json"] = json.dumps(manifest, ensure_ascii=False, indent=2).encode("utf-8")
     files["linux-preview-provenance.json"] = json.dumps(
         {
             "sourcePack": "studiox.stm32f407/0.1.3",
@@ -157,9 +144,7 @@ def prepare(args):
         ensure_ascii=False,
         indent=2,
     ).encode("utf-8")
-    index = {
-        name: hashlib.sha256(data).hexdigest() for name, data in sorted(files.items())
-    }
+    index = {name: hashlib.sha256(data).hexdigest() for name, data in sorted(files.items())}
     files["files.sha256.json"] = json.dumps(index, indent=2).encode("utf-8")
     with zipfile.ZipFile(pack_path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
         for name, data in sorted(files.items()):

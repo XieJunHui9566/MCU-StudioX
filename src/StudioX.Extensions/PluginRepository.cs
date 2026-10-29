@@ -210,6 +210,7 @@ public sealed class PluginRepository
         }
     }
 
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Security", "CA5389", Justification = "PathBoundary.Resolve validates every entry before FileMode.CreateNew; duplicate, link and expansion limits apply independently.")]
     private static async Task ExtractAsync(string archive, string destination, CancellationToken token)
     {
         if (!archive.EndsWith(".studioxplugin", StringComparison.OrdinalIgnoreCase))

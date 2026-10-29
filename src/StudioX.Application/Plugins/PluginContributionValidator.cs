@@ -51,6 +51,7 @@ public static partial class PluginContributionValidator
                 throw Invalid("面板 ID 为空或重复。");
             }
             ValidatePanel(panel, commands, manifest.Scope == "application");
+            ValidatePanelCapabilities(manifest, panel);
         }
         var tools = new HashSet<string>(StringComparer.Ordinal);
         foreach (var tool in contribution.AgentTools)
@@ -69,9 +70,17 @@ public static partial class PluginContributionValidator
     {
         Identifier(panel.Id);
         Text(panel.Title, 256, "面板标题");
+        if (panel.Presentation is not ("panel" or "window"))
+        {
+            throw Invalid("面板呈现方式必须为 panel 或 window。");
+        }
         if (panel.Widgets is null || panel.Widgets.Length > 128)
         {
             throw Invalid("面板控件为空或超过限制。");
+        }
+        if (panel.Widgets.Any(widget => widget?.Kind == "mcuConfiguration") && panel.Widgets.Length != 1)
+        {
+            throw Invalid("图形配置必须作为独立面板呈现。");
         }
         var count = 0;
         var ids = new HashSet<string>(StringComparer.Ordinal);
@@ -110,7 +119,7 @@ public static partial class PluginContributionValidator
         }
         Text(widget.Label, 256, "控件标签", allowEmpty: true);
         if (widget.Kind is not ("text" or "table" or "tree" or "form" or "plot" or "button" or
-            "input" or "number" or "checkbox" or "select" or "metric" or "chart" or "group" or "projectLink" or "appearance"))
+            "input" or "number" or "checkbox" or "select" or "metric" or "chart" or "group" or "projectLink" or "appearance" or "programmerCalculator" or "mcuConfiguration"))
         {
             throw Invalid("不支持的控件类型：" + widget.Kind);
         }
@@ -121,6 +130,26 @@ public static partial class PluginContributionValidator
         if (widget.Kind is "button" && widget.CommandId is null)
         {
             throw Invalid("按钮必须指定已注册命令。");
+        }
+        if (widget.Kind == "programmerCalculator")
+        {
+            if (widget.CommandId is null || widget.Value is not { } calculator)
+            {
+                throw Invalid("程序员计算器必须声明交互命令和显示数据。");
+            }
+            _ = PluginProgrammerCalculator.Parse(calculator);
+        }
+        if (widget.Kind == "mcuConfiguration")
+        {
+            if (depth != 0)
+            {
+                throw Invalid("图形配置视图不能嵌套在其它控件中。");
+            }
+            if (widget.CommandId is null || widget.Value is not { } configuration)
+            {
+                throw Invalid("图形配置视图必须声明交互命令和数据。");
+            }
+            _ = PluginMcuConfiguration.Parse(configuration);
         }
         if (widget.Kind == "projectLink")
         {
@@ -227,6 +256,25 @@ public static partial class PluginContributionValidator
         if (count > 0 && !manifest.Capabilities.Contains(capability, StringComparer.Ordinal))
         {
             throw Invalid("清单未声明贡献能力：" + capability);
+        }
+    }
+
+    public static void ValidatePanelCapabilities(PluginManifest manifest, PluginPanelDefinition panel)
+    {
+        RequireCapability(manifest, "panelWindows", panel.Presentation == "window" ? 1 : 0);
+        Visit(panel.Widgets);
+        void Visit(PluginPanelWidget[] widgets)
+        {
+            foreach (var widget in widgets)
+            {
+                RequireCapability(manifest, "programmerCalculator", widget.Kind == "programmerCalculator" ? 1 : 0);
+                RequireCapability(manifest, "mcuConfigurationPreview", widget.Kind == "mcuConfiguration" ? 1 : 0);
+                if (widget.Kind == "programmerCalculator" && widget.Value is { } state)
+                {
+                    RequireCapability(manifest, "calculatorRealtime", PluginProgrammerCalculator.Parse(state).Realtime ? 1 : 0);
+                }
+                Visit(widget.Children ?? []);
+            }
         }
     }
 

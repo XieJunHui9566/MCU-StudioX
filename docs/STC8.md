@@ -2,13 +2,17 @@
 
 ## 范围
 
+`stc.stc8/0.1.7` 在保留 24 个型号、原有模板、寄存器和 Mon51/RT51 资源的基础上，为 STC89/STC12/STC15/STC8G/STC8H 五组头文件统一加入 `<stdint.h>`。包含型号头文件后即可使用 `uint8_t/int8_t/uint16_t/int16_t/uint32_t/int32_t` 等标准类型；使用工程锁定 SDCC 的标准头，不引入重复 typedef。新包由[不可变升级配方](../tools/New-StcStdintPack.py)生成，已有工程的器件副本不自动替换。IAP15L2K61S2 的可选图形配置与分文件代码生成见[插件说明](../plugins/StudioX.StcConfigurator/README.md)。
+
+`stc.stc8/0.1.6` 新增 IAP15L2K61S2 专用 Mon51 固件，保留此前器件和模板；配合本次 IDE 软件适配可进行 L 型号调试构建与 Mon51 调试。L 型号已于 2026-10-21 完成单板制作和调试验收，见 [适配说明](STC-MON51-IAP15L2K61S2.md)。
+
 `stc.stc8/0.1.2` 在 0.1.0 的 SDK、模板和编译工具版本基础上增加 IAP15F2K61S2 的包内 Mon51 V2.5 制作固件；IDE 直接读取和下载，无需用户提供厂商程序。制作只接受 ISP 7.2.5S / 状态 70。旧工程编译锁不迁移，可在调试窗口独立选择此监控资源包。流程和边界见 [Mon51 界面](STC-MON51-UI.md) 与 [固件说明](STC-MON51-FIRMWARE.md)。
 
 `stc.stc8/0.1.0` 是单个 StudioX Pack，首批收录 STC89、STC12、STC15、STC8G、STC8H 共 24 个已核实型号，其中 IAP15F2K61S2 为代表型号。完整型号、容量与来源见 [包配方](../examples/packs/stc.stc8/README.md) 和 `artifacts/packs/STC8-0.1.0/source/vendor/provenance.json`。型号未列入包时，新建工程不猜测兼容型号或内存容量。
 
 直接运行随附发行目录时，首次进入“新建工程”会按 `device-packs/index.json` 校验并导入用户目录中缺失的器件包；已有同 ID 和版本的用户包保持不变。`STC / 宏晶科技` 在厂商选择器中显示为“宏晶科技”。
 
-工程仅生成 C 源码，以 `stc.sdcc/1.0.0` 内的 SDCC 4.5.0、CMake 4.4.0、Ninja 1.10.2 编译。固件产物为 `.ihx`、相同内容的 `.hex`、`.map` 与 `.mem`；内存视图读取 SDCC `.mem` 的程序 Flash 和扩展 RAM 统计，不把它解释为 GCC/ELF。IDE 已接入由随附 `stcgal 1.10` 执行的串口 ISP 下载，也可选择用户自己安装的版本；仍不提供 STC 源码调试。实际串口、供电和复位方式须按开发板确认。
+工程仅生成 C 源码，以 `stc.sdcc/1.0.0` 内的 SDCC 4.5.0、CMake 4.4.0、Ninja 1.10.2 编译。固件产物为 `.ihx`、相同内容的 `.hex`、`.map` 与 `.mem`；内存视图读取 SDCC `.mem` 的程序 Flash 和扩展 RAM 统计，不把它解释为 GCC/ELF。IDE 已接入由随附 `stcgal 1.10` 执行的串口 ISP 下载，也可选择用户自己安装的版本；IAP15F2K61S2 / IAP15L2K61S2 已通过 Mon51 V2.5 接入源码调试，其他型号不自动具备该能力。实际串口、供电和复位方式须按开发板确认。
 
 ## 编译档位
 

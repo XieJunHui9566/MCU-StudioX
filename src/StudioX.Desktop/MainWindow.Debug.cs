@@ -6,6 +6,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Threading;
 using ICSharpCode.AvalonEdit.Document;
+using StudioX.Engine;
 using StudioX.Engine.Debugging;
 using StudioX.Foundation;
 
@@ -220,7 +221,7 @@ public partial class MainWindow
         }
         var debug = services.Debugger;
         var idle = !projectActionsBusy;
-        var sourceDebugUnsupported = IsEspressifProject || IsZephyrProject || IsMicroPythonProject;
+        var sourceDebugUnsupported = currentProjectManifest is not null && !ProjectCapabilities.For(currentProjectManifest).Debug;
         var addressDebug = IsStcSdccProject || debug.MonitorSession is not null;
         DebugTopMenu.Visibility = DebugStartButton.Visibility = sourceDebugUnsupported ? Visibility.Collapsed : Visibility.Visible;
         if (debugMargin is not null)
@@ -259,7 +260,7 @@ public partial class MainWindow
         DebugResetButton.ToolTip = addressDebug ? "设置监控逻辑复位入口并暂停；不复位外设、不擦写程序" : "复位并暂停目标";
         DebugStartButton.ToolTip = addressDebug ? "保存并编译最新程序，通过 Mon51 覆盖用户区后启动调试；再次点击结束调试" : "启动 / 结束调试";
         var available = projectDirectory is not null && idle && !debug.IsActive;
-        BuildButton.IsEnabled = BuildMenu.IsEnabled = available && !IsZephyrProject && !IsMicroPythonProject;
+        BuildButton.IsEnabled = BuildMenu.IsEnabled = available && ProjectCapabilities.For(currentProjectManifest).Build;
         DownloadButton.IsEnabled = DownloadMenu.IsEnabled = available && supportsDownload;
         DownloadProbePicker.IsEnabled = DownloadSettingsButton.IsEnabled = DownloadSettingsMenu.IsEnabled = available && supportsDownload;
         UpdateBuildSettingsControls();
@@ -465,7 +466,7 @@ public partial class MainWindow
             await RunAsync(token => services.Debugger.ChangeBreakpointAsync(point.Id, !point.Enabled, token));
         }
     }
-    private bool CanEditBreakpoints => (services.Debugger.MonitorSession is null || services.Debugger.MonitorSession.HasSymbols) && !IsEspressifProject && !IsZephyrProject && !IsMicroPythonProject && projectDirectory is not null && activeDocument is not null && IsActiveSourceTab &&
+    private bool CanEditBreakpoints => (services.Debugger.MonitorSession is null || services.Debugger.MonitorSession.HasSymbols) && ProjectCapabilities.For(currentProjectManifest).Debug && projectDirectory is not null && activeDocument is not null && IsActiveSourceTab &&
         !Path.IsPathRooted(activeDocument.RelativePath) && CodeLanguage.ForFile(activeDocument.RelativePath) is "C" or "C++" &&
         services.Debugger.State is DebugState.Disconnected or DebugState.Stopped or DebugState.Faulted;
     private async Task NavigateSelectedDebugFrameAsync()

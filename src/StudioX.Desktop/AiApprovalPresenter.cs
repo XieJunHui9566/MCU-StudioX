@@ -36,6 +36,7 @@ internal sealed class AiApprovalPresenter(
         var externalRead = request.Permission == StudioXMcpPermission.ExternalRead;
         var title = request.Permission switch
         {
+            StudioXMcpPermission.CustomMcp => "自定义 MCP 服务",
             StudioXMcpPermission.ExternalRead => "读取外部示例目录",
             StudioXMcpPermission.FileWrite => "修改工程文件",
             StudioXMcpPermission.Build => "编译或配置工程",

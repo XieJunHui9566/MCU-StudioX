@@ -1,0 +1,105 @@
+{
+  "dfp": "Microchip.PIC16Fxxx_DFP",
+  "version": "1.9.176",
+  "url": "https://packs.download.microchip.com/Microchip.PIC16Fxxx_DFP.1.9.176.atpack",
+  "archiveSha256": "C5C3CE16F908635A6858FC128494B82AE9AA61B7F5AB932A12843BBDFA8F8F62",
+  "derivation": "CodeSector words; CodeMemTraits instruction width; non-shadow GPRDataSector bytes; EEDataSector bytes",
+  "devices": [
+    {
+      "id": "PIC16F610",
+      "edcSha256": "29cab5b2d256860ca6727510b746b0f05d62ef8965149b7187b0cebd5d0503e3"
+    },
+    {
+      "id": "PIC16F616",
+      "edcSha256": "d1f3d14cc1dff31299552559abd0f570f06a69853d8fa15ef490af5c3e7e7b2b"
+    },
+    {
+      "id": "PIC16F627",
+      "edcSha256": "ffafb18f062197fb53f0d86f135dcc22f5526daf268b0050bf41b5aea797427a"
+    },
+    {
+      "id": "PIC16F627A",
+      "edcSha256": "399d9447d76b03618b2a42870f0582f98193898c8df221dc488e7e7340e32d84"
+    },
+    {
+      "id": "PIC16F628",
+      "edcSha256": "cfd68d8caee46f22c9c5c4b684837a30da7994608911112dfe446f5cb084ec9c"
+    },
+    {
+      "id": "PIC16F628A",
+      "edcSha256": "92ea6dea19e6b3e24129c89daf21e08aa4fe82e05025c4d0fef686f71a068100"
+    },
+    {
+      "id": "PIC16F630",
+      "edcSha256": "94207a58b7b5b2b6d839209ec98144b4ebe1267c3c25f87b54e7b23bcb0a91f2"
+    },
+    {
+      "id": "PIC16F631",
+      "edcSha256": "8160526b9b3b2789bae72ec707a65a328eb1aac26644c62babf62e6474495d1d"
+    },
+    {
+      "id": "PIC16F636",
+      "edcSha256": "58adcf0309d2e03cc93cd8ef8d33b5f2565bd5c5694c4b771a046b348acd02c8"
+    },
+    {
+      "id": "PIC16F639",
+      "edcSha256": "ffa4368bfbac341fc7a6fe29ac4c3d773ebdb5fae8d6eb5d6fceac23cda653bd"
+    },
+    {
+      "id": "PIC16F648A",
+      "edcSha256": "a56a73f9336a42e4ce33dd96d32470bdd707da89bac4cdc17b00fd403c9d62b6"
+    },
+    {
+      "id": "PIC16F676",
+      "edcSha256": "f80a0a0fd4ab43b45b57c9e472ed3f8c322151e3a51243475dc62d4770e821b6"
+    },
+    {
+      "id": "PIC16F677",
+      "edcSha256": "a9b7a32d26778a07137407348809bc8838f7bed97710d7161b643cc483aa076a"
+    },
+    {
+      "id": "PIC16F684",
+      "edcSha256": "635de3b52e471ff36c4b81232eb6d0900075d99e791658aecba4845bb90fa54d"
+    },
+    {
+      "id": "PIC16F685",
+      "edcSha256": "b05cfcdb7df0e68769190a24b07d5540a5b7e9f58c4382c446193ecafb6b2086"
+    },
+    {
+      "id": "PIC16F687",
+      "edcSha256": "22f9501c4088347406aad8dbcd9a9491620c1557269409f77615c4977ebdb532"
+    },
+    {
+      "id": "PIC16F688",
+      "edcSha256": "cf0450259aa4c8f8d3dbaa1d0702b317f973e805d56b5348244e78e0b372e103"
+    },
+    {
+      "id": "PIC16F689",
+      "edcSha256": "ce2c4b14badcd36df0602ff732d712ea90ccee3678523f498918deb8826ba105"
+    },
+    {
+      "id": "PIC16F690",
+      "edcSha256": "80b175660ee13418ba17bd5def2365178fc50bc9d2dcaa8a065dbade742e28a1"
+    },
+    {
+      "id": "PIC16LF627",
+      "edcSha256": "4ae4cd5cfbb1ed4707f354bb869bfbee983915d22dd9821e49e4b00773188918"
+    },
+    {
+      "id": "PIC16LF627A",
+      "edcSha256": "02070cfe350a6b5e5c02b9cd2ab7e29c5b9932dba73cc968f893855d3f9812f5"
+    },
+    {
+      "id": "PIC16LF628",
+      "edcSha256": "5ff7c7ffac70ba8c176fb811b2c0c2512afcdfddd8c72f7f1faa6b323ce45d2d"
+    },
+    {
+      "id": "PIC16LF628A",
+      "edcSha256": "66500a3dc7c9fcf77e79b801ea598c4dfdc509ebcf7721e66e03a0a4c83dc0de"
+    },
+    {
+      "id": "PIC16LF648A",
+      "edcSha256": "4f36c6124a976a1516277a5128f852cb7583fd6e4887ce91626a19657db1a844"
+    }
+  ]
+}

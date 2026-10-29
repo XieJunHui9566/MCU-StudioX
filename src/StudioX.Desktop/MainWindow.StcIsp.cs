@@ -28,6 +28,7 @@ public partial class MainWindow
             return;
         }
         loadedStcIspSettings = null;
+        loadedProjectClock = null;
         stcIspCapabilities = null;
         StcIspPanel.Visibility = IsStcSdccProject ? Visibility.Visible : Visibility.Collapsed;
         StcIspStatus.Text = IsStcSdccProject ? "正在读取 STC 下载设置…" : "";
@@ -41,7 +42,8 @@ public partial class MainWindow
         {
             var settingsTask = services.StcIsp.LoadSettingsAsync(root);
             var capabilitiesTask = services.StcIsp.GetCapabilitiesAsync(root);
-            await Task.WhenAll(settingsTask, capabilitiesTask);
+            var clockTask = services.ProjectClocks.ReadAsync(root);
+            await Task.WhenAll(settingsTask, capabilitiesTask, clockTask);
             var toolTask = ReadStcToolStatusSafeAsync();
             var portsTask = ReadStcPortsSafeAsync();
             await Task.WhenAll(toolTask, portsTask);
@@ -49,6 +51,14 @@ public partial class MainWindow
             {
                 return;
             }
+            var clockState = await clockTask;
+            var providerEnabled = services.ProjectClocks.Ownership is not null && await services.ProjectClocks.Ownership.RequiresManagedClockAsync(root);
+            if (revision != projectDetailsRevision || projectDirectory != root || closing)
+            {
+                return;
+            }
+            loadedProjectClock = clockState;
+            clockProviderEnabled = providerEnabled;
             ApplyStcIspSettings(await settingsTask, await capabilitiesTask, await toolTask, await portsTask);
         }
         catch (Exception ex)
@@ -128,6 +138,18 @@ public partial class MainWindow
             return;
         }
         var mode = StcClockModePicker.SelectedValue is StcClockMode selected ? selected : StcClockMode.Preserve;
+        var managed = loadedProjectClock?.Managed == true;
+        StcClockModePicker.IsEnabled = !managed;
+        StcClockFrequencyBox.IsReadOnly = managed;
+        StcClockActions.Visibility = managed ? Visibility.Visible : Visibility.Collapsed;
+        ReleaseManagedClockButton.Visibility = managed && !clockProviderEnabled ? Visibility.Visible : Visibility.Collapsed;
+        if (managed)
+        {
+            StcClockFrequencyLabel.Visibility = StcClockFrequencyBox.Visibility = Visibility.Visible;
+            StcClockFrequencyLabel.Text = "图形配置源频率（MHz，只读）";
+            StcClockHelp.Text = loadedProjectClock!.Message + "\n修改请前往时钟树；COM 与传输波特率仍在这里设置。";
+            return;
+        }
         var frequencyEnabled = mode == StcClockMode.ExternalCrystal ||
             mode == StcClockMode.InternalRc && stcIspCapabilities?.SupportsRcTrim == true;
         StcClockFrequencyLabel.Visibility = StcClockFrequencyBox.Visibility = frequencyEnabled ? Visibility.Visible : Visibility.Collapsed;
@@ -151,7 +173,8 @@ public partial class MainWindow
             error = "STC 型号能力尚未加载。";
             return false;
         }
-        var mode = StcClockModePicker.SelectedValue is StcClockMode selected ? selected : StcClockMode.Preserve;
+        var mode = loadedProjectClock?.Managed == true && loadedStcIspSettings is { } owned
+            ? owned.ClockMode : StcClockModePicker.SelectedValue is StcClockMode selected ? selected : StcClockMode.Preserve;
         int? hz = null;
         if (mode == StcClockMode.ExternalCrystal || mode == StcClockMode.InternalRc && stcIspCapabilities.SupportsRcTrim)
         {
@@ -201,6 +224,11 @@ public partial class MainWindow
         {
             return;
         }
+        if (loadedProjectClock?.Managed == true)
+        {
+            UpdateStcClockHelp();
+            return;
+        }
         StcClockFrequencyBox.Clear();
         UpdateStcClockHelp();
         UpdateStcIspDirtyStatus();
@@ -240,7 +268,7 @@ public partial class MainWindow
         }
         await services.StcIsp.SaveSettingsAsync(RequireProject(), settings, token);
         loadedStcIspSettings = settings;
-        StcIspStatus.Text = Status.Text = "STC 串口与时钟设置已保存；重新编译后生效，芯片配置将在下载时写入。";
+        StcIspStatus.Text = Status.Text = loadedProjectClock?.Managed == true ? "已保存下载串口与传输速度；时钟由图形配置托管。" : "STC 串口与时钟设置已保存；重新编译后生效，芯片配置将在下载时写入。";
     });
 
     private async void ChooseStcgal_Click(object sender, RoutedEventArgs e)
@@ -261,6 +289,8 @@ public partial class MainWindow
 
     private async Task DownloadStcAsync(string root, CancellationToken token)
     {
+        var clockState = await services.ProjectClocks.ReadAsync(root, token);
+        clockState.RequireReady();
         if (loadedBuildSettings is not null && (!TrySelectedBuildSettings(out var selectedBuild, out var buildError) || selectedBuild != loadedBuildSettings))
         {
             FocusStcSettings();

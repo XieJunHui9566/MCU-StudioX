@@ -5,4 +5,4 @@ public sealed record FirstProjectProgress(
     string? ProjectDirectory = null, string ProjectName = "", string Target = "", string Toolset = "",
     bool Script = false, bool Experimental = false, bool Espressif = false,
     bool HealthPassed = false, bool SourceSaved = false, bool? BuildSucceeded = null,
-    IReadOnlyList<string>? Artifacts = null);
+    IReadOnlyList<string>? Artifacts = null, StudioX.Engine.ProjectCapabilities? Capabilities = null);

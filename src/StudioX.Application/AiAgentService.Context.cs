@@ -6,7 +6,18 @@ using System.Text.Json;
 public sealed partial class AiAgentService
 {
     private const int LowActiveProtocolMessages = 44;
-    private const int LowActiveProtocolChars = 160_000;
+    private const int LowActiveProtocolChars = 48_000;
+
+    /// <summary>保留 JSON 值与字符串内容，只消除缩进和中文 Unicode 转义，降低模型实际读取量。</summary>
+    private static string CompactToolJson(string text)
+    {
+        try
+        {
+            using var json = JsonDocument.Parse(text);
+            return JsonSerializer.Serialize(json.RootElement, SkillCatalogJsonOptions);
+        }
+        catch (JsonException) { return text; }
+    }
 
     /// <summary>越过高水位时批量回收到低水位，并在协议末尾追加一次不可变的执行记录。</summary>
     private static void CompactCurrentProtocol(List<AiChatMessage> protocol, AiAgentCheckpoint checkpoint)
@@ -28,6 +39,12 @@ public sealed partial class AiAgentService
                 break;
             }
             var (start, size) = batch.Value;
+            // 最近一批结果仍是模型下一步的直接输入，不能只留下状态回执。
+            if (!protocol.Skip(start + size).Any(message =>
+                    message.Role == "assistant" && message.ToolCalls is { Count: > 0 }))
+            {
+                break;
+            }
             var receipts = checkpoint.Add(protocol.GetRange(start, size));
             compactedCalls += receipts.Count;
             compacted.AddRange(receipts);
@@ -104,7 +121,7 @@ public sealed partial class AiAgentService
             if (json.RootElement.ValueKind == JsonValueKind.Object)
             {
                 foreach (var name in new[] { "saved", "created", "deleted", "path", "destination",
-                             "sha256", "rootId", "error", "success", "status" })
+                             "sha256", "rootId", "error", "success", "status", "nextLine", "nextColumn", "nextCursor", "contentHash" })
                 {
                     if (!json.RootElement.TryGetProperty(name, out var value))
                     {
@@ -121,6 +138,10 @@ public sealed partial class AiAgentService
                     else if (value.ValueKind == JsonValueKind.String)
                     {
                         fields[name] = Limit(value.GetString() ?? "", 240);
+                    }
+                    else if (value.ValueKind == JsonValueKind.Number && value.TryGetInt64(out var number))
+                    {
+                        fields[name] = number;
                     }
                 }
             }
@@ -187,17 +208,18 @@ public sealed partial class AiAgentService
                 var call = calls[index];
                 var result = batch[index + 1].Content ?? "";
                 CompactedToolCalls++;
-                counts[call.Name] = counts.GetValueOrDefault(call.Name) + 1;
-                var subject = Subject(call.ArgumentsJson);
+                var toolName = EffectiveToolName(call);
+                counts[toolName] = counts.GetValueOrDefault(toolName) + 1;
+                var subject = Subject(EffectiveToolArguments(call));
                 var status = ResultStatus(result);
-                var receipt = $"{call.Name}{subject}：{status}";
+                var receipt = $"{toolName}{subject}：{status}";
                 added.Add(receipt);
                 receipts.Enqueue(receipt);
                 while (receipts.Count > 24)
                 {
                     receipts.Dequeue();
                 }
-                if (call.Name == "external_project_open" && TryGetString(result, "rootId") is { } rootId)
+                if (toolName == "external_project_open" && TryGetString(result, "rootId") is { } rootId)
                 {
                     externalRoots.Enqueue($"{Limit(rootId, 64)}{subject}");
                     while (externalRoots.Count > 6)

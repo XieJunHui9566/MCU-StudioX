@@ -5,4 +5,5 @@ public sealed record ProjectTemplate(string Id, string DisplayName, string Descr
     TemplateBuild? Build = null, IReadOnlyDictionary<string, string>? Files = null, EspressifExampleTemplate? EspressifExample = null,
     MicroPythonProfile? MicroPython = null, Ag32LogicTemplate? Ag32Sources = null,
     IReadOnlyList<string>? ReplacesTemplates = null,
-    IReadOnlyList<DevelopmentComponentRequirement>? DevelopmentComponents = null);
+    IReadOnlyList<DevelopmentComponentRequirement>? DevelopmentComponents = null,
+    GraphicalConfigurationTemplate? GraphicalConfiguration = null, string? Mx251Configuration = null);

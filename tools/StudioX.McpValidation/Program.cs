@@ -320,7 +320,9 @@ try
     var reply = await agent.SendAsync(project, "读取工程信息");
     Check(reply.Text == "工程已读取" && fakeTransport.Requests.Count == 2 &&
         fakeTransport.Requests[0].Tools!.Any(tool => tool.Name == "project_info") &&
-        fakeTransport.Requests[0].Tools!.Any(tool => tool.Name == "project_edit_file") &&
+        fakeTransport.Requests[0].Tools!.Any(tool => tool.Name == AiToolCatalog.CallName) &&
+        fakeTransport.Requests[0].Tools!.Any(tool => tool.Name == AiToolCatalog.SearchName) &&
+        !fakeTransport.Requests[0].Tools!.Any(tool => tool.Name == "project_edit_file") &&
         fakeTransport.Requests[0].Tools!.All(tool => tool.Name != "propose_file_edit") &&
         fakeTransport.Requests[0].Messages.Any(message => message.Content?.Contains(
             "project-validation", StringComparison.Ordinal) == true) &&

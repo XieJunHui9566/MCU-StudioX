@@ -24,9 +24,9 @@ public sealed partial class DebugSessionService
 
     private async Task StartMon51CoreAsync(string port, int baud, string confirmedTarget, Mon51DownloadPreparation? preparation, CancellationToken token)
     {
-        if (confirmedTarget != "IAP15F2K61S2")
+        if (!StcMon51Targets.Supports(confirmedTarget))
         {
-            throw new StudioXException("MON51_TARGET", "请选择本次验证的 IAP15F2K61S2 仿真芯片；其它器件尚未完成监控适配验证。");
+            throw new StudioXException("MON51_TARGET", "请选择已适配的准确型号：" + StcMon51Targets.DisplayNames + "。");
         }
         var settings = new SerialSettings(port, baud);
         settings.Validate();
@@ -46,6 +46,10 @@ public sealed partial class DebugSessionService
             {
                 throw new StudioXException("MON51_PROJECT", "当前监控调试入口只适用于 STC SDCC 工程。");
             }
+            if (project.DeviceId != confirmedTarget)
+            {
+                throw new StudioXException("MON51_TARGET", "确认的实机型号与当前工程不一致；请使用对应准确型号的工程，未打开串口。");
+            }
             StcDebugArtifact? downloadArtifact = null;
             if (preparation is not null)
             {
@@ -56,7 +60,7 @@ public sealed partial class DebugSessionService
                 }
                 downloadArtifact = current.Artifact;
             }
-            var monitor = new Mon51DebugSession(dataDirectory) { UserDownloadRequested = preparation is not null };
+            var monitor = new Mon51DebugSession(dataDirectory, confirmedTarget) { UserDownloadRequested = preparation is not null };
             var transport = monitorTransportFactory?.Invoke(settings) ?? new SerialTransport(settings);
             // 连接快照会更新界面状态；先保留工程偏好，避免首次空快照覆盖已保存断点和观察项。
             var savedBreakpoints = breakpoints.ToArray();

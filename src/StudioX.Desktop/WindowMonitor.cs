@@ -33,8 +33,10 @@ internal static class WindowMonitor
         public NativeRect Monitor, Work;
         public uint Flags;
     }
+    [System.Runtime.InteropServices.DefaultDllImportSearchPaths(System.Runtime.InteropServices.DllImportSearchPath.System32)]
     [DllImport("user32.dll", ExactSpelling = true)]
     private static extern nint MonitorFromWindow(nint window, uint flags);
+    [System.Runtime.InteropServices.DefaultDllImportSearchPaths(System.Runtime.InteropServices.DllImportSearchPath.System32)]
     [DllImport("user32.dll", EntryPoint = "GetMonitorInfoW", ExactSpelling = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool GetMonitorInfo(nint monitor, ref MonitorInfo info);

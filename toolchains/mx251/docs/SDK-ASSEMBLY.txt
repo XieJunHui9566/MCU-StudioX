@@ -1,0 +1,52 @@
+MX251 独立开发 SDK 装配
+
+目标：同一份内容锁在不同目录装配出相同文件，不依赖 StudioX 服务或历史实验路径。
+这是开发目录装配入口，不生成安装程序，不替换用户工具，不授予 LST 资格。
+
+在仓库中执行 tools/Prepare-Mx251Sdk.py。Python（本次验收版本 3.14.3）仅为维护者装配工具，
+使用 SDK 编译工程只需 PowerShell 7、CMake 3.25+、Ninja 和 SDK 本身。
+
+输入 roots.json 恰好包含下列键；值为绝对路径或相对 roots.json 的路径。
+  toolchain            与目标 profile 锁匹配的基础工具、标准库和预处理器目录
+  profiles             两目标目录的父目录（每个目标有 profile.lock.json）
+  source               当前编译器完整有效源码状态
+  baseSource           配套标准库/汇编器/链接器所用的基础源码状态
+  upstreamSource       上游完整源码 ZIP，保留原文件内容与许可证
+  hostRecipe           显式参数的 BuildSource.py，不能依赖冻结对象或隐式父目录
+  upstreamProvenance   原始上游下载来源与哈希 JSON
+  dependencyProvenance 配套归档工具 DLL 的原始来源与哈希 JSON
+
+1. python tools/Prepare-Mx251Sdk.py --roots roots.json --record-lock inputs.lock.json
+2. 审核输入身份及 sources 对应关系；此锁是内容清单，不是身份签名。
+3. python tools/Prepare-Mx251Sdk.py --roots roots.json --lock inputs.lock.json --output <新目录>
+4. python tools/Prepare-Mx251Sdk.py --verify <新目录>
+
+运行入口及所有路径都在 sdk.json 中以相对路径记录；本机 roots.json 不进入 SDK。
+sdk.json 最后生成，失败会留下 ASSEMBLY-FAILED.txt 和原异常，不能继续消费失败目录。
+更换任一输入内容后，原锁拒绝装配；未知 profile、目标契约与库哈希不匹配也拒绝。
+产物使用独立文件副本，不通过硬链接修改冻结基线。不会打包 C251 或 STC-IDE。
+
+对应源码
+  sources/mx251-source.zip / compiler-current：当前 MX251 编译器有效源码。
+  同归档 / compiler-runtime-base：配套库及基础工具的源码状态。
+  同归档 / build/BuildSource.py：编译器/汇编器/链接器的显式源码构建入口。
+  sources/upstream-source.zip：原始上游完整源码，包括其他配套组件的源码与文档。
+  sources/input-lock.json：全部输入文件哈希；compiler-patches 保留历史演进补丁。
+  sources/*Provenance.json 与 toolchain/licenses：外部依赖来源及现存许可证。
+
+BuildSource.py 需要显式 --source --output --host-deps --gcc-bin --gawk --cmake --ninja。
+宿主编译器、bison/flex/m4、gawk 和其依赖由维护者配置，不由 SDK 自动下载。
+本入口保证 SDK 装配可重现；不把它等同于任意宿主版本下 EXE 字节完全相同。
+全运行库的可移植源码重建入口和外部 DLL 完整源包镜像仍需收拢，不能把本开发
+目录直接宣称为已经完成全部对外发行准备。现有运行库源文件及原始重建证据继续保留。
+
+验收采用现有固定完整工程、静态库与 ABI 组合，不创建有利的微型性能测试。
+保持 MX251 + CMake + Ninja；IDE 如需包装，应指向同一 build/qualified 入口。
+
+IDE 组件适配
+  SDK 原样放入组件的 sdk/ 目录，resourceDirectories 的 mx251-sdk 指向它。
+  build251 指向 SDK 的 buildScript，profile-<目标> 和 sdcc 基础资源指向 SDK 内路径。
+  component compilerId = mx251-v<SDK version>；组件三段版本独立由工程锁定。
+  SDK schema 1、buildChain、projectModule/buildScript、文件索引与目标锁是接口契约；
+  IDE 校验对应关系和哈希，不在源码中枚举编译器版本。未知 schema 明确拒绝。
+  这表示接口可消费，不表示 IDE 为任意导入的编译器自动授予实板或 LST 资格。

@@ -8,20 +8,36 @@ using StudioX.Packages;
 /// <summary>外部 stcgal 1.10 的受控串口下载；不把本机 Python 路径写进工程或开发环境组件。</summary>
 public sealed partial class StcIspService(ToolsetCatalog catalog, string runtimeDirectory, string dataDirectory)
 {
+    public ProjectClockService ProjectClocks { get; set; } = new();
     private readonly SemaphoreSlim gate = new(1, 1);
     private readonly string runtime = Path.GetFullPath(runtimeDirectory);
     private readonly string data = Path.GetFullPath(dataDirectory);
     private const string ToolSettingsName = "stc-isp-tool.json";
     private sealed record ToolSettings(string ProgrammerExecutable);
-    private sealed record PreviewInputs(StcIspPreview Preview, byte[] Image);
+    private sealed record PreviewInputs(StcIspPreview Preview, byte[] Image, string? ClockConfigurationSha256);
 
-    public Task<StcIspSettings> LoadSettingsAsync(string root, CancellationToken token = default) => StcIspSettings.ReadAsync(root, token);
+    public async Task<StcIspSettings> LoadSettingsAsync(string root, CancellationToken token = default)
+        => ApplyClock(await ProjectClocks.ReadAsync(root, token), await StcIspSettings.ReadAsync(root, token));
 
     public async Task SaveSettingsAsync(string root, StcIspSettings settings, CancellationToken token = default)
     {
         var capabilities = await GetCapabilitiesAsync(root, token);
         settings.ValidateFor(capabilities);
         var previous = await StcIspSettings.ReadAsync(root, token);
+        var clock = await ProjectClocks.ReadAsync(root, token);
+        if (clock.Managed)
+        {
+            var expected = ApplyClock(clock, previous);
+            if (settings.ClockMode != expected.ClockMode || settings.ClockFrequencyHz != expected.ClockFrequencyHz)
+            {
+                throw new StudioXException("STC_ISP_CLOCK_MANAGED", "时钟由图形配置托管；请前往时钟树修改，下载页仅保存串口与传输速度。");
+            }
+            settings = settings with
+            {
+                ClockMode = StcClockMode.Preserve,
+                ClockFrequencyHz = null
+            };
+        }
         if (previous == settings)
         {
             return;
@@ -169,7 +185,8 @@ public sealed partial class StcIspService(ToolsetCatalog catalog, string runtime
         }
         return new(root, preview.ExpectedModel, preview.ExpectedCodeBytes, preview.Port, preview.SourceImage, image,
             preview.ImageSha256, preview.DataBytes, preview.HighestAddress,
-            preview.Tool.PythonExecutable!, script, Path.Combine(session, "stcgal.log"), settings);
+            preview.Tool.PythonExecutable!, script, Path.Combine(session, "stcgal.log"), settings,
+            ClockConfigurationSha256: inputs.ClockConfigurationSha256);
     }
 
     private async Task<PreviewInputs> PreviewCoreAsync(string directory, StcIspSettings settings, CancellationToken token)
@@ -178,7 +195,9 @@ public sealed partial class StcIspService(ToolsetCatalog catalog, string runtime
         var (project, device) = await ReadProjectDeviceAsync(root, token);
         var buildSettings = await ReadOrdinaryIspBuildSettingsAsync(root, token);
         settings.ValidateFor(StcIspCapabilities.For(device), requirePort: true);
-        var saved = await StcIspSettings.ReadAsync(root, token);
+        var clock = await ProjectClocks.ReadAsync(root, token);
+        clock.RequireReady();
+        var saved = await LoadSettingsAsync(root, token);
         if (saved != settings)
         {
             throw new StudioXException("STC_ISP_BUILD", "STC ISP 设置尚未按工程保存，请先保存；时钟设置变化后还需重新编译。");
@@ -221,7 +240,7 @@ public sealed partial class StcIspService(ToolsetCatalog catalog, string runtime
             throw new StudioXException("STC_ISP_TOOL", tool.Message);
         }
         return new(new(root, device.Id, device.FlashBytes, settings.Port.ToUpperInvariant(), sourceImage,
-            hash, bytes.Length, hex.DataBytes, hex.HighestAddress, settings, tool), bytes);
+            hash, bytes.Length, hex.DataBytes, hex.HighestAddress, settings, tool), bytes, clock.ConfigurationSha256);
     }
 
     /// <summary>便捷入口；调用方须在启动前就固件、目标和全片擦除取得用户确认。</summary>
@@ -286,7 +305,7 @@ public sealed partial class StcIspService(ToolsetCatalog catalog, string runtime
         finally { gate.Release(); }
     }
 
-    private static async Task VerifyPreparationAsync(StcIspPreparation prepared, CancellationToken token)
+    private async Task VerifyPreparationAsync(StcIspPreparation prepared, CancellationToken token)
     {
         var root = Path.GetFullPath(prepared.ProjectRoot);
         var (project, device) = await ReadProjectDeviceAsync(root, token);
@@ -297,7 +316,16 @@ public sealed partial class StcIspService(ToolsetCatalog catalog, string runtime
         {
             throw new StudioXException("STC_ISP_PREPARE", "下载准备的芯片型号、容量或串口与当前工程不符。");
         }
-        var saved = await StcIspSettings.ReadAsync(root, token);
+        var clock = await ProjectClocks.ReadAsync(root, token);
+        if (!prepared.MonitorSetup)
+        {
+            clock.RequireReady();
+        }
+        if (!prepared.MonitorSetup && prepared.ClockConfigurationSha256 != clock.ConfigurationSha256)
+        {
+            throw new StudioXException("STC_ISP_PREPARE", "确认后的图形时钟配置已变化，请重新编译和准备下载。");
+        }
+        var saved = await LoadSettingsAsync(root, token);
         if (!prepared.MonitorSetup && saved != prepared.Settings)
         {
             throw new StudioXException("STC_ISP_PREPARE", "确认后串口、速度或时钟选项已变化，请重新准备并确认下载。");
@@ -324,7 +352,7 @@ public sealed partial class StcIspService(ToolsetCatalog catalog, string runtime
         if (prepared.MonitorSetup)
         {
             ValidateMonitorTarget(device, prepared.Settings);
-            StcMonitorImage.ValidateSetup(bytes);
+            StcMonitorImage.ValidateSetup(bytes, device.Id);
             if (prepared.DataBytes != 61440 || prepared.HighestAddress != 0xefff)
             {
                 throw new StudioXException("STC_ISP_PREPARE", "监控制作范围被修改。");
@@ -368,7 +396,7 @@ public sealed partial class StcIspService(ToolsetCatalog catalog, string runtime
             throw new StudioXException("STC_ISP_DEVICE", "当前工程不是 STC 8 位 SDCC 工程。");
         }
         var pack = await JsonStore.ReadAsync<PackManifest>(PathBoundary.Resolve(root, "device/manifest.json"), token);
-        if (pack.Id != project.PackId || pack.Id != "stc.stc8" || pack.Version != project.PackVersion ||
+        if (pack.Id != project.PackId || pack.Id is not ("stc.stc8" or "stc.iap15l2k61s2.config-preview") || pack.Version != project.PackVersion ||
             string.IsNullOrWhiteSpace(pack.Vendor) || !pack.Vendor.StartsWith("STC", StringComparison.OrdinalIgnoreCase))
         {
             throw new StudioXException("STC_ISP_DEVICE", "工程与 STC 器件包信息不一致。");

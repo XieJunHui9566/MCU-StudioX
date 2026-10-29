@@ -20,6 +20,8 @@ node_modules/
 tmp/
 .git-credentials
 *.pem
+# 发布目录验签只嵌入公钥；私钥继续由上面的通配规则排除。
+!src/StudioX.Application/Distribution/publisher.pem
 *.key
 *.sqlite
 *.db

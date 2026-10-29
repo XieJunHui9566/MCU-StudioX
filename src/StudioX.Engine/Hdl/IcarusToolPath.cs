@@ -25,6 +25,7 @@ internal static class IcarusToolPath
         return native;
     }
 
+    [System.Runtime.InteropServices.DefaultDllImportSearchPaths(System.Runtime.InteropServices.DllImportSearchPath.System32)]
     [DllImport("kernel32.dll", EntryPoint = "GetShortPathNameW", CharSet = CharSet.Unicode, SetLastError = true)]
     private static extern uint GetShortPathName(string path, StringBuilder shortPath, uint length);
 }

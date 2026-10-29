@@ -74,6 +74,7 @@ internal static class EspressifLanguageAliasChecks
         return count > 0 && count < result.Capacity ? result.ToString() : path;
     }
 
+    [System.Runtime.InteropServices.DefaultDllImportSearchPaths(System.Runtime.InteropServices.DllImportSearchPath.System32)]
     [DllImport("kernel32.dll", EntryPoint = "GetShortPathNameW", CharSet = CharSet.Unicode, SetLastError = true)]
     private static extern uint GetShortPathName(string path, StringBuilder result, uint capacity);
 }

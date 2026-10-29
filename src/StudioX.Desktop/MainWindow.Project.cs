@@ -24,6 +24,7 @@ public partial class MainWindow
             return;
         }
         await projectTransitions.StopCurrentAsync(token);
+        await services.McuCodeGeneration.RecoverAsync(directory, token);
         CancelBuildMemoryRefresh();
         // 官方 SDK 示例保留原文件名和目录；由创建记录指定入口，旧工程继续使用原有默认位置。
         var mainPath = project.EntryFile ?? (project.Kind == ProjectKind.CubeMx ? "Core/Src/main.c" : "src/main.c");
@@ -54,13 +55,13 @@ public partial class MainWindow
         WindowProjectTitle.Text = project.Name;
         Title = project.Name + " — MCU StudioX";
         BuildConfiguration.Text = project.Kind == ProjectKind.Zephyr
-            ? project.Name + " · Zephyr 实验模式"
+                ? project.Name + " · Zephyr"
             : project.Name + " · " + (project.CubeMx?.ConfigurePreset ?? project.CubeMx?.BuildType ?? "Debug");
-        DeviceLabel.Text = project.Kind == ProjectKind.Zephyr
+        DeviceLabel.Text = IsLegacyZephyrProject
             ? "板级目标 / " + project.Zephyr!.BoardTarget
             : "器件 / " + project.DeviceId;
         ToolsetLabel.Text = project.Kind == ProjectKind.Zephyr
-            ? "Zephyr " + project.Zephyr!.ZephyrVersion + " · 实验模式"
+            ? "Zephyr " + project.Zephyr!.ZephyrVersion + " · " + project.DeviceId
             : $"开发环境组件 / {project.ToolsetId} {project.ToolsetVersion}";
         ApplyDownloadConfiguration(await services.Downloads.ConfigurationAsync(directory, token));
         if (source is not null)
@@ -86,7 +87,19 @@ public partial class MainWindow
             return;
         }
         MicroPythonPanel.SetProject(null, null);
-        if (project.Kind != ProjectKind.Zephyr)
+        if (project.Kind == ProjectKind.Arduino)
+        {
+            BuildConfiguration.Text = project.Name + " · Arduino";
+            DeviceLabel.Text = "开发板 / " + StudioX.Engine.Arduino.ArduinoBoard.Require(project.Arduino!.BoardId).DisplayName;
+            ToolsetLabel.Text = project.Arduino!.Platform.DisplayName + " / CLI " + StudioX.Engine.Arduino.ArduinoPlatform.CliVersion;
+            BuildMemory.SetMessage("Arduino 构建输出包含 Flash / RAM 占用；尚未进行实板验证。");
+        }
+        if (project.Kind == ProjectKind.Pic)
+        {
+            BuildConfiguration.Text = project.Name + " · PIC / XC8 C99";
+            BuildMemory.SetMessage(project.Pic!.CapacityDescription + "；占用见 XC8 输出。当前支持 HEX 导出，尚未接入烧录与调试。");
+        }
+        if (project.Kind is not (ProjectKind.Zephyr or ProjectKind.Arduino or ProjectKind.Pic))
         {
             QueueBuildMemoryRefresh(directory);
         }
@@ -95,7 +108,7 @@ public partial class MainWindow
         await ReloadPluginWorkspaceAsync(token);
         if (project.Kind == ProjectKind.Zephyr)
         {
-            BuildMemory.SetMessage("Zephyr 实验模式：板级构建尚待验证。");
+            BuildMemory.SetMessage(IsLegacyZephyrProject ? "历史实验工程仅支持打开和编辑。" : "Zephyr 存储区占用见构建输出的 Memory region 表。");
             var boardDts = await services.ZephyrProjects.FindBoardDevicetreeAsync(directory, project, token);
             ZephyrDeviceTreeButton.IsEnabled = boardDts is not null;
             if (boardDts is not null)
@@ -104,10 +117,13 @@ public partial class MainWindow
             }
             else
             {
-                Status.Text = "已打开 " + project.Name + " · Zephyr 实验模式；此工程没有板级 DTS 源文件。";
+                Status.Text = "已打开 " + project.Name + " · Zephyr；此工程没有板级 DTS 源文件。";
             }
             QueueOutlineRefresh(clear: true);
-            return;
+            if (IsLegacyZephyrProject || !File.Exists(Path.Combine(directory, ".build/compile_commands.json")))
+            {
+                return;
+            }
         }
         Status.Text = "正在准备代码提示…";
         try
@@ -220,17 +236,18 @@ public partial class MainWindow
         projectActionsBusy = busy;
         var available = projectDirectory is not null && !busy;
         VerifyProjectComponentsButton.IsEnabled = available;
-        BuildButton.IsEnabled = BuildMenu.IsEnabled = available && !IsZephyrProject && !IsMicroPythonProject;
+        BuildButton.IsEnabled = BuildMenu.IsEnabled = available && ProjectCapabilities.For(currentProjectManifest).Build;
         CloseProjectMenu.IsEnabled = CloseProjectButton.IsEnabled = available;
         DownloadButton.IsEnabled = DownloadMenu.IsEnabled = available && supportsDownload && (!IsMicroPythonProject || !MicroPythonPanel.IsBusy);
         MicroPythonRunButton.Visibility = IsMicroPythonProject ? Visibility.Visible : Visibility.Collapsed;
         MicroPythonRunButton.IsEnabled = available && IsMicroPythonProject && !MicroPythonPanel.IsBusy;
         MicroPythonRunLabel.Text = MicroPythonPanel.IsScriptRunning ? "运行中…" : "开始运行";
-        DownloadProbePicker.IsEnabled = available && supportsDownload && !IsStcSdccProject && !IsEspressifProject && !IsZephyrProject && !IsMicroPythonProject;
+        DownloadProbePicker.IsEnabled = available && supportsDownload && !IsPicProject && !IsArduinoProject && !IsMx251Project && !IsStcSdccProject && !IsEspressifProject && !IsZephyrProject && !IsMicroPythonProject;
         DownloadSettingsButton.IsEnabled = DownloadSettingsMenu.IsEnabled = available && supportsDownload;
         CancelButton.IsEnabled = !GitGraph.IsMutating && (operationCancellation is not null || buildMemoryCancellation is not null ||
             IsMicroPythonProject && (MicroPythonPanel.IsBusy || services.MicroPython.IsConnected));
         UpdateStcIspControls();
+        UpdateMx251IspControls();
         UpdateDebugControls();
         RefreshAg32LogicUi(currentProjectManifest, busy);
         RefreshPluginCommandState();

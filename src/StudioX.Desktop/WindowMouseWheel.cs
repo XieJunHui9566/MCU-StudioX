@@ -55,6 +55,13 @@ internal static class WindowMouseWheel
         {
             return false;
         }
+        for (var item = hit; item is not null; item = Parent(item))
+        {
+            if (item is PluginMcuDiagramViewport { IsVisible: true, IsEnabled: true } viewport)
+            {
+                return viewport.ZoomWheel(hit, delta, Mouse.GetPosition(viewport));
+            }
+        }
         if (window is MainWindow main && main.HandleTextMouseWheel(hit, delta, control))
         {
             return true;

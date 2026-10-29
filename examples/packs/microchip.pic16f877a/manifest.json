@@ -1,0 +1,26 @@
+{
+  "formatVersion": 1,
+  "id": "microchip.pic16f877a",
+  "version": "0.1.0",
+  "displayName": "Microchip PIC16F877A · XC8",
+  "vendor": "Microchip",
+  "devices": [{
+    "id": "PIC16F877A",
+    "displayName": "PIC16F877A · 8192×14-bit Flash / 368 B RAM",
+    "architecture": "pic14",
+    "flashOrigin": 0,
+    "flashBytes": 14336,
+    "ramOrigin": 0,
+    "ramBytes": 368,
+    "toolsetId": "microchip.xc8",
+    "toolsetVersion": "4.0.0",
+    "compilerId": "xc8-4.00-pic",
+    "cpuFlags": [], "defines": [], "includeDirectories": [], "sources": [],
+    "linkerScript": "", "compileOptions": [], "linkOptions": [],
+    "pic": { "compilerTarget": "16F877A", "programWords": 8192, "programWordBits": 14, "eepromBytes": 256, "dfpVersion": "1.9.176" },
+    "templates": [
+      { "id": "xc8-basic", "displayName": "XC8 基础 C（板级配置待设置）", "description": "不假设晶振和外部引脚；使用软件计数器及 CLRWDT。配置位尚未设置，当前仅用于离线编译和编辑。", "entryFile": "templates/basic.c" },
+      { "id": "xc8-gpio-4mhz", "displayName": "XC8 GPIO 示例（外部 4 MHz / RD0）", "description": "明确使用外部 4 MHz 晶振、XT 模式和 RD0 输出；必须先核对实际板级连接，RD0 不代表开发板自带 LED。", "entryFile": "templates/gpio.c" }
+    ]
+  }]
+}

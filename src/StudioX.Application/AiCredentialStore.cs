@@ -8,6 +8,15 @@ using StudioX.Foundation;
 /// <summary>API Key 只保存于当前 Windows 用户的凭据管理器，不写入工程、JSON 或日志。</summary>
 public sealed class AiCredentialStore
 {
+    private readonly string? namedTarget;
+    public AiCredentialStore()
+    {
+    }
+    internal AiCredentialStore(string namedTarget)
+    {
+        this.namedTarget = namedTarget;
+    }
+
     private const uint Generic = 1;
     private const uint LocalMachine = 2;
     private const int NotFound = 1168;
@@ -128,8 +137,12 @@ public sealed class AiCredentialStore
         throw NativeError("AI_CREDENTIAL_READ", "无法读取 AI API Key。");
     }
 
-    private static string TargetFor(string baseUrl)
+    private string TargetFor(string baseUrl)
     {
+        if (namedTarget is not null)
+        {
+            return namedTarget;
+        }
         var endpoint = AiSettingsService.CompletionUri(new AiSettings(BaseUrl: baseUrl));
         var hash = SHA256.HashData(Encoding.UTF8.GetBytes(endpoint.AbsoluteUri));
         return "MCUStudioX:AI:" + Convert.ToHexString(hash);
@@ -163,18 +176,22 @@ public sealed class AiCredentialStore
         [MarshalAs(UnmanagedType.LPWStr)] public string? UserName;
     }
 
+    [System.Runtime.InteropServices.DefaultDllImportSearchPaths(System.Runtime.InteropServices.DllImportSearchPath.System32)]
     [DllImport("Advapi32.dll", EntryPoint = "CredWriteW", CharSet = CharSet.Unicode, SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool CredWrite(ref NativeCredential credential, uint flags);
 
+    [System.Runtime.InteropServices.DefaultDllImportSearchPaths(System.Runtime.InteropServices.DllImportSearchPath.System32)]
     [DllImport("Advapi32.dll", EntryPoint = "CredReadW", CharSet = CharSet.Unicode, SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool CredRead(string target, uint type, uint flags, out IntPtr credential);
 
+    [System.Runtime.InteropServices.DefaultDllImportSearchPaths(System.Runtime.InteropServices.DllImportSearchPath.System32)]
     [DllImport("Advapi32.dll", EntryPoint = "CredDeleteW", CharSet = CharSet.Unicode, SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool CredDelete(string target, uint type, uint flags);
 
+    [System.Runtime.InteropServices.DefaultDllImportSearchPaths(System.Runtime.InteropServices.DllImportSearchPath.System32)]
     [DllImport("Advapi32.dll", EntryPoint = "CredFree")]
     private static extern void CredFree(IntPtr credential);
 }

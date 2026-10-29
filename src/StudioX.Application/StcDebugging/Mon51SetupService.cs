@@ -11,7 +11,7 @@ public sealed class Mon51SetupService(StcIspService isp, DeviceHub devices, Pack
     public async Task<IReadOnlyList<Mon51FirmwareSource>> ListFirmwareSourcesAsync(string project, CancellationToken token = default)
     {
         var manifest = await ProjectService.ReadAsync(project, token);
-        if (manifest.DeviceId != "IAP15F2K61S2" || manifest.ToolsetId != "stc.sdcc")
+        if (!StcMon51Targets.Supports(manifest.DeviceId) || manifest.ToolsetId != "stc.sdcc")
         {
             return [];
         }
@@ -38,9 +38,11 @@ public sealed class Mon51SetupService(StcIspService isp, DeviceHub devices, Pack
         {
             throw new StudioXException("MON51_SETUP_SESSION", "请先结束当前调试再制作仿真芯片。");
         }
-        if (confirmedTarget != "IAP15F2K61S2" || source.DeviceId != confirmedTarget)
+        var projectManifest = await ProjectService.ReadAsync(project, token);
+        if (!StcMon51Targets.Supports(confirmedTarget) || source.DeviceId != confirmedTarget ||
+            projectManifest.DeviceId != confirmedTarget || projectManifest.ToolsetId != "stc.sdcc")
         {
-            throw new StudioXException("MON51_SETUP_TARGET", "请明确确认连接的是 IAP15F2K61S2，并选择同型号监控固件。");
+            throw new StudioXException("MON51_SETUP_TARGET", "请确认实机、当前工程和监控固件是同一准确型号：" + StcMon51Targets.DisplayNames + "。F/L 固件不能互换。");
         }
         var selected = (await packs.ListCatalogAsync(token)).SingleOrDefault(p => p.Manifest.Id == source.PackId && p.Manifest.Version == source.PackVersion);
         if (selected is null || selected.ContentHash != source.PackContentHash)
@@ -56,21 +58,22 @@ public sealed class Mon51SetupService(StcIspService isp, DeviceHub devices, Pack
             throw new StudioXException("MON51_SETUP_FIRMWARE", "器件包监控固件不在已核对的制作范围内。");
         }
         var bytes = await File.ReadAllBytesAsync(PathBoundary.Resolve(verified.RootDirectory, firmware.ImageFile), token);
-        StcMonitorImage.ValidateSetup(bytes);
+        StcMonitorImage.ValidateSetup(bytes, confirmedTarget);
         var prepared = await isp.PrepareMonitorAsync(project, port, bytes, token);
         await JsonStore.WriteAsync(Path.Combine(Path.GetDirectoryName(prepared.Image)!, "monitor-source.json"), source, token);
         return prepared;
     }
 
-    private static bool IsSupported(DeviceDefinition device) => device is
+    private static bool IsSupported(DeviceDefinition device) => StcMon51Targets.Supports(device.Id) && device is
     {
-        Id: "IAP15F2K61S2", Architecture: "mcs51", FlashBytes: 62464,
+        Architecture: "mcs51", ToolsetId: "stc.sdcc", FlashBytes: 62464, RamBytes: 2048,
         MonitorFirmware:
         {
-            Id: "stc.mon51.iap15f2k61s2", Protocol: "stc-mon51-encoded", Version: "2.5.0", ImageBytes: 61440,
-            BootloaderVersion: StcMonitorImage.Bootloader, BootloaderStatus: 0x70, ImageSha256: StcMonitorImage.SetupSha256
+            Protocol: "stc-mon51-encoded", Version: "2.5.0", ImageBytes: 61440,
+            BootloaderVersion: StcMonitorImage.Bootloader, BootloaderStatus: 0x70
         }
-    };
+    } && device.MonitorFirmware.Id == "stc.mon51." + device.Id.ToLowerInvariant() &&
+        device.MonitorFirmware.ImageSha256 == StcMon51Targets.SetupSha256(device.Id);
 
     public async Task<StcIspReport> ExecuteAsync(StcIspPreparation prepared, IProgress<string>? output, CancellationToken token = default)
     {

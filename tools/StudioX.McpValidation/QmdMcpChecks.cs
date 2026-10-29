@@ -17,23 +17,27 @@ internal static class QmdMcpChecks
             directory = "src",
             maxResults = 5
         });
-        var first = await session.CallToolAsync("project_qmd_search", request);
-        if (first.Contains("MCP_QMD_NOT_INSTALLED", StringComparison.Ordinal))
+        string first;
+        var previousPath = Environment.GetEnvironmentVariable("PATH");
+        try
         {
-            check(true, "QMD 缺失时返回可操作的安装提示；无需联网或下载模型");
-            return;
+            Environment.SetEnvironmentVariable("PATH", "");
+            first = await session.CallToolAsync("project_qmd_search", request);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("PATH", previousPath);
         }
         using var firstJson = JsonDocument.Parse(first);
         var firstRoot = firstJson.RootElement;
         check(firstRoot.GetProperty("results").EnumerateArray().Any(item =>
                 item.GetProperty("path").GetString() == "src/qmd_led_fixture.c" &&
                 item.GetProperty("snippet").GetString()!.Contains("GPIO_PIN_9", StringComparison.Ordinal)) &&
-            !firstRoot.GetProperty("reusedIndex").GetBoolean(),
-            "QMD BM25 在临时工程中建立有界索引并返回相对路径、行号和片段");
+            !firstRoot.GetProperty("reusedIndex").GetBoolean() &&
+            firstRoot.GetProperty("engine").GetString() == "studiox-csharp-bm25",
+            "内置 BM25 在空 PATH 环境仍返回源码相对路径、行号和片段，不启动 Node 或 QMD");
 
         var indexRoot = Path.Combine(services.DataDirectory, "qmd-bm25");
-        var indexDb = Directory.EnumerateFiles(indexRoot, "studiox.sqlite", SearchOption.AllDirectories)
-            .Single();
         var snapshotState = Directory.EnumerateFiles(indexRoot, "snapshot.json", SearchOption.AllDirectories)
             .Single();
         var modified = File.GetLastWriteTimeUtc(snapshotState);
@@ -41,8 +45,9 @@ internal static class QmdMcpChecks
         using var secondJson = JsonDocument.Parse(second);
         check(secondJson.RootElement.GetProperty("reusedIndex").GetBoolean() &&
             secondJson.RootElement.GetProperty("results").GetArrayLength() > 0 &&
-            File.GetLastWriteTimeUtc(snapshotState) == modified && File.Exists(indexDb),
-            "未变更工程的第二次 QMD 搜索复用索引，不再调用 update");
+            File.GetLastWriteTimeUtc(snapshotState) == modified &&
+            !Directory.EnumerateFiles(indexRoot, "*.sqlite", SearchOption.AllDirectories).Any(),
+            "未变更工程复用安全快照，不写 SQLite 或调用外部 update");
         var indexBytes = Directory.EnumerateFiles(indexRoot, "*", SearchOption.AllDirectories)
             .Sum(file => new FileInfo(file).Length);
         check(!Directory.EnumerateDirectories(indexRoot, "models", SearchOption.AllDirectories).Any() &&
@@ -86,5 +91,27 @@ internal static class QmdMcpChecks
             changedJson.RootElement.GetProperty("results").EnumerateArray().Any(item =>
                 item.GetProperty("path").GetString() == "src/qmd_led_fixture.c"),
             "源码修改后 QMD 快照重新索引并检索新内容");
+
+        File.Delete(fixture);
+        var deleted = await session.CallToolAsync("project_qmd_search", JsonSerializer.Serialize(new
+        {
+            query = "studioxQmdFixture",
+            directory = "src"
+        }));
+        using var deletedJson = JsonDocument.Parse(deleted);
+        check(deletedJson.RootElement.GetProperty("results").GetArrayLength() == 0 &&
+            !deletedJson.RootElement.GetProperty("reusedIndex").GetBoolean(),
+            "已删除源码不会继续出现在检索缓存中");
+        var punctuation = await session.CallToolAsync("project_qmd_search", """{"query":"!!!","directory":"src"}""");
+        check(punctuation.Contains("MCP_QMD_QUERY", StringComparison.Ordinal), "纯标点查询返回明确诊断");
+
+        await File.WriteAllTextAsync(Path.Combine(project, "src", "rank_high.c"), "BM25FixtureTerm BM25FixtureTerm filler\n");
+        await File.WriteAllTextAsync(Path.Combine(project, "src", "rank_low.c"), "BM25FixtureTerm filler other\n");
+        var ranking = await session.CallToolAsync("project_qmd_search", """{"query":"bm25fixtureterm","directory":"src","maxResults":2}""");
+        using var rankingJson = JsonDocument.Parse(ranking);
+        var ranked = rankingJson.RootElement.GetProperty("results");
+        check(ranked.GetArrayLength() == 2 && ranked[0].GetProperty("path").GetString() == "src/rank_high.c" &&
+            ranked[0].GetProperty("score").GetDouble() > ranked[1].GetProperty("score").GetDouble(),
+            "BM25 不区分关键词大小写，同长度文档按实际词频排序");
     }
 }

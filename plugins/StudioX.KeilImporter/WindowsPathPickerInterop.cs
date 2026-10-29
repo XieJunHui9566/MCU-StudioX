@@ -10,22 +10,30 @@ internal static class WindowsPathPickerInterop
     internal static readonly Guid DialogInterface = new("42F85136-DB7E-439C-85F1-E4075D135FC8");
     internal static readonly Guid ShellItemInterface = new("43826D1E-E718-42EE-BC55-A1E261C37BFE");
 
+    [System.Runtime.InteropServices.DefaultDllImportSearchPaths(System.Runtime.InteropServices.DllImportSearchPath.System32)]
     [DllImport("ole32.dll", ExactSpelling = true)]
     internal static extern int CoInitializeEx(nint reserved, uint options);
+    [System.Runtime.InteropServices.DefaultDllImportSearchPaths(System.Runtime.InteropServices.DllImportSearchPath.System32)]
     [DllImport("ole32.dll", ExactSpelling = true)]
     internal static extern void CoUninitialize();
+    [System.Runtime.InteropServices.DefaultDllImportSearchPaths(System.Runtime.InteropServices.DllImportSearchPath.System32)]
     [DllImport("ole32.dll", ExactSpelling = true)]
     internal static extern int CoCreateInstance(in Guid classId, nint outer, uint context, in Guid interfaceId, [MarshalAs(UnmanagedType.Interface)] out IFileDialog dialog);
+    [System.Runtime.InteropServices.DefaultDllImportSearchPaths(System.Runtime.InteropServices.DllImportSearchPath.System32)]
     [DllImport("shell32.dll", CharSet = CharSet.Unicode, ExactSpelling = true)]
     internal static extern int SHCreateItemFromParsingName(string path, nint context, in Guid interfaceId, [MarshalAs(UnmanagedType.Interface)] out IShellItem item);
+    [System.Runtime.InteropServices.DefaultDllImportSearchPaths(System.Runtime.InteropServices.DllImportSearchPath.System32)]
     [DllImport("user32.dll", ExactSpelling = true)]
     internal static extern nint GetForegroundWindow();
     internal delegate void TimerCallback(nint window, uint message, nuint timer, uint time);
+    [System.Runtime.InteropServices.DefaultDllImportSearchPaths(System.Runtime.InteropServices.DllImportSearchPath.System32)]
     [DllImport("user32.dll", ExactSpelling = true, SetLastError = true)]
     internal static extern nuint SetTimer(nint window, nuint id, uint milliseconds, TimerCallback callback);
+    [System.Runtime.InteropServices.DefaultDllImportSearchPaths(System.Runtime.InteropServices.DllImportSearchPath.System32)]
     [DllImport("user32.dll", ExactSpelling = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
     internal static extern bool KillTimer(nint window, nuint id);
+    [System.Runtime.InteropServices.DefaultDllImportSearchPaths(System.Runtime.InteropServices.DllImportSearchPath.System32)]
     [DllImport("user32.dll", CharSet = CharSet.Unicode, ExactSpelling = true, SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
     internal static extern bool PostMessageW(nint window, uint message, nuint wParam, nint lParam);

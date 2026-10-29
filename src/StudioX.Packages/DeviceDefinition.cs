@@ -9,4 +9,4 @@ public sealed record DeviceDefinition(string Id, string DisplayName, string Arch
     IReadOnlyList<ProjectTemplate> Templates, OpenOcdDefinition? OpenOcd = null,
     EspressifDeviceDefinition? Espressif = null,
     IReadOnlyList<DevelopmentComponentRequirement>? DevelopmentComponents = null,
-    MonitorFirmwareDefinition? MonitorFirmware = null);
+    MonitorFirmwareDefinition? MonitorFirmware = null, PicDeviceDefinition? Pic = null);

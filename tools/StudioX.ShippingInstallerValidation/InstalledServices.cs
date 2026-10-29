@@ -135,4 +135,19 @@ internal sealed class InstalledServices
         }
         finally { foreach (var (name, value) in previous) { Environment.SetEnvironmentVariable(name, value); } }
     }
+
+    internal async Task CaptureMemoryAsync(string project, string data, string output)
+    {
+        var memory = New("StudioX.Engine.BuildMemoryService", Services(data).Tools);
+        var report = await CallAsync(memory, "ReadAsync", project);
+        var snapshot = await CallAsync(New("StudioX.Application.BuildHistoryService", data, memory), "CaptureAsync", project);
+        FileEvidence.Write(output, new
+        {
+            passed = snapshot is not null,
+            report,
+            snapshot,
+            bindings = Bindings(),
+            hardware = false
+        });
+    }
 }

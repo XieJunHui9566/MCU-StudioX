@@ -19,11 +19,12 @@ public sealed class AgentSkillCatalog
     private readonly string projectSkillsRoot;
     private readonly string userSkillsRoot;
     private readonly string? bundledSkillsRoot;
+    private readonly string? importedSkillsRoot;
     private readonly bool includeProjectSkills;
 
     public AgentSkillCatalog(string projectPath, string? userSkillsRoot = null,
         string? projectSkillsRoot = null, bool includeProjectSkills = false,
-        string? bundledSkillsRoot = null)
+        string? bundledSkillsRoot = null, string? importedSkillsRoot = null)
     {
         if (string.IsNullOrWhiteSpace(projectPath) || !Path.IsPathFullyQualified(projectPath))
         {
@@ -44,6 +45,7 @@ public sealed class AgentSkillCatalog
             ? Path.Combine(userHome, ".agents", "skills")
             : RequireAbsoluteRoot(userSkillsRoot);
         this.bundledSkillsRoot = bundledSkillsRoot is null ? null : RequireAbsoluteRoot(bundledSkillsRoot);
+        this.importedSkillsRoot = importedSkillsRoot is null ? null : RequireAbsoluteRoot(importedSkillsRoot);
         this.includeProjectSkills = includeProjectSkills;
     }
 
@@ -115,6 +117,10 @@ public sealed class AgentSkillCatalog
             ReadScope(bundledSkillsRoot, "bundled", entries, diagnostics);
         }
         ReadScope(userSkillsRoot, "user", entries, diagnostics);
+        if (importedSkillsRoot is not null)
+        {
+            ReadScope(importedSkillsRoot, "imported", entries, diagnostics);
+        }
         // 同名项目技能覆盖用户技能，符合 Agent Skills 的工程级优先规则。
         // 工程内文件可来自不可信仓库；只有宿主显式信任后才纳入发现和读取。
         if (includeProjectSkills)

@@ -46,6 +46,10 @@ public partial class MainWindow
 
     private void InitializePlugins()
     {
+        services.ProjectClocks.HasPendingChangesAsync = (root, token) => Dispatcher.InvokeAsync(() =>
+            projectDirectory == root && (editorDocuments.Any(document => document.Source.RelativePath == "device.mcuconfig" && document.IsDirty) ||
+                pluginPanels.Values.SelectMany(panel => panel.Renderer.ConfigurationViews).Any(view => view.HasChanges)),
+            DispatcherPriority.Normal, token).Task;
         PluginManager.Attach(services.PluginManager);
         PluginManager.WorkspaceChangedAsync = ReloadPluginSessionsAsync;
         PluginManager.CancelCommandRequested = () => pluginInvocationCancellation?.Cancel();
@@ -162,7 +166,7 @@ public partial class MainWindow
                 PluginManager.Log(diagnostic);
             }
             PluginManager.WorkspaceHint.Text = workspace.Contributions.Count == 0
-                ? "没有运行中的通用插件；可安装后显式启用。"
+                ? "当前工程没有匹配且已启用的插件；已安装插件可在管理页查看。"
                 : $"已加载 {workspace.Contributions.Count} 个插件；" + (pluginActivities.Count > 0
                     ? $"其中 {pluginActivities.Count} 个在左侧注册了独立入口。" : "面板显示在此页面。");
         }
@@ -316,7 +320,7 @@ public partial class MainWindow
             active.Id == pluginId && active.Contribution.Panels.Length > 0 && active.Contribution.Commands.Any(command =>
                 command.Id == commandId && command.Placement is "tools" or "palette")))
         {
-            ShowDocument(activity.Tab);
+            ShowPluginActivity(pluginId, activity.Tab);
         }
         var lifetime = ReferenceEquals(workspace, pluginApplication) ? pluginApplicationCancellation : pluginWorkspaceCancellation;
         if (lifetime is null)
@@ -329,7 +333,13 @@ public partial class MainWindow
         RefreshPluginCommandState();
         try
         {
-            pluginInvocationTask = workspace.InvokeAsync(pluginId, "command", commandId, arguments, cancellation.Token);
+            pluginInvocationTask = arguments.ValueKind == JsonValueKind.Object && arguments.TryGetProperty("action", out var action) && action.GetString() == "generate" &&
+                workspace.Contributions.Any(active => active.Id == pluginId && active.Manifest.Capabilities.Contains("mcuCodeGenerationV1", StringComparer.Ordinal))
+                ? GenerateMcuCodeAsync(workspace, pluginId, commandId, cancellation.Token)
+                : arguments.ValueKind == JsonValueKind.Object && arguments.TryGetProperty("action", out var saveAction) && saveAction.GetString() == "save" &&
+                    workspace.Contributions.Any(active => active.Id == pluginId && active.Manifest.Capabilities.Contains("mcuConfigurationSaveV1", StringComparer.Ordinal))
+                ? SaveMcuConfigurationAsync(workspace, pluginId, commandId, cancellation.Token)
+                : workspace.InvokeAsync(pluginId, "command", commandId, arguments, cancellation.Token);
             await pluginInvocationTask;
         }
         catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
@@ -342,6 +352,8 @@ public partial class MainWindow
         }
         finally
         {
+            // 命令结束前先应用已到达的面板，避免重新启用按键后才用旧结果覆盖下一次输入。
+            FlushPluginPanels();
             pluginInvocationCancellation = null;
             pluginInvocationSession = null;
             RefreshPluginCommandState();
@@ -448,16 +460,20 @@ public partial class MainWindow
         if (!pluginPanels.TryGetValue(key, out var existing))
         {
             var pluginId = key[..key.IndexOf('/')];
-            existing = (new PluginPanelRenderer((command, arguments) => InvokePluginCommandAsync(pluginId, command, arguments), PluginManager.Log), new ContentControl());
-            existing.Renderer.OpenProjectAsync = target => OpenPluginProjectAsync(pluginId, target);
             var owner = FindPluginSession(pluginId);
+            var ownerGeneration = pluginGeneration;
+            existing = (new PluginPanelRenderer((command, arguments) => ownerGeneration == pluginGeneration && ReferenceEquals(owner, FindPluginSession(pluginId))
+                ? InvokePluginCommandAsync(pluginId, command, arguments)
+                : Task.FromException(new InvalidOperationException("插件所属工程会话已切换，旧界面操作已取消。")), PluginManager.Log), new ContentControl());
+            existing.Renderer.OpenProjectAsync = target => OpenPluginProjectAsync(pluginId, target);
+            existing.Renderer.InvokeCalculatorAsync = (command, arguments) => InvokeCalculatorPanelAsync(pluginId, command, arguments);
             existing.Renderer.CreateAppearanceView = value => CreatePluginAppearanceView(pluginId, owner, value);
             pluginPanels.Add(key, existing);
-            var body = pluginActivities.TryGetValue(pluginId, out var activity) ? activity.Body : PluginManager.PanelsHost;
-            body.Children.Add(existing.Host);
         }
         existing.Host.Content = existing.Renderer.Render(panel);
+        PlacePluginPanel(key, key[..key.IndexOf('/')], panel, existing.Host);
         existing.Renderer.SetEnabled(CanRunPlugin(key[..key.IndexOf('/')]));
+        QueueManagedClockRefresh();
     }
 
     private void RefreshPluginCommandState()

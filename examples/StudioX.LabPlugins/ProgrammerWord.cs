@@ -43,7 +43,11 @@ internal sealed class ProgrammerWord(int width, int radix, bool signed)
             radix = 10;
             text = text[2..];
         }
-        if (text.Length == 0 || text.StartsWith('_') || text.EndsWith('_') || text.Contains("__", StringComparison.Ordinal))
+        if (text.Length == 0)
+        {
+            throw new ProgrammerIncompleteExpressionException("数字前缀后尚缺少数位。");
+        }
+        if (text.StartsWith('_') || text.EndsWith('_') || text.Contains("__", StringComparison.Ordinal))
         {
             throw new ArgumentException("数字不能为空，分隔符 _ 只能放在数字之间。");
         }

@@ -49,6 +49,7 @@ public partial class MainWindow
         Add(HelpRootMenu, "快捷键速查…", "", () => true, () => ShowHelpAsync("shortcuts"));
         Add(HelpRootMenu, "故障处理指南…", "", () => true, () => ShowHelpAsync("troubleshooting"));
         Add(HelpRootMenu, "工程健康检查…", "", () => !projectActionsBusy, () => ShowProjectHealthAsync());
+        Add(HelpRootMenu, "导出故障资料…", "", () => !projectActionsBusy, ExportSupportReportAsync);
         InputBindings.Add(new KeyBinding(new PluginUiCommand(() => ShowHelpAsync(), () => true), new KeyGesture(Key.F1)));
         workbenchCommands.Add(new("在工程中查找", "Ctrl+Shift+F", () => projectDirectory is not null, () => { ShowWorkspaceSearch(false); return Task.CompletedTask; }));
         workbenchCommands.Add(new("保存全部文件", "Ctrl+Shift+S", () => projectDirectory is not null, () => RunAsync(t => SaveAllSourcesAsync(RequireProject(), t))));

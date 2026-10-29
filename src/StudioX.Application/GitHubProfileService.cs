@@ -26,6 +26,7 @@ public sealed class GitHubProfileService : IDisposable
         this.tokenProvider = tokenProvider ?? throw new ArgumentNullException(nameof(tokenProvider));
         this.client = client ?? new HttpClient(new HttpClientHandler
         {
+            CheckCertificateRevocationList = true,
             AllowAutoRedirect = false,
             UseCookies = false
         });

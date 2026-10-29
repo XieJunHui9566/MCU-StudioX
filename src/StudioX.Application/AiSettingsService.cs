@@ -8,10 +8,14 @@ public sealed class AiSettingsService(string dataDirectory)
 
     public async Task<AiSettings> LoadAsync(CancellationToken token = default)
     {
-        var settings = File.Exists(SettingsPath) ? await JsonStore.ReadAsync<AiSettings>(SettingsPath, token) : new();
+        var settings = await LoadForEditAsync(token);
         Validate(settings);
         return settings;
     }
+
+    /// <summary>允许修正旧的不兼容配置；实际发送前仍执行完整校验。</summary>
+    public Task<AiSettings> LoadForEditAsync(CancellationToken token = default) => File.Exists(SettingsPath)
+        ? JsonStore.ReadAsync<AiSettings>(SettingsPath, token) : Task.FromResult(new AiSettings());
 
     public Task SaveAsync(AiSettings settings, CancellationToken token = default)
     {
@@ -60,6 +64,14 @@ public sealed class AiSettingsService(string dataDirectory)
         {
             throw new StudioXException("AI_ENDPOINT", "AI API 地址必须是无账号、查询参数和片段的 HTTPS 基础地址。");
         }
-        return new Uri(baseUri.AbsoluteUri.TrimEnd('/') + "/chat/completions", UriKind.Absolute);
+        if (baseUri.Host.Equals("api.anthropic.com", StringComparison.OrdinalIgnoreCase) ||
+            baseUri.AbsolutePath.Split('/').Any(part => part.Equals("anthropic", StringComparison.OrdinalIgnoreCase) ||
+                part.Equals("messages", StringComparison.OrdinalIgnoreCase)))
+        {
+            throw new StudioXException("AI_PROTOCOL", "仅支持 OpenAI 兼容的 Chat Completions API（包括 DeepSeek）；不支持 Anthropic Messages API。");
+        }
+        var normalized = new Uri(baseUri.AbsoluteUri.TrimEnd('/'));
+        return normalized.AbsolutePath.EndsWith("/chat/completions", StringComparison.OrdinalIgnoreCase)
+            ? normalized : new Uri(normalized.AbsoluteUri.TrimEnd('/') + "/chat/completions", UriKind.Absolute);
     }
 }

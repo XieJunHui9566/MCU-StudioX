@@ -16,7 +16,8 @@ public partial class MainWindow
     private FirstProjectProgress GuideProgress() => new(projectDirectory, currentProjectManifest?.Name ?? "",
         currentProjectManifest?.Zephyr?.BoardTarget ?? currentProjectManifest?.DeviceId ?? "",
         currentProjectManifest is { } project ? project.ToolsetId + " " + project.ToolsetVersion : "",
-        IsMicroPythonProject, IsZephyrProject, IsEspressifProject, guideHealthPassed, guideSaved, guideBuild?.Success, guideBuild?.Artifacts);
+        IsMicroPythonProject, IsLegacyZephyrProject, IsEspressifProject, guideHealthPassed, guideSaved, guideBuild?.Success, guideBuild?.Artifacts,
+        ProjectCapabilities.For(currentProjectManifest));
 
     private Task ShowFirstProjectAsync()
     {

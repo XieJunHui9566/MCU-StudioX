@@ -110,6 +110,7 @@ public sealed class ComponentService(Func<bool> busy, BuildService? builds = nul
         return result;
     }
 
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Security", "CA5389", Justification = "Every entry passes PathBoundary.Resolve in owned staging after PreviewAsync validates the archive; CreateNew prevents overwrite.")]
     public async Task InstallAsync(string project, ComponentArchivePreview preview, string target, CancellationToken token = default)
     {
         await gate.WaitAsync(token);

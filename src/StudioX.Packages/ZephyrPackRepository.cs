@@ -17,6 +17,7 @@ public sealed class ZephyrPackRepository(string rootDirectory)
     public string RootDirectory { get; } = Path.GetFullPath(rootDirectory);
 
     /// <summary>完整校验归档后原子发布；相同 ID/版本的不同内容拒绝覆盖。</summary>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Security", "CA5389", Justification = "Every entry passes PathBoundary.Resolve before FileMode.CreateNew; links, duplicates and expanded sizes are checked separately.")]
     public async Task<InstalledZephyrPack> ImportAsync(string archivePath, CancellationToken token = default)
     {
         if (!archivePath.EndsWith(".mcupack", StringComparison.OrdinalIgnoreCase))

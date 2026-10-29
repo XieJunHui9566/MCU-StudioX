@@ -1,6 +1,5 @@
 namespace StudioX.Application.CodeIntelligence;
 
-using System.Text;
 using System.Text.Json;
 using StudioX.Foundation;
 
@@ -9,6 +8,7 @@ public sealed partial class CodeIntelligenceService
     private sealed record ImportedAnalysis(string Directory, string File, string[] Arguments);
     private readonly Dictionary<string, ImportedAnalysis> importedCommands = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, ImportedAnalysis> inferredCommands = new(StringComparer.OrdinalIgnoreCase);
+    private bool zephyrAnalysis;
     private string AnalysisDirectory(string path) => ImportedCommand(path)?.Directory ?? projectRoot;
     private ImportedAnalysis? ImportedCommand(string path)
     {
@@ -112,6 +112,12 @@ public sealed partial class CodeIntelligenceService
                 {
                     continue;
                 }
+                if (zephyrAnalysis && (argument is "-fno-printf-return-value" or "-fno-reorder-functions" or "-fno-defer-pop" or "-mfp16-format=ieee" ||
+                    argument.StartsWith("--param=", StringComparison.Ordinal) || argument.StartsWith("-specs=", StringComparison.Ordinal)))
+                {
+                    // GCC 的优化开关和 specs 不属于语言语义；Zephyr 宏、ABI 与实际包含目录继续保留。
+                    continue;
+                }
                 if (!argument.StartsWith('-') && Path.GetFullPath(argument, directory).Equals(path, StringComparison.OrdinalIgnoreCase))
                 {
                     continue;
@@ -141,70 +147,5 @@ public sealed partial class CodeIntelligenceService
     }
 
     // CMake 在 Windows 导出的 command 使用双引号和反斜线转义；仅拆分参数，不交给 shell 执行。
-    internal static string[] SplitCMakeCommand(string command)
-    {
-        var result = new List<string>();
-        var part = new StringBuilder();
-        var quoted = false;
-        var started = false;
-        for (var i = 0; i < command.Length; i++)
-        {
-            var c = command[i];
-            if (c == '\\')
-            {
-                var start = i;
-                while (i < command.Length && command[i] == '\\')
-                {
-                    i++;
-                }
-                var count = i - start;
-                if (i < command.Length && command[i] == '"')
-                {
-                    part.Append('\\', count / 2);
-                    if (count % 2 == 1)
-                    {
-                        part.Append('"');
-                    }
-                    else
-                    {
-                        quoted = !quoted;
-                    }
-                }
-                else
-                {
-                    part.Append('\\', count);
-                    i--;
-                }
-                started = true;
-            }
-            else if (c == '"')
-            {
-                quoted = !quoted;
-                started = true;
-            }
-            else if (char.IsWhiteSpace(c) && !quoted)
-            {
-                if (started)
-                {
-                    result.Add(part.ToString());
-                    part.Clear();
-                    started = false;
-                }
-            }
-            else
-            {
-                part.Append(c);
-                started = true;
-            }
-        }
-        if (quoted)
-        {
-            throw new StudioXException("CUBEMX_COMMAND", "编译数据库中有未闭合的参数引号。");
-        }
-        if (started)
-        {
-            result.Add(part.ToString());
-        }
-        return result.ToArray();
-    }
+    internal static string[] SplitCMakeCommand(string command) => CMakeCommandLine.Split(command);
 }

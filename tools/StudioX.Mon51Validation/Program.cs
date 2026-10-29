@@ -5,6 +5,24 @@ using StudioX.Engine;
 using StudioX.Engine.Debugging;
 using StudioX.Foundation;
 
+if (args is ["--prepare-low-voltage-hardware", var hardwarePack, var hardwareRuntime, var prepareHardwareOutput])
+{
+    return await LowVoltageHardwareChecks.PrepareAsync(hardwarePack, hardwareRuntime, Path.GetFullPath(prepareHardwareOutput));
+}
+if (args is ["--setup-low-voltage-hardware", var setupHardwareOutput])
+{
+    return await LowVoltageHardwareChecks.SetupAsync(Path.GetFullPath(setupHardwareOutput));
+}
+if (args is ["--verify-low-voltage-hardware", var verifyHardwareOutput])
+{
+    return await LowVoltageHardwareChecks.VerifyAsync(Path.GetFullPath(verifyHardwareOutput));
+}
+
+if (args is ["--low-voltage", var lowVoltagePack, var lowVoltageRuntime, var lowVoltageVendor, var lowVoltageOutput])
+{
+    return await LowVoltageChecks.RunAsync(lowVoltagePack, lowVoltageRuntime, lowVoltageVendor, Path.GetFullPath(lowVoltageOutput));
+}
+
 if (args is ["--installed-setup-pack", var installedRuntime, var installedData, var installedProject, var installedCatalog, var installedOutput])
 {
     return await InstalledSetupChecks.RunAsync(installedRuntime, installedData, installedProject, installedCatalog, installedOutput);
@@ -47,7 +65,7 @@ async Task Reject(Func<Task> action, string code, string name)
 }
 var project = Path.Combine(root, "project");
 Directory.CreateDirectory(Path.Combine(project, ".studiox"));
-await JsonStore.WriteAsync(Path.Combine(project, ".studiox", "project.json"), new ProjectManifest(1, "Mon51Probe", "stc.mon51", "1.0.0", "", "stc.IAP15F2K61S2", "bare-metal", "stc.sdcc", "4.5.0", "sdcc-4.5.0-15242"));
+await JsonStore.WriteAsync(Path.Combine(project, ".studiox", "project.json"), new ProjectManifest(1, "Mon51Probe", "stc.mon51", "1.0.0", "", "IAP15F2K61S2", "bare-metal", "stc.sdcc", "4.5.0", "sdcc-4.5.0-15242"));
 var request = Mon51Client.Encode([8, 0]);
 Check(request.SequenceEqual(new byte[] { 0xff, 0x5a, 3, 8, 0, 0x9c }), "compact GO frame 08 00 checksum");
 await using var hub = new DeviceHub();

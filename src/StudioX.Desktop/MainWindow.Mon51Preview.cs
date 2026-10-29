@@ -158,6 +158,7 @@ public partial class MainWindow
         await services.Debugger.StopAsync();
         await Settle();
         Check(RegistersTab.Visibility == Visibility.Collapsed && DebugTab.Visibility == Visibility.Collapsed && fixture.Running, "end restores layout and resumes program");
+        await CheckLowVoltageMon51UiAsync(directory, checks);
         await File.WriteAllTextAsync(Path.Combine(directory, "result.txt"), $"PASS {checks.Count} WPF Mon51 UI checks. Protocol fixture only; no hardware or serial access.\n" + string.Join('\n', checks));
     }
 
