@@ -46,7 +46,8 @@ try
     }
 
     # folder 模式不还原包；文件逐个列入，避免目录 include 在 SDK 中只匹配目录本身。
-    $absoluteFiles = @(& rg --files (Join-Path $projectRoot 'src') (Join-Path $projectRoot 'tools') (Join-Path $projectRoot 'examples') (Join-Path $projectRoot 'plugins') -g '*.cs' -g '!**/bin/**' -g '!**/obj/**' -g '!**/vendor/**' -g '!**/third-party/**' -g '!**/runtime/**' -g '!**/artifacts/**')
+    # 与结构检查共用目录边界；干净构建机只需 .NET SDK，不依赖额外安装 rg。
+    $absoluteFiles = @(& dotnet run --no-build --project (Join-Path $PSScriptRoot 'StudioX.SourceStyle') -- --list-csharp $projectRoot)
     if ($LASTEXITCODE -ne 0)
     {
         throw 'Cannot enumerate first-party C# files.'

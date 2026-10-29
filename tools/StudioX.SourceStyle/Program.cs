@@ -10,6 +10,22 @@ if (args is ["--self-test"])
     return 0;
 }
 
+if (args is ["--list-csharp", var sourceWorkspace])
+{
+    var sourceDirectory = Path.GetFullPath(sourceWorkspace);
+    if (!File.Exists(Path.Combine(sourceDirectory, "StudioX.slnx")))
+    {
+        throw new ArgumentException("目标目录不是 MCU StudioX 源码仓库。");
+    }
+    foreach (var file in SourceFiles.Enumerate(sourceDirectory)
+        .Where(path => Path.GetExtension(path).Equals(".cs", StringComparison.OrdinalIgnoreCase))
+        .Order(StringComparer.Ordinal))
+    {
+        Console.WriteLine(file);
+    }
+    return 0;
+}
+
 if (args is ["--finish-whitespace", var sourceRoot, var baseline, var formatted, var operation] && operation is "--write" or "--check")
 {
     return CSharpWhitespace.Finish(sourceRoot, baseline, formatted, operation == "--write");
