@@ -10,6 +10,10 @@ internal sealed class ProgrammerExpression(ProgrammerWord word, string expressio
 
     internal ulong Evaluate()
     {
+        if (string.IsNullOrWhiteSpace(expression))
+        {
+            throw new ProgrammerIncompleteExpressionException("表达式尚未输入完成。");
+        }
         if (expression.Length is < 1 or > 1024)
         {
             throw new ArgumentException("表达式须为 1–1024 个字符。");
@@ -63,6 +67,10 @@ internal sealed class ProgrammerExpression(ProgrammerWord word, string expressio
                 var value = Binary(1);
                 if (token != ")")
                 {
+                    if (token == "")
+                    {
+                        throw new ProgrammerIncompleteExpressionException("表达式缺少右括号 )。");
+                    }
                     throw new ArgumentException("表达式缺少右括号 )。");
                 }
                 Next();
@@ -70,6 +78,10 @@ internal sealed class ProgrammerExpression(ProgrammerWord word, string expressio
             }
             if (!IsNumber(current))
             {
+                if (current == "")
+                {
+                    throw new ProgrammerIncompleteExpressionException("表达式尚缺少一个整数。");
+                }
                 throw new ArgumentException("这里需要整数或左括号：" + current);
             }
             Next();
@@ -120,6 +132,10 @@ internal sealed class ProgrammerExpression(ProgrammerWord word, string expressio
         {
             if (position >= expression.Length || expression[position] != ch)
             {
+                if (position == expression.Length)
+                {
+                    throw new ProgrammerIncompleteExpressionException("移位运算符尚未输入完成。");
+                }
                 throw new ArgumentException("移位请使用 << / >> / >>>。");
             }
             position++;

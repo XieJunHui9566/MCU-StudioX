@@ -13,10 +13,13 @@ public static class StcMonitorImage
     public const string SetupSha256 = "ABC080915DDDCA9589F184E9BE76FBCC757EDF001BE02AF7A70ECB57451106F9";
     public const string Bootloader = "7.2.5S";
     public static void ValidateSetup(byte[] bytes)
+        => ValidateSetup(bytes, StcMon51Targets.HighVoltageDevice);
+
+    public static void ValidateSetup(byte[] bytes, string targetId)
     {
-        if (bytes.Length != 61440 || Hash(bytes) != SetupSha256)
+        if (bytes.Length != 61440 || Hash(bytes) != StcMon51Targets.SetupSha256(targetId))
         {
-            throw new StudioXException("MON51_FIRMWARE", "制作镜像与已核对的 IAP15F2K61S2 / 7.2.5S 固件身份不符。");
+            throw new StudioXException("MON51_FIRMWARE", "制作镜像与 " + targetId + " / 7.2.5S 的型号专用固件身份不符；F/L 镜像不能互换。");
         }
     }
     public static byte[] CreateHex(byte[] monitor, byte[] reset)

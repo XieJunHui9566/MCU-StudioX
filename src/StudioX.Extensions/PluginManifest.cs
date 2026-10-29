@@ -25,6 +25,19 @@ public sealed record PluginManifest(
 {
     /// <summary>旧清单默认绑定工程；应用级入口必须显式声明，不借用虚构工程目录。</summary>
     public string Scope { get; init; } = "project";
+    /// <summary>仅用于展示的版本标签；兼容性、排序和生成凭据始终使用 Version。</summary>
+    public string? DisplayVersion
+    {
+        get; init;
+    }
+    public PluginProjectSupport[]? SupportedProjects
+    {
+        get; init;
+    }
+    public bool ManagesProjectClock
+    {
+        get; init;
+    }
 
     /// <summary>校验清单、入口及目录中的全部文件；旧 decode API 1 保留其明确契约。</summary>
     public static async Task<PluginManifest> ReadAsync(string manifestPath, CancellationToken cancellationToken = default)
@@ -49,23 +62,70 @@ public sealed record PluginManifest(
         if (manifest.Scope is not ("project" or "application") ||
             manifest.Scope == "application" && (manifest.ApiVersion == 1 ||
                 manifest.HostTools is { Length: > 0 } || manifest.Capabilities is null ||
-                manifest.Capabilities.Any(capability => capability is not ("commands" or "panels"))))
+                manifest.Capabilities.Any(capability => capability is not ("commands" or "panels" or "panelWindows" or "programmerCalculator" or "calculatorRealtime"))))
         {
             throw new StudioXException("PLUGIN_SCOPE", "应用级插件仅支持命令和面板，不能声明工程宿主工具；scope 必须为 project 或 application。");
         }
         PackValidator.Token(manifest.Id);
+        if (manifest.SupportedProjects is { } supported)
+        {
+            if (manifest.Scope != "project" || supported.Length is 0 or > 64 ||
+                manifest.Capabilities?.Contains("projectMatching", StringComparer.Ordinal) != true)
+            {
+                throw new StudioXException("PLUGIN_PROJECT", "准确工程限定需要 projectMatching 能力及 1–64 个工程组合。");
+            }
+            foreach (var support in supported)
+            {
+                if (support is null)
+                {
+                    throw new StudioXException("PLUGIN_PROJECT", "工程组合为空。");
+                }
+                foreach (var id in new[] { support.PackId, support.DeviceId, support.TemplateId, support.PackageId, support.ProfileId })
+                {
+                    PackValidator.Token(id);
+                }
+                PackValidator.Version(support.PackVersion);
+                PackValidator.Version(support.ProfileVersion);
+            }
+            if (supported.Distinct().Count() != supported.Length)
+            {
+                throw new StudioXException("PLUGIN_PROJECT", "工程组合重复。");
+            }
+        }
+        if (manifest.ManagesProjectClock && (manifest.SupportedProjects is null ||
+            manifest.Capabilities?.Contains("projectClockV1", StringComparer.Ordinal) != true ||
+            manifest.Capabilities?.Contains("mcuConfigurationPreview", StringComparer.Ordinal) != true))
+        {
+            throw new StudioXException("PLUGIN_PROJECT_CLOCK", "时钟托管需要准确工程限定及 projectClockV1 配置能力。");
+        }
         PackValidator.Version(manifest.Version);
+        if (manifest.DisplayVersion is { } displayVersion &&
+            (string.IsNullOrWhiteSpace(displayVersion) || displayVersion.Length > 64 ||
+                displayVersion != displayVersion.Trim() || displayVersion.Any(char.IsControl)))
+        {
+            throw new StudioXException("PLUGIN_MANIFEST", "插件显示版本须为 1–64 个可见字符，不能包含控制字符或首尾空白。");
+        }
         if (string.IsNullOrWhiteSpace(manifest.DisplayName) || manifest.DisplayName.Length > 256 ||
             manifest.Description?.Length > 8192 ||
             manifest.Sha256 is null || manifest.Sha256.Count is 0 or > 4096 ||
-            manifest.Capabilities is null || manifest.Capabilities.Length is 0 or > 7 ||
+            manifest.Capabilities is null || manifest.Capabilities.Length is 0 or > 10 ||
             manifest.Capabilities.Distinct(StringComparer.Ordinal).Count() != manifest.Capabilities.Length)
         {
             throw new StudioXException("PLUGIN_MANIFEST", "插件名称、能力或文件索引无效。");
         }
         manifest.Activity?.Validate();
-        var supported = manifest.ApiVersion == 1 ? new[] { "decode" } : manifest.ApiVersion == 2 ? ["commands", "panels", "agentTools"] : ["commands", "panels", "agentTools", "settings", "events", "languages", "debugAdapters"];
-        if (manifest.Capabilities.Any(capability => !supported.Contains(capability, StringComparer.Ordinal)) ||
+        if ((manifest.Capabilities.Contains("mcuCodeGenerationV1", StringComparer.Ordinal) || manifest.Capabilities.Contains("mcuConfigurationSaveV1", StringComparer.Ordinal)) &&
+            (manifest.ApiVersion != 3 || manifest.SupportedProjects is null || !manifest.ManagesProjectClock ||
+             !manifest.Capabilities.Contains("mcuConfigurationPreview", StringComparer.Ordinal)))
+        {
+            throw new StudioXException("PLUGIN_MCU_GENERATION", "代码生成需要 API 3、准确工程绑定、时钟托管和配置视图能力。");
+        }
+        if ((manifest.Capabilities.Contains("mcuClockDiagramV1", StringComparer.Ordinal) || manifest.Capabilities.Contains("mcuClockFieldsV1", StringComparer.Ordinal) || manifest.Capabilities.Contains("mcuPinActionsV1", StringComparer.Ordinal)) && !manifest.Capabilities.Contains("mcuConfigurationPreview", StringComparer.Ordinal))
+        {
+            throw new StudioXException("PLUGIN_MCU_CLOCK", "时钟符号图需要 mcuConfigurationPreview 视图能力。");
+        }
+        var supportedCapabilities = manifest.ApiVersion == 1 ? new[] { "decode" } : manifest.ApiVersion == 2 ? ["commands", "panels", "agentTools", "panelWindows", "programmerCalculator", "calculatorRealtime", "mcuConfigurationPreview"] : ["commands", "panels", "agentTools", "settings", "events", "languages", "debugAdapters", "panelWindows", "programmerCalculator", "calculatorRealtime", "mcuConfigurationPreview", "projectMatching", "projectClockV1", "mcuClockDiagramV1", "mcuCodeGenerationV1", "mcuConfigurationSaveV1", "mcuClockFieldsV1", "mcuPinActionsV1"];
+        if (manifest.Capabilities.Any(capability => !supportedCapabilities.Contains(capability, StringComparer.Ordinal)) ||
             (manifest.ApiVersion == 1 && (manifest.Capabilities is not ["decode"] || manifest.Kind != "dotnet")))
         {
             throw new StudioXException("PLUGIN_MANIFEST", "插件能力与声明的 API 版本不兼容。");

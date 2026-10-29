@@ -4,6 +4,7 @@ using StudioX.Application.Editing;
 using StudioX.Engine;
 using StudioX.Foundation;
 using StudioX.Packages;
+using StudioX.WorkspaceEditingValidation;
 
 if (args.Any(a => a.StartsWith("--compile-commands-dir=", StringComparison.Ordinal)))
 {
@@ -24,6 +25,12 @@ if (args is ["--verify-project-analysis", var analysisRuntime, var analysisProje
         Console.WriteLine("PASS " + message);
     });
     await File.WriteAllLinesAsync(Path.Combine(analysisOutput, "result.txt"), verified);
+    return;
+}
+
+if (args is ["--verify-stc-completion", var stcRuntime, var stcProject, var stcOutput])
+{
+    await StcCompletionChecks.RunAsync(Path.GetFullPath(stcRuntime), Path.GetFullPath(stcProject), Path.GetFullPath(stcOutput));
     return;
 }
 
@@ -56,6 +63,7 @@ async Task Reject(Func<Task> action, string message)
     throw new InvalidOperationException("Expected rejection: " + message);
 }
 DiagnosticTextChecks.Run(Check);
+CompletionTriggerChecks.Run(Check);
 var project = Path.Combine(root, "中文工程 with spaces");
 Directory.CreateDirectory(Path.Combine(project, "src"));
 Directory.CreateDirectory(Path.Combine(project, "include"));

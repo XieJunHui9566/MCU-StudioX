@@ -55,9 +55,9 @@ public sealed class SourceRegistrationService(ProjectFileService files)
             throw SourceListEditor.Unsupported("请选择用户 CMakeLists.txt");
         }
         var manifest = await ProjectService.ReadAsync(project, token).ConfigureAwait(false);
-        if (manifest.Kind is ProjectKind.MicroPython or ProjectKind.Zephyr || manifest.Espressif is { Framework: not "esp-idf" })
+        if (!ProjectCapabilities.For(manifest).SourceRegistration || manifest.Espressif is { Framework: not "esp-idf" })
         {
-            throw SourceListEditor.Unsupported("此工程不使用受支持的原生 CMake 或 ESP-IDF 编译列表");
+            throw SourceListEditor.Unsupported(ProjectCapabilities.For(manifest).SourceWorkflow);
         }
         var identity = await ProjectHash(project, token).ConfigureAwait(false);
         var disk = await files.ReadAsync(project, configuration, token).ConfigureAwait(false);
@@ -72,9 +72,9 @@ public sealed class SourceRegistrationService(ProjectFileService files)
         }
         var snapshot = opened ?? new(disk, disk.Text);
         var idf = manifest.Espressif?.Framework == "esp-idf";
-        var parser = new SourceListEditor(snapshot.Text, idf);
+        var parser = new SourceListEditor(snapshot.Text, idf, manifest.ToolsetId == Mx251Profile.ToolsetId);
         var targets = parser.Describe(value => ResolveSource(project, configuration, value));
-        return new(project, identity, snapshot, opened is not null, idf, targets);
+        return new(project, identity, snapshot, opened is not null, idf, targets, manifest.ToolsetId == Mx251Profile.ToolsetId);
     }
 
     public IReadOnlyList<SourceRegistrationOperation> Suggest(SourceRegistrationContext context, string target, IReadOnlyList<string> discovered, IReadOnlyList<ProjectFileChange> moves)
@@ -131,7 +131,7 @@ public sealed class SourceRegistrationService(ProjectFileService files)
             ValidateOperation(context, operation);
         }
         var configuration = context.Configuration.Source.RelativePath;
-        var parser = new SourceListEditor(context.Configuration.Text, context.EspIdf);
+        var parser = new SourceListEditor(context.Configuration.Text, context.EspIdf, context.Mx251);
         var after = parser.Change(target, operations, value => ResolveSource(context.ProjectDirectory, configuration, value),
             value => Path.GetRelativePath(Path.GetDirectoryName(PathBoundary.Resolve(context.ProjectDirectory, configuration))!, PathBoundary.Resolve(context.ProjectDirectory, value)).Replace('\\', '/'));
         if (context.Configuration.Source.Encoding.GetByteCount(after) + context.Configuration.Source.Encoding.GetPreamble().Length > 4 * 1024 * 1024)

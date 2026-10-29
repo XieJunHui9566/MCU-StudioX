@@ -36,6 +36,9 @@ foreach (var device in selectedDevices)
             throw new InvalidOperationException("器件架构、开发环境组件或调试状态不符。 ");
         }
         var manifest = await new ProjectService().CreateAsync(pack, device.Id, device.Templates[0].Id, "stc_check", path);
+        // 只包含型号头文件便能使用固定宽度整数；编译期检查宽度，不依赖运行时或实板。
+        var main = Path.Combine(path, "src/main.c");
+        await File.AppendAllTextAsync(main, "\ntypedef char sx_u8[(sizeof(uint8_t) == 1) ? 1 : -1];\ntypedef char sx_i8[(sizeof(int8_t) == 1) ? 1 : -1];\ntypedef char sx_u16[(sizeof(uint16_t) == 2) ? 1 : -1];\ntypedef char sx_i16[(sizeof(int16_t) == 2) ? 1 : -1];\ntypedef char sx_u32[(sizeof(uint32_t) == 4) ? 1 : -1];\ntypedef char sx_i32[(sizeof(int32_t) == 4) ? 1 : -1];\n");
         if (manifest.CompilerId != "sdcc-4.5.0-15242" || await downloader.ConfigurationAsync(path) is not null)
         {
             throw new InvalidOperationException("开发环境组件或下载入口不符。");

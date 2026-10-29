@@ -1,4 +1,5 @@
 """Build a new immutable STC package source with the first-party RT51 template."""
+
 import argparse
 import hashlib
 import json
@@ -41,37 +42,84 @@ def main():
     manifest["version"] = "0.1.5"
     target = next(d for d in manifest["devices"] if d["id"] == "IAP15F2K61S2")
     files = {}
-    for name in ("include/rt51.h", "include/rt51_config.h", "src/rt51.c", "src/rt51_port_sdcc.c", "src/rt51_timers.c", "src/rt51_internal.h"):
+    for name in (
+        "include/rt51.h",
+        "include/rt51_config.h",
+        "src/rt51.c",
+        "src/rt51_port_sdcc.c",
+        "src/rt51_timers.c",
+        "src/rt51_internal.h",
+    ):
         destination = "templates/rt51/" + name
         path = args.output / destination
         path.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(source / name, path)
         files[name] = destination
-    (args.output / "templates/rt51/main.c").write_bytes((source / "examples/iap15/main.c").read_bytes())
+    (args.output / "templates/rt51/main.c").write_bytes(
+        (source / "examples/iap15/main.c").read_bytes()
+    )
     (args.output / "templates/rt51/RT51.md").write_bytes((source / "README.md").read_bytes())
     files["include/RT51.md"] = "templates/rt51/RT51.md"
-    (args.output / "templates/rt51/stc15_xinit_sdcc.c").write_bytes((source / "examples/iap15/stc15_xinit_sdcc.c").read_bytes())
+    (args.output / "templates/rt51/stc15_xinit_sdcc.c").write_bytes(
+        (source / "examples/iap15/stc15_xinit_sdcc.c").read_bytes()
+    )
     files["src/stc15_xinit_sdcc.c"] = "templates/rt51/stc15_xinit_sdcc.c"
-    (args.output / "templates/rt51/RT51-HARDWARE-20261012.md").write_bytes((repo / "docs/RT51-HARDWARE-20261012.md").read_bytes())
+    (args.output / "templates/rt51/RT51-HARDWARE-20261012.md").write_bytes(
+        (repo / "docs/RT51-HARDWARE-20261012.md").read_bytes()
+    )
     files["include/RT51-HARDWARE-20261012.md"] = "templates/rt51/RT51-HARDWARE-20261012.md"
-    (args.output / "templates/rt51/RT51-EXTENSIONS-20261012.md").write_bytes((repo / "docs/RT51-EXTENSIONS-20261012.md").read_bytes())
+    (args.output / "templates/rt51/RT51-EXTENSIONS-20261012.md").write_bytes(
+        (repo / "docs/RT51-EXTENSIONS-20261012.md").read_bytes()
+    )
     files["include/RT51-EXTENSIONS-20261012.md"] = "templates/rt51/RT51-EXTENSIONS-20261012.md"
-    target["templates"].append({
-        "id": "rt51", "displayName": "StudioX RT51 · 静态抢占式 RTOS",
-        "description": "3 个用户任务、周期延时、静态软件定时器与任务快照，用户提供 tick；含 STC15 XINIT 适配，预留 Mon51 内存。新功能仅离线验证，见 RT51.md。",
-        "entryFile": "templates/rt51/main.c", "files": files,
-        "build": {
-            "defines": ["STUDIOX_RT51=1"], "includeDirectories": [], "sources": [],
-            "compileOptions": ["--stack-auto", "--int-long-reent", "--float-reent"],
-            "linkOptions": ["--stack-auto", "--int-long-reent", "--float-reent", "--code-size", "56317", "--xram-loc", "1", "--xram-size", "1023", "--idata-loc", "48", "--stack-size", "128"]
+    target["templates"].append(
+        {
+            "id": "rt51",
+            "displayName": "StudioX RT51 · 静态抢占式 RTOS",
+            "description": "3 个用户任务、周期延时、静态软件定时器与任务快照，用户提供 tick；含 STC15 XINIT 适配，预留 Mon51 内存。新功能仅离线验证，见 RT51.md。",
+            "entryFile": "templates/rt51/main.c",
+            "files": files,
+            "build": {
+                "defines": ["STUDIOX_RT51=1"],
+                "includeDirectories": [],
+                "sources": [],
+                "compileOptions": ["--stack-auto", "--int-long-reent", "--float-reent"],
+                "linkOptions": [
+                    "--stack-auto",
+                    "--int-long-reent",
+                    "--float-reent",
+                    "--code-size",
+                    "56317",
+                    "--xram-loc",
+                    "1",
+                    "--xram-size",
+                    "1023",
+                    "--idata-loc",
+                    "48",
+                    "--stack-size",
+                    "128",
+                ],
+            },
         }
-    })
-    (args.output / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    (args.output / "templates/rt51/source.json").write_text(json.dumps({
-        "kernel": "StudioX RT51", "version": "0.1.0", "firstPartySource": "firmware/StudioX.Rt51",
-        "basePackSha256": hashlib.sha256(args.base_pack.read_bytes()).hexdigest(),
-        "compiler": "SDCC 4.5.0 #15242", "verification": "compiled 8052 instruction simulation; no hardware claim"
-    }, indent=2) + "\n", encoding="utf-8")
+    )
+    (args.output / "manifest.json").write_text(
+        json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
+    (args.output / "templates/rt51/source.json").write_text(
+        json.dumps(
+            {
+                "kernel": "StudioX RT51",
+                "version": "0.1.0",
+                "firstPartySource": "firmware/StudioX.Rt51",
+                "basePackSha256": hashlib.sha256(args.base_pack.read_bytes()).hexdigest(),
+                "compiler": "SDCC 4.5.0 #15242",
+                "verification": "compiled 8052 instruction simulation; no hardware claim",
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
     print(args.output)
 
 

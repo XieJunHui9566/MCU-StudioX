@@ -100,6 +100,28 @@ public partial class MainWindow
             throw new InvalidOperationException("External disk content overwritten.");
         }
         catch (StudioXException error) when (error.Code == "EDITOR_FILE_CHANGED") { Check(true, "saving a conflicting buffer refuses disk overwrite"); }
+        Check(await FindProjectNodeAsync(".build") is null, "fresh tree has no generated output directory");
+        Directory.CreateDirectory(Path.Combine(project, ".build/compiler/latest"));
+        await File.WriteAllTextAsync(Path.Combine(project, ".build/compiler/latest/firmware.hex"), "offline output fixture\n");
+        buildDiagnostics["src/main.c"] = (main.Source.Text, [new("src/main.c", 1, 1, false, "retained build diagnostic")], "构建");
+        await RefreshBuildArtifactsTreeAsync(project);
+        var outputNode = await FindProjectNodeAsync(".build/compiler/latest");
+        await LoadChildrenAsync(outputNode!);
+        Check(await FindProjectNodeAsync(".build/compiler/latest/firmware.hex") is not null,
+            "build completion adds a previously absent generated directory and its lazily expanded firmware");
+        Check(ReferenceEquals(rootNode, ProjectTree.Items[0]) && ReferenceEquals(sourceNode, await FindProjectNodeAsync("src")) &&
+            ReferenceEquals(mainNode, await FindProjectNodeAsync("src/main.c")) && mainNode!.IsSelected && sourceNode!.IsExpanded &&
+            main.Buffer.Text == unsaved && main.Source.DiskHash == baseline && main.Buffer.UndoStack.CanUndo == canUndo &&
+            main.DiskConflict is not null && buildDiagnostics.ContainsKey("src/main.c"),
+            "tree-only build refresh preserves node identity, selection, expansion, dirty buffer, conflict, undo and diagnostics");
+        File.Delete(Path.Combine(project, ".build/compiler/latest/firmware.hex"));
+        await File.WriteAllTextAsync(Path.Combine(project, ".build/compiler/latest/compiler.stderr.log"), "offline failure fixture\n");
+        await RefreshBuildArtifactsTreeAsync(project);
+        Check(ReferenceEquals(outputNode, await FindProjectNodeAsync(".build/compiler/latest")) &&
+            await FindProjectNodeAsync(".build/compiler/latest/firmware.hex") is null &&
+            await FindProjectNodeAsync(".build/compiler/latest/compiler.stderr.log") is not null,
+            "already loaded build subtree removes obsolete firmware and shows newly produced logs");
+        buildDiagnostics.Clear();
         await File.WriteAllTextAsync(Path.Combine(project, "src/新增.c"), "int added;\n");
         await Wait(() => sourceNode!.Items.OfType<System.Windows.Controls.TreeViewItem>().Any(node => node.Tag is StudioX.Application.ProjectEntry entry && entry.RelativePath == "src/新增.c"));
         Check(ReferenceEquals(sourceNode, await FindProjectNodeAsync("src")) && ReferenceEquals(mainNode, await FindProjectNodeAsync("src/main.c")) && SelectedProjectEntry?.RelativePath == "src/main.c",
@@ -191,6 +213,10 @@ public partial class MainWindow
         var next = await Fixture("next-workspace");
         originalSession.Notify(new("src/main.c", ProjectFileChangeKind.Renamed, "src/late.c"));
         await OpenProjectAsync(next, CancellationToken.None, _ => MessageBoxResult.No);
+        var nextRoot = ProjectTree.Items[0];
+        await RefreshBuildArtifactsTreeAsync(project);
+        Check(ReferenceEquals(nextRoot, ProjectTree.Items[0]) && await FindProjectNodeAsync(".build") is null,
+            "late build completion cannot refresh a different project");
         await File.WriteAllTextAsync(Path.Combine(project, "src/main.c"), "old workspace late write\n");
         await Task.Delay(350);
         await projectSyncTask;

@@ -14,12 +14,20 @@ using StudioX.Packages;
 /// <summary>工作台的服务组合根；各服务拥有自己的业务状态和资源生命周期。</summary>
 public sealed class WorkbenchService : IAsyncDisposable
 {
+    public McuFavoritesService McuFavorites
+    {
+        get;
+    }
     public Help.HelpContentService Help { get; } = new();
     public Onboarding.FirstProjectGuideService FirstProjectGuide
     {
         get;
     }
     public Health.ProjectHealthService ProjectHealth
+    {
+        get;
+    }
+    public Health.SupportReportService SupportReports
     {
         get;
     }
@@ -68,6 +76,18 @@ public sealed class WorkbenchService : IAsyncDisposable
         get;
     }
     public StcTiming.StcTimingService StcTiming { get; } = new();
+    public McuCodeGenerationService McuCodeGeneration
+    {
+        get;
+    }
+    public ProjectClockService ProjectClocks
+    {
+        get;
+    }
+    public GraphicalClockControlService GraphicalClockControl
+    {
+        get;
+    }
     public PeripheralDevelopment.PeripheralDevelopmentService PeripheralDevelopment
     {
         get;
@@ -76,6 +96,7 @@ public sealed class WorkbenchService : IAsyncDisposable
     {
         RuntimeDirectory = Path.GetFullPath(runtimeDirectory);
         DataDirectory = Path.GetFullPath(dataDirectory);
+        McuFavorites = new(DataDirectory);
         Distribution = new(DataDirectory);
         FirstProjectGuide = new(DataDirectory);
         LocalHistory = new Editing.LocalHistoryService(DataDirectory);
@@ -101,7 +122,11 @@ public sealed class WorkbenchService : IAsyncDisposable
         ToolInventory = new ToolInventoryService(Toolsets);
         EspressifProjectVersions = new(Packs, Toolsets);
         ToolEnvironment = new ToolEnvironmentService(Toolsets);
-        Builds = new BuildService(Toolsets, Path.Combine(DataDirectory, "licenses", "ag32-pin-mapping"));
+        Builds = new BuildService(Toolsets, Path.Combine(DataDirectory, "licenses", "ag32-pin-mapping"), DataDirectory);
+        Mx251Settings = new(Builds, Files);
+        Mx251Downloads = new(new Mx251IspService(Toolsets, DataDirectory), Builds, Devices);
+        Arduino = new(Builds, Devices, Git.InitializeAsync);
+        PicDownloads = new(new StudioX.Engine.Pic.PicDownloadService(Toolsets, Builds.Pic, DataDirectory), Devices);
         ComponentMigration = new(Packs, Builds);
         BuildMemory = new BuildMemoryService(Toolsets);
         BuildHistory = new(DataDirectory, BuildMemory);
@@ -123,6 +148,7 @@ public sealed class WorkbenchService : IAsyncDisposable
         Peripherals = new(Debugger, DataDirectory);
         DebugLaunch = new(Debugger, Downloads);
         ProjectHealth = new Health.ProjectHealthService(Toolsets, Builds, () => Debugger.IsActive);
+        SupportReports = new Health.SupportReportService(RuntimeDirectory, DataDirectory, ProjectHealth);
         OpenOcdPlot = new OpenOcdPlot.OpenOcdPlotService(Debugger);
         Debugger.Changed += OpenOcdPlot.StopIfSessionEnded;
         Themes = new ThemeService(DataDirectory);
@@ -137,6 +163,7 @@ public sealed class WorkbenchService : IAsyncDisposable
         EditorSessions = new Editing.EditorSessionStore(DataDirectory);
         WorkspaceEdits = new Editing.WorkspaceEditService(Files);
         AiSettings = new AiSettingsService(DataDirectory);
+        AiMcp = new Mcp.AiMcpSettingsService(DataDirectory);
         AiSkills = new AiSkillService(DataDirectory, RuntimeDirectory);
         AiConversations = new AiConversationStore(DataDirectory);
         AiCredentials = new AiCredentialStore();
@@ -151,10 +178,24 @@ public sealed class WorkbenchService : IAsyncDisposable
         SerialPlot = new SerialPlot.SerialPlotService(Devices, DataDirectory);
         Plugins = new PluginClient(Path.Combine(RuntimeDirectory, "plugin-host", "StudioX.PluginHost.exe"));
         PluginManager = new PluginManagerService(RuntimeDirectory, DataDirectory);
+        ProjectClocks = new ProjectClockService { Ownership = new PluginProjectClockOwnership(PluginManager) };
+        McuCodeGeneration = new(PluginManager, Files, ProjectClocks, DataDirectory);
+        Builds.ProjectClocks = ProjectClocks;
+        StcIsp.ProjectClocks = ProjectClocks;
+        StcTiming.ProjectClocks = ProjectClocks;
+        GraphicalClockControl = new(ProjectClocks, StcIsp, Files);
         PluginSettings = new PluginSettingsService(DataDirectory);
         Simulation = new SimulationLabService(Devices);
     }
     public string RuntimeDirectory
+    {
+        get;
+    }
+    public Pic.PicDownloadService PicDownloads
+    {
+        get;
+    }
+    public Arduino.ArduinoService Arduino
     {
         get;
     }
@@ -246,6 +287,15 @@ public sealed class WorkbenchService : IAsyncDisposable
     {
         get;
     }
+    public Mx251ProjectSettingsService Mx251Settings
+    {
+        get;
+    }
+    public Mx251DownloadService Mx251Downloads
+    {
+        get;
+    }
+
     public BuildService Builds
     {
         get;
@@ -360,6 +410,11 @@ public sealed class WorkbenchService : IAsyncDisposable
     {
         get;
     }
+    public Mcp.AiMcpSettingsService AiMcp
+    {
+        get;
+    }
+
     public AiSettingsService AiSettings
     {
         get;

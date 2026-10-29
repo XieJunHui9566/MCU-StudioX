@@ -6,6 +6,35 @@ using StudioX.Application.Editing;
 
 public partial class MainWindow
 {
+    private async Task RefreshBuildArtifactsTreeAsync(string directory)
+    {
+        var session = projectChangeSession;
+        bool Current() => !closing && !closed && string.Equals(projectDirectory, directory, StringComparison.OrdinalIgnoreCase) &&
+            ReferenceEquals(projectChangeSession, session);
+        if (!Current())
+        {
+            return;
+        }
+        // 用户取消编译后仍刷新产物；关闭或切换工程则终止刷新，避免更新另一个工程。
+        using var lifetime = CancellationTokenSource.CreateLinkedTokenSource(
+            projectSyncCancellation?.Token ?? CancellationToken.None, projectTreeCancellation?.Token ?? CancellationToken.None);
+        try
+        {
+            await projectSyncGate.WaitAsync(lifetime.Token);
+            try
+            {
+                if (Current())
+                {
+                    // 只核对已加载的目录，不重新建立整棵树，也不触发源码同步和构建结果失效。
+                    await SynchronizeProjectTreeAsync(new(directory, 0, [], RequiresRescan: true), lifetime.Token);
+                }
+            }
+            finally { projectSyncGate.Release(); }
+        }
+        catch (OperationCanceledException) when (lifetime.IsCancellationRequested) { }
+        catch (Exception error) { Log("构建产物目录刷新失败，可按 F5 重试；原始构建结果保留：" + error); }
+    }
+
     private TreeViewItem CreateProjectNode(ProjectEntry item)
     {
         var deviceSupport = item.IsDirectory && item.RelativePath == "device";

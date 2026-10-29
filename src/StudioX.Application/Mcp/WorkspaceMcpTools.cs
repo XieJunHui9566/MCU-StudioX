@@ -28,6 +28,8 @@ internal sealed class WorkspaceMcpTools(McpSessionContext context) : StudioXMcpT
             manifest.DeviceId,
             manifest.PackId,
             manifest.PackVersion,
+            manifest.PackContentHash,
+            graphicalConfiguration = manifest.GraphicalConfiguration,
             manifest.TemplateId,
             manifest.CompilerId,
             manifest.ToolsetId,

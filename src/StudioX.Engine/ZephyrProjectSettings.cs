@@ -4,12 +4,23 @@ using System.Text.RegularExpressions;
 using StudioX.Foundation;
 using StudioX.Packages;
 
-/// <summary>Zephyr 工程只记录板级目标；运行时与开发环境组件以后由独立后端锁定。</summary>
+/// <summary>锁定 Zephyr 版本和工程自带的板级目标；格式 1 仅用于打开历史实验工程。</summary>
 public sealed record ZephyrProjectSettings(int FormatVersion, string BoardId, string BoardTarget,
-    string BoardRevision, string ZephyrVersion, bool Experimental)
+    string BoardRevision, string ZephyrVersion, bool Experimental, string? Devicetree = null)
 {
     public static async Task ValidateAsync(string directory, ProjectManifest project, CancellationToken token)
     {
+        if (project.Zephyr is { FormatVersion: 2 })
+        {
+            Validate(project);
+            var device = await ProjectDevelopmentComponents.ReadMetadataAsync<DeviceDefinition>(
+                PathBoundary.Resolve(directory, ".studiox/zephyr-device.json"), 2 * 1024 * 1024, token);
+            if (device.Id != project.DeviceId || ZephyrDeviceCatalog.ForDevice(device) is null)
+            {
+                throw new StudioXException("PROJECT_ZEPHYR_DEVICE", "工程器件快照与已核验的 Zephyr 型号、容量或架构不符。");
+            }
+            return;
+        }
         _ = await ReadValidatedManifestAsync(directory, project, token);
     }
 
@@ -38,6 +49,28 @@ public sealed record ZephyrProjectSettings(int FormatVersion, string BoardId, st
 
     public static void Validate(ProjectManifest project)
     {
+        if (project.Zephyr is { FormatVersion: 2 } modern)
+        {
+            _ = ZephyrDeviceCatalog.Require(project.DeviceId);
+            var board = "studiox_" + project.DeviceId.ToLowerInvariant();
+            if (modern.Experimental || project.Kind != ProjectKind.Zephyr || project.CubeMx is not null ||
+                project.Logic is not null || project.PinMapping is not null || project.Espressif is not null ||
+                project.Arduino is not null || project.Pic is not null || project.MicroPython is not null ||
+                modern.BoardId != board || modern.BoardTarget != board || modern.BoardRevision != "custom" ||
+                modern.ZephyrVersion != ZephyrDeviceCatalog.ZephyrVersion || project.TemplateId != ZephyrDeviceCatalog.TemplateId ||
+                project.ToolsetId != ZephyrDeviceCatalog.ToolsetId || project.ToolsetVersion != ZephyrDeviceCatalog.ToolsetVersion ||
+                project.CompilerId != ZephyrDeviceCatalog.CompilerId || project.EntryFile != "src/main.c" ||
+                modern.Devicetree != $"boards/others/{board}/{board}.dts" ||
+                project.PackContentHash is not { Length: 64 } || project.PackContentHash.Any(c => !Uri.IsHexDigit(c)) ||
+                project.DevelopmentComponents is not { Count: 1 } needs || needs[0] != ZephyrDeviceCatalog.Requirement)
+            {
+                throw new StudioXException("PROJECT_ZEPHYR_SETTINGS", "Zephyr MCU 模板的器件、板级目标或锁定框架身份无效。");
+            }
+            PackValidator.Token(project.Name);
+            PackValidator.Token(project.PackId);
+            PackValidator.Version(project.PackVersion);
+            return;
+        }
         if (project.Zephyr is not { } settings || settings.FormatVersion != 1 || !settings.Experimental ||
             project.Kind != ProjectKind.Zephyr || project.CubeMx is not null || project.Logic is not null ||
             project.PinMapping is not null || project.Espressif is not null ||

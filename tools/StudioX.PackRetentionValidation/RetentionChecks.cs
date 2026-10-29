@@ -10,6 +10,7 @@ internal sealed partial class RetentionChecks(string output)
 
     public async Task RunAsync()
     {
+        await DirectoryMoveChecks.RunAsync(output, Pass);
         CheckPolicy();
         await CheckPruningAndProjectAsync();
         await CheckDistinctCapabilitiesAsync();
@@ -88,6 +89,10 @@ internal sealed partial class RetentionChecks(string output)
         Require(!PackCatalogPolicy.Supersedes(anotherId.Manifest, hal.Manifest), "same display name does not merge IDs");
         Require(PackCatalogPolicy.SelectCurrentVersions(await repository.ListCatalogAsync()).Count == 5,
             "selector keeps unique templates/devices and distinct IDs");
+        var latest = PackCatalogPolicy.SelectLatestVersions(await repository.ListCatalogAsync());
+        Require(latest.Count == 3 && latest.Select(pack => pack.Manifest.Id).Distinct().Count() == 3 &&
+            latest.Where(pack => pack.Manifest.Id != "fixture.different-id").All(pack => pack.Manifest.Version == "0.10.0"),
+            "new-project picker groups by ID, uses numeric newest and preserves same-named different IDs");
         var result = await repository.PruneSupersededAsync();
         Require(result.Removed.Count == 0 && result.Failures.Count == 0 && (await repository.ListCatalogAsync()).Count == 5,
             "prune keeps all distinct capabilities");

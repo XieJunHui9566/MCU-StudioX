@@ -14,6 +14,10 @@ from stcgal.frontend import StcGal
 from stcgal.protocols import StcProtocolException, Stc15Protocol
 
 MONITOR_SETUP_SHA256 = "ABC080915DDDCA9589F184E9BE76FBCC757EDF001BE02AF7A70ECB57451106F9"
+MONITOR_SETUP_HASHES = {
+    "IAP15F2K61S2": MONITOR_SETUP_SHA256,
+    "IAP15L2K61S2": "D2320E17FE8961813D8A012C46571390D6AA3BA683A594DD05697AD5B990D729",
+}
 STCGAL_FIRST_CALIBRATION = bytes.fromhex("000c00c080c0ffc000808080ff8000408040ff4000008000c000")
 IAP15_FIRST_CALIBRATION = bytes.fromhex("000b00c080c0ffc000808080ff8000408040ff40000080000000")
 
@@ -28,10 +32,15 @@ ALLOWED_MODEL_NAMES = {
 def configure_iap15_calibration(protocol):
     # 当前实测官方流程使用 66 校准脉冲；精确限定型号和 BSL，避免改变其他系列。
     # 第一轮按抓包使用 11 点和尾部填充；保留第二轮、超时、频率计算及应答校验。
-    if (type(protocol) is not Stc15Protocol or protocol.model.name != "IAP15F2K61S2"
-        or protocol.model.code != 62464 or getattr(protocol, "mcu_bsl_version", None) != "7.2.5S"
-        or len(getattr(protocol, "status_packet", b"")) < 46 or protocol.status_packet[45] != 0x70
-        or getattr(protocol, "external_clock", False)):
+    if (
+        type(protocol) is not Stc15Protocol
+        or protocol.model.name != "IAP15F2K61S2"
+        or protocol.model.code != 62464
+        or getattr(protocol, "mcu_bsl_version", None) != "7.2.5S"
+        or len(getattr(protocol, "status_packet", b"")) < 46
+        or protocol.status_packet[45] != 0x70
+        or getattr(protocol, "external_clock", False)
+    ):
         return False
     if getattr(protocol, "_studiox_calibration_profile", None) == "iap15-7.2.5S-66-11":
         return True
@@ -57,7 +66,15 @@ def configure_iap15_calibration(protocol):
 
 
 class GuardedStcGal(StcGal):
-    def __init__(self, options, expected_model, expected_code_bytes, expected_hash, clock_mode, monitor_setup=False):
+    def __init__(
+        self,
+        options,
+        expected_model,
+        expected_code_bytes,
+        expected_hash,
+        clock_mode,
+        monitor_setup=False,
+    ):
         self.expected_model = expected_model
         self.expected_code_bytes = expected_code_bytes
         self.expected_hash = expected_hash
@@ -124,25 +141,47 @@ class GuardedStcGal(StcGal):
         data = self.opts.code_image.read()
         self.opts.code_image.seek(0)
         # 专用编码镜像不能走普通 program_flash；仅开放静态核对的型号、版本和内容。
-        if (self.expected_model != "IAP15F2K61S2" or self.expected_hash != MONITOR_SETUP_SHA256
-            or len(data) != 61440 or type(protocol) is not Stc15Protocol
-            or protocol.mcu_bsl_version != "7.2.5S" or self.clock_mode != "preserve"
-            or len(protocol.status_packet) < 46 or protocol.status_packet[45] != 0x70):
-            raise StcProtocolException("StudioX monitor setup: unsupported target, BSL, or image; no erase/write")
-        print("STUDIOX_TARGET_VERIFIED IAP15F2K61S2", flush=True)
-        print("StudioX: factory monitor setup, dedicated 62/42 packets; validated on IAP15F2K61S2 / 7.2.5S / status 70", flush=True)
+        if (
+            self.expected_model not in MONITOR_SETUP_HASHES
+            or self.expected_hash != MONITOR_SETUP_HASHES[self.expected_model]
+            or protocol.model.name != self.expected_model
+            or protocol.model.code != 62464
+            or hashlib.sha256(data).hexdigest().upper() != self.expected_hash
+            or len(data) != 61440
+            or type(protocol) is not Stc15Protocol
+            or protocol.mcu_bsl_version != "7.2.5S"
+            or self.clock_mode != "preserve"
+            or len(protocol.status_packet) < 46
+            or protocol.status_packet[45] != 0x70
+        ):
+            raise StcProtocolException(
+                "StudioX monitor setup: unsupported target, BSL, or image; no erase/write"
+            )
+        print("STUDIOX_TARGET_VERIFIED " + self.expected_model, flush=True)
+        print(
+            "StudioX: factory monitor setup, dedicated 62/42 packets; exact image / 7.2.5S / status 70; target="
+            + self.expected_model,
+            flush=True,
+        )
+        if self.expected_model == "IAP15L2K61S2":
+            print(
+                "StudioX: IAP15L2K61S2 / 7.2.5S / status 70 hardware baseline verified on 2026-10-21",
+                flush=True,
+            )
         configure_iap15_calibration(protocol)
         protocol.handshake()
         protocol.erase_flash(len(data), protocol.model.code)
         for offset in range(0, len(data), protocol.PROGRAM_BLOCKSIZE):
             packet = bytes([0x62 if offset == 0 else 0x42]) + struct.pack(">H", offset)
-            packet += bytes([0x5a, 0xa5]) + data[offset:offset + protocol.PROGRAM_BLOCKSIZE]
+            packet += bytes([0x5A, 0xA5]) + data[offset : offset + protocol.PROGRAM_BLOCKSIZE]
             protocol.write_packet(packet)
             response = protocol.read_packet()
             if len(response) < 2 or response[:2] != bytes([0x02, 0x54]):
-                raise StcProtocolException("StudioX monitor setup: write acknowledgement failed at %04X" % offset)
+                raise StcProtocolException(
+                    "StudioX monitor setup: write acknowledgement failed at %04X" % offset
+                )
             protocol.progress_cb(offset, protocol.PROGRAM_BLOCKSIZE, len(data))
-        protocol.write_packet(bytes([0x07, 0, 0, 0x5a, 0xa5]))
+        protocol.write_packet(bytes([0x07, 0, 0, 0x5A, 0xA5]))
         if protocol.read_packet()[:2] != bytes([0x07, 0x54]):
             raise StcProtocolException("StudioX monitor setup: finish acknowledgement failed")
         protocol.program_options()
@@ -174,9 +213,14 @@ def main():
     with open(args.image, "rb") as image:
         if hashlib.sha256(image.read()).hexdigest().upper() != args.expected_sha256.upper():
             parser.error("image checksum changed")
-    if args.monitor_setup and (args.expected_model != "IAP15F2K61S2" or args.expected_code_bytes != 62464
-        or args.expected_sha256.upper() != MONITOR_SETUP_SHA256 or args.baud != 115200
-        or args.clock_mode != "preserve" or args.frequency_hz is not None):
+    if args.monitor_setup and (
+        args.expected_model not in MONITOR_SETUP_HASHES
+        or args.expected_code_bytes != 62464
+        or args.expected_sha256.upper() != MONITOR_SETUP_HASHES[args.expected_model]
+        or args.baud != 115200
+        or args.clock_mode != "preserve"
+        or args.frequency_hz is not None
+    ):
         parser.error("unsupported monitor setup request; serial port not opened")
     options = argparse.Namespace(
         port=args.port,

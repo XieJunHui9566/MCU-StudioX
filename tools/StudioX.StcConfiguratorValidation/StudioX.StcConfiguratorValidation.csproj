@@ -1,0 +1,12 @@
+<Project
+  Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference
+      Include="../../plugins/StudioX.StcConfigurator/StudioX.StcConfigurator.csproj" />
+    <ProjectReference
+      Include="../../src/StudioX.Application/StudioX.Application.csproj" />
+  </ItemGroup>
+</Project>

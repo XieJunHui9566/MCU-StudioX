@@ -16,7 +16,7 @@ public sealed partial class DistributionService : IDisposable
     public DistributionService(string dataDirectory, HttpMessageHandler? handler = null)
     {
         cache = Path.Combine(Path.GetFullPath(dataDirectory), "distribution-cache");
-        http = new(handler ?? new HttpClientHandler { AllowAutoRedirect = false })
+        http = new(handler ?? new HttpClientHandler { CheckCertificateRevocationList = true, AllowAutoRedirect = false })
         {
             Timeout = Timeout.InfiniteTimeSpan
         };

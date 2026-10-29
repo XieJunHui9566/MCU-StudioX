@@ -44,7 +44,7 @@ public partial class MainWindow
         {
             if (pluginActivities.TryGetValue(active.Id, out var current) && ReferenceEquals(current, activity))
             {
-                ShowDocument(tab);
+                ShowPluginActivity(active.Id, tab);
             }
         };
         tab.IsVisibleChanged += (_, _) => RefreshPluginActivitySelection();
@@ -67,6 +67,7 @@ public partial class MainWindow
 
     private void RemovePluginActivity(string id)
     {
+        ClosePluginWindows(id);
         if (!pluginActivities.Remove(id, out var activity))
         {
             return;

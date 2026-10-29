@@ -50,7 +50,5 @@ receipt = {
     "sourceCore": args.core,
     "files": hashes,
 }
-(target / "git-provenance.json").write_text(
-    json.dumps(receipt, indent=2), encoding="utf-8"
-)
+(target / "git-provenance.json").write_text(json.dumps(receipt, indent=2), encoding="utf-8")
 print(json.dumps({"privateGit": str(target), "version": actual, "files": len(hashes)}))

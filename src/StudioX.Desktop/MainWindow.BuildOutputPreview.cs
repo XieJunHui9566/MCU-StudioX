@@ -208,6 +208,24 @@ public partial class MainWindow
                 "code and log surfaces are opaque with media in " + theme.Id);
             // 主题与媒体触发延迟布局；截图必须等待真实文本和新底色完成绘制。
             await Layout();
+            var menu = BuildLog.ContextMenu!;
+            menu.PlacementTarget = BuildLog;
+            menu.IsOpen = true;
+            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);
+            menu.ApplyTemplate();
+            menu.UpdateLayout();
+            Check(menu.Background is SolidColorBrush background && menu.Foreground is SolidColorBrush foreground &&
+                background.Color != foreground.Color && background.Color == ((SolidColorBrush)FindResource("Surface")).Color,
+                "output context menu follows theme background and readable foreground in " + theme.Id);
+            var menuImage = new RenderTargetBitmap((int)Math.Ceiling(menu.ActualWidth), (int)Math.Ceiling(menu.ActualHeight), 96, 96, PixelFormats.Pbgra32);
+            menuImage.Render(menu);
+            var menuEncoder = new PngBitmapEncoder();
+            menuEncoder.Frames.Add(BitmapFrame.Create(menuImage));
+            using (var menuFile = File.Create(Path.Combine(directory, "context-menu-" + theme.Id + ".png")))
+            {
+                menuEncoder.Save(menuFile);
+            }
+            menu.IsOpen = false;
             Render(this, Path.Combine(directory, "readable-background-" + theme.Id + ".png"));
             ApplyBackground(backgroundSettings with
             {

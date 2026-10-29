@@ -32,15 +32,34 @@ public static partial class PackValidator
             {
                 EspressifPackProfile.Validate(device);
             }
-            if ((device.Espressif is null && (device.Architecture is not ("arm" or "riscv" or "mcs51") || device.FlashBytes == 0 || device.RamBytes == 0)) ||
+            if ((device.Espressif is null && (device.Architecture is not ("arm" or "riscv" or "mcs51" or "mcs251" or "avr" or "pic12" or "pic14") || device.FlashBytes == 0 || device.RamBytes == 0)) ||
                 (ulong)device.FlashOrigin + device.FlashBytes > 0x100000000UL || (ulong)device.RamOrigin + device.RamBytes > 0x100000000UL)
             {
                 throw new StudioXException("PACK_DEVICE", "芯片架构或内存定义无效。");
+            }
+            if (device.Architecture is "pic12" or "pic14" || device.Pic is not null)
+            {
+                PicDeviceDefinition.Validate(device);
+            }
+            if (device.Architecture == "avr" && (device.Id != "ATmega328P" || device.ToolsetId != "arduino.avr" ||
+                device.ToolsetVersion != "1.8.8" || device.CompilerId != "avr-gcc-7.3.0-arduino7" ||
+                device.FlashOrigin != 0 || device.FlashBytes != 32768 || device.RamOrigin != 256 || device.RamBytes != 2048 || device.LinkerScript != "" ||
+                device.OpenOcd is not null || device.Espressif is not null || device.Templates is not { Count: 1 } || device.Templates[0].Id != "arduino-sketch"))
+            {
+                throw new StudioXException("PACK_AVR", "首批 AVR 器件只接受已核实的 ATmega328P Arduino 配置；链接由官方核心负责。");
             }
             if (device.Architecture == "mcs51" && (device.ToolsetId != "stc.sdcc" || device.CompilerId != "sdcc-4.5.0-15242" ||
                 device.LinkerScript != "" || device.OpenOcd is not null))
             {
                 throw new StudioXException("PACK_DEVICE", "MCS-51 器件需要 STC SDCC 开发环境组件，不使用 OpenOCD 或 GCC 链接脚本。");
+            }
+            if (device.Architecture == "mcs251" && (device.Id != "AI8051U-34K64" || device.ToolsetId != "studiox.mx251" ||
+                device.CompilerId != "mx251-r89" || device.ToolsetVersion != "0.1.89" || device.FlashOrigin != 0xff0000 ||
+                device.FlashBytes != 65536 || device.RamOrigin != 0x10000 || device.RamBytes != 32768 ||
+                device.LinkerScript != "" || device.OpenOcd is not null || device.Espressif is not null || device.Pic is not null ||
+                device.CpuFlags is not { Count: 0 } || device.CompileOptions is not { Count: 0 } || device.LinkOptions is not { Count: 0 }))
+            {
+                throw new StudioXException("PACK_MCS251", "当前 MCS-251 仅接受 AI8051U-34K64 / R89 的明确内存和工具身份；构建选项由锁定 profile 负责。");
             }
             if (string.IsNullOrWhiteSpace(device.CompilerId) || device.CpuFlags is null || device.Defines is null ||
                 device.Sources is null || device.IncludeDirectories is null || device.CompileOptions is null || device.LinkOptions is null)
@@ -54,7 +73,7 @@ public static partial class PackValidator
                     throw new StudioXException("PACK_BUILD_VALUE", "构建参数包含不支持的字符。");
                 }
             }
-            if (device.Architecture != "mcs51" && device.Espressif is null)
+            if (device.Architecture is not ("mcs51" or "mcs251" or "avr" or "pic12" or "pic14") && device.Espressif is null)
             {
                 RequireFile(root, device.LinkerScript);
             }
@@ -87,6 +106,25 @@ public static partial class PackValidator
                     throw new StudioXException("PACK_TEMPLATE", "模板 ID 重复。");
                 }
                 RequireFile(root, template.EntryFile);
+                if (device.Architecture == "mcs251" || template.Mx251Configuration is not null)
+                {
+                    if (device.Architecture != "mcs251" || template.Mx251Configuration is null || template.Build is not null ||
+                        template.MicroPython is not null || template.EspressifExample is not null || template.Ag32Sources is not null ||
+                        template.GraphicalConfiguration is not null)
+                    {
+                        throw new StudioXException("PACK_MCS251_TEMPLATE", "MCS-251 模板需要独立构建配置，不能混用其它构建框架。");
+                    }
+                    RequireFile(root, template.Mx251Configuration);
+                }
+                if (template.GraphicalConfiguration is { } graphical)
+                {
+                    RequireFile(root, graphical.File);
+                    _ = GraphicalConfigurationFile.ReadTemplate(root, graphical.File, device.Id);
+                    if (template.MicroPython is not null || template.EspressifExample is not null || device.Pic is not null)
+                    {
+                        throw new StudioXException("MCUCONFIG_TEMPLATE", "当前配置模板仅支持原生 C/C++ 器件工程。");
+                    }
+                }
                 if (template.Ag32Sources is not null && (manifest.Vendor != "AGM" || device.Architecture != "riscv" ||
                     device.ToolsetId != "agm.agrv" || template.MicroPython is not null || template.EspressifExample is not null))
                 {

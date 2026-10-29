@@ -14,9 +14,11 @@ public static class DirectoryMoves
                 return;
             }
             catch (IOException error) when (OperatingSystem.IsWindows() && attempt < 5 &&
-                (uint)error.HResult is 0x80070020 or 0x80070021)
+                ((uint)error.HResult is 0x80070020 or 0x80070021 ||
+                 (uint)error.HResult == 0x80070005 && Directory.Exists(source) && !Directory.Exists(destination)))
             {
-                // 扫描器或刚退出的宿主可能短暂持有文件；不重试权限、路径及内容错误。
+                // Windows 对被占用目录也可能返回 ACCESS_DENIED；仅在移动尚未发生时有界重试。
+                // 不修改权限、不替换目标；持续拒绝仍抛出原始异常，取消也不能发布部分目录。
                 await Task.Delay(Math.Min(100 << attempt, 1000), cancellationToken).ConfigureAwait(false);
             }
         }

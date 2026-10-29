@@ -16,6 +16,7 @@ public sealed partial class CodeIntelligenceService(string runtimeDirectory, str
     private string projectRoot = "";
     private string[] flags = [];
     private string? compilerHeaders;
+    private string? arduinoLibrariesRoot;
     private readonly Dictionary<string, string> synchronizedDocuments = new(StringComparer.OrdinalIgnoreCase);
     private readonly HashSet<string> documentsNeedingReparse = new(StringComparer.OrdinalIgnoreCase);
     private int version;
@@ -31,7 +32,7 @@ public sealed partial class CodeIntelligenceService(string runtimeDirectory, str
             yield return line;
         }
     }
-    public static bool Supports(string path) => Path.GetExtension(path).ToLowerInvariant() is ".c" or ".h" or ".cpp" or ".cc" or ".cxx" or ".hpp" or ".hh" or ".hxx";
+    public static bool Supports(string path) => Path.GetExtension(path).ToLowerInvariant() is ".ino" or ".c" or ".h" or ".cpp" or ".cc" or ".cxx" or ".hpp" or ".hh" or ".hxx";
 
     public Task StartAsync(string directory, CancellationToken token = default)
         => Task.Run(() => StartInBackgroundAsync(directory, token), token);
@@ -65,6 +66,9 @@ public sealed partial class CodeIntelligenceService(string runtimeDirectory, str
             version = 0;
             projectRoot = Path.GetFullPath(directory);
             var project = await ProjectService.ReadAsync(projectRoot, token).ConfigureAwait(false);
+            sdccAnalysis = project.ToolsetId is "stc.sdcc" or Mx251Profile.ToolsetId;
+            sdccDiskHeaders.Clear();
+            sdccHeaderCache.Clear();
             var before = AnalysisInputStamp.Capture(runtimeDirectory, analysisDirectory, project);
             if (project.Kind == ProjectKind.MicroPython)
             {
@@ -72,35 +76,58 @@ public sealed partial class CodeIntelligenceService(string runtimeDirectory, str
             }
             importedCommands.Clear();
             inferredCommands.Clear();
+            mx251SourceDefines.Clear();
             espressifAnalysis = project.Espressif is not null;
+            zephyrAnalysis = project.Kind == ProjectKind.Zephyr;
             var keilImport = project.Kind == ProjectKind.Pack && File.Exists(Path.Combine(projectRoot, ".studiox", "keil-import.json"));
             // 用户添加的目录、宏和逐文件参数以 CMake 为准；器件模板只用于尚未配置的工程。
             // SDCC 仍使用专门的通用 C 兼容配置，不能把 MCS-51 参数直接传给 clang。
-            var nativeDatabase = project.Kind == ProjectKind.CubeMx || keilImport ||
-                project.Kind == ProjectKind.Pack && project.ToolsetId != "stc.sdcc" &&
+            var nativeDatabase = project.Kind == ProjectKind.CubeMx || project.Kind == ProjectKind.Zephyr || keilImport ||
+                project.Kind == ProjectKind.Pack && project.ToolsetId is not ("stc.sdcc" or Mx251Profile.ToolsetId) &&
                 File.Exists(Path.Combine(projectRoot, ".build", "compile_commands.json"));
             if (keilImport && !File.Exists(Path.Combine(projectRoot, ".build", "compile_commands.json")))
             {
                 throw new StudioXException("LANGUAGE_DATABASE_MISSING", "Keil 移植工程缺少 CMake 编译数据库，请先配置或编译工程；不会使用器件包模板参数猜测原工程的头文件与宏。");
             }
             StatusDescription = nativeDatabase ? "C/C++ 代码提示使用 CMake 实际编译参数" :
-                project.Kind == ProjectKind.Pack && project.Espressif is null && project.ToolsetId != "stc.sdcc"
+                project.Kind == ProjectKind.Pack && project.Espressif is null && project.ToolsetId is not ("stc.sdcc" or Mx251Profile.ToolsetId)
                     ? "C/C++ 代码提示使用器件模板；请配置或编译工程以同步 CMake 参数。" : "C/C++ 代码提示已就绪";
             EspressifAnalysisProfile? espressifProfile = null;
+            ArduinoAnalysisProfile? arduinoProfile = null;
+            PicAnalysisProfile? picProfile = null;
+            arduinoLibrariesRoot = null;
             var executable = Path.Combine(runtimeDirectory, "languages", "clangd", "bin", "clangd.exe");
             if (!File.Exists(executable))
             {
                 throw new StudioXException("LANGUAGE_MISSING", "此安装缺少内置 clangd 组件，代码提示不可用。");
             }
-            if (project.Espressif is not null)
+            if (project.Kind == ProjectKind.Pic)
+            {
+                picProfile = await PicAnalysisProfile.ReadAsync(runtimeDirectory, dataDirectory, project, token).ConfigureAwait(false);
+                flags = [.. picProfile.Flags, "-I" + Path.Combine(projectRoot, "include"), "-I" + Path.Combine(projectRoot, "src")];
+                StatusDescription = "PIC 通用 C 与官方寄存器提示已就绪；位类型、地址及目标 ABI 以 XC8 编译为准。";
+            }
+            else if (project.Kind == ProjectKind.Arduino)
+            {
+                arduinoProfile = await ArduinoAnalysisProfile.ReadAsync(runtimeDirectory, dataDirectory, projectRoot, project, token).ConfigureAwait(false);
+                flags = arduinoProfile.Flags;
+                arduinoLibrariesRoot = arduinoProfile.LibrariesRoot;
+                StatusDescription = "Arduino C++ 代码提示已就绪；sketch 自动原型以官方编译结果为准。";
+            }
+            else if (project.Espressif is not null)
             {
                 projectRoot = EspressifPathIdentity.NormalizePath(projectRoot);
                 espressifProfile = await EspressifAnalysisProfile.ReadAsync(runtimeDirectory, projectRoot, project, token).ConfigureAwait(false);
                 flags = espressifProfile.Flags;
             }
-            else if (project.Kind == ProjectKind.CubeMx)
+            else if (project.Kind is ProjectKind.CubeMx or ProjectKind.Zephyr)
             {
                 flags = ["--target=arm-none-eabi", "-ffreestanding", "-ferror-limit=0"];
+                if (project.Kind == ProjectKind.Zephyr)
+                {
+                    var headers = PathBoundary.Resolve(runtimeDirectory, $"toolsets/{project.ToolsetId}/{project.ToolsetVersion}/sdk/gnu/arm-zephyr-eabi/arm-zephyr-eabi/include");
+                    flags = [.. flags, "-isystem", headers.Replace('\\', '/')];
+                }
             }
             else
             {
@@ -108,12 +135,25 @@ public sealed partial class CodeIntelligenceService(string runtimeDirectory, str
                 var device = TemplateResolver.Resolve(pack.Devices.Single(d => d.Id == project.DeviceId), project.TemplateId, project.Logic is not null);
                 // 已配置工程的库、宏和源目录来自实际 CMake，不能重新套用新建模板的 SDK。
                 flags = CreateFlags(device, templateConfiguration: !nativeDatabase);
+                if (project.ToolsetId == Mx251Profile.ToolsetId && await Mx251ClockConfiguration.ReadAsync(projectRoot, token) is { } hz)
+                {
+                    flags = [.. flags, "-D" + Mx251ClockConfiguration.Define + "=" + hz,
+                        "-D" + Mx251ClockConfiguration.TicksDefine + "=" + Mx251ClockConfiguration.DelayTicks(hz)];
+                }
+                if (project.ToolsetId == Mx251Profile.ToolsetId)
+                {
+                    await ReadMx251CMakeAnalysisAsync(token);
+                }
+                if (sdccAnalysis)
+                {
+                    StatusDescription = "通用 C 提示已就绪；SDCC 内联汇编由实际编译器检查，编辑分析不验证汇编或目标 ABI。";
+                }
                 if (project.PinMapping is not null && Ag32DeviceCatalog.Find(project.DeviceId) is not null)
                 {
                     flags = [.. flags, "-I" + PathBoundary.Resolve(projectRoot, "device/studiox").Replace('\\', '/')];
                 }
             }
-            compilerHeaders = espressifProfile?.HeaderRoot;
+            compilerHeaders = picProfile?.HeaderRoot ?? arduinoProfile?.HeaderRoot ?? espressifProfile?.HeaderRoot;
             var compilerTriple = project.CompilerId switch
             {
                 "arm-gnu-15.2.rel1" => "arm-none-eabi",
@@ -129,7 +169,7 @@ public sealed partial class CodeIntelligenceService(string runtimeDirectory, str
                     flags = [.. flags, "-isystem", headers.Replace('\\', '/')];
                 }
             }
-            else if (project is { ToolsetId: "stc.sdcc", CompilerId: "sdcc-4.5.0-15242" })
+            else if (project is { ToolsetId: "stc.sdcc", CompilerId: "sdcc-4.5.0-15242" } or { ToolsetId: Mx251Profile.ToolsetId, CompilerId: Mx251Profile.CompilerId })
             {
                 var headers = PathBoundary.Resolve(runtimeDirectory, $"toolsets/{project.ToolsetId}/{project.ToolsetVersion}/sdcc/include");
                 if (Directory.Exists(headers))
@@ -289,7 +329,7 @@ public sealed partial class CodeIntelligenceService(string runtimeDirectory, str
             "riscv" => device.CpuFlags.Any(f => f.StartsWith("-march=rv64", StringComparison.Ordinal)) ? "riscv64-unknown-elf" : "riscv32-unknown-elf",
             "arm" or "cortex-m" => "arm-none-eabi",
             // clangd 没有 MCS-51 目标；在此只提供通用 C 编辑索引，构建仍由 SDCC 执行。
-            "mcs51" => null,
+            "mcs51" or "mcs251" => null,
             _ => throw new StudioXException("LANGUAGE_TARGET", "当前代码提示服务尚未支持此器件架构：" + device.Architecture)
         };
         // 只传递影响 C/C++ 解析的参数；不执行编译器，也不把链接/下载参数交给语言服务。
@@ -298,10 +338,11 @@ public sealed partial class CodeIntelligenceService(string runtimeDirectory, str
         {
             result.Insert(0, "--target=" + target);
         }
-        if (device.Architecture.Equals("mcs51", StringComparison.OrdinalIgnoreCase))
+        if (device.Architecture is "mcs51" or "mcs251")
         {
-            // 仅让寄存器声明和地址空间标记在 clangd 中保持可解析；宽度、指针及中断语义以 SDCC 为准。
+            // 仅让寄存器声明、地址空间及调用约定在 clangd 中可解析；选择 MCS-51 头文件分支，不模拟其 ABI。
             result.AddRange([
+                "-D__SDCC_" + device.Architecture + "=1", "-D__sdcccall(x)=",
                 "-D__sfr=volatile unsigned char", "-D__sfr16=volatile unsigned short", "-D__sbit=volatile unsigned char",
                 "-D__bit=unsigned char", "-D__at(x)=", "-D__data=", "-D__idata=", "-D__pdata=", "-D__xdata=", "-D__code=",
                 "-D__interrupt(x)=", "-D__using(x)=", "-D__reentrant=", "-D__critical=", "-D__naked=", "-D__banked=", "-D__nonbanked="
@@ -374,7 +415,7 @@ public sealed partial class CodeIntelligenceService(string runtimeDirectory, str
                     uri,
                     languageId = cpp ? "cpp" : "c",
                     version = TrackDiagnosticText(uri, text),
-                    text
+                    text = sdccAnalysis ? SdccAssemblyProjection.Create(text) : text
                 }
             }, token).ConfigureAwait(false);
             synchronizedDocuments[uri] = text;
@@ -397,7 +438,7 @@ public sealed partial class CodeIntelligenceService(string runtimeDirectory, str
                     uri,
                     version = TrackDiagnosticText(uri, text)
                 },
-                contentChanges = new[] { new { text } }
+                contentChanges = new[] { new { text = sdccAnalysis ? SdccAssemblyProjection.Create(text) : text } }
             }, token).ConfigureAwait(false);
             synchronizedDocuments[uri] = text;
             documentsNeedingReparse.Add(uri);

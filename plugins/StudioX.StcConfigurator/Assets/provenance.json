@@ -1,0 +1,20 @@
+{
+  "definitionsSha256": "d37399dd33ff3a447da9ade49fe07b2169d9187ece4a9ecbd13886207adc5a18",
+  "basePackSha256": "87201f245a9f5c129d96951af93c788428275d2bde8f3b7672ad815baea4640a",
+  "datasheetSha256": "c1df3cdb156465acc3f1d07b283b0c599d33cc170a7946a8cb9330aa84273801",
+  "aicubeHeaderSha256": "d818bef2e23c6911cde6c1e3cc0f8d5f1471e4c6d3e8f89a0f89caf3397b22ef",
+  "stcIspSha256": "d857b147f2f4e527c5566a2dd40e63f875c94f4e344fa5ce800ab13a770db420",
+  "ircFrequencyPresetsHz": [
+    5529600,
+    6000000,
+    11059200,
+    12000000,
+    18432000,
+    20000000,
+    22118400,
+    24000000,
+    27000000
+  ],
+  "status": "Offline preview; no hardware connection; exact LQFP44 only",
+  "notice": "Vendor facts re-expressed independently. No vendor program, PDF or original source included."
+}

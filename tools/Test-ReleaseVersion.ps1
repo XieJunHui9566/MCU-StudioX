@@ -1,4 +1,4 @@
-param([Parameter(Mandatory = $true)][string]$OutputDirectory)
+param([Parameter(Mandatory = $true)][string]$OutputDirectory, [string]$DesktopAssembly)
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'Release-Version.ps1')
 $output = [IO.Path]::GetFullPath($OutputDirectory)
@@ -51,6 +51,22 @@ foreach ($pair in @(
 Check ((Compare-StudioXReleaseVersions '0.2.5.4A' '0.2.5.4A') -eq 0) 'Same letter revision can repair'
 Check ((Compare-StudioXReleaseVersions '0.2.5' '0.2.5.0') -eq 0) 'Three and four numeric parts compare equally'
 Check ((Compare-StudioXReleaseVersions '0.2.6LTS' '0.2.6LTS') -eq 0) 'Same LTS identity can repair'
+$identity = Assert-StudioXSourceReleaseIdentity (Split-Path -Parent $PSScriptRoot) $DesktopAssembly
+Check ($null -ne $identity) ('Current source release identity is consistent: ' + $identity.ProductVersion)
+$fixture = Join-Path $output 'source-identity'
+[IO.Directory]::CreateDirectory($fixture) | Out-Null
+Copy-Item -LiteralPath (Join-Path (Split-Path -Parent $PSScriptRoot) 'Directory.Build.props') -Destination $fixture
+[IO.File]::WriteAllText((Join-Path $fixture 'README.md'), '当前源码版本 **0.0.0**')
+$rejected = $false
+try
+{
+    Assert-StudioXSourceReleaseIdentity $fixture | Out-Null
+}
+catch
+{
+    $rejected = $_.Exception.Message -match 'README'
+}
+Check $rejected 'Stale README identity blocks the current release identity gate'
 @{ status  = 'passed';
     checks = $checks;
     count  = $checks.Count

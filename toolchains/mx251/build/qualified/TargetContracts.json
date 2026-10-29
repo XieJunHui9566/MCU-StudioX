@@ -1,0 +1,103 @@
+{
+  "schema": 1,
+  "targets": {
+    "STC32G12K128": {
+      "id": "STC32G12K128",
+      "revision": 1,
+      "displayName": "STC32G12K128",
+      "instructionMode": "32-bit",
+      "startup": {
+        "sha256": "7225a696352a34eb5c32566c6783bf2018a65e9879d8adf4f53d6fbbf53fd876",
+        "beforeStackAndCInitialization": true,
+        "writes": [
+          {
+            "space": "sfr",
+            "address": 168,
+            "value": 0,
+            "name": "IE"
+          },
+          {
+            "space": "sfr",
+            "address": 175,
+            "value": 0,
+            "name": "IE2"
+          }
+        ],
+        "otherPeripheralState": "application-owned"
+      },
+      "interruptVectors": {
+        "count": 62,
+        "unused": "disable-ea-and-halt"
+      },
+      "mdu32": {
+        "abi": "mcs251-r4",
+        "trigger": "mov-direct-immediate"
+      },
+      "allowedRuntimes": [
+        "standard",
+        "native-int",
+        "native-math",
+        "native-math-wide",
+        "native-int-mdu32",
+        "native-math-mdu32",
+        "native-math-wide-mdu32"
+      ],
+      "qualifiedMemory": {
+        "codeBase": 16711680,
+        "codeBytes": 65536,
+        "xramBase": 65536,
+        "xramBytes": 8192,
+        "iramBytes": 256,
+        "stackBase": 1024,
+        "stackBytes": 1024,
+        "stackLimit": 4096
+      },
+      "qualification": "Existing fixed projects only; not a statement of all physical memory, all interrupts, or general runtime support."
+    },
+    "AI8051U-34K64-32": {
+      "id": "AI8051U-34K64-32",
+      "revision": 2,
+      "displayName": "AI8051U-34K64-32Bit（STC80251）",
+      "instructionMode": "32-bit",
+      "startup": {
+        "sha256": "b13e2b892cd04dcb9059af6e6e475de4c8a32dfd9764ecd88dceecc46afb7cdb",
+        "beforeStackAndCInitialization": true,
+        "writes": [
+          {
+            "space": "bit",
+            "address": 175,
+            "value": 0,
+            "name": "EA"
+          }
+        ],
+        "otherPeripheralState": "application-owned"
+      },
+      "interruptVectors": {
+        "count": 0,
+        "unused": "compiler-default"
+      },
+      "mdu32": {
+        "abi": "mcs251-r4",
+        "trigger": "mov-direct-immediate"
+      },
+      "allowedRuntimes": [
+        "standard",
+        "native-int",
+        "native-math-wide",
+        "native-int-mdu32",
+        "native-math-wide-mdu32"
+      ],
+      "qualifiedMemory": {
+        "codeBase": 16711680,
+        "codeBytes": 65536,
+        "xramBase": 65536,
+        "xramBytes": 28672,
+        "iramBytes": 256,
+        "stackBase": 1024,
+        "stackBytes": 1024,
+        "stackLimit": 4096
+      },
+      "qualification": "AI-specific 0x7000 XDATA window from sealed R89/V0.0100; fixed complete projects and direct helper/ISR boundary qualification only. Startup, stack and vectors unchanged. Large native math remains rejected."
+    }
+  }
+}

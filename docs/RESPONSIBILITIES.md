@@ -19,12 +19,18 @@
 | MCP 工具发现 | `Application/Mcp/StudioXMcpTools.cs` 组合内置工具组和固定的插件贡献快照，排序注册和清理 |
 | 工程文件与外部目录 | `WorkspaceMcpTools` 调用工程文件服务；外部授权、路径策略、游标浏览与复制事务各自独立 |
 | 编译和 Git | `BuildMcpTools`、`GitMcpTools` 调用对应应用/引擎服务 |
+| 工程支持范围 | `Engine/ProjectCapabilities` 统一框架能力与说明；引导、健康检查、详情及 Desktop 菜单复用，具体探针与工具仍需专项配置核验 |
+| MCU 收藏 | `Application/McuFavoritesService` 原子保存用户级包 ID 与准确型号，按已安装目录解析；`Desktop/MainWindow.McuFavorites` 同步新建工程选择器和缺包提示，沿用实际模板与创建校验 |
+| 构建后端 | `Engine/BuildService` 拥有互斥与公共入口，`BuildService.Backends` 注册框架后端，`BuildService.Native` 保留原生流水线；后端保留各自的工具锁、取消及产物凭据语义 |
+| 故障资料 | `Application/Health/SupportReportService` 只读收集版本、工程锁、工具身份、健康检查和有界原始日志；Desktop 仅选择本机输出文件 |
 | 调试和 RTOS | `DebugMcpTools` 调用 `DebugSessionService`；Engine 的 MI、反汇编与 FreeRTOS 检查独立于 WPF |
 | 模拟设备和采集 | `Application/Simulation/SimulationLabService.cs` 拥有会话、两路订阅和记录器；Desktop 只显示事件 |
 | LVGL PC 预览 | Engine 扫描库、构建和启动原生窗口，Application 管预览会话/资源，Desktop 提供配置与状态 |
 | 插件安装与信任 | `Extensions/PluginRepository` 校验归档并原子发布；`Application/Plugins/PluginManagerService` 保存当前内容的启用指纹 |
+| 插件宿主兼容 | `PluginHostCapabilities` 声明应用可提供的 API/贡献；插件目录检查缺少的能力和 .NET 宿主组件，启用前展示原因并拒绝不兼容内容 |
 | 插件运行与主机调用 | `PluginWorkspaceSession` 拥有独立进程；`PluginWorkspaceBroker` 复用应用工具和授权，负责释放插件设备观察者 |
 | 插件界面 | `PluginManagerView` 管目录和临时授权，`PluginPanelRenderer` 渲染数据，`MainWindow.Plugins.cs` 协调当前工程命令与编辑器同步 |
+| 插件独立工具窗口 | `MainWindow.PluginWindows` 管面板窗口与会话退出；`PluginToolWindow` 无模态显示，关闭隐藏、会话结束释放；`ProgrammerCalculatorView` 只呈现和提交数据，计算留在实验室插件 |
 
 MCP 工具组完整目录见 `src/StudioX.Application/Mcp/README.md`；代码和注释约定见 [CODE_STYLE.md](CODE_STYLE.md)。
 

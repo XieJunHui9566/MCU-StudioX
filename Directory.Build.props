@@ -1,5 +1,9 @@
 <Project>
   <PropertyGroup>
+    <!-- SDK 安全规则覆盖第一方工程；路径净化误报只在已核对的方法上说明原因。 -->
+    <AnalysisLevelSecurity>latest-all</AnalysisLevelSecurity>
+    <NuGetAudit>true</NuGetAudit>
+    <NuGetAuditMode>all</NuGetAuditMode>
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
@@ -11,9 +15,9 @@
       Condition="'$(RuntimeIdentifier)' == '' and $([MSBuild]::IsOSPlatform('Windows'))">win-x64</RuntimeIdentifier>
     <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
     <!-- 产品后缀用于发行修订；PE 文件与程序集版本必须保持四段数字。 -->
-    <Version>0.2.6.14</Version>
+    <Version>0.2.6.15</Version>
     <ProductVersion
-      Condition="'$(ProductVersion)' == ''">0.2.6.14</ProductVersion>
+      Condition="'$(ProductVersion)' == ''">0.2.6.15</ProductVersion>
     <InformationalVersion>$(ProductVersion)</InformationalVersion>
   </PropertyGroup>
   <ItemGroup>

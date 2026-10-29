@@ -19,6 +19,8 @@ void Check(bool condition, string message)
 }
 try
 {
+    CapabilityChecks.Run(Check);
+    await SupportReportChecks.RunAsync(root, Check);
     await FaultChecks.RunAsync(root, Check);
     await DistributionChecks.RunAsync(root, Check);
     await DownloadResumeChecks.RunAsync(root, Check);

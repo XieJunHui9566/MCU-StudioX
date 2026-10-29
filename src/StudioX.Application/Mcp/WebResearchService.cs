@@ -13,6 +13,7 @@ public sealed class WebResearchService
     private static readonly Uri ExtractEndpoint = new("https://api.tavily.com/extract");
     private static readonly HttpClient SharedClient = new(new HttpClientHandler
     {
+        CheckCertificateRevocationList = true,
         AllowAutoRedirect = false,
         UseCookies = false
     })

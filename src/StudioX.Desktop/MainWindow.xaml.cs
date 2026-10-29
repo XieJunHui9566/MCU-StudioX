@@ -160,19 +160,27 @@ public partial class MainWindow : Window
         Plot.InvalidateVisual();
         SerialPlotView.RefreshTheme();
         OpenOcdPlotPanel.RefreshTheme();
+        foreach (var panel in pluginPanels.Values)
+        {
+            panel.Renderer.RefreshTheme();
+        }
     }
     private async Task RefreshPacksAsync(CancellationToken token, bool preserveSelection = false)
     {
         // 浏览只校验目录元数据；完整 SDK 校验留在导入、覆盖清理与创建工程前。
         var catalog = await services.Packs.ListCatalogAsync(token);
+        // 目录重建后暂停使用上一轮的收藏选项，避免指向刚被移除的包。
+        mcuFavoritesLoaded = false;
+        UpdateMcuFavoriteControls();
         // 目录读取期间允许用户继续选择；在实际重建列表前采集最新选择。
         var vendorId = preserveSelection ? (VendorPicker.SelectedItem as ManufacturerOption)?.Id : null;
         var packId = preserveSelection ? (PackPicker.SelectedItem as InstalledPack)?.Manifest.Id : null;
         var packVersion = preserveSelection ? (PackPicker.SelectedItem as InstalledPack)?.Manifest.Version : null;
         var deviceId = preserveSelection ? (DevicePicker.SelectedItem as DeviceDefinition)?.Id : null;
         var templateId = preserveSelection ? (TemplatePicker.SelectedItem as ProjectTemplate)?.Id : null;
+        var arduinoBoardId = preserveSelection ? (ArduinoBoardPicker.SelectedItem as StudioX.Engine.Arduino.ArduinoBoard)?.Id : null;
         var search = preserveSelection ? DeviceSearch.Text : "";
-        // 不按版本号隐藏未验证的旧包，避免损坏新版或不同 SDK 遮蔽可用资源。
+        // 完整目录用于明确的 SDK 版本选择；器件包下拉框单独按 ID 合并。
         installedPacks = catalog
             .OrderBy(p => p.Manifest.DisplayName, StringComparer.OrdinalIgnoreCase)
             .ThenByDescending(p => p.Manifest.Version, Comparer<string>.Create(PackVersion.Compare)).ToArray();
@@ -188,17 +196,20 @@ public partial class MainWindow : Window
                 .FirstOrDefault(vendor => vendor.Id == vendorId);
             if (packId is not null)
             {
-                PackPicker.SelectedItem = PackPicker.Items.Cast<InstalledPack>()
+                SelectPack(installedPacks
                     .FirstOrDefault(pack => pack.Manifest.Id == packId && pack.Manifest.Version == packVersion)
                     ?? PackPicker.Items.Cast<InstalledPack>().Where(pack => pack.Manifest.Id == packId)
-                        .OrderByDescending(pack => pack.Manifest.Version, Comparer<string>.Create(PackVersion.Compare)).FirstOrDefault();
+                        .OrderByDescending(pack => pack.Manifest.Version, Comparer<string>.Create(PackVersion.Compare)).FirstOrDefault());
                 DeviceSearch.Text = search;
                 DevicePicker.SelectedItem = DevicePicker.Items.Cast<DeviceDefinition>()
                     .FirstOrDefault(device => device.Id == deviceId);
                 TemplatePicker.SelectedItem = TemplatePicker.Items.Cast<ProjectTemplate>()
                     .FirstOrDefault(template => template.Id == templateId);
+                ArduinoBoardPicker.SelectedItem = ArduinoBoardPicker.Items.Cast<StudioX.Engine.Arduino.ArduinoBoard>()
+                    .FirstOrDefault(board => board.Id == arduinoBoardId);
             }
         }
+        await RefreshMcuFavoritesAsync(token);
     }
     private static string PackManufacturer(InstalledPack pack)
     {
@@ -227,7 +238,8 @@ public partial class MainWindow : Window
         var manufacturer = VendorPicker.SelectedItem as ManufacturerOption;
         var vendor = manufacturer?.Id;
         PackPicker.SelectedIndex = -1;
-        PackPicker.ItemsSource = installedPacks.Where(p =>
+        var latestPacks = PackCatalogPolicy.SelectLatestVersions(installedPacks);
+        PackPicker.ItemsSource = latestPacks.Where(p =>
             string.Equals(PackManufacturer(p), vendor, StringComparison.OrdinalIgnoreCase)).ToArray();
         PackPicker.IsEnabled = PackPicker.Items.Count > 0;
         DeviceSearch.Clear();
@@ -235,28 +247,34 @@ public partial class MainWindow : Window
         PackageStatus.Text = installedPacks.Length == 0
             ? "尚未安装器件包。请导入 StudioX 格式 1 的 .mcupack。"
             : vendor is null
-                ? $"已安装 {VendorPicker.Items.Count} 家厂商的 {installedPacks.Length} 个器件包。请先选择器件厂商。"
+                ? $"已安装 {VendorPicker.Items.Count} 家厂商的 {latestPacks.Count} 个器件包。请先选择器件厂商。"
                 : $"{manufacturer!.DisplayName} · {PackPicker.Items.Count} 个器件包。请选择器件包、芯片型号与工程模板。";
     }
     private void SelectPack(InstalledPack? pack)
     {
         VendorPicker.SelectedItem = pack is null ? null : VendorPicker.Items.Cast<ManufacturerOption>()
             .Single(v => string.Equals(v.Id, PackManufacturer(pack), StringComparison.OrdinalIgnoreCase));
-        PackPicker.SelectedItem = pack is null ? null : PackPicker.Items.Cast<InstalledPack>()
-            .Single(p => p.Manifest.Id == pack.Manifest.Id && p.Manifest.Version == pack.Manifest.Version);
+        if (pack is null)
+        {
+            PackPicker.SelectedItem = null;
+            return;
+        }
+        // 明确切换 SDK 时替换同 ID 的唯一选项，不把多个包版本重新塞回下拉框。
+        var selected = installedPacks.Single(p => p.Manifest.Id == pack.Manifest.Id && p.Manifest.Version == pack.Manifest.Version);
+        PackPicker.ItemsSource = PackPicker.Items.Cast<InstalledPack>()
+            .Select(p => p.Manifest.Id == selected.Manifest.Id ? selected : p).ToArray();
+        PackPicker.SelectedItem = selected;
     }
     private async Task<InstalledPack> ImportPackForSelectionAsync(string archive, CancellationToken token)
     {
         var pack = await services.Packs.ImportAsync(archive, token);
         await PrunePackVersionsAsync(token);
         await RefreshPacksAsync(token);
-        var current = installedPacks.SingleOrDefault(p => p.Manifest.Id == pack.Manifest.Id && p.Manifest.Version == pack.Manifest.Version)
-            ?? installedPacks.Where(p => PackCatalogPolicy.Supersedes(p.Manifest, pack.Manifest))
-                .OrderByDescending(p => p.Manifest.Version, Comparer<string>.Create(PackVersion.Compare)).First();
+        var current = PackCatalogPolicy.SelectLatestVersions(installedPacks).Single(p => p.Manifest.Id == pack.Manifest.Id);
         SelectPack(current);
         PackageStatus.Text = current.Manifest.Version == pack.Manifest.Version
             ? $"已导入 {current.Manifest.DisplayName} {current.Manifest.Version}。请选择芯片和模板。"
-            : $"{pack.Manifest.Version} 已被新版完整覆盖，保留 {current.Manifest.DisplayName} {current.Manifest.Version}。请选择芯片和模板。";
+            : $"已选择最新的 {current.Manifest.DisplayName} {current.Manifest.Version}。请选择芯片和模板。";
         return current;
     }
     private async void ImportPack_Click(object sender, RoutedEventArgs e)
@@ -328,6 +346,7 @@ public partial class MainWindow : Window
         DevicePicker.IsEnabled = DevicePicker.Items.Count > 0;
         TemplatePicker.ItemsSource = null;
         TemplatePicker.IsEnabled = false;
+        RefreshArduinoTemplateSelection();
         CreateProjectButton.IsEnabled = false;
         UpdateAg32LogicModeOption();
         ClearIdfVersionSelection();
@@ -362,10 +381,12 @@ public partial class MainWindow : Window
             return;
         }
         var device = DevicePicker.SelectedItem as DeviceDefinition;
-        TemplatePicker.ItemsSource = device?.Templates;
+        UpdateMcuFavoriteControls();
+        TemplatePicker.ItemsSource = device is null ? null : StudioX.Application.ZephyrTemplateCatalog.Templates(device);
         TemplatePicker.SelectedIndex = -1;
         TemplatePicker.IsEnabled = TemplatePicker.Items.Count > 0;
         CreateProjectButton.IsEnabled = false;
+        RefreshArduinoTemplateSelection();
         if (SelectedDeviceCapability is not null)
         {
             var pack = PackPicker.SelectedItem as InstalledPack;
@@ -409,6 +430,7 @@ public partial class MainWindow : Window
         {
             CreateProjectButton.IsEnabled = TemplatePicker.SelectedItem is ProjectTemplate;
         }
+        RefreshArduinoTemplateSelection();
         UpdateSelectedComponents();
         await RefreshIdfVersionsAsync();
     }
@@ -417,6 +439,21 @@ public partial class MainWindow : Window
     {
         if (SelectedDevelopmentComponents is null)
         {
+            return;
+        }
+        if (StudioX.Application.Arduino.ArduinoTemplateCatalog.IsArduino(TemplatePicker?.SelectedItem as ProjectTemplate))
+        {
+            var board = ArduinoBoardPicker?.SelectedItem as StudioX.Engine.Arduino.ArduinoBoard;
+            SelectedDevelopmentComponents.Text = board is null ? "请选择 Arduino 开发板配置。" :
+                "所需开发环境组件\n" + board.Platform.ToolsetId + " " + board.Platform.CoreVersion +
+                "\n创建后可在“准备工程开发环境组件”安装此精确版本；ESP-IDF 与 Arduino 核心各自管理。";
+            return;
+        }
+        if (StudioX.Application.ZephyrTemplateCatalog.IsZephyr(TemplatePicker?.SelectedItem as ProjectTemplate) &&
+            DevicePicker.SelectedItem is DeviceDefinition zephyrDevice)
+        {
+            SelectedDevelopmentComponents.Text = StudioX.Application.ZephyrTemplateCatalog.Description(zephyrDevice) +
+                $"\n所需组件：{ZephyrDeviceCatalog.ToolsetId} {ZephyrDeviceCatalog.ToolsetVersion}";
             return;
         }
         SelectedDevelopmentComponents.Text = PackPicker?.SelectedItem is InstalledPack pack &&
@@ -436,8 +473,16 @@ public partial class MainWindow : Window
             return;
         }
         var enableAg32Logic = Ag32LogicModeCheckBox.IsChecked == true;
+        var isArduino = StudioX.Application.Arduino.ArduinoTemplateCatalog.IsArduino(template);
+        var isZephyr = StudioX.Application.ZephyrTemplateCatalog.IsZephyr(template);
+        var arduinoBoard = ArduinoBoardPicker.SelectedItem as StudioX.Engine.Arduino.ArduinoBoard;
+        if (isArduino && arduinoBoard is null)
+        {
+            Status.Text = "请选择与芯片匹配的 Arduino 开发板配置。";
+            return;
+        }
         var idfSelection = IdfVersionPicker.SelectedItem as StudioX.Application.Tools.EspressifProjectVersionChoice;
-        if (device.Espressif?.Framework == "esp-idf" && idfSelection?.CanCreate != true)
+        if (!isArduino && !isZephyr && device.Espressif?.Framework == "esp-idf" && idfSelection?.CanCreate != true)
         {
             Status.Text = "请选择可创建的 ESP-IDF 开发环境组件版本。";
             return;
@@ -449,13 +494,16 @@ public partial class MainWindow : Window
         }
         await RunAsync(async token =>
         {
-            if (idfSelection is not null)
+            if (!isArduino && !isZephyr && idfSelection is not null)
             {
                 await services.EspressifProjectVersions.EnsureSelectionAsync(idfSelection, token);
             }
             PackValidator.Token(ProjectName.Text);
             var destination = Path.Combine(dialog.FolderName, ProjectName.Text);
-            var created = await services.Projects.CreateAsync(pack, device.Id, template.Id, ProjectName.Text, destination, token, enableAg32Logic);
+            var created = isArduino
+                ? await services.Arduino.CreateFromPackAsync(pack, device.Id, arduinoBoard!.Id, ProjectName.Text, destination, token)
+                : isZephyr ? await services.ZephyrProjects.CreateFromPackAsync(pack, device.Id, ProjectName.Text, destination, token)
+                    : await services.Projects.CreateAsync(pack, device.Id, template.Id, ProjectName.Text, destination, token, enableAg32Logic);
             Log("工程已创建，Git 仓库已初始化（main 分支）；请在工程终端设置身份并提交。");
             await OpenProjectAsync(destination, token);
             if (created.Logic is { } logic)
@@ -606,6 +654,12 @@ public partial class MainWindow : Window
             return;
         }
         closing = true;
+        // 图形配置草稿属于插件会话；用户取消关闭前不能先取消其宿主。
+        if (!await ConfirmPluginConfigurationDraftsAsync(null))
+        {
+            closing = false;
+            return;
+        }
         projectSyncCancellation?.Cancel();
         IsEnabled = false;
         packSyncCancellation?.Cancel();

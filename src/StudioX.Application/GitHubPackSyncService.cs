@@ -26,7 +26,7 @@ public sealed class GitHubPackSyncService : IDisposable
     public GitHubPackSyncService(PackRepository packs, HttpClient? client = null)
     {
         this.packs = packs ?? throw new ArgumentNullException(nameof(packs));
-        this.client = client ?? new HttpClient(new HttpClientHandler { AllowAutoRedirect = false, UseCookies = false })
+        this.client = client ?? new HttpClient(new HttpClientHandler { CheckCertificateRevocationList = true, AllowAutoRedirect = false, UseCookies = false })
         {
             // 每次请求由关联的取消令牌限定；避免 HttpClient 默认 100 秒上限覆盖单包下载时限。
             Timeout = System.Threading.Timeout.InfiniteTimeSpan

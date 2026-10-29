@@ -1,0 +1,6 @@
+StudioX graphical configuration contract example, revision 1.
+This is a synthetic device named DEMO4, not a real MCU or board.
+Package DEMO-4 has positions 1 VDD, 2 GND, 3 PA0, 4 PA1.
+PA0 permits GPIOA.PA0 or UART0.TX; PA1 permits GPIOA.PA1 or UART0.RX.
+Clock RC feeds SYS. The example RC setting is 1000000 Hz.
+These statements are fictional fixture data, not electrical specifications.

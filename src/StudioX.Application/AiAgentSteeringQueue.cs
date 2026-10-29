@@ -10,6 +10,7 @@ public sealed class AiAgentSteeringQueue
     private bool accepting = true;
 
     public event Action<string>? MessageDequeued;
+    public event Action? MessageQueued;
 
     public bool IsAccepting
     {
@@ -55,8 +56,19 @@ public sealed class AiAgentSteeringQueue
                 return false;
             }
             pending.Enqueue(text);
-            return true;
         }
+        if (MessageQueued is { } callbacks)
+        {
+            foreach (Action callback in callbacks.GetInvocationList())
+            {
+                try
+                {
+                    callback();
+                }
+                catch (Exception) { }
+            }
+        }
+        return true;
     }
 
     /// <summary>任务取消或失败后，宿主可取回尚未消费的提示词。</summary>

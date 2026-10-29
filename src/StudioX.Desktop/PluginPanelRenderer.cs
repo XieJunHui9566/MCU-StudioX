@@ -15,6 +15,11 @@ internal sealed class PluginPanelRenderer(Func<string, JsonElement, Task> invoke
     private bool enabled = true;
     private FrameworkElement? current;
     private readonly Dictionary<string, (string Definition, FrameworkElement View)> appearanceViews = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, (string Command, ProgrammerCalculatorView View)> calculatorViews = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, (string Command, PluginMcuConfigurationView View)> configurationViews = new(StringComparer.Ordinal);
+
+    // 未显示的页签尚无可遍历的可视树，配置草稿和导航仍属于已创建的渲染器。
+    internal IEnumerable<PluginMcuConfigurationView> ConfigurationViews => configurationViews.Values.Select(item => item.View);
 
     public Func<JsonElement, FrameworkElement>? CreateAppearanceView
     {
@@ -25,11 +30,29 @@ internal sealed class PluginPanelRenderer(Func<string, JsonElement, Task> invoke
     {
         get; set;
     }
+    public Func<string, JsonElement, Task<JsonElement>>? InvokeCalculatorAsync
+    {
+        get; set;
+    }
 
     public FrameworkElement Render(PluginPanelDefinition panel)
     {
         var declaredInputs = new HashSet<string>(StringComparer.Ordinal);
         ValidateKinds(panel.Widgets, 0, declaredInputs);
+        foreach (var stale in calculatorViews.Keys.Where(id => !declaredInputs.Contains(id)).ToArray())
+        {
+            calculatorViews.Remove(stale);
+        }
+        foreach (var stale in configurationViews.Keys.Where(id => !declaredInputs.Contains(id)).ToArray())
+        {
+            configurationViews.Remove(stale);
+        }
+        if (panel.Widgets is [{ Kind: "programmerCalculator" or "mcuConfiguration" } calculator])
+        {
+            current = RenderWidget(calculator, 0);
+            current.IsEnabled = enabled;
+            return current;
+        }
         foreach (var stale in appearanceViews.Keys.Where(id => !declaredInputs.Contains(id)).ToArray())
         {
             appearanceViews.Remove(stale);
@@ -85,11 +108,11 @@ internal sealed class PluginPanelRenderer(Func<string, JsonElement, Task> invoke
         foreach (var widget in widgets)
         {
             if (widget.Kind is not ("text" or "metric" or "table" or "tree" or "form" or "group" or
-                "plot" or "chart" or "button" or "input" or "number" or "checkbox" or "select" or "projectLink" or "appearance"))
+                "plot" or "chart" or "button" or "input" or "number" or "checkbox" or "select" or "projectLink" or "appearance" or "programmerCalculator" or "mcuConfiguration"))
             {
                 throw new InvalidDataException("不支持的插件控件：" + widget.Kind);
             }
-            if (widget.Kind is "input" or "number" or "checkbox" or "select" or "appearance")
+            if (widget.Kind is "input" or "number" or "checkbox" or "select" or "appearance" or "programmerCalculator" or "mcuConfiguration")
             {
                 declaredInputs.Add(widget.Id);
             }
@@ -106,6 +129,14 @@ internal sealed class PluginPanelRenderer(Func<string, JsonElement, Task> invoke
         }
     }
 
+    public void RefreshTheme()
+    {
+        foreach (var calculator in calculatorViews.Values)
+        {
+            calculator.View.RefreshPalette();
+        }
+    }
+
     private FrameworkElement RenderWidget(PluginPanelWidget widget, int depth)
     {
         if (depth > 12)
@@ -113,6 +144,38 @@ internal sealed class PluginPanelRenderer(Func<string, JsonElement, Task> invoke
             throw new InvalidDataException("插件面板嵌套过深。");
         }
         var kind = widget.Kind;
+        if (kind == "mcuConfiguration")
+        {
+            var command = widget.CommandId ?? throw new InvalidDataException("配置视图缺少命令。");
+            if (!configurationViews.TryGetValue(widget.Id, out var configuration) || configuration.Command != command)
+            {
+                configuration = (command, new PluginMcuConfigurationView(widget.Value!.Value, arguments => invoke(command, arguments), diagnostic));
+                configurationViews[widget.Id] = configuration;
+            }
+            else
+            {
+                configuration.View.Update(widget.Value!.Value);
+            }
+            return configuration.View;
+        }
+        if (kind == "programmerCalculator")
+        {
+            if (!calculatorViews.TryGetValue(widget.Id, out var calculator) || calculator.Command != widget.CommandId)
+            {
+                var command = widget.CommandId ?? throw new InvalidDataException("计算器缺少交互命令。");
+                calculator = (command, new ProgrammerCalculatorView(widget.Value!.Value, arguments => invoke(command, arguments), diagnostic));
+                if (InvokeCalculatorAsync is { } calculate)
+                {
+                    calculator.View.InvokeCalculatorAsync = arguments => calculate(command, arguments);
+                }
+                calculatorViews[widget.Id] = calculator;
+            }
+            else
+            {
+                calculator.View.Update(widget.Value!.Value);
+            }
+            return calculator.View;
+        }
         if (kind == "appearance")
         {
             var definition = widget.Value!.Value.GetRawText();

@@ -2,6 +2,7 @@ namespace StudioX.PluginValidation;
 
 using System.IO.Compression;
 using StudioX.Extensions;
+using StudioX.Application.Plugins;
 using StudioX.Foundation;
 
 /// <summary>隔离归档门禁，覆盖路径、哈希、冲突、降级与发布事务。</summary>
@@ -20,6 +21,26 @@ internal static class RepositoryChecks
         CopyDirectory(installed.Directory, source);
         var manifest = installed.Manifest;
         var manifestPath = Path.Combine(source, "plugin.json");
+        var catalogEntry = new PluginCatalogEntry(manifest.Id, manifest, manifestPath, false, false, true, null);
+        checks.Check(catalogEntry.DisplayVersion == manifest.Version, "old manifest displays canonical version when no label is provided");
+        await JsonStore.WriteAsync(manifestPath, manifest with
+        {
+            DisplayVersion = "0.01"
+        });
+        var labeled = await PluginManifest.ReadAsync(manifestPath);
+        checks.Check(labeled.Version == manifest.Version && (catalogEntry with
+        {
+            Manifest = labeled
+        }).DisplayVersion == "0.01",
+            "display version survives manifest validation without changing canonical version");
+        foreach (var invalid in new[] { "", " ", "0.01\n", " 0.01", "0.01 ", new string('1', 65), "0.\u000001" })
+        {
+            await JsonStore.WriteAsync(manifestPath, manifest with
+            {
+                DisplayVersion = invalid
+            });
+            await checks.RejectAsync(async () => { _ = await PluginManifest.ReadAsync(manifestPath); }, "invalid display version rejected", "PLUGIN_MANIFEST");
+        }
         await JsonStore.WriteAsync(manifestPath, manifest with
         {
             Version = "1.1.0"

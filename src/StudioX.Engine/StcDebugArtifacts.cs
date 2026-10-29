@@ -17,9 +17,9 @@ public static class StcDebugArtifacts
         }
         var receipt = await JsonStore.ReadAsync<BuildReceipt>(receiptPath, token);
         var current = await ProjectService.ReadAsync(root, token);
-        if (current.DeviceId != "IAP15F2K61S2" || receipt.Project.DeviceId != current.DeviceId || receipt.Project.ToolsetId != current.ToolsetId || receipt.Project.ToolsetVersion != current.ToolsetVersion || receipt.Project.CompilerId != current.CompilerId || receipt.Project.PackId != current.PackId || receipt.Project.PackVersion != current.PackVersion || receipt.Project.PackContentHash != current.PackContentHash || receipt.Project.TemplateId != current.TemplateId)
+        if (!StcMon51Targets.Supports(current.DeviceId) || receipt.Project.DeviceId != current.DeviceId || receipt.Project.ToolsetId != current.ToolsetId || receipt.Project.ToolsetVersion != current.ToolsetVersion || receipt.Project.CompilerId != current.CompilerId || receipt.Project.PackId != current.PackId || receipt.Project.PackVersion != current.PackVersion || receipt.Project.PackContentHash != current.PackContentHash || receipt.Project.TemplateId != current.TemplateId)
         {
-            throw new StudioXException("MON51_SYMBOLS", "当前器件、开发环境组件或包身份与已构建的 IAP15F2K61S2 调试目标不一致。");
+            throw new StudioXException("MON51_SYMBOLS", "当前器件、开发环境组件或包身份与已构建的 Mon51 调试目标不一致。");
         }
         if (receipt.Project.ToolsetId != "stc.sdcc" || receipt.SourceStamp is null || receipt.SourceStamp != await DebugSourceStamp.ComputeAsync(root, token))
         {

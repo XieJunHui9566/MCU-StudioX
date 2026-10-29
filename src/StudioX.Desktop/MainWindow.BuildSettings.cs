@@ -28,6 +28,10 @@ public partial class MainWindow
     private void ConfigureBuildSettingsForProject()
     {
         var stc = IsStcSdccProject;
+        var mx = IsMx251Project;
+        Mx251ModelPanel.Visibility = mx ? Visibility.Visible : Visibility.Collapsed;
+        BuildOptimizationLabel.Visibility = BuildOptimizationPicker.Visibility = mx ? Visibility.Collapsed : Visibility.Visible;
+        Mx251ModelPicker.ItemsSource = new[] { new BuildChoice<string>("small", "small · 小内存模型"), new BuildChoice<string>("large", "large · 大内存模型") };
         BuildDebugInfoPicker.ItemsSource = stc
             ? new[] { new BuildChoice<CompilerDebugInfo>(CompilerDebugInfo.ProjectDefault, "沿用工程默认"), new(CompilerDebugInfo.None, "不生成 CDB"), new(CompilerDebugInfo.Standard, "--debug · 生成源码调试 CDB") }
             : new[] { new BuildChoice<CompilerDebugInfo>(CompilerDebugInfo.ProjectDefault, "沿用工程默认"), new(CompilerDebugInfo.None, "-g0 · 不生成调试信息"), new(CompilerDebugInfo.Standard, "-g2 · 标准调试信息"), new(CompilerDebugInfo.Full, "-g3 · 包含宏信息") };
@@ -46,10 +50,10 @@ public partial class MainWindow
                 new(CompilerOptimization.O1, "-O1 · 基础优化"), new(CompilerOptimization.O2, "-O2 · 速度优化"),
                 new(CompilerOptimization.O3, "-O3 · 更高速度优化"), new(CompilerOptimization.Os, "-Os · 优先减小体积")
             };
-        BuildDebugInfoLabel.Visibility = BuildDebugInfoPicker.Visibility = Visibility.Visible;
+        BuildDebugInfoLabel.Visibility = BuildDebugInfoPicker.Visibility = mx ? Visibility.Collapsed : Visibility.Visible;
         StcCodeRomPanel.Visibility = stc ? Visibility.Visible : Visibility.Collapsed;
-        StcMon51Profile.Visibility = stc && currentProjectManifest?.DeviceId == "IAP15F2K61S2" ? Visibility.Visible : Visibility.Collapsed;
-        BuildSettingsHelp.Text = stc
+        StcMon51Profile.Visibility = stc && StcMon51Targets.Supports(currentProjectManifest?.DeviceId) ? Visibility.Visible : Visibility.Collapsed;
+        BuildSettingsHelp.Text = mx ? "small / large 决定默认数据存储方式，不改变芯片的 32 位工作模式。保存后重新编译整个工程；源码中的显式存储区声明保持不变。" : stc
             ? "源码调试请选择 --debug，并建议低优化。构建生成 CDB；Mon51 连接会核对源码、构建产物与目标 CODE。优化可能使变量或部分源码行不可用。"
             : "源码调试建议 -Og 与 -g3；较高优化可能使变量或源码行无法直接观察。";
     }
@@ -145,6 +149,14 @@ public partial class MainWindow
 
     private void UpdateBuildSettingsDirtyStatus()
     {
+        if (IsMx251Project)
+        {
+            if (!applyingBuildSettings && loadedMx251Settings is not null)
+            {
+                BuildSettingsStatus.Text = Mx251ModelPicker.SelectedValue as string == loadedMx251Settings.Model ? "参数与已保存配置一致。" : "参数尚未保存。";
+            }
+            return;
+        }
         if (applyingBuildSettings || loadedBuildSettings is null)
         {
             return;
@@ -159,7 +171,12 @@ public partial class MainWindow
         {
             return;
         }
-        var enabled = projectDirectory is not null && !IsZephyrProject && !IsMicroPythonProject && loadedBuildSettings is not null && !projectActionsBusy && !services.Debugger.IsActive;
+        if (IsMx251Project)
+        {
+            UpdateMx251SettingsControls();
+            return;
+        }
+        var enabled = projectDirectory is not null && ProjectCapabilities.For(currentProjectManifest).BuildSettings && loadedBuildSettings is not null && !projectActionsBusy && !services.Debugger.IsActive;
         BuildSettingsEditor.IsEnabled = enabled;
         if (!TrySelectedBuildSettings(out var selected, out var error))
         {
@@ -183,6 +200,11 @@ public partial class MainWindow
     {
         EnsureNoActiveDebug();
         var directory = RequireProject();
+        if (IsMx251Project)
+        {
+            await SaveMx251SettingsAsync(directory, token);
+            return;
+        }
         if (!TrySelectedBuildSettings(out var settings, out var error))
         {
             BuildSettingsStatus.Text = error;
@@ -196,6 +218,11 @@ public partial class MainWindow
 
     private void ResetBuildSettings_Click(object sender, RoutedEventArgs e)
     {
+        if (IsMx251Project)
+        {
+            Mx251ModelPicker.SelectedValue = loadedMx251Settings?.DefaultModel;
+            return;
+        }
         BuildOptimizationPicker.SelectedValue = CompilerOptimization.ProjectDefault;
         BuildDebugInfoPicker.SelectedValue = CompilerDebugInfo.ProjectDefault;
         StcCodeRomSizeBox.Clear();

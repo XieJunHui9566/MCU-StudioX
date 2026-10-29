@@ -27,9 +27,12 @@ jobs:
         with:
           name: regression-${{ github.sha }}
           path: |
-            ${{ runner.temp }}/studiox-regression/
-            !${{ runner.temp }}/studiox-regression/build/**
-            !${{ runner.temp }}/studiox-regression/empty-runtime/**
-            !${{ runner.temp }}/studiox-regression/**/.git/**
+            ${{ runner.temp }}/studiox-regression/*.json
+            ${{ runner.temp }}/studiox-regression/*.log
+            ${{ runner.temp }}/studiox-regression/**/result.json
+            ${{ runner.temp }}/studiox-regression/**/result.txt
+            ${{ runner.temp }}/studiox-regression/*-ui/*.png
+            ${{ runner.temp }}/studiox-regression/*-ui/*.json
+            ${{ runner.temp }}/studiox-regression/*-ui/*.txt
           include-hidden-files: true
           retention-days: 14

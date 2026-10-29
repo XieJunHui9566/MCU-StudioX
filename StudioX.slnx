@@ -1,4 +1,6 @@
 <Solution>
+  <Project
+    Path="tools/StudioX.Mx251Validation/StudioX.Mx251Validation.csproj" />
   <Folder
     Name="/src/">
     <Project
@@ -27,6 +29,8 @@
   <Folder
     Name="/examples/">
     <Project
+      Path="plugins/StudioX.StcConfigurator/StudioX.StcConfigurator.csproj" />
+    <Project
       Path="examples/StudioX.AppearancePlugin/StudioX.AppearancePlugin.csproj" />
     <Project
       Path="examples/StudioX.LabPlugins/StudioX.LabPlugins.csproj" />
@@ -38,10 +42,16 @@
   <Folder
     Name="/tools/">
     <Project
+      Path="tools/StudioX.ArduinoValidation/StudioX.ArduinoValidation.csproj" />
+    <Project
+      Path="tools/StudioX.ArduinoTemplateValidation/StudioX.ArduinoTemplateValidation.csproj" />
+    <Project
       Path="tools/StudioX.ProductivityValidation/StudioX.ProductivityValidation.csproj" />
   </Folder>
   <Folder
     Name="/validation/">
+    <Project
+      Path="tools/StudioX.StcConfiguratorValidation/StudioX.StcConfiguratorValidation.csproj" />
     <Project
       Path="tools/StudioX.AppearanceValidation/StudioX.AppearanceValidation.csproj" />
     <Project
@@ -98,4 +108,8 @@
     <Project
       Path="tools/StudioX.ProductWorkflowValidation/StudioX.ProductWorkflowValidation.csproj" />
   </Folder>
+  <Project
+    Path="tools/StudioX.PicValidation/StudioX.PicValidation.csproj" />
+  <Project
+    Path="tools/StudioX.ZephyrValidation/StudioX.ZephyrValidation.csproj" />
 </Solution>

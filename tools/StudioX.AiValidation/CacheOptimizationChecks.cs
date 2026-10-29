@@ -62,7 +62,8 @@ internal static class CacheOptimizationChecks
         steering.MessageDequeued += delivered.Add;
         var steeringTransport = new SteeringTransport(steering);
         var guidedAgent = new AiAgentService(steeringTransport, new AiSettings(), session);
-        var guided = await guidedAgent.SendAsync(project, "原始任务", steering: steering);
+        var guided = await guidedAgent.SendAsync(project, "原始任务", steering: steering,
+            progress: new ToolStartedProgress(steering));
         var protocol = guided.History[^1].ProtocolMessages!;
         check(delivered.SequenceEqual(["先确认工程范围", "回答前再说明验证范围"]) &&
               guided.History[^1].SteeringMessages!.SequenceEqual(delivered) &&
@@ -132,10 +133,6 @@ internal static class CacheOptimizationChecks
             Requests.Add(request);
             if (Requests.Count == 1)
             {
-                if (!queue.TryEnqueue("先确认工程范围"))
-                {
-                    throw new Exception("guidance was rejected");
-                }
                 return Task.FromResult(new AiChatResponse(null,
                     [new AiToolCall("steer-call", "project_info", "{}")], "tool_calls", null));
             }
@@ -158,6 +155,17 @@ internal static class CacheOptimizationChecks
         {
             queue.TryEnqueue("未消费的提示仍在队列");
             throw new InvalidOperationException("offline transport failed");
+        }
+    }
+
+    private sealed class ToolStartedProgress(AiAgentSteeringQueue queue) : IProgress<AiAgentProgress>
+    {
+        public void Report(AiAgentProgress update)
+        {
+            if (update.Kind == AiAgentProgressKind.ToolCallStarted && !queue.TryEnqueue("先确认工程范围"))
+            {
+                throw new Exception("guidance was rejected");
+            }
         }
     }
 }

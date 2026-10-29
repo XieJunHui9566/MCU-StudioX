@@ -120,7 +120,7 @@ public partial class MainWindow
             QueueAssistance(signature: true);
             return;
         }
-        if (char.IsLetter(character) || character == '_' || character is '.' or '>' or ':' or '"' or '<' or '/' || char.IsDigit(character) && completionWindow is not null)
+        if (CodeCompletionTrigger.ShouldComplete(SourceEditor.Text, SourceEditor.CaretOffset, character))
         {
             QueueAssistance(signature: false);
         }

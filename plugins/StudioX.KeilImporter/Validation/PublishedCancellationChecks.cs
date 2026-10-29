@@ -62,7 +62,9 @@ internal static class PublishedCancellationChecks
             await Task.Delay(20, token);
         }
         await Task.Delay(200, token);
-        var queuedRefresh = plugin.InvokeAsync("command", "open", JsonSerializer.SerializeToElement(new { }), token);
+        var queuedRefresh = plugin.InvokeAsync("command", "open", JsonSerializer.SerializeToElement(new
+        {
+        }), token);
         await Task.Delay(50, token);
         Check(!queuedRefresh.IsCompleted, "new panel request waits for in-flight migration state to settle");
         cancellation.Cancel();

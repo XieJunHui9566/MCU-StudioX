@@ -1,0 +1,103 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:studiox:example:demo-data:1",
+  "title": "仅供契约示例的 DEMO4 profile 叠加校验",
+  "description": "在完整公共 Schema 校验之后，对同一完整文档执行本 Schema；不是插件实现或真实器件规则。",
+  "type": "object",
+  "required": ["target", "profile", "definitions", "configuration"],
+  "properties": {
+    "target": {
+      "properties": {
+        "vendorId": { "const": "example" },
+        "deviceId": { "const": "DEMO4" },
+        "packageId": { "const": "DEMO-4" },
+        "architecture": { "const": "synthetic" }
+      }
+    },
+    "profile": {
+      "properties": {
+        "id": { "const": "example.demo.bare" },
+        "version": { "const": "1.0.0" },
+        "pluginId": { "const": "example.demo.configurator" },
+        "providerId": { "const": "demo-configurator" },
+        "framework": { "const": { "id": "bare-metal", "version": "1.0.0" } },
+        "sdk": { "type": "null" }
+      }
+    },
+    "definitions": {
+      "properties": {
+        "profileData": { "const": { "synthetic": true } },
+        "pins": {
+          "items": {
+            "properties": {
+              "profileData": { "$ref": "#/$defs/empty" },
+              "functions": { "items": { "properties": { "profileData": { "$ref": "#/$defs/empty" } } } }
+            }
+          }
+        },
+        "peripherals": {
+          "items": {
+            "properties": {
+              "profileData": { "$ref": "#/$defs/empty" },
+              "signals": { "items": { "properties": { "profileData": { "$ref": "#/$defs/empty" } } } }
+            }
+          }
+        },
+        "clockTree": {
+          "properties": { "nodes": { "items": { "properties": { "profileData": { "$ref": "#/$defs/empty" } } } } }
+        }
+      }
+    },
+    "configuration": {
+      "properties": {
+        "profileData": { "$ref": "#/$defs/empty" },
+        "pins": {
+          "items": {
+            "if": { "properties": { "functionId": { "const": "gpio" } } },
+            "then": { "properties": { "parameters": { "$ref": "#/$defs/gpio" } } },
+            "else": { "properties": { "parameters": { "$ref": "#/$defs/empty" } } }
+          }
+        },
+        "peripherals": {
+          "items": {
+            "if": { "properties": { "peripheralId": { "const": "UART0" } } },
+            "then": { "properties": { "parameters": { "$ref": "#/$defs/uart" } } },
+            "else": { "properties": { "parameters": { "$ref": "#/$defs/empty" } } }
+          }
+        },
+        "clocks": {
+          "items": {
+            "if": { "properties": { "nodeId": { "const": "RC" } } },
+            "then": { "properties": { "parameters": { "$ref": "#/$defs/rc" } } },
+            "else": { "properties": { "parameters": { "$ref": "#/$defs/divider" } } }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "empty": { "type": "object", "additionalProperties": false },
+    "gpio": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "mode": { "enum": ["input", "output"] },
+        "initialLevel": { "enum": [0, 1] }
+      }
+    },
+    "uart": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "baudRate": { "type": "integer", "minimum": 1, "maximum": 1000000 },
+        "parity": { "enum": ["none", "odd", "even"] }
+      }
+    },
+    "rc": {
+      "type": "object", "additionalProperties": false,
+      "properties": { "frequencyHz": { "const": 1000000 } }
+    },
+    "divider": {
+      "type": "object", "additionalProperties": false,
+      "properties": { "divider": { "type": "integer", "minimum": 1, "maximum": 16 } }
+    }
+  }
+}

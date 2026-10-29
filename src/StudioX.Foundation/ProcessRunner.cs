@@ -49,11 +49,13 @@ public sealed class ProcessRunner
         using var timeout = new CancellationTokenSource(request.Timeout);
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(timeout.Token, cancellationToken);
         using var process = new Process { StartInfo = start };
+        using var job = request.ContainProcessTree ? new ProcessJob() : null;
         cancellationToken.ThrowIfCancellationRequested();
         if (!process.Start())
         {
             throw new StudioXException("TOOL_START", "无法启动工具进程。");
         }
+        job?.Add(process);
         var output = DrainAsync(process.StandardOutput, linked.Token, request.Output, request.StreamCompleteOutput);
         var error = DrainAsync(process.StandardError, linked.Token, request.Output, request.StreamCompleteOutput);
         var input = WriteInputAsync(process, request.StandardInput, linked.Token);
@@ -65,6 +67,10 @@ public sealed class ProcessRunner
         }
         catch (OperationCanceledException)
         {
+            if (job is not null)
+            {
+                await job.StopAsync();
+            }
             try
             {
                 if (!process.HasExited)
@@ -81,6 +87,10 @@ public sealed class ProcessRunner
             // 输出观察器或管道故障同样结束整个工具树；进程句柄 Dispose 不会终止工具。
             try
             {
+                if (job is not null)
+                {
+                    await job.StopAsync();
+                }
                 if (!process.HasExited)
                 {
                     process.Kill(entireProcessTree: true);
@@ -95,6 +105,10 @@ public sealed class ProcessRunner
         }
         var stdout = await output;
         var stderr = await error;
+        if (job is not null)
+        {
+            await job.StopAsync();
+        }
         cancellationToken.ThrowIfCancellationRequested();
         return new ProcessResult(process.ExitCode, stdout.Text, stderr.Text, timedOut, stdout.Truncated || stderr.Truncated);
     }

@@ -13,7 +13,9 @@ param(
     [string]$PeripheralPackInputs,
     [string]$KeilValidationInputs,
     [string]$SourceRegistrationInputs,
-    [ValidateSet('baseline', 'editor', 'keil', 'sources', 'environment', 'peripheral', 'fault')][string[]]$MaintenanceAreas = @('baseline')
+    [string]$PicInputs,
+    [string]$ArduinoInputs,
+    [ValidateSet('baseline', 'editor', 'keil', 'sources', 'environment', 'peripheral', 'fault', 'pic', 'arduino')][string[]]$MaintenanceAreas = @('baseline')
 )
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
@@ -30,6 +32,19 @@ foreach ($name in $maintenancePolicy.inputs.PSObject.Properties.Name)
 }
 # 先拒绝缺失的必跑输入，不能执行完基础回归才把真实验证悄悄视作未请求。
 Assert-StudioXMaintenanceInputs $maintenancePolicy $maintenanceAreasResolved $maintenanceInputs
+. (Join-Path $PSScriptRoot 'Framework-Maintenance.ps1')
+foreach ($area in @('pic', 'arduino') | Where-Object { $_ -in $maintenanceAreasResolved })
+{
+    $inputName = if ($area -eq 'pic')
+    {
+        'PicInputs'
+    }
+    else
+    {
+        'ArduinoInputs'
+    }
+    $null = Read-StudioXFrameworkInputs $maintenanceInputs[$inputName] $area
+}
 $output = [IO.Path]::GetFullPath($OutputDirectory)
 if (Test-Path -LiteralPath $output)
 {
@@ -66,8 +81,22 @@ try
     Run-Check 'security-boundaries' { & (Exe 'StudioX.SecurityValidation') (Join-Path $output 'security-boundaries') }
     Run-Check 'mon51-protocol' { & (Exe 'StudioX.Mon51Validation') (Join-Path $output 'mon51-protocol') }
     Run-Check 'source-style' { & (Join-Path $PSScriptRoot 'Format-Source.ps1') -Check -BuildArtifactsDirectory $build }
+    foreach ($area in @('pic', 'arduino') | Where-Object { $_ -in $maintenanceAreasResolved })
+    {
+        $inputName = if ($area -eq 'pic')
+        {
+            'PicInputs'
+        }
+        else
+        {
+            'ArduinoInputs'
+        }
+        Run-Check ($area + '-framework') { Invoke-StudioXFrameworkMaintenance $area $maintenanceInputs[$inputName] $build (Join-Path $output ($area + '-framework')) }
+    }
     Run-Check 'mcp-validation-build' { & dotnet build (Join-Path $PSScriptRoot 'StudioX.McpValidation/StudioX.McpValidation.csproj') -c Release --artifacts-path $build --nologo }
     Run-Check 'mcp-contracts-and-boundaries' { & (Exe 'StudioX.McpValidation') }
+    Run-Check 'ai-validation-build' { & dotnet build (Join-Path $PSScriptRoot 'StudioX.AiValidation/StudioX.AiValidation.csproj') -c Release --artifacts-path $build --nologo }
+    Run-Check 'ai-protocol-and-boundaries' { & (Exe 'StudioX.AiValidation') }
     if ($LanguageRuntime)
     {
         $languageRuntimePath = [IO.Path]::GetFullPath($LanguageRuntime)
@@ -124,7 +153,7 @@ try
         Run-Check ($name + '-build') { & dotnet build (Join-Path $PSScriptRoot "$name/$name.csproj") -c Release --artifacts-path $build --nologo }
         Run-Check $name { & (Exe $name) }
     }
-    Run-Check 'release-identity' { & (Join-Path $PSScriptRoot 'Test-ReleaseVersion.ps1') -OutputDirectory (Join-Path $output 'release-identity') }
+    Run-Check 'release-identity' { & (Join-Path $PSScriptRoot 'Test-ReleaseVersion.ps1') -OutputDirectory (Join-Path $output 'release-identity') -DesktopAssembly (Join-Path $build 'bin/StudioX.Desktop/release_win-x64/MCU StudioX.dll') }
     Run-Check 'release-pipeline-guards' { & (Join-Path $PSScriptRoot 'Test-ReleasePipeline.ps1') -OutputDirectory (Join-Path $output 'release-pipeline') }
     Run-Check 'maintenance-gate-contracts' { & (Join-Path $PSScriptRoot 'Test-MaintenanceGates.ps1') -OutputDirectory (Join-Path $output 'maintenance-gate-contracts') }
     Run-Check 'debug-plugin-isolation' { & (Exe 'StudioX.DebugPluginValidation') (Join-Path $build 'bin/StudioX.PluginHost/release_win-x64') (Join-Path $output 'debug-plugins') }
@@ -211,14 +240,24 @@ try
                     ('"' + (Join-Path $packRetention 'prune-project/archives/fixture.same-0.9.0.mcupack') + '"'),
                     ('"' + (Join-Path $packRetention 'prune-project/archives/fixture.same-0.10.0.mcupack') + '"'))
             }
-            else { @('--preview-editable-combos', ('"' + $packUi + '"')) }
+            else
+            {
+                @('--preview-editable-combos', ('"' + $packUi + '"'))
+            }
             $packUiProcess = Start-Process -FilePath $desktop -ArgumentList $packUiArguments -WindowStyle Hidden -PassThru
             if (!$packUiProcess.WaitForExit(45000))
             {
                 $packUiProcess.Kill($true)
                 throw ($packUiKind + ' UI timeout.')
             }
-            $packUiResult = Join-Path $packUi $(if ($packUiKind -eq 'pack-catalog') { 'loading-result.json' } else { 'result.json' })
+            $packUiResult = Join-Path $packUi $(if ($packUiKind -eq 'pack-catalog')
+                {
+                    'loading-result.json'
+                }
+                else
+                {
+                    'result.json'
+                })
             if ($packUiProcess.ExitCode -ne 0 -or !(Test-Path -LiteralPath $packUiResult) -or
                 !(Get-Content -LiteralPath $packUiResult -Raw | ConvertFrom-Json).success)
             {
@@ -290,20 +329,31 @@ finally
         $sourceAfter = Get-StudioXMaintenanceSourceSnapshot $root
         $inputFilesAfter = @(Get-StudioXMaintenanceInputFiles $maintenancePolicy $maintenanceInputs)
         $headAfter = (& git -C $root rev-parse HEAD).Trim()
-        if ($LASTEXITCODE -ne 0) { throw 'Final source commit unavailable.' }
+        if ($LASTEXITCODE -ne 0)
+        {
+            throw 'Final source commit unavailable.'
+        }
     }
-    catch { $snapshotDiagnostic = $_.Exception.ToString() }
-    $report = @{formatVersion   =1;
-        sourceCommit  =$head;
-        sourceDirty   =$sourceDirty;
-        hardware      =$false;
-        downloadedSdk =$false;
-        passed        =($completed -and $results.Count -gt 0 -and !($results | Where-Object { !$_.passed }));
-        results       =$results;
-        maintenanceAreas = @($maintenanceAreasResolved);
-        maintenanceInputs = $maintenanceInputs;
-        sourceSnapshot = @{before=$sourceBefore; after=$sourceAfter; diagnostic=$snapshotDiagnostic}
-        inputFileSnapshot = @{before=$inputFilesBefore; after=$inputFilesAfter}
+    catch
+    {
+        $snapshotDiagnostic = $_.Exception.ToString()
+    }
+    $report = @{formatVersion =1;
+        sourceCommit          =$head;
+        sourceDirty           =$sourceDirty;
+        hardware              =$false;
+        downloadedSdk         =$false;
+        passed                =($completed -and $results.Count -gt 0 -and !($results | Where-Object { !$_.passed }));
+        results               =$results;
+        maintenanceAreas      = @($maintenanceAreasResolved);
+        maintenanceInputs     = $maintenanceInputs;
+        sourceSnapshot        = @{before =$sourceBefore;
+            after                        =$sourceAfter;
+            diagnostic                   =$snapshotDiagnostic
+        }
+        inputFileSnapshot     = @{before =$inputFilesBefore;
+            after                        =$inputFilesAfter
+        }
     }
     $report.maintenance = Test-StudioXMaintenanceEvidence $maintenancePolicy $maintenanceAreasResolved $report $output $sourceAfter $headAfter
     $report.passed = $report.passed -and $report.maintenance.passed

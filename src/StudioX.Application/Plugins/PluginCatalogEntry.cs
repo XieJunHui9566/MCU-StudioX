@@ -12,11 +12,16 @@ public sealed record PluginCatalogEntry(
     bool CanEnable,
     string? Diagnostic)
 {
+    public PluginCompatibilityReport? Compatibility
+    {
+        get; init;
+    }
     internal string? ContentFingerprint
     {
         get; init;
     }
     public string DisplayName => Manifest?.DisplayName ?? Id;
     public string Version => Manifest?.Version ?? "未知";
+    public string DisplayVersion => Manifest?.DisplayVersion ?? Version;
     public string[] Capabilities => Manifest?.Capabilities ?? [];
 }

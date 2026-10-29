@@ -10,7 +10,10 @@ public sealed class WindowsPathPicker : IPathPicker
 {
     public Task<string?> PickAsync(PathPickerRequest request, CancellationToken token)
     {
-        if (!OperatingSystem.IsWindows()) { throw new PlatformNotSupportedException("文件选择窗口需要 Windows。"); }
+        if (!OperatingSystem.IsWindows())
+        {
+            throw new PlatformNotSupportedException("文件选择窗口需要 Windows。");
+        }
         token.ThrowIfCancellationRequested();
         // 独立宿主不继承 SystemDrive；Shell 会展开此变量来定位缓存，否则会在插件目录生成字面量目录并破坏包校验。
         // 仅补齐当前插件进程的系统盘变量，不修改用户/系统环境或 PATH。
@@ -18,7 +21,10 @@ public sealed class WindowsPathPicker : IPathPicker
         {
             var windows = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
             var drive = Path.GetPathRoot(windows)?.TrimEnd(Path.DirectorySeparatorChar);
-            if (drive is not { Length: 2 } || drive[1] != ':') { throw new InvalidOperationException("无法确定 Windows 系统盘，不能打开路径选择窗口。"); }
+            if (drive is not { Length: 2 } || drive[1] != ':')
+            {
+                throw new InvalidOperationException("无法确定 Windows 系统盘，不能打开路径选择窗口。");
+            }
             Environment.SetEnvironmentVariable("SystemDrive", drive, EnvironmentVariableTarget.Process);
         }
         var completion = new TaskCompletionSource<string?>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -26,12 +32,19 @@ public sealed class WindowsPathPicker : IPathPicker
         {
             try
             {
-                if (!OperatingSystem.IsWindows()) { throw new PlatformNotSupportedException("文件选择窗口需要 Windows。"); }
+                if (!OperatingSystem.IsWindows())
+                {
+                    throw new PlatformNotSupportedException("文件选择窗口需要 Windows。");
+                }
                 completion.TrySetResult(Show(request, token));
             }
             catch (OperationCanceledException) { completion.TrySetCanceled(token); }
             catch (Exception error) { completion.TrySetException(error); }
-        }) { IsBackground = true, Name = "StudioX Keil path picker" };
+        })
+        {
+            IsBackground = true,
+            Name = "StudioX Keil path picker"
+        };
         thread.SetApartmentState(ApartmentState.STA);
         thread.Start();
         return completion.Task;
@@ -60,54 +73,87 @@ public sealed class WindowsPathPicker : IPathPicker
             if (!string.IsNullOrWhiteSpace(initial) && Directory.Exists(initial))
             {
                 Marshal.ThrowExceptionForHR(SHCreateItemFromParsingName(initial, 0, ShellItemInterface, out var folder));
-                try { dialog.SetFolder(folder); }
+                try
+                {
+                    dialog.SetFolder(folder);
+                }
                 finally { Marshal.FinalReleaseComObject(folder); }
             }
-            if (!request.Folder && File.Exists(request.InitialPath)) { dialog.SetFileName(Path.GetFileName(request.InitialPath)); }
+            if (!request.Folder && File.Exists(request.InitialPath))
+            {
+                dialog.SetFileName(Path.GetFileName(request.InitialPath));
+            }
             Exception? cancellationError = null;
             TimerCallback cancelOnSta = (_, _, _, _) =>
             {
-                if (!token.IsCancellationRequested) { return; }
+                if (!token.IsCancellationRequested)
+                {
+                    return;
+                }
                 try
                 {
                     ((IOleWindow)dialog).GetWindow(out var window);
-                    if (window != 0 && !PostMessageW(window, 0x10, 0, 0)) { throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error()); }
+                    if (window != 0 && !PostMessageW(window, 0x10, 0, 0))
+                    {
+                        throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error());
+                    }
                 }
                 catch (Exception error)
                 {
-                    if (cancellationError is null) { Trace.WriteLine(error); }
+                    if (cancellationError is null)
+                    {
+                        Trace.WriteLine(error);
+                    }
                     cancellationError ??= error;
                 }
             };
             // 在窗口自身的 STA 消息循环中请求关闭，取消回调不跨线程访问 COM；异常不能越过原生回调边界。
             var timer = token.CanBeCanceled ? SetTimer(0, 0, 100, cancelOnSta) : 0;
-            if (token.CanBeCanceled && timer == 0) { throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error()); }
+            if (token.CanBeCanceled && timer == 0)
+            {
+                throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error());
+            }
             try
             {
                 token.ThrowIfCancellationRequested();
                 var result = dialog.Show(FindOwner());
-                if (cancellationError is { } error) { throw new InvalidOperationException("关闭路径选择窗口失败。", error); }
+                if (cancellationError is { } error)
+                {
+                    throw new InvalidOperationException("关闭路径选择窗口失败。", error);
+                }
                 token.ThrowIfCancellationRequested();
-                if (result == Cancelled) { return null; }
+                if (result == Cancelled)
+                {
+                    return null;
+                }
                 Marshal.ThrowExceptionForHR(result);
                 dialog.GetResult(out var item);
                 try
                 {
                     item.GetDisplayName(0x80058000U, out var path);
-                    try { return Marshal.PtrToStringUni(path) ?? throw new InvalidOperationException("选择窗口没有返回文件系统路径。"); }
+                    try
+                    {
+                        return Marshal.PtrToStringUni(path) ?? throw new InvalidOperationException("选择窗口没有返回文件系统路径。");
+                    }
                     finally { Marshal.FreeCoTaskMem(path); }
                 }
                 finally { Marshal.FinalReleaseComObject(item); }
             }
             finally
             {
-                if (timer != 0 && !KillTimer(0, timer)) { Trace.WriteLine("路径选择窗口的取消定时器已不可用。"); }
+                if (timer != 0 && !KillTimer(0, timer))
+                {
+                    Trace.WriteLine("路径选择窗口的取消定时器已不可用。");
+                }
                 GC.KeepAlive(cancelOnSta);
             }
         }
         finally
         {
-            if (dialog is not null) { Marshal.FinalReleaseComObject(dialog); }
+            if (dialog is not null)
+            {
+                Marshal.FinalReleaseComObject(dialog);
+            }
             CoUninitialize();
         }
     }
@@ -127,7 +173,10 @@ public sealed class WindowsPathPicker : IPathPicker
                 {
                     if (process.MainModule?.FileName.Equals(executable, StringComparison.OrdinalIgnoreCase) == true && process.MainWindowHandle != 0)
                     {
-                        if (process.MainWindowHandle == foreground) { return foreground; }
+                        if (process.MainWindowHandle == foreground)
+                        {
+                            return foreground;
+                        }
                         owner = process.MainWindowHandle;
                         candidates++;
                     }

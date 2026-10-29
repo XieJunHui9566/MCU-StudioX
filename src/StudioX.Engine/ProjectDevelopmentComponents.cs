@@ -13,7 +13,7 @@ public static class ProjectDevelopmentComponents
             return;
         }
         DevelopmentComponentRequirements.Validate(needs);
-        if (project.Kind is ProjectKind.MicroPython or ProjectKind.Zephyr)
+        if (project.Kind == ProjectKind.MicroPython || project.Kind == ProjectKind.Zephyr && project.Zephyr?.FormatVersion != 2)
         {
             if (needs.Count != 0)
             {
@@ -30,13 +30,13 @@ public static class ProjectDevelopmentComponents
     public static async Task<IReadOnlyList<DevelopmentComponentRequirement>> ReadAsync(string root, ProjectManifest project, CancellationToken token = default)
     {
         ValidateSnapshot(project);
-        if (project.Kind is ProjectKind.MicroPython or ProjectKind.Zephyr)
+        if (project.Kind == ProjectKind.MicroPython || project.Kind == ProjectKind.Zephyr && project.Zephyr?.FormatVersion != 2)
         {
             return [];
         }
         IReadOnlyList<DevelopmentComponentRequirement> needs = project.DevelopmentComponents ?? [Primary(project)];
         var devicePath = PathBoundary.Resolve(root, "device/manifest.json");
-        if (project.Kind == ProjectKind.Pack && File.Exists(devicePath))
+        if (project.Kind is ProjectKind.Pack or ProjectKind.Pic && File.Exists(devicePath))
         {
             var pack = await ReadMetadataAsync<PackManifest>(devicePath, 32 * 1024 * 1024, token);
             var device = pack.Devices?.SingleOrDefault(item => item.Id == project.DeviceId);
@@ -64,7 +64,7 @@ public static class ProjectDevelopmentComponents
     public static IReadOnlyList<DevelopmentComponentRequirement> FromSnapshot(ProjectManifest project)
     {
         ValidateSnapshot(project);
-        return project.Kind is ProjectKind.MicroPython or ProjectKind.Zephyr ? []
+        return project.Kind == ProjectKind.MicroPython || project.Kind == ProjectKind.Zephyr && project.Zephyr?.FormatVersion != 2 ? []
             : Configured(project, project.DevelopmentComponents ?? [Primary(project)]);
     }
 

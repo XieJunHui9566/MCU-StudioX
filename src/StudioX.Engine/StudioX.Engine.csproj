@@ -10,6 +10,9 @@
     <EmbeddedResource
       Include="Resources/studiox-coredump.py" />
     <EmbeddedResource
+      Include="Resources/Mx251/*"
+      LogicalName="StudioX.Engine.Mx251.%(Filename)%(Extension)" />
+    <EmbeddedResource
       Include="Resources/Ag32/StudioX_System.h" />
     <EmbeddedResource
       Include="Resources/Ag32/StudioX_System.c" />
@@ -27,5 +30,11 @@
   <ItemGroup>
     <EmbeddedResource
       Include="Resources/Lvgl/preview_host.c" />
+  </ItemGroup>
+  <!-- 与已验证 CLI 编译同一份 C# 协议核心，IDE 不调用 Python 或复制报文实现。 -->
+  <ItemGroup>
+    <Compile
+      Include="../../tools/StudioX.Ai8051Isp/BridgeProtocol.cs;../../tools/StudioX.Ai8051Isp/Calibration.cs;../../tools/StudioX.Ai8051Isp/DeviceConfiguration.cs;../../tools/StudioX.Ai8051Isp/FirmwareImage.cs;../../tools/StudioX.Ai8051Isp/HidDevice.cs;../../tools/StudioX.Ai8051Isp/HidTransport.cs;../../tools/StudioX.Ai8051Isp/IHidReportTransport.cs;../../tools/StudioX.Ai8051Isp/TargetInfo.cs;../../tools/StudioX.Ai8051Isp/IspSession.cs;../../tools/StudioX.Ai8051Isp/IspSessionResult.cs"
+      Link="Ai8051Isp/%(Filename)%(Extension)" />
   </ItemGroup>
 </Project>

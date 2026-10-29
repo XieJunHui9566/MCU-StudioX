@@ -11,6 +11,11 @@
   </PropertyGroup>
   <ItemGroup>
     <Content
+      Include="../../licenses/Arduino-NOTICE.md"
+      Link="licenses/Arduino-NOTICE.md"
+      CopyToOutputDirectory="PreserveNewest"
+      CopyToPublishDirectory="PreserveNewest" />
+    <Content
       Include="../../licenses/SharpCompress-MIT.txt;../../licenses/SharpCompress-NOTICE.md"
       Link="licenses/%(Filename)%(Extension)"
       CopyToOutputDirectory="PreserveNewest"

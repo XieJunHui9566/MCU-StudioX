@@ -14,6 +14,7 @@ public sealed partial class PackRepository(string rootDirectory)
     private readonly SemaphoreSlim importGate = new(1, 1);
     public string RootDirectory { get; } = Path.GetFullPath(rootDirectory);
 
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Security", "CA5389", Justification = "Every entry is resolved by PathBoundary.Resolve, which rejects traversal, Win32 aliases and reparse points; covered by SecurityValidation PackChecks.")]
     public async Task<InstalledPack> ImportAsync(string archivePath, CancellationToken cancellationToken = default)
     {
         await importGate.WaitAsync(cancellationToken);

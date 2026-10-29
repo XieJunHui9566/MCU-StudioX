@@ -31,13 +31,15 @@ public partial class MainWindow
         NewProjectPanel.IsEnabled = project is null;
         ProjectDetailsPanel.Visibility = project is null ? Visibility.Collapsed : Visibility.Visible;
         ProjectDetailsPanel.DataContext = null;
-        BuildSettingsCard.Visibility = project?.Kind is ProjectKind.Zephyr or ProjectKind.MicroPython ? Visibility.Collapsed : Visibility.Visible;
+        BuildSettingsCard.Visibility = project?.Kind is ProjectKind.Arduino or ProjectKind.Zephyr or ProjectKind.MicroPython or ProjectKind.Pic ? Visibility.Collapsed : Visibility.Visible;
         loadedBuildSettings = null;
+        loadedMx251Settings = null;
         stcCodeRomLimit = null;
         ConfigureBuildSettingsForProject();
         UpdateBuildSettingsControls();
         ConfigureEspressifModuleForProject();
         ConfigureStcIspForProject();
+        ConfigureMx251IspForProject();
         RefreshAg32LogicUi(project);
     }
 
@@ -52,31 +54,37 @@ public partial class MainWindow
         NewProjectPanel.IsEnabled = false;
         ProjectDetailsPanel.Visibility = Visibility.Visible;
         CurrentProjectName.Text = project.Name;
-        CurrentProjectDeviceId.Text = project.Kind == ProjectKind.Zephyr
+        CurrentProjectDeviceId.Text = project.Kind == ProjectKind.Zephyr && project.Zephyr?.FormatVersion != 2
             ? project.Zephyr!.BoardTarget : project.DeviceId;
         CurrentProjectTemplateId.Text = project.Kind == ProjectKind.CubeMx ? "CubeMX 导入" : project.TemplateId;
         CurrentProjectDescriptionHeading.Text = project.Kind switch
         {
             ProjectKind.CubeMx => "工程来源说明",
-            ProjectKind.Zephyr => "Zephyr 实验板级配置（创建时）",
+            ProjectKind.Zephyr => "Zephyr 自定义板级配置（创建时）",
             _ => "模板默认配置（创建时）"
         };
-        TemplateDefaultsNote.Visibility = project.Kind is ProjectKind.CubeMx or ProjectKind.Zephyr or ProjectKind.MicroPython
+        TemplateDefaultsNote.Visibility = project.Kind is ProjectKind.Arduino or ProjectKind.CubeMx or ProjectKind.Zephyr or ProjectKind.MicroPython
             ? Visibility.Collapsed : Visibility.Visible;
         CurrentProjectPackVersion.Text = project.Kind == ProjectKind.CubeMx ? "不适用" : project.PackVersion;
         CurrentProjectToolset.Text = project.Kind == ProjectKind.Zephyr
-            ? $"Zephyr {project.Zephyr!.ZephyrVersion} · 实验模式 · {project.Zephyr.BoardTarget}"
+            ? $"Zephyr {project.Zephyr!.ZephyrVersion} · {project.ToolsetId} {project.ToolsetVersion} · {project.Zephyr.BoardTarget}"
             : $"{project.ToolsetId} {project.ToolsetVersion} · {project.CompilerId}";
         ApplyProjectDetails(ProjectDeviceInfo.Recorded(project));
         loadedBuildSettings = null;
+        loadedMx251Settings = null;
         stcCodeRomLimit = null;
         BuildSettingsStatus.Text = project.Kind == ProjectKind.Zephyr
-            ? "Zephyr 实验模式由 Kconfig、Devicetree 与 west 管理；当前未启用板级构建。"
+            ? "Zephyr 使用 prj.conf、Devicetree 和 CMakeLists.txt 配置编译。"
             : "正在读取编译参数…";
         UpdateBuildSettingsControls();
         ConfigureEspressifModuleForProject();
         ShowDocument(PackagesTab);
         var details = await ProjectDeviceInfo.ReadAsync(directory, project);
+        if (project.Kind is ProjectKind.Arduino or ProjectKind.Pic)
+        {
+            ApplyProjectDetails(details);
+            return;
+        }
         if (project.Kind == ProjectKind.MicroPython)
         {
             CurrentProjectToolset.Text = $"MicroPython {project.MicroPython!.Version} · {project.MicroPython.Board}";
@@ -92,6 +100,17 @@ public partial class MainWindow
             if (revision == projectDetailsRevision && projectDirectory == directory && !closing)
             {
                 ApplyProjectDetails(details);
+            }
+            return;
+        }
+        if (IsMx251Project)
+        {
+            var mxSettings = await services.Mx251Settings.ReadAsync(directory);
+            if (revision == projectDetailsRevision && projectDirectory == directory && !closing)
+            {
+                ApplyProjectDetails(details);
+                ApplyMx251Settings(mxSettings);
+                await LoadMx251IspAsync(directory, revision);
             }
             return;
         }

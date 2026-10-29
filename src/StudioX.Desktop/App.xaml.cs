@@ -27,6 +27,9 @@ public partial class App : System.Windows.Application
         var developmentComponentsPreview = e.Args is ["--preview-development-components", _, _, _];
         var faultPeripheralsPreview = e.Args is ["--preview-fault-peripherals", _, _];
         var codeTemplatesPreview = e.Args is ["--preview-code-templates", _];
+        var mx251DownloadPreview = e.Args is ["--preview-mx251-download", _, _, _];
+        var mx251MemoryPreview = e.Args is ["--preview-mx251-memory", _, _, _];
+        var mx251SettingsPreview = e.Args is ["--preview-mx251-settings", _, _];
         var stcTimingPreview = e.Args is ["--preview-stc-timing", _, _];
         var peripheralDevelopmentPreview = e.Args is ["--preview-peripheral-development", _, _, _];
         var projectHealthPreview = e.Args is ["--preview-project-health", _, _];
@@ -34,6 +37,8 @@ public partial class App : System.Windows.Application
         var diagnosticsPreview = e.Args is ["--preview-diagnostics", _];
         var openOcdPlotPreview = e.Args is ["--preview-openocd-plot", _];
         var pluginLabsPreview = e.Args is ["--preview-plugin-labs", _, _];
+        var mcuConfigurationPreview = e.Args is ["--preview-mcu-configuration", _, _, _];
+        var showMcuConfiguration = e.Args is ["--show-mcu-configuration", _, _, _];
         var workspaceEditingPreview = e.Args is ["--preview-workspace-editor", _, _] or ["--preview-editor-recovery", _, _]
             or ["--preview-workspace-editor", _, _, _] or ["--preview-editor-recovery", _, _, _];
         var startupRecoveryPreview = e.Args is ["--preview-startup-recovery", _, _];
@@ -56,6 +61,9 @@ public partial class App : System.Windows.Application
         var navigationPreview = e.Args is ["--preview-navigation", _, _];
         var explorerPreview = e.Args is ["--preview-explorer", _, _];
         var recentProjectsPreview = e.Args is ["--preview-recent-projects", _, _];
+        var arduinoPreview = e.Args is ["--preview-arduino", _, _, _];
+        var arduinoTemplatesPreview = e.Args is ["--preview-arduino-templates", _, _, _, _];
+        var picPreview = e.Args is ["--preview-pic", _, _, _, _];
         var buildPreview = e.Args is ["--preview-build", _, _];
         var buildOutputPreview = e.Args is ["--preview-build-output", _, _, _];
         var stcDownloadOutputPreview = e.Args is ["--preview-stc-download-output", _];
@@ -78,6 +86,7 @@ public partial class App : System.Windows.Application
         var mon51Fixture = mon51Preview ? new StudioX.Application.StcDebugging.Mon51OfflineTransport() : null;
         var rtosPreview = e.Args is ["--preview-rtos", _, _];
         var packCatalogPreview = e.Args is ["--preview-pack-catalog", _, _, _];
+        var mcuFavoritesPreview = e.Args is ["--preview-mcu-favorites", _];
         var editableCombosPreview = e.Args is ["--preview-editable-combos", _];
         var breakpointsPreview = e.Args is ["--preview-breakpoints", _, _];
         var importPerformancePreview = e.Args is ["--preview-import-performance", _, _];
@@ -89,12 +98,14 @@ public partial class App : System.Windows.Application
         var lvglPreview = e.Args is ["--preview-lvgl-ui", _, _];
         var lvglSetupPreview = e.Args is ["--preview-lvgl-setup", _, _, _, _];
         var zephyrDevicetreePreview = e.Args is ["--preview-zephyr-devicetree", _, _];
+        var zephyrTemplatesPreview = e.Args is ["--preview-zephyr-templates", _, _, _, _];
         var anyPreview = productivityPreview || workspaceEditingPreview || microPythonPreview || pythonPreview || hdlWorkflowPreview || hdlPreview || ag32MappingPreview || pluginsPreview || preview || windowLayoutPreview || editorPreview || completionPreview || cmakePreview || documentsPreview || vePreview || navigationPreview || explorerPreview || buildPreview || buildMemoryPreview || editingPreview || bracketsPreview || stm32Preview || rp2350Preview || rp2040Preview || projectPreview || cubeMxPreview || importPerformancePreview || downloadPreview || espressifPreview || espressifModulePreview || debugPreview || rtosPreview || packCatalogPreview || breakpointsPreview || lvglPreview || lvglSetupPreview || zephyrDevicetreePreview;
         anyPreview |= agentWorkspacePreview || diagnosticsPreview || openOcdPlotPreview || pluginLabsPreview || helpPreview || firstProjectPreview || projectHealthPreview || toolManagementPreview || largeProjectPreview || projectOpenPerformancePreview;
         anyPreview |= debugPluginsPreview || productWorkflowsPreview || projectToolsPreview;
         anyPreview |= faultPeripheralsPreview;
         anyPreview |= codeTemplatesPreview;
-        anyPreview |= stcTimingPreview;
+        anyPreview |= mcuConfigurationPreview;
+        anyPreview |= mx251DownloadPreview || stcTimingPreview || mx251SettingsPreview || mx251MemoryPreview;
         anyPreview |= peripheralDevelopmentPreview;
         anyPreview |= developmentComponentsPreview;
         anyPreview |= idfVersionsPreview;
@@ -109,9 +120,19 @@ public partial class App : System.Windows.Application
         anyPreview |= stcDownloadOutputPreview;
         anyPreview |= appearancePluginPreview;
         anyPreview |= recentProjectsPreview;
-        var data = (acceptanceWorkbench || showAgentWorkspace || showProductivity || showDebugDemo || showBreakpointsDemo) && e.Args.Length >= 3 ? Path.GetFullPath(e.Args[2]) : smoke || anyPreview ? Path.Combine(Path.GetFullPath(e.Args[1]), "user-data") :
+        anyPreview |= arduinoPreview;
+        anyPreview |= arduinoTemplatesPreview;
+        anyPreview |= picPreview;
+        anyPreview |= zephyrTemplatesPreview;
+        anyPreview |= mcuFavoritesPreview;
+        var data = showMcuConfiguration ? Path.GetFullPath(e.Args[3]) : (acceptanceWorkbench || showAgentWorkspace || showProductivity || showDebugDemo || showBreakpointsDemo) && e.Args.Length >= 3 ? Path.GetFullPath(e.Args[2]) : smoke || anyPreview ? Path.Combine(Path.GetFullPath(e.Args[1]), "user-data") :
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MCUStudioX");
         var services = new WorkbenchService(acceptanceWorkbench ? Path.GetFullPath(e.Args[1])
+            : mx251DownloadPreview || mx251MemoryPreview ? Path.GetFullPath(e.Args[3])
+            : zephyrTemplatesPreview ? Path.GetFullPath(e.Args[2])
+            : arduinoPreview ? Path.GetFullPath(e.Args[3])
+            : arduinoTemplatesPreview ? Path.GetFullPath(e.Args[2])
+            : picPreview ? Path.GetFullPath(e.Args[2])
             : buildOutputPreview ? Path.GetFullPath(e.Args[3])
             : peripheralDevelopmentPreview ? Path.GetFullPath(e.Args[3])
             : workspaceEditingPreview && e.Args.Length == 4 ? Path.GetFullPath(e.Args[3])
@@ -130,14 +151,35 @@ public partial class App : System.Windows.Application
             window.Left = -20000;
         }
         window.Show();
-        await window.InitializeAsync(loadGitHubAccounts: !smoke && !anyPreview && !showProductivity && !showAgentWorkspace && !acceptanceWorkbench);
+        await window.InitializeAsync(loadGitHubAccounts: !smoke && !anyPreview && !showProductivity && !showAgentWorkspace && !acceptanceWorkbench && !showMcuConfiguration);
+        if (showMcuConfiguration)
+        {
+            await window.ShowMcuConfigurationAsync(Path.GetFullPath(e.Args[1]), Path.GetFullPath(e.Args[2]));
+            return;
+        }
         if (anyPreview)
         {
             var directory = Path.GetFullPath(e.Args[1]);
             Directory.CreateDirectory(directory);
             try
             {
-                if (appearancePluginPreview)
+                if (mcuFavoritesPreview)
+                {
+                    await window.RenderMcuFavoritesPreviewAsync(directory);
+                }
+                else if (picPreview)
+                {
+                    await window.RenderPicPreviewAsync(directory, Path.GetFullPath(e.Args[3]), Path.GetFullPath(e.Args[4]));
+                }
+                else if (arduinoTemplatesPreview)
+                {
+                    await window.RenderArduinoTemplatesPreviewAsync(directory, Path.GetFullPath(e.Args[3]), Path.GetFullPath(e.Args[4]));
+                }
+                else if (arduinoPreview)
+                {
+                    await window.RenderArduinoPreviewAsync(directory, Path.GetFullPath(e.Args[2]));
+                }
+                else if (appearancePluginPreview)
                 {
                     await window.RenderAppearancePluginPreviewAsync(directory, Path.GetFullPath(e.Args[2]), Path.GetFullPath(e.Args[3]));
                 }
@@ -176,6 +218,18 @@ public partial class App : System.Windows.Application
                 else if (codeTemplatesPreview)
                 {
                     await window.RenderCodeTemplatesPreviewAsync(directory);
+                }
+                else if (mx251DownloadPreview)
+                {
+                    await window.RenderMx251DownloadPreviewAsync(directory, Path.GetFullPath(e.Args[2]));
+                }
+                else if (mx251MemoryPreview)
+                {
+                    await window.RenderMx251MemoryPreviewAsync(directory, Path.GetFullPath(e.Args[2]));
+                }
+                else if (mx251SettingsPreview)
+                {
+                    await window.RenderMx251SettingsPreviewAsync(directory, Path.GetFullPath(e.Args[2]));
                 }
                 else if (stcTimingPreview)
                 {
@@ -232,6 +286,10 @@ public partial class App : System.Windows.Application
                 else if (helpPreview)
                 {
                     await window.RenderHelpPreviewAsync(directory);
+                }
+                else if (mcuConfigurationPreview)
+                {
+                    await window.RenderMcuConfigurationPreviewAsync(directory, Path.GetFullPath(e.Args[2]), Path.GetFullPath(e.Args[3]));
                 }
                 else if (pluginLabsPreview)
                 {
@@ -396,6 +454,10 @@ public partial class App : System.Windows.Application
                 else if (editorPreview)
                 {
                     await window.RenderEditorPreviewAsync(directory, Path.GetFullPath(e.Args[2]));
+                }
+                else if (zephyrTemplatesPreview)
+                {
+                    await window.RenderZephyrTemplatesPreviewAsync(directory, Path.GetFullPath(e.Args[3]), Path.GetFullPath(e.Args[4]));
                 }
                 else if (zephyrDevicetreePreview)
                 {

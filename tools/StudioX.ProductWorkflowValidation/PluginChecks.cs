@@ -12,7 +12,29 @@ internal static class PluginChecks
         var runtime = Path.Combine(root, "plugin-runtime");
         await using var manager = new PluginManagerService(runtime, Path.Combine(root, "plugin-data"));
         var one = await manager.ImportAsync(pluginArchive);
+        check(!one.CanEnable && one.Diagnostic!.Contains("插件宿主组件", StringComparison.Ordinal), "missing host explains why a plugin cannot be enabled before execution");
+        try
+        {
+            await manager.SetEnabledAsync(one.Id, true);
+            throw new InvalidOperationException("Missing host was enabled.");
+        }
+        catch (StudioXException error) when (error.Code == "PLUGIN_INVALID")
+        {
+            check(error.Message.Contains("插件宿主组件"), "missing host blocks trust before activation and retains the explanation");
+        }
+        var host = Path.GetFullPath("../../StudioX.PluginHost/" + new DirectoryInfo(AppContext.BaseDirectory).Name, AppContext.BaseDirectory);
+        Directory.CreateDirectory(Path.Combine(runtime, "plugin-host"));
+        foreach (var file in Directory.EnumerateFiles(host))
+        {
+            File.Copy(file, Path.Combine(runtime, "plugin-host", Path.GetFileName(file)));
+        }
         await manager.SetEnabledAsync(one.Id, true);
+        await using (var restricted = new PluginManagerService(runtime, Path.Combine(root, "plugin-data"), new(1, ["decode"])))
+        {
+            var incompatible = (await restricted.ListAsync()).Single();
+            check(!incompatible.CanEnable && !incompatible.Enabled && incompatible.Diagnostic!.Contains("API") &&
+                incompatible.Compatibility!.Missing.Count > 1, "a restricted host explains missing API and contribution capabilities even for previously trusted content");
+        }
         var payload = new Dictionary<string, byte[]>();
         using (var zip = ZipFile.OpenRead(pluginArchive))
         {
@@ -29,7 +51,12 @@ internal static class PluginChecks
         payload["plugin.json"] = System.Text.Encoding.UTF8.GetBytes(node.ToJsonString());
         var second = Path.Combine(root, "plugin-1.0.1.studioxplugin");
         FixtureArchives.Write(second, payload);
-        var updated = await manager.ImportAsync(second);
+        PluginCatalogEntry updated;
+        await using (var restricted = new PluginManagerService(runtime, Path.Combine(root, "plugin-data"), new(1, ["decode"])))
+        {
+            updated = await restricted.ImportAsync(second);
+            check(!updated.CanEnable, "updating an incompatible plugin preserves its disabled state");
+        }
         check(updated.Version == "1.0.1" && !updated.Enabled, "plugin update revokes existing trust instead of running replacement code");
         var versions = await manager.ListRollbackAsync(one.Id);
         check(versions.Any(v => v.Version == one.Version), "plugin update creates a validated rollback archive");

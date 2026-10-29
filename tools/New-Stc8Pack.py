@@ -100,6 +100,7 @@ def make_header(
         f"/* StudioX {family.upper()} SDCC register declarations. See vendor/provenance.json. */",
         f"#ifndef {guard}",
         f"#define {guard}",
+        "#include <stdint.h>",
         "",
     ]
     for kind in ("sfr", "sbit"):

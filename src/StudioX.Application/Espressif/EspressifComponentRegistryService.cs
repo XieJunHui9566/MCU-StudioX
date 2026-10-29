@@ -43,7 +43,7 @@ public sealed class EspressifComponentRegistryService : IAsyncDisposable
         {
             throw new ArgumentOutOfRangeException(nameof(requestTimeout));
         }
-        diagnostics = new RegistryHttpHandler(handler ?? new HttpClientHandler { AllowAutoRedirect = false },
+        diagnostics = new RegistryHttpHandler(handler ?? new HttpClientHandler { CheckCertificateRevocationList = true, AllowAutoRedirect = false },
             this.timeProvider);
         httpClient = new HttpClient(diagnostics) { Timeout = Timeout.InfiniteTimeSpan };
         // 官方 CDN 会拒绝没有 User-Agent 的匿名请求；标明产品身份，不伪装浏览器。

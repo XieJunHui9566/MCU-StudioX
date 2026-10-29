@@ -5,6 +5,12 @@ using StudioX.Application;
 using StudioX.Engine;
 using StudioX.Foundation;
 
+if (args is ["--mcp-echo-server"])
+{
+    await StdioMcpFixture.RunAsync();
+    return;
+}
+
 var checks = 0;
 void Check(bool condition, string description)
 {
@@ -267,6 +273,7 @@ try
 
     await ProtocolTransportChecks.RunAsync(Check);
     await CacheOptimizationChecks.RunAsync(projectA, root, Check);
+    await AssistantRedesignChecks.RunAsync(projectA, root, Check);
 
     Console.WriteLine($"PASS {checks} offline AI checks; no live API or toolchain access.");
 }

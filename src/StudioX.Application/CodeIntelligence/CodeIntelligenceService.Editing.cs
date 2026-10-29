@@ -129,7 +129,7 @@ public sealed partial class CodeIntelligenceService
     }
 
     private static object LspPosition(CodePosition position) => new { line = position.Line, character = position.Character };
-    private static IReadOnlyList<WorkspaceFileChange> PlanEdits(WorkspaceBufferSnapshot buffer, JsonElement values)
+    private IReadOnlyList<WorkspaceFileChange> PlanEdits(WorkspaceBufferSnapshot buffer, JsonElement values)
     {
         var edits = values.EnumerateArray().Select(edit =>
         {
@@ -138,6 +138,21 @@ public sealed partial class CodeIntelligenceService
             var end = CodePositions.ToOffset(buffer.Text, range.End);
             return new TextSearchMatch(start, end - start, edit.GetProperty("newText").GetString()!);
         }).ToArray();
+        if (sdccAnalysis)
+        {
+            var projection = SdccAssemblyProjection.Create(buffer.Text);
+            foreach (var edit in edits)
+            {
+                var end = Math.Min(buffer.Text.Length, edit.Start + Math.Max(1, edit.Length));
+                for (var i = edit.Start; i < end; i++)
+                {
+                    if (buffer.Text[i] != projection[i])
+                    {
+                        throw new StudioXException("SDCC_ASM_EDIT", "本次自动修改涉及 SDCC 内联汇编，无法可靠应用；请只选择外围 C 代码进行格式化或修复。原文未改动。");
+                    }
+                }
+            }
+        }
         var after = WorkspaceEditService.ApplyText(buffer.Text, edits);
         return after == buffer.Text ? [] : [new(buffer.Source, buffer.Text, after, edits, true)];
     }

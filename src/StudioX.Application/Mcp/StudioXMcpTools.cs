@@ -44,6 +44,8 @@ public sealed class StudioXMcpTools : IAsyncDisposable
             new PdfMcpTools(context),
             new QmdMcpTools(context),
             new MicrochipMcpTools(context),
+            new CustomServerMcpTools(context),
+            new ManagedDownloadMcpTools(context),
             new EspressifKnowledgeMcpTools(context),
             new WebMcpTools(context)
         ];

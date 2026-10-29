@@ -29,6 +29,7 @@ public sealed partial class Mon51DebugSession
             userProgramVerified = false;
             await JsonStore.WriteAsync(downloadRecoveryPath!, new
             {
+                target = TargetId,
                 project = bundle.ProjectDirectory,
                 imageSha256 = bundle.ImageSha256,
                 symbolsSha256 = bundle.SymbolsSha256,

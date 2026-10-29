@@ -8,9 +8,9 @@ public sealed partial class StcIspService
     /// <summary>制作监控独立于工程构建；仅接受经散列核对的专用编码镜像。</summary>
     public async Task<StcIspPreparation> PrepareMonitorAsync(string directory, string port, byte[] firmware, CancellationToken token = default)
     {
-        StcMonitorImage.ValidateSetup(firmware);
         var root = Path.GetFullPath(directory);
         var (_, device) = await ReadProjectDeviceAsync(root, token);
+        StcMonitorImage.ValidateSetup(firmware, device.Id);
         var settings = new StcIspSettings(Port: port, ClockMode: StcClockMode.Preserve);
         ValidateMonitorTarget(device, settings);
         var tool = await GetToolStatusAsync(token);
@@ -29,7 +29,7 @@ public sealed partial class StcIspService
             await using var destination = File.Create(script);
             await resource.CopyToAsync(destination, token);
         }
-        return new(root, device.Id, device.FlashBytes, port.ToUpperInvariant(), image, image, StcMonitorImage.SetupSha256,
+        return new(root, device.Id, device.FlashBytes, port.ToUpperInvariant(), image, image, StcMon51Targets.SetupSha256(device.Id),
             firmware.Length, firmware.Length - 1, tool.PythonExecutable, script, Path.Combine(session, "stcgal.log"), settings, MonitorSetup: true);
     }
 
@@ -45,9 +45,9 @@ public sealed partial class StcIspService
     private static void ValidateMonitorTarget(DeviceDefinition device, StcIspSettings settings)
     {
         settings.ValidateFor(StcIspCapabilities.For(device), requirePort: true);
-        if (device.Id != "IAP15F2K61S2" || device.FlashBytes != 62464 || settings.ClockMode != StcClockMode.Preserve || settings.TransferBaud != 115200)
+        if (!StcMon51Targets.Supports(device.Id) || device.Architecture != "mcs51" || device.RamBytes != 2048 || device.FlashBytes != 62464 || settings.ClockMode != StcClockMode.Preserve || settings.TransferBaud != 115200)
         {
-            throw new StudioXException("MON51_SETUP_TARGET", "制作通道当前仅核对 IAP15F2K61S2 / 7.2.5S，使用 115200 并保留当前时钟来源。其他目标不会擦写。");
+            throw new StudioXException("MON51_SETUP_TARGET", "制作通道限定 " + StcMon51Targets.DisplayNames + " / 7.2.5S / 状态 70，使用 115200 并保留当前时钟来源。其他组合不会擦写。");
         }
     }
 }

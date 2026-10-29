@@ -3,13 +3,14 @@ namespace StudioX.Desktop;
 using System.Windows;
 using System.Windows.Controls;
 using StudioX.Application.StcDebugging;
+using StudioX.Engine;
 
 /// <summary>先制作并重新上电，再编译更新用户程序；窗口不持有串口。</summary>
 public sealed class Mon51ConnectionWindow : Window
 {
     private readonly ComboBox ports = new() { MinWidth = 180 };
     private readonly ComboBox baud = new() { ItemsSource = new[] { 115200, 57600, 102400 }, SelectedIndex = 0 };
-    private readonly ComboBox target = new() { ItemsSource = new[] { "IAP15F2K61S2" }, SelectedIndex = -1 };
+    private readonly ComboBox target = new() { SelectedIndex = -1 };
     private readonly ComboBox firmware = new() { DisplayMemberPath = nameof(Mon51FirmwareSource.DisplayName) };
     private readonly CheckBox configured = new() { Content = new TextBlock { Text = "已成功设置为仿真芯片，并在设置完成后给 MCU 断电约 2 秒再上电", TextWrapping = TextWrapping.Wrap }, Margin = new(0, 12, 0, 10) };
     private readonly TextBox detail = new() { IsReadOnly = true, TextWrapping = TextWrapping.Wrap, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, MinHeight = 95, MaxHeight = 170 };
@@ -24,7 +25,8 @@ public sealed class Mon51ConnectionWindow : Window
     public Mon51ConnectionWindow(string[] availablePorts, string selectedPort, string projectName,
         IReadOnlyList<Mon51FirmwareSource> firmwareSources,
         Func<string, int, string, IProgress<string>, CancellationToken, Task> startDebug,
-        Func<string, string, Mon51FirmwareSource, IProgress<string>, CancellationToken, Task> setupMonitor)
+        Func<string, string, Mon51FirmwareSource, IProgress<string>, CancellationToken, Task> setupMonitor,
+        string projectDeviceId = StcMon51Targets.HighVoltageDevice)
     {
         Title = "STC Mon51 仿真调试";
         Width = 650;
@@ -35,6 +37,8 @@ public sealed class Mon51ConnectionWindow : Window
         SetResourceReference(BackgroundProperty, "ChromeSurface");
         SetResourceReference(ForegroundProperty, "Text");
         ports.ItemsSource = availablePorts;
+        target.ItemsSource = StcMon51Targets.Supports(projectDeviceId) ? new[] { projectDeviceId } : [];
+        firmwareSources = firmwareSources.Where(source => source.DeviceId == projectDeviceId).ToArray();
         firmware.ItemsSource = firmwareSources;
         // 仅有一个明确资源或工程锁定包提供资源时可默认；不猜测多个包中的最新版本。
         firmware.SelectedItem = firmwareSources.Count == 1 ? firmwareSources[0] : firmwareSources.SingleOrDefault(s => s.IsProjectPack);
@@ -44,14 +48,15 @@ public sealed class Mon51ConnectionWindow : Window
         }
         var body = new StackPanel { Margin = new(18) };
         AddText(body, $"STC Mon51 仿真调试 · {projectName}", true);
+        AddText(body, StcMon51Targets.Evidence(projectDeviceId));
         AddField(body, "确认实机型号（Mon51 协议不能读取准确料号）", target);
         AddField(body, "串口（请先释放串口终端及其他软件的连接）", ports);
         AddText(body, "1. 制作仿真芯片", true);
         AddField(body, "监控固件（器件包提供）", firmware);
         AddText(body, firmwareSources.Count == 0
-            ? "当前没有兼容监控固件。请在 IDE 中导入包含 IAP15F2K61S2 / Mon51 固件的 .mcupack，再打开此窗口。已制作且监控生效的芯片可直接进行第二步。"
+            ? $"当前没有兼容监控固件。请在 IDE 中导入包含 {projectDeviceId} / Mon51 固件的 .mcupack，再打开此窗口。已制作且监控生效的芯片可直接进行第二步。"
             : "IDE 直接读取所选器件包中的 Mon51 V2.5 固件并下载，无需其他程序。监控包独立选择，不改变工程的编译工具或 SDK 锁定。");
-        AddText(body, "制作会覆盖用户程序和监控区，并写回读取到的选项与时钟参数。当前仅适配 IAP15F2K61S2 / ISP 7.2.5S / 状态标记 70。已制作且监控生效可跳过此步。");
+        AddText(body, $"制作会覆盖用户程序和监控区，并写回读取到的选项与时钟参数。当前限定 {projectDeviceId} / ISP 7.2.5S / 状态标记 70，并校验此型号专用镜像。已制作且监控生效可跳过此步。");
         body.Children.Add(setup);
         AddText(body, "制作成功后，必须给 MCU 本体断电再上电；CH340 通常不能自动断电，按复位键不能代替。");
         AddText(body, "2. 更新程序并开始调试", true);

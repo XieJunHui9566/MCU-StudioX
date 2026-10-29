@@ -18,7 +18,7 @@ internal static class SourceFiles
                 yield return path;
             }
         }
-        foreach (var relative in new[] { "src", "tools", "examples" })
+        foreach (var relative in new[] { "src", "tools", "examples", "plugins" })
         {
             var directory = Path.Combine(root, relative);
             if (Directory.Exists(directory))

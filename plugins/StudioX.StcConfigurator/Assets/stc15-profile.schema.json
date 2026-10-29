@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:studiox:stc15:config-preview:3.0",
+  "type": "object",
+  "required": [
+    "target",
+    "profile",
+    "configuration"
+  ],
+  "properties": {
+    "target": {
+      "const": {
+        "vendorId": "STC",
+        "deviceId": "IAP15L2K61S2",
+        "packageId": "LQFP44",
+        "architecture": "mcs51"
+      }
+    },
+    "configuration": {
+      "type": "object",
+      "required": [
+        "pins",
+        "peripherals",
+        "clocks",
+        "profileData"
+      ],
+      "properties": {
+        "profileData": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "reserveMon51",
+            "projectClock",
+            "p54GpioConfirmed"
+          ],
+          "properties": {
+            "reserveMon51": {
+              "type": "boolean"
+            },
+            "p54GpioConfirmed": {
+              "type": "boolean"
+            },
+            "projectClock": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "managed",
+                "valid",
+                "inputSha256"
+              ],
+              "properties": {
+                "managed": {
+                  "type": "boolean"
+                },
+                "valid": {
+                  "type": "boolean"
+                },
+                "inputSha256": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "pattern": "^[a-f0-9]{64}$"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "description": "预览版的 profile 叠加结构；完整参数和资源校验由插件执行，不宣称完整 mcuConfigurationV1。"
+}

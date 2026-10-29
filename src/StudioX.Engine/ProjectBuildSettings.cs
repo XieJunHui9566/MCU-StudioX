@@ -34,9 +34,9 @@ public sealed record ProjectBuildSettings(int FormatVersion = 1,
     public void ValidateFor(ProjectManifest project)
     {
         Validate();
-        if (Mon51Profile && (project.ToolsetId != "stc.sdcc" || project.DeviceId != "IAP15F2K61S2" || DebugInfo != CompilerDebugInfo.Standard || CodeRomSizeBytes > 0xdbfd))
+        if (Mon51Profile && (project.ToolsetId != "stc.sdcc" || !StcMon51Targets.Supports(project.DeviceId) || DebugInfo != CompilerDebugInfo.Standard || CodeRomSizeBytes > 0xdbfd))
         {
-            throw new StudioXException("BUILD_SETTINGS", "Mon51 V2.5 构建预设仅适用于 IAP15F2K61S2，须启用标准 CDB；用户 CODE 上限不能超过 56317 字节。");
+            throw new StudioXException("BUILD_SETTINGS", "Mon51 V2.5 构建预设仅适用于 " + StcMon51Targets.DisplayNames + "，须启用标准 CDB；用户 CODE 上限不能超过 56317 字节。");
         }
         if (project.ToolsetId == "stc.sdcc" && (DebugInfo == CompilerDebugInfo.Full ||
             Optimization is not (CompilerOptimization.ProjectDefault or CompilerOptimization.O0 or CompilerOptimization.Os or CompilerOptimization.O2)))
@@ -81,7 +81,7 @@ public sealed record ProjectBuildSettings(int FormatVersion = 1,
         return value;
     }
 
-    internal async Task<string> PrepareCMakeAsync(string build, ProjectManifest project, CancellationToken token, int? stcClockHz = null)
+    internal async Task<string> PrepareCMakeAsync(string build, ProjectManifest project, CancellationToken token, int? stcClockHz = null, int? stcClockDivider = null)
     {
         var hook = Path.Combine(build, "studiox-compiler-options.cmake").Replace('\\', '/');
         if (hook.Contains(';') || hook.Contains("]]", StringComparison.Ordinal))
@@ -91,6 +91,10 @@ public sealed record ProjectBuildSettings(int FormatVersion = 1,
         var flags = string.Join(' ', stcClockHz is { } hz
             ? FlagsFor(project).Append("-DSTUDIOX_CLOCK_HZ=" + hz.ToString(System.Globalization.CultureInfo.InvariantCulture) + "UL")
             : FlagsFor(project));
+        if (stcClockDivider is { } divider)
+        {
+            flags += " -DSTUDIOX_CLOCK_DIVIDER=" + divider.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        }
         var linkFlags = project.ToolsetId == "stc.sdcc" ? string.Join(' ', new[]
         {
             Mon51Profile ? "--code-size " + Math.Min(CodeRomSizeBytes ?? 0xdbfd, 0xdbfd).ToString(System.Globalization.CultureInfo.InvariantCulture) : CodeRomSizeBytes is { } size ? "--code-size " + size.ToString(System.Globalization.CultureInfo.InvariantCulture) : "",
@@ -158,7 +162,7 @@ public sealed record ProjectBuildSettings(int FormatVersion = 1,
         return Math.Min(bytes, 1024 - origin);
     }
 
-    internal async Task VerifyCommandsAsync(string build, ProjectManifest project, CancellationToken token, int? stcClockHz = null)
+    internal async Task VerifyCommandsAsync(string build, ProjectManifest project, CancellationToken token, int? stcClockHz = null, int? stcClockDivider = null)
     {
         if (!HasOverrides && stcClockHz is null)
         {
@@ -189,6 +193,11 @@ public sealed record ProjectBuildSettings(int FormatVersion = 1,
                     "-DSTUDIOX_CLOCK_HZ=" + hz.ToString(System.Globalization.CultureInfo.InvariantCulture) + "UL")
                 {
                     throw new StudioXException("BUILD_SETTINGS_NOT_APPLIED", "SDCC 编译命令未应用工程时钟宏：" + file);
+                }
+                if (stcClockDivider is { } divider && arguments.LastOrDefault(arg => arg.StartsWith("-DSTUDIOX_CLOCK_DIVIDER=", StringComparison.Ordinal)) !=
+                    "-DSTUDIOX_CLOCK_DIVIDER=" + divider.ToString(System.Globalization.CultureInfo.InvariantCulture))
+                {
+                    throw new StudioXException("BUILD_SETTINGS_NOT_APPLIED", "SDCC 编译命令未应用托管系统分频：" + file);
                 }
             }
             else if (OptimizationFlag is { } optimization && arguments.LastOrDefault(arg => Regex.IsMatch(arg, @"^-O(?:[0-3sgz]|fast)?$")) != optimization ||

@@ -12,7 +12,7 @@ public partial class AiSettingsWindow : Window
     private readonly AiSettings savedSettings;
 
     public AiSettingsWindow(AiSettingsService settingsService, AiCredentialStore credentials, WebCredentialStore webCredentials, AiSettings savedSettings,
-        EspressifDocumentationService? espressifDocumentation = null)
+        EspressifDocumentationService? espressifDocumentation = null, StudioX.Application.Mcp.AiMcpSettingsService? mcpSettings = null)
     {
         InitializeComponent();
         this.settingsService = settingsService;
@@ -20,6 +20,8 @@ public partial class AiSettingsWindow : Window
         this.webCredentials = webCredentials;
         this.savedSettings = savedSettings;
         this.espressifDocumentation = espressifDocumentation;
+        this.mcpSettings = mcpSettings;
+        _ = LoadMcpAsync();
         BaseUrlInput.Text = savedSettings.BaseUrl;
         ModelInput.Text = savedSettings.Model;
         ContextWindowInput.Text = savedSettings.ContextWindowTokens?.ToString() ?? "";
@@ -27,10 +29,21 @@ public partial class AiSettingsWindow : Window
         RefreshWebKeyState();
         RefreshEspressifState();
         Closed += EspressifSettings_Closed;
+        Closed += (_, _) => mcpTokens.Clear();
     }
 
     private void RefreshKeyState()
     {
+        try
+        {
+            AiSettingsService.Validate(savedSettings);
+        }
+        catch (StudioX.Foundation.StudioXException)
+        {
+            KeyState.Text = "当前配置无效，请先修正 API 地址或模型。";
+            DeleteKeyButton.IsEnabled = false;
+            return;
+        }
         var hasKey = credentials.HasApiKey(savedSettings.BaseUrl);
         KeyState.Text = hasKey ? "已保存 API Key；留空不会更改。" : "当前地址尚未保存 API Key。";
         DeleteKeyButton.IsEnabled = hasKey;
@@ -74,6 +87,7 @@ public partial class AiSettingsWindow : Window
                 throw new ArgumentException("Tavily API Key 格式无效。");
             }
             await settingsService.SaveAsync(settings);
+            await SaveMcpAsync();
             if (key.Length > 0)
             {
                 credentials.SetApiKey(key, settings.BaseUrl);

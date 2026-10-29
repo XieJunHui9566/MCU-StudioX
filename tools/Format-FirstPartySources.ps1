@@ -61,6 +61,14 @@ function Get-ExecutableTokenSignature([string]$Source)
 function Expand-StatementSeparators([string]$Source)
 {
     $tokens = @(Get-SourceTokens $Source)
+    $lineEnding = if ($Source.Contains("`r`n"))
+    {
+        "`r`n"
+    }
+    else
+    {
+        "`n"
+    }
     $parenthesisDepth = 0
     $offsets = [Collections.Generic.List[int]]::new()
     foreach ($token in $tokens)
@@ -87,7 +95,7 @@ function Expand-StatementSeparators([string]$Source)
     }
     foreach ($offset in $offsets | Sort-Object -Descending)
     {
-        $Source = $Source.Insert($offset, "`n")
+        $Source = $Source.Insert($offset, $lineEnding)
     }
     return $Source
 }
@@ -110,6 +118,28 @@ function Remove-OuterTrailingWhitespace([string]$Source)
     return $Source
 }
 
+function Restore-SourceStringTokens([string]$Original, [string]$Formatted)
+{
+    $originalStrings = @(Get-SourceTokens $Original | Where-Object { $_.Kind.ToString() -match '^(String|HereString)' })
+    $formattedStrings = @(Get-SourceTokens $Formatted | Where-Object { $_.Kind.ToString() -match '^(String|HereString)' })
+    if ($originalStrings.Count -ne $formattedStrings.Count)
+    {
+        throw 'PowerShell formatter changed the number of strings.'
+    }
+    for ($index = $originalStrings.Count - 1; $index -ge 0; $index--)
+    {
+        $before = $originalStrings[$index]
+        $after = $formattedStrings[$index]
+        if ($before.Kind -ne $after.Kind -or $before.Text.Replace("`r`n", "`n") -cne $after.Text.Replace("`r`n", "`n"))
+        {
+            throw 'PowerShell formatter changed a string token.'
+        }
+        # 生成模板和 here-string 的原始换行属于数据，不随脚本外层排版变化。
+        $Formatted = $Formatted.Remove($after.Extent.StartOffset, $after.Text.Length).Insert($after.Extent.StartOffset, $before.Text)
+    }
+    return $Formatted
+}
+
 $results = [Collections.Generic.List[object]]::new()
 $ownedScripts = @(Get-ChildItem -LiteralPath $PSScriptRoot -Filter '*.ps1' -File) +
 @(Get-ChildItem -LiteralPath (Join-Path $PSScriptRoot 'acceptance') -Filter '*.ps1' -File)
@@ -117,8 +147,16 @@ foreach ($file in $ownedScripts | Where-Object { $_.Name -notin $ExcludeFile } |
 {
     $original = [IO.File]::ReadAllText($file.FullName)
     $expanded = Expand-StatementSeparators $original
-    $formatted = Invoke-Formatter -ScriptDefinition $expanded -Settings $settings
+    try
+    {
+        $formatted = Invoke-Formatter -ScriptDefinition $expanded.Replace("`r`n", "`n") -Settings $settings
+    }
+    catch
+    {
+        throw [InvalidOperationException]::new("PowerShell formatter failed: $($file.Name)", $_.Exception)
+    }
     $formatted = Remove-OuterTrailingWhitespace ($formatted.Replace("`r`n", "`n").TrimEnd() + "`n")
+    $formatted = Restore-SourceStringTokens $original $formatted
     if ((Get-ExecutableTokenSignature $original) -cne (Get-ExecutableTokenSignature $formatted))
     {
         throw "PowerShell executable tokens changed: $($file.Name)"

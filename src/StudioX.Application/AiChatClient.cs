@@ -26,6 +26,7 @@ public sealed class AiChatClient : IDisposable
         this.apiKeyProvider = apiKeyProvider ?? throw new ArgumentNullException(nameof(apiKeyProvider));
         this.client = client ?? new HttpClient(new HttpClientHandler
         {
+            CheckCertificateRevocationList = true,
             AllowAutoRedirect = false,
             UseCookies = false
         });

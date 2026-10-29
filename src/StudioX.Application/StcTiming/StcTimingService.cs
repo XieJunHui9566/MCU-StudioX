@@ -10,11 +10,12 @@ using StudioX.Packages;
 /// <summary>只读取工程和包内寄存器声明，计算、生成文本；不执行工具或连接硬件。</summary>
 public sealed partial class StcTimingService
 {
+    public ProjectClockService ProjectClocks { get; set; } = new();
     public async Task<StcTimingContext> ReadAsync(string directory, CancellationToken token = default)
     {
         var root = Path.GetFullPath(directory);
         var project = await ProjectService.ReadAsync(root, token).ConfigureAwait(false);
-        if (project.Kind != ProjectKind.Pack || project.PackId != "stc.stc8" || project.ToolsetId != "stc.sdcc" ||
+        if (project.Kind != ProjectKind.Pack || project.PackId is not ("stc.stc8" or "stc.iap15l2k61s2.config-preview") || project.ToolsetId != "stc.sdcc" ||
             project.CompilerId != "sdcc-4.5.0-15242")
         {
             throw new StudioXException("STC_TIMING_PROJECT", "请先打开 STC 8 位 SDCC 工程，再生成 51 延时或波特率函数。");
@@ -84,6 +85,8 @@ public sealed partial class StcTimingService
             }
         }
         var isp = await StcIspSettings.ReadAsync(root, token).ConfigureAwait(false);
+        var clock = await ProjectClocks.ReadAsync(root, token).ConfigureAwait(false);
+        clock.RequireReady();
         isp.ValidateFor(StcIspCapabilities.For(device));
         var build = await ProjectBuildSettings.ReadAsync(root, token).ConfigureAwait(false);
         build.ValidateFor(project);
@@ -94,8 +97,8 @@ public sealed partial class StcTimingService
         profile.Validate(settings);
         // COM 号和 ISP 传输速度不参与代码计算；串口下载速度绝不是用户 UART 的波特率。
         var stamp = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(manifest + header + settingText +
-            System.Text.Json.JsonSerializer.Serialize(project, JsonStore.Options) + $"|{isp.ClockMode}|{isp.ClockFrequencyHz}|{build.Mon51Profile}")));
-        return new(root, project, profile, settings, isp.ClockFrequencyHz, build.Mon51Profile, stamp);
+            System.Text.Json.JsonSerializer.Serialize(project, JsonStore.Options) + $"|{isp.ClockMode}|{isp.ClockFrequencyHz}|{build.Mon51Profile}|{clock.ConfigurationSha256}")));
+        return new(root, project, profile, settings, clock.Managed ? clock.SystemFrequencyHz : isp.ClockFrequencyHz, build.Mon51Profile, stamp);
     }
 
     public async Task ValidateAsync(StcTimingContext context, CancellationToken token = default)

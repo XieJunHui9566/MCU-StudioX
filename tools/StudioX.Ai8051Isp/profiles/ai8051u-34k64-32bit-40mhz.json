@@ -1,0 +1,6 @@
+{
+  "schema": 1,
+  "model": "AI8051U-34K64",
+  "cpuMode": 32,
+  "ircHz": 40000000
+}

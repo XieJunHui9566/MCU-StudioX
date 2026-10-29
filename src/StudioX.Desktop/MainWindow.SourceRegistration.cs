@@ -4,6 +4,7 @@ using System.Windows.Controls;
 using StudioX.Application;
 using StudioX.Application.BuildConfiguration;
 using StudioX.Application.Editing;
+using StudioX.Engine;
 using StudioX.Foundation;
 
 public partial class MainWindow
@@ -13,7 +14,8 @@ public partial class MainWindow
     private SourceRegistrationPlan? sourceRegistrationUndo;
     private void InitializeSourceRegistration()
     {
-        bool Enabled() => projectDirectory is not null && !closing && !services.Debugger.IsActive && pendingOperation.IsCompleted;
+        bool Enabled() => projectDirectory is not null && ProjectCapabilities.For(currentProjectManifest).SourceRegistration &&
+            !closing && !services.Debugger.IsActive && pendingOperation.IsCompleted;
         Func<Task> show = () => RunAsync(token => ShowSourceRegistrationAsync(token));
         Func<Task> showTree = () => RunAsync(token => ShowSourceRegistrationAsync(token, explorerMenuEntry?.RelativePath ?? SelectedProjectEntry?.RelativePath));
         const string title = "源码登记与编译列表…";

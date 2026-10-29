@@ -14,7 +14,7 @@ public sealed partial class OpenOcdService(ToolsetCatalog catalog)
     public async Task<DownloadConfiguration?> ConfigurationAsync(string projectDirectory, CancellationToken token = default)
     {
         var project = await ProjectService.ReadAsync(projectDirectory, token);
-        if (project.Kind is ProjectKind.Zephyr or ProjectKind.MicroPython)
+        if (project.Kind is ProjectKind.Zephyr or ProjectKind.MicroPython or ProjectKind.Arduino or ProjectKind.Pic)
         {
             return null;
         }
@@ -96,7 +96,7 @@ public sealed partial class OpenOcdService(ToolsetCatalog catalog)
     {
         var root = Path.GetFullPath(projectDirectory);
         var project = await ProjectService.ReadAsync(root, token);
-        if (project.Kind is ProjectKind.Zephyr or ProjectKind.MicroPython)
+        if (project.Kind is ProjectKind.Zephyr or ProjectKind.MicroPython or ProjectKind.Arduino)
         {
             throw ZephyrProjectService.RuntimeUnavailable();
         }

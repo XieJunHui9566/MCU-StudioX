@@ -57,6 +57,10 @@ sha256 覆盖清单之外的完整工具树；清单同时受工程的版本锁�
 
 主题为格式 1 JSON：id、displayName、colors。colors 必须完整提供 Background/Surface/Panel/Border/Text/Muted/Accent/OnAccent 八个 `#RRGGBB` 颜色。主题文件不能执行 XAML。选中的主题和导入的主题保存在用户数据目录，不影响工程构建。
 
+## 图形化配置 `.mcuconfig`（待实现契约）
+
+图形化配置采用可选系列/厂商插件。包模板提供初始 `device.mcuconfig`，工程副本保存器件基础资料与用户配置；普通源码开发和构建不依赖安装该插件。模板/工程关联字段、来源绑定、结构化摘要、生成凭据及保存恢复要求见 [MCU 图形化配置契约 v1](GRAPHICAL_CONFIGURATION.md)，公共结构见 [JSON Schema](contracts/mcuconfig-v1.schema.json)。[STC 试行插件](../plugins/StudioX.StcConfigurator/README.md)已接入可选文件复制、绑定及单文件保存；完整 v1 生成事务尚未实现，不自动迁移旧工程。
+
 ## 采集记录 `.sxcapture`
 
 UTF-8 JSON Lines。首行是格式 1、clockDomain=host-monotonic、ticksPerSecond、connectionKey、simulated。后续每行 sequence/timestamp/base64。时间戳来自宿主单调时钟，不代表串口线上某位或某个物理边沿的采集时刻。丢帧可表现为 sequence 的间隔；订阅层另暴露 droppedFrames。高精度硬件时序和长时间高吞吐记录需后续专门设计。

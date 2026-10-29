@@ -2,7 +2,15 @@ namespace StudioX.Packages;
 
 public static class PackCatalogPolicy
 {
-    /// <summary>只清理构建身份相同且完整覆盖的旧包；不同 SDK/组件版本必须保留，供新建选择和锁定工程使用。</summary>
+    /// <summary>新建工程按包 ID 只显示最新版本；此视图不参与磁盘清理或工程版本锁定。</summary>
+    public static IReadOnlyList<InstalledPack> SelectLatestVersions(IEnumerable<InstalledPack> catalog) =>
+        catalog.GroupBy(pack => pack.Manifest.Id, StringComparer.Ordinal)
+            .Select(group => group.OrderByDescending(pack => pack.Manifest.Version,
+                Comparer<string>.Create(PackVersion.Compare)).First())
+            .OrderBy(pack => pack.Manifest.DisplayName, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(pack => pack.Manifest.Id, StringComparer.Ordinal).ToArray();
+
+    /// <summary>只清理构建身份相同且完整覆盖的旧包；不同 SDK/组件版本保留给独立 SDK 选择和锁定工程。</summary>
     public static bool Supersedes(PackManifest newer, PackManifest older) =>
         newer.Id == older.Id && PackVersion.Compare(newer.Version, older.Version) > 0 &&
         older.Devices.All(oldDevice => newer.Devices.Any(newDevice => newDevice.Id == oldDevice.Id &&

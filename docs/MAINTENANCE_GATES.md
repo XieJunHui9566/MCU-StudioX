@@ -38,6 +38,8 @@
 | 组件安装、租约、恢复、工具选择及工程健康 | `environment` | `-ProjectHealthNinja`、`-EnvironmentReliabilityNinja` | 工程健康编译/分析、组件进程终止后的恢复边界通过 |
 | ESP-IDF 外设代码、依赖、SDK 版本适配或外设页面 | `peripheral`；涉及语言诊断加 `editor` | `-PeripheralRuntime`、`-PeripheralPackInputs` | 实际工程编译、`peripheral-development-diagnostics` 和 `peripheral-development-ui` 通过，版本/目标来自明确输入 |
 | 故障解码、SVD、GDB 工具选择或转储分析 | `fault` | `-VendorSvd`、`-ToolsetsDirectory`、`-CoreDumpFixtures` | `fault-peripherals` 使用厂商 SVD 和已有官方转储实际解码；寄存器界面门禁通过 |
+| PIC 工程、XC8 构建、引导及能力菜单 | `pic` | `-PicInputs` | `pic-framework` 实际生成并编译 PIC16F877A 两种模板，检查过期产物、真实语言服务及 WPF 引导/菜单/健康范围 |
+| Arduino 模板、固定核心、上传预检及能力菜单 | `arduino` | `-ArduinoInputs` | `arduino-framework` 实际编译 AVR/ESP32 板型矩阵，检查镜像变更、跨芯片选择、真实语言服务及 WPF 支持边界 |
 
 领域必需输入缺失时，在构建前失败；不得删掉声明来把未验证领域记为完成。所有报告必须声明当次领域，不能事后把基础回归扩写成真实编译或语言验收。额外传入可选工具参数仍会运行对应验证，但正式领域结论要在启动时声明。
 
@@ -78,6 +80,18 @@
 ```
 
 Keil 输入 JSON 的字段为 `cli`、`packs`、`toolsets`、`f407Project`、`f103Project`，指向明确已有的 CLI、器件包、工具集与两个原工程；参考 [Keil 验证入口](../tools/Test-KeilWorkflow.ps1)。其它领域参数与专项说明见 [回归与发行流程](REGRESSION_RELEASE.md)。
+
+PIC/Arduino 输入使用 `formatVersion: 1`：PIC 为 `runtime`、`pack`；Arduino 为 `runtime`、`avrPack`、`espPacks`。所有路径必须为明确存在的绝对路径。`runtime` 下必须已有锁定的 `toolsets`：XC8 `4.0.0`（编译器显示 4.00），或 Arduino AVR `1.8.8` 与 ESP32 `3.3.8`；`espPacks` 包含六个 `espressif.*-0.1.1.mcupack`，其中 P4 用于确认不误开放 Arduino 模板。输入文件和嵌套路径在构建前检查，不自动下载。专项摘要必须为 `passed=true`、`realCompilation=passed`、`hardware=false`，同时附对应 UI 摘要；仅创建工程不能满足领域门槛。
+
+```powershell
+./tools/Test-Regression.ps1 -OutputDirectory .artifacts/maintenance-frameworks-<新编号> `
+  -MaintenanceAreas pic,arduino -PicInputs <PIC输入JSON> -ArduinoInputs <Arduino输入JSON>
+./tools/Test-MaintenanceEvidence.ps1 -RegressionReport <本次regression.json> -MaintenanceAreas pic,arduino
+```
+
+这两个软件领域不执行上传、烧录、调试或实板运行。PIC16F877A 基准硬件验收由用户明确选择的板卡、烧录器、固件与备份策略另行开展；无硬件时保持待验收。
+
+重复验证可在 Arduino 输入中明确提供 `cacheData`，复用输入 JSON 所在目录下已有的隔离验证数据。仍在新输出目录创建工程并重新真实编译、检查工具和核心内容；不复用旧的通过结论。不得指向日常 IDE 用户数据或运行时目录，默认始终使用新缓存。
 
 源码登记使用 `-MaintenanceAreas editor,sources -LanguageRuntime <已有runtime> -SourceRegistrationInputs <本机输入JSON>`；字段与操作范围见 [源码登记](SOURCE_REGISTRATION.md)。该领域必须有两类真实构建证据，离线预览的 `not_requested` 不能满足维护门槛。
 

@@ -44,3 +44,29 @@ function Compare-StudioXReleaseVersions([string]$Left, [string]$Right)
     }
     return [string]::CompareOrdinal($a.Suffix, $b.Suffix)
 }
+
+function Assert-StudioXSourceReleaseIdentity([string]$SourceDirectory, [string]$DesktopAssembly)
+{
+    [xml]$props = Get-Content -LiteralPath (Join-Path $SourceDirectory 'Directory.Build.props') -Raw
+    $version = $props.SelectSingleNode('/Project/PropertyGroup/Version').InnerText
+    $product = $props.SelectSingleNode('/Project/PropertyGroup/ProductVersion').InnerText
+    $identity = Get-StudioXReleaseVersion $product
+    if ($version -cne $product)
+    {
+        throw 'Source Version and ProductVersion differ.'
+    }
+    $readme = Get-Content -LiteralPath (Join-Path $SourceDirectory 'README.md') -Raw
+    if ($readme -cnotmatch ('当前源码版本 \*\*' + [regex]::Escape($product) + '\*\*'))
+    {
+        throw 'README current source version differs from ProductVersion.'
+    }
+    if ($DesktopAssembly)
+    {
+        $file = [Diagnostics.FileVersionInfo]::GetVersionInfo([IO.Path]::GetFullPath($DesktopAssembly))
+        if ($file.FileVersion -cne $identity.FileVersion -or ($file.ProductVersion -split '\+')[0] -cne $product)
+        {
+            throw 'Desktop file/product version differs from the source release identity.'
+        }
+    }
+    return $identity
+}

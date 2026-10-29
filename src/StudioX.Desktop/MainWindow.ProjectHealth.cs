@@ -83,13 +83,23 @@ public partial class MainWindow
         {
             return;
         }
-        var dialog = new SaveFileDialog { Title = "保存到本机，不自动上传", Filter = "工程健康检查 JSON|*.json", FileName = "studiox-project-health.json" };
+        var dialog = new SaveFileDialog { Title = "导出故障资料到本机", Filter = "故障资料 JSON|*.json", FileName = "studiox-support-report.json" };
         if (dialog.ShowDialog(this) != true)
         {
             return;
         }
-        await services.ProjectHealth.ExportAsync(report, dialog.FileName, token);
+        await services.SupportReports.ExportAsync(report.ProjectDirectory, dialog.FileName, lastFailure, token);
         Status.Text = "检查报告已保存：" + dialog.FileName;
+    });
+    private Task ExportSupportReportAsync() => RunAsync(async token =>
+    {
+        var dialog = new SaveFileDialog { Title = "导出故障资料到本机", Filter = "故障资料 JSON|*.json", FileName = "studiox-support-report.json" };
+        if (dialog.ShowDialog(this) != true)
+        {
+            return;
+        }
+        await services.SupportReports.ExportAsync(projectDirectory, dialog.FileName, lastFailure, token);
+        Status.Text = "故障资料已保存：" + dialog.FileName;
     });
     private async Task RunHealthActionAsync(HealthCheck check)
     {

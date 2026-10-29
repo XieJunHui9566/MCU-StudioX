@@ -259,6 +259,10 @@ public partial class MainWindow
     }
     private async Task<bool> ConfirmDocumentsAsync(Func<SourceDocument, MessageBoxResult>? decide = null, bool retainEditorDrafts = false)
     {
+        if (!await ConfirmPluginConfigurationDraftsAsync(decide))
+        {
+            return false;
+        }
         var wasEnabled = WorkspaceTabs.IsEnabled;
         WorkspaceTabs.IsEnabled = false;
         try

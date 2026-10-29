@@ -2,5 +2,5 @@ namespace StudioX.Engine;
 
 public enum ProjectKind
 {
-    Pack, CubeMx, Zephyr, MicroPython
+    Pack, CubeMx, Zephyr, MicroPython, Arduino, Pic
 }

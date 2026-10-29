@@ -1,0 +1,9 @@
+<Project
+  Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference
+      Include="../../src/StudioX.Extensions.Abstractions/StudioX.Extensions.Abstractions.csproj" />
+    <EmbeddedResource
+      Include="Assets/*.json;Assets/*.mcuconfig" />
+  </ItemGroup>
+</Project>

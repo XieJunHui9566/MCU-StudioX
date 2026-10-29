@@ -37,8 +37,136 @@ public sealed partial class ProjectHealthService(ToolsetCatalog catalog, BuildSe
             checks.Add(Failure("HEALTH_PROJECT", "工程清单无法读取或不一致", "project-open", HealthAction.None, error));
             return new(directory, "无法读取工程", "无法读取", DateTimeOffset.UtcNow, deep, false, checks);
         }
-        var native = project.Kind is ProjectKind.Pack or ProjectKind.CubeMx;
+        var capabilities = ProjectCapabilities.For(project);
+        var native = capabilities.Build;
+        checks.Add(new("HEALTH_PROJECT_SCOPE", "当前工程支持范围", HealthState.Information, capabilities.Scope, "build"));
         var target = project.Espressif is { } sdk ? $"{sdk.Framework} {sdk.SdkVersion} · target={sdk.Target}" : project.DeviceId;
+        if (project.ToolsetId == Mx251Profile.ToolsetId)
+        {
+            await CheckAsync("HEALTH_MX251_ENTRY", "MX251 构建配置", "build", HealthAction.None, async () =>
+            {
+                using var config = System.Text.Json.JsonDocument.Parse(await ReadLimitedAsync(
+                    PathBoundary.Resolve(root, Mx251Profile.ConfigurationFile), 1024 * 1024, token));
+                if (!config.RootElement.TryGetProperty("target", out var item) || item.GetString() != Mx251SdkProfile.Target(project.DeviceId))
+                {
+                    throw new StudioXException("MX251_TARGET", "构建配置的目标必须与工程器件一致：" + Mx251SdkProfile.Target(project.DeviceId));
+                }
+                if (Mx251SdkProfile.Matches(project) && !File.Exists(Path.Combine(root, "CMakeLists.txt")))
+                {
+                    throw new StudioXException("MX251_CMAKE", "缺少 CMakeLists.txt。");
+                }
+                return "CMake 管理工程输入，Ninja 调用锁定的 MX251 组件；完整选项、源码与 ABI 检查在构建时执行。";
+            });
+            await CheckAsync("HEALTH_MX251_TOOLS", "锁定的 MX251 组件", "tool-environment", HealthAction.None, async () =>
+            {
+                catalog.RequireEnabled(project.ToolsetId, project.ToolsetVersion);
+                var manifest = deep ? (await catalog.ResolveAsync(project.ToolsetId, project.ToolsetVersion, project.CompilerId, token, true)).Manifest
+                    : await JsonStore.ReadAsync<ToolsetManifest>(PathBoundary.Resolve(catalog.RootDirectory,
+                        project.ToolsetId + "/" + project.ToolsetVersion + "/toolset.json"), token);
+                if (manifest.Id != project.ToolsetId || manifest.Version != project.ToolsetVersion || manifest.CompilerId != project.CompilerId ||
+                    (!(manifest.Version == Mx251Profile.Version && manifest.CompilerId == Mx251Profile.CompilerId) &&
+                     !Mx251SdkProfile.Matches(manifest.Version, manifest.CompilerId)) || manifest.Purpose != "mx251")
+                {
+                    throw new StudioXException("MX251_IDENTITY", "组件身份与锁定工程不匹配。");
+                }
+                return "独立工具组件，不使用系统 SDCC；构建前校验工具内容和工程锁。";
+            });
+            return Report();
+        }
+        if (project.Kind == ProjectKind.Pic)
+        {
+            await CheckAsync("HEALTH_PIC_ENTRY", "PIC C 源码入口", "build", HealthAction.None, () =>
+            {
+                var sourceRoot = PathBoundary.Resolve(root, "src");
+                if (!Directory.Exists(sourceRoot) || !Directory.EnumerateFiles(sourceRoot, "*.c", SearchOption.AllDirectories).Any())
+                {
+                    throw new StudioXException("PIC_ENTRY", "src/ 下缺少 C 源码，请恢复入口或在 src/ 下组织 C 源码。");
+                }
+                return Task.FromResult("独立 XC8 编译；不使用 CMake，不启动 MPLAB IDE。");
+            });
+            await CheckAsync("HEALTH_PIC_TOOLS", "XC8 4.00 / PIC16Fxxx DFP 1.9.176", "tool-environment", HealthAction.None, async () =>
+            {
+                catalog.RequireEnabled(project.ToolsetId, project.ToolsetVersion);
+                var manifest = deep ? (await catalog.ResolveAsync(project.ToolsetId, project.ToolsetVersion, project.CompilerId, token, true)).Manifest
+                    : await JsonStore.ReadAsync<ToolsetManifest>(PathBoundary.Resolve(catalog.RootDirectory,
+                        project.ToolsetId + "/" + project.ToolsetVersion + "/toolset.json"), token);
+                if (manifest.Id != project.ToolsetId || manifest.Version != project.ToolsetVersion || manifest.CompilerId != project.CompilerId ||
+                    manifest.Purpose != "pic-xc8" || manifest.ComponentVersions?.GetValueOrDefault("PIC16Fxxx_DFP") != project.Pic!.DfpVersion)
+                {
+                    throw new StudioXException("PIC_TOOLS", "PIC 开发环境组件身份或 DFP 版本不一致。");
+                }
+                return "独立官方编译器；构建前按工程内容锁完整校验。";
+            });
+            if (project.DeviceId == "PIC16F877A")
+            {
+                await InspectToolsAsync(StudioX.Engine.Pic.PicDownloadSettings.ToolsetId, "6.20.0", StudioX.Engine.Pic.PicDownloadSettings.CompilerId, null, deep, checks, progress, token);
+            }
+            return Report();
+        }
+        if (project.Kind == ProjectKind.Arduino)
+        {
+            await CheckAsync("HEALTH_ARDUINO_ENTRY", "Arduino sketch 入口", "build", HealthAction.None, () =>
+            {
+                if (!File.Exists(PathBoundary.Resolve(root, project.EntryFile!)))
+                {
+                    throw new StudioXException("ARDUINO_SKETCH", "缺少与工程同名的 .ino 入口。");
+                }
+                return Task.FromResult(project.EntryFile!);
+            });
+            await CheckAsync("HEALTH_ARDUINO_TOOLS", "固定 Arduino 开发环境", "build", HealthAction.None, async () =>
+            {
+                if (deep)
+                {
+                    _ = await catalog.ResolveAsync(project.ToolsetId, project.ToolsetVersion, project.CompilerId, token, true);
+                }
+                else
+                {
+                    catalog.RequireEnabled(project.ToolsetId, project.ToolsetVersion);
+                    var manifest = await JsonStore.ReadAsync<ToolsetManifest>(PathBoundary.Resolve(catalog.RootDirectory,
+                        project.ToolsetId + "/" + project.ToolsetVersion + "/toolset.json"), token);
+                    if (manifest.Id != project.ToolsetId || manifest.Version != project.ToolsetVersion || manifest.Purpose != "arduino")
+                    {
+                        throw new StudioXException("ARDUINO_RUNTIME", "Arduino 工具组件身份不一致。");
+                    }
+                }
+                return project.Arduino!.Platform.DisplayName + " / CLI 1.5.1；构建执行前完整校验工具和库。";
+            });
+            return Report();
+        }
+        if (project is { Kind: ProjectKind.Zephyr, Zephyr.FormatVersion: 2 })
+        {
+            await CheckAsync("HEALTH_ZEPHYR_FILES", "Zephyr 工程与板级配置", "build", HealthAction.None, () =>
+            {
+                foreach (var relative in new[] { "CMakeLists.txt", "prj.conf", project.EntryFile!, project.Zephyr.Devicetree! })
+                {
+                    if (!File.Exists(PathBoundary.Resolve(root, relative)))
+                    {
+                        throw new StudioXException("ZEPHYR_FILE", "缺少 Zephyr 工程文件：" + relative);
+                    }
+                }
+                return Task.FromResult("准确 MCU、自定义板级 DTS 和框架版本已记录；外部接线仍需按实际 PCB 配置。");
+            });
+            await CheckAsync("HEALTH_ZEPHYR_TOOLS", "锁定的 Zephyr 开发组件", "build", HealthAction.None, async () =>
+            {
+                catalog.RequireEnabled(project.ToolsetId, project.ToolsetVersion);
+                if (deep)
+                {
+                    _ = await catalog.ResolveAsync(project.ToolsetId, project.ToolsetVersion, project.CompilerId, token, true);
+                }
+                else
+                {
+                    var manifest = await JsonStore.ReadAsync<ToolsetManifest>(PathBoundary.Resolve(catalog.RootDirectory,
+                        project.ToolsetId + "/" + project.ToolsetVersion + "/toolset.json"), token);
+                    if (manifest.Id != project.ToolsetId || manifest.Version != project.ToolsetVersion || manifest.CompilerId != project.CompilerId ||
+                        manifest.Host != "win-x64" || manifest.Purpose != "zephyr")
+                    {
+                        throw new StudioXException("ZEPHYR_RUNTIME", "Zephyr 开发组件身份不一致。");
+                    }
+                }
+                return "框架、SDK 与 Python 由独立组件管理，构建前完整校验内容，不使用系统 PATH。";
+            });
+            return Report();
+        }
         if (!native)
         {
             checks.Add(new("HEALTH_BUILD_MODE", "当前工程的构建方式", HealthState.Information,

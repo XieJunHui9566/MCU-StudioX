@@ -659,6 +659,9 @@
         </Setter>
       </Style>
       <Style
+        TargetType="ContextMenu"
+        BasedOn="{StaticResource CodeContextMenu}" />
+      <Style
         TargetType="MenuItem">
         <Setter
           Property="Foreground"

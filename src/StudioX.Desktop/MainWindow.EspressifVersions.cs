@@ -27,7 +27,8 @@ public partial class MainWindow
         }
         var revision = ++idfSelectionRevision;
         if (PackPicker.SelectedItem is not InstalledPack pack || DevicePicker.SelectedItem is not DeviceDefinition device ||
-            TemplatePicker.SelectedItem is not ProjectTemplate template || device.Espressif?.Framework != "esp-idf")
+            TemplatePicker.SelectedItem is not ProjectTemplate template || device.Espressif?.Framework != "esp-idf" ||
+            StudioX.Application.Arduino.ArduinoTemplateCatalog.IsArduino(template) || StudioX.Application.ZephyrTemplateCatalog.IsZephyr(template))
         {
             ClearIdfVersionSelection();
             return;
@@ -77,8 +78,7 @@ public partial class MainWindow
             applyingIdfSelection = true;
             try
             {
-                PackPicker.SelectedItem = PackPicker.Items.Cast<InstalledPack>()
-                    .Single(item => item.Manifest.Id == pack.Manifest.Id && item.Manifest.Version == pack.Manifest.Version);
+                SelectPack(pack);
                 DevicePicker.SelectedItem = DevicePicker.Items.Cast<DeviceDefinition>().Single(item => item.Id == choice.DeviceId);
                 TemplatePicker.SelectedItem = TemplatePicker.Items.Cast<ProjectTemplate>().Single(item => item.Id == choice.TemplateId);
                 UpdateSelectedComponents();

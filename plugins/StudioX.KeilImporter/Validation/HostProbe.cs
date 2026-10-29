@@ -30,7 +30,14 @@ internal sealed class HostProbe : IAsyncDisposable
     public async Task<JsonElement> RequestAsync(string method, object payload)
     {
         var id = "keil-validation-" + ++requestNumber;
-        await process.StandardInput.WriteLineAsync(JsonSerializer.Serialize(new { protocolVersion = 2, kind = "request", requestId = id, method, payload }));
+        await process.StandardInput.WriteLineAsync(JsonSerializer.Serialize(new
+        {
+            protocolVersion = 2,
+            kind = "request",
+            requestId = id,
+            method,
+            payload
+        }));
         await process.StandardInput.FlushAsync();
         using var timeout = new CancellationTokenSource(TimeSpan.FromMinutes(3));
         while (true)
@@ -60,7 +67,16 @@ internal sealed class HostProbe : IAsyncDisposable
     }
 
     public Task<JsonElement> InvokeAsync(string id, Dictionary<string, object?> fields) =>
-        RequestAsync("invoke", new { kind = "command", id, arguments = new { widgetId = "form", values = fields } });
+        RequestAsync("invoke", new
+        {
+            kind = "command",
+            id,
+            arguments = new
+            {
+                widgetId = "form",
+                values = fields
+            }
+        });
 
     public async ValueTask DisposeAsync()
     {

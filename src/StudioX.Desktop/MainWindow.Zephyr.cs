@@ -1,12 +1,12 @@
 namespace StudioX.Desktop;
 
 using System.Windows;
-using Microsoft.Win32;
 using StudioX.Engine;
 
 public partial class MainWindow
 {
     private bool IsZephyrProject => currentProjectManifest?.Kind == ProjectKind.Zephyr;
+    private bool IsLegacyZephyrProject => IsZephyrProject && currentProjectManifest?.Zephyr?.FormatVersion != 2;
 
     private async void ZephyrDeviceTree_Click(object sender, RoutedEventArgs e) => await RunAsync(async token =>
     {
@@ -33,29 +33,7 @@ public partial class MainWindow
             node.BringIntoView(new Rect(0, 0, 1, Math.Max(1, node.ActualHeight)));
         }
         await OpenSourceAsync(relative, token);
-        Status.Text = "板级设备树源文件 · " + relative + "；合成后的 zephyr.dts 需通过 west 构建。";
+        Status.Text = "板级设备树源文件 · " + relative + "；编译后可在 .build/zephyr/zephyr.dts 查看合成结果。";
     }
 
-    private async void ZephyrExperimental_Click(object sender, RoutedEventArgs e)
-    {
-        var selection = new ZephyrProjectWindow(services.ZephyrPacks) { Owner = this };
-        if (selection.ShowDialog() != true)
-        {
-            return;
-        }
-        var destinationPicker = new OpenFolderDialog { Title = "选择 Zephyr 实验工程的父目录（路径请勿含空格）" };
-        if (destinationPicker.ShowDialog(this) != true)
-        {
-            return;
-        }
-        await RunAsync(async token =>
-        {
-            var destination = Path.Combine(destinationPicker.FolderName, selection.ProjectName);
-            var project = await services.ZephyrProjects.CreateAsync(selection.SelectedPack, selection.SelectedBoard.Id,
-                selection.SelectedTemplate.Id, selection.ProjectName, destination, token);
-            Log($"已创建 Zephyr 实验工程：{project.Name} · {project.Zephyr?.BoardTarget}。Git 仓库已初始化。");
-            await OpenProjectAsync(destination, token);
-            Status.Text = "Zephyr 实验模式 · 工程已创建；板级构建和调试尚待验证。";
-        });
-    }
 }

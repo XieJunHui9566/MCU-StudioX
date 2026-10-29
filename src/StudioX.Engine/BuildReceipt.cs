@@ -5,17 +5,18 @@ using StudioX.Foundation;
 
 internal sealed record BuiltImage(string RelativePath, string Format, string Sha256, string? SymbolsPath = null, string? SymbolsSha256 = null);
 internal sealed record BuildReceipt(ProjectManifest Project, string ToolFingerprint, BuiltImage[] Images, string? SourceStamp = null,
-    EspressifFlashLayout? EspressifLayout = null, string[]? CompiledSources = null)
+    EspressifFlashLayout? EspressifLayout = null, string[]? CompiledSources = null, IReadOnlyDictionary<string, string>? AnalysisInputs = null)
 {
     internal const string RelativePath = ".build/studiox-build-receipt.json";
-    internal static async Task WriteAsync(string root, ProjectManifest project, string fingerprint, string[] images, CancellationToken token, string? sourceStamp = null)
+    internal static async Task WriteAsync(string root, ProjectManifest project, string fingerprint, string[] images, CancellationToken token, string? sourceStamp = null,
+        string[]? analysisFiles = null)
     {
         var entries = new List<BuiltImage>();
         foreach (var image in images)
         {
             var relative = Path.GetRelativePath(root, image).Replace('\\', '/');
             await using var stream = File.OpenRead(PathBoundary.Resolve(root, relative));
-            var sdcc = project.ToolsetId == "stc.sdcc";
+            var sdcc = project.ToolsetId is "stc.sdcc" or Mx251Profile.ToolsetId;
             var symbols = project.Kind == ProjectKind.CubeMx ? image : sdcc ?
                 (await ProjectBuildSettings.ReadAsync(root, token)).DebugInfo == CompilerDebugInfo.Standard ? Path.ChangeExtension(image, ".cdb") : "" : Path.ChangeExtension(image, ".elf");
             string? symbolsHash = null;
@@ -28,7 +29,18 @@ internal sealed record BuildReceipt(ProjectManifest Project, string ToolFingerpr
                 symbolsHash is null ? null : Path.GetRelativePath(root, symbols).Replace('\\', '/'), symbolsHash));
         }
         var sources = project.ToolsetId == "stc.sdcc" && entries.Any(entry => entry.SymbolsPath is not null) ? await StcDebugArtifacts.ReadCompiledSourcesAsync(root, token) : null;
-        await JsonStore.WriteAsync(PathBoundary.Resolve(root, RelativePath), new BuildReceipt(project, fingerprint, entries.ToArray(), sourceStamp, CompiledSources: sources), token);
+        Dictionary<string, string>? analysis = null;
+        if (analysisFiles is not null)
+        {
+            analysis = new(StringComparer.Ordinal);
+            foreach (var file in analysisFiles)
+            {
+                var relative = Path.GetRelativePath(root, file).Replace('\\', '/');
+                await using var stream = File.OpenRead(PathBoundary.Resolve(root, relative));
+                analysis.Add(relative, Convert.ToHexString(await SHA256.HashDataAsync(stream, token)));
+            }
+        }
+        await JsonStore.WriteAsync(PathBoundary.Resolve(root, RelativePath), new BuildReceipt(project, fingerprint, entries.ToArray(), sourceStamp, CompiledSources: sources, AnalysisInputs: analysis), token);
     }
 
     internal static async Task WriteEspressifAsync(string root, ProjectManifest project, string fingerprint,

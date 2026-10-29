@@ -174,6 +174,7 @@ public partial class MainWindow
             await Layout();
         }
     }
+    [System.Runtime.InteropServices.DefaultDllImportSearchPaths(System.Runtime.InteropServices.DllImportSearchPath.System32)]
     [DllImport("user32.dll", EntryPoint = "SendMessageW")]
     private static extern nint SendPreviewWheel(nint window, uint message, nint wParam, nint lParam);
 }

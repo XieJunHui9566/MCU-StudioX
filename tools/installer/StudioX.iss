@@ -78,6 +78,12 @@ LZMADictionarySize=32768
 ; 完整 SDK 的未压缩数据超出单个 EXE 上限，仅隔离验收使用旁置数据文件。
 DiskSpanning=yes
 DiskSliceSize=max
+#else
+#if DistributionProfile == "full"
+; GitHub 单附件须小于 2 GiB；完整安装器旁置分卷保持在 1.5 GB 内。
+DiskSpanning=yes
+DiskSliceSize=1500000000
+#endif
 #endif
 #if DistributionProfile == "light"
 OutputBaseFilename=MCU-StudioX-{#AppVersion}-win-x64-Light-Setup

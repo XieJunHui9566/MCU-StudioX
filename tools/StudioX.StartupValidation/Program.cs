@@ -47,6 +47,7 @@ Pass("PASS: catalog selection creates project after full verification");
 await ProjectDeviceInfoChecks.RunAsync(validProject, manifest, Pass);
 await EditorRecoveryChecks.RunAsync(output, validProject, Pass);
 await RecentProjectActionsChecks.RunAsync(output, Pass);
+await McuFavoritesChecks.RunAsync(output, Pass);
 
 async Task RejectCreate(string name)
 {

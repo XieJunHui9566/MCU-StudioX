@@ -2,6 +2,10 @@
 
 MCU StudioX 便携版包含 `runtime/mcp-host/StudioX.Cli.exe`。此程序是本机 stdio MCP 服务端；每个进程绑定一个 StudioX 工程目录。Codex、Claude Desktop 等客户端通过启动它来发现和调用与内置 Agent 相同的工程、编译、OpenOCD 与 STC ISP 烧录、Git、调试、串口、绘图、器件包查询、互联网资料、PDF 资料和 Agent Skill 工具。
 
+StudioX 作为客户端连接用户自己的 MCP 服务，使用「AI 接口设置 → 自定义 MCP」。支持 Streamable HTTP、SSE 和 stdio；这与下文让其他 AI 客户端启动 StudioX 服务端的方向不同。内置 AI 的 OpenAI 协议限制不限制外部 MCP 客户端软件的品牌。
+
+新增 Arduino 与 PIC 的预检/授权下载工具，均沿用原有应用层身份与设备所有权校验；服务端不默认授权硬件。
+
 ## 配置
 
 把下面示例中的便携版路径和工程路径替换成实际绝对路径。绑定工程须已由 StudioX 创建，且包含有效工程清单。服务端的工作目录不决定工程工具的范围；启动参数中的工程目录是写入、编译、Git 和设备操作的边界。其他目录只有通过单独的只读授权才能供示例查阅。

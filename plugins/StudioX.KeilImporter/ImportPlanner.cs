@@ -31,7 +31,14 @@ public static partial class ImportPlanner
         {
             throw new InvalidOperationException("器件选择与包目录不一致，请重新搜索。");
         }
-        request = request with { SourceRoot = root, ProjectFile = projectFile, ParentDirectory = parent, CliPath = cli, PackRepository = repository };
+        request = request with
+        {
+            SourceRoot = root,
+            ProjectFile = projectFile,
+            ParentDirectory = parent,
+            CliPath = cli,
+            PackRepository = repository
+        };
         var target = KeilProjectReader.Read(projectFile).SingleOrDefault(target => target.Name == request.TargetName)
             ?? throw new InvalidOperationException("请选择一个明确的 Keil Target。");
         await DeviceCatalog.VerifyAsync(request.Device, token);
@@ -186,8 +193,19 @@ public static partial class ImportPlanner
             throw new InvalidOperationException("生成配置超过本版面板预览容量，请拆分 Target 或先手工整理构建输入。");
         }
         var cliHash = await ImportPaths.HashAsync(cli, token);
-        var previewId = ImportPaths.HashText(JsonSerializer.Serialize(new { request.ProjectName, destination, target.Name, device = request.Device.Key,
-            request.Device.ContentHash, request.TemplateId, files, edits, cmake, cliHash }, DeviceCatalog.Json));
+        var previewId = ImportPaths.HashText(JsonSerializer.Serialize(new
+        {
+            request.ProjectName,
+            destination,
+            target.Name,
+            device = request.Device.Key,
+            request.Device.ContentHash,
+            request.TemplateId,
+            files,
+            edits,
+            cmake,
+            cliHash
+        }, DeviceCatalog.Json));
         return new(request, destination, target, files.ToArray(), sources, includes, packSources, additionalDefines, edits, issues.ToArray(), cmake, cliHash, previewId);
 
         void AddFile(string path)

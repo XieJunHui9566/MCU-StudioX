@@ -54,7 +54,10 @@ public sealed partial class ProjectHealthService
                 "ag32-mapping" => new[] { "python", "converter", "supra" },
                 "hdl-native" => ["mapper"],
                 "hdl-simulation" => ["iverilog", "vvp"],
+                "pic-xc8" => ["xc8-cc"],
+                "pic-ipe" => ["java", "ipecmd"],
                 "windows-native" => ["gcc", "gxx", "ar", "ranlib", "as", "ld", "objcopy", "objdump", "size"],
+                _ when id == Mx251Profile.ToolsetId => Mx251Profile.RequiredRoles,
                 _ when id == "stc.sdcc" => ["cmake", "ninja", "sdcc", "sdar", "sdas8051", "sdld", "packihx"],
                 _ => ["cmake", "ninja", "gcc", "gxx", "objcopy", "size"]
             };

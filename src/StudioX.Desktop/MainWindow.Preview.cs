@@ -209,6 +209,7 @@ public partial class MainWindow
                 throw new InvalidOperationException("离线预览不得批准 MCP 操作。");
             }
         }
+        await RenderAiRedesignPreviewAsync(directory);
         await File.WriteAllTextAsync(Path.Combine(directory, "result.txt"), "Rendered welcome, appearance settings, and AI sidebar. No device/build/API actions.\n");
     }
     private static void Render(FrameworkElement element, string path)

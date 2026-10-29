@@ -315,6 +315,7 @@ public sealed partial class PluginWorkspaceSession : IAsyncDisposable
             }
             PluginContributionValidator.ValidatePanel(panel,
                 contribution.Commands.Select(command => command.Id).ToHashSet(StringComparer.Ordinal), active.Manifest.Scope == "application");
+            PluginContributionValidator.ValidatePanelCapabilities(active.Manifest, panel);
             lock (gate)
             {
                 if (disposed || !active.Running)

@@ -1,0 +1,29 @@
+{
+  "dfp": "Microchip.PIC16Fxxx_DFP",
+  "version": "1.9.176",
+  "url": "https://packs.download.microchip.com/Microchip.PIC16Fxxx_DFP.1.9.176.atpack",
+  "archiveSha256": "C5C3CE16F908635A6858FC128494B82AE9AA61B7F5AB932A12843BBDFA8F8F62",
+  "derivation": "CodeSector words; CodeMemTraits instruction width; non-shadow GPRDataSector bytes; EEDataSector bytes",
+  "devices": [
+    {
+      "id": "PIC16F913",
+      "edcSha256": "22569a735d15026fc37e833f7745a39418e3e25a5b625eb95e20a47bc3a77ca2"
+    },
+    {
+      "id": "PIC16F914",
+      "edcSha256": "020fdfa4152d217786b8273befd51a4fcf5cefed2c33af9c513630aee4368a8d"
+    },
+    {
+      "id": "PIC16F916",
+      "edcSha256": "2fa646bedac1572facd349cc48fc4503098e13f71b18333aa1830d8c9ebfc891"
+    },
+    {
+      "id": "PIC16F917",
+      "edcSha256": "3ea5e461809510100eeda818ca4312a14eb97dcc951902882bcba19da087e55c"
+    },
+    {
+      "id": "PIC16F946",
+      "edcSha256": "4dc29f8f10dc78603e3ad3bd502d8be32bb928805b24fb668966f94a95a53de8"
+    }
+  ]
+}

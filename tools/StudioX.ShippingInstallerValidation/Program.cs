@@ -35,6 +35,9 @@ try
         case ["build", var installed, var project, var data, var output]:
             await new InstalledServices(installed).BuildAsync(project, data, output);
             break;
+        case ["memory", var installed, var project, var data, var output]:
+            await new InstalledServices(installed).CaptureMemoryAsync(project, data, output);
+            break;
         case ["export", var root, var archive, var output]:
             FileEvidence.Export(root, archive, output);
             break;
