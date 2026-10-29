@@ -1,7 +1,6 @@
 namespace StudioX.Application.Mcp;
 
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -9,13 +8,12 @@ using ModelContextProtocol.Server;
 using StudioX.Foundation;
 using static McpWorkspacePathPolicy;
 
-/// <summary>管理绑定工程的有界 QMD 源码索引与按需检索。</summary>
+/// <summary>管理绑定工程的有界源码快照；工具名保留兼容，检索由内置 C# 实现。</summary>
 internal sealed class QmdMcpTools(McpSessionContext context) : StudioXMcpToolProvider(context)
 {
     private const int QmdMaxFiles = 400;
     private const long QmdMaxSourceBytes = 8L * 1024 * 1024;
     private const long QmdMaxFileBytes = 512L * 1024;
-    private const long QmdMaxIndexBytes = 48L * 1024 * 1024;
     private const long QmdMaxProjectBytes = 64L * 1024 * 1024;
     private const int QmdRetainedProjects = 3;
     private const int QmdMaxOutputChars = 16_000;
@@ -23,7 +21,7 @@ internal sealed class QmdMcpTools(McpSessionContext context) : StudioXMcpToolPro
     private const string QmdManagedMarker = "StudioX QMD BM25 cache v1";
 
     [McpServerTool(Name = "project_qmd_search")]
-    [Description("可选 QMD 本地 BM25 检索当前工程安全源码，返回少量相关片段。首次调用会建立有界本地索引；不使用向量模型、重排或联网。目录过大时指定更窄的 directory。此工具降低重复读取的 token，不直接提高 API 前缀缓存命中率。")]
+    [Description("内置 C# BM25 关键词检索当前工程安全源码，返回少量相关片段。首次调用建立有界本地快照，未变更时复用；无需 Node.js、QMD、模型或联网。目录过大时指定更窄的 directory。工具名保留兼容；关键词检索不直接改变 API 前缀缓存命中率。")]
     public async Task<string> ProjectQmdSearchAsync(
         [Description("2–160 字符的关键词或短语。")]
         string query,
@@ -43,24 +41,18 @@ internal sealed class QmdMcpTools(McpSessionContext context) : StudioXMcpToolPro
         {
             RequireWorkspaceSourceDirectory(directory);
         }
+        SourceBm25Search.ValidateQuery(query, cancellationToken);
         var selectedRoot = directory.Length == 0 ? Project : PathBoundary.Resolve(Project, directory);
         if (!Directory.Exists(selectedRoot))
         {
             throw new StudioXException("MCP_QMD_DIRECTORY", "QMD 检索目录不存在。");
         }
 
-        var entry = FindQmdEntry();
-        if (entry is null)
-        {
-            throw new StudioXException("MCP_QMD_NOT_INSTALLED",
-            "未找到可用的 QMD。请自行安装 @tobilu/qmd 和 Node.js 后重启 StudioX；也可以使用 project_search。StudioX 不会自动下载模型或索引整个工程。");
-        }
-
         var projectKey = Convert.ToHexString(SHA256.HashData(QmdUtf8.GetBytes(Project.ToUpperInvariant())))[..20];
-        var qmdRoot = Path.GetFullPath(Path.Combine(Services.DataDirectory, "qmd-bm25"));
+        var qmdRoot = PathBoundary.Resolve(Services.DataDirectory, "qmd-bm25");
         Directory.CreateDirectory(qmdRoot);
         await using var globalGate = await AcquireQmdLockAsync(qmdRoot, cancellationToken).ConfigureAwait(false);
-        var indexRoot = Path.GetFullPath(Path.Combine(qmdRoot, projectKey));
+        var indexRoot = PathBoundary.Resolve(qmdRoot, projectKey);
         if (!Directory.Exists(indexRoot))
         {
             Directory.CreateDirectory(indexRoot);
@@ -80,14 +72,15 @@ internal sealed class QmdMcpTools(McpSessionContext context) : StudioXMcpToolPro
         PruneQmdProjectIndexes(qmdRoot, indexRoot);
         await using var gate = await AcquireQmdLockAsync(indexRoot, cancellationToken).ConfigureAwait(false);
         var mirror = Path.Combine(indexRoot, "source");
-        var config = Path.Combine(indexRoot, "config");
-        var cache = Path.Combine(indexRoot, "cache");
-        Directory.CreateDirectory(config);
-        if (Directory.Exists(cache) && DirectorySize(cache) > QmdMaxIndexBytes)
+        // 旧版外部后端的数据库与配置不再使用；只清理已核对归属的托管缓存。
+        foreach (var legacy in new[] { "config", "cache" })
         {
-            DeleteManagedQmdDirectory(indexRoot, cache);
+            var legacyPath = PathBoundary.Resolve(indexRoot, legacy);
+            if (Directory.Exists(legacyPath))
+            {
+                DeleteManagedQmdDirectory(indexRoot, legacyPath);
+            }
         }
-        Directory.CreateDirectory(cache);
 
         var candidates = CollectQmdSources(selectedRoot, directory, cancellationToken);
         var statePath = Path.Combine(indexRoot, "snapshot.json");
@@ -105,7 +98,6 @@ internal sealed class QmdMcpTools(McpSessionContext context) : StudioXMcpToolPro
         }
         var reusable = priorState?.Paths is not null && priorState.Directory == directory &&
             priorState.Fingerprint == candidates.Fingerprint && Directory.Exists(mirror) &&
-            File.Exists(Path.Combine(cache, "qmd", "studiox.sqlite")) &&
             await ValidateQmdSnapshotAsync(priorState, candidates, mirror, cancellationToken)
                 .ConfigureAwait(false);
         QmdSnapshot snapshot;
@@ -144,38 +136,34 @@ internal sealed class QmdMcpTools(McpSessionContext context) : StudioXMcpToolPro
 
         if (!reusable)
         {
-            var indexConfig = JsonSerializer.Serialize(new
-            {
-                collections = new
-                {
-                    project = new
-                    {
-                        path = mirror,
-                        pattern = "**/*"
-                    }
-                }
-            });
-            await File.WriteAllTextAsync(Path.Combine(config, "studiox.yml"), indexConfig, QmdUtf8,
-                cancellationToken).ConfigureAwait(false);
-            await RunQmdAsync(entry, indexRoot, config, cache,
-                ["--index", "studiox", "update"], TimeSpan.FromSeconds(30), cancellationToken).ConfigureAwait(false);
             await File.WriteAllTextAsync(statePath,
                 JsonSerializer.Serialize(new QmdSnapshotState(directory, candidates.Fingerprint,
                     snapshot.Files, snapshot.Bytes, snapshot.SkippedOversize,
                     new Dictionary<string, string>(snapshot.Paths, StringComparer.Ordinal))), QmdUtf8,
                 cancellationToken).ConfigureAwait(false);
         }
-        if (DirectorySize(cache) > QmdMaxIndexBytes || DirectorySize(indexRoot) > QmdMaxProjectBytes)
+        if (DirectorySize(indexRoot) > QmdMaxProjectBytes)
         {
-            DeleteManagedQmdDirectory(indexRoot, cache);
-            throw new StudioXException("MCP_QMD_INDEX_SIZE",
-                "QMD 索引超过 48 MiB（项目缓存上限 64 MiB），已清除超限索引；请缩小检索目录。");
+            throw new StudioXException("MCP_QMD_INDEX_SIZE", "项目检索缓存超过 64 MiB，请缩小检索目录。");
         }
-        var output = await RunQmdAsync(entry, indexRoot, config, cache,
-            ["--index", "studiox", "search", query, "--format", "json", "-n",
-                maxResults.ToString(System.Globalization.CultureInfo.InvariantCulture), "-c", "project"],
-            TimeSpan.FromSeconds(15), cancellationToken).ConfigureAwait(false);
-        return FormatQmdResults(output, query, directory, snapshot, reusable);
+        var matches = await SourceBm25Search.SearchAsync(mirror, snapshot.Paths, query, maxResults,
+            cancellationToken).ConfigureAwait(false);
+        var output = JsonSerializer.Serialize(new
+        {
+            query,
+            directory,
+            engine = "studiox-csharp-bm25",
+            indexedFiles = snapshot.Files,
+            indexedSourceBytes = snapshot.Bytes,
+            skippedOversizeFiles = snapshot.SkippedOversize,
+            reusedIndex = reusable,
+            results = matches.Select(item => new { path = item.Path, line = item.Line, score = item.Score, snippet = item.Snippet })
+        });
+        if (output.Length > QmdMaxOutputChars)
+        {
+            throw new StudioXException("MCP_QMD_OUTPUT", "检索结果超过输出上限，请减少 maxResults。");
+        }
+        return output;
     }
 
     /// <summary>先按工程源码策略筛选并生成目录指纹，超出范围时拒绝创建索引。</summary>
@@ -237,7 +225,7 @@ internal sealed class QmdMcpTools(McpSessionContext context) : StudioXMcpToolPro
         return new QmdSources(files, fingerprint, skippedOversize);
     }
 
-    /// <summary>使用数字镜像名避免 QMD 路径规范化冲突，映射仅指向校验过的工程文件。</summary>
+    /// <summary>使用固定镜像名，映射仅指向校验过的工程文件。</summary>
     private async Task<QmdSnapshot> CreateQmdSnapshotAsync(QmdSources candidates, string mirror,
         CancellationToken token)
     {
@@ -271,7 +259,7 @@ internal sealed class QmdMcpTools(McpSessionContext context) : StudioXMcpToolPro
             }
             files++;
             bytes += utf8Bytes;
-            // QMD 会把下划线等字符规范化为连字符；固定数字镜像名避免路径碰撞。
+            // 沿用固定数字镜像名，保持旧快照映射兼容并避免路径碰撞。
             var mirrorName = files.ToString("D6", System.Globalization.CultureInfo.InvariantCulture) +
                 Path.GetExtension(relative).ToLowerInvariant();
             var target = Path.GetFullPath(Path.Combine(mirror, mirrorName));
@@ -354,85 +342,6 @@ internal sealed class QmdMcpTools(McpSessionContext context) : StudioXMcpToolPro
         return bytes == state.Bytes;
     }
 
-    private static string FormatQmdResults(string output, string query, string directory,
-        QmdSnapshot snapshot, bool reusedIndex)
-    {
-        using var document = JsonDocument.Parse(output);
-        if (document.RootElement.ValueKind != JsonValueKind.Array)
-        {
-            throw new StudioXException("MCP_QMD_OUTPUT", "QMD 没有返回 JSON 结果数组。");
-        }
-        var results = new List<object>();
-        foreach (var item in document.RootElement.EnumerateArray())
-        {
-            if (!item.TryGetProperty("file", out var file) || file.ValueKind != JsonValueKind.String)
-            {
-                continue;
-            }
-            var uri = file.GetString() ?? "";
-            const string prefix = "qmd://project/";
-            if (!uri.StartsWith(prefix, StringComparison.Ordinal))
-            {
-                continue;
-            }
-            var mirrorName = uri[prefix.Length..].Split('?', 2)[0];
-            if (!snapshot.Paths.TryGetValue(mirrorName, out var path))
-            {
-                continue;
-            }
-            if (!IsWorkspaceSourceFile(path))
-            {
-                continue;
-            }
-            var snippet = item.TryGetProperty("snippet", out var snippetElement) &&
-                snippetElement.ValueKind == JsonValueKind.String ? snippetElement.GetString() ?? "" : "";
-            results.Add(new
-            {
-                path,
-                line = item.TryGetProperty("line", out var line) && line.TryGetInt32(out var number) ? number : 1,
-                score = item.TryGetProperty("score", out var score) && score.TryGetDouble(out var value)
-                    ? value : 0d,
-                snippet = snippet.Length > 900 ? snippet[..900] : snippet
-            });
-        }
-        var serialized = JsonSerializer.Serialize(new
-        {
-            query,
-            directory,
-            indexedFiles = snapshot.Files,
-            indexedSourceBytes = snapshot.Bytes,
-            skippedOversizeFiles = snapshot.SkippedOversize,
-            reusedIndex,
-            results
-        });
-        if (serialized.Length > QmdMaxOutputChars)
-        {
-            throw new StudioXException("MCP_QMD_OUTPUT", "QMD 结果异常过长，请减少 maxResults。");
-        }
-        return serialized;
-    }
-
-    private static string? FindQmdEntry()
-    {
-        var roots = new List<string>();
-        var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-        if (appData.Length > 0)
-        {
-            roots.Add(Path.Combine(appData, "npm"));
-        }
-        var path = Environment.GetEnvironmentVariable("PATH") ?? "";
-        roots.AddRange(path.Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries));
-        foreach (var root in roots.Distinct(StringComparer.OrdinalIgnoreCase))
-        {
-            var entry = Path.Combine(root, "node_modules", "@tobilu", "qmd", "bin", "qmd");
-            if (File.Exists(entry))
-            {
-                return entry;
-            }
-        }
-        return null;
-    }
-
     private static void PruneQmdProjectIndexes(string qmdRoot, string current)
     {
         var managed = Directory.EnumerateDirectories(qmdRoot)
@@ -503,99 +412,6 @@ internal sealed class QmdMcpTools(McpSessionContext context) : StudioXMcpToolPro
                 await Task.Delay(150, token).ConfigureAwait(false);
             }
         }
-    }
-
-    private static async Task<string> RunQmdAsync(string entry, string indexRoot, string config,
-        string cache, IReadOnlyList<string> arguments, TimeSpan timeout, CancellationToken token)
-    {
-        using var limit = CancellationTokenSource.CreateLinkedTokenSource(token);
-        limit.CancelAfter(timeout);
-        var start = new ProcessStartInfo("node")
-        {
-            WorkingDirectory = indexRoot,
-            UseShellExecute = false,
-            CreateNoWindow = true,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            StandardOutputEncoding = Encoding.UTF8,
-            StandardErrorEncoding = Encoding.UTF8
-        };
-        start.ArgumentList.Add(entry);
-        foreach (var argument in arguments)
-        {
-            start.ArgumentList.Add(argument);
-        }
-        start.Environment["QMD_CONFIG_DIR"] = config;
-        start.Environment["XDG_CACHE_HOME"] = cache;
-        start.Environment["QMD_FORCE_CPU"] = "1";
-        Process? launched;
-        try
-        {
-            launched = Process.Start(start);
-        }
-        catch (System.ComponentModel.Win32Exception ex)
-        {
-            throw new StudioXException("MCP_QMD_LAUNCH", "无法启动 Node.js：" + ex.Message);
-        }
-        using var process = launched ??
-            throw new StudioXException("MCP_QMD_LAUNCH", "无法启动本机 QMD；请检查 Node.js 安装。");
-        var stdout = process.StandardOutput.ReadToEndAsync(limit.Token);
-        var stderr = process.StandardError.ReadToEndAsync(limit.Token);
-        try
-        {
-            var wait = process.WaitForExitAsync(limit.Token);
-            while (!wait.IsCompleted)
-            {
-                await Task.WhenAny(wait, Task.Delay(100)).ConfigureAwait(false);
-                if (wait.IsCompleted)
-                {
-                    break;
-                }
-                long size;
-                try
-                {
-                    size = DirectorySize(indexRoot);
-                }
-                catch (IOException) { continue; }
-                if (size <= QmdMaxProjectBytes)
-                {
-                    continue;
-                }
-                process.Kill(entireProcessTree: true);
-                await process.WaitForExitAsync(CancellationToken.None).ConfigureAwait(false);
-                if (Directory.Exists(cache))
-                {
-                    DeleteManagedQmdDirectory(indexRoot, cache);
-                }
-                throw new StudioXException("MCP_QMD_INDEX_SIZE",
-                    "QMD 项目缓存超过 64 MiB，已停止索引并清除缓存；请缩小目录。");
-            }
-            await wait.ConfigureAwait(false);
-        }
-        catch (OperationCanceledException) when (!token.IsCancellationRequested)
-        {
-            if (!process.HasExited)
-            {
-                process.Kill(entireProcessTree: true);
-            }
-            throw new StudioXException("MCP_QMD_TIMEOUT", "QMD 检索或索引超时；请缩小目录。");
-        }
-        catch
-        {
-            if (!process.HasExited)
-            {
-                process.Kill(entireProcessTree: true);
-            }
-            throw;
-        }
-        var output = await stdout.ConfigureAwait(false);
-        var error = await stderr.ConfigureAwait(false);
-        if (process.ExitCode != 0)
-        {
-            throw new StudioXException("MCP_QMD_FAILED",
-            "QMD 执行失败：" + LimitOutput(error.Length > 0 ? error : output, 2_000));
-        }
-        return output;
     }
 
     private static long DirectorySize(string path) => Directory.Exists(path)

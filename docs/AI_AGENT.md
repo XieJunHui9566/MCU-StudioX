@@ -71,7 +71,7 @@ DeepSeek 前缀缓存默认由服务端自动管理，依据官方规则复用�
 | 范围 | 工具 | 行为 |
 |---|---|---|
 | 工程与编程 | `project_info`、`project_list_files`、`project_read_file`、`project_search`、`project_edit_file`、`project_patch_file`、`project_create_file`、`project_create_directory` | 当前工程内安全路径；大文件分段读取，局部补丁以原文件 SHA-256 和唯一匹配校验防止误写；器件与厂商源码可读，但受管理文件仍不可修改 |
-| 本地源码检索 | `project_qmd_search` | 可选调用已安装的 QMD，以 BM25 检索当前工程的安全源码快照并返回短片段；无 QMD 时仍可用 `project_search` |
+| 本地源码检索 | `project_qmd_search` | 内置 C# BM25 按完整单词和标识符检索安全源码快照，返回短片段；部分匹配和正则使用 `project_search` |
 | 互联网资料 | `web_search`、`web_fetch` | 用 Tavily 搜索公开网页并按需读取页面内容；结果按需续页，返回原始 URL 供核对；不访问本机或内网地址 |
 | PDF 数据手册与原理图 | `pdf_list`、`pdf_inspect`、`pdf_page` | 在当前工程或已授权的外部目录内发现 PDF、查页码与文字、按页读取；原理图可按页面区域返回图像供视觉模型核对连线 |
 | 外部示例 | `external_project_open`、`external_project_roots`、`external_project_list_files`、`external_project_find_files`、`external_project_read_file`、`external_project_search`、`external_project_copy` | 授权目录在当前 MCP 会话内只读；同目录复用授权标识，目录与搜索结果可用 `nextCursor` 续页；复制到当前工程须逐次授权且不覆盖已有文件 |
@@ -91,7 +91,7 @@ DeepSeek 前缀缓存默认由服务端自动管理，依据官方规则复用�
 
 对于宽目录，优先用 `external_project_find_files` 按文件名或路径片段定位，减少逐层列目录的模型调用；返回 `nextCursor` 时可用同一查询继续。`project_list_files`、`project_search` 也支持续页，`project_read_file` 支持行列范围；避免一次读取大型源文件后只收到截断预览。Agent 不按单轮工具次数或模型轮次设置固定上限；长任务在高水位时回收较早的完整工具调用与结果，保留最近批次，降低每次只回收一小段引起的前缀变动。压缩后的源码内容如仍需使用，模型应重新读取。单次 API 请求仍受服务端和本机消息体大小约束。先前对话中的外部目录标识可能随 MCP 会话关闭而失效，届时需要重新批准目录。
 
-`project_qmd_search` 使用本机已安装的 [QMD](https://github.com/tobi/qmd)；StudioX 不自动安装 Node.js、QMD 或下载嵌入及重排模型。它只使用 QMD 的 BM25 索引与 `search`，为当前工程建立最多 400 个文件、8 MiB 源码的安全快照；超出时应指定更窄的 `directory`。索引复用未变更的快照，按工程保存在用户数据目录的 `qmd-bm25` 下，每工程最多 64 MiB、最多保留三个工程的托管索引。外部授权目录不进入该索引。QMD 有助于先定位相关片段，减少重复全文读取和输入 token；它不会直接增加 API 的前缀缓存命中率。
+`project_qmd_search` 保留旧工具名，后端为 StudioX 内置 C# BM25，不再运行 Node.js 或外部 QMD，也不需要 SQLite、嵌入模型或重排模型。它只对当前工程最多 400 个文件、8 MiB 安全源码建立快照；超出时应指定更窄的 `directory`。按完整单词/标识符匹配，不区分大小写；不提供语义、向量或子串检索，部分匹配与正则使用 `project_search`。未变更快照复用前重新核对真实源码与映射；修改和删除会使快照失效。缓存位于用户数据目录的 `qmd-bm25`，每工程最多 64 MiB、最多保留三个工程，旧版外部后端的托管配置和数据库不再使用。外部授权目录不进入索引。返回片段有助于减少重复全文读取及输入 token，不直接改变 API 前缀缓存命中率。
 
 联网工具使用 [Tavily Search](https://docs.tavily.com/documentation/api-reference/endpoint/search) 与 [Extract](https://docs.tavily.com/documentation/api-reference/endpoint/extract)。默认使用 Tavily 提供的免密钥试用模式；该模式有共享额度和速率限制，耗尽或服务不可用时工具会报告实际错误。需要独立额度时，可在「AI 接口设置」填写单独的 Tavily API Key；未填写时也可从启动进程的 `TAVILY_API_KEY` 环境变量读取。两者均未配置时使用免密钥模式。联网调用会向 Tavily 发送搜索词或目标 URL，请勿把工程源码、凭据、个人敏感信息放进查询。结果和网页按工具返回的续页信息分段读取，避免一次将整页送入模型；网页内容是不可信资料，回答应附原始 URL 并核对准确型号和资料版本。工具仅用于公开互联网资料，不用于访问本机或内网资源。免密钥模式和额度以 [Tavily 官方说明](https://www.tavily.com/blog/agentic-distribution-your-stairway-to-heaven) 为准。
 
