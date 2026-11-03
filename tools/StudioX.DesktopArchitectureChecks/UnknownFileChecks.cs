@@ -16,7 +16,10 @@ internal static class UnknownFileChecks
 {
     public static async Task<int> RunAsync(string output)
     {
-        if (Directory.Exists(output)) { throw new IOException("Use a new evidence directory."); }
+        if (Directory.Exists(output))
+        {
+            throw new IOException("Use a new evidence directory.");
+        }
         var root = Path.Combine(output, "fixtures");
         Directory.CreateDirectory(root);
         var cases = new List<(string Path, string Expected)>();
@@ -72,12 +75,29 @@ internal static class UnknownFileChecks
                     TimeSpan.FromSeconds(15), ContainProcessTree: true));
                 var success = result.Success && !result.TimedOut;
                 passed &= success;
-                results.Add(new { path = test.Path, expected = test.Expected, passed = success, result.ExitCode, result.TimedOut, elapsedMs = stopwatch.ElapsedMilliseconds, result.StandardOutput, result.StandardError });
+                results.Add(new
+                {
+                    path = test.Path,
+                    expected = test.Expected,
+                    passed = success,
+                    result.ExitCode,
+                    result.TimedOut,
+                    elapsedMs = stopwatch.ElapsedMilliseconds,
+                    result.StandardOutput,
+                    result.StandardError
+                });
                 Console.WriteLine($"{(success ? "PASS" : "FAIL")} {test.Path}: {test.Expected}, exit={result.ExitCode}, timeout={result.TimedOut}, {stopwatch.ElapsedMilliseconds} ms");
             }
             finally { held?.Dispose(); }
         }
-        await JsonStore.WriteAsync(Path.Combine(output, "result.json"), new { passed, hardware = false, paidApi = false, cases = cases.Count, results });
+        await JsonStore.WriteAsync(Path.Combine(output, "result.json"), new
+        {
+            passed,
+            hardware = false,
+            paidApi = false,
+            cases = cases.Count,
+            results
+        });
         return passed ? 0 : 1;
     }
 
@@ -96,7 +116,10 @@ internal static class UnknownFileChecks
             var previous = editor.Document;
             SourceDocument? source = null;
             string? rejected = null;
-            try { source = Task.Run(() => files.ReadAsync(root, path)).GetAwaiter().GetResult(); }
+            try
+            {
+                source = Task.Run(() => files.ReadAsync(root, path)).GetAwaiter().GetResult();
+            }
             catch (StudioXException error) { rejected = error.Code; }
             catch (IOException) { rejected = "IO"; }
             if (expected == "text" ? source is null : rejected != expected)
@@ -142,19 +165,35 @@ internal static class UnknownFileChecks
                 var before = editor.Text;
                 editor.Document.Insert(editor.Document.TextLength, "\n// edit");
                 editor.Undo();
-                if (editor.Text != before) { throw new InvalidOperationException("Editing/undo changed the original text."); }
+                if (editor.Text != before)
+                {
+                    throw new InvalidOperationException("Editing/undo changed the original text.");
+                }
                 editor.Redo();
                 Render(window);
                 editor.Document = new TextDocument("int main(void) { return 0; }\n");
                 editor.SyntaxHighlighting = CodeLanguage.Get("C", true);
                 Render(window);
-                if (editor.Document.TextLength == 0) { throw new InvalidOperationException("Known-source switch failed."); }
+                if (editor.Document.TextLength == 0)
+                {
+                    throw new InvalidOperationException("Known-source switch failed.");
+                }
                 if (source is { Text.Length: < 4096 })
                 {
                     var saved = Task.Run(() => files.SaveAsync(root, source, source.Text)).GetAwaiter().GetResult();
-                    if (saved.DiskHash != source.DiskHash) { throw new InvalidOperationException("Plain-text save changed original encoding or bytes."); }
+                    if (saved.DiskHash != source.DiskHash)
+                    {
+                        throw new InvalidOperationException("Plain-text save changed original encoding or bytes.");
+                    }
                 }
-                Console.WriteLine(JsonSerializer.Serialize(new { path, rejected, characters = source?.Text.Length, peakWorkingSet = Process.GetCurrentProcess().PeakWorkingSet64, passed = true }));
+                Console.WriteLine(JsonSerializer.Serialize(new
+                {
+                    path,
+                    rejected,
+                    characters = source?.Text.Length,
+                    peakWorkingSet = Process.GetCurrentProcess().PeakWorkingSet64,
+                    passed = true
+                }));
                 return 0;
             }
             finally { window.Close(); }

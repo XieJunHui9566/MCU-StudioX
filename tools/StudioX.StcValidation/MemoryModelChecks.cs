@@ -187,8 +187,12 @@ internal static class MemoryModelChecks
             var manifest = await new ProjectService().CreateAsync(pack, "STC89C52RC", "bare", "NonSdccSettings", nonSdcc);
             // 只验证服务的能力边界，不解析或执行虚构的非 SDCC 工具。
             await JsonStore.WriteAsync(Path.Combine(nonSdcc, ".studiox", "project.json"),
-                manifest with { ToolsetId = "arm.none-eabi", CompilerId = "gcc",
-                    DevelopmentComponents = [new("arm.none-eabi", manifest.ToolsetVersion, "gcc")] });
+                manifest with
+                {
+                    ToolsetId = "arm.none-eabi",
+                    CompilerId = "gcc",
+                    DevelopmentComponents = [new("arm.none-eabi", manifest.ToolsetVersion, "gcc")]
+                });
             await RejectAsync(() => builder.SaveSettingsAsync(nonSdcc,
                 new ProjectBuildSettings(MemoryModel: SdccMemoryModel.Large)), "非 SDCC 工程拒绝 SDCC 模型选项");
             await RejectAsync(() => builder.SaveSettingsAsync(nonSdcc,
@@ -316,10 +320,21 @@ internal static class MemoryModelChecks
                     foreach (var line in textAssembly.Split('\n'))
                     {
                         var areaMatch = Regex.Match(line, @"^\s*\.area\s+(\w+)");
-                        if (areaMatch.Success) { area = areaMatch.Groups[1].Value; }
-                        if (Regex.IsMatch(line, @"^_sx_default_byte::?\s*$")) { break; }
+                        if (areaMatch.Success)
+                        {
+                            area = areaMatch.Groups[1].Value;
+                        }
+                        if (Regex.IsMatch(line, @"^_sx_default_byte::?\s*$"))
+                        {
+                            break;
+                        }
                     }
-                    var expected = model switch { "small" => "DSEG", "medium" => "PSEG", _ => "XSEG" };
+                    var expected = model switch
+                    {
+                        "small" => "DSEG",
+                        "medium" => "PSEG",
+                        _ => "XSEG"
+                    };
                     Check(area == expected, label + " 未加地址空间的变量实际位于 " + expected);
                     var body = textAssembly[textAssembly.IndexOf("_sx_touch:", StringComparison.Ordinal)..];
                     Check(model switch

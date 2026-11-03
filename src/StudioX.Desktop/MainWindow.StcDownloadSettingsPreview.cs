@@ -15,11 +15,18 @@ public partial class MainWindow
         var checks = new List<string>();
         void Check(bool value, string name)
         {
-            if (!value) { throw new InvalidOperationException(name); }
+            if (!value)
+            {
+                throw new InvalidOperationException(name);
+            }
             checks.Add(name);
         }
         var originalSize = System.Windows.Application.Current.Resources["WorkbenchFontSize"];
-        var custom = ThemeService.Dark with { Id = "stc-custom", Colors = new(ThemeService.Dark.Colors) };
+        var custom = ThemeService.Dark with
+        {
+            Id = "stc-custom",
+            Colors = new(ThemeService.Dark.Colors)
+        };
         custom.Colors["Accent"] = "#B8E986";
         custom.Colors["OnAccent"] = "#163020";
         try
@@ -49,7 +56,10 @@ public partial class MainWindow
                     var savedBuild = new ProjectBuildSettings();
                     ApplyBuildSettings(savedBuild);
                     var saved = new StcIspSettings(Port: "COM17", TransferBaud: 57600);
-                    if (mx) { ApplyMx251Isp(new(), []); }
+                    if (mx)
+                    {
+                        ApplyMx251Isp(new(), []);
+                    }
                     else
                     {
                         var caps = new StcIspCapabilities(target, [StcClockMode.Preserve, StcClockMode.InternalRc], true, 1000000, 40000000, "离线测试配置");
@@ -173,8 +183,14 @@ public partial class MainWindow
                         Render(this, Path.Combine(directory, target + "-" + theme.Id + "-memory-model.png"));
                         FocusStcSettings();
                     }
-                    if (mx) { Mx251IspPanel.BringIntoView(); }
-                    else { StcIspPanel.BringIntoView(); }
+                    if (mx)
+                    {
+                        Mx251IspPanel.BringIntoView();
+                    }
+                    else
+                    {
+                        StcIspPanel.BringIntoView();
+                    }
                     await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ContextIdle);
                     Render(this, Path.Combine(directory, target + "-" + theme.Id + "-transport.png"));
                     StcHardwareCard.BringIntoView();
@@ -182,7 +198,10 @@ public partial class MainWindow
                     var saveBounds = SaveStcHardwareButton.TransformToAncestor(WorkspaceTabs).TransformBounds(new Rect(SaveStcHardwareButton.RenderSize));
                     Check(SaveStcHardwareButton.IsVisible && saveBounds.Top >= 0 && saveBounds.Bottom <= WorkspaceTabs.ActualHeight,
                         target + ": save action stays visible while scrolling long options");
-                    if (!mx) { StcModifyHardware.IsChecked = true; }
+                    if (!mx)
+                    {
+                        StcModifyHardware.IsChecked = true;
+                    }
                     Render(this, Path.Combine(directory, target + "-" + theme.Id + "-hardware.png"));
                 }
                 await CheckRt51MemoryModelPreviewAsync(directory, theme.Id, Check);
@@ -192,7 +211,12 @@ public partial class MainWindow
             Check(BuildExtendedSettings.Parent == BuildExtendedSettingsHost && StcDownloadTab.Visibility == Visibility.Collapsed &&
                 SdccMemorySettingsPanel.Visibility == Visibility.Collapsed,
                 "non-STC project keeps its compiler debug settings and no STC page");
-            await JsonStore.WriteAsync(Path.Combine(directory, "result.json"), new { passed = true, hardware = false, checks });
+            await JsonStore.WriteAsync(Path.Combine(directory, "result.json"), new
+            {
+                passed = true,
+                hardware = false,
+                checks
+            });
         }
         finally { System.Windows.Application.Current.Resources["WorkbenchFontSize"] = originalSize; }
     }

@@ -10,7 +10,10 @@ internal static class SdccModelAnalysisChecks
 {
     internal static async Task RunAsync(string runtime, string archive, string output)
     {
-        if (Directory.Exists(output)) { throw new IOException("Use a new output directory."); }
+        if (Directory.Exists(output))
+        {
+            throw new IOException("Use a new output directory.");
+        }
         Directory.CreateDirectory(output);
         var pack = await new PackRepository(Path.Combine(output, "packs")).ImportAsync(archive);
         var project = Path.Combine(output, "project with spaces");
@@ -33,7 +36,10 @@ internal static class SdccModelAnalysisChecks
             try
             {
                 await service.StartAsync(project);
-                if (!service.IsReady) { throw new InvalidOperationException(service.StatusDescription); }
+                if (!service.IsReady)
+                {
+                    throw new InvalidOperationException(service.StatusDescription);
+                }
                 await service.SynchronizeDiagnosticsAsync("src/main.c", text, [new("src/main.c", text)]);
                 for (var attempt = 0; attempt < 100 && !service.GetDiagnostics().Any(batch => batch.Path == "src/main.c" && batch.Text == text); attempt++)
                 {
@@ -54,6 +60,11 @@ internal static class SdccModelAnalysisChecks
             }
             finally { await File.WriteAllLinesAsync(Path.Combine(data, "language.log"), service.DrainLog()); }
         }
-        await JsonStore.WriteAsync(Path.Combine(output, "result.json"), new { passed = true, checks, hardware = false });
+        await JsonStore.WriteAsync(Path.Combine(output, "result.json"), new
+        {
+            passed = true,
+            checks,
+            hardware = false
+        });
     }
 }

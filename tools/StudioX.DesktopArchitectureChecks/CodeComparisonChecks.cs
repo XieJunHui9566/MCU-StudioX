@@ -39,8 +39,14 @@ internal static class CodeComparisonChecks
             for (var edit = 0; edit < 8; edit++)
             {
                 var index = random.Next(0, lines.Count + 1);
-                if (index < lines.Count && random.Next(2) == 0) { lines.RemoveAt(index); }
-                else { lines.Insert(index, random.Next(0, 8) + "\n"); }
+                if (index < lines.Count && random.Next(2) == 0)
+                {
+                    lines.RemoveAt(index);
+                }
+                else
+                {
+                    lines.Insert(index, random.Next(0, 8) + "\n");
+                }
             }
             CheckRoundTrip(original, string.Concat(lines));
         }

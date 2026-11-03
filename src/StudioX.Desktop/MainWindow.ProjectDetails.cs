@@ -24,7 +24,10 @@ public partial class MainWindow
                 ProjectDetailsPanel.Visibility = Visibility.Visible;
                 ShowDocument(PackagesTab);
             }
-            else { await RunAsync(_ => ShowProjectDetailsAsync()); }
+            else
+            {
+                await RunAsync(_ => ShowProjectDetailsAsync());
+            }
         }
     }
 
@@ -122,7 +125,10 @@ public partial class MainWindow
             {
                 ApplyProjectDetails(details);
                 ApplyMx251Settings(mxSettings);
-                if (ProjectCapabilities.For(project).Download) await LoadMx251IspAsync(directory, revision);
+                if (ProjectCapabilities.For(project).Download)
+                {
+                    await LoadMx251IspAsync(directory, revision);
+                }
             }
             return;
         }

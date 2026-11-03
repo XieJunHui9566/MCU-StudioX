@@ -177,7 +177,10 @@ public sealed partial class Mx251IspService(ToolsetCatalog catalog, string dataD
             {
                 throw Invalid("下载快照被修改；未打开硬件。");
             }
-            if (prepared.Settings.DownloadMode == Mx251DownloadMode.Serial) return await DownloadSerialAsync(prepared, image, output, token);
+            if (prepared.Settings.DownloadMode == Mx251DownloadMode.Serial)
+            {
+                return await DownloadSerialAsync(prepared, image, output, token);
+            }
             if (prepared.Settings.DownloadMode == Mx251DownloadMode.NativeUsb)
             {
                 return await DownloadNativeUsbAsync(prepared, image, output, token);

@@ -11,11 +11,23 @@ public partial class MainWindow
     public async Task RenderMx251TransportPreviewAsync(string directory)
     {
         var checks = new List<string>();
-        void Check(bool value, string message) { if (!value) throw new InvalidOperationException(message); checks.Add(message); }
+        void Check(bool value, string message)
+        {
+            if (!value)
+            {
+                throw new InvalidOperationException(message);
+            }
+            checks.Add(message);
+        }
         projectDirectory = directory;
         currentProjectManifest = new(1, "AI8051U 下载设置", "stc.ai8051u-mx251", "0.2.171", "", "AI8051U-34K64", "registers", "studiox.mx251", "0.0.170", "mx251-v0.0170");
-        var custom = ThemeService.Dark with { Id = "custom-large", Colors = new(ThemeService.Dark.Colors) };
-        custom.Colors["Accent"] = "#B8E986"; custom.Colors["OnAccent"] = "#163020";
+        var custom = ThemeService.Dark with
+        {
+            Id = "custom-large",
+            Colors = new(ThemeService.Dark.Colors)
+        };
+        custom.Colors["Accent"] = "#B8E986";
+        custom.Colors["OnAccent"] = "#163020";
         foreach (var theme in new[] { ThemeService.Dark, ThemeService.Light, custom })
         {
             ApplyTheme(theme);

@@ -208,8 +208,14 @@ public sealed class EditorSessionStore : IDisposable
                     throw new StudioXException("SESSION_BASELINE", "草稿缺少保存基线，原记录已保留。");
                 }
                 // 恢复记录也会直接建立编辑缓冲区；不能绕过磁盘读取的排版保护。
-                if (document.Draft is not null) { EditorTextSafety.Validate(document.Draft); }
-                if (document.Baseline is not null) { EditorTextSafety.Validate(document.Baseline); }
+                if (document.Draft is not null)
+                {
+                    EditorTextSafety.Validate(document.Draft);
+                }
+                if (document.Baseline is not null)
+                {
+                    EditorTextSafety.Validate(document.Baseline);
+                }
             }
         }
     }

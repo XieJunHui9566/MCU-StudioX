@@ -47,7 +47,9 @@ internal static class OptionSafetyChecks
         }
         await JsonStore.WriteAsync(Path.Combine(output, "result.json"), new
         {
-            passed = true, hardware = false, newFamilyCapabilityRejections = denied,
+            passed = true,
+            hardware = false,
+            newFamilyCapabilityRejections = denied,
             guardSha256 = Convert.ToHexString(SHA256.HashData(await File.ReadAllBytesAsync(script))),
             loadedEngine = typeof(StcIspService).Assembly.Location
         });

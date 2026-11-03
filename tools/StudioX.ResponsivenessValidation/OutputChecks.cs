@@ -10,7 +10,10 @@ internal static class OutputChecks
         {
             var view = new OutputLogView { Text = new string('x', 200000) + "\n" };
             var before = GC.GetAllocatedBytesForCurrentThread();
-            for (var i = 0; i < 2000; i++) { view.AppendLogLine("short tool diagnostic"); }
+            for (var i = 0; i < 2000; i++)
+            {
+                view.AppendLogLine("short tool diagnostic");
+            }
             var allocated = GC.GetAllocatedBytesForCurrentThread() - before;
             if (allocated > 64 * 1024 * 1024)
             {
@@ -33,7 +36,10 @@ internal static class OutputChecks
             }
             view.Text = "partial";
             view.UpdateProgress("progress");
-            if (view.Text != "partial\nprogress\n") { throw new InvalidOperationException("进度没有从新行开始。"); }
+            if (view.Text != "partial\nprogress\n")
+            {
+                throw new InvalidOperationException("进度没有从新行开始。");
+            }
             return new("output-allocation-and-progress", true, watch.ElapsedMilliseconds, $"2000 lines, {allocated} allocated bytes; line/progress checks passed");
         }
         catch (Exception error) { return new("output-allocation-and-progress", false, watch.ElapsedMilliseconds, error.ToString()); }

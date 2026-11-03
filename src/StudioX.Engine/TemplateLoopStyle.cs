@@ -14,9 +14,15 @@ public static class TemplateLoopStyle
     internal static async Task PrepareEntryAsync(string root, CancellationToken token)
     {
         var path = StudioX.Foundation.PathBoundary.Resolve(root, "src/main.c");
-        if (!File.Exists(path)) { return; }
+        if (!File.Exists(path))
+        {
+            return;
+        }
         var source = await File.ReadAllTextAsync(path, token);
         var result = Normalize(source);
-        if (source != result) { await File.WriteAllTextAsync(path, result, token); }
+        if (source != result)
+        {
+            await File.WriteAllTextAsync(path, result, token);
+        }
     }
 }

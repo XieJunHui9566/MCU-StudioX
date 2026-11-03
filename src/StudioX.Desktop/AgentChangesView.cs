@@ -62,7 +62,10 @@ internal sealed class AgentChangesView : Grid
         Children.Add(plans);
         for (var row = 0; row < 4; row++)
         {
-            details.RowDefinitions.Add(new() { Height = GridLength.Auto });
+            details.RowDefinitions.Add(new()
+            {
+                Height = GridLength.Auto
+            });
         }
         details.RowDefinitions.Add(new());
         SetRow(Comparison, 4);
@@ -134,8 +137,12 @@ internal sealed class AgentChangesView : Grid
                 "reverted" => "已撤销",
                 _ => "已拒绝"
             };
-            var item = new ListBoxItem { Content = new TextBlock { Text = title + " · " + plan.Reason, TextWrapping = TextWrapping.Wrap },
-                HorizontalContentAlignment = HorizontalAlignment.Stretch, Tag = plan };
+            var item = new ListBoxItem
+            {
+                Content = new TextBlock { Text = title + " · " + plan.Reason, TextWrapping = TextWrapping.Wrap },
+                HorizontalContentAlignment = HorizontalAlignment.Stretch,
+                Tag = plan
+            };
             plans.Items.Add(item);
             if (plan.Id == (focus ?? previous)?.Id)
             {
@@ -179,7 +186,10 @@ internal sealed class AgentChangesView : Grid
         shownPlan = null;
         if ((plans.SelectedItem as ListBoxItem)?.Tag is not AgentEditPlan plan)
         {
-            if (!preservingView) { Comparison.Visibility = Visibility.Collapsed; }
+            if (!preservingView)
+            {
+                Comparison.Visibility = Visibility.Collapsed;
+            }
             return;
         }
         Comparison.Visibility = Visibility.Visible;
@@ -217,7 +227,8 @@ internal sealed class AgentChangesView : Grid
             Text = plan.Status == "pending" ? plan.IsAtomic ? "语义重命名整体应用；点击修改块定位。" : "勾选要保留的块，点击定位；对照同步更新。" :
                 "对照为此计划的原始快照与修改结果；后续手工编辑仍按冲突检查保护。",
             ToolTip = "Agent 等待授权时，请在聊天区允许。语义重命名须整体应用。",
-            TextWrapping = TextWrapping.Wrap, Margin = new(0, 0, 0, 8)
+            TextWrapping = TextWrapping.Wrap,
+            Margin = new(0, 0, 0, 8)
         };
         SetRow(hint, 1);
         details.Children.Add(hint);
@@ -255,8 +266,10 @@ internal sealed class AgentChangesView : Grid
             var row = new DockPanel { LastChildFill = true };
             var check = new CheckBox
             {
-                IsChecked = selected[plan.Id].Contains(key), VerticalAlignment = VerticalAlignment.Center,
-                IsEnabled = plan.Status == "pending" && !plan.IsAtomic, Margin = new(4, 0, 6, 0)
+                IsChecked = selected[plan.Id].Contains(key),
+                VerticalAlignment = VerticalAlignment.Center,
+                IsEnabled = plan.Status == "pending" && !plan.IsAtomic,
+                Margin = new(4, 0, 6, 0)
             };
             System.Windows.Automation.AutomationProperties.SetName(check, $"保留修改 {i + 1}");
             check.Checked += (_, _) => { selected[plan.Id].Add(key); currentHunk = index; ShowComparison(); };
@@ -265,7 +278,8 @@ internal sealed class AgentChangesView : Grid
             var navigate = new Button
             {
                 Content = $"修改 {i + 1} · 第 {Comparison.Before.Document.GetLineByOffset(match.Start).LineNumber} 行 · 定位",
-                HorizontalContentAlignment = HorizontalAlignment.Left, Padding = new(5, 2, 5, 2)
+                HorizontalContentAlignment = HorizontalAlignment.Left,
+                Padding = new(5, 2, 5, 2)
             };
             navigate.Click += (_, _) => { currentHunk = index; FocusHunk(); };
             row.Children.Add(navigate);

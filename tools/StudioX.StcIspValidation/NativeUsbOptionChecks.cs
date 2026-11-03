@@ -23,7 +23,10 @@ internal static class NativeUsbOptionChecks
         {
             var id = vector.GetProperty("id").GetString()!;
             var value = vector.GetProperty("value").GetString()!;
-            var selected = settings with { Hardware = StcHardwareOptions.FromValues(new Dictionary<string, string> { [id] = value }) };
+            var selected = settings with
+            {
+                Hardware = StcHardwareOptions.FromValues(new Dictionary<string, string> { [id] = value })
+            };
             var command = await ProgramAsync(replies, image, selected);
             check(Convert.ToHexString(command) == vector.GetProperty("command").GetString(),
                 $"USB official PE serializer fixture: {id}={value}");
@@ -42,7 +45,12 @@ internal static class NativeUsbOptionChecks
             foreach (var value in StcHardwareCatalog.For("STC8H8K64U").Single(f => f.Id == rule.Id).Values)
             {
                 var hardware = StcHardwareOptions.FromValues(new Dictionary<string, string> { [rule.Id] = value.Value });
-                var selected = settings with { ClockMode = StcClockMode.Preserve, ClockFrequencyHz = null, Hardware = hardware };
+                var selected = settings with
+                {
+                    ClockMode = StcClockMode.Preserve,
+                    ClockFrequencyHz = null,
+                    Hardware = hardware
+                };
                 for (var seed = 0; seed < 256; seed++)
                 {
                     var current = ChangeStatus(replies, rule.Offset - 28, (byte)seed);
@@ -66,7 +74,9 @@ internal static class NativeUsbOptionChecks
         check(iterations == 7168, "USB all 256 raw-byte states preserve unselected bits, clock/trim and reserved bytes: 7168 cases");
         var disabled = settings with
         {
-            ClockMode = StcClockMode.Preserve, ClockFrequencyHz = null, ModifyHardware = false,
+            ClockMode = StcClockMode.Preserve,
+            ClockFrequencyHz = null,
+            ModifyHardware = false,
             Hardware = new StcHardwareOptions { Uart1Remap = "true", ResetPin = "true", WatchdogPrescale = "2" }
         };
         var unchanged = await ProgramAsync(replies, image, disabled);
@@ -120,7 +130,10 @@ internal static class NativeUsbOptionChecks
 
     private static async Task RejectAsync(Func<Task> action, string code)
     {
-        try { await action(); }
+        try
+        {
+            await action();
+        }
         catch (StudioXException error) when (error.Code == code) { return; }
         throw new InvalidOperationException("Expected USB rejection: " + code);
     }

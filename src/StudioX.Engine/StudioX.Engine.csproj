@@ -3,7 +3,8 @@
   <ItemGroup>
     <PackageReference
       Include="SharpCompress" />
-    <PackageReference Include="System.IO.Ports" />
+    <PackageReference
+      Include="System.IO.Ports" />
     <ProjectReference
       Include="../StudioX.Packages/StudioX.Packages.csproj" />
   </ItemGroup>

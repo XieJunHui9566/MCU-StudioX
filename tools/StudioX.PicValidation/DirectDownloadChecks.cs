@@ -185,8 +185,18 @@ internal static class DirectDownloadChecks
         var hashes = Directory.GetFiles(component, "*", SearchOption.AllDirectories).ToDictionary(
             path => Path.GetRelativePath(component, path).Replace('\\', '/'), path => Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(path))));
         await JsonStore.WriteAsync(Path.Combine(component, "toolset.json"), new ToolsetManifest(1, "microchip.ipe", "6.20.0", "win-x64", "ipecmd-6.20",
-            new() { ["java"] = "bin/StudioX.PicValidation.exe", ["ipecmd"] = "direct-fixture.jar" }, hashes, "PICkit3 isolated IPECMD fixture",
-            new() { ["ipe"] = "6.20" }, new() { ["ipe"] = "bin" }, "pic-ipe"));
+            new()
+            {
+                ["java"] = "bin/StudioX.PicValidation.exe",
+                ["ipecmd"] = "direct-fixture.jar"
+            }, hashes, "PICkit3 isolated IPECMD fixture",
+            new()
+            {
+                ["ipe"] = "6.20"
+            }, new()
+            {
+                ["ipe"] = "bin"
+            }, "pic-ipe"));
         var fixtureData = Path.Combine(evidence, "fixture-data");
         var home = Path.Combine(fixtureData, "pic/ipe-user");
         Directory.CreateDirectory(home);
@@ -214,8 +224,14 @@ internal static class DirectDownloadChecks
                 name + " performs no full readback, re-enumeration, redundant verify, bulk erase or target power override");
             Check(!Directory.GetFiles(Path.Combine(root, ".build/pic-download"), "before.hex", SearchOption.AllDirectories).Any(),
                 name + " creates no original-firmware backup or implicit restoration image");
-            cases.Add(new { name, elapsedMilliseconds = elapsed, processCount = calls.Length,
-                programmingCount = expectedPrograms, commands = calls });
+            cases.Add(new
+            {
+                name,
+                elapsedMilliseconds = elapsed,
+                processCount = calls.Length,
+                programmingCount = expectedPrograms,
+                commands = calls
+            });
         }
 
         await Begin("success");
@@ -312,10 +328,25 @@ internal static class DirectDownloadChecks
                     if (!mutated && text.Contains("FIXTURE_CONFIG_READY", StringComparison.Ordinal))
                     {
                         mutated = true;
-                        if (mutation == "source") { File.AppendAllText(sourcePath, "\n/* changed during preflight */\n"); }
-                        if (mutation == "firmware") { File.AppendAllText(firmware.HexPath, "changed"); }
-                        if (mutation == "snapshot") { File.AppendAllText(Path.Combine(root, ".build/pic-download/latest/firmware.hex"), "changed"); }
-                        if (mutation == "settings") { File.WriteAllText(settingsPath, JsonSerializer.Serialize(preview.Settings with { ProgrammerSerial = "OTHER123" }, JsonStore.Options)); }
+                        if (mutation == "source")
+                        {
+                            File.AppendAllText(sourcePath, "\n/* changed during preflight */\n");
+                        }
+                        if (mutation == "firmware")
+                        {
+                            File.AppendAllText(firmware.HexPath, "changed");
+                        }
+                        if (mutation == "snapshot")
+                        {
+                            File.AppendAllText(Path.Combine(root, ".build/pic-download/latest/firmware.hex"), "changed");
+                        }
+                        if (mutation == "settings")
+                        {
+                            File.WriteAllText(settingsPath, JsonSerializer.Serialize(preview.Settings with
+                            {
+                                ProgrammerSerial = "OTHER123"
+                            }, JsonStore.Options));
+                        }
                     }
                 })));
             Check(mutated, mutation + " mutation occurred while real child preflight was running");
@@ -352,8 +383,14 @@ internal static class DirectDownloadChecks
                     if (!mutated && text.Contains("FIXTURE_PROGRAM_READY", StringComparison.Ordinal))
                     {
                         mutated = true;
-                        if (mutation == "source") { File.AppendAllText(sourcePath, "\n/* changed during programming */\n"); }
-                        else { File.AppendAllText(Path.Combine(root, ".build/pic-download/latest/firmware.hex"), "changed"); }
+                        if (mutation == "source")
+                        {
+                            File.AppendAllText(sourcePath, "\n/* changed during programming */\n");
+                        }
+                        else
+                        {
+                            File.AppendAllText(Path.Combine(root, ".build/pic-download/latest/firmware.hex"), "changed");
+                        }
                     }
                 })));
             Check(mutated, mutation + " mutation occurred during the programming child process");
@@ -382,8 +419,14 @@ internal static class DirectDownloadChecks
             {
                 Check(true, mode + " propagates caller cancellation");
             }
-            using (ProbeLease.Acquire()) { Check(true, mode + " releases the probe lease"); }
-            using (ProjectBuildStorage.Acquire(root, "pic")) { Check(true, mode + " releases the project artifact lease"); }
+            using (ProbeLease.Acquire())
+            {
+                Check(true, mode + " releases the probe lease");
+            }
+            using (ProjectBuildStorage.Acquire(root, "pic"))
+            {
+                Check(true, mode + " releases the project artifact lease");
+            }
             await Record(mode, 0, mode == "cancel" ? 1 : 0);
             if (mode == "cancel")
             {
@@ -404,12 +447,17 @@ internal static class DirectDownloadChecks
         }
         await JsonStore.WriteAsync(Path.Combine(evidence, "result.json"), new
         {
-            passed = true, hardwareWrite = false, enumerateHardware,
+            passed = true,
+            hardwareWrite = false,
+            enumerateHardware,
             stub = "separate child EXE copied into an isolated, hashed toolset; no physical USB access",
             successfulDownloadProcessCount = successCalls.Length,
             measuredSuccessfulStubMilliseconds = watch.ElapsedMilliseconds,
             timingScope = "offline fixture only; not a real PICkit3 throughput benchmark",
-            checks, cases, root, firmware
+            checks,
+            cases,
+            root,
+            firmware
         });
     }
 }

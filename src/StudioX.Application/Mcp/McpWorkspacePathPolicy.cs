@@ -24,9 +24,15 @@ internal static class McpWorkspacePathPolicy
     internal static string NormalizeRelativePath(string relative)
     {
         ArgumentNullException.ThrowIfNull(relative);
-        if (relative.Length > 240) { return relative; }
+        if (relative.Length > 240)
+        {
+            return relative;
+        }
         var offset = 0;
-        while (relative.AsSpan(offset).StartsWith("./", StringComparison.Ordinal)) { offset += 2; }
+        while (relative.AsSpan(offset).StartsWith("./", StringComparison.Ordinal))
+        {
+            offset += 2;
+        }
         var normalized = offset == 0 ? relative : relative[offset..];
         return normalized == "." ? "" : normalized;
     }

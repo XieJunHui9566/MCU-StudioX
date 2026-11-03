@@ -25,7 +25,11 @@ internal static class OrderedEventChecks
         await CheckShutdownAsync(check);
         await CheckOverflowAsync(check);
         const string summary = "Ordered events: wire order, drain snapshot/cancellation, bidirectional callback, original fault including buffered read cancellation race, unexpected callback cancellation, cooperative shutdown and 64-event overflow passed";
-        await JsonStore.WriteAsync(Path.Combine(output, "ordered-events.json"), new { success = true, summary });
+        await JsonStore.WriteAsync(Path.Combine(output, "ordered-events.json"), new
+        {
+            success = true,
+            summary
+        });
         return summary;
     }
 
@@ -101,7 +105,10 @@ internal static class OrderedEventChecks
             var request = await peer.OutputAsync();
             check(request.Kind == "request" && request.Method == "hostCall", "event callback can issue hostCall");
             peer.Send(new PluginProtocolMessage(2, "response", request.RequestId,
-                Payload: JsonSerializer.SerializeToElement(new { value = 73 })));
+                Payload: JsonSerializer.SerializeToElement(new
+                {
+                    value = 73
+                })));
             await completed.Task.WaitAsync(Deadline);
             await peer.Connection.DrainHandlersAsync(CancellationToken.None).WaitAsync(Deadline);
             check(!peer.Connection.Completion.IsCompleted, "event hostCall does not block the protocol reader");
@@ -280,7 +287,10 @@ internal static class OrderedEventChecks
         private readonly Input input = new();
         private readonly Output output = new();
         private readonly JsonSerializerOptions options = new(JsonSerializerDefaults.Web);
-        public PluginProtocolConnection Connection { get; }
+        public PluginProtocolConnection Connection
+        {
+            get;
+        }
 
         public Peer(Func<string, JsonElement, CancellationToken, Task<JsonElement>> request,
             Func<string, JsonElement, CancellationToken, Task> callback)
@@ -289,7 +299,10 @@ internal static class OrderedEventChecks
         }
 
         public void Event(int value) => Send(new PluginProtocolMessage(2, "event", Method: "panel",
-            Payload: JsonSerializer.SerializeToElement(new { value })));
+            Payload: JsonSerializer.SerializeToElement(new
+            {
+                value
+            })));
 
         public void Request(string method) => Send(new PluginProtocolMessage(2, "request", Guid.NewGuid().ToString("N"), method, Empty));
 
@@ -338,7 +351,10 @@ internal static class OrderedEventChecks
     {
         private int reads;
         public TaskCompletionSource<bool> SecondReadEntered { get; } = Signal();
-        public bool ReturnedAfterCancellation { get; private set; }
+        public bool ReturnedAfterCancellation
+        {
+            get; private set;
+        }
 
         public override async ValueTask<int> ReadAsync(Memory<char> buffer, CancellationToken cancellationToken = default)
         {

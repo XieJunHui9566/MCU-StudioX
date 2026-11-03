@@ -19,7 +19,10 @@ public static class EditorTextSafety
         var lineLength = 0;
         while (offset < text.Length)
         {
-            if ((offset & 4095) == 0) { token.ThrowIfCancellationRequested(); }
+            if ((offset & 4095) == 0)
+            {
+                token.ThrowIfCancellationRequested();
+            }
             if (text[offset] is '\r' or '\n')
             {
                 offset++;

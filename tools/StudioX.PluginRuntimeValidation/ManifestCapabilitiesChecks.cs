@@ -29,11 +29,22 @@ internal static class ManifestCapabilitiesChecks
         });
         var complete = await PluginManifest.ReadAsync(path);
         check(complete.Capabilities.SequenceEqual(api3), "API 3 accepts all 18 compatible capabilities together");
-        await JsonStore.WriteAsync(path, manifest with { Capabilities = api3[..11] });
+        await JsonStore.WriteAsync(path, manifest with
+        {
+            Capabilities = api3[..11]
+        });
         check((await PluginManifest.ReadAsync(path)).Capabilities.Length == 11, "API 3 accepts valid capability combination above the old ten-item limit");
-        await JsonStore.WriteAsync(path, manifest with { ApiVersion = 2, Capabilities = api2 });
+        await JsonStore.WriteAsync(path, manifest with
+        {
+            ApiVersion = 2,
+            Capabilities = api2
+        });
         check((await PluginManifest.ReadAsync(path)).Capabilities.Length == api2.Length, "API 2 accepts its complete capability set");
-        await JsonStore.WriteAsync(path, manifest with { ApiVersion = 1, Capabilities = ["decode"] });
+        await JsonStore.WriteAsync(path, manifest with
+        {
+            ApiVersion = 1,
+            Capabilities = ["decode"]
+        });
         check((await PluginManifest.ReadAsync(path)).Capabilities.SequenceEqual(new[] { "decode" }), "API 1 preserves explicit decode-only compatibility");
         foreach (var (name, candidate) in new[]
         {
@@ -58,7 +69,11 @@ internal static class ManifestCapabilitiesChecks
             throw new InvalidOperationException("Manifest accepted invalid capability set: " + name);
         }
         const string summary = "Manifest capabilities: full API 1/2/3 sets, 11-capability combination and unknown/duplicate/cross-version/empty/overflow rejection passed";
-        await JsonStore.WriteAsync(Path.Combine(output, "manifest-capabilities.json"), new { success = true, summary });
+        await JsonStore.WriteAsync(Path.Combine(output, "manifest-capabilities.json"), new
+        {
+            success = true,
+            summary
+        });
         return summary;
     }
 }

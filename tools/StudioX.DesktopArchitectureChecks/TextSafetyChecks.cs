@@ -9,7 +9,10 @@ internal static class TextSafetyChecks
     {
         async Task Reject(Func<Task> operation, string code, string label)
         {
-            try { await operation(); }
+            try
+            {
+                await operation();
+            }
             catch (StudioXException error) when (error.Code == code) { check(true, label); return; }
             throw new InvalidOperationException(label);
         }
@@ -29,7 +32,10 @@ internal static class TextSafetyChecks
             await Reject(() => files.SaveAsync(root, source, "binary\0data"), "EDITOR_BINARY", "保存前拒绝 NUL 正文");
             check(await File.ReadAllTextAsync(path) == original && !Directory.EnumerateFiles(root, "*.tmp-*").Any(), "拒绝保存保留原文件且不产生临时文件");
             var valid = new WorkspaceFileChange(source, original, original + "// edit\n", [new(original.Length, 0, "// edit\n")], false);
-            var unsafeChange = valid with { After = complex };
+            var unsafeChange = valid with
+            {
+                After = complex
+            };
             await Reject(() => new WorkspaceEditService(files).ValidateAsync(root, [unsafeChange], []), "EDITOR_TEXT_COMPLEXITY", "AI 与批量修改在写入缓冲区前拒绝危险正文");
             check(await File.ReadAllTextAsync(path) == original, "被拒绝的修改计划不改变磁盘");
             await File.WriteAllTextAsync(Path.Combine(root, "unsafe.unknown"), complex);
@@ -38,7 +44,11 @@ internal static class TextSafetyChecks
             using (var stop = new CancellationTokenSource())
             {
                 stop.Cancel();
-                try { EditorTextSafety.Validate("valid", stop.Token); throw new InvalidOperationException("Cancellation ignored."); }
+                try
+                {
+                    EditorTextSafety.Validate("valid", stop.Token);
+                    throw new InvalidOperationException("Cancellation ignored.");
+                }
                 catch (OperationCanceledException) { check(true, "正文检查响应取消"); }
             }
             var snapshot = new EditorWorkspaceSnapshot(1, root, "main.unknown",
@@ -47,7 +57,10 @@ internal static class TextSafetyChecks
             using (var oldStore = new EditorSessionStore(data))
             {
                 await Reject(() => oldStore.SaveAsync(snapshot), "EDITOR_TEXT_COMPLEXITY", "草稿备份在持久化前校验排版复杂度");
-                var good = snapshot with { Documents = [snapshot.Documents[0] with { Draft = original + "// draft\n" }] };
+                var good = snapshot with
+                {
+                    Documents = [snapshot.Documents[0] with { Draft = original + "// draft\n" }]
+                };
                 await oldStore.SaveAsync(good);
             }
             var state = Directory.EnumerateFiles(data, "state.json", SearchOption.AllDirectories).Single();

@@ -8,12 +8,18 @@ internal static class HardwareSettingsChecks
     internal static async Task RunAsync(string python, string output)
     {
         output = Path.GetFullPath(output);
-        if (Directory.Exists(output)) { throw new IOException("Use a new validation directory."); }
+        if (Directory.Exists(output))
+        {
+            throw new IOException("Use a new validation directory.");
+        }
         Directory.CreateDirectory(output);
         var checks = new List<string>();
         void Check(bool value, string name)
         {
-            if (!value) { throw new InvalidOperationException(name); }
+            if (!value)
+            {
+                throw new InvalidOperationException(name);
+            }
             checks.Add(name);
         }
         var targets = new[] { "STC89C52RC", "STC12C2052AD", "STC12C5A60S2", "STC15F104E", "IAP15L2K61S2", "STC8H8K64U" };
@@ -37,7 +43,11 @@ internal static class HardwareSettingsChecks
         foreach (var options in new[] { new StcHardwareOptions { Uart2PinMode = "wrong" }, new StcHardwareOptions { LowVoltageThreshold = "8" },
             new StcHardwareOptions { WatchdogPowerOn = "yes" }, new StcHardwareOptions { Uart1Remap = "true" } })
         {
-            try { options.Validate("IAP15L2K61S2", true, StcDownloadMode.Serial); throw new InvalidOperationException("invalid settings accepted"); }
+            try
+            {
+                options.Validate("IAP15L2K61S2", true, StcDownloadMode.Serial);
+                throw new InvalidOperationException("invalid settings accepted");
+            }
             catch (StudioXException error) when (error.Code == "STC_HARDWARE_OPTION") { checks.Add("invalid value rejected"); }
         }
         var usbDraft = new StcHardwareOptions { WatchdogPowerOn = "true" };
@@ -46,9 +56,17 @@ internal static class HardwareSettingsChecks
         checks.Add("qualified F784 USB watchdog setting accepted");
         var unsupportedUsbDraft = new StcHardwareOptions { Uart1Remap = "true" };
         unsupportedUsbDraft.Validate("STC8H8K64U", false, StcDownloadMode.NativeUsb);
-        try { unsupportedUsbDraft.Validate("STC8H8K64U", true, StcDownloadMode.NativeUsb); throw new InvalidOperationException("unqualified USB bits accepted"); }
+        try
+        {
+            unsupportedUsbDraft.Validate("STC8H8K64U", true, StcDownloadMode.NativeUsb);
+            throw new InvalidOperationException("unqualified USB bits accepted");
+        }
         catch (StudioXException error) when (error.Code == "STC_USB_OPTIONS") { checks.Add("USB keeps inactive drafts, refuses applying bits"); }
-        try { StcHardwareOptions.FromValues(new Dictionary<string, string> { ["unknown"] = "true" }); throw new InvalidOperationException("unknown field accepted"); }
+        try
+        {
+            StcHardwareOptions.FromValues(new Dictionary<string, string> { ["unknown"] = "true" });
+            throw new InvalidOperationException("unknown field accepted");
+        }
         catch (JsonException) { checks.Add("unknown JSON properties rejected"); }
         var path = Path.Combine(output, "project");
         Directory.CreateDirectory(path);
@@ -67,7 +85,12 @@ internal static class HardwareSettingsChecks
             Environment.CurrentDirectory, TimeSpan.FromSeconds(30), RemoveEnvironment: ["PYTHONHOME", "PYTHONPATH"]));
         await File.WriteAllTextAsync(Path.Combine(output, "backend.log"), run.StandardOutput + run.StandardError);
         Check(run.Success, "actual stcgal encoders and guarded download entry: " + run.StandardError);
-        await JsonStore.WriteAsync(Path.Combine(output, "result.json"), new { passed = true, hardware = false, checks });
+        await JsonStore.WriteAsync(Path.Combine(output, "result.json"), new
+        {
+            passed = true,
+            hardware = false,
+            checks
+        });
         Console.WriteLine($"PASS {checks.Count} hardware settings checks; " + run.StandardOutput.Trim());
     }
 }

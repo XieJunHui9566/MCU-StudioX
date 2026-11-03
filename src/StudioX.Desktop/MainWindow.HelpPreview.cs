@@ -97,7 +97,11 @@ public partial class MainWindow
         await SettleAsync();
         Check(helpCenter.ArticleBody.Document.Blocks.OfType<Table>().Count() == 4, "shortcut reference has four real formatted tables");
         Render(this, Path.Combine(directory, "help-shortcuts.png"));
-        var custom = ThemeService.Dark with { Id = "plugin-api-custom", Colors = new(ThemeService.Dark.Colors) };
+        var custom = ThemeService.Dark with
+        {
+            Id = "plugin-api-custom",
+            Colors = new(ThemeService.Dark.Colors)
+        };
         custom.Colors["Accent"] = "#B8E986";
         custom.Colors["OnAccent"] = "#163020";
         var originalSize = System.Windows.Application.Current.Resources["WorkbenchFontSize"];

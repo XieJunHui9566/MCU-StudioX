@@ -15,20 +15,36 @@ internal static class LifecycleChecks
         {
             await service.ConnectAsync(new("COM99")).WaitAsync(TimeSpan.FromSeconds(2));
             var bytes = Encoding.UTF8.GetBytes("\x1b[32mdiagnostic\x1b[0m\r\n");
-            for (var i = 0; i < 1000; i++) { fake.Packets.Writer.TryWrite(bytes); }
+            for (var i = 0; i < 1000; i++)
+            {
+                fake.Packets.Writer.TryWrite(bytes);
+            }
             using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(3));
-            while (service.Status.Received != bytes.Length * 1000) { await Task.Delay(5, deadline.Token); }
+            while (service.Status.Received != bytes.Length * 1000)
+            {
+                await Task.Delay(5, deadline.Token);
+            }
             _ = service.ReadDisplay(-1, false);
             await service.DisconnectAsync().WaitAsync(TimeSpan.FromSeconds(2));
-            if (service.Status.Connected || !fake.Closed) { throw new InvalidOperationException("模拟串口没有释放。"); }
+            if (service.Status.Connected || !fake.Closed)
+            {
+                throw new InvalidOperationException("模拟串口没有释放。");
+            }
         }
         var blocked = new FakeTransport { BlockSend = true };
         var session = await hub.OpenAsync(blocked);
         var sending = session.SendAsync(new byte[] { 1 }).AsTask();
         await session.DisposeAsync().AsTask().WaitAsync(TimeSpan.FromSeconds(2));
-        try { await sending; throw new InvalidOperationException("已关闭会话仍完成了阻塞发送。"); }
+        try
+        {
+            await sending;
+            throw new InvalidOperationException("已关闭会话仍完成了阻塞发送。");
+        }
         catch (OperationCanceledException) { }
-        if (!blocked.Closed) { throw new InvalidOperationException("发送取消后没有释放模拟传输。"); }
+        if (!blocked.Closed)
+        {
+            throw new InvalidOperationException("发送取消后没有释放模拟传输。");
+        }
         return "1000 ANSI frames, disconnect, blocked TX cancellation, ownership released";
     }
 
@@ -43,7 +59,10 @@ internal static class LifecycleChecks
         var paste = terminal.WriteAsync(new string('x', 1024 * 1024));
         await Task.Delay(50);
         await Task.WhenAll(terminal.DisposeAsync().AsTask(), terminal.DisposeAsync().AsTask()).WaitAsync(TimeSpan.FromSeconds(5));
-        try { await paste.WaitAsync(TimeSpan.FromSeconds(2)); }
+        try
+        {
+            await paste.WaitAsync(TimeSpan.FromSeconds(2));
+        }
         catch (IOException) { /* 关闭正在写入的管道应显式报告中断。 */ }
         await terminal.Completion.WaitAsync(TimeSpan.FromSeconds(2));
         return "1 MiB paste and concurrent ConPTY shutdown completed";
@@ -54,16 +73,28 @@ internal static class LifecycleChecks
         public Channel<ReadOnlyMemory<byte>> Packets { get; } = Channel.CreateUnbounded<ReadOnlyMemory<byte>>();
         public string Key => "responsiveness:fake-serial";
         public bool IsSimulated => true;
-        public bool BlockSend { get; init; }
-        public bool Closed { get; private set; }
+        public bool BlockSend
+        {
+            get; init;
+        }
+        public bool Closed
+        {
+            get; private set;
+        }
         public ValueTask OpenAsync(CancellationToken cancellationToken) => ValueTask.CompletedTask;
         public async IAsyncEnumerable<ReadOnlyMemory<byte>> ReceiveAsync([EnumeratorCancellation] CancellationToken cancellationToken)
         {
-            await foreach (var packet in Packets.Reader.ReadAllAsync(cancellationToken)) { yield return packet; }
+            await foreach (var packet in Packets.Reader.ReadAllAsync(cancellationToken))
+            {
+                yield return packet;
+            }
         }
         public async ValueTask SendAsync(ReadOnlyMemory<byte> bytes, CancellationToken cancellationToken)
         {
-            if (BlockSend) { await Task.Delay(Timeout.Infinite, cancellationToken); }
+            if (BlockSend)
+            {
+                await Task.Delay(Timeout.Infinite, cancellationToken);
+            }
         }
         public ValueTask DisposeAsync()
         {

@@ -39,19 +39,31 @@ internal static class DebuggerPipeChecks
     private static async Task<string> MdbDeadlineAsync(string output, string mode, bool cancel)
     {
         await using var fixture = await PipeFixture.CreateAsync(output, "mdb-" + mode, false);
-        if (mode == "queue") { await fixture.Gate.WaitAsync(); }
+        if (mode == "queue")
+        {
+            await fixture.Gate.WaitAsync();
+        }
         using var cancellation = new CancellationTokenSource();
-        if (cancel) { cancellation.CancelAfter(200); }
+        if (cancel)
+        {
+            cancellation.CancelAfter(200);
+        }
         var command = mode == "response" || mode == "queue" ? "version" : new string('x', 8192);
         var run = fixture.Mdb!.ExecuteAsync(command, cancellation.Token, cancel ? TimeSpan.FromMinutes(1) : TimeSpan.FromMilliseconds(200));
         try
         {
             await ExpectDeadlineAsync(run, cancel, TimeSpan.FromSeconds(2));
-            if (mode == "queue" && fixture.Observer.HasExited) { throw new InvalidOperationException("排队超时不应终止其他命令所属进程。"); }
+            if (mode == "queue" && fixture.Observer.HasExited)
+            {
+                throw new InvalidOperationException("排队超时不应终止其他命令所属进程。");
+            }
         }
         finally
         {
-            if (mode == "queue") { fixture.Gate.Release(); }
+            if (mode == "queue")
+            {
+                fixture.Gate.Release();
+            }
             await fixture.StopAsync(run);
         }
         return cancel ? "user cancellation preserved" : "queue/write/response bounded by 200 ms deadline";
@@ -64,7 +76,10 @@ internal static class DebuggerPipeChecks
         await fixture.Mdb.ExecuteAsync("version", timeout: TimeSpan.FromSeconds(2)).WaitAsync(TimeSpan.FromSeconds(3));
         await fixture.Mdb.DisposeAsync().AsTask().WaitAsync(TimeSpan.FromSeconds(7));
         fixture.ProductDisposed = true;
-        if (!fixture.Observer.HasExited) { throw new InvalidOperationException("退出后子进程仍在运行。"); }
+        if (!fixture.Observer.HasExited)
+        {
+            throw new InvalidOperationException("退出后子进程仍在运行。");
+        }
         return "echo barriers and graceful exit passed";
     }
 
@@ -89,9 +104,15 @@ internal static class DebuggerPipeChecks
             {
                 await Task.WhenAll(close, fixture.Mdb.DisposeAsync().AsTask()).WaitAsync(TimeSpan.FromSeconds(7));
             }
-            else { await close.WaitAsync(TimeSpan.FromSeconds(7)); }
+            else
+            {
+                await close.WaitAsync(TimeSpan.FromSeconds(7));
+            }
             fixture.ProductDisposed = true;
-            if (!fixture.Observer.HasExited) { throw new InvalidOperationException("退出没有回收本会话子进程。"); }
+            if (!fixture.Observer.HasExited)
+            {
+                throw new InvalidOperationException("退出没有回收本会话子进程。");
+            }
             if (command is not null)
             {
                 var failure = await ObserveAsync(command);
@@ -108,15 +129,27 @@ internal static class DebuggerPipeChecks
     private static async Task<string> GdbDeadlineAsync(string output, string mode, bool cancel)
     {
         await using var fixture = await PipeFixture.CreateAsync(output, "gdb-" + mode, true);
-        if (mode == "queue") { await fixture.Gate.WaitAsync(); }
+        if (mode == "queue")
+        {
+            await fixture.Gate.WaitAsync();
+        }
         using var cancellation = new CancellationTokenSource();
-        if (cancel) { cancellation.CancelAfter(200); }
+        if (cancel)
+        {
+            cancellation.CancelAfter(200);
+        }
         var command = "1-interpreter-exec console " + (mode == "queue" ? "version" : new string('x', 8192));
         var run = fixture.Gdb!.ExecuteAsync(command, cancellation.Token);
-        try { await ExpectDeadlineAsync(run, cancel, cancel ? TimeSpan.FromSeconds(2) : TimeSpan.FromSeconds(23)); }
+        try
+        {
+            await ExpectDeadlineAsync(run, cancel, cancel ? TimeSpan.FromSeconds(2) : TimeSpan.FromSeconds(23));
+        }
         finally
         {
-            if (mode == "queue") { fixture.Gate.Release(); }
+            if (mode == "queue")
+            {
+                fixture.Gate.Release();
+            }
             await fixture.StopAsync(run);
         }
         return cancel ? "user cancellation preserved" : "queue/write bounded by production 20 s deadline";
@@ -127,7 +160,10 @@ internal static class DebuggerPipeChecks
         await using var fixture = await PipeFixture.CreateAsync(output, "gdb-success", true, "gdb");
         var first = await fixture.Gdb!.ExecuteAsync("1-gdb-version").WaitAsync(TimeSpan.FromSeconds(2));
         var second = await fixture.Gdb.ExecuteAsync("2-gdb-version").WaitAsync(TimeSpan.FromSeconds(2));
-        if (first != "1^done" || second != "2^done") { throw new InvalidOperationException("MI token 应答配对错误。"); }
+        if (first != "1^done" || second != "2^done")
+        {
+            throw new InvalidOperationException("MI token 应答配对错误。");
+        }
         return "MI tokens matched independent responses";
     }
 
@@ -137,7 +173,10 @@ internal static class DebuggerPipeChecks
         var arguments = start.ArgumentList.ToArray();
         var result = await new ProcessRunner().RunAsync(new(start.FileName, arguments, Environment.CurrentDirectory,
             TimeSpan.FromMilliseconds(800), StandardInput: new string('x', 2 * 1024 * 1024), ContainProcessTree: true)).WaitAsync(TimeSpan.FromSeconds(4));
-        if (!result.TimedOut) { throw new InvalidOperationException("阻塞输入未报告超时。"); }
+        if (!result.TimedOut)
+        {
+            throw new InvalidOperationException("阻塞输入未报告超时。");
+        }
         return "2 MiB blocked stdin timed out and owned process tree reclaimed";
     }
 
@@ -152,23 +191,54 @@ internal static class DebuggerPipeChecks
 
     private static async Task<Exception?> ObserveAsync(Task operation)
     {
-        try { await operation; return null; }
+        try
+        {
+            await operation;
+            return null;
+        }
         catch (Exception error) { return error; }
     }
 
     /// <summary>直接注入本工具创建的管道，绕过生产构造函数中的 SDK 和探针获取，执行生产通信与关闭方法。</summary>
     private sealed class PipeFixture : IAsyncDisposable
     {
-        public required Process Child { get; init; }
-        public required Process Observer { get; init; }
-        public required SemaphoreSlim Gate { get; init; }
-        public required StreamWriter Trace { get; init; }
-        public required IDisposable Job { get; init; }
-        public required CancellationTokenSource Lifetime { get; init; }
-        public MdbProcess? Mdb { get; init; }
-        public GdbProcessTransport? Gdb { get; init; }
+        public required Process Child
+        {
+            get; init;
+        }
+        public required Process Observer
+        {
+            get; init;
+        }
+        public required SemaphoreSlim Gate
+        {
+            get; init;
+        }
+        public required StreamWriter Trace
+        {
+            get; init;
+        }
+        public required IDisposable Job
+        {
+            get; init;
+        }
+        public required CancellationTokenSource Lifetime
+        {
+            get; init;
+        }
+        public MdbProcess? Mdb
+        {
+            get; init;
+        }
+        public GdbProcessTransport? Gdb
+        {
+            get; init;
+        }
         public List<Task> Readers { get; } = [];
-        public bool ProductDisposed { get; set; }
+        public bool ProductDisposed
+        {
+            get; set;
+        }
 
         public static async Task<PipeFixture> CreateAsync(string output, string name, bool gdb, string mode = "idle")
         {
@@ -192,8 +262,17 @@ internal static class DebuggerPipeChecks
                 Set(product, "job", job);
                 var observer = Process.GetProcessById(child.Id);
                 observer.EnableRaisingEvents = true;
-                var fixture = new PipeFixture { Child = child, Observer = observer, Gate = gate, Trace = trace, Job = job, Lifetime = lifetime,
-                    Mdb = product as MdbProcess, Gdb = product as GdbProcessTransport };
+                var fixture = new PipeFixture
+                {
+                    Child = child,
+                    Observer = observer,
+                    Gate = gate,
+                    Trace = trace,
+                    Job = job,
+                    Lifetime = lifetime,
+                    Mdb = product as MdbProcess,
+                    Gdb = product as GdbProcessTransport
+                };
                 if (gdb)
                 {
                     Set(product, "pending", new ConcurrentDictionary<int, TaskCompletionSource<string>>());
@@ -218,7 +297,10 @@ internal static class DebuggerPipeChecks
             }
             catch
             {
-                if (!child.HasExited) { child.Kill(true); }
+                if (!child.HasExited)
+                {
+                    child.Kill(true);
+                }
                 child.Dispose();
                 throw;
             }
@@ -226,12 +308,21 @@ internal static class DebuggerPipeChecks
 
         public async Task StopAsync(params Task?[] operations)
         {
-            if (Gdb is not null) { Set(Gdb, "closing", true); }
-            if (!Observer.HasExited) { Observer.Kill(true); }
+            if (Gdb is not null)
+            {
+                Set(Gdb, "closing", true);
+            }
+            if (!Observer.HasExited)
+            {
+                Observer.Kill(true);
+            }
             await Observer.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(3));
             foreach (var operation in operations)
             {
-                if (operation is not null) { await ObserveAsync(operation).WaitAsync(TimeSpan.FromSeconds(3)); }
+                if (operation is not null)
+                {
+                    await ObserveAsync(operation).WaitAsync(TimeSpan.FromSeconds(3));
+                }
             }
         }
 
@@ -240,7 +331,12 @@ internal static class DebuggerPipeChecks
             await StopAsync();
             Job.Dispose();
             await Task.WhenAll(Readers).WaitAsync(TimeSpan.FromSeconds(3));
-            if (!ProductDisposed) { Gate.Dispose(); Trace.Dispose(); Lifetime.Dispose(); }
+            if (!ProductDisposed)
+            {
+                Gate.Dispose();
+                Trace.Dispose();
+                Lifetime.Dispose();
+            }
             Child.Dispose();
             Observer.Dispose();
         }

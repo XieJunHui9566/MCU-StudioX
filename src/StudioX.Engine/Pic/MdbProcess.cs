@@ -299,7 +299,10 @@ public sealed class MdbProcess : IAsyncDisposable
             finally
             {
                 job.Dispose();
-                if (acquired) { commands.Release(); }
+                if (acquired)
+                {
+                    commands.Release();
+                }
             }
         }
         // 被取消的写入完成后才释放资源，避免命令 finally 访问已释放的信号量。

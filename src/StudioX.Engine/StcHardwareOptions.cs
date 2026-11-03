@@ -9,27 +9,111 @@ using StudioX.Foundation;
 [JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed record StcHardwareOptions
 {
-    [JsonPropertyName("reset_pin_enabled")] public string? ResetPin { get; init; }
-    [JsonPropertyName("clock_gain")] public string? ClockGain { get; init; }
-    [JsonPropertyName("watchdog_por_enabled")] public string? WatchdogPowerOn { get; init; }
-    [JsonPropertyName("watchdog_stop_idle")] public string? WatchdogStopIdle { get; init; }
-    [JsonPropertyName("watchdog_prescale")] public string? WatchdogPrescale { get; init; }
-    [JsonPropertyName("low_voltage_reset")] public string? LowVoltageReset { get; init; }
-    [JsonPropertyName("low_voltage_threshold")] public string? LowVoltageThreshold { get; init; }
-    [JsonPropertyName("eeprom_lvd_inhibit")] public string? EepromLowVoltageInhibit { get; init; }
-    [JsonPropertyName("eeprom_erase_enabled")] public string? EepromErase { get; init; }
-    [JsonPropertyName("bsl_pindetect_enabled")] public string? DownloadPinDetect { get; init; }
-    [JsonPropertyName("por_reset_delay")] public string? PowerOnDelay { get; init; }
-    [JsonPropertyName("rstout_por_state")] public string? ResetOutputLevel { get; init; }
-    [JsonPropertyName("uart2_passthrough")] public string? Uart2Passthrough { get; init; }
-    [JsonPropertyName("uart2_pin_mode")] public string? Uart2PinMode { get; init; }
-    [JsonPropertyName("cpu_core_voltage")] public string? CoreVoltage { get; init; }
-    [JsonPropertyName("uart1_remap")] public string? Uart1Remap { get; init; }
-    [JsonPropertyName("epwm_open_drain")] public string? EpwmOpenDrain { get; init; }
-    [JsonPropertyName("cpu_6t_enabled")] public string? Cpu6T { get; init; }
-    [JsonPropertyName("ale_enabled")] public string? Ale { get; init; }
-    [JsonPropertyName("xram_enabled")] public string? Xram { get; init; }
-    [JsonPropertyName("oscillator_stable_delay")] public string? OscillatorDelay { get; init; }
+    [JsonPropertyName("reset_pin_enabled")]
+    public string? ResetPin
+    {
+        get; init;
+    }
+    [JsonPropertyName("clock_gain")]
+    public string? ClockGain
+    {
+        get; init;
+    }
+    [JsonPropertyName("watchdog_por_enabled")]
+    public string? WatchdogPowerOn
+    {
+        get; init;
+    }
+    [JsonPropertyName("watchdog_stop_idle")]
+    public string? WatchdogStopIdle
+    {
+        get; init;
+    }
+    [JsonPropertyName("watchdog_prescale")]
+    public string? WatchdogPrescale
+    {
+        get; init;
+    }
+    [JsonPropertyName("low_voltage_reset")]
+    public string? LowVoltageReset
+    {
+        get; init;
+    }
+    [JsonPropertyName("low_voltage_threshold")]
+    public string? LowVoltageThreshold
+    {
+        get; init;
+    }
+    [JsonPropertyName("eeprom_lvd_inhibit")]
+    public string? EepromLowVoltageInhibit
+    {
+        get; init;
+    }
+    [JsonPropertyName("eeprom_erase_enabled")]
+    public string? EepromErase
+    {
+        get; init;
+    }
+    [JsonPropertyName("bsl_pindetect_enabled")]
+    public string? DownloadPinDetect
+    {
+        get; init;
+    }
+    [JsonPropertyName("por_reset_delay")]
+    public string? PowerOnDelay
+    {
+        get; init;
+    }
+    [JsonPropertyName("rstout_por_state")]
+    public string? ResetOutputLevel
+    {
+        get; init;
+    }
+    [JsonPropertyName("uart2_passthrough")]
+    public string? Uart2Passthrough
+    {
+        get; init;
+    }
+    [JsonPropertyName("uart2_pin_mode")]
+    public string? Uart2PinMode
+    {
+        get; init;
+    }
+    [JsonPropertyName("cpu_core_voltage")]
+    public string? CoreVoltage
+    {
+        get; init;
+    }
+    [JsonPropertyName("uart1_remap")]
+    public string? Uart1Remap
+    {
+        get; init;
+    }
+    [JsonPropertyName("epwm_open_drain")]
+    public string? EpwmOpenDrain
+    {
+        get; init;
+    }
+    [JsonPropertyName("cpu_6t_enabled")]
+    public string? Cpu6T
+    {
+        get; init;
+    }
+    [JsonPropertyName("ale_enabled")]
+    public string? Ale
+    {
+        get; init;
+    }
+    [JsonPropertyName("xram_enabled")]
+    public string? Xram
+    {
+        get; init;
+    }
+    [JsonPropertyName("oscillator_stable_delay")]
+    public string? OscillatorDelay
+    {
+        get; init;
+    }
 
     public IReadOnlyDictionary<string, string> Values() => JsonSerializer.SerializeToElement(this).EnumerateObject()
         .Where(p => p.Value.ValueKind == JsonValueKind.String).ToDictionary(p => p.Name, p => p.Value.GetString()!);

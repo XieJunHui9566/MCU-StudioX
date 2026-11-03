@@ -2355,16 +2355,38 @@
                                   Foreground="{DynamicResource Muted}"
                                   TextWrapping="Wrap"
                                   Margin="0,6,0,4" />
-                                <TextBlock Text="下载方式" Style="{StaticResource SectionLabel}" />
-                                <ComboBox x:Name="Mx251DownloadModePicker" DisplayMemberPath="Label" SelectedValuePath="Value"
-                                  MinHeight="36" SelectionChanged="Mx251DownloadMode_Changed" AutomationProperties.Name="AI8051U 下载方式" />
-                                <TextBlock x:Name="Mx251ConnectionHelp" TextWrapping="Wrap" Foreground="{DynamicResource Muted}" Margin="0,6,0,4" />
-                                <StackPanel x:Name="Mx251SerialPanel" Visibility="Collapsed">
-                                  <TextBlock Text="下载串口" Style="{StaticResource SectionLabel}" />
-                                  <ComboBox x:Name="Mx251SerialPortPicker" IsEditable="True" MinHeight="36"
-                                    SelectionChanged="Mx251DevicePicker_Changed" AutomationProperties.Name="AI8051U 下载串口" />
-                                  <TextBlock Text="自动使用 2400 波特握手、115200 波特写入；8 位数据、偶校验、1 位停止位。点击下载后按输出提示重新上电。"
-                                    TextWrapping="Wrap" Foreground="{DynamicResource Muted}" Margin="0,6,0,4" />
+                                <TextBlock
+                                  Text="下载方式"
+                                  Style="{StaticResource SectionLabel}" />
+                                <ComboBox
+                                  x:Name="Mx251DownloadModePicker"
+                                  DisplayMemberPath="Label"
+                                  SelectedValuePath="Value"
+                                  MinHeight="36"
+                                  SelectionChanged="Mx251DownloadMode_Changed"
+                                  AutomationProperties.Name="AI8051U 下载方式" />
+                                <TextBlock
+                                  x:Name="Mx251ConnectionHelp"
+                                  TextWrapping="Wrap"
+                                  Foreground="{DynamicResource Muted}"
+                                  Margin="0,6,0,4" />
+                                <StackPanel
+                                  x:Name="Mx251SerialPanel"
+                                  Visibility="Collapsed">
+                                  <TextBlock
+                                    Text="下载串口"
+                                    Style="{StaticResource SectionLabel}" />
+                                  <ComboBox
+                                    x:Name="Mx251SerialPortPicker"
+                                    IsEditable="True"
+                                    MinHeight="36"
+                                    SelectionChanged="Mx251DevicePicker_Changed"
+                                    AutomationProperties.Name="AI8051U 下载串口" />
+                                  <TextBlock
+                                    Text="自动使用 2400 波特握手、115200 波特写入；8 位数据、偶校验、1 位停止位。点击下载后按输出提示重新上电。"
+                                    TextWrapping="Wrap"
+                                    Foreground="{DynamicResource Muted}"
+                                    Margin="0,6,0,4" />
                                 </StackPanel>
                                 <TextBlock
                                   Text="CPU 运行模式"
@@ -2389,17 +2411,18 @@
                                   Foreground="{DynamicResource Muted}"
                                   TextWrapping="Wrap"
                                   Margin="0,6,0,4" />
-                                <StackPanel x:Name="Mx251BridgePanel">
-                                <TextBlock
-                                  Text="底板 AI8H2K12G USB 下载器"
-                                  Style="{StaticResource SectionLabel}" />
-                                <ComboBox
-                                  x:Name="Mx251DevicePicker"
-                                  DisplayMemberPath="Label"
-                                  SelectedValuePath="Value"
-                                  MinHeight="36"
-                                  SelectionChanged="Mx251DevicePicker_Changed"
-                                  AutomationProperties.Name="AI8051U USB下载器" />
+                                <StackPanel
+                                  x:Name="Mx251BridgePanel">
+                                  <TextBlock
+                                    Text="底板 AI8H2K12G USB 下载器"
+                                    Style="{StaticResource SectionLabel}" />
+                                  <ComboBox
+                                    x:Name="Mx251DevicePicker"
+                                    DisplayMemberPath="Label"
+                                    SelectedValuePath="Value"
+                                    MinHeight="36"
+                                    SelectionChanged="Mx251DevicePicker_Changed"
+                                    AutomationProperties.Name="AI8051U USB下载器" />
                                 </StackPanel>
                                 <WrapPanel
                                   Margin="0,8,0,0">

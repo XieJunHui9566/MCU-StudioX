@@ -69,7 +69,10 @@ public partial class MainWindow
         BuildSettingsHelp.Text = mx ? "small / large 决定默认数据存储方式，不改变芯片的 32 位工作模式。保存后重新编译整个工程；源码中的显式存储区声明保持不变。" : stc
             ? "源码调试请选择 --debug，并建议低优化。构建生成 CDB；Mon51 连接会核对源码、构建产物与目标 CODE。优化可能使变量或部分源码行不可用。"
             : "源码调试建议 -Og 与 -g3；较高优化可能使变量或源码行无法直接观察。";
-        if (stc) { BuildSettingsHelp.Text = "编译优化、内存模型与 RAM 大小按工程保存。调试配套、下载与硬件选项请使用工具栏下载按钮旁的设置入口。"; }
+        if (stc)
+        {
+            BuildSettingsHelp.Text = "编译优化、内存模型与 RAM 大小按工程保存。调试配套、下载与硬件选项请使用工具栏下载按钮旁的设置入口。";
+        }
         ConfigureStcDownloadPage();
     }
 
@@ -94,7 +97,11 @@ public partial class MainWindow
         {
             return false;
         }
-        settings = settings with { IdataSizeBytes = idataBytes, XdataSizeBytes = xdataBytes };
+        settings = settings with
+        {
+            IdataSizeBytes = idataBytes,
+            XdataSizeBytes = xdataBytes
+        };
         if (stcRamLimits is null && (settings.MemoryModel != SdccMemoryModel.ProjectDefault || idataBytes is not null || xdataBytes is not null))
         {
             error = "尚未取得准确型号的 RAM 容量配置，无法保存内存覆盖项；请重新打开工程配置并检查器件包。";
@@ -131,7 +138,10 @@ public partial class MainWindow
     {
         try
         {
-            if (currentProjectManifest is { } project) { settings.ValidateFor(project); }
+            if (currentProjectManifest is { } project)
+            {
+                settings.ValidateFor(project);
+            }
             error = "";
             return true;
         }
@@ -142,7 +152,10 @@ public partial class MainWindow
     {
         bytes = null;
         error = "";
-        if (string.IsNullOrWhiteSpace(text)) { return true; }
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return true;
+        }
         if (!int.TryParse(text.Trim(), NumberStyles.None, CultureInfo.InvariantCulture, out var parsed) || parsed < (allowZero ? 0 : 1))
         {
             error = label + (allowZero ? "请输入非负整数字节数" : "请输入正整数字节数") + "，或留空使用器件包默认值。";
@@ -154,7 +167,10 @@ public partial class MainWindow
 
     private async Task<StcRamLimits?> ReadStcRamLimitsForUiAsync(string root, CancellationToken token = default)
     {
-        try { return await services.Builds.ReadStcRamLimitsAsync(root, token); }
+        try
+        {
+            return await services.Builds.ReadStcRamLimitsAsync(root, token);
+        }
         catch (Exception ex) when (ex is StudioXException or IOException or UnauthorizedAccessException or System.Text.Json.JsonException)
         {
             Log("读取 STC RAM 配置失败，内存覆盖项保持不可保存：" + ex);

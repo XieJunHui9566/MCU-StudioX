@@ -99,14 +99,19 @@ internal static class SdkErrorContractChecks
                     cancelled.TrySetResult(true);
                     throw;
                 }
-                return JsonSerializer.SerializeToElement(new { });
+                return JsonSerializer.SerializeToElement(new
+                {
+                });
             }
             var error = errors[id];
             throw new StudioXException(error.Code, error.Message);
         }, (_, _) => Task.CompletedTask);
         foreach (var (id, expected) in errors)
         {
-            var arguments = JsonSerializer.SerializeToElement(new { tool = "validation." + id });
+            var arguments = JsonSerializer.SerializeToElement(new
+            {
+                tool = "validation." + id
+            });
             var caught = await client.InvokeAsync("command", "catch", arguments);
             if (caught.GetProperty("code").GetString() != expected.Code ||
                 caught.GetProperty("message").GetString()?.Contains(expected.Message, StringComparison.Ordinal) != true ||
@@ -126,7 +131,10 @@ internal static class SdkErrorContractChecks
             }
         }
         var cancellationResult = await client.InvokeAsync("command", "cancel",
-            JsonSerializer.SerializeToElement(new { tool = "validation.cancel" }));
+            JsonSerializer.SerializeToElement(new
+            {
+                tool = "validation.cancel"
+            }));
         await cancelled.Task.WaitAsync(TimeSpan.FromSeconds(5));
         if (!cancellationResult.GetProperty("operationCancelled").GetBoolean() ||
             cancellationResult.GetProperty("sdkException").GetBoolean())
@@ -134,7 +142,12 @@ internal static class SdkErrorContractChecks
             throw new InvalidOperationException("SDK host cancellation was incorrectly converted to PluginHostException.");
         }
         var result = "SDK-only .NET plugin: public error Code/message, denial/unknown/timeout, rethrow compatibility and cancellation passed";
-        await JsonStore.WriteAsync(Path.Combine(source, "results.json"), new { success = true, references = "StudioX.Extensions.Abstractions only", result });
+        await JsonStore.WriteAsync(Path.Combine(source, "results.json"), new
+        {
+            success = true,
+            references = "StudioX.Extensions.Abstractions only",
+            result
+        });
         return result;
     }
 

@@ -17,7 +17,10 @@ public partial class MainWindow
         var checks = new List<string>();
         void Check(bool condition, string text)
         {
-            if (!condition) { throw new InvalidOperationException(text); }
+            if (!condition)
+            {
+                throw new InvalidOperationException(text);
+            }
             checks.Add(text);
         }
         const string original = """
@@ -89,8 +92,13 @@ public partial class MainWindow
         }
         var custom = ThemeService.Dark with
         {
-            Id = "studiox.review-custom", DisplayName = "Review custom",
-            Colors = new(ThemeService.Dark.Colors) { ["Accent"] = "#B8E986", ["OnAccent"] = "#163020" }
+            Id = "studiox.review-custom",
+            DisplayName = "Review custom",
+            Colors = new(ThemeService.Dark.Colors)
+            {
+                ["Accent"] = "#B8E986",
+                ["OnAccent"] = "#163020"
+            }
         };
         Width = 1500;
         Height = 980;
@@ -136,9 +144,23 @@ public partial class MainWindow
         Render(this, Path.Combine(directory, "compact-large.png"));
         await JsonStore.WriteAsync(Path.Combine(directory, "compact-layout.json"), new
         {
-            window = new { ActualWidth, ActualHeight },
-            review = new { review.ActualWidth, review.ActualHeight },
-            comparison = new { review.Comparison.ActualWidth, review.Comparison.ActualHeight }, beforeBounds, afterBounds
+            window = new
+            {
+                ActualWidth,
+                ActualHeight
+            },
+            review = new
+            {
+                review.ActualWidth,
+                review.ActualHeight
+            },
+            comparison = new
+            {
+                review.Comparison.ActualWidth,
+                review.Comparison.ActualHeight
+            },
+            beforeBounds,
+            afterBounds
         });
         Check(afterBounds.Left > beforeBounds.Right && beforeBounds.Height > 100 && afterBounds.Height > 100,
             "较窄窗口将计划列表移至顶部，为放大字体的左右对照保留可用空间");
@@ -152,6 +174,12 @@ public partial class MainWindow
             "更窄的审阅区域自动上下对照，放大字体时两侧仍可滚动查看");
         Render(this, Path.Combine(directory, "stacked-large.png"));
         await CheckAgentReviewScrollingAsync(directory, Check);
-        await JsonStore.WriteAsync(Path.Combine(directory, "result.json"), new { passed = true, hardware = false, paidApi = false, checks });
+        await JsonStore.WriteAsync(Path.Combine(directory, "result.json"), new
+        {
+            passed = true,
+            hardware = false,
+            paidApi = false,
+            checks
+        });
     }
 }

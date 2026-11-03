@@ -40,7 +40,10 @@ internal static class Program
         }
         while (Console.ReadLine() is { } line)
         {
-            if (line == "quit") { return; }
+            if (line == "quit")
+            {
+                return;
+            }
             if (mode == "mdb" && line.StartsWith("echo ", StringComparison.Ordinal))
             {
                 Console.WriteLine("/*" + line[5..] + "*/");

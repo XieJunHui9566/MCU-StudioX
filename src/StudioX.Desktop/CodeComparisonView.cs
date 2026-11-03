@@ -31,13 +31,25 @@ internal sealed class CodeComparisonView : Grid
     internal CodeComparisonView()
     {
         RowDefinitions.Add(new());
-        RowDefinitions.Add(new() { Height = GridLength.Auto });
+        RowDefinitions.Add(new()
+        {
+            Height = GridLength.Auto
+        });
         panes.ColumnDefinitions.Add(new());
-        panes.ColumnDefinitions.Add(new() { Width = new(8) });
+        panes.ColumnDefinitions.Add(new()
+        {
+            Width = new(8)
+        });
         panes.ColumnDefinitions.Add(new());
         panes.RowDefinitions.Add(new());
-        panes.RowDefinitions.Add(new() { Height = new(0) });
-        panes.RowDefinitions.Add(new() { Height = new(0) });
+        panes.RowDefinitions.Add(new()
+        {
+            Height = new(0)
+        });
+        panes.RowDefinitions.Add(new()
+        {
+            Height = new(0)
+        });
         left = Pane("修改前 · 删除 / 被替换内容", "DiagnosticError", Before);
         right = Pane("修改后 · 新增 / 替换结果", "DiagnosticSuccess", After);
         panes.Children.Add(left);
@@ -136,8 +148,14 @@ internal sealed class CodeComparisonView : Grid
         var sourceView = source.TextArea.TextView;
         var position = sourceView.ScrollOffset;
         var previous = fromBefore ? beforeScrollOffset : afterScrollOffset;
-        if (fromBefore) { beforeScrollOffset = position; }
-        else { afterScrollOffset = position; }
+        if (fromBefore)
+        {
+            beforeScrollOffset = position;
+        }
+        else
+        {
+            afterScrollOffset = position;
+        }
         if (syncing || !source.IsLoaded || source.TextArea.TextView.DefaultLineHeight <= 0)
         {
             return;
@@ -150,8 +168,14 @@ internal sealed class CodeComparisonView : Grid
             var sourceScroll = (IScrollInfo)sourceView;
             var vertical = Math.Clamp(position.Y, 0, Math.Max(0, sourceScroll.ExtentHeight - sourceScroll.ViewportHeight));
             var horizontal = Math.Clamp(position.X, 0, Math.Max(0, sourceScroll.ExtentWidth - sourceScroll.ViewportWidth));
-            if (position.Y != vertical) { sourceScroll.SetVerticalOffset(vertical); }
-            if (position.X != horizontal) { sourceScroll.SetHorizontalOffset(horizontal); }
+            if (position.Y != vertical)
+            {
+                sourceScroll.SetVerticalOffset(vertical);
+            }
+            if (position.X != horizontal)
+            {
+                sourceScroll.SetHorizontalOffset(horizontal);
+            }
             sourceScroll.ScrollOwner?.InvalidateScrollInfo();
             position = sourceView.ScrollOffset;
             var line = Math.Clamp((int)(position.Y / sourceView.DefaultLineHeight) + 1, 1, source.Document.LineCount);
@@ -188,8 +212,14 @@ internal sealed class CodeComparisonView : Grid
             var length = fromBefore ? change.BeforeLength : change.AfterLength;
             var targetStart = fromBefore ? change.AfterStart : change.BeforeStart;
             var targetLength = fromBefore ? change.AfterLength : change.BeforeLength;
-            if (offset < start) { break; }
-            if (offset < start + length) { return targetStart + Math.Min(offset - start, targetLength); }
+            if (offset < start)
+            {
+                break;
+            }
+            if (offset < start + length)
+            {
+                return targetStart + Math.Min(offset - start, targetLength);
+            }
             delta = targetStart + targetLength - start - length;
         }
         return offset + delta;
@@ -210,9 +240,13 @@ internal sealed class CodeComparisonView : Grid
     {
         var editor = new SafeTextEditor
         {
-            IsReadOnly = true, ShowLineNumbers = true, WordWrap = false,
-            FontFamily = new("Cascadia Mono, Consolas"), Padding = new(4),
-            HorizontalScrollBarVisibility = ScrollBarVisibility.Auto, VerticalScrollBarVisibility = ScrollBarVisibility.Auto
+            IsReadOnly = true,
+            ShowLineNumbers = true,
+            WordWrap = false,
+            FontFamily = new("Cascadia Mono, Consolas"),
+            Padding = new(4),
+            HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto
         };
         editor.SetResourceReference(TextEditor.FontSizeProperty, "WorkbenchFontSize");
         editor.SetResourceReference(BackgroundProperty, "EditorSurface");
@@ -229,7 +263,10 @@ internal sealed class CodeComparisonView : Grid
     private static Grid Pane(string title, string color, TextEditor editor)
     {
         var grid = new Grid();
-        grid.RowDefinitions.Add(new() { Height = GridLength.Auto });
+        grid.RowDefinitions.Add(new()
+        {
+            Height = GridLength.Auto
+        });
         grid.RowDefinitions.Add(new());
         var label = new TextBlock { Text = title, TextWrapping = TextWrapping.Wrap, Margin = new(0, 0, 0, 5) };
         label.SetResourceReference(TextBlock.ForegroundProperty, color);

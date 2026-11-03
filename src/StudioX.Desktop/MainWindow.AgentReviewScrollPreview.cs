@@ -49,8 +49,13 @@ public partial class MainWindow
             {
                 if (movements.Count < 300)
                 {
-                    movements.Add(new { side = editor == before ? "before" : "after", editor.VerticalOffset,
-                        view = editor.TextArea.TextView.ScrollOffset.Y, horizontal = editor.HorizontalOffset });
+                    movements.Add(new
+                    {
+                        side = editor == before ? "before" : "after",
+                        editor.VerticalOffset,
+                        view = editor.TextArea.TextView.ScrollOffset.Y,
+                        horizontal = editor.HorizontalOffset
+                    });
                 }
             };
         }
@@ -58,12 +63,18 @@ public partial class MainWindow
             "长文件夹具保留独立新增与删除块，不能以粗略整块映射掩盖同步故障");
         await JsonStore.WriteAsync(Path.Combine(directory, "scroll-initial-layout.json"), new
         {
-            review.ActualWidth, review.ActualHeight,
+            review.ActualWidth,
+            review.ActualHeight,
             editors = new[] { before, after }.Select(editor => new
             {
-                editor.ActualWidth, editor.ActualHeight, editor.FontSize, editor.Document.LineCount,
-                ScrollViewerFor(editor).ScrollableHeight, ScrollViewerFor(editor).ScrollableWidth,
-                ScrollViewerFor(editor).ViewportHeight, ScrollViewerFor(editor).ExtentHeight
+                editor.ActualWidth,
+                editor.ActualHeight,
+                editor.FontSize,
+                editor.Document.LineCount,
+                ScrollViewerFor(editor).ScrollableHeight,
+                ScrollViewerFor(editor).ScrollableWidth,
+                ScrollViewerFor(editor).ViewportHeight,
+                ScrollViewerFor(editor).ExtentHeight
             }).ToArray()
         });
         foreach (var editor in new[] { before, after })
@@ -97,19 +108,37 @@ public partial class MainWindow
         var priorOffset = before.VerticalOffset;
         beforeViewer.LineDown();
         await SettleAsync();
-        await JsonStore.WriteAsync(Path.Combine(directory, "scroll-progress.json"), new { priorOffset,
-            actual = before.VerticalOffset, view = before.TextArea.TextView.ScrollOffset.Y, observations, movements });
+        await JsonStore.WriteAsync(Path.Combine(directory, "scroll-progress.json"), new
+        {
+            priorOffset,
+            actual = before.VerticalOffset,
+            view = before.TextArea.TextView.ScrollOffset.Y,
+            observations,
+            movements
+        });
         check(before.VerticalOffset > priorOffset, "真实 ScrollViewer 行滚动命令向下生效，布局完成后不回弹");
         CheckMapped(before, after, true, "从原文滚动后，结果侧按实际变化位置同步");
 
         foreach (var editor in new[] { before, after })
         {
-            if (editor == before) { editor.ScrollToEnd(); }
-            else { editor.ScrollToVerticalOffset(double.MaxValue); }
+            if (editor == before)
+            {
+                editor.ScrollToEnd();
+            }
+            else
+            {
+                editor.ScrollToVerticalOffset(double.MaxValue);
+            }
             await SettleAsync();
             var scroll = ScrollViewerFor(editor);
             await JsonStore.WriteAsync(Path.Combine(directory, editor == before ? "scroll-before-end.json" : "scroll-after-end.json"),
-                new { editor.VerticalOffset, scroll.ScrollableHeight, view = editor.TextArea.TextView.ScrollOffset.Y, movements });
+                new
+                {
+                    editor.VerticalOffset,
+                    scroll.ScrollableHeight,
+                    view = editor.TextArea.TextView.ScrollOffset.Y,
+                    movements
+                });
             check(Math.Abs(editor.VerticalOffset - scroll.ScrollableHeight) < 1,
                 "两侧均能拖动或翻页至真实文件末尾");
             var endOffset = editor.VerticalOffset;
@@ -128,16 +157,28 @@ public partial class MainWindow
         var retainedHorizontal = after.HorizontalOffset;
         review.Refresh("同一任务的状态更新", "仅状态变化，不重定位正文", [plan]);
         await SettleAsync();
-        await JsonStore.WriteAsync(Path.Combine(directory, "scroll-refresh.json"), new { retainedBefore, retainedAfter,
-            retainedHorizontal, before = before.VerticalOffset, after = after.VerticalOffset, horizontal = after.HorizontalOffset });
+        await JsonStore.WriteAsync(Path.Combine(directory, "scroll-refresh.json"), new
+        {
+            retainedBefore,
+            retainedAfter,
+            retainedHorizontal,
+            before = before.VerticalOffset,
+            after = after.VerticalOffset,
+            horizontal = after.HorizontalOffset
+        });
         check(Math.Abs(before.VerticalOffset - retainedBefore) < 1 && Math.Abs(after.VerticalOffset - retainedAfter) < 1 &&
             Math.Abs(after.HorizontalOffset - retainedHorizontal) < 1,
             "同一计划状态刷新保留两侧纵向和横向浏览位置");
 
         var custom = ThemeService.Dark with
         {
-            Id = "studiox.scroll-custom", DisplayName = "Scroll custom",
-            Colors = new(ThemeService.Dark.Colors) { ["Accent"] = "#B8E986", ["OnAccent"] = "#163020" }
+            Id = "studiox.scroll-custom",
+            DisplayName = "Scroll custom",
+            Colors = new(ThemeService.Dark.Colors)
+            {
+                ["Accent"] = "#B8E986",
+                ["OnAccent"] = "#163020"
+            }
         };
         foreach (var theme in new[] { ThemeService.Dark, ThemeService.Light, custom })
         {
@@ -172,8 +213,11 @@ public partial class MainWindow
         Render(this, Path.Combine(directory, "scroll-stacked-large.png"));
         await JsonStore.WriteAsync(Path.Combine(directory, "scroll-observations.json"), new
         {
-            hardware = false, paidApi = false, originalLines = before.Document.LineCount,
-            resultLines = after.Document.LineCount, observations
+            hardware = false,
+            paidApi = false,
+            originalLines = before.Document.LineCount,
+            resultLines = after.Document.LineCount,
+            observations
         });
 
         async Task SettleAsync()
@@ -192,8 +236,14 @@ public partial class MainWindow
             editor.ScrollToVerticalOffset(requested);
             await SettleAsync();
             var expected = Math.Min(requested, ScrollViewerFor(editor).ScrollableHeight);
-            observations.Add(new { description, requested = expected, actual = editor.VerticalOffset,
-                before = before.VerticalOffset, after = after.VerticalOffset });
+            observations.Add(new
+            {
+                description,
+                requested = expected,
+                actual = editor.VerticalOffset,
+                before = before.VerticalOffset,
+                after = after.VerticalOffset
+            });
             check(Math.Abs(editor.VerticalOffset - expected) <= editor.TextArea.TextView.DefaultLineHeight,
                 description);
             CheckMapped(editor, editor == before ? after : before, editor == before, description + "：另一侧位置同步");

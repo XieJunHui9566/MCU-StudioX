@@ -28,7 +28,10 @@ public static class StcUsbHardwareOptions
 
     internal static void Apply(Span<byte> command, StcHardwareOptions? hardware, bool enabled)
     {
-        if (!enabled || hardware is null) { return; }
+        if (!enabled || hardware is null)
+        {
+            return;
+        }
         hardware.Validate("STC8H8K64U", true, StcDownloadMode.NativeUsb);
         foreach (var (id, value) in hardware.Values())
         {

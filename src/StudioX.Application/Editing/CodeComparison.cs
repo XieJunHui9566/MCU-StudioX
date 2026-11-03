@@ -127,8 +127,16 @@ public sealed record CodeComparison(IReadOnlyList<CodeChangeRange> Changes, bool
                 endB--;
             }
             // UTF-16 的代理对必须作为整体标记，不能把一半字符当作差异边界。
-            if (a > 0 && a < before.Length && char.IsLowSurrogate(before[a])) { a--; b--; }
-            if (endA < before.Length && endA > a && char.IsLowSurrogate(before[endA])) { endA++; endB++; }
+            if (a > 0 && a < before.Length && char.IsLowSurrogate(before[a]))
+            {
+                a--;
+                b--;
+            }
+            if (endA < before.Length && endA > a && char.IsLowSurrogate(before[endA]))
+            {
+                endA++;
+                endB++;
+            }
             return new(a, endA - a, b, endB - b);
         }
     }

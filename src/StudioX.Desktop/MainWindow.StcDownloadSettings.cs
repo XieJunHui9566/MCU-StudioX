@@ -12,7 +12,10 @@ public partial class MainWindow
 
     private void ConfigureStcDownloadPage()
     {
-        if (StcDownloadTab is null) { return; }
+        if (StcDownloadTab is null)
+        {
+            return;
+        }
         StcDownloadTab.Visibility = Visibility.Collapsed;
         StcDownloadTarget.Text = currentProjectManifest?.DeviceId ?? "";
         StcDownloadPageStatus.Text = "";
@@ -25,8 +28,14 @@ public partial class MainWindow
 
     private static void MoveSettingsSection(FrameworkElement element, Panel destination)
     {
-        if (element.Parent == destination) { return; }
-        if (element.Parent is Panel previous) { previous.Children.Remove(element); }
+        if (element.Parent == destination)
+        {
+            return;
+        }
+        if (element.Parent is Panel previous)
+        {
+            previous.Children.Remove(element);
+        }
         destination.Children.Add(element);
     }
 
@@ -37,7 +46,10 @@ public partial class MainWindow
             var settings = await services.Builds.LoadSettingsAsync(root, token);
             var limit = await services.Builds.ReadStcCodeRomLimitAsync(root, token);
             var ramLimits = await ReadStcRamLimitsForUiAsync(root, token);
-            if (root != projectDirectory || closing) { return; }
+            if (root != projectDirectory || closing)
+            {
+                return;
+            }
             stcCodeRomLimit = limit;
             stcRamLimits = ramLimits;
             ApplyBuildSettings(settings);
@@ -45,7 +57,10 @@ public partial class MainWindow
         if (IsMx251Project && loadedMx251Settings is null)
         {
             var settings = await services.Mx251Settings.ReadAsync(root, token);
-            if (root != projectDirectory || closing) { return; }
+            if (root != projectDirectory || closing)
+            {
+                return;
+            }
             ApplyMx251Settings(settings);
         }
         if (IsStcSdccProject && loadedStcIspSettings is null)
@@ -57,7 +72,10 @@ public partial class MainWindow
             await LoadMx251IspAsync(root, projectDetailsRevision);
         }
         token.ThrowIfCancellationRequested();
-        if (root == projectDirectory && !closing) { FocusStcSettings(); }
+        if (root == projectDirectory && !closing)
+        {
+            FocusStcSettings();
+        }
     }
 
     private void ApplyStcHardwareSettings(StcIspSettings settings)
@@ -73,7 +91,8 @@ public partial class MainWindow
             var picker = new ComboBox
             {
                 ItemsSource = new[] { new StcHardwareValue("", "保留芯片当前值") }.Concat(field.Values).ToArray(),
-                DisplayMemberPath = nameof(StcHardwareValue.Label), SelectedValuePath = nameof(StcHardwareValue.Value),
+                DisplayMemberPath = nameof(StcHardwareValue.Label),
+                SelectedValuePath = nameof(StcHardwareValue.Value),
                 MinHeight = 32
             };
             System.Windows.Automation.AutomationProperties.SetName(picker, field.Label);
@@ -95,14 +114,20 @@ public partial class MainWindow
 
     private void StcHardware_Changed(object sender, RoutedEventArgs e)
     {
-        if (applyingStcIsp || StcHardwareFields is null) { return; }
+        if (applyingStcIsp || StcHardwareFields is null)
+        {
+            return;
+        }
         UpdateStcHardwareControls();
         UpdateStcIspDirtyStatus();
     }
 
     private void UpdateStcHardwareControls()
     {
-        if (StcHardwareCard is null) { return; }
+        if (StcHardwareCard is null)
+        {
+            return;
+        }
         var usb = StcDownloadModePicker.SelectedValue is StcDownloadMode.NativeUsb;
         var writable = IsStcSdccProject && stcHardwarePickers.Count > 0 && !projectActionsBusy && !services.Debugger.IsActive;
         StcModifyHardware.IsEnabled = writable;
@@ -127,24 +152,48 @@ public partial class MainWindow
 
     private async void SaveStcDownloadPage_Click(object sender, RoutedEventArgs e) => await RunAsync(async token =>
     {
-        if (IsMx251Project) { await SaveMx251IspSettingsAsync(token); }
-        else { await SaveStcIspSettingsAsync(token); }
+        if (IsMx251Project)
+        {
+            await SaveMx251IspSettingsAsync(token);
+        }
+        else
+        {
+            await SaveStcIspSettingsAsync(token);
+        }
         StcDownloadPageStatus.Text = IsMx251Project ? Mx251IspStatus.Text : StcIspStatus.Text;
     });
 
     private void StcDownloadSection_Click(object sender, RoutedEventArgs e)
     {
         var target = (sender as Button)?.Tag as string;
-        if (target == "hardware") { StcHardwareCard.BringIntoView(); }
-        else if (target == "debug") { StcBuildExtrasHost.BringIntoView(); }
-        else if (IsMx251Project) { Mx251IspPanel.BringIntoView(); }
-        else { StcIspPanel.BringIntoView(); }
+        if (target == "hardware")
+        {
+            StcHardwareCard.BringIntoView();
+        }
+        else if (target == "debug")
+        {
+            StcBuildExtrasHost.BringIntoView();
+        }
+        else if (IsMx251Project)
+        {
+            Mx251IspPanel.BringIntoView();
+        }
+        else
+        {
+            StcIspPanel.BringIntoView();
+        }
     }
 
     private void ResetStcHardware_Click(object sender, RoutedEventArgs e)
     {
-        if (projectActionsBusy || services.Debugger.IsActive) { return; }
-        foreach (var picker in stcHardwarePickers.Values) { picker.SelectedValue = ""; }
+        if (projectActionsBusy || services.Debugger.IsActive)
+        {
+            return;
+        }
+        foreach (var picker in stcHardwarePickers.Values)
+        {
+            picker.SelectedValue = "";
+        }
         StcModifyHardware.IsChecked = false;
         UpdateStcIspDirtyStatus();
     }
@@ -162,8 +211,14 @@ public partial class MainWindow
             {
                 BuildOptimizationPicker.BringIntoView();
             }
-            else { SdccMemorySettingsPanel.BringIntoView(); }
+            else
+            {
+                SdccMemorySettingsPanel.BringIntoView();
+            }
         }
-        else { FocusStcSettings(); }
+        else
+        {
+            FocusStcSettings();
+        }
     }
 }

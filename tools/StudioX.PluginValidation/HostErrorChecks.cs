@@ -44,7 +44,9 @@ internal static class HostErrorChecks
             "rejected MCP host operation leaves source unchanged and publishes no successful operation event");
         await checks.RejectAsync(async () =>
         {
-            _ = await broker.CallAsync("validation.structured-errors", "validation_missing_tool", JsonSerializer.SerializeToElement(new { }));
+            _ = await broker.CallAsync("validation.structured-errors", "validation_missing_tool", JsonSerializer.SerializeToElement(new
+            {
+            }));
         }, "unavailable host tool keeps its stable plugin error Code", "PLUGIN_HOST_TOOL");
     }
 }

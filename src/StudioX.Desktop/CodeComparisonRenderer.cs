@@ -27,7 +27,14 @@ internal sealed class CodeComparisonRenderer : IBackgroundRenderer
         while (start < end)
         {
             var middle = start + (end - start) / 2;
-            if (Ranges[middle].EndOffset < first) { start = middle + 1; } else { end = middle; }
+            if (Ranges[middle].EndOffset < first)
+            {
+                start = middle + 1;
+            }
+            else
+            {
+                end = middle;
+            }
         }
         var visible = new List<TextSegment>();
         for (var i = start; i < Ranges.Count && Ranges[i].StartOffset <= last; i++)

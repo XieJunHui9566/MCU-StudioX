@@ -78,14 +78,19 @@ public partial class MainWindow
     }
     private void UpdateMx251ConnectionMode()
     {
-        if (Mx251BridgePanel is null || Mx251SerialPanel is null || Mx251ConnectionHelp is null) return;
+        if (Mx251BridgePanel is null || Mx251SerialPanel is null || Mx251ConnectionHelp is null)
+        {
+            return;
+        }
         var mode = Mx251DownloadModePicker.SelectedValue is Mx251DownloadMode selected ? selected : Mx251DownloadMode.NativeUsb;
         Mx251BridgePanel.Visibility = mode == Mx251DownloadMode.UsbBridge ? Visibility.Visible : Visibility.Collapsed;
         Mx251SerialPanel.Visibility = mode == Mx251DownloadMode.Serial ? Visibility.Visible : Visibility.Collapsed;
-        Mx251ConnectionHelp.Text = mode switch {
+        Mx251ConnectionHelp.Text = mode switch
+        {
             Mx251DownloadMode.NativeUsb => "连接 AI8051U 芯片 USB，进入硬件 ISP 模式后自动发现，无需 COM 或固定 USB 插口。",
             Mx251DownloadMode.Serial => "连接芯片 UART 下载接口，选择对应 COM；由应用服务独占串口。",
-            _ => "连接底板 USB1 的 AI8H2K12G 下载桥，可自动进入下载并校准 IRC。" };
+            _ => "连接底板 USB1 的 AI8H2K12G 下载桥，可自动进入下载并校准 IRC。"
+        };
     }
     private void Mx251DownloadMode_Changed(object sender, SelectionChangedEventArgs e)
     {
@@ -146,7 +151,13 @@ public partial class MainWindow
             if (draft.DownloadMode == Mx251DownloadMode.Serial && string.IsNullOrWhiteSpace(draft.SerialPort))
             {
                 var ports = await services.Mx251Downloads.ListSerialPortsAsync(token);
-                if (ports.Length == 1) draft = draft with { SerialPort = ports[0] };
+                if (ports.Length == 1)
+                {
+                    draft = draft with
+                    {
+                        SerialPort = ports[0]
+                    };
+                }
             }
             draft.Validate(requireDevice: true);
             await SaveMx251ClockAndDeviceAsync(root, draft, token);
@@ -179,7 +190,9 @@ public partial class MainWindow
         {
             selected = selected with
             {
-                IrcHz = draft.IrcHz, DownloadMode = draft.DownloadMode, SerialPort = draft.SerialPort
+                IrcHz = draft.IrcHz,
+                DownloadMode = draft.DownloadMode,
+                SerialPort = draft.SerialPort
             };
         }
         await SaveMx251ClockAndDeviceAsync(root, selected, token);

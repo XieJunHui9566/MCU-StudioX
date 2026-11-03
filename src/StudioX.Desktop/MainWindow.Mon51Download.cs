@@ -28,8 +28,14 @@ public partial class MainWindow
             {
                 if (projectDirectory == root && (PackagesTab.IsSelected || StcDownloadTab.IsSelected))
                 {
-                    if (StcDownloadTab.IsSelected) { StcBuildSettingsStatus.BringIntoView(); }
-                    else { BuildSettingsStatus.BringIntoView(); }
+                    if (StcDownloadTab.IsSelected)
+                    {
+                        StcBuildSettingsStatus.BringIntoView();
+                    }
+                    else
+                    {
+                        BuildSettingsStatus.BringIntoView();
+                    }
                 }
             }, DispatcherPriority.Loaded);
             return;
