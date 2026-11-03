@@ -6,7 +6,7 @@
 
 使用方式是「安装 IDE → 选择器件包与开发环境组件 → 开发」。轻量版按工程需要获取开发环境组件，保留内置 Git 和语言服务。`.mcupack` 保存器件信息、启动/链接文件、厂商源码与工程模板。**当前为 0.2.6 LTS 维护版，已接通编辑、构建下载、源码与反汇编调试、FreeRTOS 状态、串口终端、协议解析、串口绘图和 LVGL PC 窗口预览。**
 
-当前源码另包含 PIC16F877A/PICkit3 下载和 AI 助手重做；源码与现有安装包可能不同。本轮只更新源码，检查范围见 [源码风格与安全检查](docs/SOURCE_AUDIT_20261030.md)，AI 用法与 DeepSeek 输入优化见 [检查记录](docs/AI_ASSISTANT_REDESIGN_20261030.md)。
+2026-11-03 修订提供对应源码、轻量安装版与完整安装版，集成 MX251 0.0170（测试）及 AI8051U 串口/USB 下载适配。产品版本保持 0.2.6.15。[下载本次安装包与源码](https://github.com/XieJunHui9566/MCU-StudioX/releases/tag/v0.2.6.15-update-20261103)，详见 [本次发行说明](docs/RELEASE-0.2.6.15-20261103.md)。AI 用法与 DeepSeek 输入优化见 [检查记录](docs/AI_ASSISTANT_REDESIGN_20261030.md)。
 
 ## 0.2.6 LTS · 可靠性与安全维护
 
