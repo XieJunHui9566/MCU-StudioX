@@ -2,9 +2,9 @@ namespace StudioX.Engine;
 
 using System.Security.Cryptography;
 using System.Text;
+using StudioX.Engine.StcUsb;
 using StudioX.Foundation;
 using StudioX.Packages;
-using StudioX.Engine.StcUsb;
 
 /// <summary>外部 stcgal 1.10 的受控串口下载；不把本机 Python 路径写进工程或开发环境组件。</summary>
 public sealed partial class StcIspService(ToolsetCatalog catalog, string runtimeDirectory, string dataDirectory,

@@ -2,8 +2,8 @@ namespace StudioX.Engine;
 
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using StudioX.Foundation;
 using StudioX.Engine.StcUsb;
+using StudioX.Foundation;
 
 /// <summary>空值表示保留本次握手读到的配置；不将另一颗芯片的默认 MSR 当作本机值。</summary>
 [JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
