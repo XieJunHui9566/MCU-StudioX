@@ -265,26 +265,34 @@ public sealed class GdbProcessTransport : IGdbMiTransport
         {
             throw new InvalidOperationException("Duplicate MI token.");
         }
+        // 低速 SWD 的大映像校验允许更长时间；排队、管道发送和应答共用同一个截止时间。
+        var timeout = command.Contains("monitor verify_image ", StringComparison.Ordinal) ? TimeSpan.FromMinutes(2) : TimeSpan.FromSeconds(20);
+        using var deadline = CancellationTokenSource.CreateLinkedTokenSource(token);
+        deadline.CancelAfter(timeout);
         try
         {
-            await writes.WaitAsync(token);
+            await writes.WaitAsync(deadline.Token);
             try
             {
                 WriteLog("GDB > " + command);
-                await gdb.StandardInput.WriteLineAsync(command.AsMemory(), token);
-                await gdb.StandardInput.FlushAsync(token);
+                await gdb.StandardInput.WriteLineAsync(command.AsMemory(), deadline.Token);
+                await gdb.StandardInput.FlushAsync(deadline.Token);
             }
             finally { writes.Release(); }
-            // 低速 SWD 的大映像主机读回比较可能超过普通 MI 命令时间，仍保持有界且可取消。
-            var timeout = command.Contains("monitor verify_image ", StringComparison.Ordinal) ? TimeSpan.FromMinutes(2) : TimeSpan.FromSeconds(20);
-            var result = await completion.Task.WaitAsync(timeout, token);
+            var result = await completion.Task.WaitAsync(deadline.Token);
             if (command.Contains("-target-select ", StringComparison.Ordinal) && MiRecord.Parse(result).Class == "connected")
             {
                 targetConnected = true;
             }
             return result;
         }
-        catch (Exception ex) when (ex is TimeoutException or OperationCanceledException or IOException)
+        catch (OperationCanceledException ex) when (!token.IsCancellationRequested)
+        {
+            var failure = new TimeoutException("GDB 命令在排队、发送或等待应答时超时。", ex);
+            Fail(failure);
+            throw failure;
+        }
+        catch (Exception ex) when (ex is OperationCanceledException or IOException)
         {
             Fail(ex);
             throw;

@@ -53,13 +53,16 @@ public static partial class PackValidator
             {
                 throw new StudioXException("PACK_DEVICE", "MCS-51 器件需要 STC SDCC 开发环境组件，不使用 OpenOCD 或 GCC 链接脚本。");
             }
-            if (device.Architecture == "mcs251" && (device.Id != "AI8051U-34K64" || device.ToolsetId != "studiox.mx251" ||
-                device.CompilerId != "mx251-r89" || device.ToolsetVersion != "0.1.89" || device.FlashOrigin != 0xff0000 ||
-                device.FlashBytes != 65536 || device.RamOrigin != 0x10000 || device.RamBytes != 32768 ||
+            // 新 SDK 的目标与内容由 SDK 契约校验；旧 R89 仍保持原有身份与内存边界。
+            var mx251Sdk = device.CompilerId is not null && Mx251SdkCompiler().IsMatch(device.CompilerId);
+            if (device.Architecture == "mcs251" && (device.ToolsetId != "studiox.mx251" ||
+                (!mx251Sdk && (device.Id != "AI8051U-34K64" || device.CompilerId != "mx251-r89" ||
+                    device.ToolsetVersion != "0.1.89" || device.FlashOrigin != 0xff0000 || device.FlashBytes != 65536 ||
+                    device.RamOrigin != 0x10000 || device.RamBytes != 32768)) ||
                 device.LinkerScript != "" || device.OpenOcd is not null || device.Espressif is not null || device.Pic is not null ||
                 device.CpuFlags is not { Count: 0 } || device.CompileOptions is not { Count: 0 } || device.LinkOptions is not { Count: 0 }))
             {
-                throw new StudioXException("PACK_MCS251", "当前 MCS-251 仅接受 AI8051U-34K64 / R89 的明确内存和工具身份；构建选项由锁定 profile 负责。");
+                throw new StudioXException("PACK_MCS251", "MCS-251 需要明确的 MX251 SDK 或历史 R89 身份；目标、内存与构建选项由匹配的 SDK profile 核对。");
             }
             if (string.IsNullOrWhiteSpace(device.CompilerId) || device.CpuFlags is null || device.Defines is null ||
                 device.Sources is null || device.IncludeDirectories is null || device.CompileOptions is null || device.LinkOptions is null)
@@ -289,5 +292,6 @@ public static partial class PackValidator
         }
     }
     [GeneratedRegex("^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$", RegexOptions.CultureInvariant)] private static partial Regex SafeToken();
+    [GeneratedRegex(@"^mx251-v[0-9]+\.[0-9]{4}(?:LST)?$", RegexOptions.CultureInvariant)] private static partial Regex Mx251SdkCompiler();
     [GeneratedRegex("^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$", RegexOptions.CultureInvariant)] private static partial Regex ExactVersion();
 }

@@ -6,6 +6,41 @@ using StudioX.Foundation;
 using StudioX.Packages;
 using StudioX.PicValidation;
 
+if (args is ["--storage", var storageEvidence])
+{
+    await StorageChecks.RunAsync(Path.GetFullPath(storageEvidence));
+    return;
+}
+
+if (args is ["--rebuild-debug-lcd", var rebuildLcdEvidence, var rebuildLcdRuntime, var rebuildLcdProject])
+{
+    await PicHardwareDebug.RebuildAsync(Path.GetFullPath(rebuildLcdEvidence), Path.GetFullPath(rebuildLcdRuntime), Path.GetFullPath(rebuildLcdProject));
+    return;
+}
+
+if (args is ["--prepare-debug-lcd", var debugLcdEvidence, var debugLcdRuntime, var debugLcdPack, var debugLcdSource, var debugLcdProject])
+{
+    await PicHardwareDebug.PrepareAsync(Path.GetFullPath(debugLcdEvidence), Path.GetFullPath(debugLcdRuntime), Path.GetFullPath(debugLcdPack), Path.GetFullPath(debugLcdSource), Path.GetFullPath(debugLcdProject));
+    return;
+}
+if (args is ["--hardware-debug-approved", var debugHardwareEvidence, var debugHardwareRuntime, var debugHardwareTools, var debugHardwareProject, var debugHardwareSerial, var debugHardwareHash])
+{
+    await PicHardwareDebug.RunAsync(Path.GetFullPath(debugHardwareEvidence), Path.GetFullPath(debugHardwareRuntime), Path.GetFullPath(debugHardwareTools), Path.GetFullPath(debugHardwareProject), debugHardwareSerial, debugHardwareHash);
+    return;
+}
+
+if (args is ["--mdb-sim", var mdbEvidence, var mdbRuntime, var mdbDebugRuntime, var mdbPack])
+{
+    await MdbChecks.RunAsync(Path.GetFullPath(mdbEvidence), Path.GetFullPath(mdbRuntime), Path.GetFullPath(mdbDebugRuntime), Path.GetFullPath(mdbPack));
+    return;
+}
+
+if (args is ["--cmake", var cmakeEvidence, var cmakeRuntime, var cmakePack])
+{
+    await CMakeChecks.RunAsync(Path.GetFullPath(cmakeEvidence), Path.GetFullPath(cmakeRuntime), Path.GetFullPath(cmakePack));
+    return;
+}
+
 if (args is ["--build-lcd", var lcdBuildEvidence, var lcdBuildRuntime, var lcdBuildProject])
 {
     await LcdProject.BuildAsync(Path.GetFullPath(lcdBuildEvidence), Path.GetFullPath(lcdBuildRuntime), Path.GetFullPath(lcdBuildProject));
@@ -21,15 +56,24 @@ if (args is ["--download-lcd", var lcdDownloadEvidence, var lcdDownloadRuntime, 
     await LcdProject.DownloadAsync(Path.GetFullPath(lcdDownloadEvidence), Path.GetFullPath(lcdDownloadRuntime), Path.GetFullPath(lcdDownloadProject), lcdDownloadSha);
     return;
 }
-if (args is ["--hardware-approved", var hardwareEvidence, var hardwareRuntime, var hardwareProject, var hardwareSerial, var hardwareSha, var hardwareOriginal])
+if (args.Length > 0 && args[0] == "--hardware-approved")
 {
-    await HardwareDownload.RunAsync(Path.GetFullPath(hardwareEvidence), Path.GetFullPath(hardwareRuntime), Path.GetFullPath(hardwareProject), hardwareSerial, hardwareSha, Path.GetFullPath(hardwareOriginal));
+    throw new StudioXException("PIC_LEGACY_VALIDATION_DISABLED",
+        "旧备份恢复实板验收入口已停用；普通下载现在不备份原固件、直接写入。请使用针对当前流程明确准备和授权的新验收，不沿用旧 --hardware-approved 参数。");
+}
+if (args.Contains("-jar"))
+{
+    await DirectDownloadChecks.FixtureAsync(args);
     return;
 }
-if (args.Contains("-jar")) { await DownloadValidation.FixtureAsync(args); return; }
 if (args is ["--download", var downloadEvidence, var downloadRuntime, var downloadArchive])
 {
-    await DownloadValidation.RunAsync(Path.GetFullPath(downloadEvidence), Path.GetFullPath(downloadRuntime), Path.GetFullPath(downloadArchive));
+    await DirectDownloadChecks.RunAsync(Path.GetFullPath(downloadEvidence), Path.GetFullPath(downloadRuntime), Path.GetFullPath(downloadArchive), enumerateHardware: true);
+    return;
+}
+if (args is ["--download-offline", var offlineEvidence, var offlineRuntime, var offlineArchive])
+{
+    await DirectDownloadChecks.RunAsync(Path.GetFullPath(offlineEvidence), Path.GetFullPath(offlineRuntime), Path.GetFullPath(offlineArchive));
     return;
 }
 if (args is ["--catalog-matrix", var matrixEvidence, var matrixRuntime, var matrixArchives])
@@ -94,8 +138,9 @@ foreach (var template in device.Templates)
 {
     var root = Path.Combine(evidence, "中文 projects with spaces", template.Id);
     var project = await services.Projects.CreateAsync(pack, device.Id, template.Id, "PicExample", root);
+    Check(!(await File.ReadAllTextAsync(Path.Combine(root, "src/main.c"))).Contains("for (;;)", StringComparison.Ordinal), template.Id + " new entry uses while (1) even from a previously installed pack");
     Check(project.Kind == ProjectKind.Pic && project.Pic == device.Pic && project.PackContentHash == pack.ContentHash, template.Id + " records chip, component and pack identity");
-    Check(!File.Exists(Path.Combine(root, "CMakeLists.txt")) && Directory.Exists(Path.Combine(root, ".git")), template.Id + " creates XC8 C project and bundled Git without CMake");
+    Check(File.Exists(Path.Combine(root, "CMakeLists.txt")) && Directory.Exists(Path.Combine(root, ".git")), template.Id + " creates CMake / Ninja XC8 project and bundled Git");
     var health = await services.ProjectHealth.InspectAsync(root);
     Check(health.CanBuild && health.Errors == 0 && !health.Checks.Any(item => item.Code == "HEALTH_CMAKE"), "PIC health checks the correct independent compiler");
     Check(health.Checks.Any(item => item.Code == "HEALTH_PROJECT_SCOPE" && item.Detail == ProjectCapabilities.For(project).Scope), "PIC preflight uses common support scope");
@@ -118,7 +163,7 @@ foreach (var template in device.Templates)
     projects[template.Id] = root;
 }
 var basic = projects["xc8-basic"];
-await Reject("PIC_CONFIGURE", () => services.Builds.ConfigureAsync(basic));
+Check((await services.Builds.ConfigureAsync(basic)).Success, "PIC CMake configure-only succeeds");
 await Reject("PIC_BUILD_SETTINGS", () => services.Builds.SaveSettingsAsync(basic, new ProjectBuildSettings()));
 var sourcePath = Path.Combine(basic, "src/main.c");
 var original = await File.ReadAllTextAsync(sourcePath);
@@ -131,7 +176,7 @@ await File.WriteAllTextAsync(sourcePath, original);
 var changed = false;
 await Reject("PIC_BUILD_CHANGED", () => services.Builds.BuildAsync(basic, output: new InlineProgress(text =>
 {
-    if (!changed && text.Contains("独立 XC8", StringComparison.Ordinal))
+    if (!changed && text.Contains("CMake + Ninja + XC8", StringComparison.Ordinal))
     {
         File.AppendAllText(sourcePath, "\n/* external edit during build */\n");
         changed = true;

@@ -103,7 +103,7 @@ public sealed partial class CodeIntelligenceService(string runtimeDirectory, str
             }
             if (project.Kind == ProjectKind.Pic)
             {
-                picProfile = await PicAnalysisProfile.ReadAsync(runtimeDirectory, dataDirectory, project, token).ConfigureAwait(false);
+                picProfile = await PicAnalysisProfile.ReadAsync(runtimeDirectory, dataDirectory, projectRoot, project, token).ConfigureAwait(false);
                 flags = [.. picProfile.Flags, "-I" + Path.Combine(projectRoot, "include"), "-I" + Path.Combine(projectRoot, "src")];
                 StatusDescription = "PIC 通用 C 与官方寄存器提示已就绪；位类型、地址及目标 ABI 以 XC8 编译为准。";
             }
@@ -135,6 +135,26 @@ public sealed partial class CodeIntelligenceService(string runtimeDirectory, str
                 var device = TemplateResolver.Resolve(pack.Devices.Single(d => d.Id == project.DeviceId), project.TemplateId, project.Logic is not null);
                 // 已配置工程的库、宏和源目录来自实际 CMake，不能重新套用新建模板的 SDK。
                 flags = CreateFlags(device, templateConfiguration: !nativeDatabase);
+                if (project.ToolsetId == "stc.sdcc")
+                {
+                    var settings = await ProjectBuildSettings.ReadAsync(projectRoot, token).ConfigureAwait(false);
+                    settings.ValidateFor(project);
+                    var model = settings.MemoryModel switch
+                    {
+                        SdccMemoryModel.Small => "SMALL",
+                        SdccMemoryModel.Medium => "MEDIUM",
+                        SdccMemoryModel.Large => "LARGE",
+                        _ => device.CpuFlags.Concat(device.CompileOptions).LastOrDefault(flag =>
+                            flag is "--model-small" or "--model-medium" or "--model-large") switch
+                        {
+                            "--model-medium" => "MEDIUM",
+                            "--model-large" => "LARGE",
+                            _ => "SMALL"
+                        }
+                    };
+                    // 仅为条件编译选择与保存模型一致的分支；clangd 仍不模拟 MCS-51 ABI。
+                    flags = [.. flags, "-D__SDCC_MODEL_" + model + "=1"];
+                }
                 if (project.ToolsetId == Mx251Profile.ToolsetId && await Mx251ClockConfiguration.ReadAsync(projectRoot, token) is { } hz)
                 {
                     flags = [.. flags, "-D" + Mx251ClockConfiguration.Define + "=" + hz,
@@ -168,6 +188,14 @@ public sealed partial class CodeIntelligenceService(string runtimeDirectory, str
                     compilerHeaders = headers;
                     flags = [.. flags, "-isystem", headers.Replace('\\', '/')];
                 }
+            }
+            else if (Mx251SdkProfile.Matches(project))
+            {
+                // SDK 自己声明标准头文件根目录；不能沿用 R89 的布局或枚举新版身份。
+                var tools = await new ToolsetCatalog(Path.Combine(runtimeDirectory, "toolsets"), dataDirectory)
+                    .ResolveAsync(project.ToolsetId, project.ToolsetVersion, project.CompilerId, token).ConfigureAwait(false);
+                compilerHeaders = PathBoundary.Resolve(tools.ResourceDirectory("sdcc"), "include");
+                flags = [.. flags, "-nostdinc", "-isystem", compilerHeaders.Replace('\\', '/')];
             }
             else if (project is { ToolsetId: "stc.sdcc", CompilerId: "sdcc-4.5.0-15242" } or { ToolsetId: Mx251Profile.ToolsetId, CompilerId: Mx251Profile.CompilerId })
             {
@@ -329,7 +357,9 @@ public sealed partial class CodeIntelligenceService(string runtimeDirectory, str
             "riscv" => device.CpuFlags.Any(f => f.StartsWith("-march=rv64", StringComparison.Ordinal)) ? "riscv64-unknown-elf" : "riscv32-unknown-elf",
             "arm" or "cortex-m" => "arm-none-eabi",
             // clangd 没有 MCS-51 目标；在此只提供通用 C 编辑索引，构建仍由 SDCC 执行。
-            "mcs51" or "mcs251" => null,
+            "mcs51" => null,
+            // 通用 32 位无操作系统解析环境，避免 Windows 隐式 size_t 与 SDK 冲突；不模拟 251 ABI。
+            "mcs251" => "i386-unknown-none",
             _ => throw new StudioXException("LANGUAGE_TARGET", "当前代码提示服务尚未支持此器件架构：" + device.Architecture)
         };
         // 只传递影响 C/C++ 解析的参数；不执行编译器，也不把链接/下载参数交给语言服务。
@@ -344,7 +374,7 @@ public sealed partial class CodeIntelligenceService(string runtimeDirectory, str
             result.AddRange([
                 "-D__SDCC_" + device.Architecture + "=1", "-D__sdcccall(x)=",
                 "-D__sfr=volatile unsigned char", "-D__sfr16=volatile unsigned short", "-D__sbit=volatile unsigned char",
-                "-D__bit=unsigned char", "-D__at(x)=", "-D__data=", "-D__idata=", "-D__pdata=", "-D__xdata=", "-D__code=",
+                "-D__bit=unsigned char", "-D__at(x)=", "-D__data=", "-D__idata=", "-D__pdata=", "-D__xdata=", "-D__code=", "-D__far=",
                 "-D__interrupt(x)=", "-D__using(x)=", "-D__reentrant=", "-D__critical=", "-D__naked=", "-D__banked=", "-D__nonbanked="
             ]);
         }

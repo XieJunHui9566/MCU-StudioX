@@ -16,7 +16,7 @@ void main(void)
     /* 配置好中断源及服务程序之前保持总中断关闭。 */
     EA = 0;
     gpio_init();
-    for (;;)
+    while (1)
     {
         app_input = P2 & 0x01U;
         ++app_heartbeat;

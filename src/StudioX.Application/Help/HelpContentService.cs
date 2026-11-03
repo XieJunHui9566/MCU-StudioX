@@ -36,6 +36,10 @@ public sealed class HelpContentService
         {
             return "build-comparison";
         }
+        if (Has("PLUGIN_"))
+        {
+            return "plugin-api-development";
+        }
         if (Has("FAULT_", "HardFault", "Core Dump"))
         {
             return "fault-analysis";

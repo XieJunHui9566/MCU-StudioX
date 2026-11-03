@@ -82,7 +82,11 @@ public sealed partial class ProjectHealthService(ToolsetCatalog catalog, BuildSe
                 {
                     throw new StudioXException("PIC_ENTRY", "src/ 下缺少 C 源码，请恢复入口或在 src/ 下组织 C 源码。");
                 }
-                return Task.FromResult("独立 XC8 编译；不使用 CMake，不启动 MPLAB IDE。");
+                if (!File.Exists(PathBoundary.Resolve(root, "CMakeLists.txt")))
+                {
+                    throw new StudioXException("PIC_CMAKE_REQUIRED", "旧版直接 XC8 工程已停止兼容，请创建 CMake + Ninja PIC 工程后导入源码。");
+                }
+                return Task.FromResult("CMake + Ninja 管理工程输入，XC8 编译链接。");
             });
             await CheckAsync("HEALTH_PIC_TOOLS", "XC8 4.00 / PIC16Fxxx DFP 1.9.176", "tool-environment", HealthAction.None, async () =>
             {
@@ -101,6 +105,8 @@ public sealed partial class ProjectHealthService(ToolsetCatalog catalog, BuildSe
             {
                 await InspectToolsAsync(StudioX.Engine.Pic.PicDownloadSettings.ToolsetId, "6.20.0", StudioX.Engine.Pic.PicDownloadSettings.CompilerId, null, deep, checks, progress, token);
             }
+            await InspectToolsAsync(StudioX.Engine.Pic.PicCMake.ToolsetId, StudioX.Engine.Pic.PicCMake.Version,
+                StudioX.Engine.Pic.PicCMake.CompilerId, null, deep, checks, progress, token);
             return Report();
         }
         if (project.Kind == ProjectKind.Arduino)

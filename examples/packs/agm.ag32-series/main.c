@@ -19,7 +19,7 @@ int main(void)
     SYS->CLK_CNTL &= ~(SYS_CLK_PLL_ON | SYS_CLK_HSE_ON);
     app_device_id = SYS_GetDeviceID();
 
-    for (;;)
+    while (1)
     {
         ++app_heartbeat;
     }

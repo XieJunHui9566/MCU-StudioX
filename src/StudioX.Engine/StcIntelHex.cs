@@ -2,7 +2,7 @@ namespace StudioX.Engine;
 
 using StudioX.Foundation;
 
-internal sealed record StcIntelHexInfo(int DataBytes, int HighestAddress);
+internal sealed record StcIntelHexInfo(int DataBytes, int HighestAddress, byte[] Binary);
 
 /// <summary>只接受 STC 8 位工程的 0 基址 Intel HEX；防止 stcgal 将越界数据写入 EEPROM 或静默截断。</summary>
 internal static class StcIntelHex
@@ -17,6 +17,7 @@ internal static class StcIntelHex
         var max = -1;
         var count = 0;
         var covered = new bool[checked((int)usableFlashBytes)];
+        var binary = Enumerable.Repeat((byte)0xff, checked((int)usableFlashBytes)).ToArray();
         var eof = false;
         var firstByte = false;
         var lineNumber = 0;
@@ -60,6 +61,7 @@ internal static class StcIntelHex
                             throw Invalid("Intel HEX 代码记录相互重叠，下载结果不确定。");
                         }
                         covered[offset] = true;
+                        binary[offset] = record[4 + offset - address];
                     }
                     count += length;
                     max = Math.Max(max, address + length - 1);
@@ -91,7 +93,7 @@ internal static class StcIntelHex
         {
             throw Invalid("固件缺少结束记录、代码数据或 0x0000 程序入口。");
         }
-        return new(count, max);
+        return new(count, max, binary[..(max + 1)]);
     }
 
     private static StudioXException Invalid(string detail) => new("STC_ISP_IMAGE", detail);

@@ -5,7 +5,8 @@ using StudioX.Foundation;
 
 internal sealed record BuiltImage(string RelativePath, string Format, string Sha256, string? SymbolsPath = null, string? SymbolsSha256 = null);
 internal sealed record BuildReceipt(ProjectManifest Project, string ToolFingerprint, BuiltImage[] Images, string? SourceStamp = null,
-    EspressifFlashLayout? EspressifLayout = null, string[]? CompiledSources = null, IReadOnlyDictionary<string, string>? AnalysisInputs = null)
+    EspressifFlashLayout? EspressifLayout = null, string[]? CompiledSources = null, IReadOnlyDictionary<string, string>? AnalysisInputs = null,
+    BuildAssemblyFile[]? AssemblyFiles = null)
 {
     internal const string RelativePath = ".build/studiox-build-receipt.json";
     internal static async Task WriteAsync(string root, ProjectManifest project, string fingerprint, string[] images, CancellationToken token, string? sourceStamp = null,
@@ -40,7 +41,9 @@ internal sealed record BuildReceipt(ProjectManifest Project, string ToolFingerpr
                 analysis.Add(relative, Convert.ToHexString(await SHA256.HashDataAsync(stream, token)));
             }
         }
-        await JsonStore.WriteAsync(PathBoundary.Resolve(root, RelativePath), new BuildReceipt(project, fingerprint, entries.ToArray(), sourceStamp, CompiledSources: sources, AnalysisInputs: analysis), token);
+        var assembly = await BuildAssemblyService.CaptureAsync(root, project, token);
+        await JsonStore.WriteAsync(PathBoundary.Resolve(root, RelativePath), new BuildReceipt(project, fingerprint, entries.ToArray(), sourceStamp,
+            CompiledSources: sources, AnalysisInputs: analysis, AssemblyFiles: assembly), token);
     }
 
     internal static async Task WriteEspressifAsync(string root, ProjectManifest project, string fingerprint,

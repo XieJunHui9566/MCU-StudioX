@@ -6,7 +6,7 @@ void StudioX_Panic(uint32_t code)
 {
     app_error_code = code;
     __disable_irq();
-    for (;;)
+    while (1)
     {
         __NOP();
     }

@@ -53,7 +53,7 @@ sha256 覆盖清单之外的完整工具树；清单同时受工程的版本锁�
 
 ## 插件和主题
 
-插件格式/API 均为 1，独立进程 `IFrameDecoder` 为首个扩展点，见示例目录。其它插件能力尚未开放。
+插件清单格式为 1；API 1 保留 `IFrameDecoder` 解码器，API 2 提供命令、声明式面板和 Agent 工具，API 3 增加设置、事件、有限语言补全及只读调试快照。API 2/3 使用自有 JSON Lines 协议版本 2，支持 .NET SDK DLL 或包内固定 EXE；完整版本、能力和文件索引规则见 [插件开发文档](PLUGINS.md)。SDK 与宿主采用公开 `PluginHostException.Code` 保留工具错误，取消仍使用取消令牌；面板事件有序且有界。安装版从“帮助 → 插件 API 文档”阅读对应离线手册。
 
 主题为格式 1 JSON：id、displayName、colors。colors 必须完整提供 Background/Surface/Panel/Border/Text/Muted/Accent/OnAccent 八个 `#RRGGBB` 颜色。主题文件不能执行 XAML。选中的主题和导入的主题保存在用户数据目录，不影响工程构建。
 

@@ -9,14 +9,27 @@ internal static class McpWorkspacePathPolicy
 
     private static readonly HashSet<string> McpSourceExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
-        ".c", ".h", ".cc", ".cpp", ".cxx", ".hpp", ".s", ".asm", ".cmake", ".ld",
-        ".v", ".vh", ".ve", ".sv", ".svh", ".py", ".pyi", ".mcuconfig"
+        ".c", ".h", ".cc", ".cpp", ".cxx", ".hpp", ".hh", ".hxx", ".ino",
+        ".s", ".asm", ".cmake", ".ld", ".lds", ".dts", ".dtsi", ".overlay",
+        ".v", ".vh", ".ve", ".sv", ".svh", ".py", ".pyw", ".pyi", ".mcuconfig"
     };
     private static readonly HashSet<string> McpExcludedDirectories = new(StringComparer.OrdinalIgnoreCase)
     {
         ".git", ".studiox", ".build", "build", "bin", "obj",
         "toolsets", "node_modules", "packages", "artifacts", "secrets", "credentials"
     };
+
+    // 模型常返回 ./file；只去掉工程根目录前缀，不折叠内部 .、..、反斜杠或绝对路径。
+    // 后续仍执行名称策略和 PathBoundary 校验；底层包与工具的严格路径契约保持不变。
+    internal static string NormalizeRelativePath(string relative)
+    {
+        ArgumentNullException.ThrowIfNull(relative);
+        if (relative.Length > 240) { return relative; }
+        var offset = 0;
+        while (relative.AsSpan(offset).StartsWith("./", StringComparison.Ordinal)) { offset += 2; }
+        var normalized = offset == 0 ? relative : relative[offset..];
+        return normalized == "." ? "" : normalized;
+    }
 
     internal static bool IsUnderDeviceDirectory(string relative) =>
         relative.Equals("device", StringComparison.OrdinalIgnoreCase) ||

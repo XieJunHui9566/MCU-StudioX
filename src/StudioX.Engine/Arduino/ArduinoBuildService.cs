@@ -31,6 +31,7 @@ public sealed class ArduinoBuildService(ToolsetCatalog catalog, string dataDirec
 
     public async Task<BuildReport> BuildAsync(string root, IProgress<string>? output = null, CancellationToken token = default)
     {
+        using var storage = ProjectBuildStorage.Acquire(root, "arduino");
         var receiptPath = PathBoundary.Resolve(root, ArduinoBuildReceipt.RelativePath);
         File.Delete(receiptPath);
         var project = await RequireAsync(root, token);
@@ -39,7 +40,8 @@ public sealed class ArduinoBuildService(ToolsetCatalog catalog, string dataDirec
         await RequireSameProjectAsync(root, project, token);
         var dependency = await CheckDependenciesAsync(root, execution, token);
         var source = await ArduinoSourceSnapshot.HashAsync(root, true, token);
-        var run = ".build/arduino/" + Guid.NewGuid().ToString("N");
+        const string run = ".build/arduino/latest";
+        _ = storage.Prepare("arduino");
         var build = PathBoundary.Resolve(root, run + "/build");
         var artifacts = PathBoundary.Resolve(root, run + "/output");
         var board = ArduinoBoard.Require(project.Arduino!.BoardId);
@@ -83,7 +85,7 @@ public sealed class ArduinoBuildService(ToolsetCatalog catalog, string dataDirec
                 }
             }
             await JsonStore.WriteAsync(receiptPath, new ArduinoBuildReceipt(1, source, execution.Tools.Fingerprint,
-                dependency.LibrariesSha256, hexRelative, await FileHashAsync(hex, token), uploadFiles), token);
+                dependency.LibrariesSha256, hexRelative, await FileHashAsync(hex, token), uploadFiles, Guid.NewGuid().ToString("N")), token);
         }
         return new(success, log, success ? Directory.GetFiles(artifacts).Order(StringComparer.Ordinal).ToArray() : [],
             logPath, result.ExitCode, result.TimedOut);
@@ -141,6 +143,7 @@ public sealed class ArduinoBuildService(ToolsetCatalog catalog, string dataDirec
     public async Task<ArduinoUploadReport> UploadApprovedAsync(string root, string port, string approvedIdentity,
         IProgress<string>? output = null, CancellationToken token = default)
     {
+        using var storage = ProjectBuildStorage.Acquire(root, "arduino");
         port = ValidatePort(port);
         var project = await RequireAsync(root, token);
         using var execution = await runtime.OpenAsync(project.Arduino!, token);
@@ -150,12 +153,13 @@ public sealed class ArduinoBuildService(ToolsetCatalog catalog, string dataDirec
         {
             throw new StudioXException("ARDUINO_UPLOAD_CHANGED", "确认后的固件发生变化，请重新检查和确认。");
         }
-        var runId = Guid.NewGuid().ToString("N");
-        var logPath = PathBoundary.Resolve(root, ".build/arduino-upload/" + runId + "/upload.log");
+        var upload = storage.Prepare("arduino-upload");
+        var logPath = Path.Combine(upload, "upload.log");
         Directory.CreateDirectory(Path.GetDirectoryName(logPath)!);
         using var log = new ArduinoUploadLog(logPath, output);
         log.Report($"Arduino 上传 · {DateTimeOffset.Now:O}（宿主时间）\n板型：{preview.Board.Fqbn}\n端口：{port}\n固件：{Path.GetFileName(preview.HexPath)}\nSHA-256：{preview.Sha256}\n上传日志：{logPath}\n");
-        var snapshot = PathBoundary.Resolve(dataDirectory, "arduino/uploads/" + runId + "/" + Path.GetFileName(preview.HexPath));
+        using var workspace = new ArduinoBuildWorkspace(dataDirectory, Path.Combine(upload, "image"), esp: true);
+        var snapshot = Path.Combine(workspace.NativeDirectory, Path.GetFileName(preview.HexPath));
         Directory.CreateDirectory(Path.GetDirectoryName(snapshot)!);
         var arguments = new List<string> { "upload", "--fqbn", preview.Board.Fqbn, "--port", port,
             "--verify", "--verbose" };
@@ -190,6 +194,7 @@ public sealed class ArduinoBuildService(ToolsetCatalog catalog, string dataDirec
         }
         try
         {
+            await workspace.PublishAsync(token);
             var result = await execution.RunAsync(arguments, Path.GetDirectoryName(snapshot)!, log, token);
             var report = new ArduinoUploadReport(result, logPath, ArduinoUploadReport.HasVerification(preview.Board, result));
             log.Report("\n" + report.Summary + "\n");

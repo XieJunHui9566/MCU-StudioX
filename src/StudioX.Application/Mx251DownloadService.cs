@@ -9,6 +9,7 @@ using StudioX.Foundation;
 public sealed class Mx251DownloadService(Mx251IspService isp, BuildService builds, DeviceHub devices)
 {
     public Task<IReadOnlyList<HidDevice>> ListDevicesAsync(CancellationToken token = default) => isp.ListDevicesAsync(token);
+    public Task<string[]> ListSerialPortsAsync(CancellationToken token = default) => isp.ListSerialPortsAsync(token);
     public Task<Mx251IspSettings> LoadSettingsAsync(string root, CancellationToken token = default) => isp.LoadSettingsAsync(root, token);
     public async Task SaveSettingsAsync(string root, Mx251IspSettings settings, CancellationToken token = default)
     {
@@ -51,7 +52,7 @@ public sealed class Mx251DownloadService(Mx251IspService isp, BuildService build
     public async Task<Mx251IspReport> DownloadPreparedAsync(Mx251IspPreparation prepared, IProgress<string>? output = null, CancellationToken token = default)
     {
         using var maintenance = builds.AcquireMaintenance(token);
-        using var ownership = await devices.ReserveAsync("hid:" + prepared.Settings.DevicePath, token);
+        using var ownership = await devices.ReserveAsync(prepared.Settings.DownloadMode switch { Mx251DownloadMode.NativeUsb => "stc-native-usb", Mx251DownloadMode.Serial => "serial:" + prepared.Settings.SerialPort.ToUpperInvariant(), _ => "hid:" + prepared.Settings.DevicePath }, token);
         return await isp.DownloadPreparedAsync(prepared, output, token);
     }
 }

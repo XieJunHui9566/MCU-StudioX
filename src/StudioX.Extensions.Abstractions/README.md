@@ -8,4 +8,6 @@ MCU StudioX API 2 / API 3 的 C# 插件契约，目标为 .NET 10。公开类型
 
 完整接口、归档格式、协议和示例见源码仓库的 `docs/PLUGINS.md`。
 
+`IPluginHost.CallAsync` 的宿主业务失败使用公开的 `PluginHostException`，包含稳定 `Code` 和原始 `Message`；取消保持 `OperationCanceledException`。无需引用内部 Foundation 程序集。IDE 内可从“帮助 → 插件 API 文档”查看语言支持、最小示例和错误处理说明。
+
 API 3 在原有贡献对象上增加可选的设置、工程/文档事件、自定义后缀补全和只读调试快照视图。清单需声明对应能力，JSON 行协议版本仍为 2；原三参数贡献构造保持兼容。语言接口当前提供补全，调试接口提供快照解释，不等同于完整 LSP 或 DAP 驱动。可运行示例见 `examples/StudioX.SamplePlugin/DevelopmentToolsPlugin.cs`，通过 `tools/Build-PluginSample.ps1 -Development` 打包。

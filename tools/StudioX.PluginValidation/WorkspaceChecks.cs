@@ -13,12 +13,12 @@ using StudioX.Foundation;
 /// <summary>通过真实应用服务与 MCP 客户端验证插件生命周期和工程权限。</summary>
 internal static class WorkspaceChecks
 {
-    public static async Task RunAsync(string repository, string archive, string cli, string scratch, ValidationChecks checks)
+    public static async Task RunAsync(string repository, string archive, string cli, string scratch, ValidationChecks checks, string? pluginHostDirectory = null)
     {
         var runtime = Path.Combine(scratch, "runtime");
         var data = Path.Combine(scratch, "data");
         Directory.CreateDirectory(runtime);
-        RepositoryChecks.CopyDirectory(Path.Combine(repository, "src/StudioX.PluginHost/bin/Debug/net10.0"), Path.Combine(runtime, "plugin-host"));
+        RepositoryChecks.CopyDirectory(pluginHostDirectory ?? Path.Combine(repository, "src/StudioX.PluginHost/bin/Debug/net10.0"), Path.Combine(runtime, "plugin-host"));
         var project = Path.Combine(scratch, "project");
         Directory.CreateDirectory(Path.Combine(project, ".studiox"));
         Directory.CreateDirectory(Path.Combine(project, "src"));
@@ -90,13 +90,13 @@ internal static class WorkspaceChecks
             originalSha256 = disk.DiskHash,
             content = "int changed;\n"
         });
-        var refused = await broker.CallAsync(pluginId, "project_edit_file", writeArguments);
-        checks.Check(refused.GetRawText().Contains("MCP_APPROVAL_DENIED", StringComparison.Ordinal) && await File.ReadAllTextAsync(mainPath) == diskText,
-            "plugin host writes require approval and denied write preserves source");
+        await checks.RejectAsync(async () => { _ = await broker.CallAsync(pluginId, "project_edit_file", writeArguments); },
+            "plugin host writes expose stable MCP_APPROVAL_DENIED", "MCP_APPROVAL_DENIED");
+        checks.Check(await File.ReadAllTextAsync(mainPath) == diskText, "approval refusal preserves source");
         dirty = true;
-        var dirtyRefusal = await broker.CallAsync(pluginId, "project_edit_file", writeArguments);
-        checks.Check(dirtyRefusal.GetRawText().Contains("MCP_UNSAVED_FILES", StringComparison.Ordinal) && await File.ReadAllTextAsync(mainPath) == diskText,
-            "dirty editor blocks plugin writes before approval");
+        await checks.RejectAsync(async () => { _ = await broker.CallAsync(pluginId, "project_edit_file", writeArguments); },
+            "dirty editor exposes stable MCP_UNSAVED_FILES before approval", "MCP_UNSAVED_FILES");
+        checks.Check(await File.ReadAllTextAsync(mainPath) == diskText, "dirty editor refusal preserves source");
         dirty = false;
 
         await using (var mcp = await StudioXMcpSession.CreateAsync(new StudioXMcpTools(services, project, new DenyStudioXMcpAuthorizer())))
@@ -129,6 +129,7 @@ internal static class WorkspaceChecks
         checks.Check(updated.Version == "1.2.0" && !updated.Enabled, "content update revokes previous trust and stays disabled");
         await services.PluginManager.UninstallAsync(pluginId);
         checks.Check((await services.PluginManager.ListAsync()).Count == 0, "manager uninstall clears settings and user plugin");
+        await HostErrorChecks.RunAsync(services, project, checks);
     }
 
     private static async Task RunExternalAsync(string cli, string project, string runtime, string data, ValidationChecks checks)

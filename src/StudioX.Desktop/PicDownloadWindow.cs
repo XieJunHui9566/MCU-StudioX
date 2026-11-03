@@ -19,6 +19,7 @@ public sealed class PicDownloadWindow : Window
         Width = 680;
         SizeToContent = SizeToContent.Height;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
+        SetResourceReference(StyleProperty, typeof(Window));
         SetResourceReference(BackgroundProperty, "Surface");
         SetResourceReference(ForegroundProperty, "Text");
         var panel = new StackPanel { Margin = new(24) };

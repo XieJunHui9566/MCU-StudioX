@@ -112,6 +112,7 @@ public partial class MainWindow
         ReportBuildActivity("写入代码 Flash", new(512, 512));
         Check(buildOutputState == "取消" && !buildOutputTimer.IsEnabled && BuildLog.Text == cancelled,
             "late progress cannot restart the cancelled activity indicator");
+        await CheckMon51DownloadOutputAsync(directory, checks, Layout, Capture);
         await File.WriteAllTextAsync(Path.Combine(directory, "result.txt"), $"PASS {checks.Count} STC output checks; no serial or hardware access.\n" + string.Join('\n', checks));
 
         async Task Layout()

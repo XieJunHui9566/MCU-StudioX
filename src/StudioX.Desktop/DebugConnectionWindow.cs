@@ -30,6 +30,7 @@ public sealed class DebugConnectionWindow : Window
         MinWidth = 620;
         MinHeight = 560;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
+        SetResourceReference(StyleProperty, typeof(Window));
         SetResourceReference(BackgroundProperty, "ChromeSurface");
         SetResourceReference(ForegroundProperty, "Text");
         grid.SetResourceReference(StyleProperty, "DebugGrid");

@@ -11,19 +11,21 @@ public sealed class Mx251ProjectSettingsService(BuildService builds, ProjectFile
     public async Task<Mx251ProjectSettings> ReadAsync(string directory, CancellationToken token = default)
     {
         var project = await ProjectService.ReadAsync(directory, token);
-        if (project.Kind != ProjectKind.Pack || project.ToolsetId != Mx251Profile.ToolsetId || project.CompilerId != Mx251Profile.CompilerId)
+        if (project.Kind != ProjectKind.Pack || project.ToolsetId != Mx251Profile.ToolsetId ||
+            (project.CompilerId != Mx251Profile.CompilerId && !Mx251SdkProfile.Matches(project)))
         {
             throw new StudioXException("MX251_SETTINGS_TARGET", "此设置仅用于 MX251 工程。");
         }
         var document = await files.ReadAsync(directory, Mx251Profile.ConfigurationFile, token);
-        var config = Parse(document.Text);
+        var target = Mx251SdkProfile.Matches(project) ? Mx251SdkProfile.Target(project.DeviceId) : "AI8051U-34K64-32";
+        var config = Parse(document.Text, target);
         var model = Model(config);
         // 默认值取自工程随附的创建模板，旧 large 工程也保留自己的默认值。
         var pack = await JsonStore.ReadAsync<PackManifest>(PathBoundary.Resolve(directory, "device/manifest.json"), token);
         var template = pack.Devices.Single(d => d.Id == project.DeviceId).Templates.Single(t => t.Id == project.TemplateId);
         var path = PathBoundary.Resolve(Path.Combine(directory, "device"), template.Mx251Configuration
             ?? throw new StudioXException("MX251_CONFIGURATION", "创建模板缺少 MX251 配置。"));
-        var defaultModel = Model(Parse(await File.ReadAllTextAsync(path, token)));
+        var defaultModel = Model(Parse(await File.ReadAllTextAsync(path, token), target));
         return new(document, model, defaultModel);
     }
 
@@ -66,11 +68,12 @@ public sealed class Mx251ProjectSettingsService(BuildService builds, ProjectFile
         };
     }
 
-    private static JsonObject Parse(string text)
+    private static JsonObject Parse(string text, string? expectedTarget = null)
     {
         var config = JsonNode.Parse(text) as JsonObject
             ?? throw new StudioXException("MX251_CONFIGURATION", "mx251.json 必须是配置对象。");
-        if (config["schema"]?.GetValue<int>() is not (1 or 2) || config["target"]?.GetValue<string>() != "AI8051U-34K64-32")
+        if (config["schema"]?.GetValue<int>() is not (1 or 2) ||
+            (expectedTarget is not null && config["target"]?.GetValue<string>() != expectedTarget))
         {
             throw new StudioXException("MX251_CONFIGURATION", "不支持此 MX251 配置版本或目标。");
         }

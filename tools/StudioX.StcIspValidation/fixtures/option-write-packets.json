@@ -1,0 +1,288 @@
+[
+  {
+    "protocol": "Stc89Protocol",
+    "bslByte": "65",
+    "payloads": [
+      "8D13FFFFFF"
+    ]
+  },
+  {
+    "protocol": "Stc89Protocol",
+    "bslByte": "66",
+    "payloads": [
+      "8D13FFFFFF"
+    ]
+  },
+  {
+    "protocol": "Stc89Protocol",
+    "bslByte": "71",
+    "payloads": [
+      "8D13FFFFFF"
+    ]
+  },
+  {
+    "protocol": "Stc89Protocol",
+    "bslByte": "72",
+    "payloads": [
+      "8D13FFFFFF"
+    ]
+  },
+  {
+    "protocol": "Stc89AProtocol",
+    "bslByte": "65",
+    "payloads": [
+      "04000046B901"
+    ]
+  },
+  {
+    "protocol": "Stc89AProtocol",
+    "bslByte": "66",
+    "payloads": [
+      "04000046B901"
+    ]
+  },
+  {
+    "protocol": "Stc89AProtocol",
+    "bslByte": "71",
+    "payloads": [
+      "04000046B901"
+    ]
+  },
+  {
+    "protocol": "Stc89AProtocol",
+    "bslByte": "72",
+    "payloads": [
+      "04000046B901"
+    ]
+  },
+  {
+    "protocol": "Stc12AProtocol",
+    "bslByte": "65",
+    "payloads": [
+      "8D171819FF1D016E36001DFF1718FFFFFFFF19FFFFFFFFFFFFFF016E3600FFFFFF"
+    ]
+  },
+  {
+    "protocol": "Stc12AProtocol",
+    "bslByte": "66",
+    "payloads": [
+      "8D171819FF1D016E36001DFF1718FFFFFFFF19FFFFFFFFFFFFFF016E3600FFFFFF",
+      "50"
+    ]
+  },
+  {
+    "protocol": "Stc12AProtocol",
+    "bslByte": "71",
+    "payloads": [
+      "8D171819FF1D016E36001DFF1718FFFFFFFF19FFFFFFFFFFFFFF016E3600FFFFFF",
+      "50"
+    ]
+  },
+  {
+    "protocol": "Stc12AProtocol",
+    "bslByte": "72",
+    "payloads": [
+      "8D171819FF1D016E36001DFF1718FFFFFFFF19FFFFFFFFFFFFFF016E3600FFFFFF",
+      "50"
+    ]
+  },
+  {
+    "protocol": "Stc12BProtocol",
+    "bslByte": "65",
+    "payloads": [
+      "8D171819FF1B016E36001BFF1718FFFFFFFF19FFFFFFFFFFFFFF016E3600FFFFFF"
+    ]
+  },
+  {
+    "protocol": "Stc12BProtocol",
+    "bslByte": "66",
+    "payloads": [
+      "8D171819FF1B016E36001BFF1718FFFFFFFF19FFFFFFFFFFFFFF016E3600FFFFFF",
+      "50"
+    ]
+  },
+  {
+    "protocol": "Stc12BProtocol",
+    "bslByte": "71",
+    "payloads": [
+      "8D171819FF1B016E36001BFF1718FFFFFFFF19FFFFFFFFFFFFFF016E3600FFFFFF",
+      "50"
+    ]
+  },
+  {
+    "protocol": "Stc12BProtocol",
+    "bslByte": "72",
+    "payloads": [
+      "8D171819FF1B016E36001BFF1718FFFFFFFF19FFFFFFFFFFFFFF016E3600FFFFFF",
+      "50"
+    ]
+  },
+  {
+    "protocol": "Stc12Protocol",
+    "bslByte": "65",
+    "payloads": [
+      "8D1718191BFFFFFFFF1BFFFFFFFFFFFFFF016E3600"
+    ]
+  },
+  {
+    "protocol": "Stc12Protocol",
+    "bslByte": "66",
+    "payloads": [
+      "8D1718191BFFFFFFFF1BFFFFFFFFFFFFFF016E3600"
+    ]
+  },
+  {
+    "protocol": "Stc12Protocol",
+    "bslByte": "71",
+    "payloads": [
+      "8D1718191BFFFFFFFF1BFFFFFFFFFFFFFF016E3600"
+    ]
+  },
+  {
+    "protocol": "Stc12Protocol",
+    "bslByte": "72",
+    "payloads": [
+      "8D1718191BFFFFFFFF1BFFFFFFFFFFFFFF016E3600"
+    ]
+  },
+  {
+    "protocol": "Stc15AProtocol",
+    "bslByte": "65",
+    "payloads": [
+      "8D1718191A1B1C1D1E1F20212223FFFFFFFFFFFF"
+    ]
+  },
+  {
+    "protocol": "Stc15AProtocol",
+    "bslByte": "66",
+    "payloads": [
+      "8D1718191A1B1C1D1E1F20212223FFFFFFFFFFFF"
+    ]
+  },
+  {
+    "protocol": "Stc15AProtocol",
+    "bslByte": "71",
+    "payloads": [
+      "8D1718191A1B1C1D1E1F20212223FFFFFFFFFFFF"
+    ]
+  },
+  {
+    "protocol": "Stc15AProtocol",
+    "bslByte": "72",
+    "payloads": [
+      "8D1718191A1B1C1D1E1F20212223FFFFFFFFFFFF"
+    ]
+  },
+  {
+    "protocol": "Stc15Protocol",
+    "bslByte": "65",
+    "payloads": [
+      "040000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF01FF6EFF36FF00FF0CFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF25FFFFFF807F050607"
+    ]
+  },
+  {
+    "protocol": "Stc15Protocol",
+    "bslByte": "66",
+    "payloads": [
+      "040000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF01FF6EFF36FF00FF0CFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF25FFFFFF807F050607"
+    ]
+  },
+  {
+    "protocol": "Stc15Protocol",
+    "bslByte": "71",
+    "payloads": [
+      "040000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF01FF6EFF36FF00FF0CFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF25FFFFFF807F050607"
+    ]
+  },
+  {
+    "protocol": "Stc15Protocol",
+    "bslByte": "72",
+    "payloads": [
+      "0400005AA5FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF01FF6EFF36FF00FF0CFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF25FFFFFF807F050607"
+    ]
+  },
+  {
+    "protocol": "Stc8Protocol",
+    "bslByte": "65",
+    "payloads": [
+      "040000FFFFFF00FFFF00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00FF016E3600804001FF09FFFFFF0A0B0F10"
+    ]
+  },
+  {
+    "protocol": "Stc8Protocol",
+    "bslByte": "66",
+    "payloads": [
+      "040000FFFFFF00FFFF00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00FF016E3600804001FF09FFFFFF0A0B0F10"
+    ]
+  },
+  {
+    "protocol": "Stc8Protocol",
+    "bslByte": "71",
+    "payloads": [
+      "040000FFFFFF00FFFF00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00FF016E3600804001FF09FFFFFF0A0B0F10"
+    ]
+  },
+  {
+    "protocol": "Stc8Protocol",
+    "bslByte": "72",
+    "payloads": [
+      "0400005AA5FFFFFF00FFFF00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00FF016E3600804001FF09FFFFFF0A0B0F10"
+    ]
+  },
+  {
+    "protocol": "Stc8dProtocol",
+    "bslByte": "65",
+    "payloads": [
+      "040000FFFFFF00FFFF00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00FF016E3600804001FF09FFFFFF0A0B0F10"
+    ]
+  },
+  {
+    "protocol": "Stc8dProtocol",
+    "bslByte": "66",
+    "payloads": [
+      "040000FFFFFF00FFFF00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00FF016E3600804001FF09FFFFFF0A0B0F10"
+    ]
+  },
+  {
+    "protocol": "Stc8dProtocol",
+    "bslByte": "71",
+    "payloads": [
+      "040000FFFFFF00FFFF00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00FF016E3600804001FF09FFFFFF0A0B0F10"
+    ]
+  },
+  {
+    "protocol": "Stc8dProtocol",
+    "bslByte": "72",
+    "payloads": [
+      "0400005AA5FFFFFF00FFFF00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00FF016E3600804001FF09FFFFFF0A0B0F10"
+    ]
+  },
+  {
+    "protocol": "Stc8gProtocol",
+    "bslByte": "65",
+    "payloads": [
+      "040000FFFFFF00FFFF00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00FF016E3600804001FF09FFFFFF0A0B0F10"
+    ]
+  },
+  {
+    "protocol": "Stc8gProtocol",
+    "bslByte": "66",
+    "payloads": [
+      "040000FFFFFF00FFFF00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00FF016E3600804001FF09FFFFFF0A0B0F10"
+    ]
+  },
+  {
+    "protocol": "Stc8gProtocol",
+    "bslByte": "71",
+    "payloads": [
+      "040000FFFFFF00FFFF00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00FF016E3600804001FF09FFFFFF0A0B0F10"
+    ]
+  },
+  {
+    "protocol": "Stc8gProtocol",
+    "bslByte": "72",
+    "payloads": [
+      "0400005AA5FFFFFF00FFFF00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00FF016E3600804001FF09FFFFFF0A0B0F10"
+    ]
+  }
+]

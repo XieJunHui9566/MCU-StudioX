@@ -47,21 +47,32 @@ public static class Mx251Profile
         }
     }
 
-    internal static async Task CreateProjectFilesAsync(InstalledPack pack, ProjectTemplate template, string root, CancellationToken token)
+    internal static async Task CreateProjectFilesAsync(InstalledPack pack, DeviceDefinition device, ProjectTemplate template, string root, CancellationToken token)
     {
         var relative = template.Mx251Configuration
             ?? throw new StudioXException("MX251_TEMPLATE", "器件模板缺少 MX251 构建配置。");
         var text = await File.ReadAllTextAsync(PathBoundary.Resolve(pack.RootDirectory, relative), token);
         using var config = JsonDocument.Parse(text);
-        if (!config.RootElement.TryGetProperty("target", out var target) || target.GetString() != "AI8051U-34K64-32")
+        var sdk = Mx251SdkProfile.Matches(device.ToolsetVersion, device.CompilerId);
+        var expectedTarget = sdk ? Mx251SdkProfile.Target(device.Id) : "AI8051U-34K64-32";
+        if (!config.RootElement.TryGetProperty("target", out var target) || target.GetString() != expectedTarget)
         {
-            throw new StudioXException("MX251_TARGET", "当前资格范围仅为 AI8051U-34K64 的 32 位模式。");
+            throw new StudioXException("MX251_TARGET", "模板目标与所选器件的 MX251 配置不一致。");
         }
         await File.WriteAllTextAsync(PathBoundary.Resolve(root, ConfigurationFile), text, token);
         var cmake = PathBoundary.Resolve(pack.RootDirectory, "CMakeLists.txt");
         if (File.Exists(cmake))
         {
             await File.WriteAllTextAsync(Path.Combine(root, "CMakeLists.txt"), await File.ReadAllTextAsync(cmake, token), token);
+        }
+        if (sdk)
+        {
+            await File.WriteAllTextAsync(Path.Combine(root, "README.txt"),
+                $"{device.DisplayName} / {device.CompilerId}。F7 通过锁定的 CMake + Ninja + MX251 组件编译。\n" +
+                "在 CMakeLists.txt 登记源码、包含目录和宏；mx251.json 保存目标、内存模型、ABI 与运行库。\n" +
+                "模板说明和 STC 源码来源保存在 device/README.txt。数学运行库须使用 SDK 支持的 ABI/模型组合。\n" +
+                "编译通过不等于实板验收。下载与时钟设置使用独立下载配置页，按准确器件核对。\n", token);
+            return;
         }
         await File.WriteAllTextAsync(Path.Combine(root, "README.txt"),
             "MX251 R89 / AI8051U-34K64 32 位试用工程。F7 通过版本锁定组件编译，生成 HEX。\n" +

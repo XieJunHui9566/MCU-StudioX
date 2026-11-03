@@ -1,0 +1,92 @@
+[
+  {
+    "direction": "tx",
+    "frame": "46b96a000700007116",
+    "payload": "00",
+    "checksum": true
+  },
+  {
+    "direction": "rx",
+    "frame": "46b968003c0002617c207e3001ffffff3e3fbf2ff7fc74550078b41183bd32561d201c190100010004a0260510800e89c2f94d5f7da7b1f8fe0000151716",
+    "payload": "0002617c207e3001ffffff3e3fbf2ff7fc74550078b41183bd32561d201c190100010004a0260510800e89c2f94d5f7da7b1f8fe0000",
+    "checksum": true
+  },
+  {
+    "direction": "tx",
+    "frame": "46b96a000e010000000000008000f916",
+    "payload": "0100000000000080",
+    "checksum": true
+  },
+  {
+    "direction": "rx",
+    "frame": "46b968000701007016",
+    "payload": "01",
+    "checksum": true
+  },
+  {
+    "direction": "tx",
+    "frame": "46b96a000b0500005aa5017916",
+    "payload": "0500005aa5",
+    "checksum": true
+  },
+  {
+    "direction": "rx",
+    "frame": "46b968000705007416",
+    "payload": "05",
+    "checksum": true
+  },
+  {
+    "direction": "tx",
+    "frame": "46b96a000b0300005aa5017716",
+    "payload": "0300005aa5",
+    "checksum": true
+  },
+  {
+    "direction": "rx",
+    "frame": "46b968000e0378b4c9a807a30903c916",
+    "payload": "0378b4c9a807a309",
+    "checksum": true
+  },
+  {
+    "direction": "tx",
+    "frame": "46b96a008b3200005aa50200038aff000d9aff008480fec2af7ef803ff9aff00d3e58260048aff00079000ee7584ff7f1e9000057584017e380000be380000e47e00ffa5f6a5d8fb9000017584007e3800007e7400007ed000be380000680ae47aebb00bec1b3c78f79000007584017e3800007e7400057ed000be380000680ae47aebb00bec1b3c78f7360f16",
+    "payload": "3200005aa50200038aff000d9aff008480fec2af7ef803ff9aff00d3e58260048aff00079000ee7584ff7f1e9000057584017e380000be380000e47e00ffa5f6a5d8fb9000017584007e3800007e7400007ed000be380000680ae47aebb00bec1b3c78f79000007584017e3800007e7400057ed000be380000680ae47aebb00bec1b3c78f7",
+    "checksum": true
+  },
+  {
+    "direction": "rx",
+    "frame": "46b9680008025400c616",
+    "payload": "0254",
+    "checksum": true
+  },
+  {
+    "direction": "tx",
+    "frame": "46b96a008b1200805aa58aff0007c2af4395015396fee5a054019000047584017aebb09000037584017eebb024017aebb09000027584017eebb034007aebb09000017584017eebb034007aebb09000007584017eebb034007aebb080b9758200aaffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff511c16",
+    "payload": "1200805aa58aff0007c2af4395015396fee5a054019000047584017aebb09000037584017eebb024017aebb09000027584017eebb034007aebb09000017584017eebb034007aebb09000007584017eebb034007aebb080b9758200aaffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "checksum": true
+  },
+  {
+    "direction": "rx",
+    "frame": "46b9680008025400c616",
+    "payload": "0254",
+    "checksum": true
+  },
+  {
+    "direction": "tx",
+    "frame": "46b96a00340400005aa5ffffff00ffff00ffffffffffffffffffffffffffffff00ff02625a007d3001ffffff3e3fbfaff7fcfe1fd116",
+    "payload": "0400005aa5ffffff00ffff00ffffffffffffffffffffffffffffff00ff02625a007d3001ffffff3e3fbfaff7fcfe",
+    "checksum": true
+  },
+  {
+    "direction": "rx",
+    "frame": "46b9680008045400c816",
+    "payload": "0454",
+    "checksum": true
+  },
+  {
+    "direction": "tx",
+    "frame": "46b96a0007ff017016",
+    "payload": "ff",
+    "checksum": true
+  }
+]

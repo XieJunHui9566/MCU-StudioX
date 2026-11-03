@@ -63,10 +63,7 @@ public sealed partial class ProjectFileService(Editing.LocalHistoryService? hist
             text = encoding.GetString(bytes, offset, bytes.Length - offset);
         }
         catch (DecoderFallbackException) { throw new StudioXException("EDITOR_ENCODING", "文件不是 UTF-8 / 带 BOM 的 UTF-16 文本，暂不支持此编码。"); }
-        if (text.Contains('\0'))
-        {
-            throw new StudioXException("EDITOR_BINARY", "此文件是二进制文件，无法作为源代码打开。");
-        }
+        EditorTextSafety.Validate(text, token);
         var managed = CMakeGenerator.IsManagedFile(relativePath, text) || Ag32SystemSupport.IsManagedFile(relativePath, text);
         return new(relativePath, text, encoding, Convert.ToHexString(SHA256.HashData(bytes)), managed || (File.GetAttributes(path) & FileAttributes.ReadOnly) != 0,
             managed ? "只读 · 系统生成文件；AG32 引脚和时钟请通过引脚分配页面修改，构建配置请修改根目录 CMakeLists.txt" : null);
@@ -78,6 +75,7 @@ public sealed partial class ProjectFileService(Editing.LocalHistoryService? hist
         {
             throw new StudioXException("EDITOR_READ_ONLY", "此文件为只读文件。");
         }
+        EditorTextSafety.Validate(text, token);
         var path = PathBoundary.Resolve(project, document.RelativePath);
         var bytes = document.Encoding.GetPreamble().Concat(document.Encoding.GetBytes(text)).ToArray();
         var temporary = path + ".tmp-" + Guid.NewGuid().ToString("N");

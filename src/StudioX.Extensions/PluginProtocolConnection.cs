@@ -20,6 +20,9 @@ public sealed class PluginProtocolConnection : IAsyncDisposable
     private readonly ConcurrentDictionary<string, TaskCompletionSource<JsonElement>> pending = new(StringComparer.Ordinal);
     private readonly ConcurrentDictionary<string, CancellationTokenSource> incoming = new(StringComparer.Ordinal);
     private readonly ConcurrentDictionary<string, Task> handlers = new(StringComparer.Ordinal);
+    private readonly object eventGate = new();
+    private Task eventTail = Task.CompletedTask;
+    private int eventCount;
     private readonly JsonSerializerOptions options = new(JsonSerializerDefaults.Web);
     private readonly Task reader;
     private Exception? terminationError;
@@ -106,7 +109,13 @@ public sealed class PluginProtocolConnection : IAsyncDisposable
     /// <summary>等待已读取的回调快照，保证激活响应之前的面板事件已经交付应用。</summary>
     public Task DrainHandlersAsync(CancellationToken cancellationToken)
     {
-        return Task.WhenAll(handlers.Values.ToArray()).WaitAsync(cancellationToken);
+        Task[] snapshot;
+        lock (eventGate)
+        {
+            // 捕获已读事件的队尾；后来的事件不延长这次 Drain，也不能越过之前的回调。
+            snapshot = handlers.Values.Append(eventTail).ToArray();
+        }
+        return Task.WhenAll(snapshot).WaitAsync(cancellationToken);
     }
 
     public async ValueTask DisposeAsync()
@@ -120,7 +129,7 @@ public sealed class PluginProtocolConnection : IAsyncDisposable
         {
             await reader.ConfigureAwait(false);
         }
-        catch (Exception exception) when (exception is IOException or JsonException or StudioXException or OperationCanceledException or ObjectDisposedException)
+        catch (Exception)
         {
             // 调用等待者已经取得关闭异常；清理不重复抛出同一个协议错误。
         }
@@ -129,9 +138,9 @@ public sealed class PluginProtocolConnection : IAsyncDisposable
         {
             await Task.WhenAll(running).WaitAsync(TimeSpan.FromSeconds(2)).ConfigureAwait(false);
         }
-        catch (Exception exception) when (exception is TimeoutException or OperationCanceledException or IOException or ObjectDisposedException)
+        catch (Exception)
         {
-            // 用户插件可能忽略取消；进程所有者在 Dispose 后终止整个进程树。
+            // 回调原始失败已由 Completion/Drain 暴露；忽略取消的插件最终由所有者终止进程树。
         }
         // 回调可能忽略取消，信号量与 lifetime 由仍在清理的异步操作使用，不提前释放。
     }
@@ -186,10 +195,21 @@ public sealed class PluginProtocolConnection : IAsyncDisposable
                     }
                 }
             }
+            // ReadAsync 可以在取消竞态中返回已经读到的数据；此时循环直接退出，仍须传播回调原错。
+            if (terminationError is { } callbackError)
+            {
+                failure = callbackError;
+                ExceptionDispatchInfo.Capture(callbackError).Throw();
+            }
         }
         catch (OperationCanceledException) when (lifetime.IsCancellationRequested)
         {
             // 生命周期关闭属于正常清理，仍需取消全部在途双向调用。
+            if (terminationError is { } callbackError)
+            {
+                failure = callbackError;
+                ExceptionDispatchInfo.Capture(callbackError).Throw();
+            }
         }
         catch (Exception exception)
         {
@@ -198,8 +218,8 @@ public sealed class PluginProtocolConnection : IAsyncDisposable
         }
         finally
         {
-            var error = failure ?? new StudioXException("PLUGIN_EXIT", "插件协议连接已结束。");
-            terminationError ??= error;
+            var error = failure ?? terminationError ?? new StudioXException("PLUGIN_EXIT", "插件协议连接已结束。");
+            Interlocked.CompareExchange(ref terminationError, error, null);
             foreach (var completion in pending.Values)
             {
                 completion.TrySetException(error);
@@ -262,17 +282,44 @@ public sealed class PluginProtocolConnection : IAsyncDisposable
         }
         if (message.Kind == "event" && !string.IsNullOrWhiteSpace(message.Method) && message.Payload is { } eventPayload)
         {
-            if (handlers.Count >= 64)
+            lock (eventGate)
             {
-                throw new StudioXException("PLUGIN_BUSY", "插件事件队列超过限制。");
+                if (eventCount >= 64)
+                {
+                    throw new StudioXException("PLUGIN_BUSY", "插件事件队列超过限制。");
+                }
+                var previous = eventTail;
+                eventCount++;
+                // 读取循环只入队，不等待回调；回调中的双向 hostCall 仍能收到协议响应。
+                eventTail = Track(Guid.NewGuid().ToString("N"), async () =>
+                {
+                    try
+                    {
+                        // 显式前驱保证线序，不依赖线程池或信号量唤醒顺序。
+                        await previous.ConfigureAwait(false);
+                        lifetime.Token.ThrowIfCancellationRequested();
+                        await onEvent(message.Method, eventPayload, lifetime.Token).ConfigureAwait(false);
+                    }
+                    catch (OperationCanceledException exception) when (!lifetime.IsCancellationRequested)
+                    {
+                        // 非会话取消不能留下已取消的前驱链，否则后续事件会被静默跳过。
+                        throw new StudioXException("PLUGIN_EVENT_CANCELLED", "插件事件回调意外取消，协议会话已结束。", exception);
+                    }
+                    finally
+                    {
+                        lock (eventGate)
+                        {
+                            eventCount--;
+                        }
+                    }
+                });
             }
-            Track(Guid.NewGuid().ToString("N"), () => onEvent(message.Method, eventPayload, lifetime.Token));
             return;
         }
         throw new StudioXException("PLUGIN_PROTOCOL", "插件消息种类或必填字段无效。");
     }
 
-    private void Track(string id, Func<Task> action)
+    private Task Track(string id, Func<Task> action)
     {
         var task = Task.Run(action);
         handlers[id] = task;
@@ -281,7 +328,7 @@ public sealed class PluginProtocolConnection : IAsyncDisposable
             handlers.TryRemove(id, out _);
             if (completed.IsFaulted)
             {
-                terminationError = completed.Exception!.GetBaseException();
+                Interlocked.CompareExchange(ref terminationError, completed.Exception!.GetBaseException(), null);
                 foreach (var completion in pending.Values)
                 {
                     completion.TrySetException(completed.Exception!.GetBaseException());
@@ -289,6 +336,7 @@ public sealed class PluginProtocolConnection : IAsyncDisposable
                 lifetime.Cancel();
             }
         }, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+        return task;
     }
 
     private async Task HandleRequestAsync(PluginProtocolMessage message, CancellationTokenSource cancellation)
@@ -306,7 +354,7 @@ public sealed class PluginProtocolConnection : IAsyncDisposable
             }
             catch (Exception exception)
             {
-                var code = exception is StudioXException studio ? studio.Code : exception is OperationCanceledException ? "PLUGIN_CANCELLED" : "PLUGIN_EXCEPTION";
+                var code = exception is StudioXException studio ? studio.Code : exception is PluginHostException host ? host.Code : exception is OperationCanceledException ? "PLUGIN_CANCELLED" : "PLUGIN_EXCEPTION";
                 response = new PluginProtocolMessage(2, "response", message.RequestId, ErrorCode: code, Error: exception.ToString());
             }
             // 对端不读取响应时仍占用入站额度，防止已处理请求无限堆积在写入信号量后面。

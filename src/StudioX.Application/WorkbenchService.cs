@@ -14,6 +14,13 @@ using StudioX.Packages;
 /// <summary>工作台的服务组合根；各服务拥有自己的业务状态和资源生命周期。</summary>
 public sealed class WorkbenchService : IAsyncDisposable
 {
+    public Task<BundledPackImportResult> ImportBundledPacksAsync(string installationDirectory, CancellationToken token = default) =>
+        new BundledPackService(Packs, ZephyrPacks).ImportAsync(installationDirectory, token);
+
+    public BuildAssemblyService BuildAssembly
+    {
+        get;
+    }
     public McuFavoritesService McuFavorites
     {
         get;
@@ -123,10 +130,12 @@ public sealed class WorkbenchService : IAsyncDisposable
         EspressifProjectVersions = new(Packs, Toolsets);
         ToolEnvironment = new ToolEnvironmentService(Toolsets);
         Builds = new BuildService(Toolsets, Path.Combine(DataDirectory, "licenses", "ag32-pin-mapping"), DataDirectory);
+        BuildAssembly = new(Toolsets);
         Mx251Settings = new(Builds, Files);
         Mx251Downloads = new(new Mx251IspService(Toolsets, DataDirectory), Builds, Devices);
         Arduino = new(Builds, Devices, Git.InitializeAsync);
         PicDownloads = new(new StudioX.Engine.Pic.PicDownloadService(Toolsets, Builds.Pic, DataDirectory), Devices);
+        PicDebug = new(Toolsets, Builds.Pic, DataDirectory);
         ComponentMigration = new(Packs, Builds);
         BuildMemory = new BuildMemoryService(Toolsets);
         BuildHistory = new(DataDirectory, BuildMemory);
@@ -143,6 +152,7 @@ public sealed class WorkbenchService : IAsyncDisposable
         Debugger = new DebugSessionService(DataDirectory, Devices, monitorTransportFactory);
         StcBuilds = new(Builds, () => Debugger.IsActive);
         Mon51Setup = new(StcIsp, Devices, Packs, () => Debugger.IsActive);
+        Mon51Launch = new(Debugger, Mon51Setup);
         Components = new(() => Debugger.IsActive, Builds);
         Faults = new(Toolsets, Debugger);
         Peripherals = new(Debugger, DataDirectory);
@@ -192,6 +202,10 @@ public sealed class WorkbenchService : IAsyncDisposable
         get;
     }
     public Pic.PicDownloadService PicDownloads
+    {
+        get;
+    }
+    public StudioX.Engine.Pic.PicDebugService PicDebug
     {
         get;
     }
@@ -337,6 +351,10 @@ public sealed class WorkbenchService : IAsyncDisposable
         get;
     }
     public StcDebugging.Mon51SetupService Mon51Setup
+    {
+        get;
+    }
+    public StcDebugging.Mon51LaunchService Mon51Launch
     {
         get;
     }

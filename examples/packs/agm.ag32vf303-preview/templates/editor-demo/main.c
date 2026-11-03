@@ -76,7 +76,7 @@ int main(void)
     g_app.device_id = SYS_GetDeviceID();
     g_app.state = APP_STATE_RUNNING;
 
-    for (;;)
+    while (1)
     {
         app_update();
         /* TODO: 添加你的应用逻辑。 */

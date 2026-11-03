@@ -16,20 +16,23 @@ public sealed partial class Ag32NativeBuildService(ToolsetCatalog catalog, strin
 
     private async Task<BuildReport> BuildCoreAsync(string root, IProgress<string>? progress, IProgress<string>? output, CancellationToken token)
     {
+        using var storage = ProjectBuildStorage.Acquire(root, "ag32-logic");
         var gate = Gates.GetOrAdd(root, _ => new SemaphoreSlim(1, 1));
         if (!await gate.WaitAsync(0, token))
         {
             throw new StudioXException("AG32_LOGIC_BUSY", "自定义逻辑正在构建。");
         }
-        var run = PathBoundary.Resolve(root, ".build/ag32-logic/" + Guid.NewGuid().ToString("N"));
+        var run = PathBoundary.Resolve(root, ".build/ag32-logic/latest");
         var logPath = Path.Combine(run, "build.log");
         var log = new StringBuilder();
         var licensing = new Ag32PinMappingBuildService(catalog, licenseDirectory);
         string? privateRuntime = null;
+        var prepared = false;
         try
         {
             Invalidate(root);
-            Directory.CreateDirectory(run);
+            _ = storage.Prepare("ag32-logic");
+            prepared = true;
             var project = await HdlSchematicInputs.RequireProjectAsync(root, token);
             await RequireDeviceAsync(root, project, token);
             var settings = await ReadSettingsAsync(root, token);
@@ -136,6 +139,10 @@ public sealed partial class Ag32NativeBuildService(ToolsetCatalog catalog, strin
         }
         catch (Exception error)
         {
+            if (!prepared)
+            {
+                throw;
+            }
             Invalidate(root);
             log.AppendLine(error.ToString());
             await File.WriteAllTextAsync(logPath, log.ToString(), CancellationToken.None);

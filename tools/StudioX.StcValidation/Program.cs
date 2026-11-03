@@ -4,6 +4,24 @@ using StudioX.Engine;
 using StudioX.Foundation;
 using StudioX.Packages;
 
+if (args is ["--memory-model", var memoryRuntime, var memoryPack, var memoryOutput])
+{
+    await MemoryModelChecks.RunAsync(Path.GetFullPath(memoryRuntime), Path.GetFullPath(memoryPack), Path.GetFullPath(memoryOutput));
+    return 0;
+}
+
+if (args is ["--stdint", var integerRuntime, var integerPack, var integerOutput])
+{
+    await StandardIntegerChecks.RunAsync(Path.GetFullPath(integerRuntime), Path.GetFullPath(integerPack), Path.GetFullPath(integerOutput));
+    return 0;
+}
+
+if (args is ["--assembly", var assemblyRuntime, var assemblyPack, var assemblyOutput, var assemblySdk])
+{
+    await AssemblyChecks.RunAsync(Path.GetFullPath(assemblyRuntime), Path.GetFullPath(assemblyPack), Path.GetFullPath(assemblyOutput), Path.GetFullPath(assemblySdk));
+    return 0;
+}
+
 // 离线验收：所有明确收录的 STC 型号都实际创建工程并使用发行开发环境组件编译。
 // dotnet run --project tools/StudioX.StcValidation -c Release -- <tool-runtime> <pack.mcupack> <new-output-directory> [device-id]
 Console.OutputEncoding = Encoding.UTF8;

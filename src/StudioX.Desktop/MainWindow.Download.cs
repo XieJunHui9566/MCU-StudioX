@@ -28,10 +28,10 @@ public partial class MainWindow
             DownloadProbePicker.SelectedValue = configuration?.Options.ProbeId;
             var probe = configuration?.OpenOcd.Probes.Single(p => p.Id == configuration.Options.ProbeId);
             DownloadMenu.Header = IsArduinoProject ? "上传 Arduino 固件" : IsMicroPythonProject ? "下载 MicroPython 脚本" : "下载固件";
-            DownloadButton.ToolTip = IsPicProject ? "保存、编译并通过 PICkit3 下载 PIC16F877A；先备份，再写入与校验" : IsArduinoProject ? "保存并编译 Arduino sketch；明确选择 COM 串口、核对板型和固件后上传" : IsMicroPythonProject ? "保存并下载 MicroPython 脚本；首次使用请在下载页面选择 USB 串口。连接会中断板上程序。" :
+            DownloadButton.ToolTip = IsPicProject ? "保存、编译并通过 PICkit3 直接写入与校验 PIC16F877A；不备份板上原程序" : IsArduinoProject ? "保存并编译 Arduino sketch；明确选择 COM 串口、核对板型和固件后上传" : IsMicroPythonProject ? "保存并下载 MicroPython 脚本；首次使用请在下载页面选择 USB 串口。连接会中断板上程序。" :
                 IsZephyrProject ? "Zephyr 自定义板卡的下载尚未接入。" :
                 IsEspressifProject ? "保存、使用内置 SDK 编译并预检多映像布局；确认目标与 COM 端口后下载" :
-                IsMx251Project ? "保存、编译并经 AI8H2K12G USB 下载；固定写入 32 位 / 40 MHz 配置" :
+                IsMx251Project ? ProjectCapabilities.For(currentProjectManifest).RuntimeWorkflow :
                 IsStcSdccProject ? "保存、编译并通过普通串口 ISP 下载；完成后运行，不进入调试" :
                 !ProjectCapabilities.For(currentProjectManifest).Download ? ProjectCapabilities.For(currentProjectManifest).Scope :
                 configuration is null ? "当前器件尚未提供匹配的下载配置" :
@@ -39,7 +39,7 @@ public partial class MainWindow
             DownloadSettingsButton.ToolTip = IsPicProject ? "选择 PICkit3 序列号与校验后运行方式" : IsArduinoProject ? "Arduino 工程与库管理；上传时明确选择 USB 串口" : IsMicroPythonProject ? "MicroPython 串口、脚本与 REPL" :
                 IsZephyrProject ? "Zephyr 自定义板卡的调试器配置尚待板级适配。" :
                 IsEspressifProject ? "ESP 下载设置：COM 端口与波特率" :
-                IsMx251Project ? "AI8051U USB 下载器与固定 32 位配置" :
+                IsMx251Project ? ProjectCapabilities.For(currentProjectManifest).Scope :
                 IsStcSdccProject ? "STC 串口、时钟与下载设置" : "下载设置：速度与序列号";
             DownloadProbePicker.ToolTip = configuration is null ? "打开工程后选择该器件支持的烧录器" :
                 $"{configuration.Device.Id} · {probe!.DisplayName} · {probe.Transport.ToUpperInvariant()} · {configuration.Options.SpeedKhz} kHz\n选择按当前工程保存；速度与序列号可在下载设置中修改。";
@@ -98,19 +98,12 @@ public partial class MainWindow
         }
         if (IsMx251Project)
         {
-            await ShowProjectDetailsAsync();
+            await ShowStcDownloadSettingsAsync(root, token);
             return;
         }
         if (IsStcSdccProject)
         {
-            if (loadedStcIspSettings is null)
-            {
-                await ShowProjectDetailsAsync();
-            }
-            else
-            {
-                FocusStcSettings();
-            }
+            await ShowStcDownloadSettingsAsync(root, token);
             return;
         }
         var configuration = await services.Downloads.ConfigurationAsync(root, token);

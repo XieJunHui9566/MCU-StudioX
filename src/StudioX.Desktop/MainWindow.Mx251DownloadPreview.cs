@@ -33,6 +33,7 @@ public partial class MainWindow
         Check((await services.Mx251Downloads.LoadSettingsAsync(project)).DevicePath == connected[0].Path, "single device selection persisted automatically");
         Check(await ResolveMx251DownloadDeviceAsync(project, default) && projectDetailsRevision == originalRevision, "subsequent click reuses saved bridge without navigation");
         await ShowProjectDetailsAsync();
+        FocusStcSettings();
         Check(Mx251IspPanel.Visibility == Visibility.Visible && StcIspPanel.Visibility == Visibility.Collapsed, "dedicated USB settings in project details");
         Check(Mx251CpuModeBox.IsReadOnly && Mx251CpuModeBox.Text == "32 位（本器件固定）", "CPU mode read-only32; no 8-bit selection");
         Check(!Mx251ClockFrequencyBox.IsReadOnly && Mx251ClockFrequencyBox.Text == "40", "editable IRC defaults to 40 MHz");

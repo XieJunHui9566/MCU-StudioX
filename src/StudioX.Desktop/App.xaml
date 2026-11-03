@@ -218,11 +218,21 @@
                     TargetName="Chrome"
                     Property="BorderBrush"
                     Value="{DynamicResource Accent}" />
+                </Trigger>
+                <MultiTrigger>
+                  <MultiTrigger.Conditions>
+                    <Condition
+                      Property="IsMouseOver"
+                      Value="True" />
+                    <Condition
+                      Property="IsDefault"
+                      Value="False" />
+                  </MultiTrigger.Conditions>
                   <Setter
                     TargetName="Chrome"
                     Property="Background"
                     Value="{DynamicResource HoverSurface}" />
-                </Trigger>
+                </MultiTrigger>
                 <Trigger
                   Property="IsKeyboardFocused"
                   Value="True">
@@ -231,6 +241,20 @@
                     Property="BorderBrush"
                     Value="{DynamicResource Accent}" />
                 </Trigger>
+                <MultiTrigger>
+                  <MultiTrigger.Conditions>
+                    <Condition
+                      Property="IsDefault"
+                      Value="True" />
+                    <Condition
+                      Property="IsKeyboardFocused"
+                      Value="True" />
+                  </MultiTrigger.Conditions>
+                  <Setter
+                    TargetName="Chrome"
+                    Property="BorderBrush"
+                    Value="{DynamicResource OnAccent}" />
+                </MultiTrigger>
                 <Trigger
                   Property="IsEnabled"
                   Value="False">
@@ -243,6 +267,21 @@
             </ControlTemplate>
           </Setter.Value>
         </Setter>
+        <Style.Triggers>
+          <Trigger
+            Property="IsDefault"
+            Value="True">
+            <Setter
+              Property="Background"
+              Value="{DynamicResource Accent}" />
+            <Setter
+              Property="BorderBrush"
+              Value="{DynamicResource Accent}" />
+            <Setter
+              Property="Foreground"
+              Value="{DynamicResource OnAccent}" />
+          </Trigger>
+        </Style.Triggers>
       </Style>
       <Style
         x:Key="PrimaryButton"
@@ -250,13 +289,13 @@
         BasedOn="{StaticResource {x:Type Button}}">
         <Setter
           Property="Background"
-          Value="#3574F0" />
+          Value="{DynamicResource Accent}" />
         <Setter
           Property="BorderBrush"
-          Value="#548AF7" />
+          Value="{DynamicResource Accent}" />
         <Setter
           Property="Foreground"
-          Value="White" />
+          Value="{DynamicResource OnAccent}" />
         <Setter
           Property="Padding"
           Value="18,10" />
@@ -282,8 +321,8 @@
                   Value="True">
                   <Setter
                     TargetName="Primary"
-                    Property="Background"
-                    Value="#467FF2" />
+                    Property="Opacity"
+                    Value="0.92" />
                 </Trigger>
                 <Trigger
                   Property="IsKeyboardFocused"
@@ -291,7 +330,7 @@
                   <Setter
                     TargetName="Primary"
                     Property="BorderBrush"
-                    Value="White" />
+                    Value="{DynamicResource OnAccent}" />
                 </Trigger>
                 <Trigger
                   Property="IsEnabled"
@@ -439,6 +478,36 @@
           Value="8,6" />
       </Style>
       <Style
+        TargetType="PasswordBox">
+        <Setter
+          Property="Foreground"
+          Value="{DynamicResource Text}" />
+        <Setter
+          Property="Background"
+          Value="{DynamicResource Background}" />
+        <Setter
+          Property="BorderBrush"
+          Value="{DynamicResource Border}" />
+        <Setter
+          Property="CaretBrush"
+          Value="{DynamicResource Text}" />
+        <Setter
+          Property="SelectionBrush"
+          Value="{DynamicResource Accent}" />
+        <Setter
+          Property="Padding"
+          Value="8,6" />
+        <Style.Triggers>
+          <Trigger
+            Property="IsKeyboardFocusWithin"
+            Value="True">
+            <Setter
+              Property="BorderBrush"
+              Value="{DynamicResource Accent}" />
+          </Trigger>
+        </Style.Triggers>
+      </Style>
+      <Style
         TargetType="CheckBox">
         <Setter
           Property="Foreground"
@@ -446,6 +515,15 @@
         <Setter
           Property="VerticalContentAlignment"
           Value="Center" />
+        <Style.Triggers>
+          <Trigger
+            Property="IsEnabled"
+            Value="False">
+            <Setter
+              Property="Opacity"
+              Value="0.5" />
+          </Trigger>
+        </Style.Triggers>
       </Style>
       <Style
         TargetType="ComboBox">

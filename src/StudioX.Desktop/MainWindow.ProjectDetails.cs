@@ -17,13 +17,23 @@ public partial class MainWindow
         }
         else
         {
-            await RunAsync(_ => ShowProjectDetailsAsync());
+            if (IsStcProject && (loadedBuildSettings is not null || loadedMx251Settings is not null) && ProjectDetailsPanel.DataContext is not null)
+            {
+                PackagesTab.Visibility = Visibility.Visible;
+                NewProjectPanel.Visibility = Visibility.Collapsed;
+                ProjectDetailsPanel.Visibility = Visibility.Visible;
+                ShowDocument(PackagesTab);
+            }
+            else { await RunAsync(_ => ShowProjectDetailsAsync()); }
         }
     }
 
     private void SetProjectDetailsMode(ProjectManifest? project)
     {
         currentProjectManifest = project;
+        BuildAssemblyMenu.IsEnabled = BuildAssemblyButton.IsEnabled = BuildAssemblyService.Supports(project);
+        InvalidateBuildAssembly("成功编译后显示当前固件对应的汇编。");
+        ShowBuildAssembly(false);
         projectDetailsRevision++;
         ZephyrDeviceTreeButton.Visibility = project?.Kind == ProjectKind.Zephyr ? Visibility.Visible : Visibility.Collapsed;
         ZephyrDeviceTreeButton.IsEnabled = false;
@@ -35,6 +45,7 @@ public partial class MainWindow
         loadedBuildSettings = null;
         loadedMx251Settings = null;
         stcCodeRomLimit = null;
+        stcRamLimits = null;
         ConfigureBuildSettingsForProject();
         UpdateBuildSettingsControls();
         ConfigureEspressifModuleForProject();
@@ -73,6 +84,7 @@ public partial class MainWindow
         loadedBuildSettings = null;
         loadedMx251Settings = null;
         stcCodeRomLimit = null;
+        stcRamLimits = null;
         BuildSettingsStatus.Text = project.Kind == ProjectKind.Zephyr
             ? "Zephyr 使用 prj.conf、Devicetree 和 CMakeLists.txt 配置编译。"
             : "正在读取编译参数…";
@@ -110,16 +122,18 @@ public partial class MainWindow
             {
                 ApplyProjectDetails(details);
                 ApplyMx251Settings(mxSettings);
-                await LoadMx251IspAsync(directory, revision);
+                if (ProjectCapabilities.For(project).Download) await LoadMx251IspAsync(directory, revision);
             }
             return;
         }
         var settings = await services.Builds.LoadSettingsAsync(directory);
         var romLimit = await services.Builds.ReadStcCodeRomLimitAsync(directory);
+        var ramLimits = await ReadStcRamLimitsForUiAsync(directory);
         // 工程切换、关闭或窗口关闭期间完成的旧读取不能覆盖新页面。
         if (revision == projectDetailsRevision && projectDirectory == directory && !closing)
         {
             stcCodeRomLimit = romLimit;
+            stcRamLimits = ramLimits;
             ApplyProjectDetails(details);
             ApplyBuildSettings(settings);
             if (IsEspressifProject)

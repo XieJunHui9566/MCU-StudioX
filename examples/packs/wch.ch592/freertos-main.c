@@ -10,7 +10,7 @@ volatile uint32_t studiox_rtos_start_error;
 static void Task200ms(void *argument)
 {
     (void)argument;
-    for (;;)
+    while (1)
     {
         ++studiox_task_200ms_count;
         vTaskDelay(pdMS_TO_TICKS(200));
@@ -20,7 +20,7 @@ static void Task200ms(void *argument)
 static void Task500ms(void *argument)
 {
     (void)argument;
-    for (;;)
+    while (1)
     {
         ++studiox_task_500ms_count;
         vTaskDelay(pdMS_TO_TICKS(500));
@@ -42,7 +42,7 @@ int main(void)
         studiox_rtos_start_error = 2;
     }
     taskDISABLE_INTERRUPTS();
-    for (;;)
+    while (1)
     {
     }
 }

@@ -54,7 +54,7 @@ public partial class DebugToolsView
     {
         disassemblyBusy = true;
         UpdateDisassemblyControls();
-        DisassemblyHint.Text = mon51Mode ? "正在读取目标 CODE 并解码 8051 指令…" : "正在读取 GDB 反汇编…";
+        DisassemblyHint.Text = mon51Mode ? "正在读取目标 CODE 并解码 8051 指令…" : picMode ? "正在读取 MDB 程序字反汇编…" : "正在读取 GDB 反汇编…";
     }
 
     public void SetDisassembly(DebugDisassembly result, bool hardware)
@@ -71,7 +71,9 @@ public partial class DebugToolsView
         {
             Instructions.ScrollIntoView(focus);
         }
-        var source = mon51Mode ? hardware ? "Mon51 目标 CODE · 8051 指令" : "Mon51 离线协议样本指令" : hardware ? "GDB 目标指令" : "离线模拟指令 · 非 ELF / Flash 实际内容";
+        var source = mon51Mode ? hardware ? "Mon51 目标 CODE · 8051 指令" : "Mon51 离线协议样本指令" : picMode
+            ? hardware ? "MDB 目标指令 · 程序字地址" : "MDB 指令模拟器 · 程序字地址"
+            : hardware ? "GDB 目标指令" : "离线模拟指令 · 非 ELF / Flash 实际内容";
         DisassemblyHint.Text = $"{source} · 0x{result.StartAddress:x8}–0x{result.EndAddress:x8}（终点不含） · " +
             (rows.Length == 0 ? "该范围没有返回可用指令。" : $"{rows.Length} 条" + (result.ProgramCounter is { } pc ? $" · PC 0x{pc:x8}" : " · PC 不可用"));
         UpdateDisassemblyControls();

@@ -76,7 +76,9 @@ public static class ProjectDevelopmentComponents
         IReadOnlyList<DevelopmentComponentRequirement> logic = project.Logic is { } configuredLogic
             ? [new(configuredLogic.ToolsetId, configuredLogic.ToolsetVersion, configuredLogic.CompilerId, Purpose: "已启用的逻辑构建")] : [];
         var primary = DevelopmentComponentRequirements.Primary(project.ToolsetId, project.ToolsetVersion, project.CompilerId, needs);
-        return DevelopmentComponentRequirements.Merge([primary], needs, mapping, logic);
+        IReadOnlyList<DevelopmentComponentRequirement> picBuild = project.Kind == ProjectKind.Pic
+            ? [new(Pic.PicCMake.ToolsetId, Pic.PicCMake.Version, Pic.PicCMake.CompilerId, Purpose: "PIC CMake / Ninja 构建")] : [];
+        return DevelopmentComponentRequirements.Merge([primary], needs, mapping, logic, picBuild);
     }
 
     public static async Task<IReadOnlyDictionary<string, string>> ReadPinsAsync(string root,

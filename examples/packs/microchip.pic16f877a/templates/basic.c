@@ -5,7 +5,7 @@ volatile unsigned char app_heartbeat;
 
 void main(void)
 {
-    for (;;)
+    while (1)
     {
         CLRWDT();
         ++app_heartbeat;

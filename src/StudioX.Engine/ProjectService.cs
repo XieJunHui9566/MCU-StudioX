@@ -175,7 +175,7 @@ public sealed partial class ProjectService(Func<string, CancellationToken, Task>
 
                     int main(void)
                     {
-                        for (;;)
+                        while (1)
                         {
                             ++app_heartbeat;
                             Delay_1ms();
@@ -186,15 +186,19 @@ public sealed partial class ProjectService(Func<string, CancellationToken, Task>
             }
             if (plan.Device.Architecture == "mcs251")
             {
-                await Mx251Profile.CreateProjectFilesAsync(pack, template, staging, cancellationToken);
+                await Mx251Profile.CreateProjectFilesAsync(pack, plan.Device, template, staging, cancellationToken);
             }
             else if (plan.Project.Kind == ProjectKind.Pic)
             {
+                await Pic.PicCMake.EnsureAsync(staging, plan.Project, cancellationToken);
                 await File.WriteAllTextAsync(Path.Combine(staging, "README.txt"),
-                    "PIC16F877A / XC8 4.00。顶部编译生成 .build/pic/<运行编号>/firmware.hex 和 ELF，直接调用独立 XC8，不需要 MPLAB X IDE。\n" +
-                    "程序 Flash 为 8192 个 14 位字，RAM 为分银行的 368 字节，EEPROM 为 256 字节。\n" +
+                    plan.Project.DeviceId + " / CMake + Ninja + XC8 4.00。顶部编译生成 .build/pic/latest/firmware.hex 和 ELF，不需要安装 MPLAB X IDE。\n" +
+                    "通过 CMakeLists.txt 登记 C 源码、包含目录和宏；不要将程序字地址或分银行 RAM 容量当作连续字节地址。\n" +
                     "基础模板不假设板级晶振和引脚，尚未设置配置位。GPIO 示例明确使用外部 4 MHz 晶振和 RD0；请先核对原理图。\n" +
-                    "PIC16F877A 可在 IDE 下载设置选择 PICkit3，目标板独立供电，确认当前固件后回读备份、写入并校验。其他 PIC 型号仍仅编译和导出；源码调试未接入。\n", cancellationToken);
+                    "PICkit3 目标板独立供电。仅一个 PICkit3 时自动选择；多个时选择序列号。普通下载直接写入与校验，不备份板上原程序，也不弹确认框。\n" +
+                    "具有片上调试能力的型号通过私有 MDB 支持源码调试；需要专用 ICD 头的型号不会按普通芯片开放。退出调试恢复原程序。\n" +
+                    "独立构建：cmake -S . -B .build/cli -G Ninja -DCMAKE_MAKE_PROGRAM=<ninja> -DPIC_XC8_COMPILER=<xc8-cc> -DPIC_DFP=<DFP的xc8目录>\n" +
+                    "然后执行 cmake --build .build/cli；调试构建增加 -DPIC_DEBUGGER=pickit3。\n", cancellationToken);
             }
             else if (plan.Project.Espressif is not null)
             {
@@ -214,6 +218,7 @@ public sealed partial class ProjectService(Func<string, CancellationToken, Task>
                     await File.WriteAllTextAsync(path, content, cancellationToken);
                 }
             }
+            await TemplateLoopStyle.PrepareEntryAsync(staging, cancellationToken);
             var gitignore = ".build/\nbuild/\ncmake-build-*/\n.studiox/debug.json\n.studiox/breakpoints.json\n*.user\n";
             if (plan.Project.PinMapping is not null || plan.Project.Logic is not null)
             {

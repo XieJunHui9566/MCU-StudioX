@@ -19,4 +19,5 @@ public partial class MainWindow
         return Task.CompletedTask;
     }
     private async void QuickStart_Click(object sender, RoutedEventArgs e) => await ShowHelpAsync();
+    private async void PluginApiHelp_Click(object sender, RoutedEventArgs e) => await ShowHelpAsync("plugin-api");
 }

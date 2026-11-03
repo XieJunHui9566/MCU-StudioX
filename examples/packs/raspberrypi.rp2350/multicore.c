@@ -9,7 +9,7 @@ volatile uint32_t core1_result;
 
 static void core1_entry(void)
 {
-    for (;;)
+    while (1)
     {
         uint32_t input;
         queue_remove_blocking(&requests, &input);
@@ -24,7 +24,7 @@ int main(void)
     queue_init(&requests, sizeof(uint32_t), 1);
     queue_init(&responses, sizeof(uint32_t), 1);
     multicore_launch_core1(core1_entry);
-    for (;;)
+    while (1)
     {
         uint32_t input = ++app_counter;
         uint32_t result;

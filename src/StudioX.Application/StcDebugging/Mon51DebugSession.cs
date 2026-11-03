@@ -25,6 +25,10 @@ public sealed partial class Mon51DebugSession(string dataDirectory, string confi
         get; private set;
     }
     public bool HasConnection => client is not null;
+    internal bool HandshakeFailed
+    {
+        get; private set;
+    }
     public string Reason { get; private set; } = "未连接 Mon51";
     public DebugSnapshot Snapshot { get; private set; } = DebugSnapshot.Empty;
     public string Version { get; private set; } = "";
@@ -92,7 +96,16 @@ public sealed partial class Mon51DebugSession(string dataDirectory, string confi
                 client = new Mon51Client(session, LogPath, parameters);
             }
             catch { await session.DisposeAsync(); throw; }
-            Version = await client.SynchronizeAsync(true, token);
+            try
+            {
+                Version = await client.SynchronizeAsync(true, token);
+            }
+            catch (StudioXException error) when (error.Code is "MON51_TIMEOUT" or "MON51_VERSION")
+            {
+                // 只将版本握手失败交给自动制作流程；后续读取、传输故障和取消不能触发 ISP。
+                HandshakeFailed = true;
+                throw;
+            }
             await ReadSnapshotAsync(token);
             // 冷启动上下文的 PC=0 尚未经过监控的用户复位映射；直接 GO 会执行物理监控入口。
             // SetPc(0) 由原厂监控映射至 DBFD 跳板，仅修改执行上下文，不改写 Flash 或外设。
@@ -510,6 +523,20 @@ public sealed partial class Mon51DebugSession(string dataDirectory, string confi
         Reason = reason;
         Changed?.Invoke();
     }
+    internal async Task AbortStartAsync()
+    {
+        await gate.WaitAsync();
+        try
+        {
+            if (client is not null)
+            {
+                await client.DisposeAsync();
+                client = null;
+            }
+        }
+        finally { gate.Release(); }
+    }
+
     public async ValueTask DisposeAsync()
     {
         if (disposed)

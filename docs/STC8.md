@@ -2,11 +2,17 @@
 
 ## 范围
 
+`stc.stc8/0.1.9` 统一覆盖现有 25 个 SDCC 8 位型号和全部 6 个模板入口：STC89/STC12/STC15/STC8G/STC8H 型号头包含 `<stdint.h>`，新建工程入口也显式包含该头，裸机计数示例使用 `uint16_t`。标准类型来自工程锁定的 SDCC，包括有符号/无符号 8/16/32/64 位、least/fast、指针及最大宽度类型、范围和常量宏，不另外定义同名类型。保留 0.1.8 的 STC8H8K64U、所有寄存器、容量、下载协议、Mon51 镜像与 RT51 实现；配方见 [标准整数模板升级](../tools/New-Stc8StandardTypesPack.py)。
+
+更新包库不会自动覆盖旧工程中的 `device/` 副本。旧工程可在需要标准类型的源文件中显式加入 `#include <stdint.h>`；升级器件资源时，应先核对旧包文件哈希并保留用户改动，再同步工程的包版本及内容指纹，不可仅改版本号或覆写同版本归档。2026-11-01 已针对当前 STC15/IAP15L2K61S2 工程按此方式更新器件资源。
+
+离线回归入口为 `StudioX.StcValidation --stdint <runtime> <stc.stc8-0.1.9.mcupack> <新输出目录>`：构建 25 个裸机工程和 1 个 RT51 工程，并独立编译五组型号头；每项检查 106 条标准整数宽度、符号、范围及常量断言。不连接硬件，不能据此推定实板运行结果。
+
 `stc.stc8/0.1.7` 在保留 24 个型号、原有模板、寄存器和 Mon51/RT51 资源的基础上，为 STC89/STC12/STC15/STC8G/STC8H 五组头文件统一加入 `<stdint.h>`。包含型号头文件后即可使用 `uint8_t/int8_t/uint16_t/int16_t/uint32_t/int32_t` 等标准类型；使用工程锁定 SDCC 的标准头，不引入重复 typedef。新包由[不可变升级配方](../tools/New-StcStdintPack.py)生成，已有工程的器件副本不自动替换。IAP15L2K61S2 的可选图形配置与分文件代码生成见[插件说明](../plugins/StudioX.StcConfigurator/README.md)。
 
 `stc.stc8/0.1.6` 新增 IAP15L2K61S2 专用 Mon51 固件，保留此前器件和模板；配合本次 IDE 软件适配可进行 L 型号调试构建与 Mon51 调试。L 型号已于 2026-10-21 完成单板制作和调试验收，见 [适配说明](STC-MON51-IAP15L2K61S2.md)。
 
-`stc.stc8/0.1.2` 在 0.1.0 的 SDK、模板和编译工具版本基础上增加 IAP15F2K61S2 的包内 Mon51 V2.5 制作固件；IDE 直接读取和下载，无需用户提供厂商程序。制作只接受 ISP 7.2.5S / 状态 70。旧工程编译锁不迁移，可在调试窗口独立选择此监控资源包。流程和边界见 [Mon51 界面](STC-MON51-UI.md) 与 [固件说明](STC-MON51-FIRMWARE.md)。
+`stc.stc8/0.1.2` 在 0.1.0 的 SDK、模板和编译工具版本基础上增加 IAP15F2K61S2 的包内 Mon51 V2.5 制作固件；IDE 直接读取和下载，无需用户提供厂商程序。制作只接受 ISP 7.2.5S / 状态 70。旧工程编译锁不迁移；调试先握手，失败后按工程准确型号自动选择已核对的监控镜像，串口和波特率复用下载设置。流程和边界见 [Mon51 界面](STC-MON51-UI.md) 与 [固件说明](STC-MON51-FIRMWARE.md)。
 
 `stc.stc8/0.1.0` 是单个 StudioX Pack，首批收录 STC89、STC12、STC15、STC8G、STC8H 共 24 个已核实型号，其中 IAP15F2K61S2 为代表型号。完整型号、容量与来源见 [包配方](../examples/packs/stc.stc8/README.md) 和 `artifacts/packs/STC8-0.1.0/source/vendor/provenance.json`。型号未列入包时，新建工程不猜测兼容型号或内存容量。
 
@@ -24,6 +30,29 @@
 | 执行速度 | `--opt-code-speed` | 优先提高速度 |
 
 档位会核对 `compile_commands.json` 中的实际 SDCC 命令。STC 工程不提供 GCC 调试信息选项。SDCC 参数语义见 [官方手册](https://sdcc.sourceforge.net/doc/sdccman.pdf)。
+
+### SDCC 内存模型
+
+所有使用 SDCC 的 STC 8 位工程在“器件与模板 → 编译参数”卡片中提供内存模型及内部 RAM / XDATA 大小。设置保存在 `.studiox/build.json`，与调试信息、Mon51 预留、ROM 上限共用原构建服务和草稿保护；下载、硬件及调试配套仍位于下载旁的独立设置页。
+
+| 选项 | 实际参数 | 未显式指定存储区的变量 |
+| --- | --- | --- |
+| 沿用工程默认 | 不覆盖工程选项 | 现有 `stc.stc8` 包使用 large |
+| small | `--model-small` | 内部 DATA；容量紧张时链接器会报告溢出 |
+| medium | `--model-medium` | 分页 PDATA；须按目标器件和板级程序正确配置分页及 P2 使用 |
+| large | `--model-large` | XDATA；STC 的片内扩展 RAM 也属于该地址空间 |
+
+模型改变默认数据分配与调用约定，不改变单片机位数、物理 RAM 或源码中 `__data` / `__idata` / `__pdata` / `__xdata` 等显式声明。SDCC 要求所有模块和链接采用一致模型，不能混合不同模型的目标文件或预编译库。切换后旧构建凭据失效，重新配置并编译；构建前核对真实编译与链接命令，发现自定义 CMake 冲突时保留诊断并停止。
+
+`idataSizeBytes` 对应 SDCC 的 `--iram-size`，表示芯片内部 RAM 总容量；DATA、IDATA 和堆栈共同使用，不能将该数值视为额外独占的 IDATA。`xdataSizeBytes` 对应 `--xram-size`，表示模板既定 `--xram-loc` 起点后的可用 XDATA 字节数，不修改起点。空值保持各准确型号/模板默认，允许在已核实上限内缩小链接容量，不把某个 STC15 的 1792 字节用于所有 STC 系列。超容量设置或越过 Mon51 的监控预留边界时拒绝；链接实际占用超过用户上限时按 SDCC 原始诊断失败。
+
+内部 RAM 容量必须为正整数字节数；XDATA 可以设置为 `0`，表示不给应用分配该区，任何实际 XDATA 占用都须通过链接器容量检查。恢复空值沿用默认，不把输入容量写入芯片硬件选项。
+
+`huge` 涉及代码分 bank 及相应调用支持，当前 STC 8 位包没有完整的 bank 链接布局，因此不开放该选项；`flat24` 属于 DS390/DS400，不用于本包的 MCS-51。`--stack-auto`、外部栈与重入策略是另一组 ABI 选项，本次不把它们等同于内存模型开关。
+
+包内现有 RT51 模板的 `rt51.h` 明确要求 large 与 `--stack-auto`，因此该模板只接受沿用默认或 large，选择 small / medium 会给出明确错误；普通裸机及 Mon51 不套用此模板限制。
+
+medium 已验证真实编译、链接及 CDB 生成，但当前 Mon51 尚不支持 PDATA 变量观察：其 CDB 类型为 `P`，可靠读取需要暂停时的分页地址证据，不能当作普通 XDATA 直接读取。模型帮助中明确标注此限制，离线构建通过不代表该调试能力已实板验证。
 
 STC15 系列按官方手册在物理程序容量末尾保留 7 字节 Global ID：IAP15F2K61S2 的物理程序空间为 61 KiB，SDCC `--code-size` 限为 61 KiB 减 7 字节。其他型号按各自官方容量配置；详情与资料链接在 [包配方](../examples/packs/stc.stc8/README.md)。
 

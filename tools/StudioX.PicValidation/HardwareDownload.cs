@@ -30,8 +30,6 @@ internal static class HardwareDownload
         var started = false;
         string? backup = null;
         string? backupHash = null;
-        var previousBackups = Directory.Exists(Path.Combine(root, ".build/pic-download"))
-            ? Directory.GetFiles(Path.Combine(root, ".build/pic-download"), "before.hex", SearchOption.AllDirectories).ToHashSet(StringComparer.OrdinalIgnoreCase) : [];
         PicDownloadReport? report = null;
         ProcessResult? restored = null;
         try
@@ -41,7 +39,7 @@ internal static class HardwareDownload
                 Console.Write(text);
                 if (text.Contains("开始写入与校验", StringComparison.Ordinal))
                 {
-                    backup = Directory.GetFiles(Path.Combine(root, ".build/pic-download"), "before.hex", SearchOption.AllDirectories).Single(path => !previousBackups.Contains(path));
+                    backup = Path.Combine(root, ".build/pic-download/latest/before.hex");
                     var read = File.ReadAllBytes(backup);
                     if (MemoryFingerprint(read) != originalMemory)
                     {

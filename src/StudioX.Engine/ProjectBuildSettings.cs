@@ -4,16 +4,17 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using StudioX.Foundation;
-using StudioX.Packages;
 
 /// <summary>工程级编译覆盖项；默认不改变模板、CMake 或预设中的参数。</summary>
 public sealed record ProjectBuildSettings(int FormatVersion = 1,
     CompilerOptimization Optimization = CompilerOptimization.ProjectDefault,
     CompilerDebugInfo DebugInfo = CompilerDebugInfo.ProjectDefault,
-    int? CodeRomSizeBytes = null, bool Mon51Profile = false)
+    int? CodeRomSizeBytes = null, bool Mon51Profile = false,
+    SdccMemoryModel MemoryModel = SdccMemoryModel.ProjectDefault,
+    int? IdataSizeBytes = null, int? XdataSizeBytes = null)
 {
     public const string RelativePath = ".studiox/build.json";
-    [JsonIgnore] public bool HasOverrides => Optimization != CompilerOptimization.ProjectDefault || DebugInfo != CompilerDebugInfo.ProjectDefault || CodeRomSizeBytes is not null || Mon51Profile;
+    [JsonIgnore] public bool HasOverrides => Optimization != CompilerOptimization.ProjectDefault || DebugInfo != CompilerDebugInfo.ProjectDefault || CodeRomSizeBytes is not null || Mon51Profile || MemoryModel != SdccMemoryModel.ProjectDefault || IdataSizeBytes is not null || XdataSizeBytes is not null;
     [JsonIgnore] public string? OptimizationFlag => Optimization == CompilerOptimization.ProjectDefault ? null : "-" + Optimization;
     [JsonIgnore] public string? DebugFlag => DebugInfo switch { CompilerDebugInfo.None => "-g0", CompilerDebugInfo.Standard => "-g2", CompilerDebugInfo.Full => "-g3", _ => null };
     [JsonIgnore] public string[] Flags => new[] { OptimizationFlag, DebugFlag }.OfType<string>().ToArray();
@@ -21,7 +22,7 @@ public sealed record ProjectBuildSettings(int FormatVersion = 1,
 
     public void Validate()
     {
-        if (FormatVersion != 1 || !Enum.IsDefined(Optimization) || !Enum.IsDefined(DebugInfo))
+        if (FormatVersion != 1 || !Enum.IsDefined(Optimization) || !Enum.IsDefined(DebugInfo) || !Enum.IsDefined(MemoryModel))
         {
             throw new StudioXException("BUILD_SETTINGS", "不支持的编译参数配置，请检查 .studiox/build.json。");
         }
@@ -29,11 +30,28 @@ public sealed record ProjectBuildSettings(int FormatVersion = 1,
         {
             throw new StudioXException("BUILD_SETTINGS", "代码 ROM 大小至少为 1024 字节。");
         }
+        if (IdataSizeBytes is < 1 or > 256 || XdataSizeBytes is < 0 or > 65536)
+        {
+            throw new StudioXException("BUILD_SETTINGS", "SDCC 内部 RAM 容量须为 1–256 字节，XDATA 须为 0–65536 字节；XDATA 为 0 时不允许分配该存储区。");
+        }
     }
 
     public void ValidateFor(ProjectManifest project)
     {
         Validate();
+        if (MemoryModel != SdccMemoryModel.ProjectDefault && project.ToolsetId != "stc.sdcc")
+        {
+            throw new StudioXException("BUILD_SETTINGS", "SDCC 内存模型仅适用于 STC 8 位 SDCC 工程。");
+        }
+        if (project.ToolsetId != "stc.sdcc" && (IdataSizeBytes is not null || XdataSizeBytes is not null))
+        {
+            throw new StudioXException("BUILD_SETTINGS", "内部 RAM / XDATA 容量选项仅用于 STC 8 位 SDCC 工程。");
+        }
+        if (project.ToolsetId == "stc.sdcc" && project.TemplateId == "rt51" && MemoryModel is SdccMemoryModel.Small or SdccMemoryModel.Medium)
+        {
+            // 这是当前包内 rt51.h 的显式 ABI 契约，不能泛化为 SDCC --stack-auto 的限制。
+            throw new StudioXException("BUILD_SETTINGS", "当前 RT51 模板要求所有编译单元使用 large 内存模型；请选择沿用工程或 large。");
+        }
         if (Mon51Profile && (project.ToolsetId != "stc.sdcc" || !StcMon51Targets.Supports(project.DeviceId) || DebugInfo != CompilerDebugInfo.Standard || CodeRomSizeBytes > 0xdbfd))
         {
             throw new StudioXException("BUILD_SETTINGS", "Mon51 V2.5 构建预设仅适用于 " + StcMon51Targets.DisplayNames + "，须启用标准 CDB；用户 CODE 上限不能超过 56317 字节。");
@@ -59,7 +77,8 @@ public sealed record ProjectBuildSettings(int FormatVersion = 1,
         _ => throw new StudioXException("BUILD_SETTINGS", "不支持的 STC SDCC 优化档位。")
     };
     internal string[] FlagsFor(ProjectManifest project) => project.ToolsetId == "stc.sdcc"
-        ? StcOptimizationFlags.Concat(DebugInfo == CompilerDebugInfo.Standard ? new[] { "--debug" } : []).Concat(Mon51Profile ? new[] { "--xram-size", "1024", "-DSTUDIOX_MON51_DEBUG=1" } : []).ToArray() : Flags;
+        ? StcOptimizationFlags.Concat(DebugInfo == CompilerDebugInfo.Standard ? new[] { "--debug" } : []).Concat(Mon51Profile ? new[] { "-DSTUDIOX_MON51_DEBUG=1" } : [])
+            .Concat(SdccBuildOptions.Flag(MemoryModel) is { } model ? new[] { model } : []).ToArray() : Flags;
 
     internal string SummaryFor(ProjectManifest project) => project.ToolsetId == "stc.sdcc"
         ? (Optimization switch
@@ -70,6 +89,9 @@ public sealed record ProjectBuildSettings(int FormatVersion = 1,
             CompilerOptimization.O2 => "SDCC 速度优先（--opt-code-speed）",
             _ => throw new StudioXException("BUILD_SETTINGS", "不支持的 STC SDCC 优化档位。")
         }) + (DebugInfo == CompilerDebugInfo.Standard ? "；标准 CDB（--debug）" : "")
+        + (MemoryModel == SdccMemoryModel.ProjectDefault ? "；内存模型沿用工程" : "；内存模型 " + MemoryModel.ToString().ToLowerInvariant())
+        + (IdataSizeBytes is { } idata ? $"；内部 RAM 上限 {idata} 字节" : "")
+        + (XdataSizeBytes is { } xdata ? $"；XDATA 上限 {xdata} 字节" : "")
         + (Mon51Profile ? "；Mon51 用户 CODE ≤56317 字节 / XDATA ≤1024 字节" : CodeRomSizeBytes is { } bytes ? $"；代码 ROM 上限 {bytes} 字节" : "；代码 ROM 沿用器件包上限")
         : Summary;
 
@@ -99,11 +121,14 @@ public sealed record ProjectBuildSettings(int FormatVersion = 1,
         {
             Mon51Profile ? "--code-size " + Math.Min(CodeRomSizeBytes ?? 0xdbfd, 0xdbfd).ToString(System.Globalization.CultureInfo.InvariantCulture) : CodeRomSizeBytes is { } size ? "--code-size " + size.ToString(System.Globalization.CultureInfo.InvariantCulture) : "",
             DebugInfo == CompilerDebugInfo.Standard ? "--debug" : "",
-            Mon51Profile ? "--xram-size " + (await Mon51XramSizeAsync(build, project, token)).ToString(System.Globalization.CultureInfo.InvariantCulture) : ""
+            SdccBuildOptions.Flag(MemoryModel) ?? "",
+            IdataSizeBytes is { } iram ? "--iram-size " + iram.ToString(System.Globalization.CultureInfo.InvariantCulture) : "",
+            Mon51Profile || XdataSizeBytes is not null ? "--xram-size " + (await StcRamLimits.ReadAsync(Path.GetDirectoryName(build)!, project, token))!
+                .EffectiveXdataSize(this).ToString(System.Globalization.CultureInfo.InvariantCulture) : ""
         }.Where(s => s.Length > 0)) : "";
         // <FLAGS> 包含目录、目标、接口库及源文件选项；在其后追加才能覆盖模板中的 -Os/-Og。
         // 不重写工程 CMake、预设或 SDK；对特殊自定义规则在生成后检查实际编译命令。
-        var script = $$$"""
+        var script = SdccBuildOptions.CMakeOverrides(this) + $$$"""
             foreach(_studiox_lang C CXX ASM)
                 set(_studiox_rule "CMAKE_${_studiox_lang}_COMPILE_OBJECT")
                 if(DEFINED ${_studiox_rule})
@@ -136,30 +161,6 @@ public sealed record ProjectBuildSettings(int FormatVersion = 1,
             set(CMAKE_PROJECT_INCLUDE "${CMAKE_PROJECT_INCLUDE}" CACHE STRING "Project include files" FORCE)
             """, token);
         return bootstrap;
-    }
-
-    private static async Task<int> Mon51XramSizeAsync(string build, ProjectManifest project, CancellationToken token)
-    {
-        var pack = await JsonStore.ReadAsync<PackManifest>(Path.Combine(Path.GetDirectoryName(build)!, "device", "manifest.json"), token);
-        var device = pack.Devices.Single(d => d.Id == project.DeviceId);
-        var options = TemplateResolver.Resolve(device, project.TemplateId).LinkOptions.ToList();
-        int Read(string option)
-        {
-            var index = options.IndexOf(option);
-            if (index < 0 || index + 1 >= options.Count || !int.TryParse(options[index + 1], out var value))
-            {
-                throw new StudioXException("BUILD_SETTINGS", "Mon51 模板缺少有效的 " + option);
-            }
-            return value;
-        }
-        var origin = Read("--xram-loc");
-        var bytes = Read("--xram-size");
-        if (origin < 0 || origin >= 1024 || bytes <= 0)
-        {
-            throw new StudioXException("BUILD_SETTINGS", "Mon51 用户 XRAM 必须位于 0000..03FF。");
-        }
-        // 某些模板保留地址 0 供 NULL 使用；不能把 1 起始的 1023 字节扩成 1024 字节。
-        return Math.Min(bytes, 1024 - origin);
     }
 
     internal async Task VerifyCommandsAsync(string build, ProjectManifest project, CancellationToken token, int? stcClockHz = null, int? stcClockDivider = null)

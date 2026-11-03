@@ -4,7 +4,12 @@
 #define _XTAL_FREQ 4000000UL
 #pragma config FOSC = XT
 #pragma config WDTE = OFF
+/* PICkit3 调试要求关闭 PWRT；普通下载仍保留上电延时。 */
+#if defined(STUDIOX_PIC_DEBUG)
+#pragma config PWRTE = OFF
+#else
 #pragma config PWRTE = ON
+#endif
 #pragma config BOREN = ON
 #pragma config LVP = OFF
 #pragma config CPD = OFF
@@ -15,7 +20,7 @@ void main(void)
 {
     PORTD = 0;
     TRISDbits.TRISD0 = 0;
-    for (;;)
+    while (1)
     {
         PORTDbits.RD0 = !PORTDbits.RD0;
         __delay_ms(250);

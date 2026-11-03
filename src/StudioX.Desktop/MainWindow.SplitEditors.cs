@@ -48,6 +48,7 @@ public partial class MainWindow
         Grid.SetColumn(secondaryTabs, 2);
         editorGroups.Children.Add(secondaryTabs);
         parent.Children.Add(editorGroups);
+        InitializeBuildAssemblyPane(editorGroups);
         secondaryTabs.SelectionChanged += WorkspaceTabs_SelectionChanged;
         mirrorEditor.SetResourceReference(BackgroundProperty, "EditorSurface");
         mirrorEditor.SetResourceReference(ForegroundProperty, "Text");

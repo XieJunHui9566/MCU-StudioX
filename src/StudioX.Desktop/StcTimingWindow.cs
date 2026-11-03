@@ -53,6 +53,7 @@ internal sealed class StcTimingWindow : Window
         MinWidth = 760;
         MinHeight = 550;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
+        SetResourceReference(StyleProperty, typeof(Window));
         SetResourceReference(BackgroundProperty, "Surface");
         SetResourceReference(ForegroundProperty, "Text");
         var root = new Grid { Margin = new(18) };

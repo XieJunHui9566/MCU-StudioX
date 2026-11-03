@@ -51,21 +51,7 @@ public partial class MainWindow
         RefreshDebugUi();
         Check(DebugStartButton.Visibility == Visibility.Visible && DebugStartButton.IsEnabled && debugMargin!.Visibility == Visibility.Visible, "STC connection entry and source breakpoint gutter visible");
         Check(!Mon51BreakpointInteriorOpaque(2), "unverified saved source breakpoint renders hollow before connection");
-        var connection = new Mon51ConnectionWindow(["COM14"], "COM14", "my_firmware", [Mon51PreviewFirmware],
-            (_, _, _, _, _) => throw new InvalidOperationException("Preview must never open a serial port"),
-            (_, _, _, _, _) => throw new InvalidOperationException("Preview must never install a monitor"))
-        {
-            Owner = this,
-            ShowActivated = false,
-            ShowInTaskbar = false,
-            Left = -20000,
-            WindowStartupLocation = WindowStartupLocation.Manual
-        };
-        connection.Show();
-        connection.UpdateLayout();
-        Render(connection, Path.Combine(directory, "connection.png"));
-        connection.Close();
-        await CheckMon51ConnectionRetryAsync(checks);
+        await CheckMon51PortSettingsUiAsync(directory, checks);
         await services.Debugger.StartMon51Async("COM14", 115200, "IAP15F2K61S2");
         await Settle();
         Check(Mon51Tools.Visibility == Visibility.Visible && GeneralDebugTools.Visibility == Visibility.Collapsed && RegisterTitle.Text == "8051 寄存器" && RegisterGrid.Items.Count == 19, "dedicated 8051 panel and register rows");

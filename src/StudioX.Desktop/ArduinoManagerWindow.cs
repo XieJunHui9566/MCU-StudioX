@@ -31,6 +31,7 @@ public sealed class ArduinoManagerWindow : Window
         MinWidth = 720;
         MinHeight = 740;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
+        SetResourceReference(StyleProperty, typeof(Window));
         SetResourceReference(BackgroundProperty, "Surface");
         SetResourceReference(ForegroundProperty, "Text");
         foreach (var list in new[] { libraries, results })

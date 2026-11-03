@@ -55,10 +55,12 @@ public partial class MainWindow
         Check(currentProjectManifest?.Kind == ProjectKind.Pic && activeDocument?.RelativePath == "src/main.c", "PIC C opens in the real source editor");
         Check(services.Intelligence.IsReady, "PIC real clangd service starts");
         Check(BuildButton.IsEnabled && DownloadButton.IsEnabled && DownloadProbePicker.Visibility == Visibility.Collapsed, "PIC16F877A build and dedicated PICkit3 download enabled without OpenOCD controls");
-        Check(DebugStartButton.Visibility == Visibility.Collapsed && !CanEditBreakpoints, "unimplemented PIC debugging and breakpoints hidden");
+        Check(DownloadButton.ToolTip is string downloadHint && downloadHint.Contains("直接写入与校验", StringComparison.Ordinal) &&
+            downloadHint.Contains("不备份", StringComparison.Ordinal), "PIC ordinary download describes direct programming without an original-firmware backup");
+        Check(DebugStartButton.Visibility == Visibility.Visible && CanEditBreakpoints, "PICkit3 / MDB debug and source breakpoints enabled for the exact supported target");
         await ShowProjectDetailsAsync();
         Check(BuildSettingsCard.Visibility == Visibility.Collapsed, "PIC does not expose GCC/CMake build settings");
-        Check(sourceRegistrationMenu?.Command?.CanExecute(null) == false, "PIC hides the unsupported CMake source registration action");
+        Check(sourceRegistrationMenu?.Command?.CanExecute(null) == true, "PIC exposes CMake source registration");
         var guide = StudioX.Application.Onboarding.FirstProjectGuideService.Steps(GuideProgress());
         var scope = ProjectCapabilities.For(currentProjectManifest);
         var health = await services.ProjectHealth.InspectAsync(project);
@@ -71,18 +73,32 @@ public partial class MainWindow
         {
             ApplyTheme(theme);
             await Save(theme.Id + "-pic-workbench.png");
-            var settings = new StudioX.Engine.Pic.PicDownloadSettings(ProgrammerSerial: "BUR195068601");
-            var selection = new PicDownloadWindow(settings, [new("BUR195068601")], () => throw new InvalidOperationException("Preview must not enumerate hardware")) { Owner = this };
+            var settings = new StudioX.Engine.Pic.PicDownloadSettings(ProgrammerSerial: "PREVIEW-PICKIT3-A");
+            var selection = new PicDownloadWindow(settings, [new("PREVIEW-PICKIT3-A"), new("PREVIEW-PICKIT3-B")], () => throw new InvalidOperationException("Preview must not enumerate hardware")) { Owner = this };
             selection.Show();
             await SaveDialogAsync(selection, theme.Id + "-pic-settings.png");
-            var firmware = await services.Builds.Pic.PreviewAsync(project);
-            var preview = new StudioX.Engine.Pic.PicDownloadPreview(firmware, settings,
-                StudioX.Engine.Pic.PicHexImage.Validate(await File.ReadAllBytesAsync(firmware.HexPath)), "Preview", "Preview");
-            var confirmation = new PicDownloadConfirmWindow(preview) { Owner = this };
-            confirmation.Show();
-            await SaveDialogAsync(confirmation, theme.Id + "-pic-confirm.png");
         }
-        checks.Add("PICkit3 selection and exact-firmware confirmation render in both themes without connecting hardware");
+        checks.Add("PICkit3 selection renders in both themes without connecting hardware; downloads have no confirmation dialog");
+        Check((await services.Builds.BuildPicDebugAsync(project)).Success, "GPIO template has valid explicit debug configuration");
+        try
+        {
+            await services.Debugger.StartPicAsync(services.PicDebug, null);
+            RefreshDebugUi();
+            await NavigateSelectedDebugFrameAsync();
+            Check(DebugContinueButton.IsEnabled && DebugIntoButton.IsEnabled && DebugOverButton.IsEnabled && DebugStopButton.IsEnabled,
+                "PIC source debug actions are available in the real workbench");
+            DebugTools.ShowDisassembly();
+            DebugTools.ReadDisassemblyAt("0x0");
+            await Task.Delay(500);
+            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);
+            Check(DebugTools.DisassemblyInstructionCount > 0 && DebugTools.CanReadDisassembly, "PIC program-word disassembly reaches the actual UI");
+            foreach (var theme in new[] { ThemeService.Dark, ThemeService.Light })
+            {
+                ApplyTheme(theme);
+                await Save(theme.Id + "-pic-debug.png");
+            }
+        }
+        finally { await services.Debugger.StopAsync(); }
         await JsonStore.WriteAsync(Path.Combine(directory, "result.json"), new
         {
             passed = true,

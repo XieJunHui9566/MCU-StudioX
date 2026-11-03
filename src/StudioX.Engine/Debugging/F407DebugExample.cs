@@ -25,7 +25,7 @@ public static class F407DebugExample
         {
             System_Init();
 
-            for (;;) {
+            while (1) {
                 ++app_counter;
                 app_input = app_counter & 0xff;
                 app_output = ComputeOutput(app_input);

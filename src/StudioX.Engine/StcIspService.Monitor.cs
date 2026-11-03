@@ -7,19 +7,22 @@ public sealed partial class StcIspService
 {
     /// <summary>制作监控独立于工程构建；仅接受经散列核对的专用编码镜像。</summary>
     public async Task<StcIspPreparation> PrepareMonitorAsync(string directory, string port, byte[] firmware, CancellationToken token = default)
+        => await PrepareMonitorAsync(directory, port, firmware, 115200, token);
+
+    public async Task<StcIspPreparation> PrepareMonitorAsync(string directory, string port, byte[] firmware, int baud, CancellationToken token = default)
     {
         var root = Path.GetFullPath(directory);
         var (_, device) = await ReadProjectDeviceAsync(root, token);
         StcMonitorImage.ValidateSetup(firmware, device.Id);
-        var settings = new StcIspSettings(Port: port, ClockMode: StcClockMode.Preserve);
+        var settings = new StcIspSettings(Port: port, ClockMode: StcClockMode.Preserve, TransferBaud: baud);
         ValidateMonitorTarget(device, settings);
         var tool = await GetToolStatusAsync(token);
         if (!tool.Available || tool.PythonExecutable is null)
         {
             throw new StudioXException("STC_ISP_TOOL", tool.Message);
         }
-        var session = PathBoundary.Resolve(root, ".build/stc-isp-" + Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(session);
+        using var storage = ProjectBuildStorage.Acquire(root, "stc-isp");
+        var session = storage.Prepare("stc-monitor");
         var image = Path.Combine(session, "monitor.bin");
         await File.WriteAllBytesAsync(image, firmware, token);
         var script = Path.Combine(session, "studiox-stcgal-guard.py");
@@ -45,9 +48,9 @@ public sealed partial class StcIspService
     private static void ValidateMonitorTarget(DeviceDefinition device, StcIspSettings settings)
     {
         settings.ValidateFor(StcIspCapabilities.For(device), requirePort: true);
-        if (!StcMon51Targets.Supports(device.Id) || device.Architecture != "mcs51" || device.RamBytes != 2048 || device.FlashBytes != 62464 || settings.ClockMode != StcClockMode.Preserve || settings.TransferBaud != 115200)
+        if (!StcMon51Targets.Supports(device.Id) || device.Architecture != "mcs51" || device.RamBytes != 2048 || device.FlashBytes != 62464 || settings.ClockMode != StcClockMode.Preserve)
         {
-            throw new StudioXException("MON51_SETUP_TARGET", "制作通道限定 " + StcMon51Targets.DisplayNames + " / 7.2.5S / 状态 70，使用 115200 并保留当前时钟来源。其他组合不会擦写。");
+            throw new StudioXException("MON51_SETUP_TARGET", "制作通道限定 " + StcMon51Targets.DisplayNames + " / 7.2.5S / 状态 70，使用工程下载波特率并保留当前时钟来源。其他组合不会擦写。");
         }
     }
 }

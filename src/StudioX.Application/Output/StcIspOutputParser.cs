@@ -9,6 +9,10 @@ public static partial class StcIspOutputParser
     public static OutputActivity? Activity(string line)
     {
         var text = line.Trim();
+        if (text.StartsWith("StudioX: waiting for USB", StringComparison.Ordinal))
+        {
+            return new("等待原生 USB ISP；请使目标板进入下载模式后插入电脑");
+        }
         var progress = Progress().Match(text);
         if (progress.Success && long.TryParse(progress.Groups["done"].Value, NumberStyles.None, CultureInfo.InvariantCulture, out var done) &&
             long.TryParse(progress.Groups["total"].Value, NumberStyles.None, CultureInfo.InvariantCulture, out var total) && total > 0 && done <= total)

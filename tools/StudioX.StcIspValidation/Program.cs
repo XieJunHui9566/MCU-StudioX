@@ -7,6 +7,26 @@ using StudioX.Packages;
 // 全程只创建隔离工程、编译和准备快照；绝不调用 Download/连接 COM 口。
 // dotnet run --project tools/StudioX.StcIspValidation -c Release -- <tool-runtime> <stc.mcupack> <new-output-dir> <stcgal.exe>
 Console.OutputEncoding = Encoding.UTF8;
+if (args is ["--settings-offline", var settingsPython, var settingsOutput])
+{
+    await HardwareSettingsChecks.RunAsync(settingsPython, settingsOutput);
+    return;
+}
+if (args is ["--options-offline", var optionsPython, var optionsOutput])
+{
+    await OptionSafetyChecks.RunAsync(optionsPython, optionsOutput);
+    return;
+}
+if (args is ["--usb", var usbRuntime, var usbPack, var usbOutput])
+{
+    await NativeUsbChecks.RunAsync(usbRuntime, usbPack, usbOutput);
+    return;
+}
+if (args is ["--usb-hardware", var hardwareImage, var hardwareLog])
+{
+    await NativeUsbHardwareCheck.RunAsync(hardwareImage, hardwareLog);
+    return;
+}
 if (args.Length != 4) { throw new ArgumentException("需要 tool-runtime、STC 包、新输出目录与本机 stcgal.exe。"); }
 var output = Path.GetFullPath(args[2]);
 if (Directory.Exists(output) || File.Exists(output)) { throw new InvalidOperationException("请选择不存在的验收输出目录。"); }
@@ -51,6 +71,24 @@ Check(prepared.ExpectedModel == "IAP15F2K61S2" && prepared.ExpectedCodeBytes == 
     prepared.HighestAddress < 62457 && prepared.Port == "COM5" &&
     prepared.ImageSha256 == Convert.ToHexString(SHA256.HashData(await File.ReadAllBytesAsync(prepared.Image))), "实际包/构建产物离线准备");
 Check(prepared.Image != prepared.SourceImage && File.Exists(prepared.GuardScript) && !File.Exists(prepared.LogPath), "固件快照与门禁脚本；未启动下载");
+await service.VerifyPreparedAsync(prepared);
+var hardwareSettings = settings with
+{
+    ModifyHardware = true,
+    Hardware = new StcHardwareOptions { Uart2PinMode = "normal", ResetOutputLevel = "high", WatchdogStopIdle = "true" }
+};
+await service.SaveSettingsAsync(project, hardwareSettings);
+Check(await service.LoadSettingsAsync(project) == hardwareSettings, "硬件设置由实际工程服务保存并读取");
+try
+{
+    await service.VerifyPreparedAsync(prepared);
+    throw new InvalidOperationException("硬件配置改变后仍接受旧下载快照。");
+}
+catch (StudioXException ex) when (ex.Code == "STC_ISP_PREPARE") { Check(true, "硬件选项改变使旧准备快照失效"); }
+var hardwarePrepared = await service.PrepareAsync(project, hardwareSettings);
+await service.VerifyPreparedAsync(hardwarePrepared);
+Check(hardwarePrepared.Settings == hardwareSettings, "硬件配置固定在通过复核的下载快照内");
+await service.SaveSettingsAsync(project, settings);
 await service.VerifyPreparedAsync(prepared);
 var buildSettingsPath = Path.Combine(project, ProjectBuildSettings.RelativePath);
 var savedBuildSettings = File.Exists(buildSettingsPath) ? await File.ReadAllBytesAsync(buildSettingsPath) : null;
@@ -141,6 +179,7 @@ var progressTest = await new ProcessRunner().RunAsync(new(prepared.PythonExecuta
     ["-B", Path.GetFullPath("tools/StudioX.StcIspValidation/progress_offline.py"), prepared.GuardScript],
     Path.GetFullPath("."), TimeSpan.FromSeconds(15), RemoveEnvironment: ["PYTHONHOME", "PYTHONPATH"]));
 Check(progressTest.Success, "写入字节进度与应答失败离线边界：" + progressTest.StandardOutput + progressTest.StandardError);
+await OptionSafetyChecks.RunAsync(prepared.PythonExecutable, Path.Combine(output, "option-safety"));
 var all = pack.Manifest.Devices.Select(StcIspCapabilities.For).ToDictionary(c => c.DeviceId);
 Check(all["STC89C52RC"].SupportedClockModes.SequenceEqual([StcClockMode.Preserve]) &&
     all["STC12C5A60S2"].SupportedClockModes.Contains(StcClockMode.ExternalCrystal) && !all["STC12C5A60S2"].SupportsRcTrim &&

@@ -21,6 +21,7 @@ internal sealed class CodeTemplateVariablesWindow : Window
         MinWidth = 600;
         MinHeight = 450;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
+        SetResourceReference(StyleProperty, typeof(Window));
         SetResourceReference(BackgroundProperty, "Surface");
         SetResourceReference(ForegroundProperty, "Text");
         var root = new Grid { Margin = new(20) };

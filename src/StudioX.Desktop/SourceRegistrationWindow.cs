@@ -46,6 +46,7 @@ internal sealed class SourceRegistrationWindow : Window
         MinWidth = 760;
         MinHeight = 540;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
+        SetResourceReference(StyleProperty, typeof(Window));
         SetResourceReference(BackgroundProperty, "Surface");
         SetResourceReference(ForegroundProperty, "Text");
         Operations.SetResourceReference(BackgroundProperty, "ToolSurface");

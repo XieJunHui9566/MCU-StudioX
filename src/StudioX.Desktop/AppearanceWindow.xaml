@@ -352,7 +352,7 @@
           LineHeight="19" />
         <TextBlock
           x:Name="ErrorText"
-          Foreground="#F08080"
+          Foreground="{DynamicResource DiagnosticError}"
           TextWrapping="Wrap"
           Margin="0,12,0,0" />
       </StackPanel>

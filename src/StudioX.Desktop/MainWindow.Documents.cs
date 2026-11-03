@@ -62,6 +62,7 @@ public partial class MainWindow
     private EditorDocumentSession? FindEditor(string path) => editorDocuments.FirstOrDefault(session => string.Equals(session.Source.RelativePath, path, StringComparison.OrdinalIgnoreCase));
     private EditorDocumentSession AddEditor(SourceDocument source)
     {
+        EditorTextSafety.Validate(source.Text);
         var session = new EditorDocumentSession(source);
         projectChangeSession?.TrackPath(source.RelativePath);
         session.Tab.Tag = session;
@@ -69,7 +70,7 @@ public partial class MainWindow
         label.Children.Add(new FileIcon { FileName = source.RelativePath, Width = 19, Height = 19, Margin = new Thickness(0, 0, 7, 0), VerticalAlignment = VerticalAlignment.Center });
         label.Children.Add(session.Label);
         session.Tab.Header = CreateTabHeader(session.Tab, label);
-        session.Changed = (_, _) => { UpdateEditorHeader(session); guideSaved = false; guideBuild = null; RefreshFirstProjectGuide(); QueuePluginDocumentEvent("document.changed", session); services.Intelligence.InvalidateDiagnostics(); HideSymbolHover(); ClearBuildDiagnostics(); agentEditorSession?.InvalidateValidation(); QueueLiveDiagnostics(); CommandManager.InvalidateRequerySuggested(); };
+        session.Changed = (_, _) => { UpdateEditorHeader(session); InvalidateBuildAssembly("源码存在修改，请保存并重新编译后查看汇编。"); guideSaved = false; guideBuild = null; RefreshFirstProjectGuide(); QueuePluginDocumentEvent("document.changed", session); services.Intelligence.InvalidateDiagnostics(); HideSymbolHover(); ClearBuildDiagnostics(); agentEditorSession?.InvalidateValidation(); QueueLiveDiagnostics(); CommandManager.InvalidateRequerySuggested(); };
         session.Buffer.TextChanged += session.Changed;
         editorDocuments.Add(session);
         WorkspaceTabs.Items.Insert(editorDocuments.Count(e => e.Group == 0), session.Tab);
@@ -137,6 +138,10 @@ public partial class MainWindow
                 activeEditor.Tab.Content = null;
             }
             activeEditor = session;
+            if (buildAssemblyCatalog is not null)
+            {
+                buildAssembly.SelectSource(session.Source.RelativePath);
+            }
             if (mirroredSession == session)
             {
                 session.Tab.Content = null;

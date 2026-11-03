@@ -11,15 +11,25 @@ if (args is ["--process-plugin"] or ["--process-bad-version"])
     return await ProcessFixtureHost.RunAsync(args[0] == "--process-bad-version");
 }
 
-var root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../.."));
-var hostExecutable = Path.Combine(root, "src/StudioX.PluginHost/bin/Debug/net10.0/StudioX.PluginHost.exe");
-var scratch = Path.Combine(root, "artifacts/validation/plugin-runtime-" + Guid.NewGuid().ToString("N"));
+var explicitPaths = args is ["--verify", _, _, _, _];
+if (args.Length != 0 && !explicitPaths)
+{
+    throw new ArgumentException("Usage: --verify <repository> <plugin-host.exe> <legacy-decoder-directory> <new-output>");
+}
+var root = explicitPaths ? Path.GetFullPath(args[1]) : Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../.."));
+var hostExecutable = explicitPaths ? Path.GetFullPath(args[2]) : Path.Combine(root, "src/StudioX.PluginHost/bin/Debug/net10.0/StudioX.PluginHost.exe");
+var legacySource = explicitPaths ? Path.GetFullPath(args[3]) : Path.Combine(root, "examples/StudioX.SampleDecoder/bin/Debug/net10.0");
+var scratch = explicitPaths ? Path.GetFullPath(args[4]) : Path.Combine(root, "artifacts/validation/plugin-runtime-" + Guid.NewGuid().ToString("N"));
+if (Directory.Exists(scratch) || File.Exists(scratch)) { throw new IOException("Use a new validation output directory."); }
 Directory.CreateDirectory(scratch);
 var results = new List<string>();
 var originalSecret = Environment.GetEnvironmentVariable("STUDIOX_VALIDATION_SECRET");
 Environment.SetEnvironmentVariable("STUDIOX_VALIDATION_SECRET", "must-not-reach-plugin");
 try
 {
+    results.Add(await OrderedEventChecks.RunAsync(scratch, Check));
+    results.Add(await ManifestCapabilitiesChecks.RunAsync(scratch, Check));
+    results.Add(await SdkErrorContractChecks.RunAsync(root, scratch, hostExecutable));
     foreach (var kind in new[] { "dotnet", "process" })
     {
         var pluginDirectory = Path.Combine(scratch, kind);
@@ -122,7 +132,6 @@ try
 
     var legacyDirectory = Path.Combine(scratch, "legacy");
     Directory.CreateDirectory(legacyDirectory);
-    var legacySource = Path.Combine(root, "examples/StudioX.SampleDecoder/bin/Debug/net10.0");
     foreach (var source in Directory.GetFiles(legacySource))
     {
         File.Copy(source, Path.Combine(legacyDirectory, Path.GetFileName(source)));

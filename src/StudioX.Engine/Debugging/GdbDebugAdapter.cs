@@ -4,7 +4,7 @@ using System.Globalization;
 using StudioX.Foundation;
 
 /// <summary>所有调试交互映射到标准 MI；未提供任意命令输入，避免观察窗口意外执行赋值/函数调用。</summary>
-public sealed class GdbDebugAdapter(IGdbMiTransport transport, DebugTargetProfile? target = null) : IAsyncDisposable
+public sealed class GdbDebugAdapter(IGdbMiTransport transport, DebugTargetProfile? target = null) : IDebugAdapter
 {
     public event Action<string>? RecordReceived { add => transport.RecordReceived += value; remove => transport.RecordReceived -= value; }
     public event Action<string>? Trace;

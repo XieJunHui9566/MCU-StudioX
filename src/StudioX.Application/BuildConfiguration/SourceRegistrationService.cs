@@ -72,9 +72,9 @@ public sealed class SourceRegistrationService(ProjectFileService files)
         }
         var snapshot = opened ?? new(disk, disk.Text);
         var idf = manifest.Espressif?.Framework == "esp-idf";
-        var parser = new SourceListEditor(snapshot.Text, idf, manifest.ToolsetId == Mx251Profile.ToolsetId);
+        var parser = new SourceListEditor(snapshot.Text, idf, manifest.ToolsetId == Mx251Profile.ToolsetId || manifest.Kind == ProjectKind.Pic);
         var targets = parser.Describe(value => ResolveSource(project, configuration, value));
-        return new(project, identity, snapshot, opened is not null, idf, targets, manifest.ToolsetId == Mx251Profile.ToolsetId);
+        return new(project, identity, snapshot, opened is not null, idf, targets, manifest.ToolsetId == Mx251Profile.ToolsetId || manifest.Kind == ProjectKind.Pic);
     }
 
     public IReadOnlyList<SourceRegistrationOperation> Suggest(SourceRegistrationContext context, string target, IReadOnlyList<string> discovered, IReadOnlyList<ProjectFileChange> moves)

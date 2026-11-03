@@ -8,7 +8,7 @@ static void heartbeat_task(void *argument)
 {
     (void)argument;
 
-    for (;;)
+    while (1)
     {
         printf("Heartbeat; free heap: %lu bytes\n", (unsigned long)esp_get_free_heap_size());
         vTaskDelay(pdMS_TO_TICKS(1000));

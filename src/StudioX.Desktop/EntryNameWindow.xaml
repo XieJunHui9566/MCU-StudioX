@@ -21,7 +21,7 @@
       AutomationProperties.Name="文件或文件夹名称" />
     <TextBlock
       x:Name="ErrorLabel"
-      Foreground="#E87979"
+      Foreground="{DynamicResource DiagnosticError}"
       TextWrapping="Wrap"
       Margin="0,8,0,0"
       Visibility="Collapsed" />

@@ -288,6 +288,14 @@
               DockPanel.Dock="Right"
               Padding="10,3"
               Click="ReadMemory_Click" />
+            <Button
+              x:Name="WritePicMemory"
+              Content="写入文件寄存器…"
+              DockPanel.Dock="Right"
+              Padding="8,3"
+              Margin="4,0"
+              Visibility="Collapsed"
+              Click="WritePicMemory_Click" />
             <TextBox
               x:Name="MemoryAddress"
               Text="0x20000000"
@@ -295,6 +303,7 @@
               ToolTip="十六进制地址" />
           </DockPanel>
           <TextBlock
+            x:Name="MemoryHint"
             Grid.Row="1"
             Text="内存只读 · 每次读取 64 字节"
             Foreground="{DynamicResource Muted}"

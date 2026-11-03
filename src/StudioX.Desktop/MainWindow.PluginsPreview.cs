@@ -176,7 +176,10 @@ public partial class MainWindow
             check(SourceEditor.Text.Contains("未保存的实时缓冲区", StringComparison.Ordinal), "磁盘写入保留未保存编辑缓冲区");
             var clean = await services.Files.ReadAsync(project, "src/main.c");
             activeEditor!.Source = clean;
+            // 夹具已显式丢弃上一步的冲突草稿，重置冲突标记后才能表示干净文档。
+            activeEditor.DiskConflict = null;
             activeEditor.Buffer.Text = clean.Text;
+            check(!activeEditor.IsDirty, "显式重置夹具草稿后文档恢复干净状态");
             await File.WriteAllTextAsync(sourcePath, "// 已保存文件的新内容\n");
             await SynchronizePluginEditorsAsync(project, generation);
             check(SourceEditor.Text == "// 已保存文件的新内容\n" && !activeEditor.IsDirty, "干净的已打开文件实时同步且保持保存状态");

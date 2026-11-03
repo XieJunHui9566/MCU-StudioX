@@ -322,7 +322,7 @@ foreach ($wchPack in @('CH32V307-0.1.3-verified', 'CH32V203-0.1.1-verified', 'CH
         }
     }
 }
-foreach ($catalog in @(@{ source = 'Puya-0.1.1'; vendor = 'Puya' }, @{ source = 'Puya-Additional-0.1.0'; vendor = 'Puya' }, @{ source = 'Puya-F403-0.1.0'; vendor = 'Puya' }, @{ source = 'Puya-F410-F420-0.1.0'; vendor = 'Puya' }, @{ source = 'GD32-0.1.0-r5'; vendor = 'GigaDevice' }, @{ source = 'GD32-E51x-0.1.0'; vendor = 'GigaDevice' }, @{ source = 'STC8-0.1.0'; vendor = 'STC' }))
+foreach ($catalog in @(@{ source = 'Puya-0.1.1'; vendor = 'Puya' }, @{ source = 'Puya-Additional-0.1.0'; vendor = 'Puya' }, @{ source = 'Puya-F403-0.1.0'; vendor = 'Puya' }, @{ source = 'Puya-F410-F420-0.1.0'; vendor = 'Puya' }, @{ source = 'GD32-0.1.0-r5'; vendor = 'GigaDevice' }, @{ source = 'GD32-E51x-0.1.0'; vendor = 'GigaDevice' }, @{ source = 'STC8-0.1.9'; vendor = 'STC' }))
 {
     $catalogRoot = [IO.Path]::GetFullPath((Join-Path $preparedPacks $catalog.source))
     $catalogPrefix = $catalogRoot.TrimEnd([IO.Path]::DirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar

@@ -92,6 +92,13 @@ internal static class ArduinoUploadChecks
         Check((await service.LoadUploadSettingsAsync(root)).Port == "COM9876", "explicit port is normalized and persists per project");
         Check((await builds.BuildAsync(root)).Success, "real AVR compilation succeeds before upload workflow checks");
         var preview = await service.PreviewUploadAsync(root);
+        Check((await builds.BuildAsync(root)).Success, "repeat AVR build succeeds in the fixed output directory");
+        var rebuilt = await service.PreviewUploadAsync(root);
+        Check(rebuilt.ApprovalId != preview.ApprovalId && Directory.GetDirectories(Path.Combine(root, ".build/arduino")).Length == 1,
+            "each build gets a new receipt while only latest output remains");
+        await Reject(async () => { await service.UploadApprovedAsync(root, "COM9876", preview.ApprovalId); }, "ARDUINO_UPLOAD_CHANGED",
+            "identical rebuild still revokes the earlier upload approval");
+        preview = rebuilt;
         var sourceHash = await ArduinoSourceSnapshot.HashAsync(root, true, CancellationToken.None);
         await service.SaveUploadSettingsAsync(root, "COM9876");
         Check((await service.PreviewUploadAsync(root)).ApprovalId == preview.ApprovalId &&
@@ -145,6 +152,9 @@ internal static class ArduinoUploadChecks
         var cancellationLogs = Directory.GetFiles(Path.Combine(root, ".build/arduino-upload"), "upload.log", SearchOption.AllDirectories);
         Check(cancellationLogs.Any(path => File.ReadAllText(path).Contains("OperationCanceledException")),
             "cancelled upload retains raw diagnostic and unfinished result on disk");
+        Check(Directory.GetDirectories(Path.Combine(root, ".build/arduino-upload")).Select(Path.GetFileName).SequenceEqual(["latest"]) &&
+            !Directory.GetDirectories(Path.Combine(evidence, "user-data/arduino/build-stage")).Any(),
+            "repeat uploads retain only latest and clean private snapshots even after cancellation");
         using (await devices.ReserveAsync("serial:COM9876"))
         {
             Check(true, "upload cancellation releases port ownership");

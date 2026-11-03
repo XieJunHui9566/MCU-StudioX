@@ -36,6 +36,7 @@ public sealed class AgentEditorSession(WorkbenchService services, string project
     public static string Hash(string text) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(text)));
     public async Task<WorkspaceBufferSnapshot> ReadAsync(string path, CancellationToken token = default)
     {
+        path = McpWorkspacePathPolicy.NormalizeRelativePath(path);
         _ = new McpWorkspaceAccess(project).RequireWorkspaceSourceFile(path);
         var snapshot = await editor.SnapshotAsync(token);
         var open = snapshot.Documents.FirstOrDefault(d => d.Source.RelativePath.Equals(path, StringComparison.OrdinalIgnoreCase));
@@ -48,7 +49,12 @@ public sealed class AgentEditorSession(WorkbenchService services, string project
     }
     public async Task<AgentEditPlan> PlanAsync(IReadOnlyList<AgentTextPatch> patches, string reason, CancellationToken token = default)
     {
-        if (patches is null || patches.Count is < 1 or > 100 || patches.Any(p => p is null) || patches.Select(p => p.Path).Distinct(StringComparer.OrdinalIgnoreCase).Count() != patches.Count)
+        if (patches is null || patches.Count is < 1 or > 100 || patches.Any(p => p is null))
+        {
+            throw new StudioXException("AGENT_PLAN_SIZE", "每个计划需要 1–100 个不同文件。");
+        }
+        patches = patches.Select(p => p with { Path = McpWorkspacePathPolicy.NormalizeRelativePath(p.Path) }).ToArray();
+        if (patches.Select(p => p.Path).Distinct(StringComparer.OrdinalIgnoreCase).Count() != patches.Count)
         {
             throw new StudioXException("AGENT_PLAN_SIZE", "每个计划需要 1–100 个不同文件。");
         }

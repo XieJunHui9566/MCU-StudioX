@@ -104,7 +104,7 @@ volatile uint32_t app_counter;
 int main(void)
 {
     /* 使用官方内部 IRC8M -> 48 MHz 初始化；无开发板引脚假设。 */
-    for (;;) { ++app_counter; __asm__ volatile ("nop"); }
+    while (1) { ++app_counter; __asm__ volatile ("nop"); }
 }
 ''',
         )

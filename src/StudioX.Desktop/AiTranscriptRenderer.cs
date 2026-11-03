@@ -2,7 +2,6 @@ namespace StudioX.Desktop;
 
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Media;
 using StudioX.Application;
 
 /// <summary>创建聊天气泡；工程状态和历史选择由控制器管理，气泡仅绑定主题资源。</summary>
@@ -27,7 +26,7 @@ internal static class AiTranscriptRenderer
         var label = new TextBlock { Text = heading ?? role, FontSize = 10, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 4) };
         if (isUser)
         {
-            label.Foreground = Brushes.White;
+            label.SetResourceReference(TextBlock.ForegroundProperty, "OnAccent");
         }
         else
         {
@@ -36,7 +35,7 @@ internal static class AiTranscriptRenderer
         var message = new TextBlock { Text = content, TextWrapping = TextWrapping.Wrap, FontSize = 12.5 };
         if (isUser)
         {
-            message.Foreground = Brushes.White;
+            message.SetResourceReference(TextBlock.ForegroundProperty, "OnAccent");
         }
         else
         {

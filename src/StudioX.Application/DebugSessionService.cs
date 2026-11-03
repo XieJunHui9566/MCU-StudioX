@@ -14,10 +14,10 @@ public sealed partial class DebugSessionService(string dataDirectory, StudioX.De
     Func<StudioX.Devices.SerialSettings, StudioX.Devices.IDeviceTransport>? monitorTransportFactory = null) : IAsyncDisposable
 {
     private readonly SemaphoreSlim gate = new(1, 1);
-    private GdbDebugAdapter? adapter;
+    private IDebugAdapter? adapter;
     private Action<string>? receiver;
     private readonly Dictionary<string, string> bound = [];
-    private readonly Channel<(GdbDebugAdapter Source, string Record)> records = Channel.CreateUnbounded<(GdbDebugAdapter, string)>(new() { SingleReader = true });
+    private readonly Channel<(IDebugAdapter Source, string Record)> records = Channel.CreateUnbounded<(IDebugAdapter, string)>(new() { SingleReader = true });
     private Task? recordPump;
     private DebugAction lastResumeAction = DebugAction.Continue;
     private volatile bool pauseRequested;
@@ -63,6 +63,10 @@ public sealed partial class DebugSessionService(string dataDirectory, StudioX.De
                 if (project.ToolsetId is "wch.riscv" or "agm.agrv" || project.DeviceId == Rp2350DebugTarget.DeviceId)
                 {
                     watches = ["$pc"];
+                }
+                if (project.Kind == ProjectKind.Pic)
+                {
+                    watches = ["$pc", "STATUS"];
                 }
             }
             settingsPath = directory is null ? null : Path.Combine(dataDirectory, "debug", Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(ProjectDirectory!.ToUpperInvariant()))).ToLowerInvariant() + ".json");
@@ -181,7 +185,7 @@ public sealed partial class DebugSessionService(string dataDirectory, StudioX.De
                 SetState(DebugState.Faulted, "调试命令中断，会话已结束");
                 throw;
             }
-            if (action == DebugAction.Reset && IsHardware)
+            if (action == DebugAction.Reset && (IsHardware || IsPicDebug))
             {
                 // monitor 复位不会给 GDB 发新的 stopped 通知，须同时丢弃寄存器、栈与内存缓存。
                 await adapter.SendAsync("-interpreter-exec console \"maintenance flush register-cache\"", token);
@@ -192,7 +196,7 @@ public sealed partial class DebugSessionService(string dataDirectory, StudioX.De
         }
         finally { gate.Release(); }
     }
-    private async Task ProcessRecordAsync(GdbDebugAdapter source, string text)
+    private async Task ProcessRecordAsync(IDebugAdapter source, string text)
     {
         // 不在 transport 的回调栈内执行命令；源实例检查挡住关闭/切换工程后的迟到事件。
         await gate.WaitAsync();

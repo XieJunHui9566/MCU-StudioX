@@ -22,7 +22,12 @@ public sealed partial class DebugSessionService
     public Task DownloadAndStartMon51Async(string port, int baud, string confirmedTarget, Mon51DownloadPreparation preparation, CancellationToken token = default)
         => StartMon51CoreAsync(port, baud, confirmedTarget, preparation, token);
 
-    private async Task StartMon51CoreAsync(string port, int baud, string confirmedTarget, Mon51DownloadPreparation? preparation, CancellationToken token)
+    internal Task<bool> TryBuildAndStartMon51Async(string port, int baud, string target,
+        Func<CancellationToken, Task<Mon51DownloadPreparation>> prepare, CancellationToken token)
+        => StartMon51CoreAsync(port, baud, target, null, token, prepare);
+
+    private async Task<bool> StartMon51CoreAsync(string port, int baud, string confirmedTarget, Mon51DownloadPreparation? preparation, CancellationToken token,
+        Func<CancellationToken, Task<Mon51DownloadPreparation>>? prepareAfterHandshake = null)
     {
         if (!StcMon51Targets.Supports(confirmedTarget))
         {
@@ -60,7 +65,7 @@ public sealed partial class DebugSessionService
                 }
                 downloadArtifact = current.Artifact;
             }
-            var monitor = new Mon51DebugSession(dataDirectory, confirmedTarget) { UserDownloadRequested = preparation is not null };
+            var monitor = new Mon51DebugSession(dataDirectory, confirmedTarget) { UserDownloadRequested = preparation is not null || prepareAfterHandshake is not null };
             var transport = monitorTransportFactory?.Invoke(settings) ?? new SerialTransport(settings);
             // 连接快照会更新界面状态；先保留工程偏好，避免首次空快照覆盖已保存断点和观察项。
             var savedBreakpoints = breakpoints.ToArray();
@@ -74,21 +79,46 @@ public sealed partial class DebugSessionService
             try
             {
                 await monitor.ConnectAsync(devices, transport, ProjectDirectory, token);
+                if (prepareAfterHandshake is not null)
+                {
+                    // 握手、构建、用户区更新共用同一连接；构建失败时只释放，不续跑旧程序。
+                    var selected = await prepareAfterHandshake(token);
+                    var current = await Mon51DownloadPreparation.ReadAsync(ProjectDirectory, token);
+                    if (current.Preparation != selected)
+                    {
+                        throw new StudioXException("MON51_ARTIFACT_CHANGED", "构建后工程、源码或固件已改变；未擦除用户程序。");
+                    }
+                    downloadArtifact = current.Artifact;
+                }
                 if (downloadArtifact is not null)
                 {
                     await monitor.DownloadUserProgramAsync(downloadArtifact, token);
                 }
+                monitor.PreferencesChanged = async () =>
+                {
+                    breakpoints = monitor.SourceBreakpoints.ToArray();
+                    watches = monitor.Watches.ToArray();
+                    await SaveAsync(CancellationToken.None);
+                };
+                await monitor.SetPreferencesAsync(savedBreakpoints, savedWatches, token);
+                try
+                {
+                    await LoadMon51SymbolsCoreAsync(monitor, token);
+                }
+                catch (StudioXException ex) when (IsMon51SymbolError(ex)) { }
             }
             catch (Exception error)
             {
                 // 失败连接已释放串口；清除 facade 占位并恢复偏好，使窗口能直接重试。
                 monitor.Changed -= UpdateMonitorState;
                 monitor.Output -= Trace;
+                var released = true;
                 try
                 {
+                    await monitor.AbortStartAsync();
                     await monitor.DisposeAsync();
                 }
-                catch (Exception cleanup) { Trace("连接失败后的清理诊断：" + cleanup); }
+                catch (Exception cleanup) { released = false; Trace("连接失败后的清理诊断：" + cleanup); }
                 MonitorSession = null;
                 IsHardware = false;
                 HardwareTargetName = null;
@@ -98,21 +128,16 @@ public sealed partial class DebugSessionService
                 watches = savedWatches;
                 SessionLogPath = monitor.LogPath;
                 SetState(StudioX.Engine.Debugging.DebugState.Faulted, error.Message + " 原始日志：" + monitor.LogPath);
+                if (prepareAfterHandshake is not null && monitor.HandshakeFailed && released && !token.IsCancellationRequested &&
+                    error is StudioXException { Code: "MON51_TIMEOUT" or "MON51_VERSION" })
+                {
+                    Trace(error.ToString());
+                    return false;
+                }
                 throw;
             }
-            monitor.PreferencesChanged = async () =>
-            {
-                breakpoints = monitor.SourceBreakpoints.ToArray();
-                watches = monitor.Watches.ToArray();
-                await SaveAsync(CancellationToken.None);
-            };
-            await monitor.SetPreferencesAsync(savedBreakpoints, savedWatches, token);
-            try
-            {
-                await LoadMon51SymbolsCoreAsync(monitor, token);
-            }
-            catch (StudioXException ex) when (IsMon51SymbolError(ex)) { }
             SessionLogPath = monitor.LogPath;
+            return true;
         }
         finally { gate.Release(); }
     }

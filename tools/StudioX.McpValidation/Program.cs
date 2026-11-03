@@ -9,6 +9,12 @@ using StudioX.Devices;
 using StudioX.Engine;
 using StudioX.Foundation;
 
+if (args is ["--workspace-sources", var workspaceSourceOutput])
+{
+    await WorkspaceSourceChecks.RunAsync(Path.GetFullPath(workspaceSourceOutput));
+    return;
+}
+
 if (args is ["--verify-contracts", var baselinePath])
 {
     await ProviderContractChecks.VerifyAsync(baselinePath);
@@ -364,6 +370,7 @@ try
     await AgentExternalWorkloadChecks.RunAsync(session, authorizer, project, root, Check);
     await ExternalProjectPaginationChecks.RunAsync(services, authorizer, project, root, Check);
     await ProjectMcpPagingChecks.RunAsync(session, authorizer, project, Check);
+    await WorkspaceSourceChecks.RunAsync(Path.Combine(root, "workspace-sources"));
     await DebugMcpAssistChecks.RunAsync(services, session, project, Check);
     await DebugMemoryPagingChecks.RunAsync(root, Check);
     await QmdMcpChecks.RunAsync(session, services, project, Check);

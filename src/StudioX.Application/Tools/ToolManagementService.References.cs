@@ -33,6 +33,7 @@ public sealed partial class ToolManagementService
         Add("agm.logic", "1.0.0", "IDE 功能：AG32 原生逻辑构建");
         Add("hdl.iverilog", "14.0.0", "IDE 功能：RTL 仿真");
         Add(StudioX.Engine.Pic.PicDownloadSettings.ToolsetId, "6.20.0", "IDE 功能：PIC16F877A / PICkit3 下载");
+        Add(StudioX.Engine.Pic.PicDebugService.ToolsetId, StudioX.Engine.Pic.PicDebugService.Version, "IDE 功能：PIC16 / PICkit3 MDB 调试");
         try
         {
             foreach (var item in await recent.LoadAsync(token))

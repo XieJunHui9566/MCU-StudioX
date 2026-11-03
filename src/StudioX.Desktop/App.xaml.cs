@@ -18,6 +18,7 @@ public partial class App : System.Windows.Application
         var acceptanceWorkbench = e.Args is ["--acceptance-workbench", _, _] or ["--acceptance-workbench", _, _, _];
         var showAgentWorkspace = e.Args is ["--show-agent-workspace", _, _];
         var agentWorkspacePreview = e.Args is ["--preview-agent-workspace", _, _];
+        var agentReviewPreview = e.Args is ["--preview-agent-review", _];
         var productivityPreview = e.Args is ["--preview-ide-next", _, _] or ["--preview-ide-next-recovery", _, _];
         var smoke = e.Args is ["--smoke", _];
         var helpPreview = e.Args is ["--preview-help", _];
@@ -63,6 +64,8 @@ public partial class App : System.Windows.Application
         var recentProjectsPreview = e.Args is ["--preview-recent-projects", _, _];
         var arduinoPreview = e.Args is ["--preview-arduino", _, _, _];
         var arduinoTemplatesPreview = e.Args is ["--preview-arduino-templates", _, _, _, _];
+        var uiStylePreview = e.Args is ["--preview-ui-style", _];
+        var assemblyPreview = e.Args is ["--preview-build-assembly", _, _, _];
         var picPreview = e.Args is ["--preview-pic", _, _, _, _];
         var buildPreview = e.Args is ["--preview-build", _, _];
         var buildOutputPreview = e.Args is ["--preview-build-output", _, _, _];
@@ -83,6 +86,10 @@ public partial class App : System.Windows.Application
         var productWorkflowsPreview = e.Args is ["--preview-product-workflows", _, _, _];
         var debugPreview = e.Args is ["--preview-debug", _, _];
         var mon51Preview = e.Args is ["--preview-mon51", _];
+        var mon51SettingsPreview = e.Args is ["--preview-mon51-settings", _];
+        var stcUsbPreview = e.Args is ["--preview-stc-usb", _];
+        var mx251TransportPreview = e.Args is ["--preview-mx251-transports", _];
+        var stcDownloadSettingsPreview = e.Args is ["--preview-stc-download-settings", _];
         var mon51Fixture = mon51Preview ? new StudioX.Application.StcDebugging.Mon51OfflineTransport() : null;
         var rtosPreview = e.Args is ["--preview-rtos", _, _];
         var packCatalogPreview = e.Args is ["--preview-pack-catalog", _, _, _];
@@ -101,6 +108,7 @@ public partial class App : System.Windows.Application
         var zephyrTemplatesPreview = e.Args is ["--preview-zephyr-templates", _, _, _, _];
         var anyPreview = productivityPreview || workspaceEditingPreview || microPythonPreview || pythonPreview || hdlWorkflowPreview || hdlPreview || ag32MappingPreview || pluginsPreview || preview || windowLayoutPreview || editorPreview || completionPreview || cmakePreview || documentsPreview || vePreview || navigationPreview || explorerPreview || buildPreview || buildMemoryPreview || editingPreview || bracketsPreview || stm32Preview || rp2350Preview || rp2040Preview || projectPreview || cubeMxPreview || importPerformancePreview || downloadPreview || espressifPreview || espressifModulePreview || debugPreview || rtosPreview || packCatalogPreview || breakpointsPreview || lvglPreview || lvglSetupPreview || zephyrDevicetreePreview;
         anyPreview |= agentWorkspacePreview || diagnosticsPreview || openOcdPlotPreview || pluginLabsPreview || helpPreview || firstProjectPreview || projectHealthPreview || toolManagementPreview || largeProjectPreview || projectOpenPerformancePreview;
+        anyPreview |= agentReviewPreview;
         anyPreview |= debugPluginsPreview || productWorkflowsPreview || projectToolsPreview;
         anyPreview |= faultPeripheralsPreview;
         anyPreview |= codeTemplatesPreview;
@@ -115,19 +123,22 @@ public partial class App : System.Windows.Application
         anyPreview |= editableCombosPreview;
         anyPreview |= startupRecoveryPreview;
         anyPreview |= inactiveCodePreview;
-        anyPreview |= mon51Preview;
+        anyPreview |= mon51Preview || mon51SettingsPreview || stcUsbPreview || mx251TransportPreview;
+        anyPreview |= stcDownloadSettingsPreview;
         anyPreview |= buildOutputPreview;
         anyPreview |= stcDownloadOutputPreview;
         anyPreview |= appearancePluginPreview;
         anyPreview |= recentProjectsPreview;
         anyPreview |= arduinoPreview;
         anyPreview |= arduinoTemplatesPreview;
-        anyPreview |= picPreview;
+        anyPreview |= picPreview || uiStylePreview;
+        anyPreview |= assemblyPreview;
         anyPreview |= zephyrTemplatesPreview;
         anyPreview |= mcuFavoritesPreview;
         var data = showMcuConfiguration ? Path.GetFullPath(e.Args[3]) : (acceptanceWorkbench || showAgentWorkspace || showProductivity || showDebugDemo || showBreakpointsDemo) && e.Args.Length >= 3 ? Path.GetFullPath(e.Args[2]) : smoke || anyPreview ? Path.Combine(Path.GetFullPath(e.Args[1]), "user-data") :
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MCUStudioX");
         var services = new WorkbenchService(acceptanceWorkbench ? Path.GetFullPath(e.Args[1])
+            : assemblyPreview ? Path.GetFullPath(e.Args[2])
             : mx251DownloadPreview || mx251MemoryPreview ? Path.GetFullPath(e.Args[3])
             : zephyrTemplatesPreview ? Path.GetFullPath(e.Args[2])
             : arduinoPreview ? Path.GetFullPath(e.Args[3])
@@ -167,6 +178,14 @@ public partial class App : System.Windows.Application
                 {
                     await window.RenderMcuFavoritesPreviewAsync(directory);
                 }
+                else if (uiStylePreview)
+                {
+                    await window.RenderUiStylePreviewAsync(directory);
+                }
+                else if (assemblyPreview)
+                {
+                    await window.RenderBuildAssemblyPreviewAsync(directory, Path.GetFullPath(e.Args[3]));
+                }
                 else if (picPreview)
                 {
                     await window.RenderPicPreviewAsync(directory, Path.GetFullPath(e.Args[3]), Path.GetFullPath(e.Args[4]));
@@ -194,6 +213,22 @@ public partial class App : System.Windows.Application
                 else if (mon51Preview)
                 {
                     await window.RenderMon51PreviewAsync(directory, mon51Fixture!);
+                }
+                else if (stcDownloadSettingsPreview)
+                {
+                    await window.RenderStcDownloadSettingsPreviewAsync(directory);
+                }
+                else if (mx251TransportPreview)
+                {
+                    await window.RenderMx251TransportPreviewAsync(directory);
+                }
+                else if (stcUsbPreview)
+                {
+                    await window.RenderStcUsbPreviewAsync(directory);
+                }
+                else if (mon51SettingsPreview)
+                {
+                    await window.RenderMon51SettingsPreviewAsync(directory);
                 }
                 else if (startupRecoveryPreview)
                 {
@@ -302,6 +337,10 @@ public partial class App : System.Windows.Application
                 else if (diagnosticsPreview)
                 {
                     await window.RenderDiagnosticsPreviewAsync(directory);
+                }
+                else if (agentReviewPreview)
+                {
+                    await window.RenderAgentReviewPreviewAsync(directory);
                 }
                 else if (agentWorkspacePreview)
                 {

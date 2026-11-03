@@ -10,7 +10,7 @@ volatile uint32_t response_timeouts;
 
 static void core1_entry(void)
 {
-    for (;;)
+    while (1)
     {
         uint32_t input;
         if (queue_try_remove(&requests, &input))
@@ -31,7 +31,7 @@ int main(void)
     multicore_launch_core1(core1_entry);
     bool pending = false;
     absolute_time_t deadline = nil_time;
-    for (;;)
+    while (1)
     {
         if (!pending)
         {

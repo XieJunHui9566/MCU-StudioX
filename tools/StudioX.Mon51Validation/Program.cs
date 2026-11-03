@@ -5,6 +5,11 @@ using StudioX.Engine;
 using StudioX.Engine.Debugging;
 using StudioX.Foundation;
 
+if (args is ["--launch-offline", var launchArchive, var launchRuntime, var launchOutput])
+{
+    return await LaunchChecks.RunAsync(launchArchive, launchRuntime, Path.GetFullPath(launchOutput));
+}
+
 if (args is ["--prepare-low-voltage-hardware", var hardwarePack, var hardwareRuntime, var prepareHardwareOutput])
 {
     return await LowVoltageHardwareChecks.PrepareAsync(hardwarePack, hardwareRuntime, Path.GetFullPath(prepareHardwareOutput));

@@ -191,6 +191,8 @@ public partial class MainWindow
                 UndoRequested = id => RunAsync(async token => { if (agentEditorSession is { } session) { await session.UndoAsync(id, token); } }),
                 UndoTaskRequested = id => RunAsync(async token => { if (agentEditorSession is { } session) { await session.UndoTaskAsync(id, token); } })
             };
+            agentChangesView.BindTypography(SourceEditor);
+            agentChangesView.HighlightingFailed += ReportHighlightingFailure;
             agentChangesTab = AddToolTab("AI 修改", agentChangesView);
         }
         agentChangesView!.Refresh(agentEditorSession, plan);

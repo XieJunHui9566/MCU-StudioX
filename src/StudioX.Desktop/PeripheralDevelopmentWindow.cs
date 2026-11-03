@@ -49,6 +49,7 @@ internal sealed class PeripheralDevelopmentWindow : Window
         MinWidth = 780;
         MinHeight = 620;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
+        SetResourceReference(StyleProperty, typeof(Window));
         SetResourceReference(BackgroundProperty, "Surface");
         SetResourceReference(ForegroundProperty, "Text");
         Options.SetResourceReference(BackgroundProperty, "ToolSurface");

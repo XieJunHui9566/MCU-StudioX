@@ -11,10 +11,13 @@ public sealed partial class BuildService
         new DelegatingProjectBuildBackend(ProjectKind.Arduino, request => Arduino.BuildAsync(request.Root, request.Output, request.Token)),
         new DelegatingProjectBuildBackend(ProjectKind.Pic, async request =>
         {
+            using var storage = ProjectBuildStorage.Acquire(request.Root, "pic");
             StudioX.Engine.Pic.PicBuildService.Invalidate(request.Root);
             using var components = await PrepareComponentsAsync(request.Root, request.Project, request.Progress, request.Token);
             return await Pic.ExecuteAsync(request.Root, request.Project,
-                components.Tools.Single(tool => tool.Manifest.Id == request.Project.ToolsetId), request.Output, request.Token);
+                components.Tools.Single(tool => tool.Manifest.Id == request.Project.ToolsetId),
+                components.Tools.Single(tool => tool.Manifest.Id == StudioX.Engine.Pic.PicCMake.ToolsetId), storage, request.ConfigureOnly,
+                request.PicDebugger, request.Output, request.Token);
         }),
         new DelegatingProjectBuildBackend(ProjectKind.Zephyr, async request =>
         {

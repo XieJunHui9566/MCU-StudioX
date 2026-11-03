@@ -14,10 +14,11 @@ internal sealed class SymbolRenameDialog : Window
         SizeToContent = SizeToContent.Height;
         ResizeMode = ResizeMode.NoResize;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
+        SetResourceReference(StyleProperty, typeof(Window));
         SetResourceReference(BackgroundProperty, "Surface");
         SetResourceReference(ForegroundProperty, "Text");
         var panel = new StackPanel { Margin = new(20) };
-        panel.Children.Add(new TextBlock { Text = "新名称（下一步预览所有引用的修改）", Margin = new(0, 0, 0, 12) });
+        panel.Children.Add(new TextBlock { Text = "新名称（下一步预览所有引用的修改）", TextWrapping = TextWrapping.Wrap, Margin = new(0, 0, 0, 12) });
         name = new TextBox { Text = oldName, Margin = new(0, 0, 0, 16) };
         panel.Children.Add(name);
         var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };

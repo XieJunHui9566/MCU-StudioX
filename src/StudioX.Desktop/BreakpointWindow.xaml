@@ -89,7 +89,7 @@
     </Border>
     <TextBlock
       x:Name="ErrorLabel"
-      Foreground="#E87979"
+      Foreground="{DynamicResource DiagnosticError}"
       TextWrapping="Wrap"
       Margin="0,10,0,0" />
     <StackPanel

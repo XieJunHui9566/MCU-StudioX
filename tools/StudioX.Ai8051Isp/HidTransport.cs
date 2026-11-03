@@ -89,7 +89,9 @@ public sealed class HidTransport : IHidReportTransport, IDisposable
         lease.Dispose();
     }
 
-    public static IReadOnlyList<HidDevice> Enumerate()
+    public static IReadOnlyList<HidDevice> Enumerate() => Enumerate(0x34bf, 0xff0f);
+
+    public static IReadOnlyList<HidDevice> Enumerate(ushort vendorId, ushort productId)
     {
         Native.HidD_GetHidGuid(out var guid);
         var set = Native.SetupDiGetClassDevsW(ref guid, null, IntPtr.Zero, 0x12);
@@ -122,7 +124,7 @@ public sealed class HidTransport : IHidReportTransport, IDisposable
                         throw new Win32Exception(Marshal.GetLastWin32Error());
                     }
                     var path = Marshal.PtrToStringUni(detail + 4)!;
-                    if (!path.Contains("vid_34bf&pid_ff0f", StringComparison.OrdinalIgnoreCase))
+                    if (!path.Contains($"vid_{vendorId:x4}&pid_{productId:x4}", StringComparison.OrdinalIgnoreCase))
                     {
                         continue;
                     }
@@ -135,6 +137,10 @@ public sealed class HidTransport : IHidReportTransport, IDisposable
                     if (!Native.HidD_GetAttributes(handle, ref attributes))
                     {
                         throw new Win32Exception(Marshal.GetLastWin32Error());
+                    }
+                    if (attributes.VendorId != vendorId || attributes.ProductId != productId)
+                    {
+                        continue;
                     }
                     if (!Native.HidD_GetPreparsedData(handle, out var preparsed))
                     {

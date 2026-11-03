@@ -2,6 +2,8 @@
 
 StudioX 插件提供命令、声明式面板和 Agent 工具。应用核心与正式 SDK 使用 C#/.NET 10；Python、Rust 和 C++ 使用相同的进程协议。插件和安装内容独立于芯片包、工程、主题及采集记录。
 
+安装版可通过 **帮助 → 插件 API 文档** 打开随程序集嵌入的离线文档，包含“契约、语言与能力”和“开发、协议与错误处理”两篇。帮助中心可搜索 `IStudioXPlugin`、`hostCall`、`PluginHostException` 等名称；文档与本页的公开接口一致。
+
 图形化 MCU 配置的可选插件扩展处于契约设计阶段，见 [MCU 配置插件契约 v1](GRAPHICAL_CONFIGURATION_PLUGIN.md)和[配置文件标准](GRAPHICAL_CONFIGURATION.md)。拟用能力 `mcuConfigurationV1` 及配置提供者调用尚未实现，不能按本文现有 API 2/3 的支持能力发布或启用。
 
 [STC 配置试行版](../plugins/StudioX.StcConfigurator/README.md)使用另行声明的 `mcuConfigurationPreview` 与单独 `mcuConfiguration` 控件，数据类型为 `PluginMcuConfigurationState`。宿主校验有界封装、引脚/功能、时钟、表单和文本，仅转发声明的命令；首次启用仍核对宿主能力。它支持单配置文件保存和代码预览，完整 `mcuConfigurationV1` 的贡献、生成计划及多文件事务没有开放。旧宿主拒绝该新能力，现有插件行为保持不变。
@@ -81,7 +83,7 @@ API 2/3 增加可选能力 `panelWindows`、`programmerCalculator`、`calculator
     <EnableDynamicLoading>true</EnableDynamicLoading>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="StudioX.Plugin.Sdk" Version="0.2.5" ExcludeAssets="runtime" />
+    <PackageReference Include="StudioX.Plugin.Sdk" Version="0.2.6.15" ExcludeAssets="runtime" />
   </ItemGroup>
 </Project>
 ```
@@ -101,6 +103,18 @@ Task LogAsync(string level, string message, CancellationToken token);
 ```
 
 `Describe` 返回固定的 `Commands`、`Panels`、`AgentTools` 数组。宿主先验证贡献，再调用 `ActivateAsync` 并开放宿主工具。调用 `kind` 为 `command` 或 `agentTool`，`id` 必须已声明。每个实例串行处理显式调用；宿主工具回调不能递归调用 `plugin_*` 工具。所有等待和后台工作应传递取消令牌，在 `DeactivateAsync` 释放订阅和自有资源。
+
+`CallAsync` 的宿主工具失败使用公开 SDK 的 `PluginHostException`，包含稳定 `Code` 和原始 `Message`，无需引用内部 `StudioX.Foundation`。调用者取消保持 `OperationCanceledException`；重新抛出 SDK 异常时，进程协议保留原 `errorCode`。经宿主 MCP 规范化的审批拒绝、未保存缓冲区等 `{error, code, message}` 错误在插件桥边界转换为带码异常，不会作为成功结果交付。
+
+事件回调的原始故障通过连接完成状态及在途调用传播。连接仍有效时回调自行抛出取消异常会终止该连接并报告 `PLUGIN_EVENT_CANCELLED`，保留原始异常；它不会让后续面板更新静默停住。连接生命周期取消仍按正常退出处理。
+
+```csharp
+catch (PluginHostException error) when (error.Code == "MCP_APPROVAL_DENIED")
+{
+    // 记录拒绝并交回调用者；不要绕过宿主直接写入。
+    throw;
+}
+```
 
 完整样例见 [WorkspaceOverviewPlugin](../examples/StudioX.SamplePlugin/WorkspaceOverviewPlugin.cs)。它提供真实工程信息表格、串口只读状态和终端文本、累计接收字节曲线、表单回显以及 Agent 只读工具。未连接时明确显示未连接。曲线时间标记为插件宿主的单调时钟，终端文本已经宿主编码与 ANSI 处理，不能作为原始 RX 字节还原。
 
@@ -172,7 +186,7 @@ StudioX.Cli.exe plugin remove <runtime目录> <用户数据目录> <插件id>
 
 完整示例与 IDE 本体改动范围见 [外观插件说明](APPEARANCE_PLUGINS.md)，源码在 `examples/StudioX.AppearancePlugin`，构建入口为 `tools/Build-AppearancePlugin.ps1`。旧宿主会明确拒绝未知控件，插件包需要配套的本轮宿主源码构建；产品版本号不自动变化。
 
-`metric`、`chart`、`group` 是可接受别名。单插件最多 128 个命令、32 个面板、128 个 Agent 工具；单面板最多 256 个控件、8 层嵌套、表格 2048 行和 32 列。面板 JSON 最多 1 MiB，单控件 `value` 最多 512 KiB，所有数值必须有限。未知控件、任意 XAML、未声明命令或异常 JSON 被拒绝。限制针对数据量及在途工作，不限制插件生命周期内的总调用次数。
+`metric`、`chart`、`group` 是可接受别名。单插件最多 128 个命令、32 个面板、128 个 Agent 工具；单面板最多 128 个顶层控件、256 个总控件、8 层嵌套、表格 2048 行和 32 列。面板 JSON 最多 1 MiB，单控件 `value` 最多 512 KiB，所有数值必须有限。未知控件、任意 XAML、未声明命令或异常 JSON 被拒绝。限制针对数据量及在途工作，不限制插件生命周期内的总调用次数。
 
 ## Agent 工具输入 schema
 
@@ -249,6 +263,8 @@ Python 清单示意：
 
 标准输入、标准输出使用 UTF-8，每行一个 JSON 对象。标准输出只能写协议；普通日志写 stderr 或 `log` 事件，每行发送后刷新。请求 ID 由发送方生成，双向请求 ID 独立，响应必须复制对应请求 ID。
 
+同一连接内的 `panel` / `log` 按接收顺序处理，较早的慢回调不能在新面板之后覆盖显示。事件处理链独立于协议读取，事件回调中的双向请求仍可收到响应；最多容纳 64 个正在处理或排队的事件，超过时明确报告 `PLUGIN_BUSY`，不静默丢弃。`DrainHandlersAsync` 等待调用时已读的回调快照，后续事件不会无限延长旧快照；取消、事件异常及退出保留原始诊断。
+
 ```json
 {"protocolVersion":2,"kind":"request","requestId":"a1","method":"describe","payload":{}}
 {"protocolVersion":2,"kind":"response","requestId":"a1","payload":{"commands":[],"panels":[],"agentTools":[]}}
@@ -283,6 +299,8 @@ Rust/C++ 模板演示短时只读请求及双向取消处理；当前仓库未�
 ## API 3：设置与开发扩展
 
 API 1 解码和 API 2 通用插件继续可用；`PluginContribution` 的原三参数构造保持不变。新能力显式使用 `apiVersion: 3`，清单格式仍为 1，stdio 包络的 `protocolVersion` 仍为 2。API 3 在既有命令、面板、Agent 工具之外增加以下可选数组，并要求清单声明对应能力：
+
+清单能力数量按对应 API 已知集合校验，不再使用遗留的 10 项上限；合法的 11 项及以上 API 3 组合可通过格式校验。重复能力、未知能力与缺失前置条件仍拒绝，集合上限不替代单插件命令、面板、工具和文件的各自容量限制。
 
 | 贡献 / 能力 | 约束与调用 |
 |---|---|

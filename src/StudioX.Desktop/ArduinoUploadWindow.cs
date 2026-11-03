@@ -22,6 +22,7 @@ public sealed class ArduinoUploadWindow : Window
         MinWidth = 660;
         MinHeight = 360;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
+        SetResourceReference(StyleProperty, typeof(Window));
         SetResourceReference(BackgroundProperty, "Surface");
         SetResourceReference(ForegroundProperty, "Text");
         var panel = new StackPanel { Margin = new(24) };

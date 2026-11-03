@@ -14,6 +14,16 @@ internal static class Program
     [STAThread]
     private static void Main(string[] args)
     {
+        if (args is ["--unknown-file-child", var root, var path, var expected])
+        {
+            Environment.ExitCode = UnknownFileChecks.RunChild(root, path, expected);
+            return;
+        }
+        if (args is ["--unknown-files", var evidence])
+        {
+            Environment.ExitCode = UnknownFileChecks.RunAsync(Path.GetFullPath(evidence)).GetAwaiter().GetResult();
+            return;
+        }
         if (args is ["--render-memory", var project, var output])
         {
             var report = new StudioX.Engine.BuildMemoryService().ReadAsync(project).GetAwaiter().GetResult();
@@ -25,13 +35,16 @@ internal static class Program
             return;
         }
         SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext());
+        UiStyleChecks.Run(Check);
         CodeHighlightingChecks.Run(Check);
+        CodeComparisonChecks.Run(Check);
         SafeTextEditorChecks.Run(Check);
         BuildMemoryViewChecks.Run(Check);
         CheckEditorSynchronization();
         CheckActivityAndUsage();
         CheckApprovalLifetime();
         SynchronizationContext.SetSynchronizationContext(null);
+        TextSafetyChecks.RunAsync(Check).GetAwaiter().GetResult();
         CheckConversationsAsync().GetAwaiter().GetResult();
         Console.WriteLine($"PASS {checks} desktop responsibility checks; no hardware or API was accessed.");
     }

@@ -6,7 +6,7 @@ volatile uint32_t app_logic_value = 0;
 static void HeartbeatTask(void *argument)
 {
     (void)argument;
-    for (;;)
+    while (1)
     {
         ++app_heartbeat;
         vTaskDelay(pdMS_TO_TICKS(500));
@@ -16,7 +16,7 @@ static void HeartbeatTask(void *argument)
 static void LogicTask(void *argument)
 {
     (void)argument;
-    for (;;)
+    while (1)
     {
         /* 内部 GPIO4_0 经 user_logic.v 回到 GPIO4_1，不连接封装脚。 */
         GPIO_Toggle(GPIO4, GPIO_BIT0);
@@ -39,7 +39,7 @@ int main(void)
     }
     vTaskStartScheduler();
     configASSERT(0);
-    for (;;)
+    while (1)
     {
     }
 }

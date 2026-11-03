@@ -152,11 +152,14 @@ public partial class MainWindow : Window
         currentTheme = theme;
         ApplyThemeArtwork(theme);
         DiagnosticPalette.Apply(theme);
+        agentChangesView?.RefreshTheme();
         BuildLog.RefreshTheme();
         DeviceLog.RefreshTheme();
         LvglPreview.DiagnosticLog.RefreshTheme();
         RefreshSurfaceBrushes();
         ApplyEditorTheme();
+        var assemblyBackground = (Color)ColorConverter.ConvertFromString(theme.Colors["Background"]);
+        buildAssembly.RefreshTheme(assemblyBackground.R + assemblyBackground.G + assemblyBackground.B < 420);
         Plot.InvalidateVisual();
         SerialPlotView.RefreshTheme();
         OpenOcdPlotPanel.RefreshTheme();

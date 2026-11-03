@@ -31,6 +31,7 @@ internal sealed class QmdMcpTools(McpSessionContext context) : StudioXMcpToolPro
         int maxResults = 6,
         CancellationToken cancellationToken = default)
     {
+        directory = NormalizeRelativePath(directory);
         await RequireWorkspaceProjectAsync(cancellationToken).ConfigureAwait(false);
         if (string.IsNullOrWhiteSpace(query) || query.Length is < 2 or > 160 ||
             query.Any(char.IsControl) || maxResults is < 1 or > 10)

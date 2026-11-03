@@ -6,11 +6,11 @@ using ModelContextProtocol.Server;
 using StudioX.Engine;
 using StudioX.Foundation;
 
-/// <summary>规划并执行逐次授权的 STC 串口 ISP 下载。</summary>
+/// <summary>规划并执行逐次授权的 STC 串口或原生 USB ISP 下载。</summary>
 internal sealed class StcIspMcpTools(McpSessionContext context) : StudioXMcpToolProvider(context)
 {
     [McpServerTool(Name = "stc_isp_plan")]
-    [Description("只读预检 STC 8 位工程的准确型号、已编译 HEX、SHA-256、COM 端口、波特率和时钟选项；不创建快照、不打开串口。")]
+    [Description("只读预检 STC 8 位工程的准确型号、HEX、SHA-256、下载模式和时钟；串口返回 COM 和波特率，原生 USB 返回 USB-AUTO，波特率不参与 USB 通信。不创建快照、不打开设备。")]
     public async Task<string> StcIspPlanAsync(CancellationToken cancellationToken = default)
     {
         await RequireWorkspaceProjectAsync(cancellationToken).ConfigureAwait(false);
@@ -27,6 +27,7 @@ internal sealed class StcIspMcpTools(McpSessionContext context) : StudioXMcpTool
             dataBytes = preview.DataBytes,
             highestAddress = preview.HighestAddress,
             port = preview.Port,
+            downloadMode = settings.DownloadMode.ToString(),
             transferBaud = settings.TransferBaud,
             clockMode = StcClockModeName(settings.ClockMode),
             clockFrequencyHz = settings.ClockFrequencyHz,
@@ -39,13 +40,13 @@ internal sealed class StcIspMcpTools(McpSessionContext context) : StudioXMcpTool
     }
 
     [McpServerTool(Name = "stc_isp_download")]
-    [Description("逐次授权后将当前 STC 工程已编译的 HEX 经串口 ISP 写入实机。必须复述预检的型号、SHA-256、COM 口、波特率和时钟设置，明确承认可能整片擦除及无备份/读回；不自动编译、不接受任意映像路径。")]
+    [Description("逐次授权后经工程选择的串口或原生 USB ISP 写入当前 HEX。必须复述预检的型号、SHA-256、port（COM 或 USB-AUTO）、波特率和时钟，承认可能整片擦除及无备份/读回。USB 自动发现唯一待下载设备，不接受固定 USB 路径。")]
     public async Task<string> StcIspDownloadAsync(
         [Description("stc_isp_plan 返回的准确芯片型号。")]
         string deviceId,
         [Description("stc_isp_plan 返回的完整 64 位十六进制 HEX SHA-256。")]
         string imageSha256,
-        [Description("stc_isp_plan 返回的 COM 端口。")]
+        [Description("stc_isp_plan 返回的 port：COM 端口，或原生 USB 的 USB-AUTO。")]
         string port,
         [Description("stc_isp_plan 返回的传输波特率。")]
         int transferBaud,
@@ -75,7 +76,7 @@ internal sealed class StcIspMcpTools(McpSessionContext context) : StudioXMcpTool
         var image = Path.GetRelativePath(Project, preview.SourceImage).Replace('\\', '/');
         await RequireApprovalAsync("stc_isp_download",
             $"将 {image}（SHA-256 {preview.ImageSha256}，{preview.ImageBytes} 字节）写入 {preview.ExpectedModel}"
-            + $" / {preview.Port} / {settings.TransferBaud} baud；时钟 {clockMode}"
+            + $" / {preview.Port}" + (settings.DownloadMode == StcDownloadMode.Serial ? $" / {settings.TransferBaud} baud" : " / 自动发现唯一 USB 目标") + $"；时钟 {clockMode}"
             + (clockFrequencyHz is { } frequency ? $" / {frequency} Hz" : " / 保留现有频率")
             + "。将按芯片协议擦除现有程序（可能整片擦除）并写入代码和所选时钟选项；此流程不提供原程序备份或 Flash 读回校验。",
             StudioXMcpPermission.FirmwareDownload, cancellationToken).ConfigureAwait(false);
@@ -86,7 +87,7 @@ internal sealed class StcIspMcpTools(McpSessionContext context) : StudioXMcpTool
         if (!string.Equals(prepared.ImageSha256, imageSha256, StringComparison.OrdinalIgnoreCase) ||
             prepared.ExpectedModel != deviceId || !prepared.Port.Equals(port, StringComparison.OrdinalIgnoreCase) ||
             prepared.Settings != settings ||
-            !string.Equals(prepared.PythonExecutable, preview.Tool.PythonExecutable, StringComparison.OrdinalIgnoreCase))
+            !string.Equals(prepared.PythonExecutable, preview.Tool.PythonExecutable ?? "", StringComparison.OrdinalIgnoreCase))
         {
             throw new StudioXException("STC_ISP_APPROVAL_CHANGED",
             "批准后固件、目标、串口、时钟或 ISP 工具发生变化；未连接开发板。");

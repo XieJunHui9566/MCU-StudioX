@@ -88,6 +88,18 @@ public sealed class PluginWorkspaceBroker : IAsyncDisposable
                     text = response.Text
                 });
             }
+            cancellation.ThrowIfCancellationRequested();
+            if (text.ValueKind == JsonValueKind.Object &&
+                text.TryGetProperty("error", out var error) && error.ValueKind == JsonValueKind.String &&
+                text.TryGetProperty("code", out var code) && code.ValueKind == JsonValueKind.String &&
+                text.TryGetProperty("message", out var message) && message.ValueKind == JsonValueKind.String &&
+                code.GetString() is { Length: > 0 and <= 64 } stableCode &&
+                stableCode[0] is >= 'A' and <= 'Z' &&
+                stableCode.All(character => character is >= 'A' and <= 'Z' or >= '0' and <= '9' or '_'))
+            {
+                // MCP 会话已提供结构化业务错误；桥接保留原码，不从任意错误文本猜测含义。
+                throw new StudioXException(stableCode, message.GetString()!);
+            }
             result = response.Images.Count == 0 ? text : JsonSerializer.SerializeToElement(new
             {
                 result = text,
@@ -153,6 +165,7 @@ public sealed class PluginWorkspaceBroker : IAsyncDisposable
     {
         var relative = arguments.TryGetProperty("path", out var path) && path.ValueKind == JsonValueKind.String
             ? path.GetString()! : "";
+        relative = McpWorkspacePathPolicy.NormalizeRelativePath(relative);
         if (!McpWorkspacePathPolicy.IsWorkspaceSourceFile(relative))
         {
             throw new StudioXException("PLUGIN_EDITOR_PATH", "编辑器路径必须是本工程内的安全源码。");

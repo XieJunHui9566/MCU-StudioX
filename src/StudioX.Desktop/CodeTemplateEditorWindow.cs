@@ -28,6 +28,7 @@ internal sealed class CodeTemplateEditorWindow : Window
         MinWidth = 650;
         MinHeight = 540;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
+        SetResourceReference(StyleProperty, typeof(Window));
         SetResourceReference(BackgroundProperty, "Surface");
         SetResourceReference(ForegroundProperty, "Text");
         var root = new Grid { Margin = new(20) };

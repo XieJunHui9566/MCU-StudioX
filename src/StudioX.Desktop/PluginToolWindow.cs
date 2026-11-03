@@ -20,6 +20,7 @@ internal sealed class PluginToolWindow : Window
         MinHeight = 600;
         ShowInTaskbar = true;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
+        SetResourceReference(StyleProperty, typeof(Window));
         SetResourceReference(BackgroundProperty, "Background");
         SetResourceReference(ForegroundProperty, "Text");
     }

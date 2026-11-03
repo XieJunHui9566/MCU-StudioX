@@ -163,28 +163,28 @@
               Value="Transparent" />
             <Setter
               Property="Foreground"
-              Value="#F09C99" />
+              Value="{DynamicResource DiagnosticError}" />
             <Style.Triggers>
               <DataTrigger
                 Binding="{Binding Status}"
                 Value="CRC 正确">
                 <Setter
                   Property="Foreground"
-                  Value="#75CFAB" />
+                  Value="{DynamicResource DiagnosticSuccess}" />
               </DataTrigger>
               <DataTrigger
                 Binding="{Binding Status}"
                 Value="已解析">
                 <Setter
                   Property="Foreground"
-                  Value="#75CFAB" />
+                  Value="{DynamicResource DiagnosticSuccess}" />
               </DataTrigger>
               <DataTrigger
                 Binding="{Binding Status}"
                 Value="异常响应">
                 <Setter
                   Property="Foreground"
-                  Value="#F3BA6C" />
+                  Value="{DynamicResource DiagnosticWarning}" />
               </DataTrigger>
               <Trigger
                 Property="IsSelected"

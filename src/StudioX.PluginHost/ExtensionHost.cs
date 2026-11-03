@@ -118,14 +118,22 @@ internal static class ExtensionHost
 
     private sealed class HostBridge(PluginProtocolConnection connection) : IPluginHost
     {
-        public Task<JsonElement> CallAsync(string tool, JsonElement arguments, CancellationToken cancellationToken)
+        public async Task<JsonElement> CallAsync(string tool, JsonElement arguments, CancellationToken cancellationToken)
         {
-            return connection.RequestAsync("hostCall", JsonSerializer.SerializeToElement(new
+            try
             {
-                tool,
-                arguments
-            }),
-                TimeSpan.FromMinutes(15), cancellationToken);
+                return await connection.RequestAsync("hostCall", JsonSerializer.SerializeToElement(new
+                {
+                    tool,
+                    arguments
+                }),
+                    TimeSpan.FromMinutes(15), cancellationToken).ConfigureAwait(false);
+            }
+            catch (StudioXException exception)
+            {
+                // 插件只引用公开 SDK 即可读取稳定错误码；取消仍由原始取消异常传播。
+                throw new PluginHostException(exception.Code, exception.Message, exception);
+            }
         }
 
         public Task PublishPanelAsync(PluginPanelDefinition panel, CancellationToken cancellationToken)

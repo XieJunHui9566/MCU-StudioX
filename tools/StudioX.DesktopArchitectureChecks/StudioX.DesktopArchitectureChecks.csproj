@@ -12,6 +12,15 @@
       Include="AvalonEdit" />
   </ItemGroup>
   <ItemGroup>
+    <Compile
+      Include="../../src/StudioX.Desktop/CodeComparisonView.cs"
+      Link="Product/CodeComparisonView.cs" />
+    <Compile
+      Include="../../src/StudioX.Desktop/CodeComparisonRenderer.cs"
+      Link="Product/CodeComparisonRenderer.cs" />
+    <Compile
+      Include="../../src/StudioX.Desktop/AgentChangesView.cs"
+      Link="Product/AgentChangesView.cs" />
     <Page
       Include="../../src/StudioX.Desktop/BuildMemoryView.xaml"
       Link="Product/BuildMemoryView.xaml" />
@@ -21,6 +30,9 @@
     <Compile
       Include="../../src/StudioX.Desktop/Icon.cs"
       Link="Product/Icon.cs" />
+    <Compile
+      Include="../../src/StudioX.Desktop/FileIcon.cs"
+      Link="Product/FileIcon.cs" />
     <Using
       Include="System.IO" />
     <Compile

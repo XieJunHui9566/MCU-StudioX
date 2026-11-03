@@ -35,7 +35,7 @@ public sealed class OutputLogView : TextEditor
         }
         else
         {
-            AppendText((Document.TextLength > 0 && !Text.EndsWith('\n') ? "\n" : "") + text.TrimEnd('\r', '\n') + "\n");
+            AppendText((NeedsLineBreak() ? "\n" : "") + text.TrimEnd('\r', '\n') + "\n");
         }
     }
 
@@ -49,7 +49,7 @@ public sealed class OutputLogView : TextEditor
         }
         else
         {
-            if (Document.TextLength > 0 && !Text.EndsWith('\n'))
+            if (NeedsLineBreak())
             {
                 AppendText("\n");
             }
@@ -66,6 +66,8 @@ public sealed class OutputLogView : TextEditor
     }
 
     public void CommitProgress() => progressAnchor = null;
+    // Text 会复制整份日志；高频输出只需读取末尾字符，避免随日志长度反复分配。
+    private bool NeedsLineBreak() => Document.TextLength > 0 && Document.GetCharAt(Document.TextLength - 1) != '\n';
     private DocumentLine? ProgressLine() => progressAnchor is { IsDeleted: false } anchor && anchor.Offset < Document.TextLength
         ? Document.GetLineByOffset(anchor.Offset) : null;
     internal Brush BrushFor(OutputTone tone) => TryFindResource(tone switch

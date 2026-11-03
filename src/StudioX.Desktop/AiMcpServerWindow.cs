@@ -39,10 +39,10 @@ internal sealed class AiMcpServerWindow : Window
         token.SetResourceReference(Control.BorderBrushProperty, "Border");
         clear.SetResourceReference(Control.ForegroundProperty, "Text");
         enabled.SetResourceReference(Control.ForegroundProperty, "Text");
-        var panel = new StackPanel { Margin = new(22) };
+        var panel = new StackPanel();
         void Field(string label, FrameworkElement input)
         {
-            panel.Children.Add(new TextBlock { Text = label, Margin = new(0, 10, 0, 5) });
+            panel.Children.Add(new TextBlock { Text = label, TextWrapping = TextWrapping.Wrap, Margin = new(0, 10, 0, 5) });
             panel.Children.Add(input);
         }
         panel.Children.Add(new TextBlock { Text = "自定义 MCP", FontSize = 22, FontWeight = FontWeights.SemiBold });
@@ -60,7 +60,8 @@ internal sealed class AiMcpServerWindow : Window
             TextWrapping = TextWrapping.Wrap,
             Margin = new(0, 10, 0, 0)
         });
-        panel.Children.Add(status);
+        var footer = new StackPanel { Margin = new(0, 12, 0, 0) };
+        footer.Children.Add(status);
         var actions = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
         var test = new Button { Content = "测试连接", Margin = new(0, 0, 8, 0) };
         var cancel = new Button { Content = "取消", IsCancel = true, Margin = new(0, 0, 8, 0) };
@@ -68,8 +69,13 @@ internal sealed class AiMcpServerWindow : Window
         actions.Children.Add(test);
         actions.Children.Add(cancel);
         actions.Children.Add(save);
-        panel.Children.Add(actions);
-        Content = new ScrollViewer { Content = panel, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
+        footer.Children.Add(actions);
+        // 表单可滚动，操作区固定可见，避免字号放大后主动作落到视口之外。
+        var root = new DockPanel { Margin = new(22) };
+        DockPanel.SetDock(footer, Dock.Bottom);
+        root.Children.Add(footer);
+        root.Children.Add(new ScrollViewer { Content = panel, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled });
+        Content = root;
         name.Text = existing?.Name ?? "";
         endpoint.Text = existing?.Endpoint ?? "";
         command.Text = existing?.Command ?? "";

@@ -18,6 +18,7 @@ public sealed class Mx251DownloadDeviceWindow : Window
         SizeToContent = SizeToContent.Height;
         ResizeMode = ResizeMode.NoResize;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
+        SetResourceReference(StyleProperty, typeof(Window));
         SetResourceReference(BackgroundProperty, "ChromeSurface");
         SetResourceReference(ForegroundProperty, "Text");
         var body = new StackPanel { Margin = new(20) };

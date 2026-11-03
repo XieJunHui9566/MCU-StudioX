@@ -5,7 +5,7 @@ int main(void)
 {
     HAL_Init();
     volatile uint32_t counter = 0;
-    for (;;)
+    while (1)
     {
         ++counter; /* 无板级引脚假设；在此编写应用。 */
     }

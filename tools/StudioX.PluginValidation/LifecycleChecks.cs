@@ -11,12 +11,12 @@ using StudioX.Foundation;
 /// <summary>验证声明拒绝发生在激活之前，以及停用撤销在途主机写入与回调。</summary>
 internal static class LifecycleChecks
 {
-    public static async Task RunAsync(string repository, string scratch, ValidationChecks checks)
+    public static async Task RunAsync(string repository, string scratch, ValidationChecks checks, string? runtimeFixtureDirectory = null)
     {
         var runtime = Path.Combine(scratch, "runtime");
         var project = Path.Combine(scratch, "project");
         var source = Path.Combine(scratch, "lifecycle-source");
-        RepositoryChecks.CopyDirectory(Path.Combine(repository, "tools/StudioX.PluginRuntimeValidation/bin/Debug/net10.0"), source);
+        RepositoryChecks.CopyDirectory(runtimeFixtureDirectory ?? Path.Combine(repository, "tools/StudioX.PluginRuntimeValidation/bin/Debug/net10.0"), source);
         var hashes = new Dictionary<string, string>(StringComparer.Ordinal);
         foreach (var file in Directory.GetFiles(source, "*", SearchOption.AllDirectories))
         {

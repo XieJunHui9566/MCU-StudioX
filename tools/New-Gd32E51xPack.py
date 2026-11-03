@@ -153,12 +153,12 @@ def main():
     manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
     (stage / "templates/main.c").write_text(
         '#include <stdint.h>\n#include "gd32e51x.h"\n#include "gd32e51x_rcu.h"\n'
-        'volatile uint32_t app_counter;\nint main(void) { for (;;) { app_counter = rcu_clock_freq_get(CK_SYS); __NOP(); } }\n',
+        'volatile uint32_t app_counter;\nint main(void) { while (1) { app_counter = rcu_clock_freq_get(CK_SYS); __NOP(); } }\n',
         encoding="utf-8",
     )
     (stage / "templates/cmsis.c").write_text(
         '#include <stdint.h>\n#include "gd32e51x.h"\n'
-        'volatile uint32_t app_counter;\nint main(void) { for (;;) { app_counter = SystemCoreClock; __NOP(); } }\n',
+        'volatile uint32_t app_counter;\nint main(void) { while (1) { app_counter = SystemCoreClock; __NOP(); } }\n',
         encoding="utf-8",
     )
     provenance_path = stage / "provenance.json"

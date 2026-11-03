@@ -6,7 +6,7 @@ volatile uint32_t app_worker_count = 0;
 static void HeartbeatTask(void *argument)
 {
     (void)argument;
-    for (;;)
+    while (1)
     {
         ++app_heartbeat;
         /* 任务等待让出 CPU；Delay_ms/us 是忙等待，适合短时外设时序。 */
@@ -17,7 +17,7 @@ static void HeartbeatTask(void *argument)
 static void WorkerTask(void *argument)
 {
     (void)argument;
-    for (;;)
+    while (1)
     {
         ++app_worker_count;
         vTaskDelay(pdMS_TO_TICKS(100));
@@ -40,7 +40,7 @@ int main(void)
 
     /* 仅在调度器启动失败时返回。 */
     configASSERT(0);
-    for (;;)
+    while (1)
     {
     }
 }

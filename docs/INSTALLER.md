@@ -1,6 +1,6 @@
 # Windows 安装与升级
 
-版本从 `Directory.Build.props` 的 `ProductVersion` 读取；独立 IDE 当前源码与安装器目标版本为 **0.2.6.14**，可覆盖升级 0.2.6.13、0.2.6.12、0.2.6LTS、0.2.6.10、0.2.5.4B 及首版 0.1.0，与旧 VS Code 插件的 0.17 分开。关于窗口、欢迎页、状态栏、安装器、Windows 文件与程序集均使用 **0.2.6.14**。历史 `0.2.6LTS` 对应固定数字版本 `0.2.6.11`，数字相同时 LTS 名称高于无后缀版本；`0.2.6.14` 可覆盖升级这一历史版本。
+版本从 `Directory.Build.props` 的 `ProductVersion` 读取；独立 IDE 当前源码与安装器目标版本为 **0.2.6.15**，可覆盖升级 0.2.6.14、0.2.6.13、0.2.6.12、0.2.6LTS、0.2.6.10、0.2.5.4B 及首版 0.1.0，与旧 VS Code 插件的 0.17 分开。关于窗口、欢迎页、状态栏、安装器、Windows 文件与程序集均使用 **0.2.6.15**。历史 `0.2.6LTS` 对应固定数字版本 `0.2.6.11`，数字相同时 LTS 名称高于无后缀版本；`0.2.6.15` 可覆盖升级这一历史版本。
 
 ## 构建
 
@@ -12,7 +12,7 @@
 
 构建器固定使用 Inno Setup 7.1.0 x64，准备脚本检查下载 SHA-256 和 Pyrsys B.V. 的有效数字签名。只在开发机器准备安装编译器；最终用户不需要 Inno Setup、.NET、VS Code 或开发开发环境组件。
 
-`Build-Installer.ps1` 调用自包含发布、检查工具和器件包、生成逐文件 SHA-256，再压缩为单个 EXE。默认输出 `artifacts/releases/<version>/`，包括安装器、SHA256SUMS.txt、使用说明、release.json 和单独的 device-packs。已成功发行的目录不允许覆盖。用户明确要求同版本修复发布时，保持产品版本，使用新的输出目录和 Git 发布标签记录修复源码，不移动已有标签。
+`Build-Installer.ps1` 调用自包含发布、检查工具和器件包、生成逐文件 SHA-256，再压缩生成安装器。完整版包含一个 EXE 和配套分卷 BIN，安装时须放在同一目录；轻量版通常为单个 EXE。默认输出 `artifacts/releases/<version>/`，包括安装器、SHA256SUMS.txt、使用说明、release.json 和单独的 device-packs。已成功发行的目录不允许覆盖。用户明确要求同版本修复发布时，保持产品版本，使用新的输出目录记录修复源码；仅在另有 Git 发布授权时创建新标签，不移动已有标签。
 
 只有用户明确要求升级时才修改 `Directory.Build.props` 的产品版本。`Publish.ps1 -ReleaseVersion` 仅用于明确的发行构建；开发环境组件、器件包和插件版本分别管理，不随 IDE 版本强行改变。不要修改已经发行的开发环境组件版本内容，因为工程会锁定其指纹。
 
@@ -41,6 +41,8 @@
 为迁移旧安装器对工具文件的卸载所有权，新安装使用 `UninstallLogMode=overwrite`，组件文件使用 `uninsneveruninstall`。旧完整版升级到轻量版后再卸载，旧工具文件也会保留。该方式会让已从新载荷移除的历史程序文件不再被新卸载记录管理，卸载后可能留下这些文件；本轮不递归清理它们。规则依据 [Inno Setup UninstallLogMode](https://jrsoftware.org/ishelp/topic_setup_uninstalllogmode.htm) 和 [Files flags](https://jrsoftware.org/ishelp/topic_filessection.htm)。
 
 随附 `.mcupack` 按厂商位于安装目录的 `device-packs/` 下；另在发行输出目录保存一份，便于单独发送或更新。0.2.2 安装包收录 STM32、AGM、WCH、Puya、GigaDevice、STC 和 Raspberry Pi 的当前包，具体清单及 SHA-256 见 `device-packs/index.json`。器件包版本独立于 IDE 版本；各型号的实板验收范围见对应文档。
+
+本机完整环境安装包还须核对实际安装目录及用户仓库，不能只收集默认发行目录。以已安装组件清单和文件指纹为准，保留用户实际安装的器件包版本、独立 `zephyr-device-packs/` 目录，以及预装和用户插件。Zephyr 专用包在首次选择工程时由同一后台入口导入独立仓库，不混入普通器件包清单。同 ID 插件按现有管理器的版本选择规则预装，原始版本归档单独随包保存；插件信任仍按用户和内容指纹管理，不复制账户密钥或插件私人数据。本次个人环境包按用户要求排除 ESP-IDF 6.x，保留 5.5.4；器件包本身不因依赖被排除的 SDK 而丢弃。此个人快照不把独立研发候选提升为已安装或已验收版本。
 
 完整版同时预装 Windows PC C/C++ 开发环境组件、ESP-IDF 5.5.4、ESP8266 RTOS SDK 3.4；两种版本都随附七个 Espressif 器件包。轻量版导入对应开发环境组件后使用共享 SDK，不向每个工程复制。
 

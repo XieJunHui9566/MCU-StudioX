@@ -17,7 +17,7 @@ public partial class MainWindow
         var cancellation = new CancellationTokenSource();
         bundledPackCancellation = cancellation;
         LocalPackStatus.Text = "正在后台检查随附器件包；可继续选择已安装器件。";
-        import ??= token => services.Packs.ImportBundledMissingAsync(Path.Combine(AppContext.BaseDirectory, "device-packs"), token);
+        import ??= token => services.ImportBundledPacksAsync(AppContext.BaseDirectory, token);
         bundledPackTask = RunBundledPackCheckAsync(import, cancellation);
     }
 

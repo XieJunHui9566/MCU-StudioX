@@ -8,6 +8,22 @@ using StudioX.Engine.Debugging;
 public partial class DebugToolsView : UserControl
 {
     private bool mon51Mode;
+    private bool picMode;
+    public void ConfigurePic(bool enabled)
+    {
+        if (picMode == enabled)
+        {
+            return;
+        }
+        picMode = enabled;
+        MemoryAddress.Text = enabled ? "0x20" : "0x20000000";
+        MemoryHint.Text = enabled ? "PIC 文件寄存器为字节地址；程序反汇编使用程序字地址。" : "内存只读 · 每次读取 64 字节";
+        WritePicMemory.Visibility = enabled ? Visibility.Visible : Visibility.Collapsed;
+        RtosTab.Visibility = enabled ? Visibility.Collapsed : Visibility.Visible;
+        Frames.ToolTip = enabled ? "调用栈和局部变量取自 MDB；可用性受器件硬件栈和 XC8 调试信息限制。" : null;
+    }
+    public event Action<string>? PicMemoryWriteRequested;
+    private void WritePicMemory_Click(object sender, RoutedEventArgs e) => PicMemoryWriteRequested?.Invoke(MemoryAddress.Text);
     public void ConfigureMon51()
     {
         mon51Mode = true;
@@ -47,6 +63,7 @@ public partial class DebugToolsView : UserControl
         EnableBreakpoint.IsEnabled = DeleteBreakpoint.IsEnabled = state is DebugState.Disconnected or DebugState.Stopped or DebugState.Faulted;
         EditBreakpoint.IsEnabled = EnableBreakpoint.IsEnabled;
         Frames.IsEnabled = ReadMemory.IsEnabled = state == DebugState.Stopped;
+        WritePicMemory.IsEnabled = picMode && state == DebugState.Stopped;
         if (state != DebugState.Stopped)
         {
             Memory.Text = state == DebugState.Running ? "目标运行中，暂停后重新读取。" : "暂停后读取内存。";

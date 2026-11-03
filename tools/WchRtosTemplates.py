@@ -79,7 +79,7 @@ def extract_freertos(
         )
         config = re.sub(
             r"(?m)^#define configASSERT[^\n]*$",
-            "#define configASSERT(x) do { if (!(x)) { taskDISABLE_INTERRUPTS(); for (;;) { } } } while (0)",
+            "#define configASSERT(x) do { if (!(x)) { taskDISABLE_INTERRUPTS(); while (1) { } } } while (0)",
             config,
         )
         write("templates/freertos/FreeRTOSConfig.h", config)

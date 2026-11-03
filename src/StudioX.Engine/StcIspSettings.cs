@@ -6,7 +6,8 @@ using StudioX.Foundation;
 /// <summary>STC 串口 ISP 选项按工程保存；时钟选项只在明确下载时写入芯片。</summary>
 public sealed record StcIspSettings(int FormatVersion = 1, string Port = "",
     StcClockMode ClockMode = StcClockMode.Preserve, int? ClockFrequencyHz = null,
-    int TransferBaud = 115200)
+    int TransferBaud = 115200, StcDownloadMode DownloadMode = StcDownloadMode.Serial,
+    bool ModifyHardware = false, StcHardwareOptions? Hardware = null)
 {
     public const string RelativePath = ".studiox/stc-isp.json";
 
@@ -20,7 +21,7 @@ public sealed record StcIspSettings(int FormatVersion = 1, string Port = "",
 
     public void Validate()
     {
-        if (FormatVersion != 1 || !Enum.IsDefined(ClockMode) || TransferBaud is < 1200 or > 921600 ||
+        if (FormatVersion != 1 || !Enum.IsDefined(ClockMode) || !Enum.IsDefined(DownloadMode) || TransferBaud is < 1200 or > 921600 ||
             (!string.IsNullOrEmpty(Port) && !Regex.IsMatch(Port, @"^COM[1-9][0-9]{0,3}$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)) ||
             ClockFrequencyHz is < 1000000 or > 40000000 ||
             ClockMode == StcClockMode.Preserve && ClockFrequencyHz is not null)
@@ -32,7 +33,21 @@ public sealed record StcIspSettings(int FormatVersion = 1, string Port = "",
     public void ValidateFor(StcIspCapabilities capabilities, bool requirePort = false)
     {
         Validate();
-        if (requirePort && string.IsNullOrWhiteSpace(Port))
+        Hardware?.Validate(capabilities.DeviceId, ModifyHardware, DownloadMode);
+        if (DownloadMode == StcDownloadMode.NativeUsb)
+        {
+            if (!capabilities.SupportsNativeUsb)
+            {
+                throw new StudioXException("STC_USB_TARGET", "当前仅 STC8H8K64U 接入原生 USB 下载；其它型号请使用串口下载。");
+            }
+            // 工厂 USB 使用芯片自己的预置校准值，不能套用串口逐轮校准或其它芯片的固定 trim。
+            if (ClockMode != StcClockMode.Preserve &&
+                !(ClockMode == StcClockMode.InternalRc && ClockFrequencyHz == 24000000))
+            {
+                throw new StudioXException("STC_USB_CLOCK", "原生 USB 当前支持保留实机时钟，或内部 RC 24 MHz；其它频率和外部时钟尚未核对，请使用串口下载。");
+            }
+        }
+        if (requirePort && DownloadMode == StcDownloadMode.Serial && string.IsNullOrWhiteSpace(Port))
         {
             throw new StudioXException("STC_ISP_PORT", "请先选择开发板使用的 COM 串口。");
         }

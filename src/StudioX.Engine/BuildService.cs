@@ -43,6 +43,11 @@ public sealed partial class BuildService(ToolsetCatalog catalog, string? ag32Map
         var root = Path.GetFullPath(directory);
         return await StcCodeRomLimit.ReadAsync(root, await ProjectService.ReadAsync(root, token), token);
     }
+    public async Task<StcRamLimits?> ReadStcRamLimitsAsync(string directory, CancellationToken token = default)
+    {
+        var root = Path.GetFullPath(directory);
+        return await StcRamLimits.ReadAsync(root, await ProjectService.ReadAsync(root, token), token);
+    }
     public async Task SaveSettingsAsync(string directory, ProjectBuildSettings settings, CancellationToken token = default)
     {
         settings.Validate();
@@ -61,6 +66,7 @@ public sealed partial class BuildService(ToolsetCatalog catalog, string? ag32Map
             }
             settings.ValidateFor(project);
             (await StcCodeRomLimit.ReadAsync(root, project, token))?.Validate(settings.CodeRomSizeBytes);
+            (await StcRamLimits.ReadAsync(root, project, token))?.Validate(settings.IdataSizeBytes, settings.XdataSizeBytes, settings.Mon51Profile);
             if (await ProjectBuildSettings.ReadAsync(root, token) == settings)
             {
                 return;
@@ -81,7 +87,9 @@ public sealed partial class BuildService(ToolsetCatalog catalog, string? ag32Map
         => Task.Run(() => ExecuteAsync(projectDirectory, false, progress, cancellationToken, output), cancellationToken);
     public Task<BuildReport> ConfigureAsync(string projectDirectory, IProgress<string>? progress = null, CancellationToken cancellationToken = default, IProgress<string>? output = null)
         => Task.Run(() => ExecuteAsync(projectDirectory, true, progress, cancellationToken, output), cancellationToken);
-    private async Task<BuildReport> ExecuteAsync(string projectDirectory, bool configureOnly, IProgress<string>? progress, CancellationToken cancellationToken, IProgress<string>? output)
+    public Task<BuildReport> BuildPicDebugAsync(string projectDirectory, IProgress<string>? output = null, CancellationToken token = default)
+        => Task.Run(() => ExecuteAsync(projectDirectory, false, null, token, output, "pickit3"), token);
+    private async Task<BuildReport> ExecuteAsync(string projectDirectory, bool configureOnly, IProgress<string>? progress, CancellationToken cancellationToken, IProgress<string>? output, string picDebugger = "none")
     {
         if (!await gate.WaitAsync(0, cancellationToken))
         {
@@ -99,7 +107,11 @@ public sealed partial class BuildService(ToolsetCatalog catalog, string? ag32Map
             }
             var backend = Backends.SingleOrDefault(backend => backend.Kind == project.Kind)
                 ?? throw new StudioXException("BUILD_BACKEND", "工程没有注册构建后端：" + project.Kind);
-            return await backend.ExecuteAsync(new(root, project, configureOnly, progress, output, cancellationToken));
+            if (picDebugger != "none" && project.Kind != ProjectKind.Pic)
+            {
+                throw new StudioXException("PIC_DEBUG_PROJECT", "PIC 调试构建需要 PIC 工程。");
+            }
+            return await backend.ExecuteAsync(new(root, project, configureOnly, progress, output, cancellationToken, picDebugger));
         }
         finally { gate.Release(); }
     }

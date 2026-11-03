@@ -315,6 +315,20 @@ try
         }
         $global:LASTEXITCODE = 0
     }
+    Run-Check 'mon51-settings-ui' {
+        $settingsUi = Join-Path $output 'mon51-settings-ui'
+        $settingsProcess = Start-Process -FilePath $desktop -ArgumentList @('--preview-mon51-settings', ('"' + $settingsUi + '"')) -WindowStyle Hidden -PassThru
+        if (!$settingsProcess.WaitForExit(60000))
+        {
+            $settingsProcess.Kill($true)
+            throw 'Mon51 settings UI preview timeout.'
+        }
+        if ($settingsProcess.ExitCode -ne 0 -or !(Test-Path -LiteralPath (Join-Path $settingsUi 'result.txt')))
+        {
+            throw 'Mon51 settings UI preview failed.'
+        }
+        $global:LASTEXITCODE = 0
+    }
     $completed = $true
 }
 finally

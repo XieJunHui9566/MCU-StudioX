@@ -1,10 +1,21 @@
 # STC 8 位单片机单包（STC15 首批型号）
 
-本目录是 `stc.stc8` 的构建配方，不包含从 AiCube 原样复制的厂商头文件。当前单个 StudioX Pack 收录官方资料能逐一核实容量的 STC89、STC12、STC15、STC8G、STC8H 共 24 个完整型号。其他 STC 8 位型号可继续添加到同一个包，但需要逐型号核对程序区、idata、xdata 和寄存器适用性。STC16、STC32 和 C251 系列不在本包范围内。
+本目录是 `stc.stc8` 的构建配方，不包含从 AiCube 原样复制的厂商头文件。当前 0.1.9 单包收录官方资料能逐一核实容量的 STC89、STC12、STC15、STC8G、STC8H 共 25 个完整型号（含 STC8H8K64U）。其他 STC 8 位型号可继续添加到同一个包，但需要逐型号核对程序区、idata、xdata 和寄存器适用性。STC16、STC32 和 C251 系列不在本包范围内。
 
 各系列使用 AiCube 中对应的 SDCC 寄存器表。`tools/New-Stc8Pack.py` 从用户指定的本地 AiCube 解包目录读取这些表，核对 SHA-256，只提取 SFR 名称和地址等器件事实，再以 StudioX 独立格式生成头文件；原注释、示例和原始文件不打入包。AiCube 解包内容没有发现明确的再分发许可，因此不能把原文件当作已获授权的 SDK。生成包内的 `vendor/provenance.json` 记录每份来源哈希和许可状态。
 
 ## 构建
+
+当前标准整数类型修复由已核对的 0.1.8 归档不可变升级，保留完整器件资料及监控资源：
+
+```powershell
+python tools/New-Stc8StandardTypesPack.py --base-pack '<已核对的 stc.stc8-0.1.8.mcupack>' --output '<新源码目录>'
+StudioX.Cli pack '<新源码目录>' '<输出目录>/stc.stc8-0.1.9.mcupack'
+```
+
+五组型号头及全部模板入口提供 `<stdint.h>`；使用锁定 SDCC 的标准头，不复制 typedef。裸机示例计数器使用 `uint16_t`，模板无限循环为 `while (1)`。新建发行包从 `artifacts/packs/STC8-0.1.9/index.json` 读取当前包，不回退到历史 0.1.0。
+
+首次从本机资料重建历史基础包的入口仍保留用于来源追溯：
 
 ```powershell
 python tools/New-Stc8Pack.py --aicube-root "<AiCube 解包目录>" --output artifacts/packs/STC8-0.1.0

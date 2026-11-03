@@ -10,7 +10,7 @@ int main(void)
     while (LL_RCC_HSI_IsReady() != 1U)
     {
     }
-    for (;;)
+    while (1)
     {
         ++app_counter;
         __NOP();

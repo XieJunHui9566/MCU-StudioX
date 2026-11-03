@@ -14,7 +14,8 @@ public sealed partial class ProjectToolPreparationService(ToolsetCatalog catalog
     private sealed record Need(string Id, string Version, string Compiler, string Purpose);
     private static readonly string[] ConfigurationFiles = [".studiox/project.json", ".studiox/toolchain.lock.json",
         DevelopmentComponentLock.RelativePath, "device/manifest.json", ".studiox/ag32-mapping-toolchain.lock.json",
-        ".studiox/ag32-logic-toolchain.lock.json", HdlSimulationSettings.RelativePath, StudioX.Engine.Pic.PicDownloadSettings.RelativePath];
+        ".studiox/ag32-logic-toolchain.lock.json", HdlSimulationSettings.RelativePath, StudioX.Engine.Pic.PicDownloadSettings.RelativePath,
+        ".studiox/pic-debug-toolchain.lock.json"];
 
     public Task<ProjectToolPlan> InspectAsync(string? directory, DistributionListing? listing = null, CancellationToken token = default)
         => Task.Run(async () =>
@@ -54,6 +55,22 @@ public sealed partial class ProjectToolPreparationService(ToolsetCatalog catalog
             if (File.Exists(PathBoundary.Resolve(root, HdlSimulationSettings.RelativePath)))
             {
                 needs.Add(new("hdl.iverilog", "14.0.0", "iverilog", "已配置的 RTL 仿真"));
+            }
+            if (project.Kind == ProjectKind.Pic && StudioX.Engine.Pic.PicDebugTarget.Supports(project.DeviceId))
+            {
+                needs.Add(new(StudioX.Engine.Pic.PicDebugService.ToolsetId, StudioX.Engine.Pic.PicDebugService.Version,
+                    StudioX.Engine.Pic.PicDebugService.CompilerId, "PICkit3 MDB 调试"));
+                var debugLockPath = PathBoundary.Resolve(root, ".studiox/pic-debug-toolchain.lock.json");
+                if (File.Exists(debugLockPath))
+                {
+                    var debugLock = await JsonStore.ReadAsync<ToolchainLock>(debugLockPath, token);
+                    if (debugLock.FormatVersion != 1 || debugLock.ToolsetId != StudioX.Engine.Pic.PicDebugService.ToolsetId ||
+                        debugLock.ToolsetVersion != StudioX.Engine.Pic.PicDebugService.Version)
+                    {
+                        throw new StudioXException("PIC_DEBUG_TOOL_CHANGED", "PIC 调试组件内容锁身份或版本无效。");
+                    }
+                    pins[debugLock.ToolsetId] = debugLock.Fingerprint;
+                }
             }
             var result = new List<ProjectToolRequirement>();
             foreach (var need in needs.DistinctBy(n => (n.Id, n.Version, n.Compiler)))
@@ -184,6 +201,8 @@ public sealed partial class ProjectToolPreparationService(ToolsetCatalog catalog
             "hdl-simulation" => ["iverilog", "vvp"],
             "pic-xc8" => ["xc8-cc"],
             "pic-ipe" => ["java", "ipecmd"],
+            "pic-mdb" => ["java", "mdb", "ipecmd"],
+            "cmake-build" => ["cmake", "ninja"],
             "windows-native" => ["gcc", "gxx", "ar", "ranlib", "as", "ld", "objcopy", "objdump", "size"],
             _ when need.Id == Mx251Profile.ToolsetId => Mx251Profile.RequiredRoles,
             _ when need.Id == "stc.sdcc" => ["cmake", "ninja", "sdcc", "sdar", "sdas8051", "sdld", "packihx"],

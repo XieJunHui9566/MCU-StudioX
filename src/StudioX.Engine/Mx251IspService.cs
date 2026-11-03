@@ -9,20 +9,25 @@ using StudioX.Packages;
 using IspImage = StudioX.Ai8051Isp.FirmwareImage;
 
 /// <summary>MX251 固件的离线准备、快照复核和固定 32 位 ISP；不沿用 8 位 STC 的零基址 HEX 流程。</summary>
-public sealed class Mx251IspService(ToolsetCatalog catalog, string dataDirectory, IMx251IspBackend? backend = null)
+public sealed partial class Mx251IspService(ToolsetCatalog catalog, string dataDirectory, IMx251IspBackend? backend = null, IMx251SerialBackend? serialBackend = null)
 {
     private readonly IMx251IspBackend backend = backend ?? new Mx251HidBackend();
+    private readonly IMx251SerialBackend serialBackend = serialBackend ?? new Mx251SerialBackend();
+    public Task<string[]> ListSerialPortsAsync(CancellationToken token = default) => Task.Run(serialBackend.GetPortNames, token);
     private readonly SemaphoreSlim gate = new(1, 1);
     private static string Hash(byte[] bytes) => Convert.ToHexString(SHA256.HashData(bytes));
     private static StudioXException Invalid(string message) => new("MX251_ISP", message);
+    public static bool Supports(ProjectManifest project) => project.Kind == ProjectKind.Pack &&
+        project.ToolsetId == Mx251Profile.ToolsetId && project.DeviceId == "AI8051U-34K64" &&
+        (Mx251SdkProfile.Matches(project) || project.CompilerId == Mx251Profile.CompilerId && project.ToolsetVersion == Mx251Profile.Version);
     private string SettingsPath(string root) => Path.Combine(dataDirectory, "mx251-isp", Hash(Encoding.UTF8.GetBytes(Path.GetFullPath(root).ToUpperInvariant())) + ".json");
 
     public Task<IReadOnlyList<HidDevice>> ListDevicesAsync(CancellationToken token = default) => Task.Run(backend.Enumerate, token);
     public async Task<Mx251IspSettings> LoadSettingsAsync(string root, CancellationToken token = default)
     {
-        await ValidateProjectAsync(root, token);
+        var project = await ValidateProjectAsync(root, token);
         var path = SettingsPath(root);
-        var settings = File.Exists(path) ? await JsonStore.ReadAsync<Mx251IspSettings>(path, token) : new();
+        var settings = File.Exists(path) ? await JsonStore.ReadAsync<Mx251IspSettings>(path, token) : new(DownloadMode: Mx251SdkProfile.Matches(project) ? Mx251DownloadMode.NativeUsb : Mx251DownloadMode.UsbBridge);
         // 旧本机设置仅供首次迁移；工程一旦声明时钟，所有电脑都以工程值为准。
         if (await Mx251ClockConfiguration.ReadAsync(root, token) is { } hz)
         {
@@ -62,9 +67,7 @@ public sealed class Mx251IspService(ToolsetCatalog catalog, string dataDirectory
     private static async Task<ProjectManifest> ValidateProjectAsync(string root, CancellationToken token)
     {
         var project = await ProjectService.ReadAsync(root, token);
-        if (project.Kind != ProjectKind.Pack || project.ToolsetId != Mx251Profile.ToolsetId || project.CompilerId != Mx251Profile.CompilerId ||
-            project.ToolsetVersion != Mx251Profile.Version || project.DeviceId != "AI8051U-34K64" ||
-            project.PackId is not ("stc.stc251" or "stc.ai8051u-mx251"))
+        if (!Supports(project))
         {
             throw Invalid("仅支持 STC251 器件包中的 AI8051U-34K64 32 位 MX251 工程。");
         }
@@ -124,6 +127,8 @@ public sealed class Mx251IspService(ToolsetCatalog catalog, string dataDirectory
     {
         var root = Path.GetFullPath(directory);
         using var operation = Mx251BuildStorage.Acquire(root);
+        // 独立 CMake/CLI 与 IDE 共用输出租约，制作下载快照期间不能替换固件。
+        using var outputLease = Mx251SdkProfile.Matches(await ProjectService.ReadAsync(root, token)) ? Mx251OutputLease.Acquire(root) : null;
         var settings = await LoadSettingsAsync(root, token);
         settings.Validate(requireDevice: true);
         var input = await ReadBuildAsync(root, token);
@@ -152,6 +157,7 @@ public sealed class Mx251IspService(ToolsetCatalog catalog, string dataDirectory
         try
         {
             using var operation = Mx251BuildStorage.Acquire(prepared.ProjectRoot);
+            using var outputLease = Mx251SdkProfile.Matches(await ProjectService.ReadAsync(prepared.ProjectRoot, token)) ? Mx251OutputLease.Acquire(prepared.ProjectRoot) : null;
             var input = await ReadBuildAsync(prepared.ProjectRoot, token);
             if (input.ReceiptHash != prepared.ReceiptSha256 || input.Source != prepared.SourceImage || Hash(input.Image) != prepared.ImageSha256 ||
                 await LoadSettingsAsync(prepared.ProjectRoot, token) != prepared.Settings)
@@ -170,6 +176,11 @@ public sealed class Mx251IspService(ToolsetCatalog catalog, string dataDirectory
             if (!image.Sha256.Equals(prepared.ImageSha256, StringComparison.OrdinalIgnoreCase) || image.Code.Length != prepared.CodeBytes)
             {
                 throw Invalid("下载快照被修改；未打开硬件。");
+            }
+            if (prepared.Settings.DownloadMode == Mx251DownloadMode.Serial) return await DownloadSerialAsync(prepared, image, output, token);
+            if (prepared.Settings.DownloadMode == Mx251DownloadMode.NativeUsb)
+            {
+                return await DownloadNativeUsbAsync(prepared, image, output, token);
             }
             var device = SelectDevice(prepared.Settings, await ListDevicesAsync(token));
             token.ThrowIfCancellationRequested();

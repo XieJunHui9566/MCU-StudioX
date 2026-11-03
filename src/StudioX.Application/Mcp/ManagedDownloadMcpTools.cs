@@ -38,7 +38,7 @@ internal sealed class ManagedDownloadMcpTools(McpSessionContext context) : Studi
         return JsonSerializer.Serialize(await Services.PicDownloads.PreviewAsync(Project, cancellationToken).ConfigureAwait(false));
     }
 
-    [McpServerTool(Name = "pic_download"), Description("逐次授权将预检 PIC 固件经所选 PICkit3 写入并校验；须复述 approvalId。保留备份、EEPROM、用户 ID，配置以预检为准；不支持调试。")]
+    [McpServerTool(Name = "pic_download"), Description("逐次授权将预检 PIC 固件经所选 PICkit3 直接写入并校验；须复述 approvalId。不备份原程序，保留 EEPROM、用户 ID，配置以预检为准；不支持调试。")]
     public async Task<string> PicDownloadAsync(string approvalId, CancellationToken cancellationToken = default)
     {
         await RequireSavedDocumentsAsync().ConfigureAwait(false);
@@ -47,7 +47,7 @@ internal sealed class ManagedDownloadMcpTools(McpSessionContext context) : Studi
         {
             throw new StudioXException("DOWNLOAD_APPROVAL_CHANGED", "PIC 固件或下载设置已变化，请重新预检。");
         }
-        await RequireApprovalAsync("pic_download", $"将固件写入 {preview.Firmware.DeviceId}，PICkit3 {preview.Settings.ProgrammerSerial}。\nSHA-256 {preview.Firmware.Sha256}\n配置字及程序将按预检写入并校验。",
+        await RequireApprovalAsync("pic_download", $"将固件写入 {preview.Firmware.DeviceId}，PICkit3 {preview.Settings.ProgrammerSerial}。\nSHA-256 {preview.Firmware.Sha256}\n直接替换原程序且不备份；配置字及程序将按预检写入并校验。",
             StudioXMcpPermission.FirmwareDownload, cancellationToken).ConfigureAwait(false);
         Context.Debug.EnsureCanStart();
         await RequireSavedDocumentsAsync().ConfigureAwait(false);

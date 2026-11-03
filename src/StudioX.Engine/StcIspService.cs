@@ -4,20 +4,28 @@ using System.Security.Cryptography;
 using System.Text;
 using StudioX.Foundation;
 using StudioX.Packages;
+using StudioX.Engine.StcUsb;
 
 /// <summary>外部 stcgal 1.10 的受控串口下载；不把本机 Python 路径写进工程或开发环境组件。</summary>
-public sealed partial class StcIspService(ToolsetCatalog catalog, string runtimeDirectory, string dataDirectory)
+public sealed partial class StcIspService(ToolsetCatalog catalog, string runtimeDirectory, string dataDirectory,
+    IStcUsbBackend? usbBackend = null, TimeSpan? usbWaitTimeout = null)
 {
     public ProjectClockService ProjectClocks { get; set; } = new();
     private readonly SemaphoreSlim gate = new(1, 1);
     private readonly string runtime = Path.GetFullPath(runtimeDirectory);
     private readonly string data = Path.GetFullPath(dataDirectory);
+    private readonly IStcUsbBackend nativeUsb = usbBackend ?? new StcUsbBackend();
+    private readonly TimeSpan nativeUsbTimeout = usbWaitTimeout ?? TimeSpan.FromMinutes(3);
     private const string ToolSettingsName = "stc-isp-tool.json";
     private sealed record ToolSettings(string ProgrammerExecutable);
     private sealed record PreviewInputs(StcIspPreview Preview, byte[] Image, string? ClockConfigurationSha256);
 
     public async Task<StcIspSettings> LoadSettingsAsync(string root, CancellationToken token = default)
-        => ApplyClock(await ProjectClocks.ReadAsync(root, token), await StcIspSettings.ReadAsync(root, token));
+    {
+        var settings = ApplyClock(await ProjectClocks.ReadAsync(root, token), await StcIspSettings.ReadAsync(root, token));
+        settings.ValidateFor(await GetCapabilitiesAsync(root, token));
+        return settings;
+    }
 
     public async Task SaveSettingsAsync(string root, StcIspSettings settings, CancellationToken token = default)
     {
@@ -169,6 +177,10 @@ public sealed partial class StcIspService(ToolsetCatalog catalog, string runtime
     {
         var inputs = await PreviewCoreAsync(directory, settings, token).ConfigureAwait(false);
         var preview = inputs.Preview;
+        if (preview.Settings.DownloadMode == StcDownloadMode.NativeUsb)
+        {
+            return await PrepareNativeUsbAsync(inputs, token);
+        }
         var root = preview.ProjectRoot;
         var session = PathBoundary.Resolve(root, ".build/stc-isp-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(session);
@@ -234,12 +246,13 @@ public sealed partial class StcIspService(ToolsetCatalog catalog, string runtime
             ?? throw new StudioXException("STC_ISP_IMAGE", "缺少 STC 代码 Flash 容量配置。");
         var selectedLimit = buildSettings.CodeRomSizeBytes ?? limit.MaximumBytes;
         var hex = StcIntelHex.Validate(bytes, checked((uint)Math.Min(limit.MaximumBytes, selectedLimit)));
-        var tool = await GetToolStatusAsync(token);
-        if (!tool.Available || tool.PythonExecutable is null)
+        var native = settings.DownloadMode == StcDownloadMode.NativeUsb;
+        var tool = native ? new StcIspToolStatus(true, null, null, "原生 USB 使用内置 C# 协议和 Windows HID 驱动，无需 stcgal。") : await GetToolStatusAsync(token);
+        if (!tool.Available || !native && tool.PythonExecutable is null)
         {
             throw new StudioXException("STC_ISP_TOOL", tool.Message);
         }
-        return new(new(root, device.Id, device.FlashBytes, settings.Port.ToUpperInvariant(), sourceImage,
+        return new(new(root, device.Id, device.FlashBytes, native ? "USB-AUTO" : settings.Port.ToUpperInvariant(), sourceImage,
             hash, bytes.Length, hex.DataBytes, hex.HighestAddress, settings, tool), bytes, clock.ConfigurationSha256);
     }
 
@@ -254,7 +267,9 @@ public sealed partial class StcIspService(ToolsetCatalog catalog, string runtime
         {
             throw new StudioXException("STC_ISP_CHANNEL", "监控制作镜像必须由专用制作入口执行。");
         }
-        return Task.Run(() => DownloadPreparedCoreAsync(prepared, output, token), token);
+        return prepared.Settings.DownloadMode == StcDownloadMode.NativeUsb
+            ? Task.Run(() => DownloadNativeUsbAsync(prepared, output, token), token)
+            : Task.Run(() => DownloadPreparedCoreAsync(prepared, output, token), token);
     }
 
     /// <summary>确认窗口可调用的无硬件复核；更改过的快照会在此被拒绝。</summary>
@@ -269,6 +284,7 @@ public sealed partial class StcIspService(ToolsetCatalog catalog, string runtime
         }
         try
         {
+            using var outputStorage = prepared.MonitorSetup ? ProjectBuildStorage.Acquire(prepared.ProjectRoot, "stc-isp") : null;
             await VerifyPreparationAsync(prepared, token);
             var settings = prepared.Settings;
             using var ownership = ProbeLease.Acquire();
@@ -283,6 +299,10 @@ public sealed partial class StcIspService(ToolsetCatalog catalog, string runtime
             if (prepared.MonitorSetup)
             {
                 args.Add("--monitor-setup");
+            }
+            if (!prepared.MonitorSetup && settings.ModifyHardware && settings.Hardware is { } hardware)
+            {
+                args.AddRange(["--hardware-options", System.Text.Json.JsonSerializer.Serialize(hardware.Values())]);
             }
             if (settings.ClockMode == StcClockMode.InternalRc && settings.ClockFrequencyHz is { } frequency)
             {
@@ -307,6 +327,11 @@ public sealed partial class StcIspService(ToolsetCatalog catalog, string runtime
 
     private async Task VerifyPreparationAsync(StcIspPreparation prepared, CancellationToken token)
     {
+        if (prepared.Settings.DownloadMode == StcDownloadMode.NativeUsb)
+        {
+            await VerifyNativeUsbAsync(prepared, token);
+            return;
+        }
         var root = Path.GetFullPath(prepared.ProjectRoot);
         var (project, device) = await ReadProjectDeviceAsync(root, token);
         var buildSettings = prepared.MonitorSetup ? null : await ReadOrdinaryIspBuildSettingsAsync(root, token);
@@ -328,11 +353,14 @@ public sealed partial class StcIspService(ToolsetCatalog catalog, string runtime
         var saved = await LoadSettingsAsync(root, token);
         if (!prepared.MonitorSetup && saved != prepared.Settings)
         {
-            throw new StudioXException("STC_ISP_PREPARE", "确认后串口、速度或时钟选项已变化，请重新准备并确认下载。");
+            throw new StudioXException("STC_ISP_PREPARE", "准备后串口、速度、时钟或硬件选项已变化，请重新准备下载。");
         }
         var session = Path.GetDirectoryName(prepared.LogPath);
-        if (session is null || !string.Equals(Path.GetDirectoryName(session), PathBoundary.Resolve(root, ".build"), StringComparison.OrdinalIgnoreCase) ||
-            !Path.GetFileName(session).StartsWith("stc-isp-", StringComparison.Ordinal) ||
+        var validSession = prepared.MonitorSetup
+            ? string.Equals(session, PathBoundary.Resolve(root, ".build/stc-monitor/latest"), StringComparison.OrdinalIgnoreCase)
+            : session is not null && string.Equals(Path.GetDirectoryName(session), PathBoundary.Resolve(root, ".build"), StringComparison.OrdinalIgnoreCase) &&
+                Path.GetFileName(session).StartsWith("stc-isp-", StringComparison.Ordinal);
+        if (session is null || !validSession ||
             !string.Equals(prepared.Image, Path.Combine(session, prepared.MonitorSetup ? "monitor.bin" : "firmware.hex"), StringComparison.OrdinalIgnoreCase) ||
             !string.Equals(prepared.GuardScript, Path.Combine(session, "studiox-stcgal-guard.py"), StringComparison.OrdinalIgnoreCase) ||
             !File.Exists(prepared.Image) || !File.Exists(prepared.PythonExecutable))
@@ -415,6 +443,11 @@ public sealed partial class StcIspService(ToolsetCatalog catalog, string runtime
     {
         public void Report(string value)
         {
+            Raw(value);
+            forward?.Report(value);
+        }
+        public void Raw(string value)
+        {
             lock (log)
             {
                 if (log.Length < 5 * 1024 * 1024)
@@ -422,7 +455,6 @@ public sealed partial class StcIspService(ToolsetCatalog catalog, string runtime
                     log.Append(value);
                 }
             }
-            forward?.Report(value);
         }
         public string Text
         {

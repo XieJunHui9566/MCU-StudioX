@@ -56,6 +56,18 @@ public partial class MainWindow
         Mon51Tools.RegisterWriteRequested += (register, value) => _ = RunAsync(token => services.Debugger.MonitorSession!.SetRegisterAsync(register, value, token));
         Mon51Tools.VariableWriteRequested += (expression, value) => _ = RunAsync(token => services.Debugger.MonitorSession!.SetVariableAsync(expression, value, token));
         services.Debugger.BreakpointLog += message => _ = Dispatcher.BeginInvoke(() => DebugTools.AppendBreakpointLog(message));
+        GeneralDebugTools.PicMemoryWriteRequested += address =>
+        {
+            if (!services.Debugger.IsPicDebug || services.Debugger.State != DebugState.Stopped)
+            {
+                return;
+            }
+            var dialog = new PicMemoryWriteWindow(address) { Owner = this };
+            if (dialog.ShowDialog() == true)
+            {
+                _ = RunAsync(token => services.Debugger.WritePicFileRegistersAsync(dialog.Address, dialog.Bytes, token));
+            }
+        };
         foreach (var view in new[] { GeneralDebugTools, Mon51Tools.SourceTools })
         {
             view.FrameSelected += level => _ = RunAsync(async token => { await services.Debugger.RefreshAsync(level, token); await NavigateSelectedDebugFrameAsync(); });
@@ -159,6 +171,7 @@ public partial class MainWindow
             return;
         }
         var debug = services.Debugger;
+        GeneralDebugTools.ConfigurePic(IsPicProject);
         var state = debug.State;
         UpdateDebugDiagnosticState();
         if (!debug.IsActive)
@@ -222,16 +235,17 @@ public partial class MainWindow
         var debug = services.Debugger;
         var idle = !projectActionsBusy;
         var sourceDebugUnsupported = currentProjectManifest is not null && !ProjectCapabilities.For(currentProjectManifest).Debug;
+        var mon51Unsupported = IsStcSdccProject && sourceDebugUnsupported;
         var addressDebug = IsStcSdccProject || debug.MonitorSession is not null;
-        DebugTopMenu.Visibility = DebugStartButton.Visibility = sourceDebugUnsupported ? Visibility.Collapsed : Visibility.Visible;
+        DebugTopMenu.Visibility = DebugStartButton.Visibility = sourceDebugUnsupported && !mon51Unsupported && !debug.IsActive ? Visibility.Collapsed : Visibility.Visible;
         if (debugMargin is not null)
         {
             debugMargin.Visibility = sourceDebugUnsupported ? Visibility.Collapsed : Visibility.Visible;
         }
         var stopped = debug.State == DebugState.Stopped && idle;
         DebugStartButton.IsEnabled = DebugStartMenu.IsEnabled = idle &&
-            !sourceDebugUnsupported && (debug.IsActive || debug.State == DebugState.Faulted ||
-             (projectDirectory is not null && (supportsDownload || IsStcSdccProject)));
+            (debug.IsActive || !sourceDebugUnsupported && (debug.State == DebugState.Faulted ||
+             (projectDirectory is not null && (supportsDownload || IsStcSdccProject || IsPicProject))));
         ShowDebugMenu.IsEnabled = debug.IsActive;
         ShowFreeRtosMenu.IsEnabled = debug.IsActive && !addressDebug;
         DebugContinueButton.IsEnabled = DebugContinueMenu.IsEnabled = stopped;
@@ -240,7 +254,8 @@ public partial class MainWindow
         DebugOutButton.IsEnabled = DebugOutMenu.IsEnabled = stopped && debug.Snapshot.Frames.Length > 1;
         DebugPauseButton.IsEnabled = DebugPauseMenu.IsEnabled = debug.State == DebugState.Running && (idle || addressDebug);
         DebugResetButton.IsEnabled = DebugRefreshButton.IsEnabled = stopped;
-        DebugStopButton.IsEnabled = idle && (debug.IsActive || debug.State == DebugState.Faulted);
+        DebugStopButton.IsEnabled = IsPicProject && debug.State == DebugState.Starting || idle && (debug.IsActive || debug.State == DebugState.Faulted);
+        DebugSourceBreakpointMenu.IsEnabled = DebugSourceEnableMenu.IsEnabled = DebugSourceSettingsMenu.IsEnabled = idle && !sourceDebugUnsupported;
         if (debugMargin is not null)
         {
             debugMargin.CanEdit = idle && CanEditBreakpoints;
@@ -249,7 +264,7 @@ public partial class MainWindow
         DebugRunToMenu.IsEnabled = stopped && (!addressDebug || debug.MonitorSession is { HasSymbols: true });
         foreach (var item in new[] { ShowFreeRtosMenu, DebugPlotMenu, DebugPeripheralMenu })
         {
-            item.Visibility = addressDebug ? Visibility.Collapsed : Visibility.Visible;
+            item.Visibility = addressDebug || IsPicProject ? Visibility.Collapsed : Visibility.Visible;
         }
         DebugOverButton.Visibility = DebugOutButton.Visibility = DebugOverMenu.Visibility = DebugOutMenu.Visibility = Visibility.Visible;
         var sourceSteps = debug.MonitorSession is { HasSymbols: true, SourceStepping: true };
@@ -258,7 +273,10 @@ public partial class MainWindow
         DebugIntoButton.ToolTip = addressDebug && !sourceSteps ? "执行一条 8051 指令 (F11)" : "单步进入 (F11)";
         DebugResetLabel.Text = addressDebug ? "逻辑复位" : "复位";
         DebugResetButton.ToolTip = addressDebug ? "设置监控逻辑复位入口并暂停；不复位外设、不擦写程序" : "复位并暂停目标";
-        DebugStartButton.ToolTip = addressDebug ? "保存并编译最新程序，通过 Mon51 覆盖用户区后启动调试；再次点击结束调试" : "启动 / 结束调试";
+        DebugStartButton.ToolTip = DebugStartMenu.ToolTip = mon51Unsupported ? Mon51UnavailableMessage
+            : addressDebug ? "使用下载串口和波特率，先握手；成功后编译并更新用户程序，失败则制作仿真监控；再次点击结束调试" : "启动 / 结束调试";
+        ToolTipService.SetShowOnDisabled(DebugStartButton, true);
+        ToolTipService.SetShowOnDisabled(DebugStartMenu, true);
         var available = projectDirectory is not null && idle && !debug.IsActive;
         BuildButton.IsEnabled = BuildMenu.IsEnabled = available && ProjectCapabilities.For(currentProjectManifest).Build;
         DownloadButton.IsEnabled = DownloadMenu.IsEnabled = available && supportsDownload;
@@ -318,6 +336,11 @@ public partial class MainWindow
             await StartMon51DebugAsync(token);
             return;
         }
+        if (IsPicProject)
+        {
+            await StartPicDebugAsync(RequireProject(), token);
+            return;
+        }
         if (projectDirectory is null)
         {
             throw new StudioXException("DEBUG_PROJECT", "请先打开支持调试的工程并选择烧录器。STM32F1/F4 使用 ST-Link 或 DAP；AG32 使用 DAP-Link 或 J-Link（V9 及以上）；CH32V203 / V307 与 CH592 / CH595 使用 WCH-Link；RP2350 使用 DAP 和包含调试配置的器件包。");
@@ -354,13 +377,22 @@ public partial class MainWindow
         await NavigateSelectedDebugFrameAsync();
         Status.Text = services.Debugger.Reason;
     });
-    private async void DebugStop_Click(object sender, RoutedEventArgs e) => await RunAsync(async _ =>
+    private async void DebugStop_Click(object sender, RoutedEventArgs e)
     {
-        CancelFreeRtosRead();
-        var monitorSession = services.Debugger.MonitorSession is not null;
-        await services.Debugger.StopAsync();
-        Status.Text = monitorSession ? services.Debugger.Reason : "调试已结束，烧录器已释放。";
-    });
+        if (IsPicProject && services.Debugger.State == DebugState.Starting && operationCancellation is not null)
+        {
+            operationCancellation.Cancel();
+            Status.Text = "正在取消 PIC 调试启动；已开始写入时会先恢复原程序。";
+            return;
+        }
+        await RunAsync(async _ =>
+        {
+            CancelFreeRtosRead();
+            var monitorSession = services.Debugger.MonitorSession is not null;
+            await services.Debugger.StopAsync();
+            Status.Text = monitorSession ? services.Debugger.Reason : "调试已结束，烧录器已释放。";
+        });
+    }
     private void DebugContinue_Click(object sender, RoutedEventArgs e) => RunDebugAction(DebugAction.Continue);
     private void DebugPause_Click(object sender, RoutedEventArgs e)
     {
@@ -608,9 +640,10 @@ public partial class MainWindow
             throw new StudioXException("DEBUG_BUSY", "请先结束调试，再编译或下载。");
         }
     }
-    private bool HandleDebugKey(KeyEventArgs e)
+    private bool HandleDebugKey(KeyEventArgs e) => HandleDebugKey(e, Keyboard.Modifiers);
+
+    private bool HandleDebugKey(KeyEventArgs e, ModifierKeys mods)
     {
-        var mods = Keyboard.Modifiers;
         if (e.Key == Key.F9 && mods == ModifierKeys.None)
         {
             DebugBreakpoint_Click(this, e);
@@ -623,9 +656,16 @@ public partial class MainWindow
         {
             DebugEnableBreakpoint_Click(this, e);
         }
-        else if (e.Key == Key.F5 && mods == ModifierKeys.Control && DebugStartMenu.IsEnabled)
+        else if (e.Key == Key.F5 && mods == ModifierKeys.Control)
         {
-            DebugStart_Click(this, e);
+            if (DebugStartMenu.IsEnabled)
+            {
+                DebugStart_Click(this, e);
+            }
+            else if (IsStcSdccProject && !ProjectCapabilities.For(currentProjectManifest).Debug)
+            {
+                Status.Text = Mon51UnavailableMessage;
+            }
         }
         else if (services.Debugger.IsActive && e.Key == Key.F5 && mods == ModifierKeys.None)
         {

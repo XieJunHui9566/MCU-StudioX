@@ -14,7 +14,7 @@ public sealed partial class DebugSessionService
             // 检查 DWARF 中的内部类型，不执行 uxTaskGetSystemState / vPortGetHeapStats 等目标函数。
             var stackGrowsDown = HardwareTarget is { } target &&
                 (target.IsWch || target.IsRp2350 || target.Core.StartsWith("Cortex-M", StringComparison.Ordinal)) ? true : (bool?)null;
-            return await new FreeRtosInspector(adapter!, stackGrowsDown).ReadAsync(objectSymbols, token);
+            return await new FreeRtosInspector(adapter as GdbDebugAdapter ?? throw Error("当前 MDB 后端不提供 FreeRTOS 内核检查。"), stackGrowsDown).ReadAsync(objectSymbols, token);
         }
         finally { gate.Release(); }
     }

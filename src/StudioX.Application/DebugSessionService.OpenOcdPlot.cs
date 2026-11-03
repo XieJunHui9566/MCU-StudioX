@@ -32,7 +32,7 @@ public sealed partial class DebugSessionService : IOpenOcdPlotSource
             {
                 throw Error("OpenOCD 绘图需要已校验固件的实机调试会话。");
             }
-            return await OpenOcdPlotResolver.ResolveAsync(adapter!, expression, type, PlotSessionId, plotRamOrigin, plotRamBytes, plotLittleEndian, token);
+            return await OpenOcdPlotResolver.ResolveAsync(adapter as GdbDebugAdapter ?? throw Error("当前后端没有 OpenOCD 采样通道。"), expression, type, PlotSessionId, plotRamOrigin, plotRamBytes, plotLittleEndian, token);
         }
         finally { gate.Release(); }
     }

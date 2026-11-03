@@ -66,7 +66,7 @@ public sealed class WorkspaceEditService(ProjectFileService files)
                     {
                         source = buffer?.Source ?? await files.ReadAsync(project, entry.RelativePath, token).ConfigureAwait(false);
                     }
-                    catch (StudioXException ex) when (ex.Code is "EDITOR_BINARY" or "EDITOR_ENCODING" or "EDITOR_FILE_SIZE")
+                    catch (StudioXException ex) when (ex.Code is "EDITOR_BINARY" or "EDITOR_ENCODING" or "EDITOR_FILE_SIZE" or "EDITOR_LINE_LENGTH" or "EDITOR_TEXT_COMPLEXITY")
                     {
                         Notice(entry.RelativePath + "：" + ex.Message);
                         continue;
@@ -129,6 +129,7 @@ public sealed class WorkspaceEditService(ProjectFileService files)
         foreach (var change in changes)
         {
             token.ThrowIfCancellationRequested();
+            EditorTextSafety.Validate(change.After, token);
             var disk = await files.ReadAsync(project, change.Path, token).ConfigureAwait(false);
             var open = buffers.FirstOrDefault(b => b.Source.RelativePath.Equals(change.Path, StringComparison.OrdinalIgnoreCase));
             if (!change.CanApply || disk.IsReadOnly || disk.DiskHash != change.Source.DiskHash ||

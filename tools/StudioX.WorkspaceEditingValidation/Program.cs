@@ -6,6 +6,12 @@ using StudioX.Foundation;
 using StudioX.Packages;
 using StudioX.WorkspaceEditingValidation;
 
+if (args is ["--verify-sdcc-model-analysis", var modelRuntime, var modelPack, var modelOutput])
+{
+    await SdccModelAnalysisChecks.RunAsync(Path.GetFullPath(modelRuntime), Path.GetFullPath(modelPack), Path.GetFullPath(modelOutput));
+    return;
+}
+
 if (args.Any(a => a.StartsWith("--compile-commands-dir=", StringComparison.Ordinal)))
 {
     await DiagnosticServerFixture.RunAsync();

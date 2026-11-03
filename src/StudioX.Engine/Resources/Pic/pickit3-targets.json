@@ -1,0 +1,612 @@
+[
+  {
+    "deviceId": "PIC16F505",
+    "hardwareBreakpoints": 0,
+    "header": "PIC16F505 using AC162059"
+  },
+  {
+    "deviceId": "PIC16F506",
+    "hardwareBreakpoints": 0,
+    "header": "PIC16F506 using AC162070"
+  },
+  {
+    "deviceId": "PIC16F526",
+    "hardwareBreakpoints": 0,
+    "header": "PIC16F526 using AC162096"
+  },
+  {
+    "deviceId": "PIC16F527",
+    "hardwareBreakpoints": 0,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16F54",
+    "hardwareBreakpoints": 0,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16F57",
+    "hardwareBreakpoints": 0,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16F570",
+    "hardwareBreakpoints": 0,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16F59",
+    "hardwareBreakpoints": 0,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16F610",
+    "hardwareBreakpoints": 0,
+    "header": "PIC16F610 using AC162083"
+  },
+  {
+    "deviceId": "PIC16F616",
+    "hardwareBreakpoints": 0,
+    "header": "PIC16F616 using AC162083"
+  },
+  {
+    "deviceId": "PIC16F627",
+    "hardwareBreakpoints": 0,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16F627A",
+    "hardwareBreakpoints": 0,
+    "header": "PIC16F627A using AC162053"
+  },
+  {
+    "deviceId": "PIC16F628",
+    "hardwareBreakpoints": 0,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16F628A",
+    "hardwareBreakpoints": 0,
+    "header": "PIC16F628A using AC162053"
+  },
+  {
+    "deviceId": "PIC16F630",
+    "hardwareBreakpoints": 0,
+    "header": "PIC16F630 using AC162052"
+  },
+  {
+    "deviceId": "PIC16F631",
+    "hardwareBreakpoints": 0,
+    "header": "PIC16F631 using AC162061"
+  },
+  {
+    "deviceId": "PIC16F636",
+    "hardwareBreakpoints": 0,
+    "header": "PIC16F636 using AC162057"
+  },
+  {
+    "deviceId": "PIC16F639",
+    "hardwareBreakpoints": 0,
+    "header": "PIC16F639 using AC162066"
+  },
+  {
+    "deviceId": "PIC16F648A",
+    "hardwareBreakpoints": 0,
+    "header": "PIC16F648A using AC162053"
+  },
+  {
+    "deviceId": "PIC16F676",
+    "hardwareBreakpoints": 0,
+    "header": "PIC16F676 using AC162052"
+  },
+  {
+    "deviceId": "PIC16F677",
+    "hardwareBreakpoints": 0,
+    "header": "PIC16F677 using AC162061"
+  },
+  {
+    "deviceId": "PIC16F684",
+    "hardwareBreakpoints": 0,
+    "header": "PIC16F684 using AC162055"
+  },
+  {
+    "deviceId": "PIC16F685",
+    "hardwareBreakpoints": 0,
+    "header": "PIC16F685 using AC162061"
+  },
+  {
+    "deviceId": "PIC16F687",
+    "hardwareBreakpoints": 0,
+    "header": "PIC16F687 using AC162061"
+  },
+  {
+    "deviceId": "PIC16F688",
+    "hardwareBreakpoints": 0,
+    "header": "PIC16F688 using AC162056"
+  },
+  {
+    "deviceId": "PIC16F689",
+    "hardwareBreakpoints": 0,
+    "header": "PIC16F689 using AC162061"
+  },
+  {
+    "deviceId": "PIC16F690",
+    "hardwareBreakpoints": 0,
+    "header": "PIC16F690 using AC162061"
+  },
+  {
+    "deviceId": "PIC16F707",
+    "hardwareBreakpoints": 1,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16F716",
+    "hardwareBreakpoints": 0,
+    "header": "PIC16F716 using AC162054"
+  },
+  {
+    "deviceId": "PIC16F72",
+    "hardwareBreakpoints": 0,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16F720",
+    "hardwareBreakpoints": 1,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16F721",
+    "hardwareBreakpoints": 1,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16F722",
+    "hardwareBreakpoints": 1,
+    "header": "PIC16F722 using AC244026"
+  },
+  {
+    "deviceId": "PIC16F722A",
+    "hardwareBreakpoints": 1,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16F723",
+    "hardwareBreakpoints": 1,
+    "header": "PIC16F723 using AC244026"
+  },
+  {
+    "deviceId": "PIC16F723A",
+    "hardwareBreakpoints": 1,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16F724",
+    "hardwareBreakpoints": 1,
+    "header": "PIC16F724 using AC244026"
+  },
+  {
+    "deviceId": "PIC16F726",
+    "hardwareBreakpoints": 1,
+    "header": "PIC16F726 using AC244026"
+  },
+  {
+    "deviceId": "PIC16F727",
+    "hardwareBreakpoints": 0,
+    "header": "PIC16F727 using AC244026"
+  },
+  {
+    "deviceId": "PIC16F73",
+    "hardwareBreakpoints": 0,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16F737",
+    "hardwareBreakpoints": 1,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16F74",
+    "hardwareBreakpoints": 0,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16F747",
+    "hardwareBreakpoints": 1,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16F753",
+    "hardwareBreakpoints": 1,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16F76",
+    "hardwareBreakpoints": 0,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16F767",
+    "hardwareBreakpoints": 1,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16F77",
+    "hardwareBreakpoints": 0,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16F777",
+    "hardwareBreakpoints": 1,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16F785",
+    "hardwareBreakpoints": 0,
+    "header": "PIC16F785 using AC162060"
+  },
+  {
+    "deviceId": "PIC16F818",
+    "hardwareBreakpoints": 1,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16F819",
+    "hardwareBreakpoints": 1,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16F83",
+    "hardwareBreakpoints": 0,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16F84",
+    "hardwareBreakpoints": 0,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16F84A",
+    "hardwareBreakpoints": 0,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16F87",
+    "hardwareBreakpoints": 1,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16F870",
+    "hardwareBreakpoints": 1,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16F871",
+    "hardwareBreakpoints": 1,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16F872",
+    "hardwareBreakpoints": 1,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16F873",
+    "hardwareBreakpoints": 1,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16F873A",
+    "hardwareBreakpoints": 1,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16F874",
+    "hardwareBreakpoints": 1,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16F874A",
+    "hardwareBreakpoints": 1,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16F876",
+    "hardwareBreakpoints": 1,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16F876A",
+    "hardwareBreakpoints": 1,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16F877",
+    "hardwareBreakpoints": 1,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16F877A",
+    "hardwareBreakpoints": 1,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16F88",
+    "hardwareBreakpoints": 1,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16F882",
+    "hardwareBreakpoints": 1,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16F883",
+    "hardwareBreakpoints": 1,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16F884",
+    "hardwareBreakpoints": 1,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16F886",
+    "hardwareBreakpoints": 1,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16F887",
+    "hardwareBreakpoints": 1,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16F913",
+    "hardwareBreakpoints": 1,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16F914",
+    "hardwareBreakpoints": 1,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16F916",
+    "hardwareBreakpoints": 1,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16F917",
+    "hardwareBreakpoints": 1,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16F946",
+    "hardwareBreakpoints": 1,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16HV540",
+    "hardwareBreakpoints": 0,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16HV610",
+    "hardwareBreakpoints": 0,
+    "header": "PIC16HV610 using AC162083"
+  },
+  {
+    "deviceId": "PIC16HV616",
+    "hardwareBreakpoints": 0,
+    "header": "PIC16HV616 using AC162083"
+  },
+  {
+    "deviceId": "PIC16HV753",
+    "hardwareBreakpoints": 1,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16HV785",
+    "hardwareBreakpoints": 0,
+    "header": "PIC16HV785 using AC162060"
+  },
+  {
+    "deviceId": "PIC16LF627",
+    "hardwareBreakpoints": 0,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16LF627A",
+    "hardwareBreakpoints": 0,
+    "header": "PIC16LF627A using AC162053"
+  },
+  {
+    "deviceId": "PIC16LF628",
+    "hardwareBreakpoints": 0,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16LF628A",
+    "hardwareBreakpoints": 0,
+    "header": "PIC16LF628A using AC162053"
+  },
+  {
+    "deviceId": "PIC16LF648A",
+    "hardwareBreakpoints": 0,
+    "header": "PIC16LF648A using AC162053"
+  },
+  {
+    "deviceId": "PIC16LF707",
+    "hardwareBreakpoints": 1,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16LF720",
+    "hardwareBreakpoints": 1,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16LF721",
+    "hardwareBreakpoints": 1,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16LF722",
+    "hardwareBreakpoints": 1,
+    "header": "PIC16LF722 using AC244027"
+  },
+  {
+    "deviceId": "PIC16LF722A",
+    "hardwareBreakpoints": 1,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16LF723",
+    "hardwareBreakpoints": 1,
+    "header": "PIC16LF723 using AC244027"
+  },
+  {
+    "deviceId": "PIC16LF723A",
+    "hardwareBreakpoints": 1,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16LF724",
+    "hardwareBreakpoints": 1,
+    "header": "PIC16LF724 using AC244027"
+  },
+  {
+    "deviceId": "PIC16LF726",
+    "hardwareBreakpoints": 1,
+    "header": "PIC16LF726 using AC244027"
+  },
+  {
+    "deviceId": "PIC16LF727",
+    "hardwareBreakpoints": 1,
+    "header": "PIC16LF727 using AC244027"
+  },
+  {
+    "deviceId": "PIC16LF73",
+    "hardwareBreakpoints": 0,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16LF74",
+    "hardwareBreakpoints": 0,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16LF747",
+    "hardwareBreakpoints": 1,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16LF76",
+    "hardwareBreakpoints": 0,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16LF767",
+    "hardwareBreakpoints": 1,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16LF77",
+    "hardwareBreakpoints": 0,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16LF777",
+    "hardwareBreakpoints": 1,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16LF818",
+    "hardwareBreakpoints": 1,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16LF819",
+    "hardwareBreakpoints": 1,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16LF83",
+    "hardwareBreakpoints": 0,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16LF84",
+    "hardwareBreakpoints": 0,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16LF84A",
+    "hardwareBreakpoints": 0,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16LF87",
+    "hardwareBreakpoints": 1,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16LF870",
+    "hardwareBreakpoints": 1,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16LF871",
+    "hardwareBreakpoints": 1,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16LF872",
+    "hardwareBreakpoints": 1,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16LF873",
+    "hardwareBreakpoints": 1,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16LF873A",
+    "hardwareBreakpoints": 1,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16LF874",
+    "hardwareBreakpoints": 1,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16LF874A",
+    "hardwareBreakpoints": 1,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16LF876",
+    "hardwareBreakpoints": 1,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16LF876A",
+    "hardwareBreakpoints": 1,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16LF877",
+    "hardwareBreakpoints": 1,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16LF877A",
+    "hardwareBreakpoints": 1,
+    "header": null
+  },
+  {
+    "deviceId": "PIC16LF88",
+    "hardwareBreakpoints": 1,
+    "header": null
+  }
+]

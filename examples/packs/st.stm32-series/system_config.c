@@ -25,7 +25,7 @@ void System_Start(void)
     vTaskStartScheduler();
     /* 调度器返回表示空闲/定时器任务创建失败，保留可调试错误码。 */
     StudioX_Panic(22);
-    for (;;)
+    while (1)
     {
     }
 }

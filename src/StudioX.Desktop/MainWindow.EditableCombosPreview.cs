@@ -20,7 +20,7 @@ public partial class MainWindow
             }
             checks.Add(message);
         }
-        ShowDocument(PackagesTab);
+        FocusStcSettings();
         NewProjectPanel.Visibility = Visibility.Collapsed;
         ProjectDetailsPanel.Visibility = Visibility.Visible;
         StcIspPanel.Visibility = Visibility.Visible;

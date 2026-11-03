@@ -18,6 +18,11 @@ async Task Reject(Func<Task> action, string label)
     Check(rejected, label);
 }
 Task Parse(string text) { CodeTemplateExpander.Describe(text); return Task.CompletedTask; }
+var loopSource = "/* for (;;) */\nconst char *text = \"for (;;)\";\n// for (;;)\nvoid main(void) { for (;;) { } for (int i=0; i<4; ++i) { } }\n";
+var loopStyle = StudioX.Engine.TemplateLoopStyle.Normalize(loopSource);
+Check(loopStyle.Contains("while (1) { }", StringComparison.Ordinal) && loopStyle.Contains("for (int i=0; i<4; ++i)", StringComparison.Ordinal) &&
+    loopStyle.Contains("/* for (;;) */", StringComparison.Ordinal) && loopStyle.Contains("\"for (;;)\"", StringComparison.Ordinal) &&
+    loopStyle.Contains("// for (;;)\n", StringComparison.Ordinal), "new C entry style changes only empty for loops and preserves literals, comments and bounded loops");
 var empty = new Dictionary<string, string>();
 var context = new CodeTemplateContext("first();\nsecond();", "电机😀.c");
 try

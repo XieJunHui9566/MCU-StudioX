@@ -109,7 +109,7 @@ public sealed partial class Ag32NativeBuildService
         if (receipt.FormatVersion != 1 || receipt.Inputs is null || receipt.Artifacts is null || receipt.Settings is null ||
             receipt.MappingTools != mapping.Fingerprint || receipt.NativeTools != native.Fingerprint ||
             !receipt.Inputs.ContainsKey(ToolLockPath) ||
-            receipt.ImageRelativePath is null || !Regex.IsMatch(receipt.ImageRelativePath, @"^\.build/ag32-logic/[a-f0-9]{32}/pins\.bin$") ||
+            receipt.ImageRelativePath is null || !Regex.IsMatch(receipt.ImageRelativePath, @"^\.build/ag32-logic/(?:latest|[a-f0-9]{32})/pins\.bin$") ||
             !receipt.Artifacts.ContainsKey(receipt.ImageRelativePath))
         {
             throw new StudioXException("AG32_LOGIC_STALE", "逻辑工具或凭据已变化，请重新编译。");

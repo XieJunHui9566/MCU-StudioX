@@ -1,7 +1,7 @@
 {
   "formatVersion": 1,
   "id": "microchip.pic16f877a",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "displayName": "Microchip PIC16F877A · XC8",
   "vendor": "Microchip",
   "devices": [{

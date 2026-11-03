@@ -26,7 +26,20 @@ internal static class CapabilityChecks
         {
             Kind = ProjectKind.Pic
         });
-        check(pic.Build && !pic.Configure && !pic.BuildSettings && !pic.SourceRegistration && !pic.Download && !pic.Debug && pic.RuntimeWorkflow.Contains("尚无 PIC 烧录"), "PIC never offers generic CMake registration, flashing or debugging");
+        check(pic.Build && pic.Configure && !pic.BuildSettings && pic.SourceRegistration && !pic.Download && !pic.Debug,
+            "PIC uses CMake source registration while unknown debug targets stay disabled");
+        var pic877 = ProjectCapabilities.For(project with
+        {
+            Kind = ProjectKind.Pic,
+            DeviceId = "PIC16F877A"
+        });
+        check(pic877.Debug && pic877.Download && pic877.Configure, "PIC16F877A offers precise PICkit3 / MDB debug and CMake capabilities");
+        var picHeader = ProjectCapabilities.For(project with
+        {
+            Kind = ProjectKind.Pic,
+            DeviceId = "PIC16F628A"
+        });
+        check(!picHeader.Debug && picHeader.Build, "devices requiring an ICD header keep compilation but do not claim native debugging");
         var arduino = ProjectCapabilities.For(project with
         {
             Kind = ProjectKind.Arduino
@@ -38,6 +51,18 @@ internal static class CapabilityChecks
             Zephyr = new(2, "fixture", "fixture", "", "4.4.2", false)
         });
         check(zephyr.Build && zephyr.Configure && !zephyr.Download && !zephyr.Debug && !zephyr.BuildSettings, "modern Zephyr builds while preserving custom board hardware boundaries");
+        foreach (var device in new[] { "IAP15F2K61S2", "IAP15L2K61S2", "STC89C52RC", "STC15F2K60S2", "STC8H8K64U", "STC32G12K128", "IAP15F2K61S2-extra", "UNKNOWN" })
+        {
+            var stc = ProjectCapabilities.For(project with
+            {
+                DeviceId = device,
+                ToolsetId = "stc.sdcc",
+                CompilerId = "sdcc-4.5.0-15242"
+            });
+            var supported = device is "IAP15F2K61S2" or "IAP15L2K61S2";
+            check(stc.Debug == supported && stc.Build && stc.Download && stc.BuildSettings && stc.SourceRegistration,
+                device + " keeps STC build/ISP capabilities and exposes Mon51 only for supported exact targets");
+        }
         check(!ProjectCapabilities.For(null).Build, "closed workspace has no project build capability");
     }
 }

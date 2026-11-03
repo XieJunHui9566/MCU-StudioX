@@ -6,7 +6,7 @@ volatile uint32_t app_counter;
 int main(void)
 {
     /* SystemInit 使用芯片内部 HSI；引脚和外设由应用按电路配置。 */
-    for (;;)
+    while (1)
     {
         ++app_counter;
         __NOP();

@@ -1,0 +1,13 @@
+{
+  "id": "STC8H8K64U",
+  "modelCode": "F784",
+  "physicalFlashBytes": 65536,
+  "codeBytes": 65024,
+  "eepromBytes": 512,
+  "ramBytes": 8448,
+  "xramBytes": 8192,
+  "usbRamBytes": 1280,
+  "voltage": "1.9–5.5 V",
+  "familyHeader": "stc8h",
+  "source": "https://stcmicro.com/cn/stc/stc8h8k64u.html"
+}

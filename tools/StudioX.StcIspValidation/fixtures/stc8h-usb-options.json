@@ -1,0 +1,225 @@
+{
+  "sourceSha256": "d857b147f2f4e527c5566a2dd40e63f875c94f4e344fa5ce800ab13a770db420",
+  "evidence": "Official PE serializer and selected status-label code executed offline in Unicorn; not a USB wire capture or hardware acceptance",
+  "serializer": "44B760",
+  "usbCaller": "44D2E8",
+  "model": "F784",
+  "rom": "7.4.12U",
+  "semantic": [
+    {
+      "id": "reset_pin_enabled",
+      "reader": "0x446ab5",
+      "clearLabel": "5242",
+      "setLabel": "5241"
+    },
+    {
+      "id": "clock_gain",
+      "reader": "0x446998",
+      "clearLabel": "5228",
+      "setLabel": "5227"
+    },
+    {
+      "id": "por_reset_delay",
+      "reader": "0x446a8e",
+      "clearLabel": "523F",
+      "setLabel": "5240"
+    },
+    {
+      "id": "watchdog_por_enabled",
+      "reader": "0x446ba0",
+      "clearLabel": "522C",
+      "setLabel": "522B"
+    },
+    {
+      "id": "watchdog_stop_idle",
+      "reader": "0x446bfe",
+      "clearLabel": "522F",
+      "setLabel": "522E"
+    },
+    {
+      "id": "low_voltage_reset",
+      "reader": "0x446b50",
+      "clearLabel": "5247",
+      "setLabel": "5248"
+    },
+    {
+      "id": "eeprom_erase_enabled",
+      "reader": "0x446c24",
+      "clearLabel": "5238",
+      "setLabel": "5239"
+    },
+    {
+      "id": "bsl_pindetect_enabled",
+      "reader": "0x446a6c",
+      "clearLabel": "5246",
+      "setLabel": "5245"
+    }
+  ],
+  "normalization": [
+    {
+      "commandOffset": 37,
+      "normalizedStatusOffset": 9
+    },
+    {
+      "commandOffset": 41,
+      "normalizedStatusOffset": 10
+    },
+    {
+      "commandOffset": 42,
+      "normalizedStatusOffset": 11
+    },
+    {
+      "commandOffset": 43,
+      "normalizedStatusOffset": 15
+    },
+    {
+      "commandOffset": 44,
+      "normalizedStatusOffset": 16
+    }
+  ],
+  "normalizationCode": "44D445..44D534",
+  "baselineCaptureSha256": "21596cf091c7395f66b2b2ae07d087358de722c5670c76aa38ca86dd3cdca9e9",
+  "baseline": "0400005AA5FFFFFF00FFFF00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00FF016E36003E2001FFFFFFFF3EBFAFF7FE",
+  "vectors": [
+    {
+      "id": "reset_pin_enabled",
+      "value": "false",
+      "command": "0400005AA5FFFFFF00FFFF00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00FF016E36003E2001FFFFFFFF3EBFAFF7FE"
+    },
+    {
+      "id": "reset_pin_enabled",
+      "value": "true",
+      "command": "0400005AA5FFFFFF00FFFF00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00FF016E36003E2001FFFFFFFF3EBFBFF7FE"
+    },
+    {
+      "id": "clock_gain",
+      "value": "low",
+      "command": "0400005AA5FFFFFF00FFFF00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00FF016E36003E2001FFFFFFFF3EBDAFF7FE"
+    },
+    {
+      "id": "clock_gain",
+      "value": "high",
+      "command": "0400005AA5FFFFFF00FFFF00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00FF016E36003E2001FFFFFFFF3EBFAFF7FE"
+    },
+    {
+      "id": "por_reset_delay",
+      "value": "short",
+      "command": "0400005AA5FFFFFF00FFFF00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00FF016E36003E2001FFFFFFFF3E3FAFF7FE"
+    },
+    {
+      "id": "por_reset_delay",
+      "value": "long",
+      "command": "0400005AA5FFFFFF00FFFF00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00FF016E36003E2001FFFFFFFF3EBFAFF7FE"
+    },
+    {
+      "id": "watchdog_por_enabled",
+      "value": "false",
+      "command": "0400005AA5FFFFFF00FFFF00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00FF016E36003E2001FFFFFFFF3EBFAFF7FE"
+    },
+    {
+      "id": "watchdog_por_enabled",
+      "value": "true",
+      "command": "0400005AA5FFFFFF00FFFF00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00FF016E36003E2001FFFFFFFF3EBFAFD7FE"
+    },
+    {
+      "id": "watchdog_stop_idle",
+      "value": "false",
+      "command": "0400005AA5FFFFFF00FFFF00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00FF016E36003E2001FFFFFFFF3EBFAFFFFE"
+    },
+    {
+      "id": "watchdog_stop_idle",
+      "value": "true",
+      "command": "0400005AA5FFFFFF00FFFF00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00FF016E36003E2001FFFFFFFF3EBFAFF7FE"
+    },
+    {
+      "id": "watchdog_prescale",
+      "value": "2",
+      "command": "0400005AA5FFFFFF00FFFF00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00FF016E36003E2001FFFFFFFF3EBFAFF0FE"
+    },
+    {
+      "id": "watchdog_prescale",
+      "value": "4",
+      "command": "0400005AA5FFFFFF00FFFF00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00FF016E36003E2001FFFFFFFF3EBFAFF1FE"
+    },
+    {
+      "id": "watchdog_prescale",
+      "value": "8",
+      "command": "0400005AA5FFFFFF00FFFF00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00FF016E36003E2001FFFFFFFF3EBFAFF2FE"
+    },
+    {
+      "id": "watchdog_prescale",
+      "value": "16",
+      "command": "0400005AA5FFFFFF00FFFF00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00FF016E36003E2001FFFFFFFF3EBFAFF3FE"
+    },
+    {
+      "id": "watchdog_prescale",
+      "value": "32",
+      "command": "0400005AA5FFFFFF00FFFF00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00FF016E36003E2001FFFFFFFF3EBFAFF4FE"
+    },
+    {
+      "id": "watchdog_prescale",
+      "value": "64",
+      "command": "0400005AA5FFFFFF00FFFF00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00FF016E36003E2001FFFFFFFF3EBFAFF5FE"
+    },
+    {
+      "id": "watchdog_prescale",
+      "value": "128",
+      "command": "0400005AA5FFFFFF00FFFF00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00FF016E36003E2001FFFFFFFF3EBFAFF6FE"
+    },
+    {
+      "id": "watchdog_prescale",
+      "value": "256",
+      "command": "0400005AA5FFFFFF00FFFF00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00FF016E36003E2001FFFFFFFF3EBFAFF7FE"
+    },
+    {
+      "id": "low_voltage_reset",
+      "value": "false",
+      "command": "0400005AA5FFFFFF00FFFF00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00FF016E36003E2001FFFFFFFF3EBFEFF7FE"
+    },
+    {
+      "id": "low_voltage_reset",
+      "value": "true",
+      "command": "0400005AA5FFFFFF00FFFF00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00FF016E36003E2001FFFFFFFF3EBFAFF7FE"
+    },
+    {
+      "id": "low_voltage_threshold",
+      "value": "0",
+      "command": "0400005AA5FFFFFF00FFFF00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00FF016E36003E2001FFFFFFFF3EBFAFF7FE"
+    },
+    {
+      "id": "low_voltage_threshold",
+      "value": "1",
+      "command": "0400005AA5FFFFFF00FFFF00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00FF016E36003E2001FFFFFFFF3EBFAEF7FE"
+    },
+    {
+      "id": "low_voltage_threshold",
+      "value": "2",
+      "command": "0400005AA5FFFFFF00FFFF00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00FF016E36003E2001FFFFFFFF3EBFADF7FE"
+    },
+    {
+      "id": "low_voltage_threshold",
+      "value": "3",
+      "command": "0400005AA5FFFFFF00FFFF00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00FF016E36003E2001FFFFFFFF3EBFACF7FE"
+    },
+    {
+      "id": "eeprom_erase_enabled",
+      "value": "false",
+      "command": "0400005AA5FFFFFF00FFFF00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00FF016E36003E2001FFFDFFFF3EBFAFF7FE"
+    },
+    {
+      "id": "eeprom_erase_enabled",
+      "value": "true",
+      "command": "0400005AA5FFFFFF00FFFF00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00FF016E36003E2001FFFFFFFF3EBFAFF7FE"
+    },
+    {
+      "id": "bsl_pindetect_enabled",
+      "value": "false",
+      "command": "0400005AA5FFFFFF00FFFF00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00FF016E36003E2001FFFFFFFF3EBFAFF7FE"
+    },
+    {
+      "id": "bsl_pindetect_enabled",
+      "value": "true",
+      "command": "0400005AA5FFFFFF00FFFF00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00FF016E36003E2001FFFEFFFF3EBFAFF7FE"
+    }
+  ]
+}

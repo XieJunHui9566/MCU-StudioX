@@ -202,7 +202,7 @@ void StudioX_RtosAssert(const char *file, uint32_t line)
     StudioX_RtosFault = 1u;
     StudioX_RtosFaultFile = file;
     StudioX_RtosFaultLine = line;
-    for (;;) { }
+    while (1) { }
 }
 
 void vApplicationMallocFailedHook(void)

@@ -107,6 +107,8 @@
       Path="tools/StudioX.FaultPeripheralValidation/StudioX.FaultPeripheralValidation.csproj" />
     <Project
       Path="tools/StudioX.ProductWorkflowValidation/StudioX.ProductWorkflowValidation.csproj" />
+    <Project
+      Path="tools/StudioX.ResponsivenessValidation/StudioX.ResponsivenessValidation.csproj" />
   </Folder>
   <Project
     Path="tools/StudioX.PicValidation/StudioX.PicValidation.csproj" />

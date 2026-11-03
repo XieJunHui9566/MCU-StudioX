@@ -8,10 +8,44 @@ public partial class MainWindow
 {
     private bool IsPicProject => currentProjectManifest?.Kind == ProjectKind.Pic;
 
+    private async Task StartPicDebugAsync(string root, CancellationToken token)
+    {
+        await SaveAllSourcesAsync(root, token);
+        await PersistBreakpointLinesAsync();
+        if (!await ShowPicDownloadSettingsAsync(root, token))
+        {
+            return;
+        }
+        var settings = await services.PicDownloads.LoadSettingsAsync(root, token);
+        BeginBuildOutput("PIC CMake + Ninja 调试构建", "编译中");
+        var lines = new OutputLineBuffer();
+        var output = new Progress<string>(text => { foreach (var line in lines.Append(text)) { Log(line); } });
+        var build = await services.Builds.BuildPicDebugAsync(root, output, token);
+        await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Background);
+        if (lines.Flush() is { } tail)
+        {
+            Log(tail);
+        }
+        FinishBuildOutput(build.Success ? "PIC 调试映像已生成" : "PIC 调试构建失败", build.Success);
+        if (!build.Success)
+        {
+            return;
+        }
+        await services.Debugger.StartPicAsync(services.PicDebug, settings.ProgrammerSerial, token);
+        await NavigateSelectedDebugFrameAsync();
+        Status.Text = services.Debugger.Reason;
+    }
+
     private async Task<bool> ShowPicDownloadSettingsAsync(string root, CancellationToken token)
     {
         var settings = await services.PicDownloads.LoadSettingsAsync(root, token);
         var programmers = await services.PicDownloads.ListAsync(token: token);
+        if (StudioX.Engine.Pic.PicProgrammerSelection.Automatic(programmers) is { } automatic)
+        {
+            await services.PicDownloads.SaveSettingsAsync(root, automatic.Serial, settings.ReleaseAfterProgramming, token);
+            Status.Text = "已自动选择 PICkit3 · " + automatic.Serial;
+            return true;
+        }
         var dialog = new PicDownloadWindow(settings, programmers, () => services.PicDownloads.ListAsync(token: token)) { Owner = this };
         if (dialog.ShowDialog() != true)
         {
@@ -25,8 +59,7 @@ public partial class MainWindow
     private async Task DownloadPicAsync(string root, CancellationToken token)
     {
         await SaveAllSourcesAsync(root, token);
-        var settings = await services.PicDownloads.LoadSettingsAsync(root, token);
-        if (settings.ProgrammerSerial.Length == 0 && !await ShowPicDownloadSettingsAsync(root, token))
+        if (!await ShowPicDownloadSettingsAsync(root, token))
         {
             return;
         }
@@ -38,11 +71,6 @@ public partial class MainWindow
             return;
         }
         var preview = await services.PicDownloads.PreviewAsync(root, token);
-        if (new PicDownloadConfirmWindow(preview) { Owner = this }.ShowDialog() != true)
-        {
-            Status.Text = "PICkit3 下载已取消。";
-            return;
-        }
         EnsureNoActiveDebug();
         if (closing || closed || projectDirectory != root || editorDocuments.Any(document => document.IsDirty))
         {
@@ -50,7 +78,7 @@ public partial class MainWindow
         }
         var lines = new OutputLineBuffer();
         var output = new Progress<string>(text => { foreach (var line in lines.Append(text)) { Log(line); } });
-        BeginBuildOutput("PICkit3 回读备份、写入与校验", "下载中");
+        BeginBuildOutput("PICkit3 直接写入与校验", "下载中");
         try
         {
             var report = await services.PicDownloads.DownloadApprovedAsync(root, preview.ApprovalId, output, token);
@@ -59,7 +87,6 @@ public partial class MainWindow
             {
                 Log(tail);
             }
-            Log("回读备份：" + report.BackupPath);
             Log("下载日志：" + report.LogPath);
             Status.Text = report.Summary;
             FinishBuildOutput(report.Summary, report.Success);

@@ -118,7 +118,7 @@ extern void SystemInit(void);
 extern void __libc_init_array(void);
 extern int main(void);
 void Reset_Handler(void);
-void Default_Handler(void) {{ for (;;) {{ __asm volatile ("nop"); }} }}
+void Default_Handler(void) {{ while (1) {{ __asm volatile ("nop"); }} }}
 {declarations}
 __attribute__((used, section(".isr_vector")))
 const uintptr_t g_pfnVectors[] = {{
@@ -132,7 +132,7 @@ void Reset_Handler(void)
     SystemInit();
     __libc_init_array();
     (void)main();
-    for (;;) {{ __asm volatile ("nop"); }}
+    while (1) {{ __asm volatile ("nop"); }}
 }}
 '''
 

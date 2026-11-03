@@ -212,7 +212,7 @@ public sealed partial class DebugSessionService
         Changed?.Invoke();
     }
     /// <returns>日志断点已处理并继续执行时返回 true；其他停止交给标准快照流程。</returns>
-    private async Task<bool> HandleBreakpointStopAsync(GdbDebugAdapter source, MiRecord record)
+    private async Task<bool> HandleBreakpointStopAsync(IDebugAdapter source, MiRecord record)
     {
         stopDescription = null;
         foreach (var info in await source.BreakpointInfoAsync())

@@ -20,6 +20,7 @@ public sealed class ArduinoProjectWindow : Window
         Height = 350;
         ResizeMode = ResizeMode.NoResize;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
+        SetResourceReference(StyleProperty, typeof(Window));
         SetResourceReference(BackgroundProperty, "Surface");
         SetResourceReference(ForegroundProperty, "Text");
         boards.ItemsSource = supported;

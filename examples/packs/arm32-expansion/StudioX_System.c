@@ -10,7 +10,7 @@ void StudioX_System_Init(void)
     /* SysTick 属于当前裸机模板；接入 RTOS 时交由内核管理。 */
     if (SystemCoreClock < 1000u || SysTick_Config(SystemCoreClock / 1000u) != 0u)
     {
-        for (;;)
+        while (1)
         {
             __NOP();
         }

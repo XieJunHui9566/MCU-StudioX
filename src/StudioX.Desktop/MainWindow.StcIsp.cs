@@ -28,6 +28,8 @@ public partial class MainWindow
             return;
         }
         loadedStcIspSettings = null;
+        stcHardwarePickers.Clear();
+        StcHardwareFields.Children.Clear();
         loadedProjectClock = null;
         stcIspCapabilities = null;
         StcIspPanel.Visibility = IsStcSdccProject ? Visibility.Visible : Visibility.Collapsed;
@@ -105,6 +107,13 @@ public partial class MainWindow
         {
             stcIspCapabilities = capabilities;
             loadedStcIspSettings = settings;
+            ApplyStcHardwareSettings(settings);
+            StcMon51DownloadHelp.Visibility = StcMon51Targets.Supports(capabilities.DeviceId) ? Visibility.Visible : Visibility.Collapsed;
+            StcDownloadModePicker.ItemsSource = (capabilities.SupportsNativeUsb
+                ? new[] { StcDownloadMode.Serial, StcDownloadMode.NativeUsb } : new[] { StcDownloadMode.Serial })
+                .Select(mode => new BuildChoice<StcDownloadMode>(mode,
+                    mode == StcDownloadMode.Serial ? "串口 ISP" : "原生 USB（自动识别）")).ToArray();
+            StcDownloadModePicker.SelectedValue = settings.DownloadMode;
             StcClockModePicker.ItemsSource = capabilities.SupportedClockModes.Select(mode => new BuildChoice<StcClockMode>(mode, mode switch
             {
                 StcClockMode.InternalRc => "内部 RC（由 ISP 配置）",
@@ -124,8 +133,10 @@ public partial class MainWindow
             StcToolStatus.Text = (tool.Available ? "下载工具已就绪：" : "下载工具不可用：") + tool.Message +
                 (tool.ProgrammerExecutable is null ? "" : "\n" + tool.ProgrammerExecutable);
             UpdateStcClockHelp();
-            StcIspStatus.Text = settings.Port.Length == 0 ? "请选择 COM 串口并保存；下载前还会核对芯片型号与固件。" :
-                "设置已加载。点击下载后自动保存、编译并下载；目标、固件和时钟信息显示在输出栏。";
+            UpdateStcDownloadMode();
+            StcIspStatus.Text = settings.DownloadMode == StcDownloadMode.NativeUsb ? "USB 设置已加载。点击下载后等待 MCU 进入 USB ISP；不绑定 COM 或 USB 插口。" :
+                settings.Port.Length == 0 ? "请选择 COM 串口并保存；串口仿真也使用此串口和传输波特率。" :
+                "设置已加载。下载与串口仿真共用此串口和波特率；调试先握手，监控不可用时自动制作，重新上电提示见输出栏。";
         }
         finally { applyingStcIsp = false; }
         UpdateStcIspControls();
@@ -154,14 +165,16 @@ public partial class MainWindow
             mode == StcClockMode.InternalRc && stcIspCapabilities?.SupportsRcTrim == true;
         StcClockFrequencyLabel.Visibility = StcClockFrequencyBox.Visibility = frequencyEnabled ? Visibility.Visible : Visibility.Collapsed;
         StcClockFrequencyLabel.Text = mode == StcClockMode.ExternalCrystal ? "板上晶振频率（MHz）" : "内部 RC 目标频率（MHz）";
-        StcClockHelp.Text = mode switch
-        {
-            StcClockMode.InternalRc when stcIspCapabilities?.SupportsRcTrim == true =>
-                $"RC 可设置范围：{stcIspCapabilities.MinRcFrequencyHz / 1000000m:0.###}–{stcIspCapabilities.MaxRcFrequencyHz / 1000000m:0.###} MHz。留空时以芯片报告的当前频率为目标重新校准，实际频率可能略变。",
-            StcClockMode.InternalRc => "该型号的串口 ISP 仅能切换到内部 RC，不能通过 stcgal 校准 RC 频率。",
-            StcClockMode.ExternalCrystal => "填写开发板上实际焊接的 MCU 晶振频率；这个数值用于编译时钟参数。ISP 会切换到外部时钟源，也可能重写备用内部 RC 校准值。赛点 V3.1 的 IAP15 开发板没有 MCU 外部晶振。",
-            _ => "保留芯片当前内/外部时钟来源。STC15/IAP15 下载时 stcgal 仍会重写内部 RC 校准参数，运行频率可能略变；使用外部时钟时也会重写备用 RC 校准值。本设置不覆盖工程代码中的时钟定义。"
-        } + (stcIspCapabilities?.Warning is { Length: > 0 } warning ? "\n" + warning : "");
+        StcClockHelp.Text = StcDownloadModePicker.SelectedValue is StcDownloadMode.NativeUsb
+            ? "USB 当前支持保留实机时钟，或内部 RC 24 MHz（使用芯片自己的出厂校准值）。其它频率和外部时钟请使用串口下载；其余选项保留本次握手值。"
+            : mode switch
+            {
+                StcClockMode.InternalRc when stcIspCapabilities?.SupportsRcTrim == true =>
+                    $"RC 可设置范围：{stcIspCapabilities.MinRcFrequencyHz / 1000000m:0.###}–{stcIspCapabilities.MaxRcFrequencyHz / 1000000m:0.###} MHz。留空时以芯片报告的当前频率为目标重新校准，实际频率可能略变。",
+                StcClockMode.InternalRc => "该型号的串口 ISP 仅能切换到内部 RC，不能通过 stcgal 校准 RC 频率。",
+                StcClockMode.ExternalCrystal => "填写开发板上实际焊接的 MCU 晶振频率；这个数值用于编译时钟参数。ISP 会切换到外部时钟源，也可能重写备用内部 RC 校准值。赛点 V3.1 的 IAP15 开发板没有 MCU 外部晶振。",
+                _ => "保留芯片当前内/外部时钟来源。STC15/IAP15 下载时 stcgal 仍会重写内部 RC 校准参数，运行频率可能略变；使用外部时钟时也会重写备用 RC 校准值。本设置不覆盖工程代码中的时钟定义。"
+            } + (stcIspCapabilities?.Warning is { Length: > 0 } warning ? "\n" + warning : "");
     }
 
     private bool TrySelectedStcIspSettings(out StcIspSettings settings, out string error)
@@ -197,7 +210,9 @@ public partial class MainWindow
             return false;
         }
         settings = new StcIspSettings(Port: StcPortPicker.Text.Trim().ToUpperInvariant(), ClockMode: mode,
-            ClockFrequencyHz: hz, TransferBaud: baud);
+            ClockFrequencyHz: hz, TransferBaud: baud,
+            DownloadMode: StcDownloadModePicker.SelectedValue is StcDownloadMode downloadMode ? downloadMode : StcDownloadMode.Serial,
+            ModifyHardware: StcModifyHardware.IsChecked == true, Hardware: SelectedStcHardware());
         try
         {
             settings.ValidateFor(stcIspCapabilities);
@@ -216,6 +231,7 @@ public partial class MainWindow
             !projectActionsBusy && !services.Debugger.IsActive;
         StcIspPanel.IsEnabled = enabled;
         SaveStcIspSettingsButton.IsEnabled = enabled;
+        UpdateStcHardwareControls();
     }
 
     private void StcClockMode_Changed(object sender, SelectionChangedEventArgs e)
@@ -238,6 +254,26 @@ public partial class MainWindow
 
     private void StcIspSelection_Changed(object sender, RoutedEventArgs e) => UpdateStcIspDirtyStatus();
 
+    private void StcDownloadMode_Changed(object sender, SelectionChangedEventArgs e)
+    {
+        if (applyingStcIsp || StcSerialFields is null)
+        {
+            return;
+        }
+        UpdateStcDownloadMode();
+        UpdateStcClockHelp();
+        UpdateStcIspDirtyStatus();
+    }
+
+    private void UpdateStcDownloadMode()
+    {
+        var usb = StcDownloadModePicker.SelectedValue is StcDownloadMode.NativeUsb;
+        StcSerialFields.Visibility = ChooseStcgalButton.Visibility = usb ? Visibility.Collapsed : Visibility.Visible;
+        StcUsbHelp.Visibility = usb ? Visibility.Visible : Visibility.Collapsed;
+        StcToolStatus.Visibility = usb ? Visibility.Collapsed : Visibility.Visible;
+        UpdateStcHardwareControls();
+    }
+
     private void UpdateStcIspDirtyStatus()
     {
         if (applyingStcIsp || loadedStcIspSettings is null || StcIspStatus is null)
@@ -246,6 +282,7 @@ public partial class MainWindow
         }
         StcIspStatus.Text = !TrySelectedStcIspSettings(out var selected, out var error) ? error :
             selected == loadedStcIspSettings ? "设置与已保存配置一致。" : "设置尚未保存；保存后下次编译/下载生效。";
+        StcDownloadPageStatus.Text = StcIspStatus.Text;
     }
 
     private async void RefreshStcPorts_Click(object sender, RoutedEventArgs e) => await RunAsync(async _ =>
@@ -258,7 +295,9 @@ public partial class MainWindow
             "已刷新串口：" + string.Join("、", ports);
     });
 
-    private async void SaveStcIspSettings_Click(object sender, RoutedEventArgs e) => await RunAsync(async token =>
+    private async void SaveStcIspSettings_Click(object sender, RoutedEventArgs e) => await RunAsync(SaveStcIspSettingsAsync);
+
+    private async Task SaveStcIspSettingsAsync(CancellationToken token)
     {
         EnsureNoActiveDebug();
         if (!TrySelectedStcIspSettings(out var settings, out var error))
@@ -268,8 +307,8 @@ public partial class MainWindow
         }
         await services.StcIsp.SaveSettingsAsync(RequireProject(), settings, token);
         loadedStcIspSettings = settings;
-        StcIspStatus.Text = Status.Text = loadedProjectClock?.Managed == true ? "已保存下载串口与传输速度；时钟由图形配置托管。" : "STC 串口与时钟设置已保存；重新编译后生效，芯片配置将在下载时写入。";
-    });
+        StcIspStatus.Text = Status.Text = loadedProjectClock?.Managed == true ? "已保存下载设置；时钟由图形配置托管。" : "STC 下载模式与时钟设置已保存；芯片配置将在下载时写入。";
+    }
 
     private async void ChooseStcgal_Click(object sender, RoutedEventArgs e)
     {
@@ -293,7 +332,7 @@ public partial class MainWindow
         clockState.RequireReady();
         if (loadedBuildSettings is not null && (!TrySelectedBuildSettings(out var selectedBuild, out var buildError) || selectedBuild != loadedBuildSettings))
         {
-            FocusStcSettings();
+            FocusStcBuildSettings();
             BuildSettingsStatus.Text = buildError.Length > 0 ? buildError : "编译参数尚未保存；请先保存后再下载。";
             return;
         }
@@ -330,7 +369,7 @@ public partial class MainWindow
         {
             StcClockMode.InternalRc => "内部 RC" + (settings.ClockFrequencyHz is { } hz ? $" · {hz / 1000000m:0.######} MHz" : " · 按当前值重新校准"),
             StcClockMode.ExternalCrystal => $"外部晶振 · {settings.ClockFrequencyHz / 1000000m:0.######} MHz（必须实装）",
-            _ => "保留当前时钟来源；内部 RC 可能重新校准，频率略变"
+            _ => settings.DownloadMode == StcDownloadMode.NativeUsb ? "保留本次实机时钟及选项" : "保留当前时钟来源；内部 RC 可能重新校准，频率略变"
         };
         token.ThrowIfCancellationRequested();
         if (closing || closed || projectDirectory != root)
@@ -344,10 +383,11 @@ public partial class MainWindow
             Log(Status.Text);
             return;
         }
-        foreach (var line in new[] { $"目标型号：{prepared.ExpectedModel} · 串口：{prepared.Port}", $"固件：{prepared.SourceImage}",
+        var usb = settings.DownloadMode == StcDownloadMode.NativeUsb;
+        foreach (var line in new[] { $"目标型号：{prepared.ExpectedModel} · {(usb ? "原生 USB 自动识别" : "串口：" + prepared.Port)}", $"固件：{prepared.SourceImage}",
             $"SHA-256：{prepared.ImageSha256}", $"时钟：{clock}",
-            "串口 ISP 将擦除并覆盖现有程序。工具开始等待后，请按开发板电源/下载键；完成后正常运行。",
-            "普通 ISP 可能覆盖仿真监控；后续调试无法连接时，请在 IDE 中重新制作仿真芯片并重新上电。" })
+            usb ? "USB ISP 将擦除并覆盖现有程序。等待开始后，请手动进入硬件 USB 下载模式并插入电脑；无需选择串口。" :
+                "串口 ISP 将擦除并覆盖现有程序。工具开始等待后，请按开发板电源/下载键；完成后正常运行。" })
         {
             Log(line);
         }
@@ -358,16 +398,18 @@ public partial class MainWindow
     private void PresentStcDownloadResult(StcIspPreparation prepared, StcIspReport result)
     {
         Log("下载日志：" + result.LogPath);
-        Status.Text = result.Success ? $"STC 下载成功 · {prepared.ExpectedModel} · {prepared.Port}" : result.Summary;
-        StcIspStatus.Text = result.Summary;
-        FinishBuildOutput(result.Summary, result.Success);
+        var summary = result.Success && prepared.MonitorSetup
+            ? "STC 仿真监控下载成功，工具已完成写入并退出；未执行 Flash 读回校验。" : result.Summary;
+        Status.Text = result.Success ? $"{(prepared.MonitorSetup ? "STC 仿真监控下载成功" : "STC 下载成功")} · {prepared.ExpectedModel} · {prepared.Port}" : summary;
+        StcIspStatus.Text = summary;
+        FinishBuildOutput(summary, result.Success);
     }
 
     private void FocusStcSettings()
     {
-        PackagesTab.Visibility = Visibility.Visible;
-        NewProjectPanel.Visibility = Visibility.Collapsed;
-        ProjectDetailsPanel.Visibility = Visibility.Visible;
-        ShowDocument(PackagesTab);
+        StcDownloadTab.Visibility = Visibility.Visible;
+        StcDownloadTarget.Text = currentProjectManifest?.DeviceId ?? "";
+        UpdateStcHardwareControls();
+        ShowDocument(StcDownloadTab);
     }
 }

@@ -3,7 +3,7 @@ namespace StudioX.Engine.Pic;
 using StudioX.Foundation;
 using StudioX.Packages;
 
-/// <summary>校验 PIC 器件和工具身份；第一阶段不开放硬件入口或通用 GCC 参数。</summary>
+/// <summary>校验 PIC 器件、CMake 入口和工具身份；不能混用通用 GCC 配置。</summary>
 public static class PicProject
 {
     public static async Task ValidateAsync(string root, ProjectManifest project, CancellationToken token)
@@ -23,9 +23,13 @@ public static class PicProject
             throw new StudioXException("PROJECT_PIC", "PIC 工程与器件包的型号、模板或工具版本不一致。");
         }
         PackValidator.Validate(pack, PathBoundary.Resolve(root, "device"));
+        if (!File.Exists(PathBoundary.Resolve(root, "CMakeLists.txt")) || !File.Exists(PathBoundary.Resolve(root, "cmake/PicXc8.cmake")))
+        {
+            throw new StudioXException("PIC_CMAKE_REQUIRED", "旧版直接 XC8 工程已停止兼容。请创建 CMake + Ninja PIC 工程后导入源码、头文件及配置位。");
+        }
         if (File.Exists(PathBoundary.Resolve(root, ProjectBuildSettings.RelativePath)))
         {
-            throw new StudioXException("PIC_BUILD_SETTINGS", "PIC 首阶段使用固定 C99 / O0 编译流程；不支持 .studiox/build.json 中的 GCC/CMake 参数。");
+            throw new StudioXException("PIC_BUILD_SETTINGS", "PIC 的编译参数在 CMake 目标中维护；不接受 .studiox/build.json 中的 GCC 专用设置。");
         }
     }
 

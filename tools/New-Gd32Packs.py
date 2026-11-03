@@ -395,7 +395,7 @@ volatile uint32_t app_counter;
 int main(void)
 {{
     /* 内部时钟、无引脚假设；加入外设前请检查所选型号与实际电路。 */
-    for (;;) {{ ++app_counter; __NOP(); }}
+    while (1) {{ ++app_counter; __NOP(); }}
 }}
 ''',
     )

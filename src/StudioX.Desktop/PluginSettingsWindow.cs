@@ -16,6 +16,7 @@ internal sealed class PluginSettingsWindow : Window
         MinWidth = 400;
         MinHeight = 280;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
+        SetResourceReference(StyleProperty, typeof(Window));
         SetResourceReference(BackgroundProperty, "Surface");
         SetResourceReference(ForegroundProperty, "Text");
         var root = new DockPanel { Margin = new Thickness(18) };

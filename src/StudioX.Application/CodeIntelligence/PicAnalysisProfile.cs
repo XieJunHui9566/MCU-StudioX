@@ -6,7 +6,7 @@ using StudioX.Foundation;
 /// <summary>从已校验的官方寄存器头生成通用 C 分析入口；不模拟 PIC ABI 或替代 XC8。</summary>
 internal sealed record PicAnalysisProfile(string[] Flags, string HeaderRoot)
 {
-    public static async Task<PicAnalysisProfile> ReadAsync(string runtime, string data, ProjectManifest project, CancellationToken token)
+    public static async Task<PicAnalysisProfile> ReadAsync(string runtime, string data, string projectRoot, ProjectManifest project, CancellationToken token)
     {
         var tools = await new ToolsetCatalog(Path.Combine(runtime, "toolsets"), data)
             .ResolveAsync(project.ToolsetId, project.ToolsetVersion, project.CompilerId, token);
@@ -28,7 +28,16 @@ internal sealed record PicAnalysisProfile(string[] Flags, string HeaderRoot)
             "#define __interrupt(...)\n#define CLRWDT() ((void)0)\n#define NOP() ((void)0)\n" +
             "#define __delay_ms(value) ((void)0)\n#define __delay_us(value) ((void)0)\n" +
             "#include \"" + header + "\"\n", token);
+        string[] cmakeFlags = [];
+        try
+        {
+            cmakeFlags = await new StudioX.Engine.Pic.PicBuildService(new ToolsetCatalog(Path.Combine(runtime, "toolsets"), data), data).AnalysisFlagsAsync(projectRoot, token);
+        }
+        catch (StudioXException ex) when (ex.Code is "PIC_BUILD_REQUIRED" or "PIC_BUILD_STALE" or "PIC_ANALYSIS_STALE")
+        {
+            // 尚未构建或源码已修改时不套用旧 CMake 宏；寄存器分析入口仍可使用。
+        }
         return new(["--target=i386-unknown-elf", "-std=c99", "-ffreestanding", "-ferror-limit=0", "-Wno-unknown-pragmas",
-            "-I" + directory, "-isystem", tools.ResourceDirectory("pic-headers")], tools.RootDirectory);
+            "-I" + directory, "-isystem", tools.ResourceDirectory("pic-headers"), .. cmakeFlags], tools.RootDirectory);
     }
 }

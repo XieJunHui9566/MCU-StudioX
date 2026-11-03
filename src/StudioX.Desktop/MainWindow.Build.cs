@@ -9,6 +9,7 @@ public partial class MainWindow
     private async Task<BuildReport> BuildWithSummaryAsync(string directory, CancellationToken token)
     {
         BeginBuildOutput();
+        InvalidateBuildAssembly("正在编译，完成后更新汇编；不显示上一次构建结果。");
         var outputLines = new OutputLineBuffer();
         void ToolLine(string text)
         {
@@ -73,6 +74,7 @@ public partial class MainWindow
             }
             if (report.Success)
             {
+                await RefreshVisibleBuildAssemblyAsync(directory, token);
                 ResolveBuildTroubleshooting(directory);
                 ReportBuildActivity("分析构建产物");
                 if (IsArduinoProject)

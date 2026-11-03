@@ -81,6 +81,7 @@ internal sealed class AgentEditorMcpTools(McpSessionContext context) : StudioXMc
     public async Task<string> InspectAsync(string path, string action, int offset = 0, CancellationToken cancellationToken = default)
     {
         var buffer = await Editor.ReadAsync(path, cancellationToken);
+        path = buffer.Source.RelativePath;
         var snapshot = await Editor.SnapshotAsync(cancellationToken);
         var documents = snapshot.Documents.Select(d => new CodeDocumentSnapshot(d.Source.RelativePath, d.Text)).ToArray();
         if (!Services.Intelligence.IsReady || !CodeIntelligenceService.Supports(path))
@@ -133,6 +134,7 @@ internal sealed class AgentEditorMcpTools(McpSessionContext context) : StudioXMc
     public async Task<string> RefactorAsync(string path, string action, int offset = 0, string oldName = "", string newName = "", int fixIndex = 0, CancellationToken cancellationToken = default)
     {
         var buffer = await Editor.ReadAsync(path, cancellationToken);
+        path = buffer.Source.RelativePath;
         var snapshot = await Editor.SnapshotAsync(cancellationToken);
         var documents = snapshot.Documents.Select(d => new CodeDocumentSnapshot(d.Source.RelativePath, d.Text)).ToArray();
         if (!Services.Intelligence.IsReady || !CodeIntelligenceService.Supports(path))

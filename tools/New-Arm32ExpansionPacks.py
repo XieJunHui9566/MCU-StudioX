@@ -311,7 +311,7 @@ extern void SystemInit(void);
 extern void __libc_init_array(void);
 extern int main(void);
 void Reset_Handler(void);
-void Default_Handler(void) { for (;;) { __asm volatile ("nop"); } }
+void Default_Handler(void) { while (1) { __asm volatile ("nop"); } }
 '''
         + decl
         + '''
@@ -329,7 +329,7 @@ void Reset_Handler(void)
     for (uint32_t *destination = &_sbss; destination < &_ebss;) *destination++ = 0;
     __libc_init_array();
     (void)main();
-    for (;;) { __asm volatile ("nop"); }
+    while (1) { __asm volatile ("nop"); }
 }
 '''
     )

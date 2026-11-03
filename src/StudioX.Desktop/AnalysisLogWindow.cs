@@ -31,6 +31,7 @@ public sealed class AnalysisLogWindow : Window
         MinWidth = 600;
         MinHeight = 360;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
+        SetResourceReference(StyleProperty, typeof(Window));
         SetResourceReference(BackgroundProperty, "Surface");
         SetResourceReference(ForegroundProperty, "Text");
         LogText.SetResourceReference(BackgroundProperty, "EditorSurface");

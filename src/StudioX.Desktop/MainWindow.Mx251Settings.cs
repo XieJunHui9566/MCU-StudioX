@@ -7,7 +7,8 @@ using StudioX.Foundation;
 public partial class MainWindow
 {
     private Mx251ProjectSettings? loadedMx251Settings;
-    private bool IsMx251Project => currentProjectManifest is { ToolsetId: Mx251Profile.ToolsetId, CompilerId: Mx251Profile.CompilerId };
+    private bool IsMx251Project => currentProjectManifest is { } project &&
+        (project is { ToolsetId: Mx251Profile.ToolsetId, CompilerId: Mx251Profile.CompilerId } || Mx251SdkProfile.Matches(project));
 
     private void ApplyMx251Settings(Mx251ProjectSettings settings)
     {
@@ -23,6 +24,7 @@ public partial class MainWindow
     {
         var enabled = projectDirectory is not null && loadedMx251Settings is not null && !projectActionsBusy && !services.Debugger.IsActive;
         BuildSettingsEditor.IsEnabled = enabled;
+        StcBuildExtrasHost.IsEnabled = enabled;
         var model = Mx251ModelPicker.SelectedValue as string;
         SaveBuildSettingsButton.IsEnabled = enabled && model is "small" or "large" && model != loadedMx251Settings?.Model;
         BuildSettingsSummary.Text = model is null ? "正在读取内存模型…" : "MX251 · 32 位模式 · " + model;

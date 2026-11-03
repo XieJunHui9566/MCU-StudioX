@@ -6,8 +6,20 @@ using StudioX.Foundation;
 using StudioX.Packages;
 
 /// <summary>从明确选择的器件包读取固件；制作占有串口，写入成功后仍须断电激活监控。</summary>
-public sealed class Mon51SetupService(StcIspService isp, DeviceHub devices, PackRepository packs, Func<bool> debugActive)
+public sealed class Mon51SetupService(StcIspService isp, DeviceHub devices, PackRepository packs, Func<bool> debugActive) : IMon51SetupService
 {
+    public async Task<StcIspPreparation> PrepareForProjectAsync(string project, StcIspSettings settings, CancellationToken token = default)
+    {
+        settings.Validate();
+        var manifest = await ProjectService.ReadAsync(project, token);
+        var sources = await ListFirmwareSourcesAsync(project, token);
+        // 候选全部受准确型号与固定固件散列约束；同镜像无需让用户选择包版本。
+        var source = sources.OrderByDescending(s => s.IsProjectPack)
+            .ThenBy(s => s.PackId, StringComparer.Ordinal).ThenBy(s => s.PackVersion, StringComparer.Ordinal).FirstOrDefault()
+            ?? throw new StudioXException("MON51_SETUP_FIRMWARE", $"没有 {manifest.DeviceId} 对应的仿真固件，请在器件与模板中导入包含该型号 Mon51 固件的器件包。");
+        return await PrepareCoreAsync(project, settings.Port, manifest.DeviceId, source, settings.TransferBaud, token);
+    }
+
     public async Task<IReadOnlyList<Mon51FirmwareSource>> ListFirmwareSourcesAsync(string project, CancellationToken token = default)
     {
         var manifest = await ProjectService.ReadAsync(project, token);
@@ -33,6 +45,10 @@ public sealed class Mon51SetupService(StcIspService isp, DeviceHub devices, Pack
 
     public async Task<StcIspPreparation> PrepareAsync(string project, string port, string confirmedTarget,
         Mon51FirmwareSource source, CancellationToken token = default)
+        => await PrepareCoreAsync(project, port, confirmedTarget, source, 115200, token);
+
+    private async Task<StcIspPreparation> PrepareCoreAsync(string project, string port, string confirmedTarget,
+        Mon51FirmwareSource source, int baud, CancellationToken token)
     {
         if (debugActive())
         {
@@ -59,7 +75,7 @@ public sealed class Mon51SetupService(StcIspService isp, DeviceHub devices, Pack
         }
         var bytes = await File.ReadAllBytesAsync(PathBoundary.Resolve(verified.RootDirectory, firmware.ImageFile), token);
         StcMonitorImage.ValidateSetup(bytes, confirmedTarget);
-        var prepared = await isp.PrepareMonitorAsync(project, port, bytes, token);
+        var prepared = await isp.PrepareMonitorAsync(project, port, bytes, baud, token);
         await JsonStore.WriteAsync(Path.Combine(Path.GetDirectoryName(prepared.Image)!, "monitor-source.json"), source, token);
         return prepared;
     }

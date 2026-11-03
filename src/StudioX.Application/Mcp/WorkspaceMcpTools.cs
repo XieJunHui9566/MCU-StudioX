@@ -53,6 +53,7 @@ internal sealed class WorkspaceMcpTools(McpSessionContext context) : StudioXMcpT
         string cursor = "",
         CancellationToken cancellationToken = default)
     {
+        directory = NormalizeRelativePath(directory);
         await RequireWorkspaceProjectAsync(cancellationToken).ConfigureAwait(false);
         if (directory.Length > 0)
         {
@@ -100,6 +101,7 @@ internal sealed class WorkspaceMcpTools(McpSessionContext context) : StudioXMcpT
         int? maxChars = null,
         CancellationToken cancellationToken = default)
     {
+        path = NormalizeRelativePath(path);
         await RequireWorkspaceProjectAsync(cancellationToken).ConfigureAwait(false);
         RequireWorkspaceSourceFile(path);
         if (startLine is < 1 || startColumn is < 1 || maxLines is < 1 or > 500 ||
@@ -145,6 +147,7 @@ internal sealed class WorkspaceMcpTools(McpSessionContext context) : StudioXMcpT
         string cursor = "",
         CancellationToken cancellationToken = default)
     {
+        directory = NormalizeRelativePath(directory);
         await RequireWorkspaceProjectAsync(cancellationToken).ConfigureAwait(false);
         if (string.IsNullOrWhiteSpace(query) || query.Length is < 2 or > 120 || query.Any(char.IsControl) ||
             maxResults is < 1 or > 60)
@@ -246,7 +249,7 @@ internal sealed class WorkspaceMcpTools(McpSessionContext context) : StudioXMcpT
                         break;
                     }
                 }
-                catch (StudioXException ex) when (ex.Code is "EDITOR_ENCODING" or "EDITOR_BINARY")
+                catch (StudioXException ex) when (ex.Code is "EDITOR_ENCODING" or "EDITOR_BINARY" or "EDITOR_LINE_LENGTH" or "EDITOR_TEXT_COMPLEXITY")
                 {
                     unreadableCount++;
                     if (unreadable.Count < 12)
@@ -292,6 +295,7 @@ internal sealed class WorkspaceMcpTools(McpSessionContext context) : StudioXMcpT
         string content,
         CancellationToken cancellationToken = default)
     {
+        path = NormalizeRelativePath(path);
         await RequireWorkspaceProjectAsync(cancellationToken).ConfigureAwait(false);
         var full = RequireWorkspaceWritableSourceFile(path);
         RequireWorkspaceText(content);
@@ -346,6 +350,7 @@ internal sealed class WorkspaceMcpTools(McpSessionContext context) : StudioXMcpT
         ProjectTextHunk[] hunks,
         CancellationToken cancellationToken = default)
     {
+        path = NormalizeRelativePath(path);
         await RequireWorkspaceProjectAsync(cancellationToken).ConfigureAwait(false);
         RequireWorkspaceWritableSourceFile(path);
         RequireWorkspaceHash(originalSha256);
@@ -433,6 +438,7 @@ internal sealed class WorkspaceMcpTools(McpSessionContext context) : StudioXMcpT
         string content,
         CancellationToken cancellationToken = default)
     {
+        path = NormalizeRelativePath(path);
         await RequireWorkspaceProjectAsync(cancellationToken).ConfigureAwait(false);
         var full = RequireWorkspaceWritableSourceFile(path);
         RequireWorkspaceText(content);
@@ -465,6 +471,7 @@ internal sealed class WorkspaceMcpTools(McpSessionContext context) : StudioXMcpT
         [Description("工程内正斜杠分隔的相对目录路径，不能位于受保护的 device 或配置目录。")]
         string path, CancellationToken cancellationToken = default)
     {
+        path = NormalizeRelativePath(path);
         await RequireWorkspaceProjectAsync(cancellationToken).ConfigureAwait(false);
         RequireWorkspaceWritableSourceDirectory(path);
         var full = PathBoundary.Resolve(Project, path);

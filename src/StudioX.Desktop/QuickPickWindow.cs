@@ -23,6 +23,7 @@ internal sealed class QuickPickWindow : Window
         MinWidth = 550;
         MinHeight = 320;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
+        SetResourceReference(StyleProperty, typeof(Window));
         SetResourceReference(BackgroundProperty, "Surface");
         SetResourceReference(ForegroundProperty, "Text");
         Query.SetResourceReference(BackgroundProperty, "EditorSurface");

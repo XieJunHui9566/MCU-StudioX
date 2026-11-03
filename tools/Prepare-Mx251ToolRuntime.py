@@ -202,7 +202,7 @@ volatile __xdata uint32_t app_heartbeat = 0;
 
 void main(void)
 {
-    for (;;)
+    while (1)
     {
         ++app_heartbeat;
     }

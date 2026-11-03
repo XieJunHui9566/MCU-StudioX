@@ -105,10 +105,11 @@ public sealed record PluginManifest(
         {
             throw new StudioXException("PLUGIN_MANIFEST", "插件显示版本须为 1–64 个可见字符，不能包含控制字符或首尾空白。");
         }
+        var supportedCapabilities = manifest.ApiVersion == 1 ? new[] { "decode" } : manifest.ApiVersion == 2 ? ["commands", "panels", "agentTools", "panelWindows", "programmerCalculator", "calculatorRealtime", "mcuConfigurationPreview"] : ["commands", "panels", "agentTools", "settings", "events", "languages", "debugAdapters", "panelWindows", "programmerCalculator", "calculatorRealtime", "mcuConfigurationPreview", "projectMatching", "projectClockV1", "mcuClockDiagramV1", "mcuCodeGenerationV1", "mcuConfigurationSaveV1", "mcuClockFieldsV1", "mcuPinActionsV1"];
         if (string.IsNullOrWhiteSpace(manifest.DisplayName) || manifest.DisplayName.Length > 256 ||
             manifest.Description?.Length > 8192 ||
             manifest.Sha256 is null || manifest.Sha256.Count is 0 or > 4096 ||
-            manifest.Capabilities is null || manifest.Capabilities.Length is 0 or > 10 ||
+            manifest.Capabilities is null || manifest.Capabilities.Length == 0 || manifest.Capabilities.Length > supportedCapabilities.Length ||
             manifest.Capabilities.Distinct(StringComparer.Ordinal).Count() != manifest.Capabilities.Length)
         {
             throw new StudioXException("PLUGIN_MANIFEST", "插件名称、能力或文件索引无效。");
@@ -124,7 +125,6 @@ public sealed record PluginManifest(
         {
             throw new StudioXException("PLUGIN_MCU_CLOCK", "时钟符号图需要 mcuConfigurationPreview 视图能力。");
         }
-        var supportedCapabilities = manifest.ApiVersion == 1 ? new[] { "decode" } : manifest.ApiVersion == 2 ? ["commands", "panels", "agentTools", "panelWindows", "programmerCalculator", "calculatorRealtime", "mcuConfigurationPreview"] : ["commands", "panels", "agentTools", "settings", "events", "languages", "debugAdapters", "panelWindows", "programmerCalculator", "calculatorRealtime", "mcuConfigurationPreview", "projectMatching", "projectClockV1", "mcuClockDiagramV1", "mcuCodeGenerationV1", "mcuConfigurationSaveV1", "mcuClockFieldsV1", "mcuPinActionsV1"];
         if (manifest.Capabilities.Any(capability => !supportedCapabilities.Contains(capability, StringComparer.Ordinal)) ||
             (manifest.ApiVersion == 1 && (manifest.Capabilities is not ["decode"] || manifest.Kind != "dotnet")))
         {

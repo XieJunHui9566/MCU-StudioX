@@ -16,7 +16,7 @@ static void HeartbeatTask(void *argument)
 {
     (void)argument;
     TickType_t wake = xTaskGetTickCount();
-    for (;;)
+    while (1)
     {
         ++app_heartbeat;
         vTaskDelayUntil(&wake, pdMS_TO_TICKS(500));
@@ -38,7 +38,7 @@ int main(void)
     vTaskStartScheduler();
     StudioX_Panic(22);
 #else
-    for (;;)
+    while (1)
     {
         ++app_heartbeat;
         Board_Delay(500);

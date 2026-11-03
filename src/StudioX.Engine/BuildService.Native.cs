@@ -39,6 +39,8 @@ public sealed partial class BuildService
         var sdcc = project.ToolsetId == "stc.sdcc";
         var stcRom = await StcCodeRomLimit.ReadAsync(root, project, cancellationToken);
         stcRom?.Validate(settings.CodeRomSizeBytes);
+        var stcRam = await StcRamLimits.ReadAsync(root, project, cancellationToken);
+        stcRam?.Validate(settings.IdataSizeBytes, settings.XdataSizeBytes, settings.Mon51Profile);
         var stcIsp = sdcc ? await StcIspSettings.ReadAsync(root, cancellationToken) : null;
         var graphicalClock = sdcc ? await ProjectClocks.ReadAsync(root, cancellationToken) : null;
         graphicalClock?.RequireReady();
@@ -194,6 +196,10 @@ public sealed partial class BuildService
                 {
                     await settings.VerifyCommandsAsync(build, project, cancellationToken, stcClockHz,
                         graphicalClock is { Managed: true } ? graphicalClock.SystemDivider : null);
+                    if (sdcc)
+                    {
+                        await SdccBuildOptions.VerifyCommandsAsync(build, settings, stcRam!, tools, environment, cancellationToken);
+                    }
                 }
                 catch (Exception ex) when (ex is not OperationCanceledException)
                 {
@@ -265,6 +271,7 @@ public sealed partial class BuildService
                 throw new StudioXException("BUILD_ARTIFACT", "SDCC 报告成功，但 Intel HEX 或映射文件缺失。");
             }
             await stcRom!.VerifyBuildAsync(build, settings.Mon51Profile ? Math.Min(settings.CodeRomSizeBytes ?? 0xdbfd, 0xdbfd) : settings.CodeRomSizeBytes, cancellationToken);
+            await stcRam!.VerifyBuildAsync(build, settings, cancellationToken);
             if (settings.DebugInfo == CompilerDebugInfo.Standard && !File.Exists(Path.Combine(build, "firmware.cdb")))
             {
                 throw new StudioXException("BUILD_ARTIFACT", "SDCC --debug 构建缺少链接后的 firmware.cdb。");

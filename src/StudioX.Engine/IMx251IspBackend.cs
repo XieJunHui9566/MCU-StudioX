@@ -6,5 +6,6 @@ using StudioX.Ai8051Isp;
 public interface IMx251IspBackend
 {
     IReadOnlyList<HidDevice> Enumerate();
+    IReadOnlyList<HidDevice> EnumerateNativeUsb() => [];
     Mx251IspConnection Open(HidDevice device, Action<string, byte[]> trace);
 }

@@ -26,7 +26,20 @@ public partial class MainWindow
 
     private async Task DownloadStcWithOutputAsync(StcIspPreparation prepared, CancellationToken token)
     {
-        BeginBuildOutput("等待 MCU 上电；请按开发板电源/下载键", "下载中");
+        try
+        {
+            await RunStcDownloadWithOutputAsync(prepared,
+                (output, cancel) => services.StcIsp.DownloadPreparedAsync(prepared, output, cancel), token);
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested) { }
+    }
+
+    /// <summary>普通用户固件与仿真监控共用分块解析、活动行、诊断配色和最终状态。</summary>
+    private async Task<StcIspReport> RunStcDownloadWithOutputAsync(StcIspPreparation prepared,
+        Func<IProgress<string>, CancellationToken, Task<StcIspReport>> operation, CancellationToken token)
+    {
+        BeginBuildOutput(prepared.Settings.DownloadMode == StcDownloadMode.NativeUsb
+            ? "等待原生 USB ISP；请使目标板进入下载模式后插入电脑" : "等待 MCU 上电；请按开发板电源/下载键", "下载中");
         var lines = new OutputLineBuffer();
         var acceptingOutput = true;
         async Task DrainAsync()
@@ -39,8 +52,7 @@ public partial class MainWindow
         }
         try
         {
-            var result = await services.StcIsp.DownloadPreparedAsync(prepared,
-                new Progress<string>(chunk =>
+            var result = await operation(new Progress<string>(chunk =>
                 {
                     if (!acceptingOutput)
                     {
@@ -53,17 +65,19 @@ public partial class MainWindow
                 }), token);
             await DrainAsync();
             PresentStcDownloadResult(prepared, result);
+            return result;
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested)
         {
             await DrainAsync();
-            StcIspStatus.Text = Status.Text = "STC 下载已取消；若已开始擦写，板内程序可能不完整。";
+            StcIspStatus.Text = Status.Text = (prepared.MonitorSetup ? "STC 仿真监控下载已取消" : "STC 下载已取消") + "；若已开始擦写，板内程序可能不完整。";
             FinishBuildOutput(Status.Text, null);
+            throw;
         }
         catch (Exception)
         {
             await DrainAsync();
-            FinishBuildOutput("STC 下载失败，原始诊断见输出", false);
+            FinishBuildOutput((prepared.MonitorSetup ? "STC 仿真监控下载失败" : "STC 下载失败") + "，原始诊断见输出", false);
             throw;
         }
         finally { acceptingOutput = false; }
