@@ -109,7 +109,13 @@ internal static class BuildPreflightChecks
             "Rejected rebuild never rewrites or recompiles the MCU firmware");
         Check((await File.ReadAllTextAsync(Path.Combine(root, ".build/studiox-build.log"))).Contains("AG32_MAPPING_LICENSE", StringComparison.Ordinal),
             "Preflight failure replaces the previous successful build log");
-        await JsonStore.WriteAsync(Path.Combine(output, "result.json"), new { success = true, count = checks.Count, checks, hardwareAccess = false });
+        await JsonStore.WriteAsync(Path.Combine(output, "result.json"), new
+        {
+            success = true,
+            count = checks.Count,
+            checks,
+            hardwareAccess = false
+        });
     }
 
     private sealed class InlineProgress(Action<string> report) : IProgress<string>
