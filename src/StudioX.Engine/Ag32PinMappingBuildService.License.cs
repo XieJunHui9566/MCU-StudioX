@@ -16,19 +16,36 @@ public sealed partial class Ag32PinMappingBuildService
         }
     }
 
-    internal async Task<string> PreparePrivateRuntimeAsync(ResolvedToolset tools, CancellationToken token)
+    internal async Task ValidateLicenseAsync(CancellationToken token)
     {
+        _ = await ReadLicenseAsync(token);
+    }
+
+    private async Task<byte[]> ReadLicenseAsync(CancellationToken token)
+    {
+        token.ThrowIfCancellationRequested();
         CheckPrivateDirectory();
         var licensePath = PathBoundary.Resolve(LicenseDirectory, "license.txt");
         if (!File.Exists(licensePath))
         {
-            throw new StudioXException("AG32_MAPPING_LICENSE", "Supra 需要有效厂商许可。请导入本机已有的 license.txt；许可只存储在私有用户目录，不随工程或工具发行。");
+            throw new StudioXException("AG32_MAPPING_LICENSE", "未配置 Supra 许可。请在“AG32 引脚映射”页点击“配置 Supra 许可”，导入适用于本机的厂商 license.txt。");
+        }
+        if (new FileInfo(licensePath).Length is <= 0 or > 64 * 1024)
+        {
+            throw new StudioXException("AG32_MAPPING_LICENSE", "本机 Supra 许可文件大小不合法，请重新配置 Supra 许可。");
         }
         var license = await File.ReadAllBytesAsync(licensePath, token);
         if (license.Length is <= 0 or > 64 * 1024)
         {
             throw new StudioXException("AG32_MAPPING_LICENSE", "本机 Supra 许可文件大小不合法。");
         }
+        return license;
+    }
+
+    internal async Task<string> PreparePrivateRuntimeAsync(ResolvedToolset tools, CancellationToken token)
+    {
+        // 预检后仍重新读取，防止编译期间许可被删除或替换；有效性继续由厂商工具判定。
+        var license = await ReadLicenseAsync(token);
         var relativeRun = "runs/" + Guid.NewGuid().ToString("N");
         var run = PathBoundary.Resolve(LicenseDirectory, relativeRun);
         Directory.CreateDirectory(run);

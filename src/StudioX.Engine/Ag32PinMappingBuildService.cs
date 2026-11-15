@@ -78,6 +78,7 @@ public sealed partial class Ag32PinMappingBuildService(ToolsetCatalog catalog, s
             var assignablePins = pins.Pins.Where(pin => pin.CanAssign).Select(pin => pin.Number).ToHashSet();
             var source = await Ag32PinMappingValidation.ReadSourceAsync(root, settings, assignablePins, profile, token);
             Ag32PeripheralSupport.Validate(project.DeviceId, source, new Ag32PinPlanDocument(source).Assignments);
+            await ValidateLicenseAsync(token);
             var sourceHash = Hash(source);
             var locked = new ToolchainLock(1, settings.ToolsetId, settings.ToolsetVersion, tools.Fingerprint);
             var lockPath = PathBoundary.Resolve(root, Ag32PinMappingReceipt.LockRelativePath);

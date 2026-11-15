@@ -26,13 +26,31 @@ public sealed partial class BuildService
         {
             Hdl.Ag32NativeBuildService.Invalidate(root);
         }
-        using var components = await PrepareComponentsAsync(root, project, progress, cancellationToken);
-        var tools = components.Tools.Single(t => t.Manifest.Id == project.ToolsetId);
-        await new Ag32SystemGenerationService(catalog).PrepareAsync(root, project, cancellationToken);
         if (!configureOnly && project.PinMapping is not null && project.Logic is null)
         {
             Ag32PinMappingBuildService.Invalidate(root);
         }
+        if (!configureOnly && (project.PinMapping is not null || project.Logic is not null))
+        {
+            progress?.Report("检查 AG32 许可与引脚配置…");
+            try
+            {
+                await new Ag32PinMappingBuildService(catalog, ag32MappingLicenseDirectory)
+                    .ValidateBuildInputsAsync(root, project, cancellationToken);
+            }
+            catch (StudioXException error)
+            {
+                // 预检失败也覆盖旧日志，防止 MCP 或日志窗口仍显示上一次成功构建。
+                var failedLog = PathBoundary.Resolve(root, ".build/studiox-build.log");
+                Directory.CreateDirectory(Path.GetDirectoryName(failedLog)!);
+                await File.WriteAllTextAsync(failedLog, "[AG32 构建前检查] " + error.Code + ": " + error.Message + Environment.NewLine,
+                    CancellationToken.None);
+                throw;
+            }
+        }
+        using var components = await PrepareComponentsAsync(root, project, progress, cancellationToken);
+        var tools = components.Tools.Single(t => t.Manifest.Id == project.ToolsetId);
+        await new Ag32SystemGenerationService(catalog).PrepareAsync(root, project, cancellationToken);
         var sourceStamp = await Debugging.DebugSourceStamp.ComputeAsync(root, cancellationToken);
         var settings = await ProjectBuildSettings.ReadAsync(root, cancellationToken);
         settings.ValidateFor(project);

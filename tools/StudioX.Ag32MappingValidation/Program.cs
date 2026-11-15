@@ -3,6 +3,12 @@ using StudioX.Engine;
 using StudioX.Foundation;
 using StudioX.Packages;
 
+if (args is ["--build-preflight", var preflightTools, var preflightOutput, var preflightPack])
+{
+    await BuildPreflightChecks.RunAsync(preflightTools, preflightOutput, preflightPack);
+    return;
+}
+
 if (args is ["--rtos-templates", var rtosTools, var rtosOutput, var rtosPacks])
 {
     await RtosTemplateChecks.RunAsync(rtosTools, rtosOutput, rtosPacks);
