@@ -91,7 +91,13 @@ public sealed class CubeMxImportService(ToolsetCatalog catalog)
             token.ThrowIfCancellationRequested();
             File.Move(temporary, path, overwrite: false);
         }
-        finally { if (File.Exists(temporary)) { File.Delete(temporary); } }
+        finally
+        {
+            if (File.Exists(temporary))
+            {
+                File.Delete(temporary);
+            }
+        }
         return project;
     }
 

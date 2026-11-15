@@ -30,7 +30,10 @@ internal sealed class LanguageServerConnection : IAsyncDisposable
             {
                 return !process.HasExited && Volatile.Read(ref readerCompleted) == 0;
             }
-            catch (ObjectDisposedException) { return false; }
+            catch (ObjectDisposedException)
+            {
+                return false;
+            }
         }
     }
 
@@ -64,8 +67,13 @@ internal sealed class LanguageServerConnection : IAsyncDisposable
                     log(line);
                 }
             }
-            catch (OperationCanceledException) when (lifetime.IsCancellationRequested) { }
-            catch (IOException ex) { log(ex.Message); }
+            catch (OperationCanceledException) when (lifetime.IsCancellationRequested)
+            {
+            }
+            catch (IOException ex)
+            {
+                log(ex.Message);
+            }
         });
     }
 
@@ -103,46 +111,64 @@ internal sealed class LanguageServerConnection : IAsyncDisposable
                 throw new StudioXException("LANGUAGE_TIMEOUT", "代码提示服务响应超时，可再次按 Ctrl+Space 重试。");
             }
         }
-        finally { pending.TryRemove(id, out _); }
+        finally
+        {
+            pending.TryRemove(id, out _);
+        }
     }
     private async Task TryCancelAsync(int id)
     {
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(lifetime.Token);
+        timeout.CancelAfter(TimeSpan.FromMilliseconds(200));
         try
         {
             await NotifyAsync("$/cancelRequest", new
             {
                 id
-            }, lifetime.Token).ConfigureAwait(false);
+            }, timeout.Token).ConfigureAwait(false);
         }
-        catch (Exception ex) when (ex is IOException or OperationCanceledException or ObjectDisposedException) { }
+        catch (Exception ex) when (ex is IOException or OperationCanceledException or ObjectDisposedException or StudioXException)
+        {
+            log("代码提示请求取消通知未送达：" + ex.Message);
+        }
     }
     private async Task SendAsync(object value, CancellationToken token)
     {
         var body = JsonSerializer.SerializeToUtf8Bytes(value);
         var header = Encoding.ASCII.GetBytes($"Content-Length: {body.Length}\r\n\r\n");
-        await writer.WaitAsync(token).ConfigureAwait(false);
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(token, lifetime.Token);
+        timeout.CancelAfter(TimeSpan.FromSeconds(5));
+        var acquired = false;
+        var started = false;
         try
         {
-            // 一帧开始写入后只接受会话关闭取消，避免用户取消请求时留下半帧。
-            using var timeout = CancellationTokenSource.CreateLinkedTokenSource(lifetime.Token);
-            timeout.CancelAfter(TimeSpan.FromSeconds(5));
-            try
+            // 排队与整帧写入共用截止时间；尚未取得写锁的请求不能终止其他请求。
+            await writer.WaitAsync(timeout.Token).ConfigureAwait(false);
+            acquired = true;
+            timeout.Token.ThrowIfCancellationRequested();
+            started = true;
+            await process.StandardInput.BaseStream.WriteAsync(header, timeout.Token).ConfigureAwait(false);
+            await process.StandardInput.BaseStream.WriteAsync(body, timeout.Token).ConfigureAwait(false);
+            await process.StandardInput.BaseStream.FlushAsync(timeout.Token).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException ex)
+        {
+            if (started && !process.HasExited)
             {
-                await process.StandardInput.BaseStream.WriteAsync(header, timeout.Token).ConfigureAwait(false);
-                await process.StandardInput.BaseStream.WriteAsync(body, timeout.Token).ConfigureAwait(false);
-                await process.StandardInput.BaseStream.FlushAsync(timeout.Token).ConfigureAwait(false);
+                // 中途取消也可能留下半帧，终止自有服务后由上层恢复，不能继续拼接消息。
+                process.Kill(entireProcessTree: true);
             }
-            catch (OperationCanceledException) when (!lifetime.IsCancellationRequested)
+            token.ThrowIfCancellationRequested();
+            lifetime.Token.ThrowIfCancellationRequested();
+            throw new StudioXException("LANGUAGE_IO_TIMEOUT", "代码提示服务通信超时；重新打开工程可重启。", ex);
+        }
+        finally
+        {
+            if (acquired)
             {
-                // 超时后的通道可能留下半帧，必须结束这个自有子进程，不能继续拼接消息。
-                if (!process.HasExited)
-                {
-                    process.Kill(entireProcessTree: true);
-                }
-                throw new StudioXException("LANGUAGE_IO_TIMEOUT", "代码提示服务通信超时；重新打开工程可重启。");
+                writer.Release();
             }
         }
-        finally { writer.Release(); }
     }
     private async Task ReadAsync()
     {
@@ -213,7 +239,10 @@ internal sealed class LanguageServerConnection : IAsyncDisposable
                 }
             }
         }
-        catch (Exception ex) { terminalFailure = ex; }
+        catch (Exception ex)
+        {
+            terminalFailure = ex;
+        }
         finally
         {
             Volatile.Write(ref failure, terminalFailure);
@@ -247,7 +276,9 @@ internal sealed class LanguageServerConnection : IAsyncDisposable
                     await RequestAsync("shutdown", null, timeout.Token).ConfigureAwait(false);
                     await NotifyAsync("exit", null, timeout.Token).ConfigureAwait(false);
                 }
-                catch (Exception ex) when (ex is OperationCanceledException or IOException or StudioXException) { }
+                catch (Exception ex) when (ex is OperationCanceledException or IOException or StudioXException)
+                {
+                }
             }
             lifetime.Cancel();
             if (!process.HasExited)
@@ -256,10 +287,19 @@ internal sealed class LanguageServerConnection : IAsyncDisposable
                 {
                     await process.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(1)).ConfigureAwait(false);
                 }
-                catch (TimeoutException) { process.Kill(entireProcessTree: true); await process.WaitForExitAsync().ConfigureAwait(false); }
+                catch (TimeoutException)
+                {
+                    process.Kill(entireProcessTree: true);
+                    await process.WaitForExitAsync().ConfigureAwait(false);
+                }
             }
             await Task.WhenAll(reader, errors).ConfigureAwait(false);
         }
-        finally { process.Dispose(); lifetime.Dispose(); writer.Dispose(); }
+        finally
+        {
+            process.Dispose();
+            lifetime.Dispose();
+            writer.Dispose();
+        }
     }
 }

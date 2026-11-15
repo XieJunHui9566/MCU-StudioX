@@ -60,7 +60,10 @@ internal sealed class PluginSettingsWindow : Window
                 Values = result;
                 DialogResult = true;
             }
-            catch (Exception ex) when (ex is FormatException or OverflowException or StudioX.Foundation.StudioXException) { status.Text = ex.Message; }
+            catch (Exception ex) when (ex is FormatException or OverflowException or StudioX.Foundation.StudioXException)
+            {
+                status.Text = ex.Message;
+            }
         };
     }
     public IReadOnlyDictionary<string, JsonElement>? Values

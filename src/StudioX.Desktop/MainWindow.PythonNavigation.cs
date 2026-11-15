@@ -52,7 +52,9 @@ public partial class MainWindow
                 PythonReferencesStatus.Text = $"找到 {locations.Count} 处（{(python ? "含定义和导入" : "含声明和定义")}）· 双击定位 · 结果基于查找时的编辑快照";
                 ShowDocument(PythonReferencesTab);
             }
-            catch (OperationCanceledException) when (cancellation.IsCancellationRequested) { }
+            catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
+            {
+            }
             catch (Exception ex)
             {
                 Status.Text = "查找引用：" + ex.Message;

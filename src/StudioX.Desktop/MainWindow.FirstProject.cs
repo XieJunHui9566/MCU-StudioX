@@ -69,7 +69,10 @@ public partial class MainWindow
                 await ShowFirstProjectAsync();
             }
         }
-        catch (Exception error) { Log("首次工程引导偏好读取失败：" + error); }
+        catch (Exception error)
+        {
+            Log("首次工程引导偏好读取失败：" + error);
+        }
     }
 
     private async Task RunGuideActionAsync(string action)

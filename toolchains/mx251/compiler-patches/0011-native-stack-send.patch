@@ -1,0 +1,127 @@
+--- a/src/mcs251/ralloc.c
++++ b/src/mcs251/ralloc.c
+@@ -3154,6 +3154,71 @@
+ /*-----------------------------------------------------------------*/
+ /* packForPush - heuristics to reduce iCode for pushing            */
+ /*-----------------------------------------------------------------*/
++/* 原生SEND在CALL处统一搬运。仅将同块内未逃逸的栈标量快照延后到该处，
++   不跨计算、写入、控制流或调用；volatile和取址对象保持原读取时机。
++   这样分配器不必先给只用一次的参数分配临时槽，再在SEND交换两个DR。 */
++static void
++packStackForNativeSend (iCode *ic, eBBlock *ebp)
++{
++  iCode *def, *walk, *call;
++  operand *source, *temp;
++  sym_link *ftype;
++  int width;
++
++  if (ic->op != SEND || options.useXstack || !IS_ITEMP (IC_LEFT (ic)))
++    return;
++  temp = IC_LEFT (ic);
++  if (bitVectnBitsOn (OP_DEFS (temp)) != 1 || bitVectnBitsOn (OP_USES (temp)) != 1)
++    return;
++  def = hTabItemWithKey (iCodehTab, bitVectFirstBit (OP_DEFS (temp)));
++  if (!def || def->op != '=' || POINTER_SET (def) || def->seq < ebp->fSeq ||
++      def->seq >= ic->seq || !IS_TRUE_SYMOP (IC_RIGHT (def)))
++    return;
++  source = IC_RIGHT (def);
++  width = getSize (operandType (source));
++  if ((width != 1 && width != 2 && width != 4) || IS_AGGREGATE (operandType (source)) ||
++      !OP_SYMBOL (source)->onStack || OP_SYMBOL (source)->addrtaken ||
++      isOperandGlobal (source) || isOperandVolatileOrAtomic (source, TRUE) ||
++      compareType (operandType (source), operandType (temp), false) != 1)
++    return;
++
++  /* 先验证从定义到最终CALL的整段；失败不修改任何iCode或活跃信息。
++     只容许其他参数的纯快照以及SEND/IPUSH，不推断复杂别名或副作用。 */
++  for (walk = def->next; walk && walk->seq <= ebp->lSeq; walk = walk->next)
++    {
++      if (walk->op == CALL)
++        break;
++      if (walk->op == SEND || walk->op == IPUSH)
++        {
++          if (isOperandVolatileOrAtomic (IC_LEFT (walk), TRUE))
++            return;
++          continue;
++        }
++      if (walk->op != '=' || POINTER_SET (walk) || !IS_ITEMP (IC_RESULT (walk)) ||
++          !IC_RIGHT (walk) || isOperandVolatileOrAtomic (IC_RIGHT (walk), TRUE))
++        return;
++      if (!IS_OP_LITERAL (IC_RIGHT (walk)) &&
++          (!IS_TRUE_SYMOP (IC_RIGHT (walk)) || !OP_SYMBOL (IC_RIGHT (walk))->onStack ||
++           OP_SYMBOL (IC_RIGHT (walk))->addrtaken))
++        return;
++    }
++  call = walk;
++  if (!call || call->op != CALL || call->seq < ic->seq || call->seq > ebp->lSeq)
++    return;
++  ftype = operandType (IC_LEFT (call));
++  if (!IS_FUNC (ftype) || FUNC_SDCCCALL (ftype) != 4)
++    return;
++
++  bitVectUnSetBit (OP_USES (source), def->key);
++  OP_USES (source) = bitVectSetBit (OP_USES (source), ic->key);
++  bitVectUnSetBit (OP_USES (temp), ic->key);
++  bitVectUnSetBit (OP_DEFS (temp), def->key);
++  OP_SYMBOL (source)->liveTo = max (OP_SYMBOL (source)->liveTo, call->seq);
++  ReplaceOpWithCheaperOp (&IC_LEFT (ic), source);
++  remiCodeFromeBBlock (ebp, def);
++  hTabDeleteItem (&iCodehTab, def->key, def, DELETE_ITEM, NULL);
++}
++
+ static void
+ packForPush (iCode * ic, eBBlock ** ebpp, int blockno)
+ {
+@@ -3542,6 +3607,8 @@
+         {
+           packForPush (ic, ebpp, blockno);
+         }
++      else if (ic->op == SEND)
++        packStackForNativeSend (ic, ebp);
+ 
+       /* pack registers for accumulator use, when the
+          result of an arithmetic or bit wise operation
+--- a/src/mcs251/gen_native.c.inc
++++ b/src/mcs251/gen_native.c.inc
+@@ -89,7 +89,11 @@
+       items[n] = s; dst[n] = aopArg (ftype, s->argreg);
+       aopOp (s->left, s, FALSE); src[n] = s->left->aop;
+       allregs &= src[n]->type == AOP_REG;
+-      regOrLiteral &= src[n]->type == AOP_REG || src[n]->type == AOP_LIT;
++      regOrLiteral &= src[n]->type == AOP_REG || src[n]->type == AOP_LIT ||
++                      (src[n]->type == AOP_MCS251_STK &&
++                       !src[n]->aop_is_volatile && !src[n]->aop_is_aggregate &&
++                       src[n]->size == dst[n]->size &&
++                       (src[n]->size == 1 || src[n]->size == 2 || src[n]->size == 4));
+       fixedSources &= src[n]->type == AOP_REG || src[n]->type == AOP_LIT ||
+                       src[n]->type == AOP_DIR ||
+                       (src[n]->type == AOP_DPTR && src[n]->aopu.aop_sym);
+@@ -101,7 +105,9 @@
+       for (int i = n; i-- > 0;) freeAsmop (items[i]->left, NULL, items[i], TRUE);
+       return true;
+     }
+-  /* 常量没有依赖源寄存器：先完成寄存器并行搬运，再写常量槽。 */
++  /* 先完成寄存器并行搬运，保护可能来自 A/B 的源值。原生参数槽为
++     R4..R7/R12..R15；标量 SPX 读取只用目标槽和 A，不破坏另一参数槽。
++     因此这里的常量/栈读取不需要再保存已经就位的参数；其它内存源保留快照。 */
+   if (regOrLiteral)
+     {
+       asmop *rsrc[2], *rdst[2]; int count = 0;
+@@ -109,7 +115,7 @@
+         if (src[i]->type == AOP_REG) {rsrc[count] = src[i]; rdst[count++] = dst[i];}
+       nativeParallelMove (rdst, rsrc, count);
+       for (int i = 0; i < n; ++i)
+-        if (src[i]->type == AOP_LIT) genMove (dst[i], src[i], true);
++        if (src[i]->type != AOP_REG) genMove (dst[i], src[i], true);
+       for (int i = n; i-- > 0;) freeAsmop (items[i]->left, NULL, items[i], TRUE);
+       return true;
+     }
+@@ -134,7 +140,7 @@
+     if (!captured[i])
+       {
+         aopOp (items[i]->left, items[i], FALSE);
+-        /* 固定符号/栈地址通过 A 和 DPTR 读取，两个 DR 槽互不相交。
++        /* 固定符号地址通过 A 和 DPTR 读取，两个 DR 槽互不相交。
+            所有寄存器源已保存，因此可直接填槽，避免内存值再次压栈。 */
+         if (fixedSources)
+           {

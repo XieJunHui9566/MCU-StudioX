@@ -19,7 +19,7 @@
         FontSize="22"
         FontWeight="SemiBold" />
       <TextBlock
-        Text="顶部编译生成 MCU 固件与 FPGA 位流。RTL 仿真在电脑执行 testbench，可观察时钟、总线和 X/Z；当前不包含 SDF 布局后延迟。"
+        Text="RTL 功能仿真 · 不含布局后时序"
         TextWrapping="Wrap"
         Foreground="{DynamicResource Muted}"
         Margin="0,8,0,12" />
@@ -226,7 +226,7 @@
       <TextBlock
         Grid.Row="1"
         x:Name="Summary"
-        Text="尚未运行。testbench 中可使用断言与 $fatal；VCD 由 IDE 自动记录。"
+        Text="尚未运行"
         TextWrapping="Wrap"
         Margin="0,0,0,8" />
       <ScrollViewer
@@ -239,7 +239,7 @@
       <TextBlock
         Grid.Row="3"
         x:Name="CursorText"
-        Text="点击定位，按住左键拖动时间光标；筛选结果最多显示 128 条。"
+        Text="尚未选择时间点"
         TextWrapping="Wrap"
         Margin="0,8,0,0" />
     </Grid>

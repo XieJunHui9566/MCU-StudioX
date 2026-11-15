@@ -1,0 +1,52 @@
+--- a/src/mcs251/wide_emit.c.inc
++++ b/src/mcs251/wide_emit.c.inc
+@@ -896,6 +896,38 @@
+   }
+ }
+ 
++/* ABI2 的参数和返回值使用相同物理字节。仅对无副作用、无转换的
++ * 单参数直通函数保留这些入口字节，避免先搬入宽寄存器再搬回。
++ * 不跨内存、调用、分支或栈帧；指针补位及限定类型继续走已有路径。 */
++static bool
++wide_ordinary_passthrough(wide_function *f)
++{
++  value *arg=FUNC_ARGS(currFunc->type);
++  sym_link *ret=currFunc->type->next;
++  int received=-1,returned=-1;
++  if(!f->ordinaryEntry || f->nv!=1 || f->received!=1 || f->no ||
++     f->frame || f->formalAddress || !arg || arg->next ||
++     !wide_type(arg->type) || !wide_type(ret) || IS_PTR(arg->type) ||
++     IS_PTR(ret) || getSize(arg->type)!=getSize(ret) ||
++     IS_FLOAT(arg->type)!=IS_FLOAT(ret))return false;
++  for(int i=0;i<f->nn;++i) {
++    wide_node *n=&f->nodes[i];
++    switch(n->op) {
++    case FUNCTION:case ENDFUNCTION:case LABEL:break;
++    case RECEIVE:
++      if(received>=0 || returned>=0 || n->origin->argreg!=1 ||
++         n->width!=getSize(arg->type))return false;
++      received=n->result;break;
++    case RETURN:
++      if(received<0 || returned>=0 || n->left.value!=received ||
++         n->width!=getSize(ret))return false;
++      returned=received;break;
++    default:return false;
++    }
++  }
++  return received>=0 && returned==received;
++}
++
+ static void
+ wide_emit(wide_function *f)
+ {
+@@ -904,6 +936,10 @@
+   for(int i=0;i<f->nv;++i)we(f,"; wide v%d %s width=%d reg=%d slot=%d edges=%016llx:%016llx\n",i,f->values[i].sym->name,f->values[i].width,f->values[i].reg,f->values[i].slot,(unsigned long long)f->values[i].edges.w[1],(unsigned long long)f->values[i].edges.w[0]);
+   for(int i=0;i<f->no;++i)we(f,"; wide object %s slot=%d size=%d\n",f->objects[i].sym->name,f->objects[i].slot,f->objects[i].size);
+   if(f->ordinaryEntry)we(f,"; wide ordinary ABI2 entry: first=DPL/DPH/B/A stack=physical\n");
++  if(wide_ordinary_passthrough(f)) {
++    we(f,"; wide ordinary ABI2 passthrough: entry bytes already match return\n\teret\n");
++    return;
++  }
+   if(f->frame)we(f,"\tadd\tspx,#%d\n",f->frame);
+   for(int i=0;i<f->nn;++i) {
+     wide_node *n=&f->nodes[i];

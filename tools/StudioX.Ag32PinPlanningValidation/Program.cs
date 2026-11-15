@@ -5,9 +5,15 @@ using StudioX.Engine;
 using StudioX.Foundation;
 using StudioX.Packages;
 
-if (args.Length < 3) { throw new ArgumentException("Expected toolset root, a new output directory, and the verified AGM pack manifest."); }
+if (args.Length < 3)
+{
+    throw new ArgumentException("Expected toolset root, a new output directory, and the verified AGM pack manifest.");
+}
 var output = Path.GetFullPath(args[1]);
-if (Directory.Exists(output)) { throw new IOException("Validation output must be new."); }
+if (Directory.Exists(output))
+{
+    throw new IOException("Validation output must be new.");
+}
 Directory.CreateDirectory(output);
 var pack = await JsonStore.ReadAsync<PackManifest>(Path.GetFullPath(args[2]));
 var device = pack.Devices.FirstOrDefault(item => item.Id == "AG32VF303CCT6") ?? pack.Devices.First();

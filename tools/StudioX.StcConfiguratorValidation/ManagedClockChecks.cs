@@ -138,7 +138,10 @@ internal static class ManagedClockChecks
             var missingIndex = await services.ProjectClocks.ReadAsync(project);
             check(missingIndex.Managed && !missingIndex.Ready, "missing template provenance never falls back to manual frequency");
         }
-        finally { File.Move(indexPath + ".fixture", indexPath); }
+        finally
+        {
+            File.Move(indexPath + ".fixture", indexPath);
+        }
         await services.GraphicalClockControl.ReleaseAsync(project);
         check(!(await services.ProjectClocks.ReadAsync(project)).Managed && (await services.StcIsp.LoadSettingsAsync(project)).ClockMode == StcClockMode.Preserve, "explicit detach unlocks manual mode without restoring obsolete frequency");
         await pluginManager.SetEnabledAsync(entry.Id, true);
@@ -156,7 +159,10 @@ internal static class ManagedClockChecks
         {
             await action();
         }
-        catch (StudioXException error) when (error.Code == code) { return; }
+        catch (StudioXException error) when (error.Code == code)
+        {
+            return;
+        }
         throw new InvalidOperationException("Expected rejection " + code);
     }
 }

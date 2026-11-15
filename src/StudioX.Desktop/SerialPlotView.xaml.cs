@@ -30,8 +30,18 @@ public partial class SerialPlotView : UserControl
         StopPicker.SelectedIndex = 0;
         FlowPicker.ItemsSource = new[] { new Choice<Handshake>(Handshake.None, "无"), new(Handshake.RequestToSend, "RTS / CTS"), new(Handshake.XOnXOff, "XON / XOFF"), new(Handshake.RequestToSendXOnXOff, "RTS/CTS + XON") };
         FlowPicker.SelectedIndex = 0;
-        Chart.ViewChanged += () => { FollowCheck.IsChecked = Chart.Follow; AutoYCheck.IsChecked = Chart.AutoY; };
-        refresh.Tick += (_, _) => { if (IsVisible && !shutdown) { RefreshView(); } };
+        Chart.ViewChanged += () =>
+        {
+            FollowCheck.IsChecked = Chart.Follow;
+            AutoYCheck.IsChecked = Chart.AutoY;
+        };
+        refresh.Tick += (_, _) =>
+        {
+            if (IsVisible && !shutdown)
+            {
+                RefreshView();
+            }
+        };
         refresh.Start();
     }
     public void Attach(SerialPlotService source)
@@ -67,7 +77,10 @@ public partial class SerialPlotView : UserControl
         {
             RefreshPorts();
         }
-        catch (Exception ex) { Error(ex); }
+        catch (Exception ex)
+        {
+            Error(ex);
+        }
     }
     private PlotPreferences ReadPreferences() => new(new(PortPicker.SelectedItem as string ?? "",
         int.Parse(BaudInput.Text, CultureInfo.InvariantCulture), (int)BitsPicker.SelectedItem,
@@ -107,8 +120,15 @@ public partial class SerialPlotView : UserControl
         {
             await action();
         }
-        catch (Exception ex) { Error(ex); }
-        finally { busy = false; RefreshView(); }
+        catch (Exception ex)
+        {
+            Error(ex);
+        }
+        finally
+        {
+            busy = false;
+            RefreshView();
+        }
     }
     private void Error(Exception ex)
     {
@@ -160,7 +180,11 @@ public partial class SerialPlotView : UserControl
                 var label = new TextBlock { Foreground = SerialPlotChart.ChannelBrushes[c], FontFamily = new FontFamily("Consolas"), MinWidth = 148 };
                 values.Add(label);
                 var check = new CheckBox { Content = label, IsChecked = Chart.VisibleChannels[c], Margin = new Thickness(0, 0, 12, 5) };
-                check.Click += (_, _) => { Chart.VisibleChannels[channel] = check.IsChecked == true; Chart.InvalidateVisual(); };
+                check.Click += (_, _) =>
+                {
+                    Chart.VisibleChannels[channel] = check.IsChecked == true;
+                    Chart.InvalidateVisual();
+                };
                 Legend.Children.Add(check);
             }
         }
@@ -205,7 +229,11 @@ public partial class SerialPlotView : UserControl
             return;
         }
         var snapshot = displayed;
-        operation = RunAsync(async () => { await SerialPlotService.ExportCsvAsync(dialog.FileName, snapshot); Notice.Text = $"已导出 {snapshot.Samples.Length:N0} 组数据：{dialog.FileName}"; });
+        operation = RunAsync(async () =>
+        {
+            await SerialPlotService.ExportCsvAsync(dialog.FileName, snapshot);
+            Notice.Text = $"已导出 {snapshot.Samples.Length:N0} 组数据：{dialog.FileName}";
+        });
     }
     internal bool HandlePlotMouseWheel(DependencyObject? hit, int delta, bool control)
     {

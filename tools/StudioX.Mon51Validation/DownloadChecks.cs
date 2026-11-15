@@ -47,7 +47,10 @@ internal static class DownloadChecks
                 await action();
                 throw new InvalidOperationException("Accepted: " + name);
             }
-            catch (StudioXException error) when (error.Code == code) { checks.Add(name); }
+            catch (StudioXException error) when (error.Code == code)
+            {
+                checks.Add(name);
+            }
         }
         await using var hub = new DeviceHub();
         var fixture = new Mon51OfflineTransport { AllowUserProgramDownload = true, UseMemoryImage = true, UserEraseReplyDelay = TimeSpan.FromSeconds(2.5) };
@@ -87,7 +90,9 @@ internal static class DownloadChecks
             await recovery.DownloadAndStartMon51Async("COM18", 115200, "IAP15F2K61S2", selected);
             throw new InvalidOperationException("Injected write failure accepted");
         }
-        catch (IOException) { }
+        catch (IOException)
+        {
+        }
         Check(!recovery.IsActive && recovery.MonitorSession is null && !failed.Running &&
             !failed.Commands.Any(command => command.SequenceEqual(new byte[] { 8, 0 })), "uncertain program write releases ownership without resuming incomplete firmware");
         Check(Directory.GetFiles(Path.Combine(recoveryData, "debug", "mon51-download-recovery")).Length == 1,

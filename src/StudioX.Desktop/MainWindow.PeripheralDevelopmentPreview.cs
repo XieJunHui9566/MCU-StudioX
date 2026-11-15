@@ -95,7 +95,10 @@ public partial class MainWindow
             await UndoPeripheralAdditionAsync(CancellationToken.None);
             throw new InvalidOperationException("expected guarded undo");
         }
-        catch (StudioXException ex) when (ex.Code == "PERIPHERAL_UNDO_STALE") { Check(cmakeEditor.Buffer.Text == editedCMake && SourceEditor.Text == addition.Files[0].After, "whole undo preserves later CMake edits and source"); }
+        catch (StudioXException ex) when (ex.Code == "PERIPHERAL_UNDO_STALE")
+        {
+            Check(cmakeEditor.Buffer.Text == editedCMake && SourceEditor.Text == addition.Files[0].After, "whole undo preserves later CMake edits and source");
+        }
         cmakeEditor.Buffer.UndoStack.Undo();
         await UndoPeripheralAdditionAsync(CancellationToken.None);
         cmakeEditor.Buffer.Insert(cmakeEditor.Buffer.TextLength, "# before addition unsaved\r\n");
@@ -116,7 +119,10 @@ public partial class MainWindow
             await ApplyPeripheralAdditionAsync(target, addition, CancellationToken.None);
             throw new InvalidOperationException("expected stale CMake rejection");
         }
-        catch (StudioXException ex) when (ex.Code == "PERIPHERAL_ADDITION_STALE") { Check(SourceEditor.Text == original && cmakeEditor.Buffer.Text.EndsWith("# stale preview\r\n", StringComparison.Ordinal), "stale dependency preview prevents partial source insertion"); }
+        catch (StudioXException ex) when (ex.Code == "PERIPHERAL_ADDITION_STALE")
+        {
+            Check(SourceEditor.Text == original && cmakeEditor.Buffer.Text.EndsWith("# stale preview\r\n", StringComparison.Ordinal), "stale dependency preview prevents partial source insertion");
+        }
         cmakeEditor.Buffer.UndoStack.Undo();
         component = await services.PeripheralDevelopment.ReadComponentAsync(context, "main/ui.c", CaptureWorkspaceBuffers());
         addition = services.PeripheralDevelopment.PrepareAddition(context, component, gpio);
@@ -133,7 +139,10 @@ public partial class MainWindow
             Check(SourceEditor.Text == original && cmakeEditor.Buffer.Text == originalCMake &&
                 ex.ToString().Contains("injected CMake edit event failure", StringComparison.Ordinal), "edit event failure rolls both buffers back and preserves raw diagnostics");
         }
-        finally { cmakeEditor.Buffer.TextChanged -= failEdit; }
+        finally
+        {
+            cmakeEditor.Buffer.TextChanged -= failEdit;
+        }
         var unsupported = new PeripheralDevelopmentWindow(services.PeripheralDevelopment, context, true, Log, null, "组件依赖使用了变量，请核对注册入口");
         unsupported.Fields["pin"].Text = "1";
         Check(unsupported.PreviewResult is not null && !unsupported.Insert.IsEnabled && unsupported.StatusLine.Text.Contains("变量", StringComparison.Ordinal), "unsupported CMake remains copyable but cannot partially apply code");
@@ -170,7 +179,9 @@ public partial class MainWindow
         }
         async Task Settle()
         {
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ContextIdle);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.ContextIdle);
             UpdateLayout();
         }
     }

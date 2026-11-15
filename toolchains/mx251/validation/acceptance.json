@@ -1,0 +1,291 @@
+{
+  "schema": 2,
+  "version": "MX251 V0.0129",
+  "status": "development-not-LST",
+  "scope": "Development: conservative unsigned integer scheduling compared outside the full previous selector; exact ABI and legacy fallback retained. Fourteen changed calls/callback images and both original firmware restorations independently raw-reviewed. Not installed, not LST.",
+  "compilerSha256": "e71f231ba2397b3eb206b05326f429f4f4d8474b45818a16b264756db6045756",
+  "baseline": "V0.0128 fixed projects; 14 changed calls/callback images reviewed across both modes; 22 unchanged images retain identical-parent scope.",
+  "cases": [
+    {
+      "id": "math-software",
+      "project": "stc32g-math",
+      "overrides": {
+        "runtime": "native-math"
+      },
+      "codeBytes": 17233,
+      "firmwareSha256": "a82add3f882a996243e861aeb1303b3e9dbc8118154f5f103c2b2dc25bf775d5",
+      "profile": "STC32G12K128"
+    },
+    {
+      "id": "math-mdu32",
+      "project": "stc32g-math",
+      "overrides": {
+        "runtime": "native-math-mdu32"
+      },
+      "codeBytes": 16869,
+      "firmwareSha256": "1061f401338d13160075f1ec00c9d122babafb460d3c5a200d48045aa99ebef0",
+      "profile": "STC32G12K128"
+    },
+    {
+      "id": "math-wide-off",
+      "project": "stc32g-math",
+      "overrides": {
+        "runtime": "native-math",
+        "backend": "legacy"
+      },
+      "codeBytes": 17525,
+      "firmwareSha256": "4ed14512a6d23fe473078f0caa7f6a6f3ee0cc84a235b3daaa1c400787668b9b",
+      "profile": "STC32G12K128"
+    },
+    {
+      "id": "integer-small",
+      "project": "stc32g-native-usb",
+      "overrides": {
+        "model": "small"
+      },
+      "codeBytes": 12295,
+      "firmwareSha256": "3d07af27b541704236f20d6a9185272c5376a5771936b9d1307e8d2ae9261e2f",
+      "profile": "STC32G12K128"
+    },
+    {
+      "id": "integer-large",
+      "project": "stc32g-native-usb",
+      "overrides": {
+        "model": "large"
+      },
+      "codeBytes": 12749,
+      "firmwareSha256": "466c975a9b75d7ecfbde75d7867ba220d535731cb42c49ebfec9cc8b3adaaea1",
+      "profile": "STC32G12K128"
+    },
+    {
+      "id": "calls-large",
+      "project": "stc32g-calls",
+      "overrides": {
+        "model": "large",
+        "defines": [
+          "CALL_MODEL=1"
+        ]
+      },
+      "codeBytes": 19251,
+      "firmwareSha256": "ce92f5f0b0c53a45a597ba5085c58ee69e7c79003a80ad8cae642d5563fd220d",
+      "profile": "STC32G12K128"
+    },
+    {
+      "id": "calls-small",
+      "project": "stc32g-calls",
+      "overrides": {
+        "model": "small",
+        "defines": [
+          "CALL_MODEL=0"
+        ]
+      },
+      "codeBytes": 18615,
+      "firmwareSha256": "ed212c9d442cbb009c0147355f8c60940a440978c40cae89d0eeff9f99aefd65",
+      "profile": "STC32G12K128"
+    },
+    {
+      "id": "callbacks-small",
+      "project": "stc32g-callbacks",
+      "overrides": {
+        "model": "small",
+        "defines": [
+          "CALL_MODEL=0"
+        ]
+      },
+      "codeBytes": 22657,
+      "firmwareSha256": "647b71dadc6eafe1f2a68f39af5a1cedf49f078cffe66dc3920518652209ee42",
+      "profile": "STC32G12K128"
+    },
+    {
+      "id": "callbacks-large",
+      "project": "stc32g-callbacks",
+      "overrides": {
+        "model": "large",
+        "defines": [
+          "CALL_MODEL=1"
+        ]
+      },
+      "codeBytes": 24579,
+      "firmwareSha256": "b30fceeddadf5ba641928b5a9d9829574712ae6c82d1a982fb0512929142e1c8",
+      "profile": "STC32G12K128"
+    },
+    {
+      "id": "ai-callbacks-small",
+      "project": "ai8051u-callbacks",
+      "profile": "AI8051U-34K64-32",
+      "overrides": {
+        "model": "small",
+        "defines": [
+          "CALL_MODEL=0"
+        ]
+      },
+      "codeBytes": 19800,
+      "firmwareSha256": "50656b2c43ebe1189b6d723740320793a256c9245892f541227e8002d758da62"
+    },
+    {
+      "id": "ai-callbacks-large",
+      "project": "ai8051u-callbacks",
+      "profile": "AI8051U-34K64-32",
+      "overrides": {
+        "model": "large",
+        "defines": [
+          "CALL_MODEL=1"
+        ]
+      },
+      "codeBytes": 21635,
+      "firmwareSha256": "23e358672b133b0ecbfa171fc0f9031dee6d4724755292dae8bd9fa9632b9863"
+    },
+    {
+      "id": "reject-large-native-math",
+      "project": "stc32g-math",
+      "overrides": {
+        "runtime": "native-math",
+        "model": "large"
+      },
+      "diagnostic": "Native runtime is qualified only for small stack-auto",
+      "profile": "STC32G12K128"
+    },
+    {
+      "id": "reject-mixed-math-abi",
+      "project": "stc32g-math",
+      "overrides": {
+        "runtime": "native-math",
+        "explicitAbi": true
+      },
+      "diagnostic": "Native math entry currently qualifies the fixed ordinary ABI full-math project only",
+      "profile": "STC32G12K128"
+    },
+    {
+      "id": "reject-unqualified-target",
+      "project": "stc32g-native-usb",
+      "overrides": {
+        "target": "AI8051U-34K64"
+      },
+      "diagnostic": "Unsupported target: AI8051U-34K64",
+      "profile": "STC32G12K128"
+    },
+    {
+      "id": "reject-stc-with-ai-profile",
+      "project": "stc32g-callbacks",
+      "profile": "AI8051U-34K64-32",
+      "overrides": {},
+      "diagnostic": "Target profile mismatch"
+    },
+    {
+      "id": "reject-ai-with-stc-profile",
+      "project": "ai8051u-callbacks",
+      "profile": "STC32G12K128",
+      "overrides": {},
+      "diagnostic": "Target profile mismatch"
+    },
+    {
+      "id": "reject-ai-large-native-math",
+      "project": "ai8051u-callbacks",
+      "profile": "AI8051U-34K64-32",
+      "overrides": {
+        "model": "large",
+        "runtime": "native-math-wide"
+      },
+      "diagnostic": "Native runtime is qualified only for small stack-auto"
+    },
+    {
+      "id": "ai-fixed-mcu",
+      "project": "ai8051u-fixed/mcu",
+      "profile": "AI8051U-34K64-32",
+      "overrides": {},
+      "codeBytes": 5637,
+      "firmwareSha256": "35a5e7b15af88c54a29c3da393fdee3a747b171a876288f1f3bb0a6825f83a06"
+    },
+    {
+      "id": "ai-fixed-protocol",
+      "project": "ai8051u-fixed/protocol",
+      "profile": "AI8051U-34K64-32",
+      "overrides": {},
+      "codeBytes": 21435,
+      "firmwareSha256": "cfd316902e0208db2e66061e9ac215b22be8793d3075a550431eea2a6e6e223b"
+    },
+    {
+      "id": "ai-fixed-calls",
+      "project": "ai8051u-fixed/calls",
+      "profile": "AI8051U-34K64-32",
+      "overrides": {},
+      "codeBytes": 9866,
+      "firmwareSha256": "95a643f7d2380e0921be3942a37296682e50ddef7b6d69371e49c3fdfc9e1a72"
+    },
+    {
+      "id": "ai-fixed-math-software",
+      "project": "ai8051u-fixed/math",
+      "profile": "AI8051U-34K64-32",
+      "overrides": {},
+      "codeBytes": 12195,
+      "firmwareSha256": "1739e51b19aa86a1a122756c0baffe280761aa820d99334d3007c028b2c83daf"
+    },
+    {
+      "id": "ai-fixed-math-mdu",
+      "project": "ai8051u-fixed/math",
+      "profile": "AI8051U-34K64-32",
+      "overrides": {
+        "runtime": "native-math-wide-mdu32"
+      },
+      "codeBytes": 11929,
+      "firmwareSha256": "6d7ac7116b0a23496b0d7ae06f8f24d04e5916eafaaa1d2fb9af6cb533b9a0b6"
+    },
+    {
+      "id": "ai-fixed-integer-small",
+      "project": "ai8051u-fixed/integer",
+      "profile": "AI8051U-34K64-32",
+      "overrides": {},
+      "codeBytes": 9261,
+      "firmwareSha256": "25a7744a8a2c38ea899c8eeb891b7dc5bd9507ae2386c3c055ab9073b9fc5199"
+    },
+    {
+      "id": "ai-fixed-integer-large",
+      "project": "ai8051u-fixed/integer",
+      "profile": "AI8051U-34K64-32",
+      "overrides": {
+        "model": "large"
+      },
+      "codeBytes": 9300,
+      "firmwareSha256": "8be7ef5ea88d2293edd1a68e4a1c44795fabcf27dcf4600377b0ee162f1f26b3"
+    }
+  ],
+  "evidence": {
+    "hardwareNotRepeatedByThisRunner": true,
+    "math": "V0.0110 software and MDU32: 123 results each, three timing samples each. Same HEX in V0.0111; not all IEEE754 boundaries.",
+    "integer": "V0.0103 small/large initialization, Timer0, 6400 integer checks; V0.0110 restored small verified again. Same HEX in V0.0111.",
+    "wideOff": "Offline comparison only; do not attribute software-wide hardware measurements to wide-off.",
+    "flashReadback": "No full Flash readback qualification. Download ACK and runtime reports are separate evidence.",
+    "calls": "V0.0113 STC32G small/large: unchanged R84 128 pairs x 10 functions x two ABIs, 60 timing samples/model, Timer0 invoking both ABIs. Full raw ISP/USB evidence retained; no Flash readback.",
+    "callbacks": "V0.0115 both devices small/large: 2560 results + six edges + Timer0 per config. V0.0116 rebuilds exact same HEX; prior runtime evidence inherited, not new hardware runs.",
+    "v128Protocol": "Four parent/candidate x OFF/ON AI8051U images raw-reviewed: each 512 ordinary fields plus nine timed digests; the changed stack argument path is covered by timed digests only. Original math restored, lease released; no Flash readback. Other 34 HEX entries inherit identical-parent scope only.",
+    "v129IntegerScheduling": "Both modes: 8 STC32G and 6 AI8051U changed images independently raw-reviewed, with original integer Timer0 and math restored and leases released. No Flash readback. Historical same-HEX three-sample baselines limit timing claims. Native ON PUSH/POP each +4; indirect callback route has no demonstrated improvement. Other 22 images inherit identical-parent scope only."
+  },
+  "notQualified": [
+    "general large native math",
+    "all C language and IEEE754 inputs",
+    "all nested ISR and full Flash layouts",
+    "TFPU",
+    "arbitrary CMake and external or environment inputs",
+    "incremental per-object compilation",
+    "forced-process-kill recovery",
+    "new developer profile installed in IDE"
+  ],
+  "installedIde": {
+    "toolset": "studiox.mx251",
+    "version": "0.1.89",
+    "target": "AI8051U-34K64",
+    "separateFromDeveloperProfile": true
+  },
+  "profiles": {
+    "STC32G12K128": {
+      "profileLockSha256": "1713909967c865f921328dd80e9df88cf9be0e70bb093ce69ec72b8db7bb6109",
+      "compilerSha256": "e71f231ba2397b3eb206b05326f429f4f4d8474b45818a16b264756db6045756"
+    },
+    "AI8051U-34K64-32": {
+      "profileLockSha256": "9d96ace92b828e59968e75297172027e46b8c6983700a39e243016c25fb9e8d9",
+      "compilerSha256": "e71f231ba2397b3eb206b05326f429f4f4d8474b45818a16b264756db6045756"
+    }
+  },
+  "targetContractsSha256": "fcb37b8b9b87f1d76ac7e62ba09e9096d4de343ae6f9c87de59e73c6fc3030ec",
+  "leafCallFeedback": false
+}

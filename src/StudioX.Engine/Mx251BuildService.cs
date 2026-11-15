@@ -9,13 +9,21 @@ using StudioX.Foundation;
 /// <summary>复用所选 SDK 或历史组件的构建入口；IDE 不复制编译器参数规则。</summary>
 internal static class Mx251BuildService
 {
-    internal static void Invalidate(string root)
+    internal static void Invalidate(string root, bool internalOutputs = true)
     {
+        if (internalOutputs)
+        {
+            Mx251BuildCache.Forget(root);
+        }
         // 构建前置校验也可能失败；公共路径和内部 latest 都不得留下可误选的旧固件或成功凭据。
         foreach (var relative in new[] { BuildReceipt.RelativePath, BuildMemoryService.SnapshotPath, Mx251BuildStorage.Firmware,
             ".build/firmware.bin", ".build/mx251/latest/firmware.bin", ".build/mx251/latest/linked.partial.hex",
             ".build/mx251/latest/firmware.hex", ".build/mx251/latest/receipt.json" })
         {
+            if (!internalOutputs && relative.StartsWith(".build/mx251/latest/", StringComparison.Ordinal))
+            {
+                continue;
+            }
             var file = PathBoundary.Resolve(root, relative);
             if (File.Exists(file))
             {
@@ -25,7 +33,8 @@ internal static class Mx251BuildService
     }
 
     internal static async Task<BuildReport> ExecuteAsync(string root, ProjectManifest project, ResolvedToolset tools,
-        IProgress<string>? output, CancellationToken token, ResolvedToolset? buildTools = null, bool configureOnly = false, string? outputLease = null)
+        IProgress<string>? output, CancellationToken token, ResolvedToolset? buildTools = null, bool configureOnly = false, string? outputLease = null,
+        IProgress<string>? progress = null)
     {
         Mx251Profile.ValidateTools(tools);
         var qualified = Mx251SdkProfile.Matches(project);
@@ -74,6 +83,13 @@ internal static class Mx251BuildService
         environment["PSModulePath"] = Path.Combine(Path.GetDirectoryName(tools.Tool("pwsh"))!, "Modules");
         var firmware = Path.Combine(run, "firmware.hex");
         var published = false;
+        string? inputKey = null;
+        var reused = false;
+        using var verifiedTools = qualified && tools.VerifiedFiles is not null ? new Mx251VerifiedTools(root, tools) : null;
+        if (verifiedTools is not null)
+        {
+            environment[Mx251VerifiedTools.EnvironmentKey] = verifiedTools.Path;
+        }
         try
         {
             // 新组件自带独立入口；IDE 只传路径与生命周期租约，不覆盖工具链内部规则。
@@ -85,6 +101,7 @@ internal static class Mx251BuildService
                 {
                     throw new StudioXException("MX251_CMAKE_TOOLS", "此工程需要显式锁定的 CMake + Ninja 构建组件，请检查工程开发环境组件声明。");
                 }
+                progress?.Report("配置 MX251 工程");
                 var configured = await new ProcessRunner().RunAsync(Mx251CMake.Configure(root, support, tools, buildTools, environment, output, project), token);
                 log.AppendLine(configured.StandardOutput);
                 log.AppendLine(configured.StandardError);
@@ -94,6 +111,12 @@ internal static class Mx251BuildService
                 }
                 command = new(buildTools.Tool("cmake"), ["--build", PathBoundary.Resolve(root, ".build/mx251-cmake"), "--target", "firmware"],
                     root, TimeSpan.FromMinutes(15), environment, RemoveEnvironment: ToolsetEnvironment.AmbientVariables, Output: output, ContainProcessTree: qualified);
+                if (qualified)
+                {
+                    progress?.Report("检查 MX251 构建输入");
+                    inputKey = await Mx251BuildCache.InputsAsync(root, project, sourceStamp, tools, buildTools, token);
+                    reused = await Mx251BuildCache.TryReuseAsync(root, inputKey, token);
+                }
             }
             else
             {
@@ -105,11 +128,13 @@ internal static class Mx251BuildService
                     "-Project", configuration, "-ToolchainRoot", tools.ResourceDirectory("sdcc"), "-ProfileRoot", tools.ResourceDirectory("profile"),
                     "-OutputDirectory", run], root, TimeSpan.FromMinutes(15), environment, RemoveEnvironment: ToolsetEnvironment.AmbientVariables, Output: output);
             }
-            var result = await new ProcessRunner().RunAsync(command, token);
+            progress?.Report(reused ? "工程未变化，复用本次启动的构建产物" : "编译 MX251 固件");
+            var result = reused ? new ProcessResult(0, "MX251: inputs unchanged; reusing completed build.\n", "", false, false)
+                : await new ProcessRunner().RunAsync(command, token);
             log.AppendLine(result.StandardOutput);
             log.AppendLine(result.StandardError);
             // 原入口为每个进程保存原始诊断；同时汇入 IDE 输出，让用户可直接定位第一个编译错误。
-            if (Directory.Exists(run))
+            if (!reused && Directory.Exists(run))
             {
                 foreach (var file in Directory.EnumerateFiles(run, "*.log").Order(StringComparer.Ordinal))
                 {
@@ -120,6 +145,11 @@ internal static class Mx251BuildService
                     }
                     var diagnostic = Path.GetFileName(file) + Environment.NewLine + text;
                     log.AppendLine(diagnostic);
+                    // 实时进度已经显示过；结束时不回放旧阶段覆盖当前进度。
+                    if (Path.GetFileName(file) == "build.stdout.log")
+                    {
+                        continue;
+                    }
                     output?.Report(diagnostic);
                 }
             }
@@ -127,6 +157,7 @@ internal static class Mx251BuildService
             {
                 return new(false, log.ToString(), [], logPath, result.ExitCode, result.TimedOut);
             }
+            progress?.Report("检查 MX251 构建产物");
             Mx251NakedDiagnostics.Validate(run);
             using var receipt = JsonDocument.Parse(await File.ReadAllTextAsync(Path.Combine(run, "receipt.json"), token));
             using var image = File.OpenRead(firmware);
@@ -158,6 +189,10 @@ internal static class Mx251BuildService
             if (qualified)
             {
                 File.Copy(Path.Combine(run, "firmware.bin"), PathBoundary.Resolve(root, ".build/firmware.bin"), overwrite: true);
+            }
+            if (inputKey is not null && !reused)
+            {
+                await Mx251BuildCache.RememberAsync(root, inputKey, token);
             }
             published = true;
             var message = "固件输出：" + publicFirmware;

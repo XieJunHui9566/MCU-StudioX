@@ -39,7 +39,10 @@ internal static class RepositoryChecks
             {
                 DisplayVersion = invalid
             });
-            await checks.RejectAsync(async () => { _ = await PluginManifest.ReadAsync(manifestPath); }, "invalid display version rejected", "PLUGIN_MANIFEST");
+            await checks.RejectAsync(async () =>
+            {
+                _ = await PluginManifest.ReadAsync(manifestPath);
+            }, "invalid display version rejected", "PLUGIN_MANIFEST");
         }
         await JsonStore.WriteAsync(manifestPath, manifest with
         {
@@ -65,7 +68,10 @@ internal static class RepositoryChecks
         }
         _ = await repository.ImportAsync(upgrade);
         checks.Check((await repository.ListAsync()).Single().Manifest.Version == "1.1.0", "new version atomically replaces catalog");
-        await checks.RejectAsync(async () => { _ = await repository.ImportAsync(archive); }, "downgrade rejected", "PLUGIN_DOWNGRADE");
+        await checks.RejectAsync(async () =>
+        {
+            _ = await repository.ImportAsync(archive);
+        }, "downgrade rejected", "PLUGIN_DOWNGRADE");
         await JsonStore.WriteAsync(manifestPath, manifest with
         {
             Version = "1.1.0",
@@ -73,13 +79,22 @@ internal static class RepositoryChecks
         });
         var conflict = Path.Combine(scratch, "conflict.studioxplugin");
         await PluginRepository.PackAsync(source, conflict);
-        await checks.RejectAsync(async () => { _ = await repository.ImportAsync(conflict); }, "same version content conflict rejected", "PLUGIN_VERSION_CONFLICT");
+        await checks.RejectAsync(async () =>
+        {
+            _ = await repository.ImportAsync(conflict);
+        }, "same version content conflict rejected", "PLUGIN_VERSION_CONFLICT");
 
         var traversal = await SmallArchiveAsync(scratch, "traversal", [("plugin.json", "{}"), ("../escaped.txt", "escape")]);
-        await checks.RejectAsync(async () => { _ = await repository.ImportAsync(traversal); }, "ZIP traversal rejected", "PATH_UNSAFE", "PATH_ESCAPE");
+        await checks.RejectAsync(async () =>
+        {
+            _ = await repository.ImportAsync(traversal);
+        }, "ZIP traversal rejected", "PATH_UNSAFE", "PATH_ESCAPE");
         checks.Check(!File.Exists(Path.Combine(scratch, "escaped.txt")), "traversal creates no external file");
         var duplicate = await SmallArchiveAsync(scratch, "duplicate", [("plugin.json", "{}"), ("PLUGIN.JSON", "{}")]);
-        await checks.RejectAsync(async () => { _ = await repository.ImportAsync(duplicate); }, "case duplicate ZIP path rejected", "PLUGIN_ARCHIVE");
+        await checks.RejectAsync(async () =>
+        {
+            _ = await repository.ImportAsync(duplicate);
+        }, "case duplicate ZIP path rejected", "PLUGIN_ARCHIVE");
 
         var tampered = Path.Combine(scratch, "tampered.studioxplugin");
         await using (var output = File.Create(tampered))
@@ -111,7 +126,10 @@ internal static class RepositoryChecks
                 }
             }
         }
-        await checks.RejectAsync(async () => { _ = await repository.ImportAsync(tampered); }, "modified archive content fails SHA-256", "PLUGIN_HASH");
+        await checks.RejectAsync(async () =>
+        {
+            _ = await repository.ImportAsync(tampered);
+        }, "modified archive content fails SHA-256", "PLUGIN_HASH");
         var linked = Path.Combine(scratch, "linked.studioxplugin");
         await using (var stream = File.Create(linked))
         {
@@ -130,7 +148,10 @@ internal static class RepositoryChecks
                 await target.WriteAsync("outside.dll"u8.ToArray());
             }
         }
-        await checks.RejectAsync(async () => { _ = await repository.ImportAsync(linked); }, "ZIP Unix symbolic link rejected", "PLUGIN_ARCHIVE");
+        await checks.RejectAsync(async () =>
+        {
+            _ = await repository.ImportAsync(linked);
+        }, "ZIP Unix symbolic link rejected", "PLUGIN_ARCHIVE");
         var bomb = Path.Combine(scratch, "compressed.studioxplugin");
         await using (var stream = File.Create(bomb))
         {
@@ -148,7 +169,10 @@ internal static class RepositoryChecks
                 }
             }
         }
-        await checks.RejectAsync(async () => { _ = await repository.ImportAsync(bomb); }, "excessive ZIP compression ratio rejected", "PLUGIN_LIMIT");
+        await checks.RejectAsync(async () =>
+        {
+            _ = await repository.ImportAsync(bomb);
+        }, "excessive ZIP compression ratio rejected", "PLUGIN_LIMIT");
         await repository.UninstallAsync(manifest.Id);
         checks.Check((await repository.ListAsync()).Count == 0, "uninstall removes only managed plugin directory");
     }

@@ -143,11 +143,14 @@ public partial class MainWindow
         }
         SaveStcHardwareButton.IsEnabled = (IsStcSdccProject && loadedStcIspSettings is not null || IsMx251Project && loadedMx251Isp is not null) && !projectActionsBusy && !services.Debugger.IsActive;
         StcHardwareHelp.Text = IsMx251Project
-            ? "此 32 位器件目前可设置 IRC 频率和固定运行模式。其它硬件选项暂不支持修改，下载时使用已核对的配置。"
-            : usb ? "USB 可设置复位脚、振荡器增益、上电延时、低压检测、看门狗、下次 EEPROM 擦除及下载引脚条件。只有明确选择的字段会覆盖本次实机值；关闭修改开关时仅保留草稿。时钟当前支持保留 / RC 24 MHz。"
-            : "关闭上方开关时，下方选择仅保存为草稿。启用后，只有明确选择的字段会覆盖本次握手读到的值；保存不会访问芯片。低压档位使用协议编号，电压依准确型号手册。Mon51 监控自动制作保留当前硬件选项。";
-        StcHardwareUnavailable.Text = (usb ? "USB 暂未支持串口引脚重映射、UART2 模式、PWM 上电模式、复位输出电平及其它 RC 频率。" : "") +
-            "暂不支持的 STC-ISP 选项：快速下载开关、RS485 等待时间、程序尾追加调节参数、此次 EEPROM 全部填 FF、Flash 空白区填充值及 EEPROM 分区。EEPROM 擦除开关表示芯片下次下载策略，不承诺此次 EEPROM 保留或填充。";
+            ? "支持 IRC 频率与固定运行模式"
+            : "关闭修改时仅保留草稿；启用后只写入已选字段。";
+        StcHardwareHelp.ToolTip = IsMx251Project ? null : usb
+            ? "时钟支持保留当前值或 RC 24 MHz。"
+            : "低压检测档位对应的电压请查阅准确型号手册；制作 Mon51 监控时保留硬件选项。";
+        StcHardwareUnavailable.Text = IsMx251Project ? "其它硬件选项暂不支持" : "EEPROM 擦除选项用于下次下载；未列出的硬件选项暂不支持。";
+        StcHardwareUnavailable.ToolTip = IsMx251Project ? null : (usb ? "USB 未支持串口引脚重映射、UART2、PWM 上电模式、复位输出电平及其它 RC 频率。" : "") +
+            "暂不支持快速下载开关、RS485 等待时间、程序尾调节参数、EEPROM 填 FF、Flash 空白区填充及 EEPROM 分区。";
     }
 
     private async void SaveStcDownloadPage_Click(object sender, RoutedEventArgs e) => await RunAsync(async token =>

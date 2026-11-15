@@ -73,7 +73,10 @@ public sealed class DeviceSession : IAsyncDisposable
             ObjectDisposedException.ThrowIf(disposed != 0, this);
             await transport.SendAsync(bytes, linked.Token);
         }
-        finally { sendGate.Release(); }
+        finally
+        {
+            sendGate.Release();
+        }
     }
     private async Task PumpAsync()
     {
@@ -93,8 +96,13 @@ public sealed class DeviceSession : IAsyncDisposable
                 }
             }
         }
-        catch (OperationCanceledException) when (lifetime.IsCancellationRequested) { }
-        catch (Exception ex) { error = ex; }
+        catch (OperationCanceledException) when (lifetime.IsCancellationRequested)
+        {
+        }
+        catch (Exception ex)
+        {
+            error = ex;
+        }
         finally
         {
             lock (sync)
@@ -121,6 +129,11 @@ public sealed class DeviceSession : IAsyncDisposable
         {
             await transport.DisposeAsync();
         }
-        finally { sendGate.Release(); released(this); lifetime.Dispose(); }
+        finally
+        {
+            sendGate.Release();
+            released(this);
+            lifetime.Dispose();
+        }
     }
 }

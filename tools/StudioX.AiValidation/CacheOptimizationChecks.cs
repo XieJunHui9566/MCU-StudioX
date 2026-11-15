@@ -15,6 +15,8 @@ internal static class CacheOptimizationChecks
         await using var session = await StudioXMcpSession.CreateAsync(
             new StudioXMcpTools(services, project, new DenyStudioXMcpAuthorizer()));
 
+        await CacheContinuationChecks.RunAsync(project, services, session, check);
+
         var historicalProtocol = new List<AiChatMessage> { new("user", "检查上一次工程状态") };
         for (var index = 0; index < 9; index++)
         {
@@ -33,7 +35,7 @@ internal static class CacheOptimizationChecks
         var frozenHistory = JsonSerializer.Serialize(workload.Requests[0].Messages.Skip(2)
             .Take(historicalProtocol.Count).ToArray());
         check(workload.Requests.Count == PrefixTransport.Batches + 1 &&
-              workload.Requests.All(request => request.Messages.Count <= 128 &&
+              workload.Requests.All(request => request.Messages.Count <= 512 &&
                   request.Messages[0].Content == workload.Requests[0].Messages[0].Content &&
                   request.Messages[1].StudioXKind == "skill-catalog" &&
                   request.Messages[1].Content == workload.Requests[0].Messages[1].Content &&
@@ -94,7 +96,10 @@ internal static class CacheOptimizationChecks
         {
             _ = await brokenAgent.SendAsync(project, "可取消任务", steering: abandoned);
         }
-        catch (InvalidOperationException) { failed = true; }
+        catch (InvalidOperationException)
+        {
+            failed = true;
+        }
         check(failed && !abandoned.IsAccepting &&
               abandoned.DrainPending().SequenceEqual(["未消费的提示仍在队列"]),
             "accepted but unconsumed guidance remains recoverable after transport failure");
@@ -102,7 +107,7 @@ internal static class CacheOptimizationChecks
 
     private sealed class PrefixTransport : IAiAgentTransport
     {
-        public const int Batches = 30;
+        public const int Batches = 60;
         public List<AiChatRequest> Requests { get; } = [];
 
         public Task<AiChatResponse> CompleteAsync(AiSettings settings, AiChatRequest request,

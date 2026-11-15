@@ -5,10 +5,16 @@ using StudioX.Application.Editing;
 using StudioX.Engine;
 using StudioX.Foundation;
 
-if (args.Length != 2) { throw new ArgumentException("fixture directory, NEW report directory required"); }
+if (args.Length != 2)
+{
+    throw new ArgumentException("fixture directory, NEW report directory required");
+}
 var fixture = Path.GetFullPath(args[0]);
 var report = Path.GetFullPath(args[1]);
-if (Directory.Exists(report)) { throw new IOException("Use a new report directory."); }
+if (Directory.Exists(report))
+{
+    throw new IOException("Use a new report directory.");
+}
 Directory.CreateDirectory(report);
 if (!Directory.Exists(fixture))
 {
@@ -70,14 +76,20 @@ using (var stop = new CancellationTokenSource())
         await index.SearchAsync("source", stop.Token);
         throw new InvalidOperationException("Expected cancellation");
     }
-    catch (OperationCanceledException) { Check(true, "stale query cancellation is observed"); }
+    catch (OperationCanceledException)
+    {
+        Check(true, "stale query cancellation is observed");
+    }
     Check((await index.SearchAsync("source5999")).Count == 1, "cancelled query does not cancel the shared snapshot");
     try
     {
         await discovery.CreateIndexAsync(fixture, stop.Token);
         throw new InvalidOperationException("Expected cancellation");
     }
-    catch (OperationCanceledException) { Check(true, "cancelled discovery cannot return a partial index"); }
+    catch (OperationCanceledException)
+    {
+        Check(true, "cancelled discovery cannot return a partial index");
+    }
 }
 using (var stop = new CancellationTokenSource())
 {
@@ -90,7 +102,10 @@ using (var stop = new CancellationTokenSource())
             entries.MoveNext();
             throw new InvalidOperationException("Expected cancellation");
         }
-        catch (OperationCanceledException) { Check(true, "in-progress wide-directory enumeration cancels between entries"); }
+        catch (OperationCanceledException)
+        {
+            Check(true, "in-progress wide-directory enumeration cancels between entries");
+        }
     }
 }
 var fresh = Path.Combine(fixture, "src", "new-external-file.c");
@@ -100,7 +115,10 @@ try
     Check((await index.SearchAsync("new-external")).Count == 0, "current picker snapshot remains immutable");
     Check((await (await discovery.CreateIndexAsync(fixture)).SearchAsync("new-external")).Count == 1, "new picker discovers external additions");
 }
-finally { File.Delete(fresh); }
+finally
+{
+    File.Delete(fresh);
+}
 Check((await new ProjectFileService().ListAsync(fixture, "src")).Count == 6000, "sorted asynchronous tree listing keeps all source entries");
 foreach (var excluded in new[] { ".build", "node_modules", "cmake-build-debug" })
 {

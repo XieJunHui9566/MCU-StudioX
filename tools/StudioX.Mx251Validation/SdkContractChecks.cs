@@ -39,7 +39,10 @@ internal static class SdkContractChecks
                 await new ToolsetCatalog(tools).ResolveAsync("studiox.mx251", "0.0.121", "mx251-v0.0121", forceVerification: true);
                 throw new InvalidOperationException("Expected rejection: " + name);
             }
-            catch (StudioXException error) when (error.Code == code) { Check(true, name); }
+            catch (StudioXException error) when (error.Code == code)
+            {
+                Check(true, name);
+            }
             finally
             {
                 await File.WriteAllTextAsync(sdkFile, sdkText);
@@ -63,7 +66,10 @@ internal static class SdkContractChecks
             await new ToolsetCatalog(tools).ResolveAsync("studiox.mx251", "0.0.121", "mx251-v0.0999", forceVerification: true);
             throw new InvalidOperationException("Project compiler lock ignored");
         }
-        catch (StudioXException error) when (error.Code == "TOOLSET_INCOMPATIBLE") { Check(true, "project exact version/identity lock remains enforced"); }
+        catch (StudioXException error) when (error.Code == "TOOLSET_INCOMPATIBLE")
+        {
+            Check(true, "project exact version/identity lock remains enforced");
+        }
         // 仅改变私有夹具的版本元数据，EXE 和所有运行库不变；不宣称存在此编译器版本。
         var future = fixture["syntheticVersion"]!;
         var catalog = new ToolsetCatalog(tools);

@@ -47,9 +47,13 @@ public partial class MainWindow
             Mx251DownloadModePicker.SelectedValue = theme.Id == ThemeService.Light.Id ? Mx251DownloadMode.NativeUsb : Mx251DownloadMode.Serial;
             FocusStcSettings();
             Height = 1050;
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ContextIdle);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.ContextIdle);
             Mx251DownloadModePicker.BringIntoView();
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ContextIdle);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.ContextIdle);
             UpdateLayout();
             Check(Mx251DownloadModePicker.IsVisible, "actual download settings rendered");
             Render(this, Path.Combine(directory, "mx251-" + theme.Id + ".png"));

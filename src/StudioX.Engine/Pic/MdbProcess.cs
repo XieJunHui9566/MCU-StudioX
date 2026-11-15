@@ -34,8 +34,6 @@ public sealed class MdbProcess : IAsyncDisposable
     {
         this.verifiedDevice = verifiedDevice;
         Directory.CreateDirectory(userDirectory);
-        var temporary = Path.Combine(userDirectory, "tmp");
-        Directory.CreateDirectory(temporary);
         Directory.CreateDirectory(Path.GetDirectoryName(logPath)!);
         log = new(logPath, false, new UTF8Encoding(false))
         {
@@ -54,7 +52,7 @@ public sealed class MdbProcess : IAsyncDisposable
             StandardErrorEncoding = Encoding.UTF8,
             StandardInputEncoding = new UTF8Encoding(false)
         };
-        foreach (var variable in ToolsetEnvironment.AmbientVariables.Concat(new[] { "JAVA_HOME", "JRE_HOME", "JAVA_TOOL_OPTIONS", "JDK_JAVA_OPTIONS", "_JAVA_OPTIONS", "CLASSPATH" }))
+        foreach (var variable in PicJavaRuntime.AmbientVariables)
         {
             start.Environment.Remove(variable);
         }
@@ -62,7 +60,7 @@ public sealed class MdbProcess : IAsyncDisposable
         {
             start.Environment[name] = value;
         }
-        foreach (var argument in new[] { "-Duser.home=" + userDirectory, "-Djava.io.tmpdir=" + temporary, "-Duser.language=en", "-Duser.country=US", "-Dfile.encoding=UTF-8", "-jar", tools.Tool("mdb") })
+        foreach (var argument in PicJavaRuntime.Options(userDirectory).Concat(["-jar", tools.Tool("mdb")]))
         {
             start.ArgumentList.Add(argument);
         }
@@ -77,7 +75,13 @@ public sealed class MdbProcess : IAsyncDisposable
             stdout = ReadAsync(process.StandardOutput, false);
             stderr = ReadAsync(process.StandardError, true);
         }
-        catch { process.Dispose(); job.Dispose(); log.Dispose(); throw; }
+        catch
+        {
+            process.Dispose();
+            job.Dispose();
+            log.Dispose();
+            throw;
+        }
     }
 
     public async Task<string> ExecuteAsync(string command, CancellationToken token = default, TimeSpan? timeout = null)
@@ -139,7 +143,13 @@ public sealed class MdbProcess : IAsyncDisposable
         {
             throw new TimeoutException("MDB 命令在排队、发送或等待应答时超时。", ex);
         }
-        finally { if (acquired) { commands.Release(); } }
+        finally
+        {
+            if (acquired)
+            {
+                commands.Release();
+            }
+        }
     }
 
     private async Task ReadAsync(StreamReader reader, bool error)

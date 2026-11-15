@@ -37,6 +37,7 @@ public sealed partial class Ag32NativeBuildService(ToolsetCatalog catalog, strin
             await RequireDeviceAsync(root, project, token);
             var settings = await ReadSettingsAsync(root, token);
             ValidateSettings(root, settings);
+            await licensing.ValidateLicenseAsync(token);
             var mapping = project.PinMapping!;
             var logicTools = project.Logic!;
             var tools = await catalog.ResolveAsync(mapping.ToolsetId, mapping.ToolsetVersion, mapping.CompilerId, token, progress: progress);
@@ -161,7 +162,10 @@ public sealed partial class Ag32NativeBuildService(ToolsetCatalog catalog, strin
                     licensing.RemovePrivateRuntime(privateRuntime);
                 }
             }
-            finally { gate.Release(); }
+            finally
+            {
+                gate.Release();
+            }
         }
 
         async Task RunAsync(string executable, string[] arguments, string phase, Dictionary<string, string> environment)

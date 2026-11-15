@@ -95,7 +95,9 @@ internal sealed class QmdMcpTools(McpSessionContext context) : StudioXMcpToolPro
                 priorState = JsonSerializer.Deserialize<QmdSnapshotState>(
                 await File.ReadAllTextAsync(statePath, cancellationToken).ConfigureAwait(false));
             }
-            catch (JsonException) { /* 状态损坏时重新建索引。 */ }
+            catch (JsonException)
+            { /* 状态损坏时重新建索引。 */
+            }
         }
         var reusable = priorState?.Paths is not null && priorState.Directory == directory &&
             priorState.Fingerprint == candidates.Fingerprint && Directory.Exists(mirror) &&

@@ -43,7 +43,10 @@ internal static class QualifiedPublicationChecks
             }));
             throw new InvalidOperationException("Source changed but firmware published");
         }
-        catch (StudioXException e) when (e.Code == "MX251_SOURCE_CHANGED") { Check(changed, "source/config change during build rejects publication"); }
+        catch (StudioXException e) when (e.Code == "MX251_SOURCE_CHANGED")
+        {
+            Check(changed, "source/config change during build rejects publication");
+        }
         foreach (var p in new[] { ".build/firmware.hex", ".build/firmware.bin", ".build/studiox-build-receipt.json", ".build/mx251/latest/receipt.json" })
         {
             Check(!File.Exists(Path.Combine(project, p)), "source change cleared " + p);

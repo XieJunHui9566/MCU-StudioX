@@ -1,0 +1,18 @@
+{
+  "name": "dead-cross-tu-case-sensitive-imports",
+  "sources": ["main.c", "remote.c"],
+  "keepSymbols": [],
+  "expectFallback": false,
+  "mustKeep": ["_main", "_start"],
+  "mustRemove": ["_dead_bridge", "_Start"],
+  "removedExternalSymbol": "_Start",
+  "caseDistinctLiveSymbol": "_start",
+  "checks": [
+    "GC OFF actual cross-TU imports to case-distinct C functions both link",
+    "GC ON removes unreachable dead_bridge and Start, preserving live start",
+    "The unused _Start import is removed while live _start remains",
+    "Final actual relocation targets the exact-case live _start symbol",
+    "Final reassembled RELs and linked occupied HEX bytes independently reconstruct"
+  ],
+  "notProved": ["runtime semantics", "hardware correctness", "cycles", "arbitrary external plugin entry points"]
+}

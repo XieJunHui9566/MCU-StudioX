@@ -56,7 +56,10 @@ internal sealed class ExternalProjectAccess(McpSessionContext context)
                 alreadyApproved = false
             });
         }
-        finally { externalOpenGate.Release(); }
+        finally
+        {
+            externalOpenGate.Release();
+        }
     }
 
     internal async Task<string> ListRootsAsync(CancellationToken cancellationToken = default)

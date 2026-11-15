@@ -133,7 +133,13 @@ public partial class MainWindow
                 ShowRecentProjects(await services.RecentProjects.LoadAsync());
             }
         }
-        catch (Exception ex) { if (!closing) { Log("最近工程检查失败：" + ex.Message); } }
+        catch (Exception ex)
+        {
+            if (!closing)
+            {
+                Log("最近工程检查失败：" + ex.Message);
+            }
+        }
     }
     private async void RecentProject_Click(object sender, RoutedEventArgs e)
     {
@@ -184,7 +190,7 @@ public partial class MainWindow
     }
     private void Close_Click(object sender, RoutedEventArgs e) => Close();
     private void About_Click(object sender, RoutedEventArgs e) => MessageBox.Show(this, ProductInfo.DisplayName + "\n\n独立单片机开发环境 · " + ProductInfo.ReleaseDescription + "\n\n升级：关闭 IDE 后运行新版安装包，保留工程、器件包和个人设置。\n\n随附器件包：\n" + Path.Combine(AppContext.BaseDirectory, "device-packs"), "关于 MCU StudioX", MessageBoxButton.OK, MessageBoxImage.None);
-    private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
+    private async void Window_PreviewKeyDown(object sender, KeyEventArgs e)
     {
         if (Keyboard.Modifiers == ModifierKeys.Control && e.Key == Key.Oem3)
         {
@@ -229,8 +235,8 @@ public partial class MainWindow
             {
                 ShowFindReplace(false);
             }
-            FindMatch(Keyboard.Modifiers == ModifierKeys.Shift);
             e.Handled = true;
+            await FindMatchAsync(Keyboard.Modifiers == ModifierKeys.Shift);
             return;
         }
         if (e.Key == Key.F12 && Keyboard.Modifiers == ModifierKeys.Shift && CanNavigateCode)

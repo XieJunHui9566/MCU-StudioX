@@ -23,6 +23,9 @@ public sealed partial class PluginManagerService
             var path = PathBoundary.Resolve(Path.GetDirectoryName(entry.ManifestPath)!, artwork.Asset);
             return await ThemeArtworkService.ReadVerifiedAsync(path, artwork.Sha256, token).ConfigureAwait(false);
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
 }

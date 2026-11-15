@@ -24,7 +24,10 @@ public sealed class SupportReportService(string runtimeDirectory, string dataDir
             {
                 project = await ProjectService.ReadAsync(root, token).ConfigureAwait(false);
             }
-            catch (Exception error) when (error is not OperationCanceledException) { errors.Add(error.ToString()); }
+            catch (Exception error) when (error is not OperationCanceledException)
+            {
+                errors.Add(error.ToString());
+            }
             foreach (var relative in new[] { ".studiox/project.json", ".studiox/toolchain.lock.json", DevelopmentComponentLock.RelativePath,
                 ProjectBuildSettings.RelativePath, ".studiox/arduino.lock.json", ".studiox/arduino-build.json", ".studiox/pic-build.json",
                 ".build/studiox-build-receipt.json", ".studiox/zephyr-device.json", "CMakePresets.json", "prj.conf" }.Distinct())
@@ -71,7 +74,10 @@ public sealed class SupportReportService(string runtimeDirectory, string dataDir
                     errors.Add("日志目录扫描达到 256 项上限；仅包含已发现的最近六份日志。");
                 }
             }
-            catch (Exception error) when (error is not OperationCanceledException) { errors.Add(error.ToString()); }
+            catch (Exception error) when (error is not OperationCanceledException)
+            {
+                errors.Add(error.ToString());
+            }
         }
         var tools = new List<object>();
         try
@@ -107,12 +113,18 @@ public sealed class SupportReportService(string runtimeDirectory, string dataDir
                                 manifestSha256 = Convert.ToHexString(await SHA256.HashDataAsync(stream, token).ConfigureAwait(false))
                             });
                         }
-                        catch (Exception error) when (error is not OperationCanceledException) { errors.Add(relative + ": " + error); }
+                        catch (Exception error) when (error is not OperationCanceledException)
+                        {
+                            errors.Add(relative + ": " + error);
+                        }
                     }
                 }
             }
         }
-        catch (Exception error) when (error is not OperationCanceledException) { errors.Add(error.ToString()); }
+        catch (Exception error) when (error is not OperationCanceledException)
+        {
+            errors.Add(error.ToString());
+        }
         var assembly = typeof(SupportReportService).Assembly;
         var disks = new List<object>();
         foreach (var location in new[] { directory, runtimeDirectory, dataDirectory }.Where(location => location is not null)
@@ -128,7 +140,10 @@ public sealed class SupportReportService(string runtimeDirectory, string dataDir
                     drive.AvailableFreeSpace
                 });
             }
-            catch (Exception error) when (error is not OperationCanceledException) { errors.Add(error.ToString()); }
+            catch (Exception error) when (error is not OperationCanceledException)
+            {
+                errors.Add(error.ToString());
+            }
         }
         await JsonStore.WriteAsync(path, new
         {
@@ -179,6 +194,9 @@ public sealed class SupportReportService(string runtimeDirectory, string dataDir
             var count = await reader.ReadBlockAsync(buffer.AsMemory(), token).ConfigureAwait(false);
             return new(relative, length, File.GetLastWriteTimeUtc(path), new string(buffer, 0, count), truncated, null);
         }
-        catch (Exception error) when (error is not OperationCanceledException) { return new(relative, null, null, null, false, error.ToString()); }
+        catch (Exception error) when (error is not OperationCanceledException)
+        {
+            return new(relative, null, null, null, false, error.ToString());
+        }
     }
 }

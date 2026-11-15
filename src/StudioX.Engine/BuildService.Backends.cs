@@ -38,10 +38,18 @@ public sealed partial class BuildService
     {
         using var operation = Mx251BuildStorage.Acquire(request.Root);
         using var outputLease = Mx251SdkProfile.Matches(request.Project) ? Mx251OutputLease.Acquire(request.Root) : null;
-        Mx251BuildService.Invalidate(request.Root);
-        using var components = await PrepareComponentsAsync(request.Root, request.Project, request.Progress, request.Token);
-        return await Mx251BuildService.ExecuteAsync(request.Root, request.Project,
-            components.Tools.Single(tool => tool.Manifest.Id == request.Project.ToolsetId), request.Output, request.Token,
-            components.Tools.SingleOrDefault(tool => tool.Manifest.Id == Mx251CMake.ToolsetId), request.ConfigureOnly, outputLease?.Token);
+        Mx251BuildService.Invalidate(request.Root, internalOutputs: false);
+        try
+        {
+            using var components = await PrepareComponentsAsync(request.Root, request.Project, request.Progress, request.Token);
+            return await Mx251BuildService.ExecuteAsync(request.Root, request.Project,
+                components.Tools.Single(tool => tool.Manifest.Id == request.Project.ToolsetId), request.Output, request.Token,
+                components.Tools.SingleOrDefault(tool => tool.Manifest.Id == Mx251CMake.ToolsetId), request.ConfigureOnly, outputLease?.Token, request.Progress);
+        }
+        catch
+        {
+            Mx251BuildService.Invalidate(request.Root);
+            throw;
+        }
     }
 }

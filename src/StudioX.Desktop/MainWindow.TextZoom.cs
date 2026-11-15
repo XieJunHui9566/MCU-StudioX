@@ -90,6 +90,10 @@ public partial class MainWindow
         {
             await services.EditorSettings.SaveAsync(settings);
         }
-        catch (Exception ex) { Log("字号保存失败：" + ex); Status.Text = "字号已调整，保存偏好失败。"; }
+        catch (Exception ex)
+        {
+            Log("字号保存失败：" + ex);
+            Status.Text = "字号已调整，保存偏好失败。";
+        }
     }
 }

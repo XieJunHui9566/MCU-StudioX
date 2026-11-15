@@ -17,7 +17,15 @@ if (args is ["--environment-reload", var reloadRuntime, var reloadProject, var r
     var checks = new List<string>();
     using var cancellation = new CancellationTokenSource(TimeSpan.FromMinutes(3));
     await EnvironmentReloadChecks.RunAsync(Path.GetFullPath(reloadRuntime), Path.GetFullPath(reloadProject), evidence,
-        (condition, label) => { if (!condition) { throw new InvalidOperationException(label); } checks.Add(label); Console.WriteLine("PASS " + label); }, cancellation.Token);
+        (condition, label) =>
+        {
+            if (!condition)
+            {
+                throw new InvalidOperationException(label);
+            }
+            checks.Add(label);
+            Console.WriteLine("PASS " + label);
+        }, cancellation.Token);
     await File.WriteAllTextAsync(Path.Combine(evidence, "result.json"), System.Text.Json.JsonSerializer.Serialize(new
     {
         passed = true,

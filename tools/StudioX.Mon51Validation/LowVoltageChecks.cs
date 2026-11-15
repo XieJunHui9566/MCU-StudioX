@@ -32,7 +32,10 @@ internal static class LowVoltageChecks
                 await action();
                 throw new InvalidOperationException("Accepted: " + name);
             }
-            catch (StudioXException ex) when (ex.Code == code) { checks.Add(name); }
+            catch (StudioXException ex) when (ex.Code == code)
+            {
+                checks.Add(name);
+            }
         }
         const string target = StcMon51Targets.LowVoltageDevice;
         var packs = new PackRepository(Path.Combine(output, "packs"));
@@ -74,7 +77,11 @@ internal static class LowVoltageChecks
         await Reject(() => isp.PrepareMonitorAsync(project, "COM18", highVoltage), "MON51_FIRMWARE", "native L preparation refuses F bytes before programming");
         var fixture = new Mon51OfflineTransport { UseMemoryImage = true, AllowUserProgramDownload = true };
         var createdTransports = 0;
-        await using var debug = new DebugSessionService(data, hub, _ => { createdTransports++; return fixture; });
+        await using var debug = new DebugSessionService(data, hub, _ =>
+        {
+            createdTransports++;
+            return fixture;
+        });
         await debug.OpenProjectAsync(project);
         await Reject(() => debug.StartMon51Async("COM18", 115200, StcMon51Targets.HighVoltageDevice), "MON51_TARGET", "debug rejects mismatched project/model before creating transport");
         Check(createdTransports == 0, "wrong model never invokes transport factory");

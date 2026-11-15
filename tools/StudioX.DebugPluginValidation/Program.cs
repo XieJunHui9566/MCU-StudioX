@@ -14,9 +14,15 @@ if (args is [var hardwareMode, var hardwareSource, var toolRuntime, var pluginHo
     await HardwareChecks.RunAsync(hardwareSource, toolRuntime, pluginHost, sampleArchive, hardwareOutput, hardwareMode == "--hardware-reset");
     return;
 }
-if (args is not [var hostDirectory, var outputDirectory]) { throw new ArgumentException("Usage: <plugin-host directory> <new evidence directory>"); }
+if (args is not [var hostDirectory, var outputDirectory])
+{
+    throw new ArgumentException("Usage: <plugin-host directory> <new evidence directory>");
+}
 var root = Path.GetFullPath(outputDirectory);
-if (Directory.Exists(root)) { throw new InvalidOperationException("Use a new evidence directory."); }
+if (Directory.Exists(root))
+{
+    throw new InvalidOperationException("Use a new evidence directory.");
+}
 Directory.CreateDirectory(root);
 var checks = new List<string>();
 void Check(bool passed, string label)
@@ -44,7 +50,10 @@ Check(OpenOcdDebugDiagnostics.TargetExaminationFailure("Error: Target not examin
 await DebugPlanChecks.RunAsync(root, Check);
 var runtime = Path.Combine(root, "runtime");
 Directory.CreateDirectory(Path.Combine(runtime, "plugin-host"));
-foreach (var file in Directory.EnumerateFiles(hostDirectory)) { File.Copy(file, Path.Combine(runtime, "plugin-host", Path.GetFileName(file))); }
+foreach (var file in Directory.EnumerateFiles(hostDirectory))
+{
+    File.Copy(file, Path.Combine(runtime, "plugin-host", Path.GetFileName(file)));
+}
 var project = Path.Combine(root, "project");
 Directory.CreateDirectory(Path.Combine(project, ".studiox"));
 Directory.CreateDirectory(Path.Combine(project, "src"));
@@ -98,7 +107,10 @@ var other = await services.Debugger.CapturePluginSnapshotAsync(Path.Combine(root
 Check(other.State == "Disconnected" && other.Snapshot.GetProperty("registers").GetArrayLength() == 0, "foreign project cannot receive current debug snapshot");
 var initial = view.Current.Revision;
 var callsBefore = calls;
-for (var i = 0; i < 100; i++) { view.Refresh(); }
+for (var i = 0; i < 100; i++)
+{
+    view.Refresh();
+}
 await WaitAsync(() => view.Current.Panel is not null);
 Check(calls - callsBefore <= 2, "burst refresh uses bounded latest request instead of unbounded plugin calls");
 initial = view.Current.Revision;

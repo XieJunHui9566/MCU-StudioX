@@ -1,12 +1,25 @@
 using StudioX.Application.Editing;
 using StudioX.Foundation;
 
-if (args.Length != 1) { throw new ArgumentException("A new evidence directory is required."); }
+if (args.Length != 1)
+{
+    throw new ArgumentException("A new evidence directory is required.");
+}
 var root = Path.GetFullPath(args[0]);
-if (Directory.Exists(root)) { throw new IOException("Use a new evidence directory."); }
+if (Directory.Exists(root))
+{
+    throw new IOException("Use a new evidence directory.");
+}
 Directory.CreateDirectory(root);
 var checks = new List<string>();
-void Check(bool success, string label) { if (!success) { throw new InvalidOperationException(label); } checks.Add(label); }
+void Check(bool success, string label)
+{
+    if (!success)
+    {
+        throw new InvalidOperationException(label);
+    }
+    checks.Add(label);
+}
 async Task Reject(Func<Task> action, string label)
 {
     var rejected = false;
@@ -14,10 +27,17 @@ async Task Reject(Func<Task> action, string label)
     {
         await action();
     }
-    catch (Exception ex) when (ex is StudioXException or IOException or UnauthorizedAccessException or OperationCanceledException) { rejected = true; }
+    catch (Exception ex) when (ex is StudioXException or IOException or UnauthorizedAccessException or OperationCanceledException)
+    {
+        rejected = true;
+    }
     Check(rejected, label);
 }
-Task Parse(string text) { CodeTemplateExpander.Describe(text); return Task.CompletedTask; }
+Task Parse(string text)
+{
+    CodeTemplateExpander.Describe(text);
+    return Task.CompletedTask;
+}
 var loopSource = "/* for (;;) */\nconst char *text = \"for (;;)\";\n// for (;;)\nvoid main(void) { for (;;) { } for (int i=0; i<4; ++i) { } }\n";
 var loopStyle = StudioX.Engine.TemplateLoopStyle.Normalize(loopSource);
 Check(loopStyle.Contains("while (1) { }", StringComparison.Ordinal) && loopStyle.Contains("for (int i=0; i<4; ++i)", StringComparison.Ordinal) &&
@@ -78,7 +98,10 @@ try
             await new CodeTemplateService(Path.Combine(root, "user")).SaveAsync(project, CodeTemplateScope.User, revision, [template with { Name = "并发 " + i }]);
             return true;
         }
-        catch (Exception ex) when (ex is IOException or StudioXException) { return false; }
+        catch (Exception ex) when (ex is IOException or StudioXException)
+        {
+            return false;
+        }
     })));
     Check(outcomes.Count(v => v) == 1 && (await service.LoadAsync(project)).User.Templates.Count == 1, "concurrent writers produce exactly one committed update");
     var userFile = (await service.LoadAsync(project)).User.Path;
@@ -86,11 +109,17 @@ try
     foreach (var invalid in new[] { "{", "null", "{\"formatVersion\":2,\"templates\":[]}", "{\"formatVersion\":1,\"templates\":[null]}" })
     {
         await File.WriteAllTextAsync(userFile, invalid);
-        await Reject(async () => { await service.LoadAsync(project); }, "invalid schema/JSON is visible: " + invalid);
+        await Reject(async () =>
+        {
+            await service.LoadAsync(project);
+        }, "invalid schema/JSON is visible: " + invalid);
         Check(await File.ReadAllTextAsync(userFile) == invalid, "invalid template file is not silently rewritten");
     }
     await File.WriteAllTextAsync(userFile, new string(' ', CodeTemplateService.MaximumFileBytes + 1));
-    await Reject(async () => { await service.LoadAsync(project); }, "oversized JSON is rejected by bounded reads");
+    await Reject(async () =>
+    {
+        await service.LoadAsync(project);
+    }, "oversized JSON is rejected by bounded reads");
     await File.WriteAllBytesAsync(userFile, good);
     var described = CodeTemplateExpander.Describe("${name} ${name:motor} ${name}");
     Check(described.Single() == new CodeTemplateParameter("name", "motor"), "same-name fields share one default even if first reference precedes it");
@@ -114,8 +143,19 @@ try
     await Reject(() => Parse("${cursor}${cursor}"), "multiple caret markers are rejected");
     await Reject(() => Parse("${selection:bad}"), "reserved fields cannot have defaults");
     await Reject(() => Parse(string.Join("", Enumerable.Range(0, 33).Select(i => "${v" + i + "}"))), "parameter count is bounded");
-    await Reject(() => { CodeTemplateExpander.Expand("${a}", new Dictionary<string, string> { ["a"] = "line\nline" }, context); return Task.CompletedTask; }, "typed parameters cannot inject extra lines");
-    await Reject(() => { CodeTemplateExpander.Expand("${selection}${selection}", empty, context with { Selection = new string('x', 200_000) }); return Task.CompletedTask; }, "expanded text growth is bounded");
+    await Reject(() =>
+    {
+        CodeTemplateExpander.Expand("${a}", new Dictionary<string, string> { ["a"] = "line\nline" }, context);
+        return Task.CompletedTask;
+    }, "typed parameters cannot inject extra lines");
+    await Reject(() =>
+    {
+        CodeTemplateExpander.Expand("${selection}${selection}", empty, context with
+        {
+            Selection = new string('x', 200_000)
+        });
+        return Task.CompletedTask;
+    }, "expanded text growth is bounded");
     await JsonStore.WriteAsync(Path.Combine(root, "result.json"), new
     {
         success = true,

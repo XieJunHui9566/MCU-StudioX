@@ -16,7 +16,10 @@ internal static class Mx251BuildStorage
         {
             return new FileStream(path, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
         }
-        catch (IOException error) { throw new StudioXException("MX251_BUSY", "此工程正在编译、保存频率或下载，请等待当前操作完成。", error); }
+        catch (IOException error)
+        {
+            throw new StudioXException("MX251_BUSY", "此工程正在编译、保存频率或下载，请等待当前操作完成。", error);
+        }
     }
 
     internal static string Prepare(string root, bool download)

@@ -89,8 +89,12 @@ public sealed partial class GitRepositoryService
                 {
                     Directory.Delete(stage, recursive: true);
                 }
-                catch (IOException) { /* 不掩盖克隆的原始错误；下次可检查残留临时目录。 */ }
-                catch (UnauthorizedAccessException) { }
+                catch (IOException)
+                { /* 不掩盖克隆的原始错误；下次可检查残留临时目录。 */
+                }
+                catch (UnauthorizedAccessException)
+                {
+                }
             }
         }
     }

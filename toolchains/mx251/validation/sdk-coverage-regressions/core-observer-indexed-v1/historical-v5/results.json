@@ -1,0 +1,1543 @@
+{
+  "status": "V5_REJECTED_ACTUAL_ENCODED_OBSERVER_COUNTEREXAMPLE",
+  "rows": [
+    {
+      "model": "small",
+      "observer": "acc",
+      "off": {
+        "role": "off",
+        "result": 52,
+        "A": 52,
+        "B": 18,
+        "AParity": 1,
+        "events": [
+          [
+            "read",
+            1028,
+            2,
+            4660
+          ],
+          [
+            "io",
+            18
+          ],
+          [
+            "read",
+            1028,
+            2,
+            43981
+          ],
+          [
+            "io",
+            205
+          ],
+          [
+            "read",
+            1030,
+            1,
+            7
+          ],
+          [
+            "io",
+            1
+          ]
+        ],
+        "instructions": [
+          {
+            "pc": 0,
+            "bytes": "5e6400ff",
+            "op": "anl",
+            "args": "wr12,#0x00ff",
+            "line": 123
+          },
+          {
+            "pc": 4,
+            "bytes": "7f13",
+            "op": "mov",
+            "args": "dr4,dr12",
+            "line": 124
+          },
+          {
+            "pc": 6,
+            "bytes": "0b1e",
+            "op": "inc",
+            "args": "dr4,#4",
+            "line": 125
+          },
+          {
+            "pc": 8,
+            "bytes": "5e2400ff",
+            "op": "anl",
+            "args": "wr4,#0x00ff",
+            "line": 126
+          },
+          {
+            "pc": 12,
+            "bytes": "0b1ac0",
+            "op": "mov",
+            "args": "wr24,@dr4",
+            "line": 128
+          },
+          {
+            "pc": 15,
+            "bytes": "7d5c",
+            "op": "mov",
+            "args": "wr10,wr24",
+            "line": 131
+          },
+          {
+            "pc": 17,
+            "bytes": "7e91f0",
+            "op": "mov",
+            "args": "r9,b",
+            "line": 132
+          },
+          {
+            "pc": 20,
+            "bytes": "7a91b1",
+            "op": "mov",
+            "args": "(_io+0),r9",
+            "line": 135
+          },
+          {
+            "pc": 23,
+            "bytes": "0b1aa0",
+            "op": "mov",
+            "args": "wr20,@dr4",
+            "line": 137
+          },
+          {
+            "pc": 26,
+            "bytes": "7d3a",
+            "op": "mov",
+            "args": "wr6,wr20",
+            "line": 138
+          },
+          {
+            "pc": 28,
+            "bytes": "7c97",
+            "op": "mov",
+            "args": "r9,r7",
+            "line": 139
+          },
+          {
+            "pc": 30,
+            "bytes": "7a91b1",
+            "op": "mov",
+            "args": "(_io+0),r9",
+            "line": 142
+          },
+          {
+            "pc": 33,
+            "bytes": "29930006",
+            "op": "mov",
+            "args": "r9,@dr12+6",
+            "line": 144
+          },
+          {
+            "pc": 37,
+            "bytes": "be9007",
+            "op": "cmp",
+            "args": "r9,#0x07",
+            "line": 146
+          },
+          {
+            "pc": 40,
+            "bytes": "6805",
+            "op": "je",
+            "args": "__wm____m251r4_f_1000000",
+            "line": 147
+          },
+          {
+            "pc": 42,
+            "bytes": "7e9000",
+            "op": "mov",
+            "args": "r9,#0",
+            "line": 149
+          },
+          {
+            "pc": 45,
+            "bytes": "8003",
+            "op": "sjmp",
+            "args": "__wm____m251r4_f_1000001",
+            "line": 150
+          },
+          {
+            "pc": 47,
+            "bytes": "7e9001",
+            "op": "mov",
+            "args": "r9,#1",
+            "line": 152
+          },
+          {
+            "pc": 50,
+            "bytes": "7a91b1",
+            "op": "mov",
+            "args": "(_io+0),r9",
+            "line": 156
+          },
+          {
+            "pc": 53,
+            "bytes": "7e71e0",
+            "op": "mov",
+            "args": "r7,(_observer+0)",
+            "line": 158
+          },
+          {
+            "pc": 56,
+            "bytes": "aa",
+            "op": "eret",
+            "args": "",
+            "line": 159
+          }
+        ],
+        "child": {
+          "argv": [
+            "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-bitops-20261031\\experiments\\native-indexed-two-use\\host-v5\\build\\sdas251.exe",
+            "-plosgff",
+            "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-bitops-20261031\\experiments\\native-indexed-two-use\\observer-counterexample-v5\\small-acc-off\\probe.rel",
+            "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-bitops-20261031\\experiments\\native-indexed-two-use\\observer-diagnostics-v5\\small-acc\\off.asm"
+          ],
+          "cwd": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-bitops-20261031\\experiments\\native-indexed-two-use\\observer-counterexample-v5\\small-acc-off",
+          "started": 1793434423.2230165,
+          "timeout": 15,
+          "pid": 44856,
+          "status": "EXITED",
+          "jobAssignment": "assigned",
+          "exitCode": 0,
+          "seconds": 0.0220489501953125,
+          "jobProcesses": 1,
+          "activeChildren": 0
+        }
+      },
+      "on": {
+        "role": "on",
+        "result": 86,
+        "A": 86,
+        "B": 120,
+        "AParity": 0,
+        "events": [
+          [
+            "read",
+            1028,
+            2,
+            4660
+          ],
+          [
+            "io",
+            18
+          ],
+          [
+            "read",
+            1028,
+            2,
+            43981
+          ],
+          [
+            "io",
+            205
+          ],
+          [
+            "read",
+            1030,
+            1,
+            7
+          ],
+          [
+            "io",
+            1
+          ]
+        ],
+        "instructions": [
+          {
+            "pc": 0,
+            "bytes": "5e6400ff",
+            "op": "anl",
+            "args": "wr12,#0x00ff",
+            "line": 137
+          },
+          {
+            "pc": 4,
+            "bytes": "69330004",
+            "op": "mov",
+            "args": "wr6,@dr12+4",
+            "line": 140
+          },
+          {
+            "pc": 8,
+            "bytes": "7c96",
+            "op": "mov",
+            "args": "r9,r6",
+            "line": 143
+          },
+          {
+            "pc": 10,
+            "bytes": "7a91b1",
+            "op": "mov",
+            "args": "(_io+0),r9",
+            "line": 146
+          },
+          {
+            "pc": 13,
+            "bytes": "69330004",
+            "op": "mov",
+            "args": "wr6,@dr12+4",
+            "line": 148
+          },
+          {
+            "pc": 17,
+            "bytes": "7c97",
+            "op": "mov",
+            "args": "r9,r7",
+            "line": 149
+          },
+          {
+            "pc": 19,
+            "bytes": "7a91b1",
+            "op": "mov",
+            "args": "(_io+0),r9",
+            "line": 152
+          },
+          {
+            "pc": 22,
+            "bytes": "29930006",
+            "op": "mov",
+            "args": "r9,@dr12+6",
+            "line": 154
+          },
+          {
+            "pc": 26,
+            "bytes": "be9007",
+            "op": "cmp",
+            "args": "r9,#0x07",
+            "line": 156
+          },
+          {
+            "pc": 29,
+            "bytes": "6805",
+            "op": "je",
+            "args": "__wm____m251r4_f_1000000",
+            "line": 157
+          },
+          {
+            "pc": 31,
+            "bytes": "7e9000",
+            "op": "mov",
+            "args": "r9,#0",
+            "line": 159
+          },
+          {
+            "pc": 34,
+            "bytes": "8003",
+            "op": "sjmp",
+            "args": "__wm____m251r4_f_1000001",
+            "line": 160
+          },
+          {
+            "pc": 36,
+            "bytes": "7e9001",
+            "op": "mov",
+            "args": "r9,#1",
+            "line": 162
+          },
+          {
+            "pc": 39,
+            "bytes": "7a91b1",
+            "op": "mov",
+            "args": "(_io+0),r9",
+            "line": 166
+          },
+          {
+            "pc": 42,
+            "bytes": "7e71e0",
+            "op": "mov",
+            "args": "r7,(_observer+0)",
+            "line": 168
+          },
+          {
+            "pc": 45,
+            "bytes": "aa",
+            "op": "eret",
+            "args": "",
+            "line": 169
+          }
+        ],
+        "child": {
+          "argv": [
+            "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-bitops-20261031\\experiments\\native-indexed-two-use\\host-v5\\build\\sdas251.exe",
+            "-plosgff",
+            "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-bitops-20261031\\experiments\\native-indexed-two-use\\observer-counterexample-v5\\small-acc-on\\probe.rel",
+            "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-bitops-20261031\\experiments\\native-indexed-two-use\\observer-diagnostics-v5\\small-acc\\on.asm"
+          ],
+          "cwd": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-bitops-20261031\\experiments\\native-indexed-two-use\\observer-counterexample-v5\\small-acc-on",
+          "started": 1793434423.2473233,
+          "timeout": 15,
+          "pid": 66328,
+          "status": "EXITED",
+          "jobAssignment": "assigned",
+          "exitCode": 0,
+          "seconds": 0.012675285339355469,
+          "jobProcesses": 1,
+          "activeChildren": 0
+        }
+      }
+    },
+    {
+      "model": "large",
+      "observer": "acc",
+      "off": {
+        "role": "off",
+        "result": 52,
+        "A": 52,
+        "B": 18,
+        "AParity": 1,
+        "events": [
+          [
+            "read",
+            1028,
+            2,
+            4660
+          ],
+          [
+            "io",
+            18
+          ],
+          [
+            "read",
+            1028,
+            2,
+            43981
+          ],
+          [
+            "io",
+            205
+          ],
+          [
+            "read",
+            1030,
+            1,
+            7
+          ],
+          [
+            "io",
+            1
+          ]
+        ],
+        "instructions": [
+          {
+            "pc": 0,
+            "bytes": "5e6400ff",
+            "op": "anl",
+            "args": "wr12,#0x00ff",
+            "line": 123
+          },
+          {
+            "pc": 4,
+            "bytes": "7f13",
+            "op": "mov",
+            "args": "dr4,dr12",
+            "line": 124
+          },
+          {
+            "pc": 6,
+            "bytes": "0b1e",
+            "op": "inc",
+            "args": "dr4,#4",
+            "line": 125
+          },
+          {
+            "pc": 8,
+            "bytes": "5e2400ff",
+            "op": "anl",
+            "args": "wr4,#0x00ff",
+            "line": 126
+          },
+          {
+            "pc": 12,
+            "bytes": "0b1ac0",
+            "op": "mov",
+            "args": "wr24,@dr4",
+            "line": 128
+          },
+          {
+            "pc": 15,
+            "bytes": "7d5c",
+            "op": "mov",
+            "args": "wr10,wr24",
+            "line": 131
+          },
+          {
+            "pc": 17,
+            "bytes": "7e91f0",
+            "op": "mov",
+            "args": "r9,b",
+            "line": 132
+          },
+          {
+            "pc": 20,
+            "bytes": "7a91b1",
+            "op": "mov",
+            "args": "(_io+0),r9",
+            "line": 135
+          },
+          {
+            "pc": 23,
+            "bytes": "0b1aa0",
+            "op": "mov",
+            "args": "wr20,@dr4",
+            "line": 137
+          },
+          {
+            "pc": 26,
+            "bytes": "7d3a",
+            "op": "mov",
+            "args": "wr6,wr20",
+            "line": 138
+          },
+          {
+            "pc": 28,
+            "bytes": "7c97",
+            "op": "mov",
+            "args": "r9,r7",
+            "line": 139
+          },
+          {
+            "pc": 30,
+            "bytes": "7a91b1",
+            "op": "mov",
+            "args": "(_io+0),r9",
+            "line": 142
+          },
+          {
+            "pc": 33,
+            "bytes": "29930006",
+            "op": "mov",
+            "args": "r9,@dr12+6",
+            "line": 144
+          },
+          {
+            "pc": 37,
+            "bytes": "be9007",
+            "op": "cmp",
+            "args": "r9,#0x07",
+            "line": 146
+          },
+          {
+            "pc": 40,
+            "bytes": "6805",
+            "op": "je",
+            "args": "__wm____m251r4_f_1000000",
+            "line": 147
+          },
+          {
+            "pc": 42,
+            "bytes": "7e9000",
+            "op": "mov",
+            "args": "r9,#0",
+            "line": 149
+          },
+          {
+            "pc": 45,
+            "bytes": "8003",
+            "op": "sjmp",
+            "args": "__wm____m251r4_f_1000001",
+            "line": 150
+          },
+          {
+            "pc": 47,
+            "bytes": "7e9001",
+            "op": "mov",
+            "args": "r9,#1",
+            "line": 152
+          },
+          {
+            "pc": 50,
+            "bytes": "7a91b1",
+            "op": "mov",
+            "args": "(_io+0),r9",
+            "line": 156
+          },
+          {
+            "pc": 53,
+            "bytes": "7e71e0",
+            "op": "mov",
+            "args": "r7,(_observer+0)",
+            "line": 158
+          },
+          {
+            "pc": 56,
+            "bytes": "aa",
+            "op": "eret",
+            "args": "",
+            "line": 159
+          }
+        ],
+        "child": {
+          "argv": [
+            "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-bitops-20261031\\experiments\\native-indexed-two-use\\host-v5\\build\\sdas251.exe",
+            "-plosgff",
+            "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-bitops-20261031\\experiments\\native-indexed-two-use\\observer-counterexample-v5\\large-acc-off\\probe.rel",
+            "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-bitops-20261031\\experiments\\native-indexed-two-use\\observer-diagnostics-v5\\large-acc\\off.asm"
+          ],
+          "cwd": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-bitops-20261031\\experiments\\native-indexed-two-use\\observer-counterexample-v5\\large-acc-off",
+          "started": 1793434423.2617567,
+          "timeout": 15,
+          "pid": 58956,
+          "status": "EXITED",
+          "jobAssignment": "assigned",
+          "exitCode": 0,
+          "seconds": 0.01566338539123535,
+          "jobProcesses": 1,
+          "activeChildren": 0
+        }
+      },
+      "on": {
+        "role": "on",
+        "result": 86,
+        "A": 86,
+        "B": 120,
+        "AParity": 0,
+        "events": [
+          [
+            "read",
+            1028,
+            2,
+            4660
+          ],
+          [
+            "io",
+            18
+          ],
+          [
+            "read",
+            1028,
+            2,
+            43981
+          ],
+          [
+            "io",
+            205
+          ],
+          [
+            "read",
+            1030,
+            1,
+            7
+          ],
+          [
+            "io",
+            1
+          ]
+        ],
+        "instructions": [
+          {
+            "pc": 0,
+            "bytes": "5e6400ff",
+            "op": "anl",
+            "args": "wr12,#0x00ff",
+            "line": 137
+          },
+          {
+            "pc": 4,
+            "bytes": "69330004",
+            "op": "mov",
+            "args": "wr6,@dr12+4",
+            "line": 140
+          },
+          {
+            "pc": 8,
+            "bytes": "7c96",
+            "op": "mov",
+            "args": "r9,r6",
+            "line": 143
+          },
+          {
+            "pc": 10,
+            "bytes": "7a91b1",
+            "op": "mov",
+            "args": "(_io+0),r9",
+            "line": 146
+          },
+          {
+            "pc": 13,
+            "bytes": "69330004",
+            "op": "mov",
+            "args": "wr6,@dr12+4",
+            "line": 148
+          },
+          {
+            "pc": 17,
+            "bytes": "7c97",
+            "op": "mov",
+            "args": "r9,r7",
+            "line": 149
+          },
+          {
+            "pc": 19,
+            "bytes": "7a91b1",
+            "op": "mov",
+            "args": "(_io+0),r9",
+            "line": 152
+          },
+          {
+            "pc": 22,
+            "bytes": "29930006",
+            "op": "mov",
+            "args": "r9,@dr12+6",
+            "line": 154
+          },
+          {
+            "pc": 26,
+            "bytes": "be9007",
+            "op": "cmp",
+            "args": "r9,#0x07",
+            "line": 156
+          },
+          {
+            "pc": 29,
+            "bytes": "6805",
+            "op": "je",
+            "args": "__wm____m251r4_f_1000000",
+            "line": 157
+          },
+          {
+            "pc": 31,
+            "bytes": "7e9000",
+            "op": "mov",
+            "args": "r9,#0",
+            "line": 159
+          },
+          {
+            "pc": 34,
+            "bytes": "8003",
+            "op": "sjmp",
+            "args": "__wm____m251r4_f_1000001",
+            "line": 160
+          },
+          {
+            "pc": 36,
+            "bytes": "7e9001",
+            "op": "mov",
+            "args": "r9,#1",
+            "line": 162
+          },
+          {
+            "pc": 39,
+            "bytes": "7a91b1",
+            "op": "mov",
+            "args": "(_io+0),r9",
+            "line": 166
+          },
+          {
+            "pc": 42,
+            "bytes": "7e71e0",
+            "op": "mov",
+            "args": "r7,(_observer+0)",
+            "line": 168
+          },
+          {
+            "pc": 45,
+            "bytes": "aa",
+            "op": "eret",
+            "args": "",
+            "line": 169
+          }
+        ],
+        "child": {
+          "argv": [
+            "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-bitops-20261031\\experiments\\native-indexed-two-use\\host-v5\\build\\sdas251.exe",
+            "-plosgff",
+            "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-bitops-20261031\\experiments\\native-indexed-two-use\\observer-counterexample-v5\\large-acc-on\\probe.rel",
+            "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-bitops-20261031\\experiments\\native-indexed-two-use\\observer-diagnostics-v5\\large-acc\\on.asm"
+          ],
+          "cwd": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-bitops-20261031\\experiments\\native-indexed-two-use\\observer-counterexample-v5\\large-acc-on",
+          "started": 1793434423.279365,
+          "timeout": 15,
+          "pid": 53140,
+          "status": "EXITED",
+          "jobAssignment": "assigned",
+          "exitCode": 0,
+          "seconds": 0.01108241081237793,
+          "jobProcesses": 1,
+          "activeChildren": 0
+        }
+      }
+    },
+    {
+      "model": "small",
+      "observer": "b",
+      "off": {
+        "role": "off",
+        "result": 18,
+        "A": 52,
+        "B": 18,
+        "AParity": 1,
+        "events": [
+          [
+            "read",
+            1028,
+            2,
+            4660
+          ],
+          [
+            "io",
+            18
+          ],
+          [
+            "read",
+            1028,
+            2,
+            43981
+          ],
+          [
+            "io",
+            205
+          ],
+          [
+            "read",
+            1030,
+            1,
+            7
+          ],
+          [
+            "io",
+            1
+          ]
+        ],
+        "instructions": [
+          {
+            "pc": 0,
+            "bytes": "5e6400ff",
+            "op": "anl",
+            "args": "wr12,#0x00ff",
+            "line": 123
+          },
+          {
+            "pc": 4,
+            "bytes": "7f13",
+            "op": "mov",
+            "args": "dr4,dr12",
+            "line": 124
+          },
+          {
+            "pc": 6,
+            "bytes": "0b1e",
+            "op": "inc",
+            "args": "dr4,#4",
+            "line": 125
+          },
+          {
+            "pc": 8,
+            "bytes": "5e2400ff",
+            "op": "anl",
+            "args": "wr4,#0x00ff",
+            "line": 126
+          },
+          {
+            "pc": 12,
+            "bytes": "0b1ac0",
+            "op": "mov",
+            "args": "wr24,@dr4",
+            "line": 128
+          },
+          {
+            "pc": 15,
+            "bytes": "7d5c",
+            "op": "mov",
+            "args": "wr10,wr24",
+            "line": 131
+          },
+          {
+            "pc": 17,
+            "bytes": "7e91f0",
+            "op": "mov",
+            "args": "r9,b",
+            "line": 132
+          },
+          {
+            "pc": 20,
+            "bytes": "7a91b1",
+            "op": "mov",
+            "args": "(_io+0),r9",
+            "line": 135
+          },
+          {
+            "pc": 23,
+            "bytes": "0b1aa0",
+            "op": "mov",
+            "args": "wr20,@dr4",
+            "line": 137
+          },
+          {
+            "pc": 26,
+            "bytes": "7d3a",
+            "op": "mov",
+            "args": "wr6,wr20",
+            "line": 138
+          },
+          {
+            "pc": 28,
+            "bytes": "7c97",
+            "op": "mov",
+            "args": "r9,r7",
+            "line": 139
+          },
+          {
+            "pc": 30,
+            "bytes": "7a91b1",
+            "op": "mov",
+            "args": "(_io+0),r9",
+            "line": 142
+          },
+          {
+            "pc": 33,
+            "bytes": "29930006",
+            "op": "mov",
+            "args": "r9,@dr12+6",
+            "line": 144
+          },
+          {
+            "pc": 37,
+            "bytes": "be9007",
+            "op": "cmp",
+            "args": "r9,#0x07",
+            "line": 146
+          },
+          {
+            "pc": 40,
+            "bytes": "6805",
+            "op": "je",
+            "args": "__wm____m251r4_f_1000000",
+            "line": 147
+          },
+          {
+            "pc": 42,
+            "bytes": "7e9000",
+            "op": "mov",
+            "args": "r9,#0",
+            "line": 149
+          },
+          {
+            "pc": 45,
+            "bytes": "8003",
+            "op": "sjmp",
+            "args": "__wm____m251r4_f_1000001",
+            "line": 150
+          },
+          {
+            "pc": 47,
+            "bytes": "7e9001",
+            "op": "mov",
+            "args": "r9,#1",
+            "line": 152
+          },
+          {
+            "pc": 50,
+            "bytes": "7a91b1",
+            "op": "mov",
+            "args": "(_io+0),r9",
+            "line": 156
+          },
+          {
+            "pc": 53,
+            "bytes": "7e71f0",
+            "op": "mov",
+            "args": "r7,(_observer+0)",
+            "line": 158
+          },
+          {
+            "pc": 56,
+            "bytes": "aa",
+            "op": "eret",
+            "args": "",
+            "line": 159
+          }
+        ],
+        "child": {
+          "argv": [
+            "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-bitops-20261031\\experiments\\native-indexed-two-use\\host-v5\\build\\sdas251.exe",
+            "-plosgff",
+            "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-bitops-20261031\\experiments\\native-indexed-two-use\\observer-counterexample-v5\\small-b-off\\probe.rel",
+            "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-bitops-20261031\\experiments\\native-indexed-two-use\\observer-diagnostics-v5\\small-b\\off.asm"
+          ],
+          "cwd": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-bitops-20261031\\experiments\\native-indexed-two-use\\observer-counterexample-v5\\small-b-off",
+          "started": 1793434423.2920914,
+          "timeout": 15,
+          "pid": 65472,
+          "status": "EXITED",
+          "jobAssignment": "assigned",
+          "exitCode": 0,
+          "seconds": 0.010202646255493164,
+          "jobProcesses": 1,
+          "activeChildren": 0
+        }
+      },
+      "on": {
+        "role": "on",
+        "result": 120,
+        "A": 86,
+        "B": 120,
+        "AParity": 0,
+        "events": [
+          [
+            "read",
+            1028,
+            2,
+            4660
+          ],
+          [
+            "io",
+            18
+          ],
+          [
+            "read",
+            1028,
+            2,
+            43981
+          ],
+          [
+            "io",
+            205
+          ],
+          [
+            "read",
+            1030,
+            1,
+            7
+          ],
+          [
+            "io",
+            1
+          ]
+        ],
+        "instructions": [
+          {
+            "pc": 0,
+            "bytes": "5e6400ff",
+            "op": "anl",
+            "args": "wr12,#0x00ff",
+            "line": 137
+          },
+          {
+            "pc": 4,
+            "bytes": "69330004",
+            "op": "mov",
+            "args": "wr6,@dr12+4",
+            "line": 140
+          },
+          {
+            "pc": 8,
+            "bytes": "7c96",
+            "op": "mov",
+            "args": "r9,r6",
+            "line": 143
+          },
+          {
+            "pc": 10,
+            "bytes": "7a91b1",
+            "op": "mov",
+            "args": "(_io+0),r9",
+            "line": 146
+          },
+          {
+            "pc": 13,
+            "bytes": "69330004",
+            "op": "mov",
+            "args": "wr6,@dr12+4",
+            "line": 148
+          },
+          {
+            "pc": 17,
+            "bytes": "7c97",
+            "op": "mov",
+            "args": "r9,r7",
+            "line": 149
+          },
+          {
+            "pc": 19,
+            "bytes": "7a91b1",
+            "op": "mov",
+            "args": "(_io+0),r9",
+            "line": 152
+          },
+          {
+            "pc": 22,
+            "bytes": "29930006",
+            "op": "mov",
+            "args": "r9,@dr12+6",
+            "line": 154
+          },
+          {
+            "pc": 26,
+            "bytes": "be9007",
+            "op": "cmp",
+            "args": "r9,#0x07",
+            "line": 156
+          },
+          {
+            "pc": 29,
+            "bytes": "6805",
+            "op": "je",
+            "args": "__wm____m251r4_f_1000000",
+            "line": 157
+          },
+          {
+            "pc": 31,
+            "bytes": "7e9000",
+            "op": "mov",
+            "args": "r9,#0",
+            "line": 159
+          },
+          {
+            "pc": 34,
+            "bytes": "8003",
+            "op": "sjmp",
+            "args": "__wm____m251r4_f_1000001",
+            "line": 160
+          },
+          {
+            "pc": 36,
+            "bytes": "7e9001",
+            "op": "mov",
+            "args": "r9,#1",
+            "line": 162
+          },
+          {
+            "pc": 39,
+            "bytes": "7a91b1",
+            "op": "mov",
+            "args": "(_io+0),r9",
+            "line": 166
+          },
+          {
+            "pc": 42,
+            "bytes": "7e71f0",
+            "op": "mov",
+            "args": "r7,(_observer+0)",
+            "line": 168
+          },
+          {
+            "pc": 45,
+            "bytes": "aa",
+            "op": "eret",
+            "args": "",
+            "line": 169
+          }
+        ],
+        "child": {
+          "argv": [
+            "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-bitops-20261031\\experiments\\native-indexed-two-use\\host-v5\\build\\sdas251.exe",
+            "-plosgff",
+            "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-bitops-20261031\\experiments\\native-indexed-two-use\\observer-counterexample-v5\\small-b-on\\probe.rel",
+            "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-bitops-20261031\\experiments\\native-indexed-two-use\\observer-diagnostics-v5\\small-b\\on.asm"
+          ],
+          "cwd": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-bitops-20261031\\experiments\\native-indexed-two-use\\observer-counterexample-v5\\small-b-on",
+          "started": 1793434423.3354836,
+          "timeout": 15,
+          "pid": 51212,
+          "status": "EXITED",
+          "jobAssignment": "assigned",
+          "exitCode": 0,
+          "seconds": 0.011504173278808594,
+          "jobProcesses": 1,
+          "activeChildren": 0
+        }
+      }
+    },
+    {
+      "model": "large",
+      "observer": "b",
+      "off": {
+        "role": "off",
+        "result": 18,
+        "A": 52,
+        "B": 18,
+        "AParity": 1,
+        "events": [
+          [
+            "read",
+            1028,
+            2,
+            4660
+          ],
+          [
+            "io",
+            18
+          ],
+          [
+            "read",
+            1028,
+            2,
+            43981
+          ],
+          [
+            "io",
+            205
+          ],
+          [
+            "read",
+            1030,
+            1,
+            7
+          ],
+          [
+            "io",
+            1
+          ]
+        ],
+        "instructions": [
+          {
+            "pc": 0,
+            "bytes": "5e6400ff",
+            "op": "anl",
+            "args": "wr12,#0x00ff",
+            "line": 123
+          },
+          {
+            "pc": 4,
+            "bytes": "7f13",
+            "op": "mov",
+            "args": "dr4,dr12",
+            "line": 124
+          },
+          {
+            "pc": 6,
+            "bytes": "0b1e",
+            "op": "inc",
+            "args": "dr4,#4",
+            "line": 125
+          },
+          {
+            "pc": 8,
+            "bytes": "5e2400ff",
+            "op": "anl",
+            "args": "wr4,#0x00ff",
+            "line": 126
+          },
+          {
+            "pc": 12,
+            "bytes": "0b1ac0",
+            "op": "mov",
+            "args": "wr24,@dr4",
+            "line": 128
+          },
+          {
+            "pc": 15,
+            "bytes": "7d5c",
+            "op": "mov",
+            "args": "wr10,wr24",
+            "line": 131
+          },
+          {
+            "pc": 17,
+            "bytes": "7e91f0",
+            "op": "mov",
+            "args": "r9,b",
+            "line": 132
+          },
+          {
+            "pc": 20,
+            "bytes": "7a91b1",
+            "op": "mov",
+            "args": "(_io+0),r9",
+            "line": 135
+          },
+          {
+            "pc": 23,
+            "bytes": "0b1aa0",
+            "op": "mov",
+            "args": "wr20,@dr4",
+            "line": 137
+          },
+          {
+            "pc": 26,
+            "bytes": "7d3a",
+            "op": "mov",
+            "args": "wr6,wr20",
+            "line": 138
+          },
+          {
+            "pc": 28,
+            "bytes": "7c97",
+            "op": "mov",
+            "args": "r9,r7",
+            "line": 139
+          },
+          {
+            "pc": 30,
+            "bytes": "7a91b1",
+            "op": "mov",
+            "args": "(_io+0),r9",
+            "line": 142
+          },
+          {
+            "pc": 33,
+            "bytes": "29930006",
+            "op": "mov",
+            "args": "r9,@dr12+6",
+            "line": 144
+          },
+          {
+            "pc": 37,
+            "bytes": "be9007",
+            "op": "cmp",
+            "args": "r9,#0x07",
+            "line": 146
+          },
+          {
+            "pc": 40,
+            "bytes": "6805",
+            "op": "je",
+            "args": "__wm____m251r4_f_1000000",
+            "line": 147
+          },
+          {
+            "pc": 42,
+            "bytes": "7e9000",
+            "op": "mov",
+            "args": "r9,#0",
+            "line": 149
+          },
+          {
+            "pc": 45,
+            "bytes": "8003",
+            "op": "sjmp",
+            "args": "__wm____m251r4_f_1000001",
+            "line": 150
+          },
+          {
+            "pc": 47,
+            "bytes": "7e9001",
+            "op": "mov",
+            "args": "r9,#1",
+            "line": 152
+          },
+          {
+            "pc": 50,
+            "bytes": "7a91b1",
+            "op": "mov",
+            "args": "(_io+0),r9",
+            "line": 156
+          },
+          {
+            "pc": 53,
+            "bytes": "7e71f0",
+            "op": "mov",
+            "args": "r7,(_observer+0)",
+            "line": 158
+          },
+          {
+            "pc": 56,
+            "bytes": "aa",
+            "op": "eret",
+            "args": "",
+            "line": 159
+          }
+        ],
+        "child": {
+          "argv": [
+            "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-bitops-20261031\\experiments\\native-indexed-two-use\\host-v5\\build\\sdas251.exe",
+            "-plosgff",
+            "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-bitops-20261031\\experiments\\native-indexed-two-use\\observer-counterexample-v5\\large-b-off\\probe.rel",
+            "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-bitops-20261031\\experiments\\native-indexed-two-use\\observer-diagnostics-v5\\large-b\\off.asm"
+          ],
+          "cwd": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-bitops-20261031\\experiments\\native-indexed-two-use\\observer-counterexample-v5\\large-b-off",
+          "started": 1793434423.3484416,
+          "timeout": 15,
+          "pid": 31236,
+          "status": "EXITED",
+          "jobAssignment": "assigned",
+          "exitCode": 0,
+          "seconds": 0.012577533721923828,
+          "jobProcesses": 1,
+          "activeChildren": 0
+        }
+      },
+      "on": {
+        "role": "on",
+        "result": 120,
+        "A": 86,
+        "B": 120,
+        "AParity": 0,
+        "events": [
+          [
+            "read",
+            1028,
+            2,
+            4660
+          ],
+          [
+            "io",
+            18
+          ],
+          [
+            "read",
+            1028,
+            2,
+            43981
+          ],
+          [
+            "io",
+            205
+          ],
+          [
+            "read",
+            1030,
+            1,
+            7
+          ],
+          [
+            "io",
+            1
+          ]
+        ],
+        "instructions": [
+          {
+            "pc": 0,
+            "bytes": "5e6400ff",
+            "op": "anl",
+            "args": "wr12,#0x00ff",
+            "line": 137
+          },
+          {
+            "pc": 4,
+            "bytes": "69330004",
+            "op": "mov",
+            "args": "wr6,@dr12+4",
+            "line": 140
+          },
+          {
+            "pc": 8,
+            "bytes": "7c96",
+            "op": "mov",
+            "args": "r9,r6",
+            "line": 143
+          },
+          {
+            "pc": 10,
+            "bytes": "7a91b1",
+            "op": "mov",
+            "args": "(_io+0),r9",
+            "line": 146
+          },
+          {
+            "pc": 13,
+            "bytes": "69330004",
+            "op": "mov",
+            "args": "wr6,@dr12+4",
+            "line": 148
+          },
+          {
+            "pc": 17,
+            "bytes": "7c97",
+            "op": "mov",
+            "args": "r9,r7",
+            "line": 149
+          },
+          {
+            "pc": 19,
+            "bytes": "7a91b1",
+            "op": "mov",
+            "args": "(_io+0),r9",
+            "line": 152
+          },
+          {
+            "pc": 22,
+            "bytes": "29930006",
+            "op": "mov",
+            "args": "r9,@dr12+6",
+            "line": 154
+          },
+          {
+            "pc": 26,
+            "bytes": "be9007",
+            "op": "cmp",
+            "args": "r9,#0x07",
+            "line": 156
+          },
+          {
+            "pc": 29,
+            "bytes": "6805",
+            "op": "je",
+            "args": "__wm____m251r4_f_1000000",
+            "line": 157
+          },
+          {
+            "pc": 31,
+            "bytes": "7e9000",
+            "op": "mov",
+            "args": "r9,#0",
+            "line": 159
+          },
+          {
+            "pc": 34,
+            "bytes": "8003",
+            "op": "sjmp",
+            "args": "__wm____m251r4_f_1000001",
+            "line": 160
+          },
+          {
+            "pc": 36,
+            "bytes": "7e9001",
+            "op": "mov",
+            "args": "r9,#1",
+            "line": 162
+          },
+          {
+            "pc": 39,
+            "bytes": "7a91b1",
+            "op": "mov",
+            "args": "(_io+0),r9",
+            "line": 166
+          },
+          {
+            "pc": 42,
+            "bytes": "7e71f0",
+            "op": "mov",
+            "args": "r7,(_observer+0)",
+            "line": 168
+          },
+          {
+            "pc": 45,
+            "bytes": "aa",
+            "op": "eret",
+            "args": "",
+            "line": 169
+          }
+        ],
+        "child": {
+          "argv": [
+            "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-bitops-20261031\\experiments\\native-indexed-two-use\\host-v5\\build\\sdas251.exe",
+            "-plosgff",
+            "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-bitops-20261031\\experiments\\native-indexed-two-use\\observer-counterexample-v5\\large-b-on\\probe.rel",
+            "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-bitops-20261031\\experiments\\native-indexed-two-use\\observer-diagnostics-v5\\large-b\\on.asm"
+          ],
+          "cwd": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-bitops-20261031\\experiments\\native-indexed-two-use\\observer-counterexample-v5\\large-b-on",
+          "started": 1793434423.3625867,
+          "timeout": 15,
+          "pid": 39348,
+          "status": "EXITED",
+          "jobAssignment": "assigned",
+          "exitCode": 0,
+          "seconds": 0.01125192642211914,
+          "jobProcesses": 1,
+          "activeChildren": 0
+        }
+      }
+    }
+  ],
+  "compiler": {
+    "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-bitops-20261031\\experiments\\native-indexed-two-use\\host-v5\\build\\sdcc.exe",
+    "sha256": "ba46ab1e6a525fc324ca60225a7c70484ec6f27fbfc97ef802203d4779e065c7"
+  },
+  "script": {
+    "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-bitops-20261031\\experiments\\native-indexed-two-use\\seal_observer_counterexample_v5.py",
+    "sha256": "838624b0244bd48feca0761bf6056ed6b4128b223b00678dcecbff990340fa22"
+  },
+  "decoder": {
+    "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-bitops-20261031\\experiments\\native-indexed-two-use\\check_word_regions_v5.py",
+    "sha256": "65c1e75dd40ffc5914ae8b6131083259d4b0b5388939ecb9981a63e2c31f9df9"
+  },
+  "hardware": false,
+  "scope": "Actual bounded encoder bytes for ACC/B observer; interpreted raw machine output differs. PSW/PSW1 earlier admission diagnostics are not each claimed wrong code."
+}

@@ -39,7 +39,6 @@ public sealed class StudioXMcpTools : IAsyncDisposable
             new FirmwareDownloadMcpTools(context),
             new StcIspMcpTools(context),
             new DeviceCatalogMcpTools(context),
-            new LvglMcpTools(context),
             new SkillMcpTools(context),
             new PdfMcpTools(context),
             new QmdMcpTools(context),
@@ -122,7 +121,10 @@ public sealed class StudioXMcpTools : IAsyncDisposable
         {
             await context.Operations.DisposeAsync().ConfigureAwait(false);
         }
-        catch (Exception error) { errors.Add(error); }
+        catch (Exception error)
+        {
+            errors.Add(error);
+        }
         await pluginGate.WaitAsync().ConfigureAwait(false);
         try
         {

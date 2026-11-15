@@ -56,7 +56,9 @@ public partial class MainWindow
         }
         await PersistEditorCheckpointAsync();
         UpdateLayout();
-        await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ContextIdle);
+        await Dispatcher.InvokeAsync(() =>
+        {
+        }, DispatcherPriority.ContextIdle);
         Render(this, Path.Combine(directory, "startup.png"));
         await File.WriteAllTextAsync(Path.Combine(directory, "startup-result.txt"), "PASS " + checks.Count + "\n" + string.Join('\n', checks));
     }

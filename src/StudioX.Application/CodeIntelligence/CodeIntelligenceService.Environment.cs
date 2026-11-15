@@ -21,7 +21,10 @@ public sealed partial class CodeIntelligenceService
         {
             return await RefreshEnvironmentCoreAsync(token).ConfigureAwait(false);
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }, token);
 
     private async Task<bool> RefreshEnvironmentCoreAsync(CancellationToken token)
@@ -75,7 +78,10 @@ public sealed partial class CodeIntelligenceService
             log.Enqueue((unchanged ? "语言服务已恢复。" : "工程分析配置已变化，语言服务已重新加载。") + StatusDescription);
             return true;
         }
-        catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+            throw;
+        }
         catch (Exception error)
         {
             ResetDiagnosticSession();

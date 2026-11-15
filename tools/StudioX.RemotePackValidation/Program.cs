@@ -6,9 +6,15 @@ using StudioX.Application;
 using StudioX.Foundation;
 using StudioX.Packages;
 
-if (args.Length is < 1 or > 2) { throw new ArgumentException("Usage: StudioX.RemotePackValidation <new-output-directory> [complete-stm32-pack]"); }
+if (args.Length is < 1 or > 2)
+{
+    throw new ArgumentException("Usage: StudioX.RemotePackValidation <new-output-directory> [complete-stm32-pack]");
+}
 var output = Path.GetFullPath(args[0]);
-if (Directory.Exists(output)) { throw new ArgumentException("Use a new output directory."); }
+if (Directory.Exists(output))
+{
+    throw new ArgumentException("Use a new output directory.");
+}
 Directory.CreateDirectory(output);
 const string commit = "0123456789abcdef0123456789abcdef01234567";
 const string packId = "test.remote";
@@ -104,7 +110,9 @@ using (var client = new HttpClient(invalidHandler))
             await sync.SyncAsync();
             throw new InvalidOperationException("Traversal path was accepted.");
         }
-        catch (StudioXException ex) when (ex.Code == "PACK_REMOTE_INDEX") { }
+        catch (StudioXException ex) when (ex.Code == "PACK_REMOTE_INDEX")
+        {
+        }
         Require(!invalidHandler.Requests.Any(uri => uri.AbsolutePath.EndsWith(".mcupack", StringComparison.Ordinal)),
             "invalid path rejected before download");
         Console.WriteLine("PASS: unsafe index path rejected before download");

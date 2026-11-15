@@ -226,7 +226,10 @@ public sealed class WebResearchService
         {
             key = apiKeyProvider();
         }
-        catch (Exception) { throw new StudioXException("MCP_WEB_CREDENTIAL", "无法读取 Tavily API Key。"); }
+        catch (Exception)
+        {
+            throw new StudioXException("MCP_WEB_CREDENTIAL", "无法读取 Tavily API Key。");
+        }
         if (!string.IsNullOrEmpty(key))
         {
             if (key.Length > 2560 || key.Any(ch => ch is < '!' or > '~'))
@@ -369,7 +372,10 @@ public sealed class WebResearchService
             {
                 name = Uri.UnescapeDataString(name.Replace('+', ' '));
             }
-            catch (UriFormatException) { return new UriBuilder(uri) { Query = "" }.Uri.AbsoluteUri; }
+            catch (UriFormatException)
+            {
+                return new UriBuilder(uri) { Query = "" }.Uri.AbsoluteUri;
+            }
             var normalized = name.Replace("_", "", StringComparison.Ordinal)
                 .Replace("-", "", StringComparison.Ordinal).ToLowerInvariant();
             if (normalized is "key" or "apikey" or "token" or "accesstoken" or "auth" or

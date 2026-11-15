@@ -119,7 +119,10 @@ internal sealed class AgentChangesView : Grid
         {
             RefreshPlans(taskTitle, validationStatus, current, focus, previous);
         }
-        finally { preservingView = wasPreserving; }
+        finally
+        {
+            preservingView = wasPreserving;
+        }
     }
 
     private void RefreshPlans(string taskTitle, string validationStatus, IReadOnlyList<AgentEditPlan> current, AgentEditPlan? focus, AgentEditPlan? previous)
@@ -207,7 +210,17 @@ internal sealed class AgentChangesView : Grid
         {
             action.SetResourceReference(StyleProperty, "PrimaryButton");
         }
-        action.Click += async (_, _) => { if (plan.Status == "pending" && ApplyRequested is { } apply) { await apply(plan.Id); } else if (UndoRequested is { } undo) { await undo(plan.Id); } };
+        action.Click += async (_, _) =>
+        {
+            if (plan.Status == "pending" && ApplyRequested is { } apply)
+            {
+                await apply(plan.Id);
+            }
+            else if (UndoRequested is { } undo)
+            {
+                await undo(plan.Id);
+            }
+        };
         actions.Children.Add(action);
         details.Children.Add(actions);
         if (currentPlans.Any(p => p.TaskId == plan.TaskId && p.Status == "applied"))
@@ -219,7 +232,13 @@ internal sealed class AgentChangesView : Grid
                 IsEnabled = CanAct?.Invoke() ?? true,
                 Margin = new(8, 0, 0, 8)
             };
-            undoTask.Click += async (_, _) => { if (UndoTaskRequested is { } undo) { await undo(plan.TaskId); } };
+            undoTask.Click += async (_, _) =>
+            {
+                if (UndoTaskRequested is { } undo)
+                {
+                    await undo(plan.TaskId);
+                }
+            };
             actions.Children.Add(undoTask);
         }
         var hint = new TextBlock
@@ -272,8 +291,18 @@ internal sealed class AgentChangesView : Grid
                 Margin = new(4, 0, 6, 0)
             };
             System.Windows.Automation.AutomationProperties.SetName(check, $"保留修改 {i + 1}");
-            check.Checked += (_, _) => { selected[plan.Id].Add(key); currentHunk = index; ShowComparison(); };
-            check.Unchecked += (_, _) => { selected[plan.Id].Remove(key); currentHunk = index; ShowComparison(); };
+            check.Checked += (_, _) =>
+            {
+                selected[plan.Id].Add(key);
+                currentHunk = index;
+                ShowComparison();
+            };
+            check.Unchecked += (_, _) =>
+            {
+                selected[plan.Id].Remove(key);
+                currentHunk = index;
+                ShowComparison();
+            };
             row.Children.Add(check);
             var navigate = new Button
             {
@@ -281,7 +310,11 @@ internal sealed class AgentChangesView : Grid
                 HorizontalContentAlignment = HorizontalAlignment.Left,
                 Padding = new(5, 2, 5, 2)
             };
-            navigate.Click += (_, _) => { currentHunk = index; FocusHunk(); };
+            navigate.Click += (_, _) =>
+            {
+                currentHunk = index;
+                FocusHunk();
+            };
             row.Children.Add(navigate);
             hunks.Items.Add(row);
         }

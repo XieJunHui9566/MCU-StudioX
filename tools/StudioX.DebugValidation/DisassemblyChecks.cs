@@ -149,7 +149,10 @@ internal static class DisassemblyChecks
         {
             await action();
         }
-        catch (StudioXException error) when (error.Code == code) { return error; }
+        catch (StudioXException error) when (error.Code == code)
+        {
+            return error;
+        }
         throw new InvalidOperationException("Expected " + code);
     }
     private static async Task RejectArgumentAsync(Func<Task> action)
@@ -158,7 +161,10 @@ internal static class DisassemblyChecks
         {
             await action();
         }
-        catch (ArgumentOutOfRangeException) { return; }
+        catch (ArgumentOutOfRangeException)
+        {
+            return;
+        }
         throw new InvalidOperationException("Expected invalid disassembly range to be rejected.");
     }
 
@@ -166,7 +172,15 @@ internal static class DisassemblyChecks
     private sealed class ResponseTransport(string response) : IGdbMiTransport
     {
         public List<string> Commands { get; } = [];
-        public event Action<string>? RecordReceived { add { } remove { } }
+        public event Action<string>? RecordReceived
+        {
+            add
+            {
+            }
+            remove
+            {
+            }
+        }
         public Task<string> ExecuteAsync(string command, CancellationToken token = default)
         {
             token.ThrowIfCancellationRequested();

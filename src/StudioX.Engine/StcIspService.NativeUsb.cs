@@ -84,9 +84,15 @@ public sealed partial class StcIspService
                 capture.Report(error + "\n");
                 throw;
             }
-            finally { await File.WriteAllTextAsync(prepared.LogPath, capture.Text, CancellationToken.None); }
+            finally
+            {
+                await File.WriteAllTextAsync(prepared.LogPath, capture.Text, CancellationToken.None);
+            }
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
 
     private async Task<HidDevice> WaitForNativeUsbAsync(CancellationToken token)

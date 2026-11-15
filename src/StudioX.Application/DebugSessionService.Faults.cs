@@ -32,7 +32,10 @@ public sealed partial class DebugSessionService
                 BinaryPrimitives.ReadUInt32LittleEndian(bytes.AsSpan(4)), BinaryPrimitives.ReadUInt32LittleEndian(bytes.AsSpan(12)),
                 BinaryPrimitives.ReadUInt32LittleEndian(bytes.AsSpan(16)), null, null, raw, true, addresses);
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
 
         static uint? Parse(string? value)
         {

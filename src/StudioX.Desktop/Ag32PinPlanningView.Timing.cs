@@ -36,7 +36,10 @@ public partial class Ag32PinPlanningView
             SysClock.Text = ClockText(recommendation.Clocks.SysMhz);
             BusClock.Text = ClockText(recommendation.Clocks.BusMhz);
         }
-        finally { loading = false; }
+        finally
+        {
+            loading = false;
+        }
         MarkChanged();
     }
 

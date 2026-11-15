@@ -24,11 +24,17 @@ if (args is ["--build-existing", var buildProject, var buildRuntime, var buildOu
 }
 
 // 本程序只生成工程、真实离线编译和准备命令；所有拒绝测试必须发生在硬件进程启动之前。
-if (args.Length != 3) { throw new ArgumentException("Usage: <AG32 mcupack> <runtime directory> <new output directory>"); }
+if (args.Length != 3)
+{
+    throw new ArgumentException("Usage: <AG32 mcupack> <runtime directory> <new output directory>");
+}
 var archive = Path.GetFullPath(args[0]);
 var runtime = Path.GetFullPath(args[1]);
 var output = Path.GetFullPath(args[2]);
-if (Directory.Exists(output)) { throw new InvalidOperationException("Choose a new output directory."); }
+if (Directory.Exists(output))
+{
+    throw new InvalidOperationException("Choose a new output directory.");
+}
 Directory.CreateDirectory(output);
 var results = new List<string>();
 var tools = new ToolsetCatalog(Path.Combine(runtime, "toolsets"));
@@ -135,6 +141,10 @@ async Task Reject(Func<Task> action, string description)
     {
         await action();
     }
-    catch (StudioXException) { Check(true, description); return; }
+    catch (StudioXException)
+    {
+        Check(true, description);
+        return;
+    }
     throw new InvalidOperationException("Expected rejection: " + description);
 }

@@ -15,7 +15,10 @@ public sealed class ProbeLease : IDisposable
         {
             return new(new FileStream(Path.Combine(directory, "debug-probe.lock"), FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None));
         }
-        catch (IOException ex) { throw new StudioXException("PROBE_BUSY", "烧录器正被另一个 StudioX 下载或调试会话占用。", ex); }
+        catch (IOException ex)
+        {
+            throw new StudioXException("PROBE_BUSY", "烧录器正被另一个 StudioX 下载或调试会话占用。", ex);
+        }
     }
     public void Dispose() => stream.Dispose();
 }

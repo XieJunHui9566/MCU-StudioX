@@ -32,10 +32,6 @@
       Include="../../examples/packs/agm.ag32vf303-preview/debug/ag32vf303.cfg"
       LogicalName="StudioX.Engine.Ag32PinMapping.Target.cfg" />
   </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource
-      Include="Resources/Lvgl/preview_host.c" />
-  </ItemGroup>
   <!-- 与已验证 CLI 编译同一份 C# 协议核心，IDE 不调用 Python 或复制报文实现。 -->
   <ItemGroup>
     <Compile

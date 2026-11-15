@@ -10,39 +10,69 @@ var image = Image.Load(Path.Combine(root, "AI8051U-MX251-0.0170-test.hex"));
 var usb = Fixture.Load(root, "usb");
 var serial = Fixture.Load(root, "serial");
 var replay = new UsbReplay(usb);
-var protocol = new Mx251NativeUsbProtocol(replay, _ => { });
+var protocol = new Mx251NativeUsbProtocol(replay, _ =>
+{
+});
 await protocol.IdentifyAsync(default);
 var result = await protocol.ProgramAsync(image.Code, new(DownloadMode: Mx251DownloadMode.NativeUsb), default);
 Check(result.ProgramAcknowledged && !result.ConfigurationReadback && !result.FlashReadback && replay.Done, "USB captured frames / image / preserving options / honest completion");
 var uart = new SerialReplay(serial);
-var sp = new Mx251SerialProtocol(uart, _ => { });
+var sp = new Mx251SerialProtocol(uart, _ =>
+{
+});
 await sp.IdentifyAsync(default);
 var sr = await sp.ProgramAsync(image.Code, new(DownloadMode: Mx251DownloadMode.Serial, SerialPort: "COM6"), default);
 Check(uart.Done && uart.Bauds.SequenceEqual(new[] { 2400, 115200 }) && sr.ProgramAcknowledged && !sr.ConfigurationReadback, "serial capture, fragmented RX, calibration, baud switch, 4 blocks, options and run");
 // Reject a different model before calibration/erase; do not replay unchanged legacy protocols.
 var wrong = new UsbReplay(usb, wrongModel: true);
-var bad = new Mx251NativeUsbProtocol(wrong, _ => { });
+var bad = new Mx251NativeUsbProtocol(wrong, _ =>
+{
+});
 await Reject(() => bad.IdentifyAsync(default));
 Check(wrong.Writes == 1, "wrong USB model rejected after identification only");
 var ack = new UsbReplay(usb, badAck: true);
-var ap = new Mx251NativeUsbProtocol(ack, _ => { });
+var ap = new Mx251NativeUsbProtocol(ack, _ =>
+{
+});
 await ap.IdentifyAsync(default);
 await Reject(() => ap.ProgramAsync(image.Code, new(DownloadMode: Mx251DownloadMode.NativeUsb), default));
 Check(!ack.SentOptions && !ack.SentRun, "failed block ACK stops options and run");
 var changed = new UsbReplay(usb);
-var cp = new Mx251NativeUsbProtocol(changed, _ => { });
+var cp = new Mx251NativeUsbProtocol(changed, _ =>
+{
+});
 await cp.IdentifyAsync(default);
 await Reject(() => cp.ProgramAsync(image.Code, new(IrcHz: 24000000, DownloadMode: Mx251DownloadMode.NativeUsb), default));
 Check(changed.Writes == 1, "USB clock mismatch rejected before erase");
 // A full address window catches overflow at the last 128/64-byte packet; ACK fixture is synthetic.
 var edge = new EdgeUsb(usb.First(e => e.Direction == "rx").Payload);
-var ep = new Mx251NativeUsbProtocol(edge, _ => { });
+var ep = new Mx251NativeUsbProtocol(edge, _ =>
+{
+});
 await ep.IdentifyAsync(default);
 await ep.ProgramAsync(new byte[65536], new(DownloadMode: Mx251DownloadMode.NativeUsb), default);
 Check(edge.Blocks == 512 && edge.LastAddress == 0xff80, "USB 64 KiB boundary offset and no wrap");
 Console.WriteLine("PASS: captured USB/serial image and programming flows, UART calibration/fragments, wrong target, ACK failure, clock mismatch, full USB code window. No hardware opened.");
-static void Check(bool ok, string label) { if (!ok) { throw new Exception(label); } Console.WriteLine("PASS " + label); }
-static async Task Reject(Func<Task> f) { try { await f(); } catch (StudioXException) { return; } throw new Exception("expected rejection"); }
+static void Check(bool ok, string label)
+{
+    if (!ok)
+    {
+        throw new Exception(label);
+    }
+    Console.WriteLine("PASS " + label);
+}
+static async Task Reject(Func<Task> f)
+{
+    try
+    {
+        await f();
+    }
+    catch (StudioXException)
+    {
+        return;
+    }
+    throw new Exception("expected rejection");
+}
 record Entry(string Direction, byte[] Frame, byte[] Payload);
 static class Fixture
 {

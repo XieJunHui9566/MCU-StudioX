@@ -105,7 +105,10 @@ public sealed class GdbDebugAdapter(IGdbMiTransport transport, DebugTargetProfil
             {
                 watched.Add(new(expression, (await SendAsync("-data-evaluate-expression " + MiRecord.Quote(expression), token)).String("value")));
             }
-            catch (StudioXException ex) when (ex.Code == "GDB_COMMAND") { watched.Add(new(expression, "不可用：" + ex.Message)); }
+            catch (StudioXException ex) when (ex.Code == "GDB_COMMAND")
+            {
+                watched.Add(new(expression, "不可用：" + ex.Message));
+            }
         }
         return new(registers, frames, locals, watched.ToArray(), frame);
     }

@@ -36,7 +36,9 @@ public partial class MainWindow
         {
             ApplyTheme(theme);
             UpdateLayout();
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ContextIdle);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.ContextIdle);
             var labels = Descendants<TextBlock>(ProblemsGrid).ToArray();
             var row = (DataGridRow)ProblemsGrid.ItemContainerGenerator.ContainerFromItem(rows[1]);
             Check(labels.Any(t => t.Text == rows[1].ChineseMessage) && labels.Any(t => t.Text == rows[1].Message), theme.Id + ": Chinese and original English both rendered");
@@ -49,7 +51,9 @@ public partial class MainWindow
         Height = 760;
         ApplyTheme(ThemeService.Dark);
         UpdateLayout();
-        await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ContextIdle);
+        await Dispatcher.InvokeAsync(() =>
+        {
+        }, DispatcherPriority.ContextIdle);
         Check(ProblemsGrid.Columns[^1].ActualWidth >= 240, "compact window keeps a readable description column");
         var column = ProblemsGrid.Columns[^1];
         Check(column.ClipboardContentBinding is System.Windows.Data.Binding { Path.Path: "BilingualMessage" }, "copying diagnostic description includes both languages");

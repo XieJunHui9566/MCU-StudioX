@@ -268,7 +268,11 @@ internal static class ConnectionRecoveryChecks
             {
                 action();
             }
-            catch (StudioXException) { Check(true, description); return; }
+            catch (StudioXException)
+            {
+                Check(true, description);
+                return;
+            }
             throw new InvalidOperationException("Expected rejection: " + description);
         }
     }

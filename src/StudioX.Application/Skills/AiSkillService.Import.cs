@@ -89,7 +89,13 @@ public sealed partial class AiSkillService
                 Scope = "imported"
             };
         }
-        finally { if (Directory.Exists(stage)) { Directory.Delete(stage, recursive: true); } }
+        finally
+        {
+            if (Directory.Exists(stage))
+            {
+                Directory.Delete(stage, recursive: true);
+            }
+        }
     }
 
     private static void RejectLinks(string path)

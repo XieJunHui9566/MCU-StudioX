@@ -38,7 +38,13 @@ internal static class MdbChecks
         var engine = new PicDebugService(catalog, services.Builds.Pic, Path.Combine(output, "debug-data"));
         await services.Debugger.OpenProjectAsync(root);
         var logGate = new object();
-        services.Debugger.Output += text => { lock (logGate) { File.AppendAllText(Path.Combine(output, "session.log"), text + "\n"); } };
+        services.Debugger.Output += text =>
+        {
+            lock (logGate)
+            {
+                File.AppendAllText(Path.Combine(output, "session.log"), text + "\n");
+            }
+        };
         await services.Debugger.StartPicAsync(engine, null);
         Check(services.Debugger.State == DebugState.Stopped && !services.Debugger.IsHardware && services.Debugger.IsPicDebug,
             "real MDB simulator reaches main without connecting a probe");
@@ -48,7 +54,10 @@ internal static class MdbChecks
             await services.Builds.BuildAsync(root);
             throw new InvalidOperationException("Build during active debug accepted");
         }
-        catch (StudioXException error) when (error.Code == "PROJECT_OUTPUT_BUSY") { Check(true, "active debug session prevents build output from being replaced"); }
+        catch (StudioXException error) when (error.Code == "PROJECT_OUTPUT_BUSY")
+        {
+            Check(true, "active debug session prevents build output from being replaced");
+        }
         Check(services.Debugger.Snapshot.Registers.Any(r => r.Name == "WREG" && r.Value.StartsWith("0x", StringComparison.Ordinal)), "working register is read from the vendor backend");
         Check(PicProgrammerSelection.Automatic([new("ONE")])?.Serial == "ONE" && PicProgrammerSelection.Automatic([new("ONE"), new("TWO")]) is null,
             "one programmer is automatic, multiple programmers require selection");
@@ -57,7 +66,10 @@ internal static class MdbChecks
             PicProgrammerSelection.Automatic([]);
             throw new InvalidOperationException("Missing programmer accepted");
         }
-        catch (StudioXException error) when (error.Code == "PIC_PROGRAMMER_MISSING") { Check(true, "missing programmer fails without a selection dialog"); }
+        catch (StudioXException error) when (error.Code == "PIC_PROGRAMMER_MISSING")
+        {
+            Check(true, "missing programmer fails without a selection dialog");
+        }
         await services.Debugger.ChangeWatchAsync("counter", false);
         Check(services.Debugger.Snapshot.Watches.Any(w => w.Name == "counter" && w.Value.StartsWith("0x", StringComparison.Ordinal)), "live symbol evaluation populates watches");
         await services.Debugger.ToggleBreakpointAsync("src/main.c", 16);
@@ -75,7 +87,10 @@ internal static class MdbChecks
             await services.Debugger.ReadMemoryAsync(uint.MaxValue, 16);
             throw new InvalidOperationException("Overflowing memory read accepted");
         }
-        catch (ArgumentOutOfRangeException) { Check(true, "overflowing file-register address is rejected before sending a command"); }
+        catch (ArgumentOutOfRangeException)
+        {
+            Check(true, "overflowing file-register address is rejected before sending a command");
+        }
         var original = Convert.FromHexString(await services.Debugger.ReadMemoryAsync(0x20, 1));
         await services.Debugger.WritePicFileRegistersAsync(0x20, [0x5a]);
         Check((await services.Debugger.ReadMemoryAsync(0x20, 1)).Equals("5a", StringComparison.OrdinalIgnoreCase), "file register writes are read back");
@@ -130,7 +145,10 @@ internal static class MdbChecks
                 await process.ExecuteAsync("echo valid\nquit");
                 throw new InvalidOperationException("Multiple commands accepted");
             }
-            catch (StudioXException error) when (error.Code == "MDB_COMMAND") { Check(true, "command injection is rejected"); }
+            catch (StudioXException error) when (error.Code == "MDB_COMMAND")
+            {
+                Check(true, "command injection is rejected");
+            }
             await process.ExecuteAsync("echo ready");
             using var cancellation = new CancellationTokenSource(TimeSpan.FromMilliseconds(250));
             try

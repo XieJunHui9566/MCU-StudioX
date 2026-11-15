@@ -18,7 +18,9 @@ public partial class MainWindow
             using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(4));
             while (!condition())
             {
-                await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Background);
+                await Dispatcher.InvokeAsync(() =>
+                {
+                }, DispatcherPriority.Background);
                 await Task.Delay(10, timeout.Token);
             }
         }

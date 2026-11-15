@@ -138,7 +138,10 @@ public partial class MainWindow
                 settings.Port.Length == 0 ? "请选择 COM 串口并保存；串口仿真也使用此串口和传输波特率。" :
                 "设置已加载。下载与串口仿真共用此串口和波特率；调试先握手，监控不可用时自动制作，重新上电提示见输出栏。";
         }
-        finally { applyingStcIsp = false; }
+        finally
+        {
+            applyingStcIsp = false;
+        }
         UpdateStcIspControls();
     }
 
@@ -217,7 +220,11 @@ public partial class MainWindow
         {
             settings.ValidateFor(stcIspCapabilities);
         }
-        catch (StudioXException ex) { error = ex.Message; return false; }
+        catch (StudioXException ex)
+        {
+            error = ex.Message;
+            return false;
+        }
         return true;
     }
 
@@ -348,7 +355,16 @@ public partial class MainWindow
         {
             settings.ValidateFor(capabilities, requirePort: true);
         }
-        catch (StudioXException ex) { await ShowProjectDetailsAsync(); StcIspStatus.Text = ex.Message; return; }
+        catch (StudioXException ex)
+        {
+            await ShowStcDownloadIssueAsync(root, ex.Message, ex.Code == "STC_ISP_PORT", token);
+            return;
+        }
+        if (settings.DownloadMode == StcDownloadMode.Serial &&
+            !await RequireStcSerialPortAsync(root, settings.Port, SerialTerminalService.ListPortsAsync, token))
+        {
+            return;
+        }
         await SaveAllSourcesAsync(root, token);
         ApplyBuildSettings(await services.StcBuilds.PrepareDownloadAsync(root, token));
         ShowBottom(0);

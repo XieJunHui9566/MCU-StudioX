@@ -37,7 +37,10 @@ internal sealed class DebugMcpTools(McpSessionContext context) : StudioXMcpToolP
             }
             return DebugStateJson(debug);
         }
-        finally { mcpDebugGate.Release(); }
+        finally
+        {
+            mcpDebugGate.Release();
+        }
     }
 
     [McpServerTool(Name = "debug_wait")]
@@ -105,7 +108,10 @@ internal sealed class DebugMcpTools(McpSessionContext context) : StudioXMcpToolP
                 }
             });
         }
-        finally { debug.Changed -= OnChanged; }
+        finally
+        {
+            debug.Changed -= OnChanged;
+        }
     }
 
     [McpServerTool(Name = "debug_log")]
@@ -184,10 +190,17 @@ internal sealed class DebugMcpTools(McpSessionContext context) : StudioXMcpToolP
             {
                 await Services.Debugger.StartOfflineAsync(cancellationToken).ConfigureAwait(false);
             }
-            catch { ClearOwnedDebugSession(); throw; }
+            catch
+            {
+                ClearOwnedDebugSession();
+                throw;
+            }
             return DebugStateJson(Services.Debugger);
         }
-        finally { mcpDebugGate.Release(); }
+        finally
+        {
+            mcpDebugGate.Release();
+        }
     }
 
     [McpServerTool(Name = "debug_start_hardware")]
@@ -217,10 +230,17 @@ internal sealed class DebugMcpTools(McpSessionContext context) : StudioXMcpToolP
             {
                 await Services.Debugger.StartHardwareAsync(preparation, cancellationToken).ConfigureAwait(false);
             }
-            catch { ClearOwnedDebugSession(); throw; }
+            catch
+            {
+                ClearOwnedDebugSession();
+                throw;
+            }
             return DebugStateJson(Services.Debugger);
         }
-        finally { mcpDebugGate.Release(); }
+        finally
+        {
+            mcpDebugGate.Release();
+        }
     }
 
     [McpServerTool(Name = "debug_control")]
@@ -262,7 +282,10 @@ internal sealed class DebugMcpTools(McpSessionContext context) : StudioXMcpToolP
             }
             return DebugStateJson(debug);
         }
-        finally { mcpDebugGate.Release(); }
+        finally
+        {
+            mcpDebugGate.Release();
+        }
     }
 
     [McpServerTool(Name = "debug_breakpoint_set")]
@@ -306,7 +329,10 @@ internal sealed class DebugMcpTools(McpSessionContext context) : StudioXMcpToolP
                 breakpoint = point
             });
         }
-        finally { mcpDebugGate.Release(); }
+        finally
+        {
+            mcpDebugGate.Release();
+        }
     }
 
     [McpServerTool(Name = "debug_breakpoint_remove")]
@@ -341,7 +367,10 @@ internal sealed class DebugMcpTools(McpSessionContext context) : StudioXMcpToolP
                 breakpointId = id
             });
         }
-        finally { mcpDebugGate.Release(); }
+        finally
+        {
+            mcpDebugGate.Release();
+        }
     }
 
     [McpServerTool(Name = "debug_read_memory")]
@@ -406,7 +435,10 @@ internal sealed class DebugMcpTools(McpSessionContext context) : StudioXMcpToolP
                 simulated = !debug.IsHardware
             });
         }
-        finally { mcpDebugGate.Release(); }
+        finally
+        {
+            mcpDebugGate.Release();
+        }
     }
 
     [McpServerTool(Name = "debug_disassemble")]
@@ -483,7 +515,10 @@ internal sealed class DebugMcpTools(McpSessionContext context) : StudioXMcpToolP
                 evidence = hardware ? "GDB 返回的目标反汇编。" : "离线确定性模拟指令，不是工程编译结果或实机 Flash。"
             });
         }
-        finally { mcpDebugGate.Release(); }
+        finally
+        {
+            mcpDebugGate.Release();
+        }
     }
 
     [McpServerTool(Name = "debug_snapshot")]
@@ -536,7 +571,10 @@ internal sealed class DebugMcpTools(McpSessionContext context) : StudioXMcpToolP
                 }).ToArray()
             });
         }
-        finally { mcpDebugGate.Release(); }
+        finally
+        {
+            mcpDebugGate.Release();
+        }
     }
 
     private bool DebugProjectMatches(DebugSessionService debug) => Context.Debug.ProjectMatches();
@@ -584,7 +622,10 @@ internal sealed class DebugMcpTools(McpSessionContext context) : StudioXMcpToolP
                 throw new StudioXException("DEBUG_SESSION_CHANGED", "审批期间调试会话已改变，请重新读取状态后再操作。");
             }
         }
-        finally { debug.Changed -= OnChanged; }
+        finally
+        {
+            debug.Changed -= OnChanged;
+        }
     }
 
     private void TrackOwnedDebugSession()
@@ -706,6 +747,9 @@ internal sealed class DebugMcpTools(McpSessionContext context) : StudioXMcpToolP
                     : "离线调试数据；演示不证明芯片上的任务执行或堆状态。"
             }, options);
         }
-        finally { mcpDebugGate.Release(); }
+        finally
+        {
+            mcpDebugGate.Release();
+        }
     }
 }

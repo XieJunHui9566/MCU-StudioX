@@ -77,12 +77,20 @@ public sealed partial class DebugSessionService(string dataDirectory, StudioX.De
                 {
                     throw new StudioXException("DEBUG_SETTINGS", "不支持的调试设置版本。");
                 }
-                breakpoints = settings.Breakpoints.Where(b => !b.SessionOnly).Select(b => { ValidateLocation(b.File, b.Line); BreakpointOptions.From(b).Validate(); return Unbound(b); }).ToArray();
+                breakpoints = settings.Breakpoints.Where(b => !b.SessionOnly).Select(b =>
+                {
+                    ValidateLocation(b.File, b.Line);
+                    BreakpointOptions.From(b).Validate();
+                    return Unbound(b);
+                }).ToArray();
                 watches = settings.Watches.Where(w => ValidWatch(w) || mon51Project && ValidMon51Watch(w)).Distinct(StringComparer.Ordinal).Take(32).ToArray();
             }
             Changed?.Invoke();
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
     public async Task StartOfflineAsync(CancellationToken token = default)
     {
@@ -133,7 +141,10 @@ public sealed partial class DebugSessionService(string dataDirectory, StudioX.De
             SetState(DebugState.Faulted, "调试启动失败，查看调试输出");
             throw;
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
     public async Task ExecuteAsync(DebugAction action, CancellationToken token = default)
     {
@@ -173,14 +184,21 @@ public sealed partial class DebugSessionService(string dataDirectory, StudioX.De
             {
                 await adapter.ActionAsync(action, token);
             }
-            catch (StudioXException ex) when (ex.Code == "GDB_COMMAND") { SetState(previousState, "命令被拒绝，目标状态未改变"); throw; }
+            catch (StudioXException ex) when (ex.Code == "GDB_COMMAND")
+            {
+                SetState(previousState, "命令被拒绝，目标状态未改变");
+                throw;
+            }
             catch
             {
                 try
                 {
                     await ReleaseAdapterAsync();
                 }
-                catch (Exception cleanup) { Trace("清理异常：" + cleanup); }
+                catch (Exception cleanup)
+                {
+                    Trace("清理异常：" + cleanup);
+                }
                 Snapshot = DebugSnapshot.Empty;
                 SetState(DebugState.Faulted, "调试命令中断，会话已结束");
                 throw;
@@ -194,7 +212,10 @@ public sealed partial class DebugSessionService(string dataDirectory, StudioX.De
                 SetState(DebugState.Stopped, "已复位并暂停（实机）");
             }
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
     private async Task ProcessRecordAsync(IDebugAdapter source, string text)
     {
@@ -256,11 +277,17 @@ public sealed partial class DebugSessionService(string dataDirectory, StudioX.De
             {
                 await ReleaseAdapterAsync();
             }
-            catch (Exception cleanup) { Trace("清理异常：" + cleanup); }
+            catch (Exception cleanup)
+            {
+                Trace("清理异常：" + cleanup);
+            }
             Snapshot = DebugSnapshot.Empty;
             SetState(DebugState.Faulted, "调试响应异常：" + ex.Message);
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
     public async Task RefreshAsync(int? frame = null, CancellationToken token = default)
     {
@@ -277,7 +304,10 @@ public sealed partial class DebugSessionService(string dataDirectory, StudioX.De
             Snapshot = Highlight(NormalizeSnapshot(await adapter!.ReadAsync(watches, frame ?? Snapshot.SelectedFrame, token)), previous);
             Changed?.Invoke();
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
     public Task<string> ReadMemoryAsync(uint address, CancellationToken token = default) =>
         ReadMemoryAsync(address, 64, token);
@@ -298,7 +328,10 @@ public sealed partial class DebugSessionService(string dataDirectory, StudioX.De
             RequireStopped();
             return await adapter!.ReadMemoryAsync(address, byteCount, token);
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
     public async Task ToggleBreakpointAsync(string file, int line, CancellationToken token = default)
     {
@@ -342,7 +375,10 @@ public sealed partial class DebugSessionService(string dataDirectory, StudioX.De
             await SaveAsync(token);
             Changed?.Invoke();
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
     public async Task ChangeBreakpointAsync(string id, bool? enabled, CancellationToken token = default)
     {
@@ -382,7 +418,10 @@ public sealed partial class DebugSessionService(string dataDirectory, StudioX.De
             await SaveAsync(token);
             Changed?.Invoke();
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
     public async Task UpdateLinesAsync(IReadOnlyDictionary<string, int> lines, CancellationToken token = default)
     {
@@ -397,7 +436,10 @@ public sealed partial class DebugSessionService(string dataDirectory, StudioX.De
             await SaveAsync(token);
             Changed?.Invoke();
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
     public async Task ChangeWatchAsync(string expression, bool remove, CancellationToken token = default)
     {
@@ -431,7 +473,10 @@ public sealed partial class DebugSessionService(string dataDirectory, StudioX.De
             }
             Changed?.Invoke();
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
     private async Task<SourceBreakpoint> BindAsync(SourceBreakpoint point, CancellationToken token)
     {
@@ -439,7 +484,15 @@ public sealed partial class DebugSessionService(string dataDirectory, StudioX.De
         {
             return await BindStrictAsync(point, token);
         }
-        catch (StudioXException ex) when (ex.Code == "GDB_COMMAND") { Trace(ex.Message); return point with { Verified = false, Message = ex.Message }; }
+        catch (StudioXException ex) when (ex.Code == "GDB_COMMAND")
+        {
+            Trace(ex.Message);
+            return point with
+            {
+                Verified = false,
+                Message = ex.Message
+            };
+        }
     }
     private async Task RemoveCoreAsync(string id, CancellationToken token)
     {
@@ -466,7 +519,11 @@ public sealed partial class DebugSessionService(string dataDirectory, StudioX.De
                 Snapshot = DebugSnapshot.Empty;
                 SetState(DebugState.Disconnected, monitor.Reason);
             }
-            catch { UpdateMonitorState(); throw; }
+            catch
+            {
+                UpdateMonitorState();
+                throw;
+            }
             return;
         }
         pauseRequested = true;
@@ -490,7 +547,10 @@ public sealed partial class DebugSessionService(string dataDirectory, StudioX.De
             Trace(ex.ToString());
             throw;
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
     private async Task ReleaseAdapterAsync()
     {
@@ -556,7 +616,10 @@ public sealed partial class DebugSessionService(string dataDirectory, StudioX.De
             _ = DebugExpression.Parse(text);
             return true;
         }
-        catch (ArgumentException) { return false; }
+        catch (ArgumentException)
+        {
+            return false;
+        }
     }
     private static DebugSnapshot Highlight(DebugSnapshot next, DebugSnapshot previous)
     {
@@ -573,7 +636,14 @@ public sealed partial class DebugSessionService(string dataDirectory, StudioX.De
         {
             await StopAsync();
         }
-        finally { records.Writer.TryComplete(); if (recordPump is not null) { await recordPump; } }
+        finally
+        {
+            records.Writer.TryComplete();
+            if (recordPump is not null)
+            {
+                await recordPump;
+            }
+        }
     }
 
     public static async Task<string> CreateExampleAsync(PackRepository packs, string data, string packagedPacks, CancellationToken token = default)

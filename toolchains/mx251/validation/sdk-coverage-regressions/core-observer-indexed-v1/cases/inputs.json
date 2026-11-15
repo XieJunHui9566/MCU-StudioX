@@ -1,0 +1,48 @@
+{
+  "schema": 1,
+  "baseAddress": 1024,
+  "extent": 7,
+  "initialRegisters": {
+    "DR12": 1024,
+    "A": 86,
+    "B": 120
+  },
+  "wordReadSequence": [
+    4660,
+    43981
+  ],
+  "tag": 7,
+  "expectedEvents": [
+    [
+      "read",
+      1028,
+      2,
+      4660
+    ],
+    [
+      "io",
+      18
+    ],
+    [
+      "read",
+      1028,
+      2,
+      43981
+    ],
+    [
+      "io",
+      205
+    ],
+    [
+      "read",
+      1030,
+      1,
+      7
+    ],
+    [
+      "io",
+      1
+    ]
+  ],
+  "explanation": "Two ordinary loads are modeled separately with distinct values to detect accidental caching; this is a transformation event test, not a claim about legal asynchronous writes to a nonvolatile C object."
+}

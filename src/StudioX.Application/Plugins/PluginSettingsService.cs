@@ -36,7 +36,10 @@ public sealed class PluginSettingsService(string dataDirectory)
         {
             await JsonStore.WriteAsync(SettingsPath(id), values, token);
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
     private string SettingsPath(string id)
     {

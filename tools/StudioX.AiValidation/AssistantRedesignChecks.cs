@@ -16,7 +16,10 @@ internal static class AssistantRedesignChecks
             {
                 AiSettingsService.Validate(new(BaseUrl: url));
             }
-            catch (StudioXException ex) when (ex.Code == "AI_PROTOCOL") { rejected = true; }
+            catch (StudioXException ex) when (ex.Code == "AI_PROTOCOL")
+            {
+                rejected = true;
+            }
             check(rejected, "Anthropic Messages endpoint is rejected: " + url);
         }
         check(AiSettingsService.CompletionUri(new(BaseUrl: "https://example.com/v1/chat/completions")).AbsolutePath == "/v1/chat/completions",
@@ -47,7 +50,10 @@ internal static class AssistantRedesignChecks
         {
             await skills.ImportAsync(source);
         }
-        catch (StudioXException ex) when (ex.Code == "SKILL_EXISTS") { duplicate = true; }
+        catch (StudioXException ex) when (ex.Code == "SKILL_EXISTS")
+        {
+            duplicate = true;
+        }
         check(duplicate && !Directory.EnumerateDirectories(Path.Combine(data, "skills"), ".import-*").Any(),
             "duplicate import cannot overwrite a skill and staging residues are removed");
         var invalid = Path.Combine(root, "invalid-skill");
@@ -58,7 +64,10 @@ internal static class AssistantRedesignChecks
         {
             await skills.ImportAsync(invalid);
         }
-        catch (StudioXException) { invalidRejected = true; }
+        catch (StudioXException)
+        {
+            invalidRejected = true;
+        }
         check(invalidRejected, "invalid imported skill is never published");
 
         await using var services = new WorkbenchService(Path.Combine(root, "redesign-runtime"), data);
@@ -139,7 +148,11 @@ internal static class AssistantRedesignChecks
                 {
                     await Task.Delay(Timeout.InfiniteTimeSpan, token);
                 }
-                catch (OperationCanceledException) { Interrupted = true; throw; }
+                catch (OperationCanceledException)
+                {
+                    Interrupted = true;
+                    throw;
+                }
             }
             return new("已按新方向回答", [], "stop", null);
         }

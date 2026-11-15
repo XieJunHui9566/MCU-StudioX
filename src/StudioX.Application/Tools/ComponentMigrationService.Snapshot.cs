@@ -100,7 +100,10 @@ public sealed partial class ComponentMigrationService
                     expected.Add(relative["device/".Length..]);
                 }
             }
-            catch (StudioXException error) { blockers.Add(error.Code + ": " + error.Message); }
+            catch (StudioXException error)
+            {
+                blockers.Add(error.Code + ": " + error.Message);
+            }
         }
         var template = plan.Device.Templates.Single(t => t.Id == plan.Project.TemplateId);
         foreach (var file in Files(oldPack.RootDirectory, token, false))

@@ -115,7 +115,9 @@ internal static class LiveDiagnosticChecks
                 await pending;
                 throw new InvalidOperationException("Expected cancellation");
             }
-            catch (OperationCanceledException) { }
+            catch (OperationCanceledException)
+            {
+            }
             Check(service.GetDiagnostics().Count == 0, "cancelled partial dependency synchronization cannot publish candidate or delayed diagnostics");
             await queued;
             Check(service.GetDiagnostics().All(b => b.Text != stale), "queued analysis captured before a later edit cannot install its superseded snapshot");
@@ -174,7 +176,9 @@ internal static class LiveDiagnosticChecks
                 await service.SynchronizeDiagnosticsAsync(path, badProtocol, [new(path, badProtocol)], token);
                 throw new InvalidOperationException("Expected malformed protocol rejection");
             }
-            catch (JsonException) { }
+            catch (JsonException)
+            {
+            }
             Check(!service.IsReady && service.GetDiagnostics().Count == 0, "broken framing clears readiness even while child process remains alive");
             Check(await service.RefreshEnvironmentAsync(token) && service.IsReady, "broken reader channel is disposed and restarted without reopening project");
             await service.SynchronizeDiagnosticsAsync(path, clean, [new(path, clean)], token);

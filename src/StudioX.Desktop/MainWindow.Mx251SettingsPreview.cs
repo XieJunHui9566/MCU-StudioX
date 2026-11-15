@@ -33,7 +33,9 @@ public partial class MainWindow
         {
             ApplyTheme(theme);
             UpdateLayout();
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.Render);
             Render(BuildSettingsCard, Path.Combine(output, "model-settings-" + theme.Id + ".png"));
         }
         var source = await services.Files.ReadAsync(project, Mx251Profile.ConfigurationFile);
@@ -45,7 +47,10 @@ public partial class MainWindow
             await SaveMx251SettingsAsync(project, default);
             throw new Exception("Dirty config overwritten");
         }
-        catch (StudioXException ex) when (ex.Code == "MX251_SETTINGS_UNSAVED") { checks.Add("PASS unsaved config protected"); }
+        catch (StudioXException ex) when (ex.Code == "MX251_SETTINGS_UNSAVED")
+        {
+            checks.Add("PASS unsaved config protected");
+        }
         FindEditor(Mx251Profile.ConfigurationFile)!.Buffer.Text = source.Text;
         ResetBuildSettings_Click(this, new RoutedEventArgs());
         Check(Mx251ModelPicker.SelectedValue as string == "small", "reset selects creation default");

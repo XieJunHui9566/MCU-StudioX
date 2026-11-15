@@ -33,8 +33,14 @@ public sealed class BundledPackService(PackRepository packs, ZephyrPackRepositor
             }
             entries = await JsonStore.ReadAsync<Entry[]>(index, token);
         }
-        catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }
-        catch (Exception ex) { return new(0, 0, [new("zephyr-device-packs/index.json", ex.ToString())]); }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            return new(0, 0, [new("zephyr-device-packs/index.json", ex.ToString())]);
+        }
 
         var installed = await zephyrPacks.ListCatalogAsync(token);
         var known = installed.ToDictionary(pack => (pack.Manifest.Id, pack.Manifest.Version));
@@ -92,8 +98,14 @@ public sealed class BundledPackService(PackRepository packs, ZephyrPackRepositor
                 known.Add((result.Manifest.Id, result.Manifest.Version), result);
                 imported++;
             }
-            catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }
-            catch (Exception ex) { failures.Add(new(entry?.File ?? "zephyr-device-packs/index.json", ex.ToString())); }
+            catch (OperationCanceledException) when (token.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                failures.Add(new(entry?.File ?? "zephyr-device-packs/index.json", ex.ToString()));
+            }
         }
         return new(imported, skipped, failures);
     }

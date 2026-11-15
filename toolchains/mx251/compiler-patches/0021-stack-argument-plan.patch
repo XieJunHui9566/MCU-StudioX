@@ -1,0 +1,87 @@
+--- a/src/mcs251/gen.c
++++ b/src/mcs251/gen.c
+@@ -860,6 +860,71 @@
+   freeAsmop (IC_LEFT (ic), NULL, ic, TRUE);
+ }
+ 
++/* 仅合并普通入口向 ABI4 直接调用传递的栈上整数。先验证全部字位移，
++   再按物理高位到低位读取；单次 PUSH 仍按原大端顺序写出参数。
++   DR16 不属于普通分配器的长期寄存器；特殊入口保留旧逐字节路径。 */
++static bool
++mcs251GenStackParmPush (iCode *ic)
++{
++  operand *op = IC_LEFT (ic);
++  const asmop *aop = AOP (op);
++  sym_link *type = operandType (op);
++  sym_link *caller, *callee;
++  iCode *call;
++  char addresses[2][32];
++  int size;
++  int64_t base;
++
++  if (!_G.currentFunc || options.useXstack || !options.omitFramePtr ||
++      !ic->parmPush || aop->type != AOP_MCS251_STK ||
++      aop->aop_is_volatile || aop->aop_is_aggregate ||
++      !IS_INT (type) || IS_BITINT (type) || isAtomic (type) ||
++      isOperandVolatile (op, TRUE))
++    return FALSE;
++  caller = _G.currentFunc->type;
++  if ((FUNC_SDCCCALL (caller) != 2 && FUNC_SDCCCALL (caller) != 4) ||
++      FUNC_REGBANK (caller) || IFFUNC_ISNAKED (caller) ||
++      IFFUNC_CALLEESAVES (caller) || IFFUNC_ISISR (caller) ||
++      IFFUNC_ISBANKEDCALL (caller))
++    return FALSE;
++  /* 与 saveRegisters 查找同一个后续调用；本阶段不扩大到函数指针。 */
++  for (call = ic; call && call->op != CALL && call->op != PCALL; call = call->next);
++  if (!call || call->op != CALL)
++    return FALSE;
++  callee = operandType (IC_LEFT (call));
++  if (!IS_FUNC (callee) || FUNC_SDCCCALL (callee) != 4 ||
++      FUNC_REGBANK (callee) || IFFUNC_ISNAKED (callee) ||
++      IFFUNC_CALLEESAVES (callee) || IFFUNC_ISISR (callee) ||
++      IFFUNC_ISBANKEDCALL (callee))
++    return FALSE;
++  size = aop->size;
++  if ((size != 2 && size != 4) || getSize (type) != size)
++    return FALSE;
++  base = stackoffset (aop->aopu.aop_sym);
++  /* 源对象必须完全位于当前栈顶及以下，避免快照覆盖尚未读取的参数。
++     位移计算提升到宽整数，并在发射前验证每个双字节访问的两个端点。 */
++  if (base + size - 1 > 0)
++    return FALSE;
++  for (int physical = 0; physical < size; physical += 2)
++    {
++      int64_t displacement = base + physical;
++      if (displacement < -32768 || displacement > 32766)
++        return FALSE;
++      mcs251FormatStackOperand (addresses[physical / 2], sizeof addresses[0], (int)displacement);
++    }
++
++  emitcode (";", "mcs251 stack argument %d-bit offset %d", 8 * size, (int)base);
++  for (int physical = 0; physical < size; physical += 2)
++    emitcode ("mov", "wr%d,%s", 16 + physical, addresses[physical / 2]);
++  emitcode ("push", size == 4 ? "dr16" : "wr16");
++  _G.stack.pushed += size;
++  /* 原逐字节路径最后留下参数最低字节于 A。读取新栈顶保持该后置状态，
++     不借用与 B/R10 重叠的 WR10，也不假定后续 SEND 或分支不再使用 A。 */
++  MOVA ("@spx");
++  emitcode (";", "mcs251 end stack argument");
++  return TRUE;
++}
++
+ /*-----------------------------------------------------------------*/
+ /* genIpush - generate code for pushing this gets a little complex */
+ /*-----------------------------------------------------------------*/
+@@ -904,6 +969,12 @@
+ 
+   /* then do the push */
+   aopOp (IC_LEFT (ic), ic, FALSE);
++
++  if (mcs251GenStackParmPush (ic))
++    {
++      freeAsmop (IC_LEFT (ic), NULL, ic, TRUE);
++      return;
++    }
+ 
+   // pushSide(IC_LEFT(ic), AOP_SIZE(IC_LEFT(ic)));
+   size = AOP_SIZE (IC_LEFT (ic));

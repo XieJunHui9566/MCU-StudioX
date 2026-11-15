@@ -1,0 +1,58 @@
+--- a/src/mcs251/gen_native.c.inc
++++ b/src/mcs251/gen_native.c.inc
+@@ -71,6 +71,25 @@
+     }
+ }
+ 
++/* 只准入无需读取对象或页寄存器的三字节远地址。PDATA 转换会读取
++   P2/MXAX，cast remat 也有额外语义，均保留既有快照路径。原始操作数
++   的限定必须单独检查：remat asmop 不保证携带 volatile/atomic 信息。 */
++static bool
++nativePureFarAddress (operand *op, const asmop *dst)
++{
++  const asmop *src = AOP (op);
++  sym_link *type = operandType (op);
++  return src->type == AOP_IMMD && dst->type == AOP_REG &&
++         IS_PTR (type) && DCL_TYPE (type) == FPOINTER &&
++         getSize (type) == 3 && !IS_FUNC (type->next) &&
++         src->size == 3 && dst->size == 3 &&
++         !src->aop_is_volatile && !src->aop_is_aggregate &&
++         !isOperandVolatile (op, TRUE) && !isAtomic (type) &&
++         !src->aopu.aop_immd.from_cast_remat &&
++         !src->aopu.aop_immd.mcs251_pdata_page &&
++         src->aopu.aop_immd.aop_immd1 && *src->aopu.aop_immd.aop_immd1;
++}
++
+ static bool
+ genNativeMultiSend (set *sendSet)
+ {
+@@ -82,14 +101,15 @@
+   if (IS_FUNCPTR (ftype)) ftype = ftype->next;
+   if (!IS_FUNC (ftype) || FUNC_SDCCCALL (ftype) != 4) return false;
+   iCode *items[2]; asmop *dst[2], *src[2]; int n = 0;
+-  bool allregs = true, regOrLiteral = true, fixedSources = true;
++  bool allregs = true, simpleSources = true, fixedSources = true;
+   for (iCode *s = setFirstItem (sendSet); s; s = setNextItem (sendSet))
+     {
+       wassert (n < 2);
+       items[n] = s; dst[n] = aopArg (ftype, s->argreg);
+       aopOp (s->left, s, FALSE); src[n] = s->left->aop;
+       allregs &= src[n]->type == AOP_REG;
+-      regOrLiteral &= src[n]->type == AOP_REG || src[n]->type == AOP_LIT ||
++      simpleSources &= src[n]->type == AOP_REG || src[n]->type == AOP_LIT ||
++                      nativePureFarAddress (s->left, dst[n]) ||
+                       (src[n]->type == AOP_MCS251_STK &&
+                        !src[n]->aop_is_volatile && !src[n]->aop_is_aggregate &&
+                        src[n]->size == dst[n]->size &&
+@@ -107,8 +127,9 @@
+     }
+   /* 先完成寄存器并行搬运，保护可能来自 A/B 的源值。原生参数槽为
+      R4..R7/R12..R15；标量 SPX 读取只用目标槽和 A，不破坏另一参数槽。
+-     因此这里的常量/栈读取不需要再保存已经就位的参数；其它内存源保留快照。 */
+-  if (regOrLiteral)
++     纯远地址只向目标槽写入重定位常量；必须在寄存器源搬完后装载，
++     避免地址槽覆盖另一个参数的旧值。其它内存源保留快照。 */
++  if (simpleSources)
+     {
+       asmop *rsrc[2], *rdst[2]; int count = 0;
+       for (int i = 0; i < n; ++i)

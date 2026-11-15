@@ -19,6 +19,18 @@ internal static class SourceStyleChecks
         Require(parsed.DescendantNodes().OfType<IfStatementSyntax>().All(node => node.Statement is BlockSyntax), "if statements gain explicit blocks");
         Require(parsed.DescendantTrivia().Any(item => item.ToString().Contains("保留注释")), "original comments remain present");
         Require(new BracedStatementRewriter().Visit(parsed)!.ToFullString() == parsed.ToFullString(), "brace expansion is idempotent");
+        var callbacks = CSharpSyntaxTree.ParseText("class C { void M() { System.Action a = () => { M(); M(); }; try { a(); } catch (System.Exception) { M(); } finally { M(); } } }").GetRoot();
+        var expandedCallbacks = new BracedStatementRewriter().Visit(callbacks)!.ToFullString();
+        var callbackSyntax = CSharpSyntaxTree.ParseText(expandedCallbacks).GetRoot();
+        Require(callbackSyntax.DescendantNodes().OfType<BlockSyntax>().All(block =>
+            block.GetLocation().GetLineSpan().StartLinePosition.Line < block.GetLocation().GetLineSpan().EndLinePosition.Line),
+            "lambda, catch and finally blocks expand to separate lines");
+        Require(callbacks.DescendantTokens().Select(token => token.Text).SequenceEqual(callbackSyntax.DescendantTokens().Select(token => token.Text)) &&
+            new BracedStatementRewriter().Visit(callbackSyntax)!.ToFullString() == expandedCallbacks,
+            "expanded callback blocks preserve executable tokens and are idempotent");
+        Require(callbackSyntax.DescendantNodes().OfType<LambdaExpressionSyntax>().All(lambda =>
+            ((BlockSyntax)lambda.Body).OpenBraceToken.GetLocation().GetLineSpan().StartLinePosition.Character >= 8),
+            "expanded lambda braces retain a nested indentation anchor");
         foreach (var source in new[] { "namespace Example;\n/// <summary>职责。</summary>\nclass C {}", "namespace Example;\n\n\nusing System;\nclass C {}" })
         {
             var namespaced = new BracedStatementRewriter().Visit(CSharpSyntaxTree.ParseText(source).GetRoot())!.ToFullString();
@@ -62,7 +74,7 @@ internal static class SourceStyleChecks
         {
             Require(true, "SDK whitespace rejects executable token changes");
         }
-        Console.WriteLine("PASS 17 source formatter boundary checks.");
+        Console.WriteLine("PASS 20 source formatter boundary checks.");
     }
 
     private static void Require(bool condition, string description)

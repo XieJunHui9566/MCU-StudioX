@@ -59,7 +59,11 @@ internal static class CacheChecks
                 await action();
                 throw new InvalidOperationException("Expected " + code);
             }
-            catch (StudioXException error) when (error.Code == code) { passed.Add("rejected " + code); events.Clear(); }
+            catch (StudioXException error) when (error.Code == code)
+            {
+                passed.Add("rejected " + code);
+                events.Clear();
+            }
         }
         await Resolve();
         Check(Full() && !Cached(), "first resolve verifies all content");
@@ -96,7 +100,16 @@ internal static class CacheChecks
         events.Clear();
         var extra = Path.Combine(tree, "unexpected.dll");
         await File.WriteAllTextAsync(extra, "extra");
-        await Reject("TOOL_HASH", () => Resolve());
+        try
+        {
+            await Resolve();
+            throw new InvalidOperationException("Unexpected file accepted.");
+        }
+        catch (StudioXException error) when (error.Code == "TOOL_HASH")
+        {
+            Check(error.Message.Contains("unexpected.dll", StringComparison.Ordinal) && error.Message.Contains("test.tools / 1.0.0", StringComparison.Ordinal),
+                "unexpected-file failure identifies the component and offending path");
+        }
         File.Move(extra, Path.Combine(root, "unexpected.dll.saved"));
         await Resolve();
         events.Clear();
@@ -141,13 +154,22 @@ internal static class CacheChecks
 
         using (var cancel = new CancellationTokenSource())
         {
-            var cancelProgress = new InlineProgress(line => { if (line.StartsWith("完整校验", StringComparison.Ordinal)) { cancel.Cancel(); } });
+            var cancelProgress = new InlineProgress(line =>
+            {
+                if (line.StartsWith("完整校验", StringComparison.Ordinal))
+                {
+                    cancel.Cancel();
+                }
+            });
             try
             {
                 await catalog.ResolveAsync("test.tools", "1.0.0", "test-compiler", cancel.Token, true, cancelProgress);
                 throw new InvalidOperationException("Cancellation ignored");
             }
-            catch (OperationCanceledException) { passed.Add("cancellation interrupts complete verification"); }
+            catch (OperationCanceledException)
+            {
+                passed.Add("cancellation interrupts complete verification");
+            }
         }
         await Resolve();
         Check(Full(), "cancelled verification does not populate cache");

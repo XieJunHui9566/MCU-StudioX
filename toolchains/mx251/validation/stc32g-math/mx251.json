@@ -1,0 +1,11 @@
+{
+  "schema": 2,
+  "target": "STC32G12K128",
+  "model": "small",
+  "optimization": "speed",
+  "backend": "ordinary-wide",
+  "explicitAbi": false,
+  "standard": "sdcc11",
+  "runtime": "native-math-mdu32",
+  "defines": []
+}

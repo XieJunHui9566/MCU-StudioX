@@ -157,7 +157,10 @@ public sealed class PortableWorkspaceService : IAsyncDisposable
             disposed = true;
             await workbench.DisposeAsync().ConfigureAwait(false);
         }
-        finally { commands.Release(); }
+        finally
+        {
+            commands.Release();
+        }
     }
 
     private sealed class CommandLease(SemaphoreSlim semaphore) : IDisposable

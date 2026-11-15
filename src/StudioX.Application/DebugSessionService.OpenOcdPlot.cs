@@ -34,7 +34,10 @@ public sealed partial class DebugSessionService : IOpenOcdPlotSource
             }
             return await OpenOcdPlotResolver.ResolveAsync(adapter as GdbDebugAdapter ?? throw Error("当前后端没有 OpenOCD 采样通道。"), expression, type, PlotSessionId, plotRamOrigin, plotRamBytes, plotLittleEndian, token);
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
 
     private void CheckPlotRam(uint address, int count)
@@ -69,7 +72,14 @@ public sealed partial class DebugSessionService : IOpenOcdPlotSource
             }
             return new(DateTimeOffset.Now, State == DebugState.Running, values);
         }
-        catch (Exception ex) { Trace("OpenOCD 绘图：" + ex); throw; }
-        finally { gate.Release(); }
+        catch (Exception ex)
+        {
+            Trace("OpenOCD 绘图：" + ex);
+            throw;
+        }
+        finally
+        {
+            gate.Release();
+        }
     }
 }

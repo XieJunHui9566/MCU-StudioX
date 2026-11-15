@@ -1,0 +1,241 @@
+--- /dev/null
++++ b/src/mcs251/tests/check-wide-local-copies.py
+@@ -0,0 +1,139 @@
++"""Extract and execute the production local pointer pass against independent MIR execution."""
++from pathlib import Path
++import argparse,json,subprocess,re,hashlib
++ap=argparse.ArgumentParser();ap.add_argument('--gcc',required=True);ap.add_argument('--output-dir',required=True);a=ap.parse_args()
++S=Path(__file__).resolve().parents[1];D=Path(a.output_dir).resolve();D.mkdir(parents=True,exist_ok=False)
++def fn(text,name):
++ at=re.search(r'\n'+name+r'\s*\(',text).start()+1;start=text.rfind('static ',0,at);i=text.index('{',at)+1;level=1
++ while level:
++  if text[i]=='{':level+=1
++  if text[i]=='}':level-=1
++  i+=1
++ return text[start:i]+'\n'
++s=(S/'wide.c').read_text();p=(S/'wide_local_copies.c.inc').read_text()
++header=r'''
++#include <stdint.h>
++#include <stdbool.h>
++#include <stdlib.h>
++#include <stdio.h>
++#include <string.h>
++#include <assert.h>
++#define WV_MAX 128
++#define WN_MAX 512
++#define WA_MAX 8
++#define CAST 256
++#define LABEL 257
++#define FUNCTION 258
++#define ENDFUNCTION 259
++#define CALL 260
++#define PCALL 261
++#define WM_NOP 262
++#define WM_LOAD 263
++#define WM_STORE 264
++#define GETBYTE 265
++#define IS_PTR(t) ((t)->ptr)
++#define DCL_TYPE(t) ((t)->space)
++#define getSize(t) ((t)->size)
++#define isVolatile(t) ((t)->vol)
++#define isAtomic(t) ((t)->atomic)
++typedef struct {bool ptr,vol,atomic;int size,space;} Type;
++typedef struct {Type*type;} symbol;
++typedef struct {uint64_t w[2];} wide_bits;
++typedef struct {symbol*sym;int width,reg,slot,pin;bool pointer,codePointer,floating,sign,symbolSnapshot;} wide_value;
++typedef struct {int value,width;uint32_t literal;bool sign,floating,codePointer;} wide_operand;
++typedef struct {unsigned op;int result,width,succ[2],jumpCount;wide_operand left,right,addressIndex,stackOperands[WA_MAX-1];unsigned stackArgs;wide_bits use,def;} wide_node;
++typedef struct {wide_value values[WV_MAX];wide_node nodes[WN_MAX];int nv,nn,nj,jumpSuccessors[100];void*diagnostics;unsigned resets;} wide_function;
++static bool wb_has(wide_bits b,int n){return n>=0&&(b.w[n/64]&(UINT64_C(1)<<(n%64)));}
++static void wb_set(wide_bits*b,int n){b->w[n/64]|=UINT64_C(1)<<(n%64);}
++static wide_bits wb_minus(wide_bits a,wide_bits b){for(int i=0;i<2;++i)a.w[i]&=~b.w[i];return a;}
++#define dbuf_printf(...) ((void)0)
++static void wide_reset_allocation(wide_function*f){++f->resets;}
++'''
++tests=r'''
++static Type types[12];static symbol symbols[12];
++static wide_node node(unsigned op,int dst,int left,int right){
++ wide_node n={0};n.op=op;n.result=dst;n.left.value=left;n.right.value=right;n.addressIndex.value=-1;n.width=n.right.width=n.left.width=4;n.succ[0]=n.succ[1]=-1;
++ for(int k=0;k<7;++k)n.stackOperands[k].value=-1;
++ if(dst>=0)wb_set(&n.def,dst);if(left>=0)wb_set(&n.use,left);if(right>=0)wb_set(&n.use,right);return n;
++}
++static wide_function base(void){
++ wide_function f={0};f.nv=8;f.nn=10;
++ for(int i=0;i<12;++i){types[i]=(Type){.ptr=true,.size=3,.space=1};symbols[i].type=types+i;}
++ for(int i=0;i<f.nv;++i)f.values[i]=(wide_value){.sym=symbols+i,.width=4,.pointer=true,.pin=-1,.reg=-1,.slot=-1};
++ f.nodes[0]=node(FUNCTION,-1,-1,-1);f.nodes[1]=node(LABEL,-1,-1,-1);
++ f.nodes[2]=node('+',0,0,-1);f.nodes[2].right.literal=7;
++ f.nodes[3]=node(CAST,1,-1,0);
++ f.nodes[4]=node(WM_LOAD,2,1,-1);
++ f.nodes[5]=node('+',3,2,-1);f.nodes[5].right.literal=123;
++ f.nodes[6]=node(WM_STORE,-1,1,3);
++ f.nodes[7]=node(WM_LOAD,4,1,-1);
++ f.nodes[8]=node(LABEL,-1,-1,-1);f.nodes[9]=node(ENDFUNCTION,-1,-1,-1);
++ for(int i=0;i<9;++i)f.nodes[i].succ[0]=i+1;
++ /* Loop backedge is outside copy region; each iteration redefines source. */
++ f.nodes[8].succ[1]=1;
++ return f;
++}
++typedef struct {uint32_t values[8],memory[257],trace[600];unsigned nt;} State;
++static uint32_t val(State*s,wide_operand o){return o.value<0?o.literal:s->values[o.value];}
++static State execute(const wide_function*f,unsigned seed){
++ State s={0};for(int i=0;i<8;++i)s.values[i]=(seed*0x9e3779b9u+i)&0xffffff;
++ for(int i=0;i<257;++i)s.memory[i]=(seed*13u+i*911u)^0x5a5a5a5a;
++ for(int iteration=0;iteration<13;++iteration)for(int pc=2;pc<8;++pc){
++  const wide_node*n=f->nodes+pc;uint32_t a=val(&s,n->left),b=val(&s,n->right);unsigned index=a%257;
++  switch(n->op){
++  case '+':s.values[n->result]=(a+b)&0xffffff;break;
++  case CAST:case '=':s.values[n->result]=b;break;
++  case WM_LOAD:s.values[n->result]=s.memory[index];s.trace[s.nt++]=index;s.trace[s.nt++]=s.memory[index];break;
++  case WM_STORE:s.memory[index]=b;s.trace[s.nt++]=0x80000000u|index;s.trace[s.nt++]=b;break;
++  case WM_NOP:break;default:assert(0);
++  }
++ }
++ return s;
++}
++int main(void){
++ unsigned executions=0,negative=0;
++ for(unsigned seed=0;seed<1024;++seed){wide_function f=base(),g=f;assert(wide_local_pointer_copies(&g)==1);assert(g.resets==1);assert(wide_local_pointer_copies(&g)==0);
++  State a=execute(&f,seed),b=execute(&g,seed);assert(a.nt==b.nt&&!memcmp(a.trace,b.trace,a.nt*sizeof(uint32_t)));assert(!memcmp(a.memory,b.memory,sizeof a.memory));
++  for(int v=0;v<8;++v)if(v!=1)assert(a.values[v]==b.values[v]);++executions;
++ }
++ for(int kind=0;kind<24;++kind){wide_function f=base();
++  switch(kind){
++  case 0:f.values[1].pin=4;break;
++  case 1:f.values[0].pointer=false;break;
++  case 2:f.values[1].codePointer=true;break;
++  case 3:f.values[1].floating=true;break;
++  case 4:f.values[0].sign=true;break;
++  case 5:f.values[1].symbolSnapshot=true;break;
++  case 6:types[1].space=2;break;
++  case 7:types[0].vol=true;break;
++  case 8:types[1].atomic=true;break;
++  case 9:types[0].size=2;break;
++  case 10:f.values[1].width=2;break;
++  case 11:f.nodes[3].right.width=2;break;
++  case 12:f.nodes[5]=node('=',0,-1,-1);f.nodes[5].succ[0]=6;break;
++  case 13:wb_set(&f.nodes[5].def,1);break;
++  case 14:f.nodes[5].op=CALL;break;
++  case 15:f.nodes[5].op=PCALL;break;
++  case 16:f.nodes[5].op=LABEL;break;
++  case 17:f.nodes[5].succ[1]=8;break;
++  case 18:f.nodes[9].succ[0]=6;break;
++  case 19:f.nj=1;f.jumpSuccessors[0]=6;break;
++  case 20:wb_set(&f.nodes[2].use,1);f.nodes[2].left.value=1;break;
++  case 21:wb_set(&f.nodes[5].use,1);break; /* unknown operand carrier */
++  case 22:f.nodes[7].succ[1]=3;break;
++  case 23:f.nodes[4].jumpCount=1;break;
++  }
++  wide_function before=f;assert(wide_local_pointer_copies(&f)==0);assert(!memcmp(&before,&f,sizeof f));++negative;
++ }
++ /* Address-index carrier is rewritten; a later call is not crossed. */
++ wide_function f=base();f.nodes[7].left.value=-1;f.nodes[7].addressIndex.value=1;f.nodes[8].op=CALL;
++ assert(wide_local_pointer_copies(&f)==1&&f.nodes[7].addressIndex.value==0);
++ printf("{\"pairedExecutions\":%u,\"loopIterationsPerExecution\":13,\"negativeGraphs\":%u,\"identicalMemoryAndAccessTrace\":true,\"idempotent\":true}\n",executions,negative);
++}
++'''
++source=header+fn(s,'wide_fixed_address_value')+p+tests
++(D/'test.c').write_text(source,encoding='utf8');cmd=[a.gcc,'-std=c11','-O2','-Wall','-Wextra',str(D/'test.c'),'-o',str(D/'test.exe')]
++r=subprocess.run(cmd,capture_output=True);(D/'compile.stdout.log').write_bytes(r.stdout);(D/'compile.stderr.log').write_bytes(r.stderr);assert r.returncode==0,r.stderr
++r=subprocess.run([str(D/'test.exe')],capture_output=True);(D/'run.stdout.log').write_bytes(r.stdout);(D/'run.stderr.log').write_bytes(r.stderr);assert r.returncode==0,(r.returncode,r.stdout,r.stderr)
++result=json.loads(r.stdout);result['productionPassSha256']=hashlib.sha256((S/'wide_local_copies.c.inc').read_bytes()).hexdigest();result['passed']=True
++(D/'result.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result))
+--- a/src/mcs251/wide.c
++++ b/src/mcs251/wide.c
+@@ -1696,10 +1696,19 @@
+ 
+ /* 新调度只与完整旧选择器的输出比较，不能提前消掉 spill 而使原有
+  * 指针副本候选失去准入资格，再错误地把局部胜出当作整体不退步。 */
++#include "wide_local_copies.c.inc"
++
++static mcs251_wide_result
++wide_choose_local_pointer_copy(wide_function *f,wide_selection_cost *cost)
++{
++  return wide_choose_transform(f,cost,wide_local_pointer_copies,wide_choose_stack_addresses,
++    "local-pointer-copy","copies",false,"local-original","local-trial");
++}
++
+ static mcs251_wide_result
+ wide_choose_integer_sinking(wide_function *f,wide_selection_cost *cost)
+ {
+-  return wide_choose_transform(f,cost,wide_sink_integer_expressions,wide_choose_stack_addresses,
++  return wide_choose_transform(f,cost,wide_sink_integer_expressions,wide_choose_local_pointer_copy,
+     "integer-sink","moves",true,"sink-original","sink-trial");
+ }
+ 
+--- a/src/mcs251/wide_emit.c.inc
++++ b/src/mcs251/wide_emit.c.inc
+@@ -1050,6 +1050,14 @@
+   if(f->reusedParameterLoads)we(f,"; wide repeated parameter loads reused=%d\n",f->reusedParameterLoads);
+   for(int i=0;i<f->nv;++i)we(f,"; wide v%d %s width=%d reg=%d slot=%d edges=%016llx:%016llx\n",i,f->values[i].sym->name,f->values[i].width,f->values[i].reg,f->values[i].slot,(unsigned long long)f->values[i].edges.w[1],(unsigned long long)f->values[i].edges.w[0]);
+   for(int i=0;i<f->no;++i)we(f,"; wide object %s slot=%d size=%d\n",f->objects[i].sym->name,f->objects[i].slot,f->objects[i].size);
++  /* 仅在显式 iCode 诊断时输出实际 MIR 活跃集；注释不进入机器码成本。 */
++  if(options.dump_i_code)for(int i=0;i<f->nn;++i) {
++    wide_node *n=&f->nodes[i];
++    we(f,"; wide node=%d op=%u line=%u depth=%d result=%d left=%d right=%d index=%d succ=%d,%d in=%016llx:%016llx out=%016llx:%016llx def=%016llx:%016llx use=%016llx:%016llx\n",
++      i,n->op,n->origin->lineno,n->origin->depth,n->result,n->left.value,n->right.value,n->addressIndex.value,n->succ[0],n->succ[1],
++      (unsigned long long)n->in.w[1],(unsigned long long)n->in.w[0],(unsigned long long)n->out.w[1],(unsigned long long)n->out.w[0],
++      (unsigned long long)n->def.w[1],(unsigned long long)n->def.w[0],(unsigned long long)n->use.w[1],(unsigned long long)n->use.w[0]);
++  }
+   if(f->ordinaryEntry)we(f,"; wide ordinary ABI2 entry: first=DPL/DPH/B/A stack=physical\n");
+   if(wide_ordinary_passthrough(f)) {
+     we(f,"; wide ordinary ABI2 passthrough: entry bytes already match return\n\teret\n");
+--- /dev/null
++++ b/src/mcs251/wide_local_copies.c.inc
+@@ -0,0 +1,56 @@
++/* SPDX-License-Identifier: GPL-2.0-or-later
++ * 同一基本块中的指针值副本传播。只改变地址值的名字，不缓存或移动内存访问。 */
++static unsigned
++wide_local_pointer_copies(wide_function *f)
++{
++  unsigned changed=0;
++  for(int i=0;i<f->nn;++i) {
++    wide_node *copy=&f->nodes[i];
++    if((copy->op!='=' && copy->op!=CAST) || copy->result<0 || copy->right.value<0)continue;
++    int dst=copy->result,src=copy->right.value;
++    if(dst==src || !wide_fixed_address_value(&f->values[src]) ||
++       !wide_fixed_address_value(&f->values[dst]) || f->values[dst].pin>=0 ||
++       copy->width!=4 || copy->right.width!=4 || copy->right.sign || copy->right.floating || copy->right.codePointer ||
++       DCL_TYPE(f->values[src].sym->type)!=DCL_TYPE(f->values[dst].sym->type))continue;
++    int definitions=0,last=-1;unsigned uses=0;bool valid=true;
++    for(int j=0;j<f->nn;++j) {
++      wide_node *n=&f->nodes[j];
++      if(wb_has(n->def,dst))++definitions;
++      if(!wb_has(n->use,dst))continue;
++      bool represented=n->left.value==dst || n->right.value==dst || n->addressIndex.value==dst;
++      for(unsigned k=0;k<n->stackArgs;++k)represented|=n->stackOperands[k].value==dst;
++      if(j<=i || !represented)valid=false;
++      last=j;++uses;
++    }
++    if(!valid || definitions!=1 || !uses)continue;
++    /* 所有使用必须在同一直线区域。源值不能被重定义；调用作为边界，
++     * 免得延长调用保存活区间。不同入口、回边和 switch 表项都必须排除。 */
++    for(int j=i;j<=last && valid;++j) {
++      wide_node *n=&f->nodes[j];
++      if(n->op==LABEL || n->op==FUNCTION || n->op==ENDFUNCTION || n->op==CALL || n->op==PCALL ||
++         n->jumpCount || n->succ[1]>=0 || (j<last && n->succ[0]!=j+1) ||
++         (j>i && wb_has(n->def,src)))valid=false;
++    }
++    for(int j=0;j<f->nn && valid;++j)for(int k=0;k<2;++k) {
++      int to=f->nodes[j].succ[k];
++      if(to>i && to<=last && !(k==0 && j+1==to))valid=false;
++    }
++    for(int j=0;j<f->nj;++j)if(f->jumpSuccessors[j]>i && f->jumpSuccessors[j]<=last)valid=false;
++    if(!valid)continue;
++    wide_bits destination={{0}};wb_set(&destination,dst);
++    for(int j=i+1;j<=last;++j) {
++      wide_node *n=&f->nodes[j];if(!wb_has(n->use,dst))continue;
++      if(n->left.value==dst)n->left.value=src;
++      if(n->right.value==dst)n->right.value=src;
++      if(n->addressIndex.value==dst)n->addressIndex.value=src;
++      for(unsigned k=0;k<n->stackArgs;++k)if(n->stackOperands[k].value==dst)n->stackOperands[k].value=src;
++      n->use=wb_minus(n->use,destination);wb_set(&n->use,src);
++    }
++    copy->op=WM_NOP;copy->result=copy->left.value=copy->right.value=copy->addressIndex.value=-1;
++    copy->use=copy->def=(wide_bits){{0}};
++    dbuf_printf(f->diagnostics,"; wide local-pointer-copy node=%d source=%d destination=%d uses=%u last=%d\n",i,src,dst,uses,last);
++    ++changed;
++  }
++  if(changed)wide_reset_allocation(f);
++  return changed;
++}

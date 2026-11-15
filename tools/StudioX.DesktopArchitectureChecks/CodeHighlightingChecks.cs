@@ -17,6 +17,18 @@ internal static class CodeHighlightingChecks
         foreach (var dark in new[] { true, false })
         {
             var theme = dark ? "深色" : "浅色";
+            foreach (var language in new[] { "C", "C++" })
+            {
+                var syntax = CodeLanguage.Get(language, dark)!;
+                var code = new TextDocument("#define LIMIT 10\n#define lower_macro(x) (x)\nstruct Device { int value; };\nvoid run(void) { device.value = LIMIT; lower_macro(1); }\n");
+                using var actual = new DocumentHighlighter(code, syntax);
+                check(HasColor(actual.HighlightLine(1), "Preprocessor") && HasColor(actual.HighlightLine(1), "Macro") &&
+                    syntax.GetNamedColor("Preprocessor").Foreground.GetColor(null) != syntax.GetNamedColor("Macro").Foreground.GetColor(null),
+                    $"{theme} {language} 预处理指令与宏使用不同的真实前景色");
+                check(HasColor(actual.HighlightLine(2), "Macro") && HasColor(actual.HighlightLine(3), "TypeDefinition") &&
+                    HasColor(actual.HighlightLine(4), "Member") && HasColor(actual.HighlightLine(4), "Function"),
+                    $"{theme} {language} 小写宏定义、结构类型、成员与函数分角色着色");
+            }
             var definition = CodeLanguage.Get("AGM Pin Map", dark)!;
             var document = new TextDocument(pinMap);
             using var highlighter = new DocumentHighlighter(document, definition);

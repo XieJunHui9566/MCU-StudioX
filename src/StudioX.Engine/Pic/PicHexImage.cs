@@ -31,7 +31,10 @@ public static class PicHexImage
             {
                 record = Convert.FromHexString(line.AsSpan(1));
             }
-            catch (FormatException) { throw Invalid("HEX 包含非十六进制字符。"); }
+            catch (FormatException)
+            {
+                throw Invalid("HEX 包含非十六进制字符。");
+            }
             var length = record[0];
             var address = (uint)(record[1] * 256 + record[2]);
             if (record.Length != length + 5 || (record.Sum(value => value) & 255) != 0)

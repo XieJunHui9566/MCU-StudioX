@@ -95,7 +95,10 @@ await using var devices = new DeviceHub();
 var application = new ArduinoService(builds, devices);
 foreach (var reserved in new[] { "CON", "NUL", "COM3", "AUX" })
 {
-    await Reject(async () => { await application.CreateAsync(reserved, "uno", Path.Combine(evidence, reserved)); },
+    await Reject(async () =>
+    {
+        await application.CreateAsync(reserved, "uno", Path.Combine(evidence, reserved));
+    },
         "PATH_UNSAFE", "project creation rejects Windows device name " + reserved + " before file access");
 }
 var projects = new List<string>();
@@ -119,29 +122,50 @@ var uno = projects[0];
 var entry = Path.Combine(uno, "Blink_uno.ino");
 var originalSource = await File.ReadAllTextAsync(entry);
 await File.AppendAllTextAsync(entry, "\n// changed after compilation\n");
-await Reject(async () => { await application.PreviewUploadAsync(uno); }, "ARDUINO_BUILD_STALE", "source changes invalidate upload");
+await Reject(async () =>
+{
+    await application.PreviewUploadAsync(uno);
+}, "ARDUINO_BUILD_STALE", "source changes invalidate upload");
 await File.WriteAllTextAsync(entry, originalSource);
 var previewUno = await application.PreviewUploadAsync(uno);
 var image = await File.ReadAllBytesAsync(previewUno.HexPath);
 await File.AppendAllTextAsync(previewUno.HexPath, "changed");
-await Reject(async () => { await application.PreviewUploadAsync(uno); }, "ARDUINO_BUILD_STALE", "HEX changes invalidate upload");
+await Reject(async () =>
+{
+    await application.PreviewUploadAsync(uno);
+}, "ARDUINO_BUILD_STALE", "HEX changes invalidate upload");
 await File.WriteAllBytesAsync(previewUno.HexPath, image);
-await Reject(async () => { await application.UploadApprovedAsync(uno, "COM3 & calc", previewUno.ApprovalId); }, "ARDUINO_PORT", "reject injected or ambiguous port before any hardware action");
+await Reject(async () =>
+{
+    await application.UploadApprovedAsync(uno, "COM3 & calc", previewUno.ApprovalId);
+}, "ARDUINO_PORT", "reject injected or ambiguous port before any hardware action");
 using (await devices.ReserveAsync("serial:COM3"))
 {
-    await Reject(async () => { await application.UploadApprovedAsync(uno, "com3", previewUno.ApprovalId); }, "DEVICE_OWNED", "upload respects existing serial ownership without launching uploader");
+    await Reject(async () =>
+    {
+        await application.UploadApprovedAsync(uno, "com3", previewUno.ApprovalId);
+    }, "DEVICE_OWNED", "upload respects existing serial ownership without launching uploader");
 }
-await Reject(async () => { await builds.Arduino.UploadApprovedAsync(uno, "COM3", "unapproved"); }, "ARDUINO_UPLOAD_CHANGED", "changed approval rejected before uploader starts");
+await Reject(async () =>
+{
+    await builds.Arduino.UploadApprovedAsync(uno, "COM3", "unapproved");
+}, "ARDUINO_UPLOAD_CHANGED", "changed approval rejected before uploader starts");
 Check((await builds.BuildAsync(uno)).Success, "rebuild remains valid before generation approval check");
 var rebuiltPreview = await application.PreviewUploadAsync(uno);
 Check(rebuiltPreview.Sha256 == previewUno.Sha256 && rebuiltPreview.ApprovalId != previewUno.ApprovalId, "same HEX bytes from a new build require renewed approval");
-await Reject(async () => { await builds.Arduino.UploadApprovedAsync(uno, "COM3", previewUno.ApprovalId); }, "ARDUINO_UPLOAD_CHANGED", "approval cannot transfer to a later build even when HEX matches");
+await Reject(async () =>
+{
+    await builds.Arduino.UploadApprovedAsync(uno, "COM3", previewUno.ApprovalId);
+}, "ARDUINO_UPLOAD_CHANGED", "approval cannot transfer to a later build even when HEX matches");
 await File.WriteAllTextAsync(entry, originalSource + "\nintentional_compile_failure\n");
 var failure = await builds.BuildAsync(uno);
 Check(!failure.Success && failure.ExitCode != 0 && failure.Log.Contains("intentional_compile_failure"), "failed compile retains raw tool diagnostic and exit code");
 Check(!File.Exists(Path.Combine(uno, ArduinoBuildReceipt.RelativePath)), "failed compile removes previous upload receipt");
 await File.WriteAllTextAsync(entry, originalSource);
-await Reject(async () => { await application.PreviewUploadAsync(uno); }, "ARDUINO_BUILD_REQUIRED", "failed build cannot reuse older HEX");
+await Reject(async () =>
+{
+    await application.PreviewUploadAsync(uno);
+}, "ARDUINO_BUILD_REQUIRED", "failed build cannot reuse older HEX");
 using (var cancellation = new CancellationTokenSource())
 {
     cancellation.Cancel();
@@ -157,15 +181,27 @@ using (var cancellation = new CancellationTokenSource())
 }
 var importRoot = Path.Combine(evidence, "ImportedSketch");
 await File.WriteAllTextAsync(Path.Combine(uno, "sketch.yaml"), "default_profile: external\n");
-await Reject(async () => { await builds.BuildAsync(uno); }, "ARDUINO_PROFILE", "external sketch profile cannot silently override fixed dependencies");
+await Reject(async () =>
+{
+    await builds.BuildAsync(uno);
+}, "ARDUINO_PROFILE", "external sketch profile cannot silently override fixed dependencies");
 await application.CreateAsync("ImportedSketch", "uno", importRoot, uno);
 Check(File.Exists(Path.Combine(importRoot, ".studiox/import/sketch.yaml")) && !File.Exists(Path.Combine(importRoot, "sketch.yaml")), "import preserves external profile as inactive provenance");
 File.Delete(Path.Combine(uno, "sketch.yaml"));
 Check(await File.ReadAllTextAsync(Path.Combine(importRoot, "ImportedSketch.ino")) == originalSource, "import copies main sketch to matching new filename");
 Check(await File.ReadAllTextAsync(entry) == originalSource, "import preserves original source");
-await Reject(async () => { await application.CreateAsync("Nested", "uno", Path.Combine(uno, "Nested"), uno); }, "ARDUINO_IMPORT_TARGET", "import rejects nested self-copy destination");
-await Reject(async () => { await application.CreateAsync("Invalid_Name", "uno-r4", Path.Combine(evidence, "Invalid_Name")); }, "ARDUINO_BOARD", "unsupported boards are never guessed");
-await Reject(async () => { await application.InstallLibraryAsync(uno, "Wire --git-url", "latest"); }, "ARDUINO_LIBRARY", "library manager requires safe name and exact version");
+await Reject(async () =>
+{
+    await application.CreateAsync("Nested", "uno", Path.Combine(uno, "Nested"), uno);
+}, "ARDUINO_IMPORT_TARGET", "import rejects nested self-copy destination");
+await Reject(async () =>
+{
+    await application.CreateAsync("Invalid_Name", "uno-r4", Path.Combine(evidence, "Invalid_Name"));
+}, "ARDUINO_BOARD", "unsupported boards are never guessed");
+await Reject(async () =>
+{
+    await application.InstallLibraryAsync(uno, "Wire --git-url", "latest");
+}, "ARDUINO_LIBRARY", "library manager requires safe name and exact version");
 Check(ArduinoBuildService.ValidatePort(" com12 ") == "COM12", "port normalization shares ownership key");
 var search = await application.SearchLibrariesAsync(uno, "Adafruit AHTX0");
 Check(search.Any(item => item.Name == "Adafruit AHTX0"), "search reads official Arduino library index");
@@ -180,7 +216,10 @@ var librarySettings = (await ProjectService.ReadAsync(uno)).Arduino!;
 var libraryRoot = new ArduinoRuntime(catalog, Path.Combine(evidence, "user-data")).LibraryRoot(librarySettings);
 var header = ArduinoSourceSnapshot.Files(libraryRoot).First(file => file.EndsWith(".h", StringComparison.Ordinal));
 await File.AppendAllTextAsync(Path.Combine(libraryRoot, header), "\n// external edit\n");
-await Reject(async () => { await application.PreviewUploadAsync(uno); }, "ARDUINO_DEPENDENCY_CHANGED", "changed dependency bytes invalidate upload despite matching library version");
+await Reject(async () =>
+{
+    await application.PreviewUploadAsync(uno);
+}, "ARDUINO_DEPENDENCY_CHANGED", "changed dependency bytes invalidate upload despite matching library version");
 await application.RestoreLibrariesAsync(uno);
 Check((await builds.BuildAsync(uno)).Success, "restore exact library set preserves source identity and compiles");
 var raceRoot = Path.Combine(evidence, "RaceSketch");
@@ -217,7 +256,10 @@ finally
 {
     continuePreparation.TrySetResult();
 }
-await Reject(async () => { await installing; }, "ARDUINO_PROJECT_CHANGED", "library installation rejects configuration changes during tool preparation");
+await Reject(async () =>
+{
+    await installing;
+}, "ARDUINO_PROJECT_CHANGED", "library installation rejects configuration changes during tool preparation");
 Check((await ProjectService.ReadAsync(raceRoot)).Arduino!.BoardId == "nano", "library transaction preserves external board selection");
 if (File.Exists(Path.Combine(runtime, "languages/clangd/bin/clangd.exe")))
 {

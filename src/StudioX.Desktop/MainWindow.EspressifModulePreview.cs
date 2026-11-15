@@ -204,7 +204,10 @@ public partial class MainWindow
             await File.WriteAllTextAsync(Path.Combine(directory, "result.txt"),
                 "PASS: real WPF module selection, S3 N8R8/N16R8 preset locking, save/reload/cancel/default, custom validation, live sidecar editor refresh, stale-read and busy guards; all seven targets use backend capabilities. Dark/light screenshots. Original sources / sdkconfig unchanged; no SDK execution or hardware.\n");
         }
-        finally { await CloseProjectAsync(CancellationToken.None, _ => MessageBoxResult.No); }
+        finally
+        {
+            await CloseProjectAsync(CancellationToken.None, _ => MessageBoxResult.No);
+        }
 
         static void Check(bool condition, string message)
         {
@@ -236,8 +239,12 @@ public partial class MainWindow
         async Task Layout()
         {
             UpdateLayout();
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Loaded);
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.Loaded);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.Render);
         }
         async Task Capture(string name)
         {

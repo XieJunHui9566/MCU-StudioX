@@ -326,6 +326,27 @@
                 Click="ParameterInfo_Click" />
               <Separator />
               <MenuItem
+                Header="代码折叠">
+                <MenuItem
+                  Header="折叠当前块"
+                  InputGestureText="Ctrl+Shift+["
+                  Click="FoldCurrent_Click" />
+                <MenuItem
+                  Header="展开当前块"
+                  InputGestureText="Ctrl+Shift+]"
+                  Click="UnfoldCurrent_Click" />
+                <Separator />
+                <MenuItem
+                  Header="全部折叠"
+                  InputGestureText="Ctrl+Shift+-"
+                  Click="FoldAll_Click" />
+                <MenuItem
+                  Header="全部展开"
+                  InputGestureText="Ctrl+Shift++"
+                  Click="UnfoldAll_Click" />
+              </MenuItem>
+              <Separator />
+              <MenuItem
                 Header="切换行注释"
                 InputGestureText="Ctrl+/"
                 Command="local:SourceCommands.ToggleComment"
@@ -526,9 +547,6 @@
                 <MenuItem
                   Header="器件与模板"
                   Click="DevicesAndTemplates_Click" />
-                <MenuItem
-                  Header="LVGL PC 预览"
-                  Click="LvglPreview_Click" />
                 <MenuItem
                   Header="Arduino 工程与库管理…"
                   Click="ArduinoManager_Click" />
@@ -1149,11 +1167,6 @@
                       <TextBlock
                         Text="尚未打开工程"
                         Margin="0,0,0,8" />
-                      <TextBlock
-                        Text="创建一个工程，或从本地打开已有工程。"
-                        TextWrapping="Wrap"
-                        Foreground="{DynamicResource Muted}"
-                        LineHeight="22" />
                       <Button
                         Style="{StaticResource LinkButton}"
                         Content="新建工程…"
@@ -1305,11 +1318,6 @@
                             Text="MCU StudioX"
                             FontSize="40"
                             FontWeight="SemiBold" />
-                          <TextBlock
-                            Text="嵌入式开发，从这里开始。"
-                            Foreground="{DynamicResource Muted}"
-                            FontSize="15"
-                            Margin="0,10,0,24" />
                           <StackPanel
                             Orientation="Horizontal">
                             <Button
@@ -1368,7 +1376,7 @@
                         </Grid.ColumnDefinitions>
                         <StackPanel>
                           <TextBlock
-                            Text="最近的工程"
+                            Text="最近工程"
                             FontSize="16"
                             FontWeight="SemiBold"
                             Margin="0,0,0,18" />
@@ -1376,10 +1384,7 @@
                             x:Name="RecentEmpty"
                             Margin="0,8,20,0">
                             <TextBlock
-                              Text="你的下一个项目，从这里开始"
-                              Margin="0,0,0,9" />
-                            <TextBlock
-                              Text="打开过的工程会保留在这里，&#xA;下次可以直接继续。"
+                              Text="暂无最近工程"
                               Foreground="{DynamicResource Muted}"
                               LineHeight="23" />
                             <Button
@@ -1444,11 +1449,6 @@
                                 Grid.Column="1">
                                 <TextBlock
                                   Text="器件与模板" />
-                                <TextBlock
-                                  Text="查看工程配置，或选择器件创建工程"
-                                  Foreground="{DynamicResource Muted}"
-                                  FontSize="12"
-                                  Margin="0,5,0,0" />
                               </StackPanel>
                               <local:Icon
                                 Kind="chevron"
@@ -1477,12 +1477,6 @@
                                 Grid.Column="1">
                                 <TextBlock
                                   Text="导入 CubeMX CMake 工程" />
-                                <TextBlock
-                                  Text="沿用已有源码和配置，使用内置开发环境组件继续开发"
-                                  Foreground="{DynamicResource Muted}"
-                                  FontSize="12"
-                                  Margin="0,5,0,0"
-                                  TextWrapping="Wrap" />
                               </StackPanel>
                               <local:Icon
                                 Kind="chevron"
@@ -1511,12 +1505,6 @@
                                 Grid.Column="1">
                                 <TextBlock
                                   Text="GitHub 协作" />
-                                <TextBlock
-                                  Text="登录、克隆、同步分支与审阅 Pull Request"
-                                  Foreground="{DynamicResource Muted}"
-                                  FontSize="12"
-                                  Margin="0,5,0,0"
-                                  TextWrapping="Wrap" />
                               </StackPanel>
                               <local:Icon
                                 Kind="chevron"
@@ -1544,12 +1532,7 @@
                               <StackPanel
                                 Grid.Column="1">
                                 <TextBlock
-                                  Text="让工作台属于你" />
-                                <TextBlock
-                                  Text="深浅主题、背景图片与动态视频"
-                                  Foreground="{DynamicResource Muted}"
-                                  FontSize="12"
-                                  Margin="0,5,0,0" />
+                                  Text="外观设置" />
                               </StackPanel>
                               <local:Icon
                                 Kind="chevron"
@@ -1578,11 +1561,6 @@
                                 Grid.Column="1">
                                 <TextBlock
                                   Text="串口终端" />
-                                <TextBlock
-                                  Text="收发串口数据、彩色文本与 HEX"
-                                  Foreground="{DynamicResource Muted}"
-                                  FontSize="12"
-                                  Margin="0,5,0,0" />
                               </StackPanel>
                               <local:Icon
                                 Kind="chevron"
@@ -1611,11 +1589,6 @@
                                 Grid.Column="1">
                                 <TextBlock
                                   Text="串口绘图" />
-                                <TextBlock
-                                  Text="多通道实时曲线、可配置分隔符与时间 / 数值缩放"
-                                  Foreground="{DynamicResource Muted}"
-                                  FontSize="12"
-                                  Margin="0,5,0,0" />
                               </StackPanel>
                               <local:Icon
                                 Kind="chevron"
@@ -1643,12 +1616,7 @@
                               <StackPanel
                                 Grid.Column="1">
                                 <TextBlock
-                                  Text="扩展工作台" />
-                                <TextBlock
-                                  Text="管理工作台插件、AI 技能与内置工具"
-                                  Foreground="{DynamicResource Muted}"
-                                  FontSize="12"
-                                  Margin="0,5,0,0" />
+                                  Text="插件与扩展" />
                               </StackPanel>
                               <local:Icon
                                 Kind="chevron"
@@ -1669,10 +1637,6 @@
                           <TextBlock
                             DockPanel.Dock="Right"
                             Text="{x:Static local:ProductInfo.PreviewVersion}"
-                            FontSize="11"
-                            Foreground="{DynamicResource Muted}" />
-                          <TextBlock
-                            Text="面向 ARM 与 RISC-V    ·    C / C++    ·    .mcupack 器件包"
                             FontSize="11"
                             Foreground="{DynamicResource Muted}" />
                         </DockPanel>
@@ -2202,7 +2166,7 @@
                         MaxWidth="960"
                         HorizontalAlignment="Stretch">
                         <TextBlock
-                          Text="设置按工程保存；点击下载才会应用。未指定的硬件选项保留本次握手读取的芯片值。"
+                          Text="设置在下次下载时生效；未指定项保留芯片当前值。"
                           TextWrapping="Wrap" />
                         <Border
                           Background="{DynamicResource Surface}"
@@ -2225,13 +2189,13 @@
                                   FontSize="18"
                                   FontWeight="SemiBold" />
                                 <TextBlock
-                                  Text="时钟在下一次成功烧录时写入芯片；保存工程设置不会改变当前芯片。"
+                                  Text="时钟设置在下次下载时生效"
                                   Foreground="{DynamicResource Muted}"
                                   TextWrapping="Wrap"
                                   Margin="0,6,0,4" />
                                 <TextBlock
                                   x:Name="StcMon51DownloadHelp"
-                                  Text="IAP15F2K61S2 / IAP15L2K61S2 串口仿真复用下方下载串口和波特率。点击调试先握手，失败时自动下载对应监控；两次重新上电提示见输出栏。"
+                                  Text="Mon51 使用下方串口设置；调试时按输出提示重新上电。"
                                   Foreground="{DynamicResource Muted}"
                                   TextWrapping="Wrap"
                                   Margin="0,4,0,4" />
@@ -2247,7 +2211,7 @@
                                   AutomationProperties.Name="STC 下载模式" />
                                 <TextBlock
                                   x:Name="StcUsbHelp"
-                                  Text="内置 USB HID 下载，无需另装工具。保存后点击下载，再让 MCU 进入硬件 USB ISP 并插入电脑；自动识别，不绑定 COM 或 USB 插口。同时只接入一块待下载的目标板。"
+                                  Text="点击下载后进入 USB ISP；只连接一块待下载目标板。"
                                   Visibility="Collapsed"
                                   Foreground="{DynamicResource Muted}"
                                   TextWrapping="Wrap"
@@ -2351,7 +2315,7 @@
                                   FontSize="18"
                                   FontWeight="SemiBold" />
                                 <TextBlock
-                                  Text="选择实际连接方式。串口与下载桥可校准 IRC；原生 USB 保留芯片当前时钟。保存设置不会操作芯片。"
+                                  Text="串口与下载桥可校准 IRC；原生 USB 保留当前时钟。"
                                   Foreground="{DynamicResource Muted}"
                                   TextWrapping="Wrap"
                                   Margin="0,6,0,4" />
@@ -2383,7 +2347,7 @@
                                     SelectionChanged="Mx251DevicePicker_Changed"
                                     AutomationProperties.Name="AI8051U 下载串口" />
                                   <TextBlock
-                                    Text="自动使用 2400 波特握手、115200 波特写入；8 位数据、偶校验、1 位停止位。点击下载后按输出提示重新上电。"
+                                    Text="点击下载后按输出提示重新上电"
                                     TextWrapping="Wrap"
                                     Foreground="{DynamicResource Muted}"
                                     Margin="0,6,0,4" />
@@ -2407,7 +2371,7 @@
                                   TextChanged="Mx251ClockFrequency_Changed"
                                   AutomationProperties.Name="AI8051U IRC 频率 MHz" />
                                 <TextBlock
-                                  Text="1–48 MHz，例如 11.0592、24、40。保存后重新编译，Delay_MS 按此目标计算。原生 USB 要求芯片现有 IRC 与目标相符；更改频率请用串口或下载桥。"
+                                  Text="1–48 MHz，保存后重新编译；更改芯片频率需用串口或下载桥。"
                                   Foreground="{DynamicResource Muted}"
                                   TextWrapping="Wrap"
                                   Margin="0,6,0,4" />
@@ -2581,7 +2545,7 @@
                           </WrapPanel>
                           <TextBlock
                             x:Name="PackSyncStatus"
-                            Text="点击“检查更新”查看可用器件包；点击“同步下载”导入新版本。仅在点击后访问 GitHub。"
+                            Text="尚未检查更新"
                             TextWrapping="Wrap"
                             Foreground="{DynamicResource Muted}"
                             Margin="0,9,0,0" />
@@ -2616,11 +2580,6 @@
                               FontSize="23"
                               FontWeight="SemiBold" />
                           </DockPanel>
-                          <TextBlock
-                            Text="查看工程的创建来源与器件包信息，实际配置以工程代码为准。"
-                            Foreground="{DynamicResource Muted}"
-                            TextWrapping="Wrap"
-                            Margin="0,8,0,20" />
                           <TextBlock
                             x:Name="CurrentProjectName"
                             FontSize="17"
@@ -2691,7 +2650,7 @@
                             Style="{StaticResource SectionLabel}" />
                           <TextBlock
                             x:Name="TemplateDefaultsNote"
-                            Text="晶振与系统时钟可能已被修改，以下默认值不代表工程当前运行参数。"
+                            Text="模板默认值；当前时钟以工程代码为准。"
                             Foreground="{DynamicResource Muted}"
                             TextWrapping="Wrap"
                             Margin="0,0,0,8" />
@@ -2887,7 +2846,7 @@
                                   </StackPanel>
                                 </StackPanel>
                                 <TextBlock
-                                  Text="容量来自板卡 / 模组规格声明，PSRAM 并非运行时实测。保存后下次编译生效；沿用项保留 sdkconfig。"
+                                  Text="标称容量；保存后重新编译。"
                                   Foreground="{DynamicResource Muted}"
                                   TextWrapping="Wrap"
                                   Margin="0,14,0,0" />
@@ -2928,7 +2887,7 @@
                                 FontSize="21"
                                 FontWeight="SemiBold" />
                               <TextBlock
-                                Text="按工程保存，下次编译生效。未指定的参数沿用工程配置。"
+                                Text="保存后下次编译生效"
                                 TextWrapping="Wrap"
                                 Foreground="{DynamicResource Muted}"
                                 Margin="0,8,0,4" />
@@ -2974,7 +2933,8 @@
                                     AutomationProperties.Name="SDCC 默认数据内存模型" />
                                   <TextBlock
                                     x:Name="SdccMemoryModelHelp"
-                                    Text="small：DATA；medium：分页 PDATA，需按板级配置分页 / P2；large：XDATA。Mon51 暂不支持 PDATA 变量观察。改变默认数据区，不改变 MCU 位数，显式存储区声明不变。切换后重新编译。huge 需代码分区（bank）布局，暂不提供。"
+                                    ToolTip="small 使用 DATA；medium 使用分页 PDATA；large 使用 XDATA。切换后重新编译，源码的显式存储区声明保持不变。"
+                                    Text="medium 需配置分页 / P2；Mon51 不支持 PDATA 观察。"
                                     Foreground="{DynamicResource Muted}"
                                     TextWrapping="Wrap"
                                     Margin="0,6,0,8" />
@@ -3092,10 +3052,6 @@
                           Text="新建工程"
                           FontSize="23"
                           FontWeight="SemiBold" />
-                        <TextBlock
-                          Text="选择器件厂商，再选择器件包、芯片型号与起始模板。"
-                          Foreground="{DynamicResource Muted}"
-                          Margin="0,8,0,20" />
                         <Border
                           BorderBrush="{DynamicResource Border}"
                           BorderThickness="1"
@@ -3151,7 +3107,7 @@
                             </DockPanel>
                             <TextBlock
                               x:Name="McuFavoritesHint"
-                              Text="选择型号后点击“☆ 收藏”，下次可从这里快速选择。"
+                              Text="暂无收藏"
                               Foreground="{DynamicResource Muted}"
                               TextWrapping="Wrap"
                               Margin="0,8,0,0" />
@@ -3294,13 +3250,13 @@
                           Style="{StaticResource SectionLabel}" />
                         <TextBlock
                           x:Name="DeviceSearchHint"
-                          Text="搜索型号，例如 F103C8；封装和温度后缀可省略。"
+                          Text="例如 F103C8，可省略封装与温度后缀。"
                           Foreground="{DynamicResource Muted}"
                           FontSize="12"
                           Margin="0,0,0,5" />
                         <TextBox
                           x:Name="DeviceSearch"
-                          ToolTip="搜索型号，例如 F103C8；封装和温度后缀可省略。"
+                          ToolTip="例如 F103C8，可省略封装与温度后缀。"
                           IsEnabled="False"
                           TextChanged="DeviceSearch_TextChanged"
                           Margin="0,0,0,6" />
@@ -3412,7 +3368,7 @@
                               Margin="22,7,0,0" />
                             <TextBlock
                               x:Name="Ag32LogicModeDescription"
-                              Text="顶部编译会联合生成 MCU 固件与 FPGA 位流，使用内置原生综合和 Supra 布局布线工具。Supra 需配置本机有效许可。点击下载后写入并校验两段镜像；可在 AG32 页面配置源文件、SDC 和 RTL 波形仿真。"
+                              Text="联合构建 MCU 固件与 FPGA 位流；需配置 Supra 许可。"
                               TextWrapping="Wrap"
                               Foreground="{DynamicResource Muted}"
                               Margin="22,7,0,0"
@@ -3426,16 +3382,12 @@
                           Margin="0,12,0,0"
                           AutomationProperties.Name="所选模板需要的开发环境组件" />
                         <TextBlock
-                          Text="工程名称"
+                          x:Name="ProjectNameLabel"
+                          Text="工程名称（支持中文）"
                           Style="{StaticResource SectionLabel}" />
                         <TextBox
                           x:Name="ProjectName"
                           Text="my_firmware" />
-                        <TextBlock
-                          Text="创建后自动初始化 Git 仓库；编译产物不纳入版本管理。"
-                          Foreground="{DynamicResource Muted}"
-                          Margin="0,12,0,0"
-                          TextWrapping="Wrap" />
                         <Button
                           x:Name="CreateProjectButton"
                           Content="选择位置并创建工程…"
@@ -3446,7 +3398,7 @@
                           Click="CreateProject_Click" />
                         <TextBlock
                           x:Name="PackageStatus"
-                          Text="尚未安装器件包。请导入 StudioX 格式 1 的 .mcupack。"
+                          Text="尚未安装器件包，请导入 .mcupack。"
                           Foreground="{DynamicResource Muted}"
                           TextWrapping="Wrap"
                           Margin="0,18,0,0" />
@@ -3473,13 +3425,6 @@
                 Visibility="Collapsed">
                 <local:GitHubWorkspaceView
                   x:Name="GitHubWorkspace" />
-              </TabItem>
-              <TabItem
-                Header="LVGL PC 预览"
-                x:Name="LvglPreviewTab"
-                Visibility="Collapsed">
-                <local:LvglPreviewView
-                  x:Name="LvglPreview" />
               </TabItem>
               <TabItem
                 Header="串口绘图"
@@ -3578,7 +3523,7 @@
                         FontSize="22"
                         FontWeight="SemiBold" />
                       <TextBlock
-                        Text="模拟传感器 · 温度与数字状态，真实串口将在后续接入"
+                        Text="模拟传感器 · 温度与数字状态"
                         Foreground="{DynamicResource Muted}"
                         Margin="0,8,0,18" />
                     </StackPanel>
@@ -3661,10 +3606,6 @@
                         Text="插件管理"
                         FontSize="23"
                         FontWeight="SemiBold" />
-                      <TextBlock
-                        Text="管理工作台插件、AI 技能与内置开发工具。"
-                        Foreground="{DynamicResource Muted}"
-                        Margin="0,8,0,16" />
                       <local:PluginManagerView
                         x:Name="PluginManager"
                         Margin="0,0,0,26" />
@@ -3684,16 +3625,11 @@
                         MinHeight="80"
                         TextWrapping="Wrap" />
                       <TextBlock
-                        Text="工程按器件包自动选择开发环境组件。F7 编译；支持下载的器件包可选择 ST-Link、CMSIS-DAP 或 J-Link。已收录的 STM32F1/F4 型号可选择 ST-Link 或 DAP-Link，通过 OpenOCD 调试。AG32 使用 DAP-Link 或 J-Link（V9 及以上）。"
-                        TextWrapping="Wrap"
-                        Foreground="{DynamicResource Muted}"
-                        Margin="0,12,0,0" />
-                      <TextBlock
                         Text="AI 技能"
                         Style="{StaticResource SectionLabel}"
                         Margin="0,22,0,8" />
                       <TextBlock
-                        Text="用户技能可在工程中使用。工程内技能默认关闭，启用前请确认来源。技能说明不会直接获得文件或设备操作权限。"
+                        Text="工程技能默认关闭，请按需启用。"
                         TextWrapping="Wrap"
                         Foreground="{DynamicResource Muted}"
                         FontSize="12" />
@@ -3810,7 +3746,7 @@
                   Header="构建">
                   <local:OutputLogView
                     x:Name="BuildLog"
-                    Text="构建输出将在这里显示。"
+                    Text="尚未构建"
                     Background="Transparent"
                     Foreground="{DynamicResource Text}"
                     BorderThickness="0"
@@ -4204,12 +4140,6 @@
                     FontWeight="SemiBold"
                     HorizontalAlignment="Center"
                     Margin="0,12,0,0" />
-                  <TextBlock
-                    Text="打开工程后，可以让我阅读代码、解释问题或提出修改。"
-                    Foreground="{DynamicResource Muted}"
-                    TextWrapping="Wrap"
-                    TextAlignment="Center"
-                    Margin="0,7,0,0" />
                 </StackPanel>
                 <TextBlock
                   x:Name="AiUnconfiguredHint"
@@ -4250,7 +4180,7 @@
                 <TextBlock
                   x:Name="AiStatus"
                   Visibility="Collapsed"
-                  Text="打开工程后可以提问。工程文本会发送到所配置的 API 服务。"
+                  Text="请先打开工程"
                   Foreground="{DynamicResource Muted}"
                   TextWrapping="Wrap"
                   Margin="0,8,0,8"

@@ -1,0 +1,18 @@
+{
+  "candidate": "MX251 V0.0136",
+  "decision": "rejected-for-runtime-regression",
+  "privateSourceFoundation": "MX251 V0.0135",
+  "historicalFormalComparisonBaseline": "MX251 V0.0129",
+  "publicToolchainUpdated": false,
+  "installed": false,
+  "LST": false,
+  "correctnessPassed": true,
+  "nonRegressionGateWaived": false,
+  "affectedFunction": "struct_records",
+  "functionBytesBefore": 442,
+  "functionBytesAfter": 408,
+  "medianTicksBefore": 2963,
+  "medianTicksAfter": 3030,
+  "regressionPercent": 2.261221734728316,
+  "reason": "Duplicate pointer elimination reduces pressure and static size but shifts allocation toward cold hash spill savings. Main loop adds one MOV per iteration; no hot spill traffic removed. Loop-depth weighting fails to distinguish 4-trip and 64-trip loops. Protocol size gains cannot offset this regression."
+}

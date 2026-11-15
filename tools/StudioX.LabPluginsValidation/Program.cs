@@ -5,12 +5,18 @@ using StudioX.Extensions.Abstractions;
 using StudioX.Foundation;
 using StudioX.LabPlugins;
 
-if (args.Length is not (3 or 4)) { throw new ArgumentException("Usage: <archives> <runtime> <new-output> [legacy-calculator-archive]"); }
+if (args.Length is not (3 or 4))
+{
+    throw new ArgumentException("Usage: <archives> <runtime> <new-output> [legacy-calculator-archive]");
+}
 var archives = args[0];
 var runtime = args[1];
 var output = args[2];
 output = Path.GetFullPath(output);
-if (Directory.Exists(output)) { throw new ArgumentException("Use a new validation directory."); }
+if (Directory.Exists(output))
+{
+    throw new ArgumentException("Use a new validation directory.");
+}
 Directory.CreateDirectory(output);
 var checks = new List<string>();
 JsonElement Json(object value) => JsonSerializer.SerializeToElement(value);
@@ -30,7 +36,11 @@ void Invalid(Action action, string name)
     {
         action();
     }
-    catch (ArgumentException) { Check(true, name); return; }
+    catch (ArgumentException)
+    {
+        Check(true, name);
+        return;
+    }
     throw new InvalidOperationException("Expected rejected input: " + name);
 }
 void InvalidActivity(Action action, string name)
@@ -39,7 +49,11 @@ void InvalidActivity(Action action, string name)
     {
         action();
     }
-    catch (StudioXException error) when (error.Code.StartsWith("PLUGIN_ACTIVITY", StringComparison.Ordinal)) { Check(true, name); return; }
+    catch (StudioXException error) when (error.Code.StartsWith("PLUGIN_ACTIVITY", StringComparison.Ordinal))
+    {
+        Check(true, name);
+        return;
+    }
     throw new InvalidOperationException("Expected rejected activity: " + name);
 }
 new PluginActivityDefinition(Icon: new([[0, 0, 24, 24]])).Validate();
@@ -176,7 +190,10 @@ await using (var workspace = await manager.OpenWorkspaceAsync(project, (_, _, _,
         await PluginManifest.ReadAsync(manifestPath);
         throw new InvalidOperationException("Invalid icon accepted");
     }
-    catch (StudioXException error) when (error.Code == "PLUGIN_ACTIVITY_ICON") { Check(true, "manifest loading validates icon coordinates"); }
+    catch (StudioXException error) when (error.Code == "PLUGIN_ACTIVITY_ICON")
+    {
+        Check(true, "manifest loading validates icon coordinates");
+    }
     await JsonStore.WriteAsync(manifestPath, manifest);
     await manager.SetEnabledAsync(imported[0].Id, false);
     Check(!workspace.IsPluginRunning(imported[0].Id), "disable terminates plugin host");

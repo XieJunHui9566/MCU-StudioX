@@ -25,12 +25,6 @@
         Text="开发环境组件管理"
         FontSize="22"
         FontWeight="SemiBold" />
-      <TextBlock
-        x:Name="DescriptionText"
-        Text="管理预装与导入的开发环境组件。只在使用或点击校验时检查内容，工程始终使用锁定版本。"
-        TextWrapping="Wrap"
-        Foreground="{DynamicResource Muted}"
-        Margin="0,6,0,0" />
       <WrapPanel
         x:Name="Toolbar"
         Margin="0,8,0,2">

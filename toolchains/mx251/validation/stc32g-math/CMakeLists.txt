@@ -1,0 +1,18 @@
+cmake_minimum_required(VERSION 3.25)
+project(MX251_STC32G_MATH NONE)
+include("${MX251_PROJECT_MODULE}")
+
+# 同一份源码覆盖软件库与 MDU32 库，回传标识从实际工程配置派生，避免手工填错。
+file(READ "${CMAKE_CURRENT_SOURCE_DIR}/mx251.json" config)
+string(JSON runtime GET "${config}" runtime)
+if(runtime STREQUAL "native-math")
+  set(variant 1)
+elseif(runtime STREQUAL "native-math-mdu32")
+  set(variant 2)
+else()
+  message(FATAL_ERROR "This validation requires native-math or native-math-mdu32")
+endif()
+add_library(app INTERFACE)
+target_sources(app INTERFACE main.c software_math.c usb_poll.c math_port.h math_vectors.h stc32g_test.h)
+target_compile_definitions(app INTERFACE TEST_VARIANT=${variant})
+mx251_firmware(app)

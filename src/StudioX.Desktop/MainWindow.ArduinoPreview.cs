@@ -34,7 +34,9 @@ public partial class MainWindow
             encoder.Save(file);
         }
         await OpenProjectAsync(project, CancellationToken.None);
-        await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);
+        await Dispatcher.InvokeAsync(() =>
+        {
+        }, DispatcherPriority.ApplicationIdle);
         Check(IsArduinoProject && activeDocument?.RelativePath.EndsWith(".ino", StringComparison.Ordinal) == true, "Arduino sketch opens in the real editor");
         Check(CodeLanguage.ForFile("Sketch.ino") == "C++", "ino uses C++ syntax highlighting");
         Check(BuildButton.IsEnabled && DownloadButton.IsEnabled, "native build and upload actions enabled");
@@ -62,7 +64,9 @@ public partial class MainWindow
                 {
                     return Find<T>(child);
                 }
-                catch (InvalidOperationException) { }
+                catch (InvalidOperationException)
+                {
+                }
             }
             throw new InvalidOperationException(typeof(T).Name + " missing");
         }
@@ -85,7 +89,9 @@ public partial class MainWindow
         foreach (var theme in new[] { ThemeService.Dark, ThemeService.Light })
         {
             ApplyTheme(theme);
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.ApplicationIdle);
             Save(this, theme.Id + "-arduino-editor.png");
             foreach (var dialog in new Window[]
             {
@@ -100,7 +106,9 @@ public partial class MainWindow
                 dialog.ShowActivated = false;
                 dialog.ShowInTaskbar = false;
                 dialog.Show();
-                await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);
+                await Dispatcher.InvokeAsync(() =>
+                {
+                }, DispatcherPriority.ApplicationIdle);
                 Check(dialog.ActualWidth > 0 && dialog.ActualHeight > 0, theme.Id + " " + dialog.GetType().Name + " renders");
                 Save(dialog, theme.Id + "-" + dialog.GetType().Name + ".png");
                 dialog.Close();

@@ -5,9 +5,15 @@ using StudioX.Engine.Debugging;
 using StudioX.Foundation;
 using StudioX.Packages;
 
-if (args is not [var runtime, var packs, var output]) { throw new ArgumentException("Usage: BuildSettingsValidation <tool-runtime> <packs> <new-output>"); }
+if (args is not [var runtime, var packs, var output])
+{
+    throw new ArgumentException("Usage: BuildSettingsValidation <tool-runtime> <packs> <new-output>");
+}
 var root = Path.GetFullPath(output);
-if (Directory.Exists(root)) { throw new ArgumentException("Use a new output directory."); }
+if (Directory.Exists(root))
+{
+    throw new ArgumentException("Use a new output directory.");
+}
 var catalog = new ToolsetCatalog(Path.Combine(Path.GetFullPath(runtime), "toolsets"));
 var builds = new BuildService(catalog);
 var repository = new PackRepository(Path.Combine(root, "packs"));
@@ -47,7 +53,9 @@ foreach (var (archive, device, template) in cases)
         await HardwareDebugPreparer.PrepareAsync(project, new OpenOcdService(catalog));
         throw new Exception("Expected disabled symbols rejection");
     }
-    catch (StudioXException ex) when (ex.Code == "DEBUG_SYMBOLS") { }
+    catch (StudioXException ex) when (ex.Code == "DEBUG_SYMBOLS")
+    {
+    }
     report = await builds.BuildAsync(project);
     Check(report.Success, report.Log);
     CheckCommands(project, "-Os", "-g0");
@@ -67,7 +75,9 @@ foreach (var (archive, device, template) in cases)
         await builds.SaveSettingsAsync(project, new(Optimization: (CompilerOptimization)99));
         throw new Exception("Expected invalid settings rejection");
     }
-    catch (StudioXException ex) when (ex.Code == "BUILD_SETTINGS") { }
+    catch (StudioXException ex) when (ex.Code == "BUILD_SETTINGS")
+    {
+    }
     if (device == "STM32F103C8")
     {
         var cmakeSource = await File.ReadAllTextAsync(cmakePath);
@@ -78,7 +88,9 @@ foreach (var (archive, device, template) in cases)
             await builds.ConfigureAsync(project);
             throw new Exception("Expected custom rule rejection");
         }
-        catch (StudioXException ex) when (ex.Code == "BUILD_SETTINGS_NOT_APPLIED") { }
+        catch (StudioXException ex) when (ex.Code == "BUILD_SETTINGS_NOT_APPLIED")
+        {
+        }
         Check(!File.Exists(receiptPath) && (await File.ReadAllTextAsync(Path.Combine(project, ".build/studiox-build.log"))).Contains("未开始编译", StringComparison.Ordinal), "Custom rule rejection persists diagnostics and leaves no receipt");
         await File.WriteAllTextAsync(cmakePath, cmakeSource);
         await builds.SaveSettingsAsync(project, new());
@@ -119,7 +131,13 @@ Check((await File.ReadAllTextAsync(Path.Combine(cubeRoot, ".build/CMakeCache.txt
 Console.WriteLine("PASS CubeMX preset, custom project include preservation and real compilation");
 await File.WriteAllTextAsync(Path.Combine(root, "result.txt"), "PASS: STM32F103, CH32V307 and CubeMX compiler settings; real GCC builds, C/C++/ASM overrides, symbol removal, reset, persistence, cache reuse and build receipt invalidation. No hardware access.\n");
 
-static void Check(bool value, string message) { if (!value) { throw new InvalidOperationException(message); } }
+static void Check(bool value, string message)
+{
+    if (!value)
+    {
+        throw new InvalidOperationException(message);
+    }
+}
 static void CheckCommands(string project, string optimization, string debug)
 {
     using var document = JsonDocument.Parse(File.ReadAllText(Path.Combine(project, ".build/compile_commands.json")));

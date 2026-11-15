@@ -2,10 +2,20 @@ using System.Text.Json;
 using StudioX.KeilImporter;
 using StudioX.KeilImporter.Validation;
 
-if (args is ["--picker-smoke", var nativeScratch]) { return await PickerValidation.NativeSmokeAsync(nativeScratch); }
-if (args is ["--offline", var offlineDirectory]) { return await OfflineWorkflowChecks.RunAsync(offlineDirectory); }
+if (args is ["--picker-smoke", var nativeScratch])
+{
+    return await PickerValidation.NativeSmokeAsync(nativeScratch);
+}
+if (args is ["--offline", var offlineDirectory])
+{
+    return await OfflineWorkflowChecks.RunAsync(offlineDirectory);
+}
 var publishedCancellationFixture = File.Exists(Path.Combine(AppContext.BaseDirectory, "cancel-published"));
-if (args is ["project-info", _] && publishedCancellationFixture) { Console.WriteLine("{}"); return 0; }
+if (args is ["project-info", _] && publishedCancellationFixture)
+{
+    Console.WriteLine("{}");
+    return 0;
+}
 if (args is ["build", var fixtureProject, _] && (publishedCancellationFixture || File.Exists(Path.Combine(fixtureProject, ".studiox/cli-fixture-mode"))))
 {
     return await OfflineWorkflowChecks.CliFixtureAsync(fixtureProject, publishedCancellationFixture ? "cancel" : null);

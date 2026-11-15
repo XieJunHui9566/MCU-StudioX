@@ -140,7 +140,10 @@ internal static class HardwareChecks
             });
             throw;
         }
-        finally { await debug.StopAsync(); }
+        finally
+        {
+            await debug.StopAsync();
+        }
         Check(view.Current.Panel is null && debug.State == DebugState.Disconnected, "real debug ends, clears plugin and resumes target without firmware download");
         await JsonStore.WriteAsync(Path.Combine(root, "result.json"), new
         {

@@ -47,7 +47,11 @@ public sealed class SerialScriptClient : IAsyncDisposable
             await client.ExchangeAsync(new(1, 0, "init", Source: source), token);
             return client;
         }
-        catch { await client.DisposeAsync(); throw; }
+        catch
+        {
+            await client.DisposeAsync();
+            throw;
+        }
     }
     public Task ResetAsync(CancellationToken token) => ExchangeAsync(new(1, 0, "reset"), token);
     public async Task<SerialScriptResult> DecodeAsync(byte[] bytes, string direction, DateTimeOffset time, bool flush, CancellationToken token = default)
@@ -117,8 +121,16 @@ public sealed class SerialScriptClient : IAsyncDisposable
                 }
             }
         }
-        catch (OperationCanceledException) when (lifetime.IsCancellationRequested) { }
-        catch (IOException ex) { lock (errors) { errors.Append(ex.Message); } }
+        catch (OperationCanceledException) when (lifetime.IsCancellationRequested)
+        {
+        }
+        catch (IOException ex)
+        {
+            lock (errors)
+            {
+                errors.Append(ex.Message);
+            }
+        }
     }
     private async Task MonitorAsync()
     {
@@ -140,8 +152,12 @@ public sealed class SerialScriptClient : IAsyncDisposable
                 }
             }
         }
-        catch (OperationCanceledException) when (lifetime.IsCancellationRequested) { }
-        catch (InvalidOperationException) { /* 宿主恰好退出。 */ }
+        catch (OperationCanceledException) when (lifetime.IsCancellationRequested)
+        {
+        }
+        catch (InvalidOperationException)
+        { /* 宿主恰好退出。 */
+        }
     }
     private void Kill()
     {
@@ -152,7 +168,9 @@ public sealed class SerialScriptClient : IAsyncDisposable
                 process.Kill(true);
             }
         }
-        catch (InvalidOperationException) { }
+        catch (InvalidOperationException)
+        {
+        }
     }
     public async ValueTask DisposeAsync()
     {

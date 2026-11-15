@@ -124,7 +124,9 @@ internal static class DebugSourceStamp
                         }
                     }
                 }
-                catch (JsonException) { /* 原生配置重新生成描述；损坏的描述仍会被下载布局的严格解析拒绝。 */ }
+                catch (JsonException)
+                { /* 原生配置重新生成描述；损坏的描述仍会被下载布局的严格解析拒绝。 */
+                }
             }
         }
         var stcIspPath = Path.Combine(root, StcIspSettings.RelativePath);

@@ -142,7 +142,10 @@ public sealed class SvdParser
             resolved[path] = result;
             return result;
         }
-        finally { resolving.Remove(path); }
+        finally
+        {
+            resolving.Remove(path);
+        }
     }
     private void Walk(IEnumerable<XElement> elements, ulong basis, string prefix, string peripheral, Properties inherited, string definitionPrefix)
     {
@@ -339,6 +342,9 @@ public sealed class SvdParser
         {
             return checked((text.StartsWith("0x", StringComparison.OrdinalIgnoreCase) ? Convert.ToUInt64(text[2..], 16) : text.StartsWith('#') ? Convert.ToUInt64(text[1..], 2) : ulong.Parse(text, CultureInfo.InvariantCulture)) * multiplier);
         }
-        catch (Exception ex) when (ex is FormatException or OverflowException or ArgumentException) { throw Error("数值无效：" + text); }
+        catch (Exception ex) when (ex is FormatException or OverflowException or ArgumentException)
+        {
+            throw Error("数值无效：" + text);
+        }
     }
 }

@@ -90,7 +90,10 @@ internal static class Rp2350TargetChecks
                 {
                     OpenOcdDebugPlanner.Create(project, invalid, prepared.Tools, prepared.Elf);
                 }
-                catch (StudioXException ex) when (ex.Code == code) { return; }
+                catch (StudioXException ex) when (ex.Code == code)
+                {
+                    return;
+                }
                 throw new InvalidOperationException("Expected " + code);
             }
         }

@@ -2,9 +2,15 @@ using System.Buffers.Binary;
 using StudioX.Engine;
 using StudioX.Foundation;
 
-if (args.Length < 1 || args.Length % 2 != 1) { throw new ArgumentException("Usage: BuildMemoryValidation <new-output-directory> [elf map]..."); }
+if (args.Length < 1 || args.Length % 2 != 1)
+{
+    throw new ArgumentException("Usage: BuildMemoryValidation <new-output-directory> [elf map]...");
+}
 var root = Path.GetFullPath(args[0]);
-if (Directory.Exists(root)) { throw new ArgumentException("Output must be a new directory."); }
+if (Directory.Exists(root))
+{
+    throw new ArgumentException("Output must be a new directory.");
+}
 Directory.CreateDirectory(Path.Combine(root, ".build"));
 var mapPath = Path.Combine(root, ".build", "firmware.map");
 var elfPath = Path.Combine(root, ".build", "firmware.elf");
@@ -101,7 +107,9 @@ try
 {
     await new BuildService(new ToolsetCatalog(Path.Combine(root, "missing-tools"))).BuildAsync(root);
 }
-catch (StudioXException) { }
+catch (StudioXException)
+{
+}
 Check(!File.Exists(Path.Combine(root, ".build", "studiox-memory.json")) && (await service.ReadAsync(root)).Targets.Count == 0,
     "failed build invalidates previous snapshot");
 
@@ -130,7 +138,14 @@ for (var i = 1; i < args.Length; i += 2)
 }
 await File.WriteAllTextAsync(Path.Combine(root, "result.txt"), "PASS: ELF/MAP allocation, LMA/VMA, NOBITS, holes, custom regions, zero origin, malformed and missing data, snapshot invalidation.\n");
 
-void Check(bool okay, string description) { if (!okay) { throw new InvalidOperationException(description); } Console.WriteLine("PASS: " + description); }
+void Check(bool okay, string description)
+{
+    if (!okay)
+    {
+        throw new InvalidOperationException(description);
+    }
+    Console.WriteLine("PASS: " + description);
+}
 async Task Reject(string description)
 {
     try
@@ -138,7 +153,10 @@ async Task Reject(string description)
         await BuildMemoryAnalyzer.AnalyzeAsync(elfPath, mapPath);
         throw new InvalidOperationException(description);
     }
-    catch (InvalidDataException) { Console.WriteLine("PASS: " + description); }
+    catch (InvalidDataException)
+    {
+        Console.WriteLine("PASS: " + description);
+    }
 }
 void U16(int offset, ushort value) => BinaryPrimitives.WriteUInt16LittleEndian(elf.AsSpan(offset), value);
 void U32(int offset, uint value) => BinaryPrimitives.WriteUInt32LittleEndian(elf.AsSpan(offset), value);

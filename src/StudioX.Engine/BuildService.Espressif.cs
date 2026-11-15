@@ -40,6 +40,9 @@ public sealed partial class BuildService
                 }
             }
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
 }

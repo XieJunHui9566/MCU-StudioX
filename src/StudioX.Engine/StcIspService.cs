@@ -318,11 +318,25 @@ public sealed partial class StcIspService(ToolsetCatalog catalog, string runtime
                 return new(success, capture.Text, prepared.LogPath, result.ExitCode, result.TimedOut,
                     capture.Text.Contains("STUDIOX_TARGET_VERIFIED " + prepared.ExpectedModel, StringComparison.Ordinal));
             }
-            catch (OperationCanceledException) { capture.Report("\n下载被取消；若已开始擦写，板内程序可能不完整。\n"); throw; }
-            catch (Exception ex) { capture.Report("\n" + ex + "\n"); throw; }
-            finally { await File.WriteAllTextAsync(prepared.LogPath, capture.Text, CancellationToken.None); }
+            catch (OperationCanceledException)
+            {
+                capture.Report("\n下载被取消；若已开始擦写，板内程序可能不完整。\n");
+                throw;
+            }
+            catch (Exception ex)
+            {
+                capture.Report("\n" + ex + "\n");
+                throw;
+            }
+            finally
+            {
+                await File.WriteAllTextAsync(prepared.LogPath, capture.Text, CancellationToken.None);
+            }
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
 
     private async Task VerifyPreparationAsync(StcIspPreparation prepared, CancellationToken token)

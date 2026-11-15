@@ -34,7 +34,12 @@ public sealed class Mx251SerialBackend : IMx251SerialBackend
                 port.Open();
                 port.DiscardInBuffer();
             }
-            catch { port.Dispose(); lease.Dispose(); throw; }
+            catch
+            {
+                port.Dispose();
+                lease.Dispose();
+                throw;
+            }
             this.trace = trace;
         }
         public void SetBaudRate(int baud) => port.BaudRate = baud;
@@ -56,7 +61,10 @@ public sealed class Mx251SerialBackend : IMx251SerialBackend
                 trace("rx", result);
                 return result;
             }
-            catch (TimeoutException) { return []; }
+            catch (TimeoutException)
+            {
+                return [];
+            }
         }, token);
         public void Dispose()
         {

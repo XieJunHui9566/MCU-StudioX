@@ -116,7 +116,10 @@ public partial class AiSettingsWindow : Window
             RefreshKeyState();
             ErrorText.Text = "已删除该地址保存的 API Key。";
         }
-        catch (Exception ex) { ErrorText.Text = ex.Message; }
+        catch (Exception ex)
+        {
+            ErrorText.Text = ex.Message;
+        }
     }
 
     private void DeleteWebKey_Click(object sender, RoutedEventArgs e)
@@ -128,6 +131,9 @@ public partial class AiSettingsWindow : Window
             RefreshWebKeyState();
             ErrorText.Text = "已删除保存的 Tavily API Key。";
         }
-        catch (Exception ex) { ErrorText.Text = ex.Message; }
+        catch (Exception ex)
+        {
+            ErrorText.Text = ex.Message;
+        }
     }
 }

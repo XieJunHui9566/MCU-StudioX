@@ -79,7 +79,10 @@ public partial class MainWindow
                 Log("GitHub 器件包更新检查失败：" + ex);
             }
         }
-        finally { FinishPackOperation(cancellation); }
+        finally
+        {
+            FinishPackOperation(cancellation);
+        }
     }
 
     private async Task RunPackSyncAsync(CancellationTokenSource cancellation)
@@ -139,7 +142,10 @@ public partial class MainWindow
                 Log("GitHub 器件包同步失败：" + ex);
             }
         }
-        finally { FinishPackOperation(cancellation); }
+        finally
+        {
+            FinishPackOperation(cancellation);
+        }
     }
 
     private void FinishPackOperation(CancellationTokenSource cancellation)

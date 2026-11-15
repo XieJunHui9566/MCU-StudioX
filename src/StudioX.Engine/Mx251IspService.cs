@@ -240,6 +240,9 @@ public sealed partial class Mx251IspService(ToolsetCatalog catalog, string dataD
                 throw;
             }
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
 }

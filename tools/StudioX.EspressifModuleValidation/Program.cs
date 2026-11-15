@@ -359,7 +359,10 @@ async Task RejectAsync(Func<Task> action, string code, string message)
         await action();
         throw new InvalidOperationException("Expected rejection: " + message);
     }
-    catch (StudioXException exception) when (exception.Code == code) { Check(true, message); }
+    catch (StudioXException exception) when (exception.Code == code)
+    {
+        Check(true, message);
+    }
 }
 void Check(bool passed, string message)
 {

@@ -107,16 +107,10 @@
           Click="Undo_Click"
           IsEnabled="False"
           Margin="0,0,8,6" />
-        <TextBlock
-          Text="修改进入编辑器，Ctrl+Shift+S 保存全部文件。双击匹配项定位。"
-          VerticalAlignment="Center"
-          TextWrapping="Wrap"
-          Margin="0,0,0,6"
-          Foreground="{DynamicResource Muted}" />
       </WrapPanel>
       <TextBlock
         x:Name="Status"
-        Text="搜索当前工程；使用打开文档的未保存内容。自动排除构建产物、版本库与链接。"
+        Text="尚未搜索"
         TextWrapping="Wrap"
         Margin="0,0,0,8" />
     </StackPanel>

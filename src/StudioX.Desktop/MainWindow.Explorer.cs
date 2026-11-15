@@ -25,7 +25,13 @@ public partial class MainWindow
         MenuItem Add(string label, string gesture, Func<ProjectEntry, CancellationToken, Task> action)
         {
             var item = new MenuItem { Header = label, InputGestureText = gesture };
-            item.Click += async (_, _) => { if (explorerMenuEntry is { } entry) { await RunAsync(token => action(entry, token)); } };
+            item.Click += async (_, _) =>
+            {
+                if (explorerMenuEntry is { } entry)
+                {
+                    await RunAsync(token => action(entry, token));
+                }
+            };
             menu.Items.Add(item);
             return item;
         }
@@ -34,15 +40,34 @@ public partial class MainWindow
         var file = Add("新建文件…", "", (entry, token) => CreateExplorerEntryAsync(entry, false, token));
         var folder = Add("新建文件夹…", "", (entry, token) => CreateExplorerEntryAsync(entry, true, token));
         menu.Items.Add(new Separator());
-        var copy = Add("复制", "Ctrl+C", (entry, _) => { CopyExplorerEntry(entry); return Task.CompletedTask; });
+        var copy = Add("复制", "Ctrl+C", (entry, _) =>
+        {
+            CopyExplorerEntry(entry);
+            return Task.CompletedTask;
+        });
         var paste = Add("粘贴", "Ctrl+V", PasteExplorerEntriesAsync);
         var rename = Add("重命名…", "F2", RenameExplorerEntryAsync);
         menu.Items.Add(new Separator());
-        Add("复制完整路径", "", (entry, _) => { Clipboard.SetText(services.Files.GetEntryPath(RequireProject(), entry.RelativePath)); return Task.CompletedTask; });
-        Add("复制相对路径", "", (entry, _) => { Clipboard.SetText(entry.RelativePath.Length == 0 ? "." : entry.RelativePath); return Task.CompletedTask; });
-        Add("在资源管理器中显示", "", (entry, _) => { services.Files.ShowInExplorer(RequireProject(), entry.RelativePath); return Task.CompletedTask; });
+        Add("复制完整路径", "", (entry, _) =>
+        {
+            Clipboard.SetText(services.Files.GetEntryPath(RequireProject(), entry.RelativePath));
+            return Task.CompletedTask;
+        });
+        Add("复制相对路径", "", (entry, _) =>
+        {
+            Clipboard.SetText(entry.RelativePath.Length == 0 ? "." : entry.RelativePath);
+            return Task.CompletedTask;
+        });
+        Add("在资源管理器中显示", "", (entry, _) =>
+        {
+            services.Files.ShowInExplorer(RequireProject(), entry.RelativePath);
+            return Task.CompletedTask;
+        });
         menu.Items.Add(new Separator());
-        Add("刷新", "F5", async (entry, token) => { await ResynchronizeProjectFilesAsync(token); });
+        Add("刷新", "F5", async (entry, token) =>
+        {
+            await ResynchronizeProjectFilesAsync(token);
+        });
         menu.Opened += (_, _) =>
         {
             if (!explorerMouseContext)
@@ -67,7 +92,10 @@ public partial class MainWindow
             {
                 paste.IsEnabled = !services.Debugger.IsActive && ProjectFileService.CanCreateIn(target) && Clipboard.ContainsFileDropList();
             }
-            catch (System.Runtime.InteropServices.ExternalException) { paste.IsEnabled = false; }
+            catch (System.Runtime.InteropServices.ExternalException)
+            {
+                paste.IsEnabled = false;
+            }
             open.Header = entry.IsDirectory ? "展开 / 折叠" : "打开";
         };
         menu.Closed += (_, _) => explorerMouseContext = false;
@@ -100,7 +128,11 @@ public partial class MainWindow
         if (Keyboard.Modifiers == ModifierKeys.Control && e.Key == Key.C && entry.RelativePath.Length > 0)
         {
             e.Handled = true;
-            await RunAsync(_ => { CopyExplorerEntry(entry); return Task.CompletedTask; });
+            await RunAsync(_ =>
+            {
+                CopyExplorerEntry(entry);
+                return Task.CompletedTask;
+            });
         }
         else if (Keyboard.Modifiers == ModifierKeys.Control && e.Key == Key.V && ProjectFileService.CanCreateIn(DestinationFolder(entry)))
         {
@@ -249,8 +281,14 @@ public partial class MainWindow
             QueueLiveDiagnostics();
             QueueOutlineRefresh(clear: true);
         }
-        catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }
-        catch (Exception ex) { await RecordAnalysisFailureAsync("文件操作已完成，语言服务刷新失败；重新打开工程可重试", ex); }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            await RecordAnalysisFailureAsync("文件操作已完成，语言服务刷新失败；重新打开工程可重试", ex);
+        }
     }
     private async Task<TreeViewItem?> FindProjectNodeAsync(string path, CancellationToken token = default)
     {

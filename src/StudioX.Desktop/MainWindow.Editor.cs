@@ -47,6 +47,7 @@ public partial class MainWindow
         InitializeDiagnostics();
         InitializeEditingActions();
         InitializeCodeAssistance();
+        InitializeFolding();
         InitializeCodeNavigation();
         InitializeDocumentTabs();
         InitializeOutline();
@@ -54,7 +55,6 @@ public partial class MainWindow
         InitializeDebugger();
         InitializeWorkspaceEditing();
         InitializePeripheralDevelopment();
-        InitializeStcTiming();
         InitializeSourceRegistration();
         InitializeLiveDiagnostics();
         InitializeEditorRecovery();
@@ -96,6 +96,8 @@ public partial class MainWindow
             ReportHighlightingFailure(language, ex);
         }
         bracketColors?.Configure(CodeLanguage.ForFile(activeDocument?.RelativePath ?? ""), dark);
+        sourceFolding?.ApplyTheme();
+        mirrorFolding?.ApplyTheme();
         RefreshInactiveCode();
         InvalidateFileIcons(ProjectTree);
         foreach (var session in editorDocuments)
@@ -241,7 +243,9 @@ public partial class MainWindow
                 // 大目录分批挂入节点，让输入和渲染在批次间得到调度；折叠后保留已加载的节点。
                 if (batch.ElapsedMilliseconds >= 8)
                 {
-                    await Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Background, stop);
+                    await Dispatcher.InvokeAsync(() =>
+                    {
+                    }, System.Windows.Threading.DispatcherPriority.Background, stop);
                     batch.Restart();
                 }
             }
@@ -260,7 +264,10 @@ public partial class MainWindow
             Status.Text = ex.Message;
             Log(ex.ToString());
         }
-        finally { loadingProjectDirectories.Remove(parent); }
+        finally
+        {
+            loadingProjectDirectories.Remove(parent);
+        }
         SetFolderIcon(parent, parent.IsExpanded);
     }
     private async void Directory_Expanded(object sender, RoutedEventArgs e)
@@ -275,7 +282,9 @@ public partial class MainWindow
         {
             await LoadChildrenAsync(node);
         }
-        catch (OperationCanceledException) { }
+        catch (OperationCanceledException)
+        {
+        }
     }
     private static void SetFolderIcon(TreeViewItem node, bool expanded)
     {
@@ -305,7 +314,10 @@ public partial class MainWindow
         if (e.Key == Key.F5 && projectDirectory is not null)
         {
             e.Handled = true;
-            await RunAsync(async token => { await ResynchronizeProjectFilesAsync(token); });
+            await RunAsync(async token =>
+            {
+                await ResynchronizeProjectFilesAsync(token);
+            });
         }
         else if (e.Key == Key.Enter && ProjectTree.SelectedItem is TreeViewItem { Tag: ProjectEntry { IsLink: false } entry })
         {

@@ -1,0 +1,107 @@
+--- a/src/mcs251/main.c
++++ b/src/mcs251/main.c
+@@ -44,6 +44,31 @@
+ #define OPTION_HUGE_MODEL           "--model-huge"
+ #define OPTION_STACK_SIZE           "--stack-size"
+ 
++static char *interruptVectorCountSpec;
++static unsigned interruptVectorCount;
++
++/* 数量由目标配置提供；通用后端不内置 STC 或其它芯片的向量上限。 */
++static void
++validateInterruptVectorCount (void)
++{
++  char *end;
++  unsigned long count;
++  if (!interruptVectorCountSpec) return;
++  if (*interruptVectorCountSpec < '0' || *interruptVectorCountSpec > '9') goto invalid;
++  count = strtoul (interruptVectorCountSpec, &end, 0);
++  if (end == interruptVectorCountSpec || *end || !count || count > INTNO_MAX + 1UL) goto invalid;
++  if (options.acall_ajmp)
++    {
++      werror (E_BAD_INT_ARGUMENT, "--mcs251-vector-count cannot be combined with --acall-ajmp");
++      exit (EXIT_FAILURE);
++    }
++  interruptVectorCount = (unsigned) count;
++  return;
++invalid:
++  werror (E_BAD_INT_ARGUMENT, "--mcs251-vector-count (expected 1..256)");
++  exit (EXIT_FAILURE);
++}
++
+ static char *extendedStackSpec;
+ static unsigned long extendedStackBase, extendedStackSize, edataSize;
+ 
+@@ -95,6 +120,7 @@
+ 
+ static OPTION _mcs251_options[] =
+   {
++    { 0, "--mcs251-vector-count", &interruptVectorCountSpec, "<1..256> reserve target interrupt slots; unused slots disable EA and stop", CLAT_STRING },
+     { 0, "--mcs251-stack", &extendedStackSpec, "<base,size,edata-size> reserve extended stack and define __mcs251_stack_initial", CLAT_STRING },
+     { 0, OPTION_SMALL_MODEL, NULL, "internal data space is used (default)"},
+     { 0, OPTION_MEDIUM_MODEL, NULL, "external paged data space is used"},
+@@ -275,6 +301,7 @@
+ _mcs251_finaliseOptions (void)
+ {
+   validateExtendedStack ();
++  validateInterruptVectorCount ();
+   if (mcs251WideOrdinaryEnabled) mcs251WideEnabled = 1;
+   if (mcs251WideEnabled) nativeAbiEnabled = 1;
+   if (options.sdcccall >= 3)
+@@ -396,6 +423,12 @@
+ _mcs251_genIVT (struct dbuf_s *oBuf, symbol **interrupts, int maxInterrupts)
+ {
+   int i;
++  const unsigned vectorCount = interruptVectorCount ? interruptVectorCount : maxInterrupts;
++  if (interruptVectorCount && (unsigned) maxInterrupts > interruptVectorCount)
++    {
++      werror (E_BAD_INT_ARGUMENT, "--mcs251-vector-count is smaller than the highest declared interrupt plus one");
++      exit (EXIT_FAILURE);
++    }
+ 
+   /* The reset slot is only three bytes wide.  Keep its LJMP in the reset
+      region and let a HOME-area trampoline perform the full 24-bit jump to
+@@ -405,7 +438,7 @@
+     dbuf_printf (oBuf, "\t.ds\t1\n");
+ 
+   /* now for the other interrupts */
+-  for (i = 0; i < maxInterrupts; i++)
++  for (i = 0; (unsigned) i < vectorCount; i++)
+     {
+       if (interrupts[i])
+         {
+@@ -413,19 +446,30 @@
+              jump.  Unlike the three-byte reset slot, an interrupt handler
+              may be linked outside the vector table's 64 KiB region. */
+           dbuf_printf (oBuf, "\tejmp\t%s\n", interrupts[i]->rname);
+-          if (i != maxInterrupts - 1)
++          if (interruptVectorCount || (unsigned) i != vectorCount - 1)
+             dbuf_printf (oBuf, "\t.ds\t4\n");
+         }
+       else
+         {
+-          dbuf_printf (oBuf, "\treti\n");
+-          if ( i != maxInterrupts - 1 )
+-            dbuf_printf (oBuf, "\t.ds\t7\n");
++          if (interruptVectorCount)
++            dbuf_printf (oBuf, "\tejmp\t__sdcc_mcs251_unhandled_interrupt\n");
++          else
++            dbuf_printf (oBuf, "\treti\n");
++          if ( interruptVectorCount || (unsigned) i != vectorCount - 1 )
++            dbuf_printf (oBuf, interruptVectorCount ? "\t.ds\t4\n" : "\t.ds\t7\n");
+         }
+     }
+ 
+   dbuf_printf (oBuf, "__sdcc_mcs251_reset_trampoline::\n"
+                      "\tejmp\t__sdcc_gsinit_startup\n");
++
++  /* 未声明的中断不恢复执行：不依赖外设 ACK，也不把 RETI 风暴当作成功。
++     此策略只停止 CPU 执行，不代表外设输出安全关断或看门狗不会复位。 */
++  if (interruptVectorCount)
++    dbuf_printf (oBuf, "__sdcc_mcs251_unhandled_interrupt::\n"
++                      "\tclr\t0xaf\n"
++                      "__sdcc_mcs251_unhandled_halt::\n"
++                      "\tsjmp\t__sdcc_mcs251_unhandled_halt\n");
+ 
+   return true;
+ }

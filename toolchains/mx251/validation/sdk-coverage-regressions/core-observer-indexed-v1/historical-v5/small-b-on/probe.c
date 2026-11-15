@@ -1,0 +1,1 @@
+typedef unsigned char u8;typedef unsigned int u16;__sfr __at(0xb1) io;__sfr __at(0xf0) observer;struct cfg{u8 a,b,c,d;u16 value;u8 tag;};u8 f(u8 selector,struct cfg __xdata *p) __reentrant __sdcccall(4){io=(u8)(p->value>>8);io=(u8)p->value;io=(p->tag==7);return observer;}

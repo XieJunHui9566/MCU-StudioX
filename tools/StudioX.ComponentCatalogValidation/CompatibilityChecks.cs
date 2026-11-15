@@ -192,6 +192,9 @@ internal static class CompatibilityChecks
             await action();
             throw new InvalidOperationException(label);
         }
-        catch (StudioXException error) { check(error.Code == code, label); }
+        catch (StudioXException error)
+        {
+            check(error.Code == code, label);
+        }
     }
 }

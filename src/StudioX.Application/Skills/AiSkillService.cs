@@ -106,7 +106,13 @@ public sealed partial class AiSkillService
             File.WriteAllText(temporary, JsonSerializer.Serialize(settings, JsonStore.Options));
             File.Move(temporary, settingsPath, overwrite: true);
         }
-        finally { if (File.Exists(temporary)) { File.Delete(temporary); } }
+        finally
+        {
+            if (File.Exists(temporary))
+            {
+                File.Delete(temporary);
+            }
+        }
     }
 
     private static string NormalizeProject(string project)

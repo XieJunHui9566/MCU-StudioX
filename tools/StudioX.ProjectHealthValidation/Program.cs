@@ -7,9 +7,15 @@ using StudioX.Foundation;
 using StudioX.Packages;
 using StudioX.ProjectHealthValidation;
 
-if (args.Length is not (2 or 4)) { throw new ArgumentException("Usage: health-validation <new-output> <ninja.exe> [real-project runtime]"); }
+if (args.Length is not (2 or 4))
+{
+    throw new ArgumentException("Usage: health-validation <new-output> <ninja.exe> [real-project runtime]");
+}
 var output = Path.GetFullPath(args[0]);
-if (Directory.Exists(output)) { throw new InvalidOperationException("Use a new evidence directory."); }
+if (Directory.Exists(output))
+{
+    throw new InvalidOperationException("Use a new evidence directory.");
+}
 Directory.CreateDirectory(output);
 var ninja = await File.ReadAllBytesAsync(args[1]);
 var checks = new List<string>();
@@ -29,7 +35,10 @@ async Task ExpectCode(Func<Task> operation, string code)
         await operation();
         throw new InvalidOperationException("Expected " + code);
     }
-    catch (StudioXException error) when (error.Code == code) { Check(true, "reject " + code); }
+    catch (StudioXException error) when (error.Code == code)
+    {
+        Check(true, "reject " + code);
+    }
 }
 async Task<(string Root, ToolsetCatalog Catalog, ProjectHealthService Service, ProjectManifest Project)> Fixture(string name, bool esp = false)
 {
@@ -166,7 +175,10 @@ try
     await cache.Service.RepairCacheAsync(plan, cancelled.Token);
     throw new InvalidOperationException("Expected cancellation");
 }
-catch (OperationCanceledException) { Check(File.Exists(Path.Combine(cache.Root, ".build", "CMakeCache.txt")), "cancelled repair preserves cache"); }
+catch (OperationCanceledException)
+{
+    Check(File.Exists(Path.Combine(cache.Root, ".build", "CMakeCache.txt")), "cancelled repair preserves cache");
+}
 var backup = await cache.Service.RepairCacheAsync(plan);
 Check(Directory.Exists(backup) && File.Exists(Path.Combine(backup, "CMakeCache.txt")) && File.Exists(Path.Combine(backup, "CMakeFiles", "compiler.obj")), "repair moves original generated content to a local backup");
 Check(!File.Exists(Path.Combine(cache.Root, ".build", "studiox-build-receipt.json")) && File.Exists(Path.Combine(backup, "studiox-build-receipt.json")), "repair invalidates the old download receipt while retaining it in backup");
@@ -196,7 +208,10 @@ using (var occupied = new FileStream(rollbackSecond, FileMode.Open, FileAccess.R
         await rollback.Service.RepairCacheAsync(rollbackPlan);
         throw new InvalidOperationException("Expected occupied cache failure");
     }
-    catch (IOException) { Check(await File.ReadAllTextAsync(rollbackFirst) == "original cache", "partial repair failure restores the first moved cache file"); }
+    catch (IOException)
+    {
+        Check(await File.ReadAllTextAsync(rollbackFirst) == "original cache", "partial repair failure restores the first moved cache file");
+    }
 }
 Check(await File.ReadAllTextAsync(rollbackSecond) == "original database", "occupied cache file retains original content after rollback");
 Check(File.Exists(Path.Combine(rollback.Root, "sdkconfig")), "partial rollback leaves project SDK configuration in place");

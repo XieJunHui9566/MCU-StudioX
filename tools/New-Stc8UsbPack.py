@@ -13,10 +13,7 @@ def main():
     parser.add_argument("--base-pack", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
-    recipe_path = (
-        Path(__file__).resolve().parent.parent
-        / "examples/packs/stc.stc8/stc8h8k64u.json"
-    )
+    recipe_path = Path(__file__).resolve().parent.parent / "examples/packs/stc.stc8/stc8h8k64u.json"
     recipe = json.loads(recipe_path.read_text(encoding="utf-8"))
     if (
         recipe["codeBytes"] + recipe["eepromBytes"] != recipe["physicalFlashBytes"]

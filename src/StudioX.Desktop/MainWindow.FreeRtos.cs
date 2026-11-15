@@ -46,7 +46,13 @@ public partial class MainWindow
                 DebugTools.FreeRtosView.SetError(ex.Message);
             }
         }
-        finally { if (ReferenceEquals(rtosReadCancellation, cancellation)) { rtosReadCancellation = null; } }
+        finally
+        {
+            if (ReferenceEquals(rtosReadCancellation, cancellation))
+            {
+                rtosReadCancellation = null;
+            }
+        }
     }
     private void CancelFreeRtosRead()
     {

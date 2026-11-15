@@ -53,7 +53,7 @@ public sealed class DebugConnectionWindow : Window
         });
         var top = new StackPanel();
         top.Children.Add(new TextBlock { Text = target, FontSize = 18, TextWrapping = TextWrapping.Wrap });
-        top.Children.Add(new TextBlock { Text = "普通附加会暂停目标；校验通过后进入源码调试。连接过程不下载固件。", TextWrapping = TextWrapping.Wrap, Margin = new(0, 8, 0, 0) });
+        top.Children.Add(new TextBlock { Text = "连接后暂停目标，使用板上现有固件。", TextWrapping = TextWrapping.Wrap, Margin = new(0, 8, 0, 0) });
         reset.IsEnabled = allowReset && !review;
         start.IsEnabled = !review;
         top.Children.Add(reset);
@@ -70,12 +70,35 @@ public sealed class DebugConnectionWindow : Window
         body.Children.Add(grid);
         Content = body;
         start.Click += async (_, _) => await ConnectAsync();
-        cancel.Click += (_, _) => { if (working) { cancellation.Cancel(); cancel.IsEnabled = false; } else { Close(); } };
+        cancel.Click += (_, _) =>
+        {
+            if (working)
+            {
+                cancellation.Cancel();
+                cancel.IsEnabled = false;
+            }
+            else
+            {
+                Close();
+            }
+        };
         service.Changed += OnChanged;
         timer.Tick += (_, _) => Update();
         timer.Start();
-        Closing += (_, e) => { if (working) { e.Cancel = true; cancellation.Cancel(); } };
-        Closed += (_, _) => { service.Changed -= OnChanged; timer.Stop(); cancellation.Dispose(); };
+        Closing += (_, e) =>
+        {
+            if (working)
+            {
+                e.Cancel = true;
+                cancellation.Cancel();
+            }
+        };
+        Closed += (_, _) =>
+        {
+            service.Changed -= OnChanged;
+            timer.Stop();
+            cancellation.Dispose();
+        };
         Update();
     }
 
@@ -97,7 +120,10 @@ public sealed class DebugConnectionWindow : Window
         {
             await connect(reset.IsChecked == true, cancellation.Token);
         }
-        catch (Exception error) { detail.Text = error.ToString(); }
+        catch (Exception error)
+        {
+            detail.Text = error.ToString();
+        }
         finally
         {
             working = false;

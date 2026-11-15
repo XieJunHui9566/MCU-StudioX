@@ -32,7 +32,9 @@ public partial class MainWindow
             Check(button.IsEnabled, "enabled button: " + button.Content);
             button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             await view.PendingOperation;
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ContextIdle);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.ContextIdle);
         }
         foreach (var name in new[] { "sensor.voltage", "control.output", "app_counter" })
         {
@@ -59,7 +61,9 @@ public partial class MainWindow
             ApplyTheme(theme);
             view.RefreshTheme();
             UpdateLayout();
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ContextIdle);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.ContextIdle);
             Check(view.Chart.ActualHeight >= 230 && view.StartButton.ActualWidth > 0, theme.Id + " chart and controls laid out");
             Check(view.Chart.VisibleSampleCount >= 10, theme.Id + " waveform samples are inside the visible time window");
             Render(view, Path.Combine(directory, "openocd-plot-" + theme.Id + ".png"));
@@ -68,7 +72,9 @@ public partial class MainWindow
         Height = 760;
         ApplyTheme(ThemeService.Dark);
         UpdateLayout();
-        await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ContextIdle);
+        await Dispatcher.InvokeAsync(() =>
+        {
+        }, DispatcherPriority.ContextIdle);
         Check(view.PageScroll.ScrollableHeight > 0, "compact window scrolls to every control");
         Render(this, Path.Combine(directory, "openocd-plot-compact.png"));
         source.Failure = true;

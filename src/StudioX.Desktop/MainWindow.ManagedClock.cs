@@ -50,11 +50,17 @@ public partial class MainWindow
                         StcClockModePicker.SelectedValue = settings.ClockMode;
                         StcClockFrequencyBox.Text = settings.ClockFrequencyHz is { } hz ? (hz / 1000000m).ToString("0.######", CultureInfo.InvariantCulture) : "";
                     }
-                    finally { applyingStcIsp = false; }
+                    finally
+                    {
+                        applyingStcIsp = false;
+                    }
                 }
                 UpdateStcClockHelp();
             }
-            catch (Exception error) { Log("刷新图形时钟：" + error); }
+            catch (Exception error)
+            {
+                Log("刷新图形时钟：" + error);
+            }
             finally
             {
                 clockRefreshQueued = false;

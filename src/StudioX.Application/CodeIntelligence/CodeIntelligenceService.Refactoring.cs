@@ -49,11 +49,17 @@ public sealed partial class CodeIntelligenceService
                     var document = IsInside(projectRoot, full) ? Path.GetRelativePath(projectRoot, full).Replace('\\', '/') : full;
                     locations.Add(new(document, JsonSerializer.Deserialize<CodeRange>(item.GetProperty("range"), JsonStore.Options)!, document));
                 }
-                catch (StudioXException ex) { log.Enqueue("引用位置不可访问：" + ex.Message); }
+                catch (StudioXException ex)
+                {
+                    log.Enqueue("引用位置不可访问：" + ex.Message);
+                }
             }
             return locations.Distinct().ToArray();
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
 
     public async Task<IReadOnlyList<WorkspaceFileChange>> RenameAsync(string path, string text, int offset, string oldName, string newName,
@@ -158,6 +164,9 @@ public sealed partial class CodeIntelligenceService
             await editing.ValidateAsync(projectRoot, result, buffers, token).ConfigureAwait(false);
             return result;
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
 }

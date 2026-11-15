@@ -3,9 +3,15 @@ using StudioX.Engine;
 using StudioX.Foundation;
 using StudioX.ProductWorkflowValidation;
 
-if (args.Length is not (2 or 4 or 5)) { throw new ArgumentException("Usage: ProductWorkflowValidation <new-output> <sample-plugin> [toolsets-root F407-pack [existing-IDF-project]]"); }
+if (args.Length is not (2 or 4 or 5))
+{
+    throw new ArgumentException("Usage: ProductWorkflowValidation <new-output> <sample-plugin> [toolsets-root F407-pack [existing-IDF-project]]");
+}
 var root = Path.GetFullPath(args[0]);
-if (Directory.Exists(root)) { throw new ArgumentException("Output must be new."); }
+if (Directory.Exists(root))
+{
+    throw new ArgumentException("Output must be new.");
+}
 Directory.CreateDirectory(root);
 var checks = new List<string>();
 void Check(bool condition, string message)
@@ -36,7 +42,10 @@ try
         await launch.StartAsync(Path.Combine(root, "missing-project"), false);
         Check(false, "missing preparation rejected");
     }
-    catch (Exception) { Check(!launch.Current.Busy && launch.Current.Diagnostic is not null && launch.Current.Steps[0].Status == "失败" && !debugger.IsActive, "local preparation failure retains stage and original diagnostic without starting target"); }
+    catch (Exception)
+    {
+        Check(!launch.Current.Busy && launch.Current.Diagnostic is not null && launch.Current.Steps[0].Status == "失败" && !debugger.IsActive, "local preparation failure retains stage and original diagnostic without starting target");
+    }
     using var cancelled = new CancellationTokenSource();
     cancelled.Cancel();
     try
@@ -44,7 +53,10 @@ try
         await launch.StartAsync(root, false, cancelled.Token);
         Check(false, "cancel preparation");
     }
-    catch (OperationCanceledException) { Check(!launch.Current.Busy && launch.Current.Steps[0].Status == "已取消", "cancelled preparation drains and marks cancellation"); }
+    catch (OperationCanceledException)
+    {
+        Check(!launch.Current.Busy && launch.Current.Steps[0].Status == "已取消", "cancelled preparation drains and marks cancellation");
+    }
     if (args.Length >= 4)
     {
         await NativeChecks.RunAsync(root, Path.GetFullPath(args[2]), Path.GetFullPath(args[3]), Check);

@@ -22,7 +22,11 @@ async Task Reject(Func<Task> action, string name)
     {
         await action();
     }
-    catch (Exception) { Check(true, name); return; }
+    catch (Exception)
+    {
+        Check(true, name);
+        return;
+    }
     throw new InvalidOperationException("Expected rejection: " + name);
 }
 async Task WaitUntil(Func<bool> condition)
@@ -98,8 +102,14 @@ await using (var listener = new TestServer(async stream =>
     {
         await client.ConnectAsync(listener.Port, CancellationToken.None);
         using var cancellation = new CancellationTokenSource(50);
-        await Reject(async () => { await client.ReadAsync(0x20000010, 4, cancellation.Token); }, "cancelled in-flight RPC fails");
-        await Reject(async () => { await client.ReadAsync(0x20000010, 4, CancellationToken.None); }, "late RPC cannot contaminate next read");
+        await Reject(async () =>
+        {
+            await client.ReadAsync(0x20000010, 4, cancellation.Token);
+        }, "cancelled in-flight RPC fails");
+        await Reject(async () =>
+        {
+            await client.ReadAsync(0x20000010, 4, CancellationToken.None);
+        }, "late RPC cannot contaminate next read");
     }
 }
 
@@ -200,7 +210,11 @@ if (args is ["--runtime", var runtime])
             Check((await client.ReadAsync(0x20000000, 4, CancellationToken.None)).SequenceEqual(new byte[] { 10, 11, 12, 13 }), toolset + " real Tcl RPC, synthetic SRAM, no hardware");
             Check((await client.ReadAsync(0x20000010, 1, CancellationToken.None)).SequenceEqual(new byte[] { 10 }), toolset + " repeated RPC clears old array entries");
         }
-        catch { Console.WriteLine(string.Join('\n', lines)); throw; }
+        catch
+        {
+            Console.WriteLine(string.Join('\n', lines));
+            throw;
+        }
         finally
         {
             if (!process.HasExited)
@@ -216,7 +230,15 @@ Console.WriteLine($"PASS {checks.Count} checks; offline only, no probe connected
 
 sealed class SymbolTransport : IGdbMiTransport
 {
-    public event Action<string>? RecordReceived { add { } remove { } }
+    public event Action<string>? RecordReceived
+    {
+        add
+        {
+        }
+        remove
+        {
+        }
+    }
     public List<string> Commands { get; } = [];
     public int LiveVariables
     {
@@ -290,7 +312,11 @@ sealed class TestServer : IAsyncDisposable
     {
         listener.Start();
         Port = ((IPEndPoint)listener.LocalEndpoint).Port;
-        Completion = Task.Run(async () => { using var client = await listener.AcceptTcpClientAsync(); await serve(client.GetStream()); });
+        Completion = Task.Run(async () =>
+        {
+            using var client = await listener.AcceptTcpClientAsync();
+            await serve(client.GetStream());
+        });
     }
     public static async Task<string> ReadFrame(NetworkStream stream)
     {

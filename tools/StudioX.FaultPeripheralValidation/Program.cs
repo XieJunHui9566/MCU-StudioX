@@ -11,19 +11,37 @@ if (args is ["--f407-restore", var hardwareProject, var hardwareTools, var hardw
     return;
 }
 
-if (args.Length is not (1 or 2 or 4)) { throw new ArgumentException("<new output> [vendor SVD] [toolsets official-coredump-fixtures]"); }
+if (args.Length is not (1 or 2 or 4))
+{
+    throw new ArgumentException("<new output> [vendor SVD] [toolsets official-coredump-fixtures]");
+}
 var root = Path.GetFullPath(args[0]);
-if (Directory.Exists(root)) { throw new InvalidOperationException("Use a new output directory."); }
+if (Directory.Exists(root))
+{
+    throw new InvalidOperationException("Use a new output directory.");
+}
 Directory.CreateDirectory(root);
 var checks = new List<string>();
-void Check(bool value, string label) { if (!value) { throw new InvalidOperationException(label); } checks.Add(label); Console.WriteLine("PASS " + label); }
+void Check(bool value, string label)
+{
+    if (!value)
+    {
+        throw new InvalidOperationException(label);
+    }
+    checks.Add(label);
+    Console.WriteLine("PASS " + label);
+}
 async Task Reject(Func<Task> action, string label)
 {
     try
     {
         await action();
     }
-    catch (Exception e) when (e is StudioXException or System.Xml.XmlException or OverflowException) { Check(true, label); return; }
+    catch (Exception e) when (e is StudioXException or System.Xml.XmlException or OverflowException)
+    {
+        Check(true, label);
+        return;
+    }
     throw new InvalidOperationException("Expected rejection: " + label);
 }
 var xml = """
@@ -83,7 +101,10 @@ Check(importedReport.Evidence.Raw == originalReport.Evidence.Raw && !importedRep
     importedReport.CoreDump is { HashMatches: false } && importedReport.Findings.Single().Contains("未重新验证", StringComparison.Ordinal),
     "exported diagnostic above 2 MiB reimports without inheriting firmware trust");
 var oversized = Path.Combine(root, "oversized-report.json");
-await using (var sizeFixture = File.Create(oversized)) { sizeFixture.SetLength(16 * 1024 * 1024 + 1); }
+await using (var sizeFixture = File.Create(oversized))
+{
+    sizeFixture.SetLength(16 * 1024 * 1024 + 1);
+}
 await Reject(() => faults.ImportAsync(oversized), "oversized imported report rejected before deserialization");
 if (args.Length >= 2)
 {

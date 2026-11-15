@@ -53,7 +53,7 @@ public sealed record ProjectCapabilities(
             "历史实验工程未开放下载和调试。", "ZEPHYR_RUNTIME_UNAVAILABLE", "ZEPHYR_RUNTIME_UNAVAILABLE", "ZEPHYR_BUILD_SETTINGS"),
         ProjectKind.Pack when project.ToolsetId == "stc.sdcc" => new(true, true, true, true, true, StcMon51Targets.Supports(project.DeviceId),
             "STC SDCC 工程支持 CMake + Ninja 构建及串口 ISP 下载；Mon51 串口仿真仅支持 " + StcMon51Targets.DisplayNames + "。",
-            "在 CMakeLists.txt 中管理源码、包含目录和宏；器件与模板中保存编译参数、时钟及下载串口。",
+            "在 CMakeLists.txt 中管理源码、包含目录和宏；器件与模板中保存编译参数，下载按钮旁的设置入口保存串口、时钟和硬件选项。",
             StcMon51Targets.Supports(project.DeviceId)
                 ? "调试复用已保存的下载串口和波特率，先握手；仅握手失败才制作对应型号的 Mon51 监控，制作后按输出提示重新上电。"
                 : project.DeviceId + " 未接入 Mon51 串口仿真；可正常编译和 ISP 下载，调试入口不可用。"),

@@ -34,7 +34,6 @@ public partial class MainWindow : Window
         InitializeBuildSettings();
         InitializeEspressifModuleSettings();
         InitializeStcIsp();
-        InitializeLvglPreview();
         InitializeAg32PinPlanning();
         InitializeHdlSchematic();
         InitializeHdlWorkflow();
@@ -75,7 +74,10 @@ public partial class MainWindow : Window
             {
                 await LoadWorkbenchLayoutAsync();
             }
-            catch (Exception ex) { Log("布局恢复失败：" + ex); }
+            catch (Exception ex)
+            {
+                Log("布局恢复失败：" + ex);
+            }
         }
         await RunAsync(async token =>
         {
@@ -84,12 +86,19 @@ public partial class MainWindow : Window
             {
                 await RefreshRecentAsync(token);
             }
-            catch (Exception ex) { Log("最近工程读取失败：" + ex.Message); }
+            catch (Exception ex)
+            {
+                Log("最近工程读取失败：" + ex.Message);
+            }
             try
             {
                 ApplyTheme(await services.Themes.LoadAsync(token));
             }
-            catch (Exception ex) { Log("主题恢复失败，使用默认主题：" + ex.Message); ApplyTheme(ThemeService.Dark); }
+            catch (Exception ex)
+            {
+                Log("主题恢复失败，使用默认主题：" + ex.Message);
+                ApplyTheme(ThemeService.Dark);
+            }
             try
             {
                 var saved = await services.EditorSettings.LoadAsync(token);
@@ -101,7 +110,11 @@ public partial class MainWindow : Window
                     Log($"代码字体 {saved.FontFamily} 无法正常显示文本，已恢复为 {readable.FontFamily}。");
                 }
             }
-            catch (Exception ex) { Log("编辑器设置恢复失败：" + ex); ApplyEditorSettings(new()); }
+            catch (Exception ex)
+            {
+                Log("编辑器设置恢复失败：" + ex);
+                ApplyEditorSettings(new());
+            }
             try
             {
                 var saved = await services.Typography.LoadAsync(token);
@@ -117,12 +130,20 @@ public partial class MainWindow : Window
                     Log(diagnostic);
                 }
             }
-            catch (Exception ex) { Log("界面字体恢复失败：" + ex); ApplyTypography(new()); }
+            catch (Exception ex)
+            {
+                Log("界面字体恢复失败：" + ex);
+                ApplyTypography(new());
+            }
             try
             {
                 ApplyBackground(await services.Appearance.LoadAsync(token));
             }
-            catch (Exception ex) { Log("背景恢复失败：" + ex.Message); Status.Text = "背景不可用，可在外观设置中重新选择。"; }
+            catch (Exception ex)
+            {
+                Log("背景恢复失败：" + ex.Message);
+                Status.Text = "背景不可用，可在外观设置中重新选择。";
+            }
             ToolInventory.Text = await services.ToolInventory.DescribeAsync(token);
             PluginPicker.ItemsSource = services.PluginManifests.ToArray();
             await PluginManager.RefreshAsync(token);
@@ -135,8 +156,14 @@ public partial class MainWindow : Window
                     await GitHubWorkspace.RefreshAccountsForChromeAsync(token);
                 }
             }
-            catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }
-            catch (Exception ex) { Log("GitHub 账号状态读取失败：" + ex.Message); }
+            catch (OperationCanceledException) when (token.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                Log("GitHub 账号状态读取失败：" + ex.Message);
+            }
         });
         QueueRecentPrune();
     }
@@ -155,7 +182,6 @@ public partial class MainWindow : Window
         agentChangesView?.RefreshTheme();
         BuildLog.RefreshTheme();
         DeviceLog.RefreshTheme();
-        LvglPreview.DiagnosticLog.RefreshTheme();
         RefreshSurfaceBrushes();
         ApplyEditorTheme();
         var assemblyBackground = (Color)ColorConverter.ConvertFromString(theme.Colors["Background"]);
@@ -422,7 +448,7 @@ public partial class MainWindow : Window
         if (show && DevicePicker.SelectedItem is DeviceDefinition selectedDevice && Ag32DeviceCatalog.Find(selectedDevice.Id) is { } profile)
         {
             Ag32LogicDeviceHint.Text = $"{profile.DeviceId} · {profile.TargetDevice} / {profile.PackageName}";
-            Ag32LogicModeDescription.Text = "默认创建普通 MCU 工程；勾选后，在所选模板基础上加入 FPGA 逻辑。顶部编译联合生成 MCU 固件与 FPGA 位流，使用内置原生综合和 Supra 布局布线工具。Supra 需配置本机有效许可。";
+            Ag32LogicModeDescription.Text = "联合构建 MCU 固件与 FPGA 位流；需配置 Supra 许可。";
         }
         Ag32LogicModePanel.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
     }
@@ -440,6 +466,10 @@ public partial class MainWindow : Window
     private void ComponentSelection_Changed(object sender, RoutedEventArgs e) => UpdateSelectedComponents();
     private void UpdateSelectedComponents()
     {
+        if (ProjectNameLabel is not null)
+        {
+            ProjectNameLabel.Text = "工程名称（支持中文）";
+        }
         if (SelectedDevelopmentComponents is null)
         {
             return;
@@ -476,6 +506,17 @@ public partial class MainWindow : Window
             return;
         }
         var enableAg32Logic = Ag32LogicModeCheckBox.IsChecked == true;
+        var name = ProjectName.Text;
+        try
+        {
+            StudioX.Engine.ProjectName.Validate(name);
+        }
+        catch (StudioX.Foundation.StudioXException error)
+        {
+            Status.Text = error.Message;
+            ProjectName.Focus();
+            return;
+        }
         var isArduino = StudioX.Application.Arduino.ArduinoTemplateCatalog.IsArduino(template);
         var isZephyr = StudioX.Application.ZephyrTemplateCatalog.IsZephyr(template);
         var arduinoBoard = ArduinoBoardPicker.SelectedItem as StudioX.Engine.Arduino.ArduinoBoard;
@@ -501,12 +542,11 @@ public partial class MainWindow : Window
             {
                 await services.EspressifProjectVersions.EnsureSelectionAsync(idfSelection, token);
             }
-            PackValidator.Token(ProjectName.Text);
-            var destination = Path.Combine(dialog.FolderName, ProjectName.Text);
+            var destination = Path.Combine(dialog.FolderName, name);
             var created = isArduino
-                ? await services.Arduino.CreateFromPackAsync(pack, device.Id, arduinoBoard!.Id, ProjectName.Text, destination, token)
-                : isZephyr ? await services.ZephyrProjects.CreateFromPackAsync(pack, device.Id, ProjectName.Text, destination, token)
-                    : await services.Projects.CreateAsync(pack, device.Id, template.Id, ProjectName.Text, destination, token, enableAg32Logic);
+                ? await services.Arduino.CreateFromPackAsync(pack, device.Id, arduinoBoard!.Id, name, destination, token)
+                : isZephyr ? await services.ZephyrProjects.CreateFromPackAsync(pack, device.Id, name, destination, token)
+                    : await services.Projects.CreateAsync(pack, device.Id, template.Id, name, destination, token, enableAg32Logic);
             Log("工程已创建，Git 仓库已初始化（main 分支）；请在工程终端设置身份并提交。");
             await OpenProjectAsync(destination, token);
             if (created.Logic is { } logic)
@@ -626,14 +666,23 @@ public partial class MainWindow : Window
         {
             await action(operationCancellation.Token);
         }
-        catch (OperationCanceledException) { Status.Text = "操作已取消"; Log(Status.Text); }
+        catch (OperationCanceledException)
+        {
+            Status.Text = "操作已取消";
+            Log(Status.Text);
+        }
         catch (Exception ex)
         {
             Status.Text = ex is StudioXException studio ? studio.Code + "：" + studio.Message : ex.Message;
             Log(ex.ToString());
             ShowTroubleshooting(FailureDiagnostic(ex));
         }
-        finally { operationCancellation.Dispose(); operationCancellation = null; UpdateProjectActions(busy: false); }
+        finally
+        {
+            operationCancellation.Dispose();
+            operationCancellation = null;
+            UpdateProjectActions(busy: false);
+        }
     }
     private void Log(string text)
     {
@@ -692,7 +741,10 @@ public partial class MainWindow : Window
             {
                 await agentAccessSaveTask;
             }
-            catch (Exception ex) { Log("保存 Agent 授权模式：" + ex); }
+            catch (Exception ex)
+            {
+                Log("保存 Agent 授权模式：" + ex);
+            }
             breakpointSaveTimer.Stop();
             await PersistBreakpointLinesAsync();
             await services.Debugger.StopAsync();
@@ -724,6 +776,7 @@ public partial class MainWindow : Window
             await PersistEditorCheckpointAsync();
             editorCheckpointTimer.Stop();
             diagnosticPoll.Stop();
+            CancelFind();
             documentAccepted = true;
             pluginUiTimer.Stop();
             services.PluginManager.Changed -= PluginCatalog_Changed;
@@ -735,7 +788,6 @@ public partial class MainWindow : Window
             await MicroPythonPanel.StopAsync();
             await SerialPlotView.ShutdownAsync();
             await OpenOcdPlotPanel.CloseSessionAsync();
-            await LvglPreview.ShutdownAsync();
             await ProjectTerminal.ShutdownAsync();
             BackgroundVideo.Close();
             await StopSimulationAsync();
@@ -759,6 +811,13 @@ public partial class MainWindow : Window
                 await ReloadPluginWorkspaceAsync(CancellationToken.None);
             }
         }
-        finally { if (closing) { closed = true; _ = Dispatcher.BeginInvoke(new Action(Close)); } }
+        finally
+        {
+            if (closing)
+            {
+                closed = true;
+                _ = Dispatcher.BeginInvoke(new Action(Close));
+            }
+        }
     }
 }

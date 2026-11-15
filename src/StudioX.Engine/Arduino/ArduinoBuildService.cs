@@ -16,17 +16,18 @@ public sealed class ArduinoBuildService(ToolsetCatalog catalog, string dataDirec
         var project = await RequireAsync(root, token);
         using var execution = await runtime.OpenAsync(project.Arduino!, token);
         await RequireLibrariesAsync(execution, project.Arduino!, token);
+        using var sketch = await ArduinoSketchWorkspace.CreateAsync(dataDirectory, root, project, token);
         var build = PathBoundary.Resolve(dataDirectory, "arduino/analysis/" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(build);
         var nativeBuild = project.Arduino!.Platform.Id == "esp32" ? EspressifNativePath.For(build) : build;
         var result = await execution.RunAsync(["compile", "--fqbn", ArduinoBoard.Require(project.Arduino!.BoardId).Fqbn,
-            "--only-compilation-database", "--build-path", nativeBuild, Path.GetFullPath(root)], root, null, token);
+            "--only-compilation-database", "--build-path", nativeBuild, sketch.Directory], sketch.Directory, null, token);
         RequireSuccess(result);
         await RequireSameProjectAsync(root, project, token);
         using var database = JsonDocument.Parse(await File.ReadAllTextAsync(PathBoundary.Resolve(build, "compile_commands.json"), token));
         var command = database.RootElement.EnumerateArray().First(item => item.GetProperty("file").GetString()!.EndsWith(".ino.cpp", StringComparison.Ordinal));
         return new(command.GetProperty("directory").GetString()!, command.GetProperty("file").GetString()!,
-            command.GetProperty("arguments").EnumerateArray().Select(item => item.GetString()!).ToArray());
+            command.GetProperty("arguments").EnumerateArray().Select(item => sketch.Display(item.GetString()!)).ToArray());
     }
 
     public async Task<BuildReport> BuildAsync(string root, IProgress<string>? output = null, CancellationToken token = default)
@@ -40,28 +41,30 @@ public sealed class ArduinoBuildService(ToolsetCatalog catalog, string dataDirec
         await RequireSameProjectAsync(root, project, token);
         var dependency = await CheckDependenciesAsync(root, execution, token);
         var source = await ArduinoSourceSnapshot.HashAsync(root, true, token);
+        using var sketch = await ArduinoSketchWorkspace.CreateAsync(dataDirectory, root, project, token);
         const string run = ".build/arduino/latest";
         _ = storage.Prepare("arduino");
         var build = PathBoundary.Resolve(root, run + "/build");
         var artifacts = PathBoundary.Resolve(root, run + "/output");
         var board = ArduinoBoard.Require(project.Arduino!.BoardId);
-        using var workspace = new ArduinoBuildWorkspace(dataDirectory, build, board.PlatformId == "esp32");
+        using var workspace = new ArduinoBuildWorkspace(dataDirectory, build, board.PlatformId == "esp32", artifacts);
         var arguments = new List<string> { "compile", "--fqbn", board.Fqbn, "--warnings", "all", "--jobs", "4",
-            "--build-path", workspace.NativeDirectory, "--output-dir", artifacts };
+            "--build-path", workspace.NativeDirectory, "--output-dir", workspace.NativeArtifactsDirectory! };
         if (board.PlatformId == "esp32")
         {
             // 固定 ESP32 核心的 savehex hooks 使用 sketch_path 另行导出文件；将这些副作用留在私有构建树。
             // CLI 的实际草图输入仍为原工程，不能通过排除工程内任意 build 目录来绕过源码一致性检查。
             arguments.AddRange(["--build-property", "sketch_path=" + workspace.NativeDirectory]);
         }
-        arguments.Add(Path.GetFullPath(root));
-        var result = await execution.RunAsync(arguments, root, output, token);
-        var log = result.StandardOutput + "\n" + result.StandardError;
+        arguments.Add(sketch.Directory);
+        var mappedOutput = output is null ? null : new SketchOutput(text => output.Report(sketch.Display(text)));
+        var result = await execution.RunAsync(arguments, sketch.Directory, mappedOutput, token);
+        var log = sketch.Display(result.StandardOutput + "\n" + result.StandardError);
         var logPath = PathBoundary.Resolve(root, run + "/build.log");
         Directory.CreateDirectory(Path.GetDirectoryName(logPath)!);
         await File.WriteAllTextAsync(logPath, log, token);
         await workspace.PublishAsync(token);
-        var hexRelative = run + "/output/" + project.Name + board.FirmwareSuffix;
+        var hexRelative = run + "/output/" + sketch.Identifier + board.FirmwareSuffix;
         var hex = PathBoundary.Resolve(root, hexRelative);
         var success = result.ExitCode == 0 && !result.TimedOut && File.Exists(hex);
         if (success)
@@ -79,7 +82,7 @@ public sealed class ArduinoBuildService(ToolsetCatalog catalog, string dataDirec
                 {
                     uploadFiles.Add(Path.GetFileName(image), await FileHashAsync(image, token));
                 }
-                if (!RequiredEspImages(project.Name).All(uploadFiles.ContainsKey))
+                if (!RequiredEspImages(sketch.Identifier).All(uploadFiles.ContainsKey))
                 {
                     throw new StudioXException("ARDUINO_ARTIFACT", "ESP32 构建缺少主程序、分区表或 bootloader 镜像，不能上传。");
                 }
@@ -380,7 +383,7 @@ public sealed class ArduinoBuildService(ToolsetCatalog catalog, string dataDirec
         var dependencies = await CheckDependenciesAsync(root, execution, token);
         var hex = PathBoundary.Resolve(root, receipt.HexRelativePath);
         if (receipt.FormatVersion != 1 || !receipt.HexRelativePath.StartsWith(".build/arduino/", StringComparison.Ordinal) ||
-            !receipt.HexRelativePath.EndsWith("/output/" + project.Name + ArduinoBoard.Require(project.Arduino!.BoardId).FirmwareSuffix, StringComparison.Ordinal) ||
+            !receipt.HexRelativePath.EndsWith("/output/" + ArduinoProjectSettings.SketchIdentifier(project.Name) + ArduinoBoard.Require(project.Arduino!.BoardId).FirmwareSuffix, StringComparison.Ordinal) ||
             receipt.SourceSha256 != await ArduinoSourceSnapshot.HashAsync(root, true, token) ||
             receipt.ToolFingerprint != execution.Tools.Fingerprint || receipt.LibrariesSha256 != dependencies.LibrariesSha256 ||
             !File.Exists(hex) || receipt.HexSha256 != await FileHashAsync(hex, token) || project != await RequireAsync(root, token))
@@ -389,7 +392,7 @@ public sealed class ArduinoBuildService(ToolsetCatalog catalog, string dataDirec
         }
         if (project.Arduino!.Platform.Id == "esp32")
         {
-            if (receipt.UploadFiles is not { Count: > 0 and <= 32 } || !RequiredEspImages(project.Name).All(receipt.UploadFiles.ContainsKey))
+            if (receipt.UploadFiles is not { Count: > 0 and <= 32 } || !RequiredEspImages(ArduinoProjectSettings.SketchIdentifier(project.Name)).All(receipt.UploadFiles.ContainsKey))
             {
                 throw new StudioXException("ARDUINO_BUILD_STALE", "ESP32 构建的多镜像记录不完整，请重新编译。");
             }
@@ -408,6 +411,11 @@ public sealed class ArduinoBuildService(ToolsetCatalog catalog, string dataDirec
     }
 
     private static string[] RequiredEspImages(string name) => [name + ".ino.bin", name + ".ino.bootloader.bin", name + ".ino.partitions.bin"];
+
+    private sealed class SketchOutput(Action<string> report) : IProgress<string>
+    {
+        public void Report(string value) => report(value);
+    }
 
     private static async Task RequireSameProjectAsync(string root, ProjectManifest expected, CancellationToken token)
     {

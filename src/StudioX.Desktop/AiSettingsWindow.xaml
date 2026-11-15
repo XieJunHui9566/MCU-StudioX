@@ -21,7 +21,7 @@
         FontSize="22"
         FontWeight="SemiBold" />
       <TextBlock
-        Text="仅支持 OpenAI 兼容的 Chat Completions API（包括 DeepSeek）。不支持 Anthropic 系列的 Messages API。"
+        Text="支持 OpenAI 兼容接口（含 DeepSeek）"
         TextWrapping="Wrap"
         Foreground="{DynamicResource Muted}"
         Margin="0,7,0,20" />
@@ -67,7 +67,8 @@
               Text="API 路由地址"
               Margin="0,0,0,7" />
             <TextBox
-              x:Name="BaseUrlInput" />
+              x:Name="BaseUrlInput"
+              ToolTip="使用 OpenAI 兼容的 Chat Completions 接口；请求中的工程内容会发送到此服务。" />
             <TextBlock
               Text="模型"
               Margin="0,16,0,7" />
@@ -77,18 +78,14 @@
               Text="上下文窗口 token 数（可选）"
               Margin="0,16,0,7" />
             <TextBox
-              x:Name="ContextWindowInput" />
-            <TextBlock
-              Text="DeepSeek 已知模型自动读取窗口上限；其他接口可在这里填写服务商公布的数值。"
-              Foreground="{DynamicResource Muted}"
-              FontSize="11"
-              TextWrapping="Wrap"
-              Margin="0,6,0,0" />
+              x:Name="ContextWindowInput"
+              ToolTip="留空自动识别；自定义接口可填写服务商公布的 token 上限。" />
             <TextBlock
               Text="API Key"
               Margin="0,16,0,7" />
             <PasswordBox
               x:Name="KeyInput"
+              ToolTip="密钥保存在当前 Windows 用户凭据中。"
               Background="{DynamicResource EditorSurface}"
               Foreground="{DynamicResource Text}"
               BorderBrush="{DynamicResource Border}" />
@@ -102,11 +99,6 @@
               Content="删除已保存的 API Key"
               Click="DeleteKey_Click"
               HorizontalAlignment="Left"
-              Margin="0,16,0,0" />
-            <TextBlock
-              Text="API Key 保存在当前 Windows 用户凭据中。"
-              Foreground="{DynamicResource Muted}"
-              FontSize="11"
               Margin="0,16,0,0" />
           </StackPanel>
         </ScrollViewer>
@@ -126,14 +118,9 @@
                 Text="自定义 MCP 服务"
                 FontSize="15"
                 FontWeight="SemiBold" />
-              <TextBlock
-                Text="添加自己的远端接口或本地 MCP 程序。支持 Streamable HTTP、SSE、stdio；工具按需发现，减少 DeepSeek 输入量。"
-                Foreground="{DynamicResource Muted}"
-                TextWrapping="Wrap"
-                FontSize="11"
-                Margin="0,7,0,10" />
               <ListBox
                 x:Name="McpServersList"
+                ToolTip="支持 Streamable HTTP、SSE 和 stdio。"
                 MinHeight="180"
                 MaxHeight="300"
                 Background="{DynamicResource EditorSurface}"
@@ -189,16 +176,11 @@
               FontSize="16"
               FontWeight="SemiBold" />
             <TextBlock
-              Text="不填密钥也可使用免密钥搜索和网页读取；频繁使用可填写自己的 Tavily API Key。"
-              Foreground="{DynamicResource Muted}"
-              FontSize="11"
-              TextWrapping="Wrap"
-              Margin="0,7,0,0" />
-            <TextBlock
               Text="Tavily API Key（可选）"
               Margin="0,14,0,7" />
             <PasswordBox
               x:Name="WebKeyInput"
+              ToolTip="留空可使用免密钥搜索和网页读取。"
               Background="{DynamicResource EditorSurface}"
               Foreground="{DynamicResource Text}"
               BorderBrush="{DynamicResource Border}" />
@@ -219,7 +201,7 @@
               FontWeight="SemiBold"
               Margin="0,22,0,0" />
             <TextBlock
-              Text="组件库可直接查询；文档库需在浏览器登录 GitHub 或微信。文档库主要提供最新版资料，Agent 会核对工程的 IDF 版本。"
+              Text="查询文档需先登录；组件库无需登录。"
               Foreground="{DynamicResource Muted}"
               FontSize="11"
               TextWrapping="Wrap"
@@ -234,6 +216,7 @@
               Margin="0,12,0,0">
               <Button
                 x:Name="ConnectEspressifButton"
+                ToolTip="浏览器登录；凭据保存在当前 Windows 用户的加密存储中。查询仅发送检索词。"
                 Content="连接乐鑫文档"
                 Click="ConnectEspressif_Click"
                 Margin="0,0,8,8" />
@@ -249,11 +232,6 @@
                 Visibility="Collapsed"
                 Margin="0,0,0,8" />
             </WrapPanel>
-            <TextBlock
-              Text="授权凭据仅保存在当前 Windows 用户的加密存储中。查询只发送公开检索词，不发送工程源码或模型 API Key。"
-              Foreground="{DynamicResource Muted}"
-              FontSize="11"
-              TextWrapping="Wrap" />
           </StackPanel>
         </ScrollViewer>
       </TabItem>

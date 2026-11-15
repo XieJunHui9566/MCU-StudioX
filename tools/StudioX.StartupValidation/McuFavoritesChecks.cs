@@ -45,7 +45,10 @@ internal static class McuFavoritesChecks
             await service.AddAsync(other, second);
             throw new InvalidOperationException("Foreign model accepted.");
         }
-        catch (StudioXException ex) when (ex.Code == "MCU_FAVORITE_DEVICE") { pass("PASS: MCU favorites reject foreign device"); }
+        catch (StudioXException ex) when (ex.Code == "MCU_FAVORITE_DEVICE")
+        {
+            pass("PASS: MCU favorites reject foreign device");
+        }
         using (var cancellation = new CancellationTokenSource())
         {
             cancellation.Cancel();
@@ -54,7 +57,9 @@ internal static class McuFavoritesChecks
                 await service.AddAsync(original, second, cancellation.Token);
                 throw new InvalidOperationException("Cancelled mutation accepted.");
             }
-            catch (OperationCanceledException) { }
+            catch (OperationCanceledException)
+            {
+            }
         }
         Check((await service.LoadAsync()).Count == 1, "cancelled mutation preserves stored preferences");
         var path = Path.Combine(data, "mcu-favorites.json");
@@ -66,7 +71,9 @@ internal static class McuFavoritesChecks
                 await service.AddAsync(original, first);
                 throw new InvalidOperationException("Invalid preferences overwritten.");
             }
-            catch (Exception ex) when (ex is System.Text.Json.JsonException or StudioXException) { }
+            catch (Exception ex) when (ex is System.Text.Json.JsonException or StudioXException)
+            {
+            }
             Check(await File.ReadAllTextAsync(path) == invalid, "invalid or future preferences are reported and preserved");
         }
     }

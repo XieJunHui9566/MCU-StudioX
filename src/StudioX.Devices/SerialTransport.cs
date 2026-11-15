@@ -33,14 +33,25 @@ public sealed class SerialTransport(SerialSettings settings) : IDeviceTransport
             {
                 opened.RtsEnable = settings.Rts;
             }
-            opened.ErrorReceived += (sender, e) => { errors.Enqueue(e.EventType.ToString()); while (errors.Count > 100) { errors.TryDequeue(out _); } };
+            opened.ErrorReceived += (sender, e) =>
+            {
+                errors.Enqueue(e.EventType.ToString());
+                while (errors.Count > 100)
+                {
+                    errors.TryDequeue(out _);
+                }
+            };
             try
             {
                 opened.Open();
                 cancellationToken.ThrowIfCancellationRequested();
                 port = opened;
             }
-            catch { opened.Dispose(); throw; }
+            catch
+            {
+                opened.Dispose();
+                throw;
+            }
         }, cancellationToken).ConfigureAwait(false);
     }
     public async IAsyncEnumerable<ReadOnlyMemory<byte>> ReceiveAsync([EnumeratorCancellation] CancellationToken cancellationToken)
@@ -54,7 +65,10 @@ public sealed class SerialTransport(SerialSettings settings) : IDeviceTransport
                 {
                     return port!.Read(buffer, 0, buffer.Length);
                 }
-                catch (TimeoutException) { return 0; }
+                catch (TimeoutException)
+                {
+                    return 0;
+                }
             }, cancellationToken).ConfigureAwait(false);
             if (count > 0)
             {
@@ -65,7 +79,11 @@ public sealed class SerialTransport(SerialSettings settings) : IDeviceTransport
     public async ValueTask SendAsync(ReadOnlyMemory<byte> bytes, CancellationToken cancellationToken)
     {
         var data = bytes.ToArray();
-        await Task.Run(() => { cancellationToken.ThrowIfCancellationRequested(); port!.Write(data, 0, data.Length); }, cancellationToken).ConfigureAwait(false);
+        await Task.Run(() =>
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            port!.Write(data, 0, data.Length);
+        }, cancellationToken).ConfigureAwait(false);
     }
     public SerialPins ReadPins() => new(port!.CtsHolding, port.DsrHolding, port.CDHolding);
     public void SetOutputs(bool dtr, bool rts)

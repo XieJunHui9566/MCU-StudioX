@@ -31,7 +31,9 @@ public partial class MainWindow
             await RunStcDownloadWithOutputAsync(prepared,
                 (output, cancel) => services.StcIsp.DownloadPreparedAsync(prepared, output, cancel), token);
         }
-        catch (OperationCanceledException) when (token.IsCancellationRequested) { }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+        }
     }
 
     /// <summary>普通用户固件与仿真监控共用分块解析、活动行、诊断配色和最终状态。</summary>
@@ -44,7 +46,9 @@ public partial class MainWindow
         var acceptingOutput = true;
         async Task DrainAsync()
         {
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Background);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.Background);
             if (lines.Flush() is { } tail)
             {
                 PresentStcToolLine(tail);
@@ -80,6 +84,9 @@ public partial class MainWindow
             FinishBuildOutput((prepared.MonitorSetup ? "STC 仿真监控下载失败" : "STC 下载失败") + "，原始诊断见输出", false);
             throw;
         }
-        finally { acceptingOutput = false; }
+        finally
+        {
+            acceptingOutput = false;
+        }
     }
 }

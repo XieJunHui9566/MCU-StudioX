@@ -60,7 +60,10 @@ public partial class MainWindow
             {
                 ReadMx251IspSettings();
             }
-            catch (StudioXException e) when (e.Code == "MX251_ISP_CLOCK") { rejected = true; }
+            catch (StudioXException e) when (e.Code == "MX251_ISP_CLOCK")
+            {
+                rejected = true;
+            }
             Check(rejected, "invalid frequency rejected: " + invalid);
         }
         Mx251ClockFrequencyBox.Text = "24";
@@ -73,7 +76,9 @@ public partial class MainWindow
             Height = 1050;
             UpdateLayout();
             Mx251IspPanel.BringIntoView();
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.Render);
             Render(this, Path.Combine(output, "mx251-download-" + theme.Id + ".png"));
         }
         ApplyMx251Isp(new(device.Path), [device with { Path = device.Path + "-other" }]);

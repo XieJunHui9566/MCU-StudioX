@@ -22,7 +22,7 @@ public sealed class ToolsetCatalog
     }
     private readonly SemaphoreSlim verificationGate = new(1, 1);
     private readonly Dictionary<string, VerifiedTree> verified = new(StringComparer.OrdinalIgnoreCase);
-    private sealed record VerifiedTree(string Fingerprint, ToolsetSnapshot Snapshot);
+    private sealed record VerifiedTree(string Fingerprint, ToolsetSnapshot Snapshot, IReadOnlyDictionary<string, VerifiedToolFile> Files);
     public string RootDirectory
     {
         get;
@@ -63,8 +63,15 @@ public sealed class ToolsetCatalog
         {
             return await ResolveCoreAsync(root, id, version, compilerId, true, progress, token);
         }
-        catch { verified.Remove(root); throw; }
-        finally { verificationGate.Release(); }
+        catch
+        {
+            verified.Remove(root);
+            throw;
+        }
+        finally
+        {
+            verificationGate.Release();
+        }
     }, token);
     private async Task<ResolvedToolset> ResolveInBackgroundAsync(string id, string version, string compilerId, CancellationToken cancellationToken,
         bool forceVerification, IProgress<string>? progress, bool allowDisabled)
@@ -82,8 +89,15 @@ public sealed class ToolsetCatalog
         {
             return await ResolveCoreAsync(root, id, version, compilerId, forceVerification, progress, cancellationToken);
         }
-        catch { verified.Remove(root); throw; }
-        finally { verificationGate.Release(); }
+        catch
+        {
+            verified.Remove(root);
+            throw;
+        }
+        finally
+        {
+            verificationGate.Release();
+        }
     }
     private async Task<ResolvedToolset> ResolveCoreAsync(string root, string id, string version, string compilerId,
         bool forceVerification, IProgress<string>? progress, CancellationToken cancellationToken)
@@ -155,10 +169,6 @@ public sealed class ToolsetCatalog
                 throw new StudioXException("TOOL_MISSING", $"内置工具文件缺失：{relative}");
             }
         }
-        if (manifest.Purpose == "mx251")
-        {
-            Mx251Profile.ValidateTools(new(manifest, root, fingerprint));
-        }
         var snapshot = ToolsetSnapshot.Capture(root, cancellationToken);
         foreach (var relative in manifest.Executables.Values)
         {
@@ -173,20 +183,34 @@ public sealed class ToolsetCatalog
         var unexpected = actualFiles.Except(manifest.Sha256.Keys, StringComparer.Ordinal)
             .Where(path => !IsGdbPythonCache(path, manifest.Sha256))
             .ToArray();
-        if (unexpected.Length != 0 || manifest.Sha256.Keys.Any(path => !actualFiles.Contains(path)))
+        var missing = manifest.Sha256.Keys.Where(path => !actualFiles.Contains(path)).ToArray();
+        if (unexpected.Length != 0 || missing.Length != 0)
         {
-            throw new StudioXException("TOOL_HASH", "工具目录与发行索引不一致。");
+            var details = new List<string>();
+            if (unexpected.Length != 0)
+            {
+                details.Add($"新增文件（{unexpected.Length}）：" + string.Join("、", unexpected.Order(StringComparer.Ordinal).Take(10)));
+            }
+            if (missing.Length != 0)
+            {
+                details.Add($"缺失文件（{missing.Length}）：" + string.Join("、", missing.Order(StringComparer.Ordinal).Take(10)));
+            }
+            throw new StudioXException("TOOL_HASH", $"工具目录与发行索引不一致：{id} / {version}。\n" + string.Join('\n', details));
         }
         var indexedCount = manifest.Sha256.Count;
         if (!forceVerification && verified.TryGetValue(root, out var previous) && previous.Fingerprint == fingerprint && previous.Snapshot.Matches(snapshot))
         {
             progress?.Report($"开发环境组件 {id} / {version} 未变化，复用本次启动的校验结果（{indexedCount:N0} 个文件）。");
-            return new ResolvedToolset(manifest, root, fingerprint);
+            return new ResolvedToolset(manifest, root, fingerprint) { VerifiedFiles = previous.Files };
         }
         // 只复用本进程内成功校验的结果；重启、文件/目录元数据变化或手动检查均重新完整哈希。
         // 取消/失败不能留下可复用结果，仍覆盖 DLL、库、头文件和 OpenOCD 脚本，而不只是入口 exe。
         verified.Remove(root);
         progress?.Report($"完整校验开发环境组件 {id} / {version}（{indexedCount:N0} 个文件）…");
+        if (manifest.Purpose == "mx251")
+        {
+            Mx251Profile.ValidateTools(new(manifest, root, fingerprint));
+        }
         var completed = 0;
         var lastProgress = Stopwatch.GetTimestamp();
         foreach (var (relative, expected) in manifest.Sha256)
@@ -211,9 +235,10 @@ public sealed class ToolsetCatalog
             throw new StudioXException("TOOL_CHANGED", "校验期间工具目录发生变化（" + changed + "），请等待更新完成后重试。");
         }
         cancellationToken.ThrowIfCancellationRequested();
-        verified[root] = new(fingerprint, after);
+        var verifiedFiles = after.VerifiedFiles(manifest.Sha256);
+        verified[root] = new(fingerprint, after, verifiedFiles);
         progress?.Report($"校验开发环境组件 {id} / {version}… 100%（{completed:N0}/{indexedCount:N0}）");
-        return new ResolvedToolset(manifest, root, fingerprint);
+        return new ResolvedToolset(manifest, root, fingerprint) { VerifiedFiles = verifiedFiles };
     }
     public IEnumerable<string> ManifestPaths()
     {

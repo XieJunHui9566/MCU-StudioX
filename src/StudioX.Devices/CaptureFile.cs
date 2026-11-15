@@ -18,7 +18,10 @@ public static class CaptureFile
                 await writer.WriteLineAsync(JsonSerializer.Serialize(new CapturedFrame(frame.Sequence, frame.Timestamp, Convert.ToBase64String(frame.Payload.Span))));
             }
         }
-        finally { await writer.FlushAsync(CancellationToken.None); }
+        finally
+        {
+            await writer.FlushAsync(CancellationToken.None);
+        }
     }
     public static async IAsyncEnumerable<CapturedFrame> ReadAsync(string path, [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {

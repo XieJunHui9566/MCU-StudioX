@@ -13,7 +13,9 @@ public partial class MainWindow
         var measurements = new List<object>();
         async Task Measure(string phase, Func<Task> action)
         {
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.ApplicationIdle);
             var clock = Stopwatch.StartNew();
             var previous = TimeSpan.Zero;
             var gaps = new List<double>();
@@ -29,7 +31,9 @@ public partial class MainWindow
             try
             {
                 await action();
-                await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);
+                await Dispatcher.InvokeAsync(() =>
+                {
+                }, DispatcherPriority.ApplicationIdle);
             }
             finally
             {
@@ -49,8 +53,14 @@ public partial class MainWindow
                 await JsonStore.WriteAsync(Path.Combine(directory, "responsiveness.json"), measurements);
             }
         }
-        await Measure("inspect-cold", async () => { await services.CubeMx.InspectAsync(fixture); });
-        await Measure("inspect-warm", async () => { await services.CubeMx.InspectAsync(fixture); });
+        await Measure("inspect-cold", async () =>
+        {
+            await services.CubeMx.InspectAsync(fixture);
+        });
+        await Measure("inspect-warm", async () =>
+        {
+            await services.CubeMx.InspectAsync(fixture);
+        });
         await Measure("open-configure-index", () => OpenFromCommandLineAsync(fixture));
         if (activeDocument?.RelativePath != "Core/Src/main.c" || !services.Intelligence.IsReady)
         {

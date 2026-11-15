@@ -122,7 +122,7 @@
     <TextBlock
       Grid.Row="2"
       x:Name="Summary"
-      Text="RTL 电路预览 · 双击子模块展开，点击元件或连线查看详情，Ctrl + 滚轮缩放。"
+      Text="尚未生成电路图"
       TextWrapping="Wrap"
       Margin="0,0,0,10" />
     <Grid

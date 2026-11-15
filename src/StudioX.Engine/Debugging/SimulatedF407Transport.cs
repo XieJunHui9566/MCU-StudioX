@@ -28,7 +28,10 @@ public sealed class SimulatedF407Transport : IGdbMiTransport
             {
                 return id + Execute(text);
             }
-            catch (Exception ex) when (ex is InvalidOperationException or ArgumentException or FormatException or OverflowException) { return id + "^error,msg=" + Q(ex.Message); }
+            catch (Exception ex) when (ex is InvalidOperationException or ArgumentException or FormatException or OverflowException)
+            {
+                return id + "^error,msg=" + Q(ex.Message);
+            }
         }
     }
     private string Execute(string text)
@@ -253,7 +256,9 @@ public sealed class SimulatedF407Transport : IGdbMiTransport
                 }
             } while (true);
         }
-        catch (OperationCanceledException) when (lifetime.IsCancellationRequested) { }
+        catch (OperationCanceledException) when (lifetime.IsCancellationRequested)
+        {
+        }
         catch (Exception ex)
         {
             lock (sync)

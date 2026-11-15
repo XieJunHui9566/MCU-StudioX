@@ -26,8 +26,14 @@ internal static class WindowsRecycleBin
                 }
                 completion.SetResult();
             }
-            catch (OperationCanceledException) { completion.SetCanceled(token); }
-            catch (Exception ex) { completion.SetException(ex); }
+            catch (OperationCanceledException)
+            {
+                completion.SetCanceled(token);
+            }
+            catch (Exception ex)
+            {
+                completion.SetException(ex);
+            }
         })
         {
             IsBackground = true,

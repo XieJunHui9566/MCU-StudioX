@@ -209,7 +209,10 @@ public sealed partial class McuCodeGenerationService(PluginManagerService plugin
                 return provider;
             }
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
 
     private static Dictionary<string, string> Outputs(JsonNode? generation)

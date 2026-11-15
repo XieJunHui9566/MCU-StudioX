@@ -200,7 +200,10 @@ public partial class MainWindow
                         }
                     }
                 }
-                catch (Exception rollback) { throw new AggregateException("源码登记失败，缓冲区回退也失败；请核对保留的编辑内容。", error, rollback); }
+                catch (Exception rollback)
+                {
+                    throw new AggregateException("源码登记失败，缓冲区回退也失败；请核对保留的编辑内容。", error, rollback);
+                }
             }
             throw new StudioXException("SOURCE_APPLY", "源码登记未完成；原始编辑事件异常已保留，请核对缓冲区。", error);
         }

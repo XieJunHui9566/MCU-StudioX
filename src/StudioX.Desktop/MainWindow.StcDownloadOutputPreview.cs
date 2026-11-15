@@ -118,7 +118,9 @@ public partial class MainWindow
         async Task Layout()
         {
             UpdateLayout();
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.Render);
             BuildLog.TextArea.TextView.EnsureVisualLines();
         }
         void Capture(string name)

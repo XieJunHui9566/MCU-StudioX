@@ -32,7 +32,9 @@ internal sealed partial class RetentionChecks
                 await new PackRepository(linkedRoot).PruneSupersededAsync();
                 throw new InvalidOperationException("Linked pack root was accepted: " + linkedRoot);
             }
-            catch (StudioXException ex) when (ex.Code == "PATH_LINK") { }
+            catch (StudioXException ex) when (ex.Code == "PATH_LINK")
+            {
+            }
             Require((await externalRepository.ListCatalogAsync()).Count == 2, "linked root cleanup preserves external versions");
             foreach (var pack in await externalRepository.ListCatalogAsync())
             {
@@ -40,7 +42,10 @@ internal sealed partial class RetentionChecks
             }
             Pass(ancestor ? "junction in pack-root ancestor rejected without touching target" : "junction pack root rejected without touching target");
         }
-        finally { RemoveJunction(link); }
+        finally
+        {
+            RemoveJunction(link);
+        }
     }
 
     private async Task CheckLinkedIdentityAsync()
@@ -69,7 +74,10 @@ internal sealed partial class RetentionChecks
             }
             Pass("junction in pack ID rejects catalog before cleanup; both external versions remain fully valid");
         }
-        finally { RemoveJunction(link); }
+        finally
+        {
+            RemoveJunction(link);
+        }
     }
 
     private async Task CheckLinkedPayloadAsync(bool replacement)
@@ -92,7 +100,10 @@ internal sealed partial class RetentionChecks
             Require((await repository.ListCatalogAsync()).Count == 2, "linked payload preserves both versions");
             Pass(replacement ? "junction in replacement SDK rejects verification and preserves old" : "junction in old payload rejects recursive deletion and preserves target");
         }
-        finally { RemoveJunction(link); }
+        finally
+        {
+            RemoveJunction(link);
+        }
     }
 
     private static async Task<PackRepository> CreateTwoVersionRepositoryAsync(string directory, string id)

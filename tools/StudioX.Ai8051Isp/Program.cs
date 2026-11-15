@@ -9,7 +9,11 @@ internal static class Program
     {
         Console.OutputEncoding = System.Text.Encoding.UTF8;
         using var cancel = new CancellationTokenSource();
-        Console.CancelKeyPress += (_, e) => { e.Cancel = true; cancel.Cancel(); };
+        Console.CancelKeyPress += (_, e) =>
+        {
+            e.Cancel = true;
+            cancel.Cancel();
+        };
         try
         {
             if (args.Length == 0)
@@ -139,6 +143,10 @@ internal static class Program
             });
             return 0;
         }
-        catch (Exception error) { Console.Error.WriteLine(error); return error is OperationCanceledException ? 130 : 1; }
+        catch (Exception error)
+        {
+            Console.Error.WriteLine(error);
+            return error is OperationCanceledException ? 130 : 1;
+        }
     }
 }

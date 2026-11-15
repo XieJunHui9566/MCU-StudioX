@@ -63,7 +63,10 @@ public sealed class WebCredentialStore
             var credential = Marshal.PtrToStructure<NativeCredential>(pointer);
             return credential.CredentialBlobSize is > 0 and <= 2560 && credential.CredentialBlob != IntPtr.Zero;
         }
-        finally { CredFree(pointer); }
+        finally
+        {
+            CredFree(pointer);
+        }
     }
 
     public void DeleteApiKey()
@@ -99,9 +102,15 @@ public sealed class WebCredentialStore
             {
                 throw new StudioXException("WEB_CREDENTIAL", "保存的 Tavily API Key 无效，请重新设置。");
             }
-            finally { Array.Clear(bytes); }
+            finally
+            {
+                Array.Clear(bytes);
+            }
         }
-        finally { CredFree(pointer); }
+        finally
+        {
+            CredFree(pointer);
+        }
     }
 
     private static bool TryRead(out IntPtr pointer)

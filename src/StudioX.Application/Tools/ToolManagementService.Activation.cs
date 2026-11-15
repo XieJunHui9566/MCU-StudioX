@@ -23,7 +23,10 @@ public sealed partial class ToolManagementService
                 }
                 await catalog.SetEnabledAsync(fresh.Id, fresh.Version, enabled, token);
             }
-            finally { gate.Release(); }
+            finally
+            {
+                gate.Release();
+            }
         }, token);
 
     /// <summary>只运行固定版本查询；不启动调试会话、不探测端口、不连接硬件。</summary>

@@ -202,7 +202,13 @@ public partial class GitHubWorkspaceView : UserControl
             SetPullRequestRepository(null);
             WorkspaceStatus.Text = CurrentProjectText.Text;
         }
-        finally { if (version == projectVersion) { UpdateActions(); } }
+        finally
+        {
+            if (version == projectVersion)
+            {
+                UpdateActions();
+            }
+        }
     }
 
     private void UpdateSelectedRemote()

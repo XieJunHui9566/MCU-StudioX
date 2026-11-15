@@ -37,7 +37,10 @@ public sealed class EditorSessionStore : IDisposable
             }
             await JsonStore.WriteAsync(Path.Combine(directory, "state.json"), snapshot, token).ConfigureAwait(false);
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
 
     public async Task<EditorWorkspaceSnapshot?> ClaimLatestAsync(CancellationToken token = default)
@@ -60,7 +63,10 @@ public sealed class EditorSessionStore : IDisposable
             {
                 owner = new(Path.Combine(candidate, "owner.lock"), FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
             }
-            catch (IOException) { continue; }
+            catch (IOException)
+            {
+                continue;
+            }
             var retained = false;
             try
             {

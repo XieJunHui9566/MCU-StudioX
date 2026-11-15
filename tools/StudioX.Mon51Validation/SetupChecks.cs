@@ -30,7 +30,10 @@ internal static class SetupChecks
                 await action();
                 throw new InvalidOperationException("Accepted: " + name);
             }
-            catch (StudioXException ex) when (ex.Code == code) { checks.Add(name); }
+            catch (StudioXException ex) when (ex.Code == code)
+            {
+                checks.Add(name);
+            }
         }
         var packs = new PackRepository(Path.Combine(output, "packs"));
         var pack = await packs.ImportAsync(packFile);

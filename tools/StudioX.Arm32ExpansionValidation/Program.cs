@@ -18,7 +18,10 @@ if (args.Length < 3)
 
 var runtime = Path.GetFullPath(args[0]);
 var output = Path.GetFullPath(args[1]);
-if (Directory.Exists(output) || File.Exists(output)) { throw new InvalidOperationException("验收输出目录必须尚不存在。"); }
+if (Directory.Exists(output) || File.Exists(output))
+{
+    throw new InvalidOperationException("验收输出目录必须尚不存在。");
+}
 Directory.CreateDirectory(output);
 var catalog = new ToolsetCatalog(Path.Combine(runtime, "toolsets"));
 var builds = new BuildService(catalog);

@@ -39,8 +39,12 @@ public partial class MainWindow
         async Task Layout()
         {
             UpdateLayout();
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Loaded);
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.Loaded);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.Render);
         }
         await RunAsync(token => OpenProjectAsync(fixture, token));
         try
@@ -131,7 +135,9 @@ public partial class MainWindow
                 await CloseProjectAsync(CancellationToken.None, _ => MessageBoxResult.Yes);
                 throw new InvalidOperationException("保存冲突应阻止关闭。");
             }
-            catch (StudioXException ex) when (ex.Code == "EDITOR_FILE_CHANGED") { }
+            catch (StudioXException ex) when (ex.Code == "EDITOR_FILE_CHANGED")
+            {
+            }
             Check(projectDirectory == fixture && editorDocuments.Count == 2 && main.IsDirty, "保存失败后丢失工程。");
             await File.WriteAllTextAsync(diskMain, text);
             Check(await CloseProjectAsync(CancellationToken.None, _ => MessageBoxResult.Yes), "保存并关闭失败。");
@@ -157,7 +163,11 @@ public partial class MainWindow
             await File.WriteAllTextAsync(Path.Combine(directory, "project-details-result.txt"), "PASS: read-only device/template view preserves two dirty buffers, project tree, editor tabs and language server. Explicit new/close restores creation mode.\n");
             await File.WriteAllTextAsync(Path.Combine(directory, "result.txt"), "PASS: HWND Ctrl+wheel enlarges actual rendered line height; down/up, partial deltas, regular wheel, log scope and font persistence. Close project: cancel preserves all buffers, save conflict preserves project, save/discard, release/restart language server, empty tree/tabs/targets, new-project reset and File menu. Only fixture files changed; no build or hardware access.\n");
         }
-        finally { ClearEditorDocuments(); await services.Intelligence.StopAsync(); }
+        finally
+        {
+            ClearEditorDocuments();
+            await services.Intelligence.StopAsync();
+        }
 
         void CheckClosed() => Check(projectDirectory is null && ProjectTree.Items.Count == 0 && ProjectTree.Visibility == Visibility.Collapsed &&
             EmptyProject.Visibility == Visibility.Visible && editorDocuments.Count == 0 && activeEditor is null && SourceEditor.Text.Length == 0 &&

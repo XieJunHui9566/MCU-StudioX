@@ -56,7 +56,7 @@ public partial class FirstProjectGuideView : UserControl
         SecondaryButton.IsEnabled = SelectedStep == 1 || step.CanAct;
         BackButton.IsEnabled = SelectedStep > 0;
         NextButton.IsEnabled = SelectedStep < steps.Count - 1;
-        ProgressText.Text = $"第 {SelectedStep + 1} / {steps.Count} 步 · 可以回看或跳过阅读；完成标记依据实际操作";
+        ProgressText.Text = $"第 {SelectedStep + 1} / {steps.Count} 步";
     }
     private void Step_Changed(object sender, SelectionChangedEventArgs e)
     {
@@ -79,7 +79,14 @@ public partial class FirstProjectGuideView : UserControl
         {
             await action();
         }
-        catch (Exception error) { EvidenceText.Text = error.Message; Failed?.Invoke(error); }
-        finally { Actions.IsEnabled = true; }
+        catch (Exception error)
+        {
+            EvidenceText.Text = error.Message;
+            Failed?.Invoke(error);
+        }
+        finally
+        {
+            Actions.IsEnabled = true;
+        }
     }
 }

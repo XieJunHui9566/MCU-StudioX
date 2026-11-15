@@ -55,7 +55,10 @@ internal sealed class SerialPlotMcpTools(McpSessionContext context) : StudioXMcp
                 errors = status?.Errors.TakeLast(5).ToArray() ?? []
             });
         }
-        finally { mcpSerialGate.Release(); }
+        finally
+        {
+            mcpSerialGate.Release();
+        }
     }
 
     [McpServerTool(Name = "serial_connect")]
@@ -106,7 +109,10 @@ internal sealed class SerialPlotMcpTools(McpSessionContext context) : StudioXMcp
                 sessionOwner = "agent"
             });
         }
-        finally { mcpSerialGate.Release(); }
+        finally
+        {
+            mcpSerialGate.Release();
+        }
     }
 
     [McpServerTool(Name = "serial_send")]
@@ -171,7 +177,10 @@ internal sealed class SerialPlotMcpTools(McpSessionContext context) : StudioXMcp
                 note = "串口写入已完成；不代表目标设备已接收或处理。"
             });
         }
-        finally { mcpSerialGate.Release(); }
+        finally
+        {
+            mcpSerialGate.Release();
+        }
     }
 
     [McpServerTool(Name = "serial_read")]
@@ -232,7 +241,10 @@ internal sealed class SerialPlotMcpTools(McpSessionContext context) : StudioXMcp
                 representation = "rendered-terminal-text"
             });
         }
-        finally { mcpSerialGate.Release(); }
+        finally
+        {
+            mcpSerialGate.Release();
+        }
     }
 
     [McpServerTool(Name = "serial_read_raw")]
@@ -264,7 +276,10 @@ internal sealed class SerialPlotMcpTools(McpSessionContext context) : StudioXMcp
                 snapshot = mcpSerial.ReadRaw(afterReceivedBytes, maxBytes)
             });
         }
-        finally { mcpSerialGate.Release(); }
+        finally
+        {
+            mcpSerialGate.Release();
+        }
     }
 
     [McpServerTool(Name = "serial_disconnect")]
@@ -291,7 +306,10 @@ internal sealed class SerialPlotMcpTools(McpSessionContext context) : StudioXMcp
                 message = "Agent 串口会话已断开；显示历史仍可读取。"
             });
         }
-        finally { mcpSerialGate.Release(); }
+        finally
+        {
+            mcpSerialGate.Release();
+        }
     }
 
     [McpServerTool(Name = "plot_start")]
@@ -352,7 +370,10 @@ internal sealed class SerialPlotMcpTools(McpSessionContext context) : StudioXMcp
                 timeSource = snapshot.Format.SampleIntervalMs > 0 ? "configured-sample-interval" : "host-monotonic-receive"
             });
         }
-        finally { mcpPlotGate.Release(); }
+        finally
+        {
+            mcpPlotGate.Release();
+        }
     }
 
     [McpServerTool(Name = "plot_snapshot")]
@@ -400,7 +421,10 @@ internal sealed class SerialPlotMcpTools(McpSessionContext context) : StudioXMcp
                 samples = snapshot.Samples.TakeLast(maxSamples).ToArray()
             });
         }
-        finally { mcpPlotGate.Release(); }
+        finally
+        {
+            mcpPlotGate.Release();
+        }
     }
 
     [McpServerTool(Name = "plot_stop")]
@@ -430,7 +454,10 @@ internal sealed class SerialPlotMcpTools(McpSessionContext context) : StudioXMcp
                 message = snapshot.Message
             });
         }
-        finally { mcpPlotGate.Release(); }
+        finally
+        {
+            mcpPlotGate.Release();
+        }
     }
 
     private static SerialSettings McpSerialSettings(string portName, int baudRate, int dataBits,

@@ -7,10 +7,11 @@ using StudioX.Foundation;
 internal static class EspressifNativeTools
 {
     internal const int Revision = 7;
+    internal static int RevisionFor(EspressifProjectSettings sdk) => sdk.Framework == "esp8266-rtos-sdk" ? 8 : Revision;
 
     internal static async Task<string[]> PrepareAsync(string build, ResolvedToolset tools, EspressifProjectSettings sdk, CancellationToken token)
     {
-        if (!OperatingSystem.IsWindows() || sdk.Framework != "esp-idf")
+        if (!OperatingSystem.IsWindows())
         {
             return [];
         }
@@ -18,8 +19,158 @@ internal static class EspressifNativeTools
         var xtensa = EspressifXtensaBinding.Create(tools, sdk);
         var hook = PathBoundary.Resolve(build, "studiox-native-tools.cmake");
         var script = new StringBuilder("# StudioX generated native paths; keep compiler basenames and SDK flags.\n");
+        if (sdk.Framework == "esp8266-rtos-sdk")
+        {
+            // SDK 3.4 把路径写为未加引号的 set()，带空格的已安装 SDK 因而丢失全部组件。
+            // 仅覆盖本次 CMake 的属性序列化，不修改 SDK、组件依赖和寄存器/代码生成规则。
+            script.AppendLine("""
+                function(_studiox_property_line file name value)
+                    set(delimiter "==")
+                    string(FIND "${value}" "]${delimiter}]" found)
+                    while(NOT found EQUAL -1)
+                        string(APPEND delimiter "=")
+                        string(FIND "${value}" "]${delimiter}]" found)
+                    endwhile()
+                    file(APPEND "${file}" "set(${name} [${delimiter}[${value}]${delimiter}])\n")
+                endfunction()
+                function(__build_write_properties output_file)
+                    file(WRITE "${output_file}" "")
+                    idf_build_get_property(properties __BUILD_PROPERTIES)
+                    foreach(property ${properties})
+                        idf_build_get_property(value ${property})
+                        _studiox_property_line("${output_file}" "${property}" "${value}")
+                    endforeach()
+                endfunction()
+                function(__component_write_properties output_file)
+                    file(WRITE "${output_file}" "")
+                    idf_build_get_property(targets __COMPONENT_TARGETS)
+                    foreach(target ${targets})
+                        __component_get_property(properties ${target} __COMPONENT_PROPERTIES)
+                        foreach(property ${properties})
+                            __component_get_property(value ${target} ${property})
+                            _studiox_property_line("${output_file}" "__component_${target}_${property}" "${value}")
+                        endforeach()
+                    endforeach()
+                endfunction()
+                """);
+        }
         var sdkDirectory = tools.ResourceDirectory("idf").Replace('\\', '/');
         var nativeSdkDirectory = EspressifNativePath.For(tools.ResourceDirectory("idf")).Replace('\\', '/');
+        if (sdk.Framework == "esp8266-rtos-sdk")
+        {
+            script.AppendLine($$$"""
+                function(__component_get_property variable component property)
+                    get_property(value TARGET ${component} PROPERTY ${property})
+                    string(REPLACE "{{{sdkDirectory}}}/" "{{{nativeSdkDirectory}}}/" value "${value}")
+                    set(${variable} "${value}" PARENT_SCOPE)
+                endfunction()
+                function(__ldgen_add_fragment_files fragment_files)
+                    spaces2list(fragment_files)
+                    set(fragments "")
+                    foreach(fragment ${fragment_files})
+                        get_filename_component(path "${fragment}" ABSOLUTE)
+                        string(REPLACE "{{{sdkDirectory}}}/" "{{{nativeSdkDirectory}}}/" path "${path}")
+                        list(APPEND fragments "${path}")
+                    endforeach()
+                    idf_build_set_property(__LDGEN_FRAGMENT_FILES "${fragments}" APPEND)
+                endfunction()
+                function(__ldgen_process_template template output)
+                    idf_build_get_property(idf_path IDF_PATH)
+                    idf_build_get_property(build_dir BUILD_DIR)
+                    idf_build_get_property(libraries __LDGEN_LIBRARIES GENERATOR_EXPRESSION)
+                    file(GENERATE OUTPUT "${build_dir}/ldgen_libraries.in" CONTENT "$<JOIN:${libraries},\n>")
+                    file(GENERATE OUTPUT "${build_dir}/ldgen_libraries" INPUT "${build_dir}/ldgen_libraries.in")
+                    set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}" APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES
+                        "${build_dir}/ldgen_libraries.in" "${build_dir}/ldgen_libraries")
+                    idf_build_get_property(fragments __LDGEN_FRAGMENT_FILES GENERATOR_EXPRESSION)
+                    idf_build_get_property(depends __LDGEN_DEPENDS GENERATOR_EXPRESSION)
+                    idf_build_get_property(sdkconfig SDKCONFIG)
+                    idf_build_get_property(kconfig __ROOT_KCONFIG)
+                    idf_build_get_property(config_env CONFIG_ENV_PATH)
+                    idf_build_get_property(python PYTHON)
+                    add_custom_command(OUTPUT "${output}"
+                        COMMAND "${python}" "${idf_path}/tools/ldgen/ldgen.py"
+                            --config "${sdkconfig}" --fragments "${fragments}"
+                            --input "${template}" --output "${output}" --kconfig "${kconfig}"
+                            --env-file "${config_env}" --libraries-file "${build_dir}/ldgen_libraries"
+                            --objdump "${CMAKE_OBJDUMP}"
+                        DEPENDS "${template}" ${fragments} ${depends} "${sdkconfig}"
+                        VERBATIM COMMAND_EXPAND_LISTS)
+                    get_filename_component(name "${output}" NAME)
+                    add_custom_target(__ldgen_output_${name} DEPENDS "${output}")
+                    add_dependencies(__idf_build_target __ldgen_output_${name})
+                    idf_build_set_property(__LINK_DEPENDS "${output}" APPEND)
+                endfunction()
+                include(ExternalProject)
+                if(NOT COMMAND _externalproject_add)
+                    function(_studiox_external_argument variable value)
+                        set(delimiter "==")
+                        string(FIND "${value}" "]${delimiter}]" found)
+                        while(NOT found EQUAL -1)
+                            string(APPEND delimiter "=")
+                            string(FIND "${value}" "]${delimiter}]" found)
+                        endwhile()
+                        set(${variable} "${${variable}} [${delimiter}[${value}]${delimiter}]" PARENT_SCOPE)
+                    endfunction()
+                    function(externalproject_add name)
+                        set(invocation "_externalproject_add(")
+                        math(EXPR last "${ARGC} - 1")
+                        foreach(index RANGE 0 ${last})
+                            set(argument "${ARGV${index}}")
+                            _studiox_external_argument(invocation "${argument}")
+                            if(name STREQUAL "bootloader" AND argument STREQUAL "CMAKE_ARGS")
+                                foreach(flag CMAKE_PROJECT_TOP_LEVEL_INCLUDES CMAKE_USER_MAKE_RULES_OVERRIDE_C CMAKE_USER_MAKE_RULES_OVERRIDE_CXX CMAKE_USER_MAKE_RULES_OVERRIDE_ASM)
+                                    _studiox_external_argument(invocation "-D${flag}=${CMAKE_CURRENT_FUNCTION_LIST_FILE}")
+                                endforeach()
+                                _studiox_external_argument(invocation "-DCMAKE_MAKE_PROGRAM=${CMAKE_MAKE_PROGRAM}")
+                            endif()
+                        endforeach()
+                        # 每个原始实参都使用独立 bracket literal，包括 INSTALL_COMMAND 的空字符串；不二次展开内容。
+                        string(APPEND invocation ")")
+                        cmake_language(EVAL CODE "${invocation}")
+                    endfunction()
+                endif()
+                """);
+            // 旧 Kconfig 用空格分隔文件列表；组件发现可能已还原 SDK 的长路径，必须在生成列表前换回兼容路径。
+            script.AppendLine($$$"""
+                function(__kconfig_component_init component_target)
+                    __component_get_property(directory ${component_target} COMPONENT_DIR)
+                    file(GLOB kconfig "${directory}/Kconfig")
+                    string(REPLACE "{{{sdkDirectory}}}/" "{{{nativeSdkDirectory}}}/" kconfig "${kconfig}")
+                    __component_set_property(${component_target} KCONFIG "${kconfig}")
+                    file(GLOB kconfig "${directory}/Kconfig.projbuild")
+                    string(REPLACE "{{{sdkDirectory}}}/" "{{{nativeSdkDirectory}}}/" kconfig "${kconfig}")
+                    __component_set_property(${component_target} KCONFIG_PROJBUILD "${kconfig}")
+                endfunction()
+                if(COMMAND idf_build_get_property AND TARGET __idf_build_target)
+                    idf_build_get_property(_studiox_components __COMPONENT_TARGETS)
+                    foreach(_studiox_component ${_studiox_components})
+                        __kconfig_component_init(${_studiox_component})
+                    endforeach()
+                    function(_studiox_normalize_sdk_links)
+                        idf_build_get_property(components __BUILD_COMPONENT_TARGETS)
+                        set(libraries "")
+                        foreach(component ${components})
+                            __component_get_property(library ${component} COMPONENT_LIB)
+                            list(APPEND libraries ${library})
+                        endforeach()
+                        if(TARGET "${CMAKE_PROJECT_NAME}.elf")
+                            list(APPEND libraries "${CMAKE_PROJECT_NAME}.elf")
+                        endif()
+                        foreach(library ${libraries})
+                            foreach(property LINK_LIBRARIES INTERFACE_LINK_LIBRARIES LINK_OPTIONS INTERFACE_LINK_OPTIONS LINK_DIRECTORIES INTERFACE_LINK_DIRECTORIES)
+                                get_target_property(value ${library} ${property})
+                                if(value)
+                                    string(REPLACE "{{{sdkDirectory}}}/" "{{{nativeSdkDirectory}}}/" value "${value}")
+                                    set_property(TARGET ${library} PROPERTY ${property} "${value}")
+                                endif()
+                            endforeach()
+                        endforeach()
+                    endfunction()
+                    cmake_language(DEFER CALL _studiox_normalize_sdk_links)
+                endif()
+                """);
+        }
         // IDF 的链接片段收集会按空格拆分绝对 SDK 路径，蓝牙控制器片段因此成为不存在的依赖。
         // 只在生成的 hook 中绑定已锁定 SDK 的原生目录，不改写共享 SDK 或用户片段。
         script.Append("if(COMMAND __ldgen_add_fragment_files AND NOT COMMAND ___ldgen_add_fragment_files)\n" +
@@ -98,7 +249,7 @@ internal static class EspressifNativeTools
             "  endforeach()\n" +
             "endif()\n");
         await File.WriteAllTextAsync(hook, script.ToString(), token);
-        var nativeHook = EspressifNativePath.For(hook).Replace('\\', '/');
+        var nativeHook = EspressifNativePath.ForProject(hook).Replace('\\', '/');
         // 编译器身份检测早于 MAKE_RULES_OVERRIDE；先在 SDK 开发环境组件读完、语言启用前绑定原生路径。
         return new[] { "-D", "CMAKE_PROJECT_TOP_LEVEL_INCLUDES=" + nativeHook }
             .Concat(new[] { "C", "CXX", "ASM" }.SelectMany(language => new[] { "-D", "CMAKE_USER_MAKE_RULES_OVERRIDE_" + language + "=" + nativeHook })).ToArray();

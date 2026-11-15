@@ -11,11 +11,17 @@ if (reuseData)
 {
     args = args[..5];
 }
-if (args is not [var evidence, var runtime, var data, var avrPack, var espPacks]) { throw new ArgumentException("<new-evidence> <runtime> <user-data> <AVR-pack> <ESP-pack-directory> [--reuse-data]"); }
+if (args is not [var evidence, var runtime, var data, var avrPack, var espPacks])
+{
+    throw new ArgumentException("<new-evidence> <runtime> <user-data> <AVR-pack> <ESP-pack-directory> [--reuse-data]");
+}
 evidence = Path.GetFullPath(evidence);
 runtime = Path.GetFullPath(runtime);
 data = Path.GetFullPath(data);
-if (Directory.Exists(evidence) || !reuseData && Directory.Exists(data)) { throw new ArgumentException("Use new validation directories."); }
+if (Directory.Exists(evidence) || !reuseData && Directory.Exists(data))
+{
+    throw new ArgumentException("Use new validation directories.");
+}
 Directory.CreateDirectory(evidence);
 var checks = new List<string>();
 void Check(bool value, string message)
@@ -75,7 +81,10 @@ foreach (var board in ArduinoBoard.Supported)
             await services.Arduino.PreviewUploadAsync(root);
             throw new InvalidOperationException("Changed partitions accepted");
         }
-        catch (StudioXException error) when (error.Code == "ARDUINO_BUILD_STALE") { Check(true, board.Id + " rejects changed partitions before upload"); }
+        catch (StudioXException error) when (error.Code == "ARDUINO_BUILD_STALE")
+        {
+            Check(true, board.Id + " rejects changed partitions before upload");
+        }
         await File.WriteAllBytesAsync(partitions, original);
     }
     projects[board.Id] = root;
@@ -85,7 +94,10 @@ try
     await services.Arduino.CreateFromPackAsync(packs["esp32c3"], "ESP32-C3", "uno", "WrongBoard", Path.Combine(evidence, "WrongBoard"));
     throw new InvalidOperationException("Wrong board accepted");
 }
-catch (StudioXException error) when (error.Code == "ARDUINO_DEVICE") { Check(!Directory.Exists(Path.Combine(evidence, "WrongBoard")), "cross-chip board selection rejected without creating project"); }
+catch (StudioXException error) when (error.Code == "ARDUINO_DEVICE")
+{
+    Check(!Directory.Exists(Path.Combine(evidence, "WrongBoard")), "cross-chip board selection rejected without creating project");
+}
 var tools = await services.Toolsets.ResolveAsync(ArduinoPlatform.Esp32.ToolsetId, ArduinoPlatform.Esp32.CoreVersion, ArduinoPlatform.Esp32.CompilerId);
 var cachedBoards = Path.Combine(data, "arduino", "r", tools.Fingerprint[..20], "data", "packages", "esp32", "hardware", "esp32", "3.3.8", "boards.txt");
 var cachedBytes = await File.ReadAllBytesAsync(cachedBoards);
@@ -95,8 +107,14 @@ try
     await services.Arduino.PreviewUploadAsync(projects["esp32c3"]);
     throw new InvalidOperationException("Changed cached core accepted");
 }
-catch (StudioXException error) when (error.Code == "ARDUINO_CACHE_CHANGED") { Check(true, "private core metadata changes revoke memoized verification and trigger content validation"); }
-finally { await File.WriteAllBytesAsync(cachedBoards, cachedBytes); }
+catch (StudioXException error) when (error.Code == "ARDUINO_CACHE_CHANGED")
+{
+    Check(true, "private core metadata changes revoke memoized verification and trigger content validation");
+}
+finally
+{
+    await File.WriteAllBytesAsync(cachedBoards, cachedBytes);
+}
 await using (var language = new CodeIntelligenceService(runtime, data))
 {
     await language.StartAsync(projects["esp32c3"]);

@@ -50,7 +50,9 @@ internal static class OfflineWorkflowChecks
                         await task;
                         throw new InvalidOperationException("Cancellation did not propagate.");
                     }
-                    catch (OperationCanceledException) { }
+                    catch (OperationCanceledException)
+                    {
+                    }
                 }
                 else
                 {

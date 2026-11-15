@@ -72,6 +72,9 @@ public sealed partial class ToolEnvironmentService
                 });
                 progress?.Report((restorePrevious ? "恢复原组件" : fresh.ActionText) + "完成；恢复记录和原备份保留。");
             }
-            finally { gate.Release(); }
+            finally
+            {
+                gate.Release();
+            }
         }, token);
 }

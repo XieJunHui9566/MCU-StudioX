@@ -1,0 +1,34 @@
+--- a/adapter/Build.ps1
++++ b/adapter/Build.ps1
+@@ -15,7 +15,7 @@
+ $compilerExe=$null
+ $vectorCount=0
+ function Write-Json($Path,$Value) {
+- [IO.File]::WriteAllText($Path,($Value | ConvertTo-Json -Depth 50)+[Environment]::NewLine,[Text.UTF8Encoding]::new($false))
++ [IO.File]::WriteAllText($Path,(ConvertTo-Json -InputObject $Value -Depth 50)+[Environment]::NewLine,[Text.UTF8Encoding]::new($false))
+ }
+ function Hash-File([string]$Path) { return (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant() }
+ function Keys-Only($Object,[string[]]$Allowed,[string]$Label) {
+@@ -94,6 +94,7 @@
+  }
+ }
+ try {
++ . (Join-Path $PSScriptRoot 'InterruptDiagnostics.ps1')
+  $projectPath=(Resolve-Path -LiteralPath $Project).Path
+  $projectRoot=Split-Path -Parent $projectPath
+  $toolRoot=(Resolve-Path -LiteralPath $ToolchainRoot).Path.TrimEnd('\')
+@@ -298,6 +299,14 @@
+ } catch {
+  $message=$_.Exception.Message
+  if($ownsOutput){
++  $linkError=Join-Path $outputRoot 'link.stderr.log'
++  if([IO.File]::Exists($linkError)){
++   $interruptDiagnostics=@(Get-Mx251InterruptDiagnostics ([IO.File]::ReadAllText($linkError)))
++   if($interruptDiagnostics.Count){
++    Write-Json (Join-Path $outputRoot 'interrupt-diagnostics.json') $interruptDiagnostics
++    $message+=[Environment]::NewLine+(($interruptDiagnostics|ForEach-Object{"[$($_.code)] $($_.message)"}) -join [Environment]::NewLine)
++   }
++  }
+   foreach($name in @('firmware.hex','linked.partial.hex','receipt.json')){$path=Join-Path $outputRoot $name;if([IO.File]::Exists($path)){[IO.File]::Delete($path)}}
+   Write-Json (Join-Path $outputRoot 'build-state.json') @{status='failed';error=$message}
+  }

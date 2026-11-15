@@ -69,7 +69,14 @@ internal static class Ag32TargetChecks
             }
             foreach (var probe in new[] { "stlink" })
             {
-                await Reject(() => { OpenOcdDebugPlanner.ResolveProbe(config with { Options = new(probe, 1000) }); return Task.CompletedTask; }, "DEBUG_PROBE");
+                await Reject(() =>
+                {
+                    OpenOcdDebugPlanner.ResolveProbe(config with
+                    {
+                        Options = new(probe, 1000)
+                    });
+                    return Task.CompletedTask;
+                }, "DEBUG_PROBE");
             }
             var environment = ToolsetEnvironment.Create(prepared.Tools);
             var runner = new ProcessRunner();
@@ -163,7 +170,10 @@ internal static class Ag32TargetChecks
         {
             await action();
         }
-        catch (StudioXException ex) when (ex.Code == code) { return; }
+        catch (StudioXException ex) when (ex.Code == code)
+        {
+            return;
+        }
         throw new InvalidOperationException("Expected rejection " + code);
     }
 }

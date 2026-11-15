@@ -31,14 +31,18 @@ internal static class McpOperationChecks
             Call(tracker, "Cancel", "other-session-id");
             check(false, "invalid operation id accepted");
         }
-        catch (TargetInvocationException error) when (error.InnerException is StudioXException { Code: "MCP_OPERATION_ID" }) { }
+        catch (TargetInvocationException error) when (error.InnerException is StudioXException { Code: "MCP_OPERATION_ID" })
+        {
+        }
         check(State() == "running", "foreign or stale cancel identifiers do not stop an active operation");
         try
         {
             Call(tracker, "Start", "firmware_download", TimeSpan.FromSeconds(3), CancellationToken.None, null);
             check(false, "concurrent operation accepted");
         }
-        catch (TargetInvocationException error) when (error.InnerException is StudioXException { Code: "MCP_OPERATION_BUSY" }) { }
+        catch (TargetInvocationException error) when (error.InnerException is StudioXException { Code: "MCP_OPERATION_BUSY" })
+        {
+        }
         Call(tracker, "Cancel", id);
         check(State() == "stopping", "MCP cancellation reports stopping until its owner has finished cleanup");
         Call(operation, "Interrupted", new OperationCanceledException());
@@ -51,7 +55,9 @@ internal static class McpOperationChecks
             await Task.Delay(TimeSpan.FromSeconds(2), token);
             check(false, "timeout did not cancel");
         }
-        catch (OperationCanceledException) when (token.IsCancellationRequested) { }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+        }
         check(Call(expired, "Interrupted", new OperationCanceledException()) is StudioXException { Code: "MCP_OPERATION_TIMEOUT" },
             "MCP timeout has a recoverable error code distinct from user cancellation");
         ((IDisposable)expired).Dispose();

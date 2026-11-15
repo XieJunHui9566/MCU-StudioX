@@ -33,7 +33,10 @@ internal static class RecentProjectActionsChecks
                 await recent.DeleteAsync(directory, openProject);
                 throw new InvalidOperationException("Deletion accepted: " + code);
             }
-            catch (StudioXException ex) when (ex.Code == code) { pass("PASS: recent actions rejected " + code); }
+            catch (StudioXException ex) when (ex.Code == code)
+            {
+                pass("PASS: recent actions rejected " + code);
+            }
         }
         var kept = await Fixture("keep");
         var removed = await Fixture("remove-record");
@@ -59,7 +62,9 @@ internal static class RecentProjectActionsChecks
                 await recent.DeleteAsync(cancelled, null, cancellation.Token);
                 throw new InvalidOperationException("Cancelled deletion accepted.");
             }
-            catch (OperationCanceledException) { }
+            catch (OperationCanceledException)
+            {
+            }
         }
         Check(File.Exists(Path.Combine(cancelled, "source.c")) && (await recent.LoadAsync()).Any(p => p.Directory == cancelled),
             "cancellation preserves project and recent entry");

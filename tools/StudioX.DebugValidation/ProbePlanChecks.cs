@@ -52,7 +52,10 @@ internal static class ProbePlanChecks
             {
                 OpenOcdDebugPlanner.Create(project, invalid, tools, elf);
             }
-            catch (StudioXException ex) when (ex.Code == code) { return; }
+            catch (StudioXException ex) when (ex.Code == code)
+            {
+                return;
+            }
             throw new InvalidOperationException("Invalid debug configuration accepted: " + code);
         }
         Reject(dap with

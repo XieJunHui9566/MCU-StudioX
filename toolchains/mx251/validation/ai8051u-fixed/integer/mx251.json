@@ -1,0 +1,11 @@
+{
+  "schema": 2,
+  "target": "AI8051U-34K64-32",
+  "model": "small",
+  "optimization": "speed",
+  "backend": "legacy",
+  "explicitAbi": false,
+  "standard": "sdcc11",
+  "runtime": "native-int-mdu32",
+  "defines": []
+}

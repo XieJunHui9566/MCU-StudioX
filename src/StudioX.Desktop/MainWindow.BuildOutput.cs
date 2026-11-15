@@ -16,7 +16,14 @@ public partial class MainWindow
     private int buildOutputFrame;
     private void InitializeBuildOutput()
     {
-        buildOutputTimer.Tick += (_, _) => { if (buildOutputActive) { buildOutputFrame++; RenderBuildProgress(); } };
+        buildOutputTimer.Tick += (_, _) =>
+        {
+            if (buildOutputActive)
+            {
+                buildOutputFrame++;
+                RenderBuildProgress();
+            }
+        };
         Closed += (_, _) => buildOutputTimer.Stop();
     }
     private void BeginBuildOutput(string phase = "工程检查", string state = "构建中")
@@ -56,6 +63,11 @@ public partial class MainWindow
     {
         if (!buildOutputActive)
         {
+            return;
+        }
+        if (BuildOutputParser.Stage(text) is { } phase)
+        {
+            ReportBuildActivity(phase, BuildOutputParser.Measure(text));
             return;
         }
         if (BuildOutputParser.Measure(text) is { } measurement)

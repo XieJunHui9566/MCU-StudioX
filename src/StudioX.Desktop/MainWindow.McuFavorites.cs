@@ -33,11 +33,17 @@ public partial class MainWindow
                 McuFavoritesPicker.ItemsSource = mcuFavoriteOptions;
                 McuFavoritesPicker.SelectedItem = mcuFavoriteOptions.FirstOrDefault(item => item.Favorite == selected);
             }
-            finally { updatingMcuFavorites = false; }
+            finally
+            {
+                updatingMcuFavorites = false;
+            }
             McuFavoritesHint.Text = options.Count == 0 ? "选择型号后点击“☆ 收藏”，下次可从这里快速选择。"
                 : $"已收藏 {options.Count} 个 MCU。选择后自动定位厂商、器件包和准确型号，再选择起始模板。";
         }
-        catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             Log("MCU 收藏读取失败：" + ex);
@@ -98,7 +104,10 @@ public partial class MainWindow
             DeviceSearch.Clear();
             DevicePicker.SelectedItem = DevicePicker.Items.Cast<DeviceDefinition>().Single(device => device.Id == option.Favorite.DeviceId);
         }
-        finally { selectingMcuFavorite = false; }
+        finally
+        {
+            selectingMcuFavorite = false;
+        }
         McuFavoritesHint.Text = $"已选择 {option.Device!.DisplayName} · {option.Pack!.Manifest.DisplayName} v{option.Pack.Manifest.Version}。请选择起始模板。";
         UpdateMcuFavoriteControls();
     }

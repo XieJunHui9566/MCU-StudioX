@@ -118,6 +118,9 @@ public partial class HelpCenterView : UserControl
             Clipboard.SetText(article.Markdown);
             ResultStatus.Text = "已复制：“" + article.Title + "”。";
         }
-        catch (System.Runtime.InteropServices.COMException error) { ResultStatus.Text = "剪贴板暂时不可用，请重试：" + error.Message; }
+        catch (System.Runtime.InteropServices.COMException error)
+        {
+            ResultStatus.Text = "剪贴板暂时不可用，请重试：" + error.Message;
+        }
     }
 }

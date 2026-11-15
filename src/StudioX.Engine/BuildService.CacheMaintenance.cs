@@ -85,7 +85,10 @@ public sealed partial class BuildService
                                 File.Move(entry.Backup, entry.Source);
                             }
                         }
-                        catch (Exception restoreError) { errors.Add(restoreError); }
+                        catch (Exception restoreError)
+                        {
+                            errors.Add(restoreError);
+                        }
                     }
                     if (errors.Count > 1)
                     {
@@ -94,7 +97,10 @@ public sealed partial class BuildService
                     throw;
                 }
             }
-            finally { gate.Release(); }
+            finally
+            {
+                gate.Release();
+            }
         }, token);
 
     internal static ConfigurationCacheEntry? CacheEntry(string root, string relative, CancellationToken token)

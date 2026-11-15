@@ -1,0 +1,6 @@
+cmake_minimum_required(VERSION 3.25)
+project(MX251_STC32G_ACCEPTANCE NONE)
+include("${MX251_PROJECT_MODULE}")
+add_library(app INTERFACE)
+target_sources(app INTERFACE main.c usb_poll.c functions.c stc32g_test.h vectors.h native-int.h)
+mx251_firmware(app)

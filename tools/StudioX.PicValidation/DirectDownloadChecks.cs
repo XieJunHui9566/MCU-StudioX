@@ -249,6 +249,9 @@ internal static class DirectDownloadChecks
         Check(successCalls.All(arguments => arguments.Contains("-TSFIXTURE123") && arguments.Contains("-TPPK3") && arguments.Contains("-P16F877A")) &&
             successCalls[1].Contains("-Z") && successCalls[1].Contains("-OID") && successCalls[1].Contains("-OL"),
             "both operations select exact chip and programmer; programming preserves EEPROM / IDs and releases target");
+        Check(successCalls.All(arguments => arguments.Contains("-Dmplablogger.dir=" + Path.GetFullPath(Path.Combine(home, "logs"))) &&
+                arguments.Contains("-Djava.io.tmpdir=" + Path.GetFullPath(Path.Combine(home, "tmp")))) &&
+            Directory.Exists(Path.Combine(home, "logs")), "all IPECMD stages redirect vendor logs into user data instead of the indexed toolset");
         using (var measured = JsonDocument.Parse(await File.ReadAllBytesAsync(Path.Combine(root, ".build/pic-download/latest/result.json"))))
         {
             var timing = measured.RootElement;
@@ -436,7 +439,10 @@ internal static class DirectDownloadChecks
                     using var process = Process.GetProcessById(pid);
                     Check(process.HasExited, "cancelled programming child no longer runs");
                 }
-                catch (ArgumentException) { Check(true, "cancelled programming child is removed from the process table"); }
+                catch (ArgumentException)
+                {
+                    Check(true, "cancelled programming child is removed from the process table");
+                }
             }
         }
         Check(Directory.GetDirectories(Path.Combine(root, ".build/pic-download")).Select(Path.GetFileName).SequenceEqual(new[] { "latest" }),

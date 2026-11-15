@@ -37,8 +37,16 @@ public sealed class Mx251DownloadDeviceWindow : Window
         var row = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
         var download = new Button { Content = "开始下载", IsDefault = true, IsEnabled = false };
         var cancel = new Button { Content = "取消", IsCancel = true, Margin = new(10, 0, 0, 0) };
-        picker.SelectionChanged += (_, _) => { download.IsEnabled = picker.SelectedValue is string; detail.Text = picker.SelectedValue as string ?? ""; };
-        download.Click += (_, _) => { DevicePath = picker.SelectedValue as string; DialogResult = true; };
+        picker.SelectionChanged += (_, _) =>
+        {
+            download.IsEnabled = picker.SelectedValue is string;
+            detail.Text = picker.SelectedValue as string ?? "";
+        };
+        download.Click += (_, _) =>
+        {
+            DevicePath = picker.SelectedValue as string;
+            DialogResult = true;
+        };
         row.Children.Add(download);
         row.Children.Add(cancel);
         body.Children.Add(row);

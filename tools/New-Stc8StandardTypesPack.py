@@ -22,7 +22,9 @@ def main():
         raise ValueError("Expected the reviewed STC 0.1.8 package.")
     with zipfile.ZipFile(args.base_pack) as archive:
         index = json.loads(archive.read("files.sha256.json"))
-        if len(set(archive.namelist())) != len(archive.namelist()) or set(archive.namelist()) != set(index) | {"files.sha256.json"}:
+        if len(set(archive.namelist())) != len(archive.namelist()) or set(
+            archive.namelist()
+        ) != set(index) | {"files.sha256.json"}:
             raise ValueError("Package file set mismatch.")
         for name, expected in index.items():
             path = PurePosixPath(name)
@@ -41,8 +43,16 @@ def main():
     for family in ("stc89", "stc12", "stc15", "stc8g", "stc8h"):
         header = args.output / "sdk/include" / (family + ".h")
         if header.read_bytes().count(b"#include <stdint.h>") != 1:
-            raise ValueError("Family header must expose the compiler's standard integer types: " + family)
-    entries = sorted({template["entryFile"] for device in manifest["devices"] for template in device["templates"]})
+            raise ValueError(
+                "Family header must expose the compiler's standard integer types: " + family
+            )
+    entries = sorted(
+        {
+            template["entryFile"]
+            for device in manifest["devices"]
+            for template in device["templates"]
+        }
+    )
     changes = []
     for name in entries:
         source = args.output / name
@@ -52,22 +62,32 @@ def main():
             if b"#include " not in updated:
                 raise ValueError("No include anchor: " + name)
             updated = updated.replace(b"#include ", b"#include <stdint.h>\n#include ", 1)
-        updated = updated.replace(b"volatile __xdata unsigned int app_counter;", b"volatile __xdata uint16_t app_counter;")
+        updated = updated.replace(
+            b"volatile __xdata unsigned int app_counter;", b"volatile __xdata uint16_t app_counter;"
+        )
         updated = re.sub(rb"\bfor\s*\(\s*;\s*;\s*\)", b"while (1)", updated)
         if updated != original:
             source.write_bytes(updated)
             changes.append(name)
     manifest["version"] = "0.1.9"
-    manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    manifest_path.write_text(
+        json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
     provenance = {
-        "basePackSha256": BASE_SHA256, "baseVersion": "0.1.8", "version": "0.1.9",
-        "entryFiles": entries, "updatedFiles": changes,
+        "basePackSha256": BASE_SHA256,
+        "baseVersion": "0.1.8",
+        "version": "0.1.9",
+        "entryFiles": entries,
+        "updatedFiles": changes,
         "types": "Use the project-locked SDCC stdint.h, including signed/unsigned 8/16/32/64-bit, least/fast, pointer and max-width types; no duplicate typedefs.",
         "preserved": "All 25 device profiles, register headers, link settings, Mon51 images and RT51 implementation resources remain byte-identical.",
     }
     (args.output / "vendor/standard-integer-templates.json").write_text(
-        json.dumps(provenance, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    print(f"Prepared stc.stc8/0.1.9: {len(entries)} template entries, all five family headers, 25 devices.")
+        json.dumps(provenance, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
+    print(
+        f"Prepared stc.stc8/0.1.9: {len(entries)} template entries, all five family headers, 25 devices."
+    )
 
 
 if __name__ == "__main__":

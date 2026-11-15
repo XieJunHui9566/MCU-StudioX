@@ -1,0 +1,62 @@
+--- a/src/mcs251/main.c
++++ b/src/mcs251/main.c
+@@ -474,9 +474,59 @@
+   return true;
+ }
+ 
++/* 使用真实目标文件符号表达跨翻译单元契约，不扫描源文本。
++ * 定义必须找到向量登记；登记必须找到同名、同槽的 ISR 定义。
++ * 槽别名用于冲突诊断。仅符号/引用，无数据和指令开销；归档成员
++ * 被链接器选中后同样受约束，不强制提取未使用的整个归档。 */
++static void
++_mcs251_interruptContractName (symbol *sym)
++{
++  int slot = FUNC_INTNO (sym->type);
++  if (slot < 0 || (unsigned) slot >= interruptVectorCount || strlen (sym->rname) > 220)
++    {
++      char message[SDCC_NAME_MAX + 128];
++      SNPRINTF (message, sizeof(message),
++                "interrupt contract: %s needs a slot within --mcs251-vector-count and an assembler name <= 220 bytes",
++                sym->name);
++      werror (E_BAD_INT_ARGUMENT, message);
++      exit (EXIT_FAILURE);
++    }
++}
++
++static void
++_mcs251_interruptContracts (FILE *of, bool hasMain)
++{
++  symbol *sym;
++  if (!interruptVectorCount) return;
++  /* 声明合并会替换段集合中的旧符号，必须读取最终全局符号表。 */
++  for (int bucketIndex = 0; bucketIndex < HASHTAB_SIZE; ++bucketIndex)
++    for (bucket *entry = SymbolTab[bucketIndex]; entry; entry = entry->next)
++      {
++        sym = (symbol *) entry->sym;
++        if (sym->level || !IS_FUNC (sym->type) || !IFFUNC_ISISR (sym->type) || !IFFUNC_HASBODY (sym->type)) continue;
++        unsigned slot = FUNC_INTNO (sym->type);
++        _mcs251_interruptContractName (sym);
++        fprintf (of, "\t.globl __mx251_irq_slot_v1_%u\n__mx251_irq_slot_v1_%u = %s\n",
++                 slot, slot, sym->rname);
++        fprintf (of, "\t.globl __mx251_irq_def_v1_%u_%s\n__mx251_irq_def_v1_%u_%s = %s\n",
++                 slot, sym->rname, slot, sym->rname, sym->rname);
++        fprintf (of, "\t.globl __mx251_irq_reg_v1_%u_%s\n", slot, sym->rname);
++      }
++  if (hasMain)
++    for (unsigned slot = 0; slot < interruptVectorCount; ++slot)
++      if ((sym = interrupts[slot]))
++        {
++          _mcs251_interruptContractName (sym);
++          fprintf (of, "\t.globl __mx251_irq_reg_v1_%u_%s\n__mx251_irq_reg_v1_%u_%s = 1\n",
++                   slot, sym->rname, slot, sym->rname);
++          fprintf (of, "\t.globl __mx251_irq_def_v1_%u_%s\n", slot, sym->rname);
++        }
++}
++
+ static void
+ _mcs251_genExtraAreas(FILE *of, bool hasMain)
+ {
++  _mcs251_interruptContracts (of, hasMain);
+   tfprintf (of, "\t!area\n", HOME_NAME);
+   tfprintf (of, "\t!area\n", "GSINIT0 (CODE)");
+   tfprintf (of, "\t!area\n", "GSINIT1 (CODE)");

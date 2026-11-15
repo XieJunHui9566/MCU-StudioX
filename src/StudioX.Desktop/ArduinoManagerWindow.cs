@@ -144,8 +144,14 @@ public sealed class ArduinoManagerWindow : Window
                 output.Text = "正在处理…\n";
                 await action();
             }
-            catch (OperationCanceledException) { output.AppendText("\n操作已取消。\n"); }
-            catch (Exception error) { output.AppendText("\n" + error + "\n"); }
+            catch (OperationCanceledException)
+            {
+                output.AppendText("\n操作已取消。\n");
+            }
+            catch (Exception error)
+            {
+                output.AppendText("\n" + error + "\n");
+            }
             finally
             {
                 operation.Dispose();

@@ -21,7 +21,7 @@ internal static class EspressifBuildEnvironment
             }
         }
         environment["IDF_PATH"] = EspressifNativePath.For(tools.ResourceDirectory("idf"));
-        environment["IDF_TOOLS_PATH"] = EspressifNativePath.For(state);
+        environment["IDF_TOOLS_PATH"] = EspressifNativePath.ForProject(state);
         environment["IDF_PYTHON_ENV_PATH"] = EspressifNativePath.For(tools.ResourceDirectory("python-env"));
         environment["PYTHONHOME"] = environment["IDF_PYTHON_ENV_PATH"];
         environment["IDF_TARGET"] = settings.Target;

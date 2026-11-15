@@ -8,7 +8,10 @@ using StudioX.Foundation;
 
 Console.InputEncoding = new UTF8Encoding(false);
 Console.OutputEncoding = new UTF8Encoding(false);
-if (args is ["--serial-script"]) { return await StudioX.PluginHost.SerialScriptHost.RunAsync(); }
+if (args is ["--serial-script"])
+{
+    return await StudioX.PluginHost.SerialScriptHost.RunAsync();
+}
 if (args is ["--extension", var extensionManifestPath])
 {
     return await StudioX.PluginHost.ExtensionHost.RunAsync(extensionManifestPath);

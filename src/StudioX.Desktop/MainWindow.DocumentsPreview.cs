@@ -28,8 +28,12 @@ public partial class MainWindow
         async Task Layout()
         {
             UpdateLayout();
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Loaded);
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.Loaded);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.Render);
         }
         static void Check(bool condition, string message)
         {
@@ -105,7 +109,9 @@ public partial class MainWindow
                 await CloseWorkspaceTabAsync(header.Tab, _ => MessageBoxResult.Yes);
                 throw new InvalidOperationException("未拒绝外部修改冲突。");
             }
-            catch (StudioXException ex) when (ex.Code == "EDITOR_FILE_CHANGED") { }
+            catch (StudioXException ex) when (ex.Code == "EDITOR_FILE_CHANGED")
+            {
+            }
             Check(editorDocuments.Contains(header) && header.IsDirty, "保存失败后关闭了标签。");
             await CloseWorkspaceTabAsync(header.Tab, _ => MessageBoxResult.No);
             cmake.Buffer.Insert(0, "# save on close\n");
@@ -221,6 +227,10 @@ public partial class MainWindow
 
             await File.WriteAllTextAsync(Path.Combine(directory, "result.txt"), "PASS: multi-file buffers/undo/dirty labels, caret/selection/scroll, duplicate paths and basenames, active/background X close, cancel/discard/save/conflict, bulk-close cancellation, save-all, switch during save, keyboard cycling, utility tabs, overflow, dark/light rendering, and immediate AI create/edit refresh across tool rounds with dirty-buffer preservation. Only fixture copies were written.\n");
         }
-        finally { ClearEditorDocuments(); ShowDocument(WelcomeTab); }
+        finally
+        {
+            ClearEditorDocuments();
+            ShowDocument(WelcomeTab);
+        }
     }
 }

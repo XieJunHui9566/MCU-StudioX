@@ -63,6 +63,10 @@ public sealed partial class BuildService
             }
             return scope;
         }
-        catch { scope.Dispose(); throw; }
+        catch
+        {
+            scope.Dispose();
+            throw;
+        }
     }
 }

@@ -32,7 +32,13 @@ public partial class MainWindow
         SourceEditor.TextArea.PreviewKeyDown += Code_PreviewKeyDown;
         SourceEditor.TextArea.Caret.PositionChanged += (_, _) => CancelCodeRequest();
         SourceEditor.LostKeyboardFocus += (_, _) => CancelCodeRequest();
-        SourceEditor.IsVisibleChanged += (_, _) => { if (!SourceEditor.IsVisible) { CloseCodeAssistance(); } };
+        SourceEditor.IsVisibleChanged += (_, _) =>
+        {
+            if (!SourceEditor.IsVisible)
+            {
+                CloseCodeAssistance();
+            }
+        };
     }
     private void CancelCodeRequest()
     {
@@ -193,10 +199,10 @@ public partial class MainWindow
         assistCancellation = cancellation;
         var revision = assistRevision;
         var document = SourceEditor.Document;
-        var text = document.Text;
+        var version = document.Version;
+        var text = "";
         var offset = SourceEditor.CaretOffset;
         var path = activeDocument!.RelativePath;
-        var documents = CaptureCodeDocuments();
         assistTask = RequestAssistanceAsync();
         async Task RequestAssistanceAsync()
         {
@@ -204,10 +210,17 @@ public partial class MainWindow
             {
                 if (!manual)
                 {
-                    await Task.Delay(160, cancellation.Token);
+                    var memberAccess = offset > 0 && document.GetCharAt(offset - 1) is '.' or '>';
+                    await Task.Delay(memberAccess ? 0 : 60, cancellation.Token);
                 }
                 bool Current() => !cancellation.IsCancellationRequested && revision == assistRevision && (CanAssist || templateRequest && CanEditSource) &&
-                    SourceEditor.Document == document && SourceEditor.CaretOffset == offset && document.Text == text;
+                    SourceEditor.Document == document && SourceEditor.CaretOffset == offset && document.Version == version;
+                if (!Current())
+                {
+                    return;
+                }
+                // 停笔后才捕获缓冲区，连续输入取消的请求不再复制所有已打开文件。
+                text = document.Text;
                 IReadOnlyList<CodeTemplateEntry> templates = [];
                 if (templateRequest)
                 {
@@ -215,8 +228,18 @@ public partial class MainWindow
                     {
                         templates = await services.CodeTemplates.CompleteAsync(projectDirectory, CodeLanguage.ForFile(path), text, offset, cancellation.Token);
                     }
-                    catch (OperationCanceledException) when (cancellation.IsCancellationRequested) { throw; }
-                    catch (Exception ex) { if (manual && Current()) { Status.Text = "代码模板：" + ex.Message; } await RecordAnalysisFailureAsync("代码模板", ex); }
+                    catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
+                    {
+                        throw;
+                    }
+                    catch (Exception ex)
+                    {
+                        if (manual && Current())
+                        {
+                            Status.Text = "代码模板：" + ex.Message;
+                        }
+                        await RecordAnalysisFailureAsync("代码模板", ex);
+                    }
                     if (!Current())
                     {
                         return;
@@ -282,9 +305,10 @@ public partial class MainWindow
                     }
                     return;
                 }
+                var documents = CaptureCodeDocuments();
                 if (signature)
                 {
-                    var result = await services.Intelligence.SignatureAsync(path, text, offset, cancellation.Token, documents);
+                    var result = await Task.Run(() => services.Intelligence.SignatureAsync(path, text, offset, cancellation.Token, documents), cancellation.Token);
                     if (!Current())
                     {
                         return;
@@ -301,7 +325,7 @@ public partial class MainWindow
                 }
                 else
                 {
-                    var results = await services.Intelligence.CompleteAsync(path, text, offset, cancellation.Token, documents);
+                    var results = await Task.Run(() => services.Intelligence.CompleteAsync(path, text, offset, cancellation.Token, documents), cancellation.Token);
                     if (!Current())
                     {
                         return;
@@ -313,7 +337,9 @@ public partial class MainWindow
                     }
                 }
             }
-            catch (OperationCanceledException) when (cancellation.IsCancellationRequested) { }
+            catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
+            {
+            }
             catch (Exception ex)
             {
                 if (manual && revision == assistRevision)
@@ -383,7 +409,10 @@ public partial class MainWindow
                     start = CodePositions.ToOffset(snapshot, range.Start);
                     end = CodePositions.ToOffset(snapshot, range.End);
                 }
-                catch (ArgumentOutOfRangeException) { continue; }
+                catch (ArgumentOutOfRangeException)
+                {
+                    continue;
+                }
                 if (start > offset || end < offset || range.Start.Line != range.End.Line)
                 {
                     continue;
@@ -397,7 +426,8 @@ public partial class MainWindow
             {
                 continue;
             }
-            if (suggestion.InsertText.All(c => char.IsLetterOrDigit(c) || c == '_'))
+            if (suggestion.InsertText.All(c => char.IsLetterOrDigit(c) || c == '_') ||
+                suggestion.Snippet is not null && suggestion.FilterText.All(c => char.IsLetterOrDigit(c) || c == '_'))
             {
                 while (end < snapshot.Length && (char.IsLetterOrDigit(snapshot[end]) || snapshot[end] == '_'))
                 {
@@ -412,7 +442,18 @@ public partial class MainWindow
                         return;
                     }
                     var insertedRevision = assistRevision;
-                    _ = Dispatcher.BeginInvoke(() => { if (insertedRevision == assistRevision) { QueueAssistance(signature: !IsCMakeDocument); } }, DispatcherPriority.Input);
+                    _ = Dispatcher.BeginInvoke(() =>
+                    {
+                        if (insertedRevision == assistRevision)
+                        {
+                            QueueAssistance(signature: !IsCMakeDocument);
+                        }
+                    }, DispatcherPriority.Input);
+                }, ex =>
+                {
+                    Status.Text = "代码提示：" + ex.Message;
+                    services.Intelligence.RecordAnalysisLog("补全片段：" + ex);
+                    _ = FlushAnalysisLogQuietlyAsync();
                 }));
         }
         // 语言服务可能替换整个头文件路径；保留其原有范围，不让模板改变路径补全的行为。
@@ -437,7 +478,13 @@ public partial class MainWindow
             return;
         }
         completionWindow = window;
-        window.Closed += (_, _) => { if (completionWindow == window) { completionWindow = null; } };
+        window.Closed += (_, _) =>
+        {
+            if (completionWindow == window)
+            {
+                completionWindow = null;
+            }
+        };
         window.Show();
         if (renderingAssistancePreview)
         {
@@ -470,7 +517,13 @@ public partial class MainWindow
         var window = new InsightWindow(SourceEditor.TextArea) { Content = body, MaxWidth = 700 };
         SetAssistColors(window);
         signatureWindow = window;
-        window.Closed += (_, _) => { if (signatureWindow == window) { signatureWindow = null; } };
+        window.Closed += (_, _) =>
+        {
+            if (signatureWindow == window)
+            {
+                signatureWindow = null;
+            }
+        };
         window.Show();
         if (renderingAssistancePreview)
         {

@@ -73,7 +73,11 @@ public partial class MainWindow
                         () => SelectedBuildSettings.XdataSizeBytes == 1024, "请先保存后再调试"),
                     ("rom-size", () => StcCodeRomSizeBox.Text = "48000",
                         () => StcCodeRomSizeBox.Text == "48000", "请先保存后再调试"),
-                    ("profile", () => { StcCodeRomSizeBox.Text = "56000"; StcMon51Profile.IsChecked = true; },
+                    ("profile", () =>
+                    {
+StcCodeRomSizeBox.Text = "56000";
+StcMon51Profile.IsChecked = true;
+},
                         () => SelectedBuildSettings is { Mon51Profile: true, DebugInfo: CompilerDebugInfo.Standard }, "请先保存后再调试"),
                     ("invalid-rom", () => StcCodeRomSizeBox.Text = "invalid",
                         () => StcCodeRomSizeBox.Text == "invalid", "请输入正整数字节数"),
@@ -104,7 +108,9 @@ public partial class MainWindow
                         DebugStart_Click(DebugStartButton, new RoutedEventArgs());
                         await pendingOperation;
                         var launchStatus = Status.Text;
-                        await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ContextIdle);
+                        await Dispatcher.InvokeAsync(() =>
+                        {
+                        }, DispatcherPriority.ContextIdle);
                         UpdateLayout();
                         var currentSource = await File.ReadAllBytesAsync(sourcePath);
                         var currentBuild = await File.ReadAllBytesAsync(buildPath);

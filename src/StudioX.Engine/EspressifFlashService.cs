@@ -174,7 +174,10 @@ public sealed class EspressifFlashService(ToolsetCatalog catalog,
                 }
             }
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
 
     public static string[] CreateArguments(EspressifFlashLayout layout, EspressifFlashSettings settings,

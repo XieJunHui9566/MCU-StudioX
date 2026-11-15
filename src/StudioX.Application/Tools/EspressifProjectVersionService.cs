@@ -60,8 +60,15 @@ public sealed class EspressifProjectVersionService(PackRepository packs, Toolset
                         ? "新工程锁定此 SDK 和组件版本。安装其他版本不会改变本工程；构建前完整校验组件。"
                         : "此精确版本已禁用，请先在“开发环境组件管理”中启用。";
                 }
-                catch (OperationCanceledException) { throw; }
-                catch (Exception error) { state = EspressifVersionState.Invalid; message = error.ToString(); }
+                catch (OperationCanceledException)
+                {
+                    throw;
+                }
+                catch (Exception error)
+                {
+                    state = EspressifVersionState.Invalid;
+                    message = error.ToString();
+                }
             }
             choices.Add(new(sdk.SdkVersion, candidate.ToolsetVersion, pack, deviceId, templateId, state, message));
         }

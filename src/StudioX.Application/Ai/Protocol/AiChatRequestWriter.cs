@@ -66,13 +66,13 @@ internal static class AiChatRequestWriter
     private static void ValidateRequest(string model, bool officialDeepSeek, AiChatRequest conversation)
     {
         ArgumentNullException.ThrowIfNull(conversation);
-        if (conversation.Messages is not { Count: >= 1 and <= 128 })
+        if (conversation.Messages is not { Count: >= 1 and <= MaximumMessages })
         {
             throw new StudioXException("AI_MESSAGES", "AI 对话消息数量无效。");
         }
         if (conversation.Images is { Count: > 0 } images)
         {
-            if (conversation.Messages.Count == 128)
+            if (conversation.Messages.Count == MaximumMessages)
             {
                 throw new StudioXException("AI_REQUEST_SIZE", "添加 PDF 页面图像后，AI 消息数量超过单次请求容量。");
             }

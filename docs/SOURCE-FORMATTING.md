@@ -1,5 +1,9 @@
 # 第一方源码排版
 
+C# 与 XML 使用 `tools/Format-Source.ps1`。结构步骤显式展开单行 lambda、`catch`、`finally` 及控制块，再统一缩进；不依赖 SDK 对单行块的保留行为。写入前核对可执行 token、注释和 XML 数据，字面量及生成模板换行保持原值。`--self-test` 同时验证转换幂等性，防止每次排版继续产生差异。
+
+SDK 对嵌套回调的缩进可能需要第二次排版。入口仅继续处理上一遍发生变化的文件，最多三遍；没有稳定下来时停止并报错，不把仍会产生差异的结果当作完成。
+
 ## Python、PowerShell 与 C
 
 使用固定版本的 Black 24.10.0、PSScriptAnalyzer 1.24.0 和 clang-format 18.1.8。工具仅放在 `artifacts/validation/source-style-current`，可随验证产物清理；不安装到用户配置，不复制 MCU SDK 或编译链。下载地址、版本与 SHA-256 固定在 `tools/source-style-tools.json`，上游许可证随工具保留。
@@ -23,7 +27,7 @@
 
 - `tools` 根目录的 Python、PowerShell 维护脚本、`tools/acceptance` 来宾验收脚本，以及 STC 的离线检查与运行时保护脚本。来宾脚本保留 UTF-8 BOM，并用 Windows PowerShell 5.1 检查语法。
 - `examples/packs` 内本仓库维护的 C/H 模板。
-- 原生 LVGL PC 宿主、STC 启动器、第一方组件头文件和离线 C 验证夹具。`Resources/Ag32/Peripherals` 的厂商驱动及带占位符的 `StudioX_System` 生成模板由维护者单独核对。
+- STC 启动器、第一方组件头文件和离线 C 验证夹具。`Resources/Ag32/Peripherals` 的厂商驱动及带占位符的 `StudioX_System` 生成模板由维护者单独核对。
 
 默认四空格缩进，控制块展开显示；C 的花括号单独成行，头文件顺序保持不变。Python 和 C 的行长目标为 100，生成字符串和外部协议文案不为排版强行折断。中文注释说明时序、来源、失败原因与职责边界；许可证和上游声明保持原文。
 
@@ -35,4 +39,4 @@ C 按 `.clang-format` 排版后核对字符串与非注释 token 的原有顺序
 
 ## 验证材料
 
-`artifacts/validation/source-style-current` 保存每个文件的 AST/token 等价结果、工具来源和摘要。原生 LVGL 宿主与 STC 启动器另以已有的 MinGW GCC 做 `-Wall -Wextra -Werror -fsyntax-only` 检查；语法检查不连接设备，也不写固件。
+`artifacts/validation/source-style-current` 保存每个文件的 AST/token 等价结果、工具来源和摘要。历史原生 LVGL 宿主与 STC 启动器曾另以已有的 MinGW GCC 做 `-Wall -Wextra -Werror -fsyntax-only` 检查；语法检查不连接设备，也不写固件。

@@ -40,11 +40,22 @@ internal static class BoundaryChecks
                 await action();
                 throw new InvalidOperationException("Expected " + code);
             }
-            catch (StudioXException ex) when (ex.Code == code) { }
+            catch (StudioXException ex) when (ex.Code == code)
+            {
+            }
         }
-        await Reject("CUBEMX_LAYOUT", async () => { await services.CubeMx.InspectAsync(Path.Combine(root, "missing")); });
-        await Reject("CUBEMX_PATH", async () => { await services.CubeMx.InspectAsync(Path.Combine(root, "中文")); });
-        await Reject("CUBEMX_PRESET", async () => { await services.CubeMx.ImportAsync(root, "Nonexistent"); });
+        await Reject("CUBEMX_LAYOUT", async () =>
+        {
+            await services.CubeMx.InspectAsync(Path.Combine(root, "missing"));
+        });
+        await Reject("CUBEMX_PATH", async () =>
+        {
+            await services.CubeMx.InspectAsync(Path.Combine(root, "中文"));
+        });
+        await Reject("CUBEMX_PRESET", async () =>
+        {
+            await services.CubeMx.ImportAsync(root, "Nonexistent");
+        });
         using (var cancel = new CancellationTokenSource())
         {
             cancel.Cancel();
@@ -53,7 +64,9 @@ internal static class BoundaryChecks
                 await services.CubeMx.ImportAsync(root, token: cancel.Token);
                 throw new InvalidOperationException("Cancellation ignored.");
             }
-            catch (OperationCanceledException) { }
+            catch (OperationCanceledException)
+            {
+            }
         }
         if (File.Exists(Path.Combine(root, ".studiox/project.json")))
         {

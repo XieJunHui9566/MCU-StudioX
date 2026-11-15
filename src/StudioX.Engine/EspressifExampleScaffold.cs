@@ -32,7 +32,7 @@ internal static class EspressifExampleScaffold
         {
             throw new StudioXException("PROJECT_ESPRESSIF_EXAMPLE", "SDK 示例根 CMake 缺少唯一的原生入口或工程名称。");
         }
-        root = projectCall.Replace(root, "project(" + plan.Project.Name + ")");
+        root = projectCall.Replace(root, "project(" + ProjectName.BuildIdentifier(plan.Project.Name) + ")");
         // 官方 MINIMAL_BUILD、组件依赖和原始文件名全部保留；仅增加不可猜测的目标锁定。
         root = root.Replace(include, $"set(IDF_TARGET \"{plan.Project.Espressif!.Target}\" CACHE STRING \"StudioX locked SDK target\")\n\n" + include, StringComparison.Ordinal);
         await File.WriteAllTextAsync(rootFile, root, token);

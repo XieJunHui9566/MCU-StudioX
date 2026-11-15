@@ -54,7 +54,10 @@ internal static class WchCh592GuardChecks
             {
                 OpenOcdService.CreateArguments(project, invalid, invalid.Options, plan.Tools, plan.Image);
             }
-            catch (StudioXException ex) when (ex.Code == "DOWNLOAD_TARGET") { continue; }
+            catch (StudioXException ex) when (ex.Code == "DOWNLOAD_TARGET")
+            {
+                continue;
+            }
             throw new InvalidOperationException("CH592 download accepted a mismatched target, range or probe");
         }
     }

@@ -67,7 +67,9 @@ internal static class WchDownloadChecks
                     await downloads.SaveOptionsAsync(project, invalid);
                     throw new Exception("Expected rejection");
                 }
-                catch (StudioXException ex) when (ex.Code == "DOWNLOAD_OPTIONS") { }
+                catch (StudioXException ex) when (ex.Code == "DOWNLOAD_OPTIONS")
+                {
+                }
             }
             Console.WriteLine($"PASS {device.Id}: build, download preparation, SDI/page erase, chip/split/protection guard, settings; no hardware access");
         }

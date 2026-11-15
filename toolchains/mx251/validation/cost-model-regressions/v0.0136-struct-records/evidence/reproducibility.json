@@ -1,0 +1,21 @@
+{
+  "passed": true,
+  "outputs": [
+    {
+      "file": "sdcc.exe",
+      "sha256": "01a1957a5338e4b87d03548b674cf76d2581f9d72eb4a0f43d49d2893bed4147",
+      "identical": true
+    },
+    {
+      "file": "sdas251.exe",
+      "sha256": "f0476c17abc0cfe54c0c6260aa28867c7e636b40abf8ba760c8835995c6b9a0f",
+      "identical": true
+    },
+    {
+      "file": "sdld.exe",
+      "sha256": "58e393c922a5de712cbbe3dc2ba19b0267c3bcba156c95e35aaff2572762ce03",
+      "identical": true
+    }
+  ],
+  "finalInputLock": "host-reproduce/input-lock.json"
+}

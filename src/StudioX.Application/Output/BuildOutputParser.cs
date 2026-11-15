@@ -52,6 +52,12 @@ public static partial class BuildOutputParser
 
     public static OutputMeasurement? Measure(string text)
     {
+        text = text.Trim();
+        var mx251 = Mx251Stage().Match(text.Trim());
+        if (mx251.Success)
+        {
+            text = text[(mx251.Index + mx251.Length)..];
+        }
         var match = Count().Match(text.Trim());
         if (!match.Success)
         {
@@ -65,6 +71,14 @@ public static partial class BuildOutputParser
         match = Percentage().Match(text.Trim());
         return match.Success && int.TryParse(match.Groups["percent"].Value, out var percent) && percent is >= 0 and <= 100 ? new(percent, 100, true) : null;
     }
+
+    public static string? Stage(string text)
+    {
+        var match = Mx251Stage().Match(text.Trim());
+        return match.Success ? "MX251 · " + match.Groups["phase"].Value.Trim() : null;
+    }
+
+    [GeneratedRegex(@"^\[MX251\] (?<phase>[^\[\r\n]+?)(?=\s*\[\d+/\d+\]|$)\s*", RegexOptions.CultureInvariant)] private static partial Regex Mx251Stage();
 
     [GeneratedRegex(@"^\[\d{2}:\d{2}:\d{2}\]\s*", RegexOptions.CultureInvariant)] private static partial Regex HostTimestamp();
     [GeneratedRegex(@"(?:^|\s)(?:fatal\s+)?error(?:\s+[A-Z]*\d+)?\s*:|^FATAL:|^CMake Error(?:\s|:)|\b(?:\w*Exception|\w+Error):", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)] private static partial Regex Error();

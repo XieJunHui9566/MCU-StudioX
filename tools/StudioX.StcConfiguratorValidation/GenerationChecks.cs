@@ -82,8 +82,14 @@ internal static class GenerationChecks
             action = "generate"
         }));
         check(pure.GetProperty("files").GetArrayLength() == 10 && await File.ReadAllTextAsync(main) == beforeMain && !Directory.Exists(Path.Combine(project, "src/generated")), "direct plugin invocation returns ten pure files including Delay without writing project");
-        await Reject(async () => { await Generate(() => Task.FromResult(true)); }, "dirty editor buffers block code generation");
-        await Reject(async () => { await Generate(() => Task.FromResult(File.Exists(Path.Combine(project, "src/generated/mcuconfig/gpio.c")))); }, "interruption during multi-file write triggers rollback");
+        await Reject(async () =>
+        {
+            await Generate(() => Task.FromResult(true));
+        }, "dirty editor buffers block code generation");
+        await Reject(async () =>
+        {
+            await Generate(() => Task.FromResult(File.Exists(Path.Combine(project, "src/generated/mcuconfig/gpio.c"))));
+        }, "interruption during multi-file write triggers rollback");
         check(await File.ReadAllTextAsync(config) == beforeConfig && await File.ReadAllTextAsync(main) == beforeMain && await File.ReadAllTextAsync(cmake) == beforeCmake &&
             !Directory.GetFiles(project, "*.tmp-*", SearchOption.AllDirectories).Any() && !File.Exists(Path.Combine(project, ".studiox/mcu-generation.pending.json")) &&
             !Directory.GetFiles(Path.Combine(project, "include/generated/mcuconfig")).Any(), "rollback restores all original bytes, removes newly written files, pending marker and temporary files");
@@ -114,7 +120,10 @@ internal static class GenerationChecks
         await File.WriteAllTextAsync(main, partialMain, new UTF8Encoding(false));
         await restarted.RecoverAsync(project);
         await File.AppendAllTextAsync(config, " \n");
-        await Reject(async () => { await Generate(); }, "configuration disk hash changed after planning is never overwritten");
+        await Reject(async () =>
+        {
+            await Generate();
+        }, "configuration disk hash changed after planning is never overwritten");
         await File.WriteAllTextAsync(config, beforeConfig, new UTF8Encoding(false));
         check(await Generate() == 10, "application commits ten module source/header files including Delay");
         await services.McuCodeGeneration.RefreshAsync(workspace, entry.Id, "interact");
@@ -172,7 +181,10 @@ internal static class GenerationChecks
         {
             await File.WriteAllTextAsync(main, broken, new UTF8Encoding(false));
             var configSnapshot = await File.ReadAllBytesAsync(config);
-            await Reject(async () => { await Generate(); }, "user suffix does not bypass missing, duplicate or modified initialization checks");
+            await Reject(async () =>
+            {
+                await Generate();
+            }, "user suffix does not bypass missing, duplicate or modified initialization checks");
             check(await File.ReadAllTextAsync(main) == broken && (await File.ReadAllBytesAsync(config)).SequenceEqual(configSnapshot), "rejected initialization edit preserves main and generation receipt");
         }
         var crlfMain = afterMain.Replace("\n", "\r\n", StringComparison.Ordinal);
@@ -199,26 +211,44 @@ internal static class GenerationChecks
         var originalGpio = await File.ReadAllTextAsync(gpio);
         await File.AppendAllTextAsync(gpio, "/* handwritten edit */\n");
         check(!(await services.ProjectClocks.ReadAsync(project)).Ready, "modified generated output invalidates clock/build readiness");
-        await Reject(async () => { await Generate(); }, "regeneration never overwrites edited generated files");
+        await Reject(async () =>
+        {
+            await Generate();
+        }, "regeneration never overwrites edited generated files");
         check((await File.ReadAllTextAsync(gpio)).EndsWith("/* handwritten edit */\n", StringComparison.Ordinal) && await File.ReadAllTextAsync(main) == afterMain, "conflict leaves edited output and main unchanged");
         await File.WriteAllTextAsync(gpio, originalGpio, new UTF8Encoding(false));
         File.SetAttributes(timer, File.GetAttributes(timer) | FileAttributes.ReadOnly);
         try
         {
-            await Reject(async () => { await Generate(); }, "read-only generated file blocks entire operation before writes");
+            await Reject(async () =>
+            {
+                await Generate();
+            }, "read-only generated file blocks entire operation before writes");
         }
-        finally { File.SetAttributes(timer, File.GetAttributes(timer) & ~FileAttributes.ReadOnly); }
+        finally
+        {
+            File.SetAttributes(timer, File.GetAttributes(timer) & ~FileAttributes.ReadOnly);
+        }
         await File.WriteAllTextAsync(main, afterMain.Replace("sx_mcuconfig_init();", "if (1)"));
-        await Reject(async () => { await Generate(); }, "modified main integration block is preserved and reported as conflict");
+        await Reject(async () =>
+        {
+            await Generate();
+        }, "modified main integration block is preserved and reported as conflict");
         await File.WriteAllTextAsync(main, afterMain, new UTF8Encoding(false));
         var validCmake = await File.ReadAllTextAsync(cmake);
         await File.WriteAllTextAsync(cmake, "if(TRUE)\n" + validCmake + "\nendif()\n");
-        await Reject(async () => { await Generate(); }, "conditional CMake source registration is rejected before any writes");
+        await Reject(async () =>
+        {
+            await Generate();
+        }, "conditional CMake source registration is rejected before any writes");
         await File.WriteAllTextAsync(cmake, validCmake, new UTF8Encoding(false));
         using (var canceled = new CancellationTokenSource())
         {
             canceled.Cancel();
-            await Reject(async () => { await Generate(token: canceled.Token); }, "canceled generation cannot write files");
+            await Reject(async () =>
+            {
+                await Generate(token: canceled.Token);
+            }, "canceled generation cannot write files");
         }
         await workspace.InvokeAsync(entry.Id, "command", "interact", JsonSerializer.SerializeToElement(new
         {

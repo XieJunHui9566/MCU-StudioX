@@ -130,7 +130,10 @@ internal sealed class HardwareCheck
                 note = "记录短暂继续后的观测差异；不预设 Tick 必须推进，计数不可用或未变化也保留证据。"
             };
         }
-        catch (Exception ex) { errors.Add(ex); }
+        catch (Exception ex)
+        {
+            errors.Add(ex);
+        }
         finally
         {
             // 先保留本次会话路径；结束后的 Disconnected 状态本身不能证明芯片恢复运行。
@@ -159,7 +162,10 @@ internal sealed class HardwareCheck
                 {
                     await services.Debugger.StopAsync();
                 }
-                catch (Exception retry) { errors.Add(retry); }
+                catch (Exception retry)
+                {
+                    errors.Add(retry);
+                }
             }
             try
             {
@@ -187,7 +193,10 @@ internal sealed class HardwareCheck
                     errors.Add(new StudioXException("RTOS_RESTORE", "原始 OpenOCD 会话日志没有 STUDIOX_DETACHED_RUNNING 输出，不能确认目标已恢复运行。"));
                 }
             }
-            catch (Exception ex) { errors.Add(ex); }
+            catch (Exception ex)
+            {
+                errors.Add(ex);
+            }
             if (!stopConfirmed)
             {
                 errors.Add(new StudioXException("RTOS_CLEANUP", "未确认调试器已结束，不能把本次验收标记成功。"));

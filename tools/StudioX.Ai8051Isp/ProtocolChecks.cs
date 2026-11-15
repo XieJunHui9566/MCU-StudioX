@@ -108,7 +108,11 @@ internal static class ProtocolChecks
             {
                 action();
             }
-            catch (Exception e) when (e is InvalidDataException or ArgumentOutOfRangeException) { checks++; return; }
+            catch (Exception e) when (e is InvalidDataException or ArgumentOutOfRangeException)
+            {
+                checks++;
+                return;
+            }
             throw new Exception("Invalid input unexpectedly accepted.");
         }
         var valid = new byte[65];

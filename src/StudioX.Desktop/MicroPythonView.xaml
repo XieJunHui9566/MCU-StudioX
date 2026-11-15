@@ -204,12 +204,7 @@
                   ToolTip="运行板上已下载的指定脚本，持续显示输出；点击停止可中断。" />
               </WrapPanel>
               <TextBlock
-                Text="顶部下载按钮执行相同操作：保存编辑内容，再下载到所选串口；连接会中断板上程序。"
-                TextWrapping="Wrap"
-                Foreground="{DynamicResource Muted}" />
-              <TextBlock
-                Text="下载完成后点击「开始运行」；运行板上已下载版本，修改代码后请先重新下载。"
-                Margin="0,4,0,0"
+                Text="下载前保存文件；连接会中断板上程序。"
                 TextWrapping="Wrap"
                 Foreground="{DynamicResource Muted}" />
             </StackPanel>
@@ -219,7 +214,7 @@
             Margin="0,0,0,12">
             <TextBlock
               x:Name="OperationText"
-              Text="选择串口后，点击顶部下载或下方下载脚本。"
+              Text="请选择串口"
               TextWrapping="Wrap"
               Foreground="{DynamicResource Text}" />
             <ProgressBar
@@ -284,7 +279,7 @@
                   Click="Execute_Click"
                   HorizontalAlignment="Left" />
                 <TextBlock
-                  Text="表达式用 print 显示；每次最多 30 秒，可点击顶部停止。"
+                  Text="使用 print 输出结果；超时 30 秒。"
                   TextWrapping="Wrap"
                   Foreground="{DynamicResource Muted}"
                   Margin="0,6,0,0" />

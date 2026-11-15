@@ -96,7 +96,13 @@ public sealed class ProjectToolPreparationView : UserControl
             ("组件校验与修复", "repair"), ("取消操作", "cancel"), ("开发环境组件管理", "management"), ("帮助", "help") })
         {
             var button = new Button { Content = label, Margin = new(0, 0, 8, 8), Padding = new(10, 5, 10, 5) };
-            button.Click += async (_, _) => { if (Requested is { } run) { await run(action); } };
+            button.Click += async (_, _) =>
+            {
+                if (Requested is { } run)
+                {
+                    await run(action);
+                }
+            };
             var destination = action is "github-acquire" or "offline" or "repair" or "cancel" ? primary
                 : action is "trusted" or "load" or "browse" or "key" or "clear-key" or "download" ? advancedActions : actions;
             destination.Children.Add(button);
@@ -104,7 +110,7 @@ public sealed class ProjectToolPreparationView : UserControl
         }
         top.Children.Add(actions);
         var advanced = new StackPanel();
-        advanced.Children.Add(new TextBlock { Text = "自定义目录仅用于明确选择的高级获取操作。自动模式始终使用 IDE 内置的 GitHub 来源和公钥。", TextWrapping = TextWrapping.Wrap, Margin = new(0, 8, 0, 8) });
+        advanced.Children.Add(new TextBlock { Text = "自定义来源仅用于手动模式", TextWrapping = TextWrapping.Wrap, Margin = new(0, 8, 0, 8) });
         advanced.Children.Add(source);
         advanced.Children.Add(publisher);
         advanced.Children.Add(advancedActions);
@@ -134,7 +140,14 @@ public sealed class ProjectToolPreparationView : UserControl
         Grid.SetRow(detail, 3);
         body.Children.Add(detail);
         Content = body;
-        requirements.SelectionChanged += (_, _) => { UpdateActions(); if (Selected is { } item) { SelectionChanged?.Invoke(item); } };
+        requirements.SelectionChanged += (_, _) =>
+        {
+            UpdateActions();
+            if (Selected is { } item)
+            {
+                SelectionChanged?.Invoke(item);
+            }
+        };
         source.TextChanged += (_, _) => SetListing(null);
         githubMode.Checked += (_, _) => UpdateActions();
         manualMode.Checked += (_, _) => UpdateActions();
@@ -190,7 +203,7 @@ public sealed class ProjectToolPreparationView : UserControl
             button.IsEnabled = !busy;
         }
         var automatic = githubMode.IsChecked == true;
-        modeHint.Text = automatic ? "按工程锁定版本自动匹配、下载、校验并安装。无需填写地址；下载可取消并在下次继续。"
+        modeHint.Text = automatic ? "自动安装工程锁定的组件版本"
             : "选择相同 ID、版本与编译器的本地归档，可一次导入多个缺失组件。此模式不访问网络。";
         buttons["github-acquire"].Visibility = automatic ? Visibility.Visible : Visibility.Collapsed;
         buttons["offline"].Visibility = automatic ? Visibility.Collapsed : Visibility.Visible;

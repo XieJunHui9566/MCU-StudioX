@@ -22,7 +22,11 @@ internal sealed partial class PluginMcuConfigurationView
         var diagram = new PluginMcuClockDiagram(State.Clocks, State.Fields.Where(field => field.Page == "clock" && field.ClockNodeId.Length > 0).ToArray(), CreateFieldControl);
         var viewport = new PluginMcuDiagramViewport(diagram, clockZoom, clockPan, "时钟树交互画布", minimumZoom: 0.15) { Height = 520 };
         var zoomBar = new DockPanel { Margin = new Thickness(0, 8, 0, 0) };
-        zoomBar.Children.Add(Button("居中适配", () => { viewport.ResetView(); return Task.CompletedTask; }));
+        zoomBar.Children.Add(Button("居中适配", () =>
+        {
+            viewport.ResetView();
+            return Task.CompletedTask;
+        }));
         var zoomText = Text(clockZoom.ToString("P0"), 12);
         zoomText.Width = 44;
         DockPanel.SetDock(zoomText, Dock.Right);

@@ -59,7 +59,10 @@ using (var cancel = new CancellationTokenSource())
         await service.FindAsync(root, "main.py", source, 0, true, token: cancel.Token);
         throw new InvalidOperationException("Cancellation ignored");
     }
-    catch (OperationCanceledException) { Check(true, "导航可取消"); }
+    catch (OperationCanceledException)
+    {
+        Check(true, "导航可取消");
+    }
 }
 Directory.CreateDirectory(Path.Combine(root, "pkg"));
 await File.WriteAllTextAsync(Path.Combine(root, "pkg/__init__.py"), "");
@@ -87,12 +90,18 @@ try
     TextSearchService.Find("text", new("[", RegularExpression: true));
     throw new InvalidOperationException("Invalid regex accepted");
 }
-catch (ArgumentException) { Check(true, "非法正则返回错误而不产生替换计划"); }
+catch (ArgumentException)
+{
+    Check(true, "非法正则返回错误而不产生替换计划");
+}
 try
 {
     TextSearchService.Find("text", new("[", WholeWord: true, RegularExpression: true));
     throw new InvalidOperationException("Whole-word wrapper changed regex validity");
 }
-catch (ArgumentException) { Check(true, "全词模式不得把非法正则意外补全"); }
+catch (ArgumentException)
+{
+    Check(true, "全词模式不得把非法正则意外补全");
+}
 await File.WriteAllLinesAsync(Path.Combine(root, "result.txt"), results);
 Console.WriteLine("PASS " + results.Count);

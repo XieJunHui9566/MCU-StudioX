@@ -84,7 +84,9 @@ public sealed class PluginRuntimeClient : IAsyncDisposable
         Func<PluginRuntimeEvent, CancellationToken, Task> onEvent,
         CancellationToken cancellationToken = default)
     {
-        return StartAsync(hostExecutable, manifestPath, callHost, onEvent, _ => { }, cancellationToken);
+        return StartAsync(hostExecutable, manifestPath, callHost, onEvent, _ =>
+        {
+        }, cancellationToken);
     }
 
     /// <summary>外部贡献校验在激活及授予主机调用之前执行；任何失败终止并清理进程。</summary>

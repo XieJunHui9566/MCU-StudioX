@@ -18,7 +18,9 @@ public partial class MainWindow
         async Task Layout()
         {
             tool.UpdateLayout();
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ContextIdle);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.ContextIdle);
         }
         async Task Click(Button button, Func<bool> ready)
         {

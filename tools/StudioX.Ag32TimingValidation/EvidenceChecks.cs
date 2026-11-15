@@ -77,7 +77,10 @@ internal static class EvidenceChecks
             File.Delete(attemptFile);
             Check((await timing.ReadAsync(root)).State == Ag32TimingState.Passed, "Legacy success receipt is checked against real routing before showing green");
         }
-        finally { await File.WriteAllBytesAsync(attemptFile, attemptBytes); }
+        finally
+        {
+            await File.WriteAllBytesAsync(attemptFile, attemptBytes);
+        }
         await ReplaceAsync(".build/ag32-mapping/studiox-mapping-receipt.json", Encoding.UTF8.GetBytes("{}"),
             Ag32TimingState.Unverified, "Positive attempt cannot replace a valid download receipt");
         Check((await timing.ReadAsync(root)).State == Ag32TimingState.Passed, "Restored fixture shows the original verified result");
@@ -98,7 +101,10 @@ internal static class EvidenceChecks
                 await File.WriteAllBytesAsync(path, bytes);
                 Check((await timing.ReadAsync(root)).State == expected, description);
             }
-            finally { await File.WriteAllBytesAsync(path, original); }
+            finally
+            {
+                await File.WriteAllBytesAsync(path, original);
+            }
         }
     }
 

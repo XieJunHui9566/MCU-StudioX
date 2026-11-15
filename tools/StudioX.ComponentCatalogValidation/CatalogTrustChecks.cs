@@ -47,7 +47,10 @@ internal static class CatalogTrustChecks
             await service.ReadTrustedAsync();
             throw new InvalidOperationException("redirect accepted");
         }
-        catch (HttpRequestException) { check(true, "trusted catalog refuses redirect downgrade"); }
+        catch (HttpRequestException)
+        {
+            check(true, "trusted catalog refuses redirect downgrade");
+        }
         handler.Status = HttpStatusCode.OK;
         using var cancelled = new CancellationTokenSource();
         cancelled.Cancel();
@@ -56,7 +59,10 @@ internal static class CatalogTrustChecks
             await service.ReadTrustedAsync(cancelled.Token);
             throw new InvalidOperationException("cancellation ignored");
         }
-        catch (OperationCanceledException) { check(true, "trusted catalog read respects cancellation"); }
+        catch (OperationCanceledException)
+        {
+            check(true, "trusted catalog read respects cancellation");
+        }
         if (online)
         {
             using var remote = new DistributionService(Path.Combine(output, "online"));
@@ -73,7 +79,10 @@ internal static class CatalogTrustChecks
             await action();
             throw new InvalidOperationException(label);
         }
-        catch (StudioXException error) { check(error.Code == code, label); }
+        catch (StudioXException error)
+        {
+            check(error.Code == code, label);
+        }
     }
     private sealed class Handler(byte[] catalog, byte[] signature) : HttpMessageHandler
     {

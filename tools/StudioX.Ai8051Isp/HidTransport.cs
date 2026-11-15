@@ -41,7 +41,12 @@ public sealed class HidTransport : IHidReportTransport, IDisposable
         {
             stream = new FileStream(handle, FileAccess.ReadWrite, 65, true);
         }
-        catch { handle.Dispose(); lease.Dispose(); throw; }
+        catch
+        {
+            handle.Dispose();
+            lease.Dispose();
+            throw;
+        }
         this.trace = trace;
     }
 
@@ -154,16 +159,25 @@ public sealed class HidTransport : IHidReportTransport, IDisposable
                             throw new InvalidDataException("HID caps failed.");
                         }
                     }
-                    finally { Native.HidD_FreePreparsedData(preparsed); }
+                    finally
+                    {
+                        Native.HidD_FreePreparsedData(preparsed);
+                    }
                     var text = new byte[256];
                     Native.HidD_GetProductString(handle, text, text.Length);
                     devices.Add(new(path, attributes.VendorId, attributes.ProductId,
                         System.Text.Encoding.Unicode.GetString(text).TrimEnd('\0'), BitConverter.ToUInt16(caps, 4), BitConverter.ToUInt16(caps, 6)));
                 }
-                finally { Marshal.FreeHGlobal(detail); }
+                finally
+                {
+                    Marshal.FreeHGlobal(detail);
+                }
             }
         }
-        finally { Native.SetupDiDestroyDeviceInfoList(set); }
+        finally
+        {
+            Native.SetupDiDestroyDeviceInfoList(set);
+        }
         return devices;
     }
 

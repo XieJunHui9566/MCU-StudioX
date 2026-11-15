@@ -79,7 +79,10 @@ public sealed class Ag32TimingService(ToolsetCatalog tools)
                 clocks, report.WorstSetupSlackNs, report.WorstHoldSlackNs, report.Covered, report.Total,
                 report.SetupPath, report.HoldPath, ".build/ag32-mapping/logic_log.txt");
         }
-        catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+            throw;
+        }
         catch (Exception error) when (error is StudioXException or IOException or JsonException or UnauthorizedAccessException or DecoderFallbackException or OverflowException)
         {
             return new(Ag32TimingState.Unverified, "时序证据不可用 / Unverified：" + error.Message);

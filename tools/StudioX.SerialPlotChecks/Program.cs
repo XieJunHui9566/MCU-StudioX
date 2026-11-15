@@ -6,14 +6,25 @@ using StudioX.Application.SerialPlot;
 using StudioX.Devices;
 
 var checks = 0;
-void Check(bool condition, string label) { if (!condition) { throw new Exception(label); } checks++; }
+void Check(bool condition, string label)
+{
+    if (!condition)
+    {
+        throw new Exception(label);
+    }
+    checks++;
+}
 void Reject(Action action, string label)
 {
     try
     {
         action();
     }
-    catch (ArgumentException) { checks++; return; }
+    catch (ArgumentException)
+    {
+        checks++;
+        return;
+    }
     throw new Exception(label);
 }
 (List<double[]> Rows, List<string> Errors) Parse(PlotFormat format, string input, int chunk)
@@ -24,7 +35,17 @@ void Reject(Action action, string label)
     var bytes = Encoding.UTF8.GetBytes(input);
     for (var i = 0; i < bytes.Length; i += chunk)
     {
-        parser.Feed(bytes.AsSpan(i, Math.Min(chunk, bytes.Length - i)), (r, e) => { if (r is not null) { rows.Add(r); } else { errors.Add(e!); } });
+        parser.Feed(bytes.AsSpan(i, Math.Min(chunk, bytes.Length - i)), (r, e) =>
+        {
+            if (r is not null)
+            {
+                rows.Add(r);
+            }
+            else
+            {
+                errors.Add(e!);
+            }
+        });
     }
     return (rows, errors);
 }
@@ -56,7 +77,13 @@ Reject(() => new PlotFormat(",", "\\").Validate(), "trailing slash");
 Reject(() => new PlotFormat(SampleIntervalMs: double.NaN).Validate(), "invalid timebase");
 var recovering = new PlotStreamParser(new());
 var recovered = new List<double[]>();
-void Capture(double[]? row, string? _) { if (row is not null) { recovered.Add(row); } }
+void Capture(double[]? row, string? _)
+{
+    if (row is not null)
+    {
+        recovered.Add(row);
+    }
+}
 recovering.Feed("123,"u8, Capture);
 recovering.LoseSynchronization();
 recovering.Feed("456\n7,8\n"u8, Capture);
@@ -71,10 +98,16 @@ var gap = PlotGeometry.Reduce([new(0, [1], 0), new(.001, [2], 1), new(.002, [3],
 Check(gap.Select(p => p.Segment).Distinct().Count() == 3, "decimation keeps discontinuities in same bucket");
 var range = new PlotRange(10, 20).Zoom(.5, .25, .001, 3600000);
 Check(range == new PlotRange(11.25, 16.25), "zoom anchored at pointer");
-for (var i = 0; i < 1000; i++) { range = range.Zoom(.8, .5, .001, 3600000); }
+for (var i = 0; i < 1000; i++)
+{
+    range = range.Zoom(.8, .5, .001, 3600000);
+}
 Check(range.Span >= .000999, "zoom lower bound");
 var extreme = new PlotRange(1e99, 1e100);
-for (var i = 0; i < 1000; i++) { extreme = extreme.Zoom(.8, .5, 1e-12, 2e100); }
+for (var i = 0; i < 1000; i++)
+{
+    extreme = extreme.Zoom(.8, .5, 1e-12, 2e100);
+}
 Check(extreme.Span > 0 && double.IsFinite(extreme.Span), "extreme value zoom cannot collapse");
 
 var testDirectory = Path.Combine(Path.GetTempPath(), "StudioX-SerialPlotChecks-" + Guid.NewGuid().ToString("N"));
@@ -152,7 +185,10 @@ try
         {
             await service.ConnectAsync(new("COM123"), new());
         }
-        catch (Exception ex) when (ex.Message.Contains("占用", StringComparison.Ordinal)) { failed = true; }
+        catch (Exception ex) when (ex.Message.Contains("占用", StringComparison.Ordinal))
+        {
+            failed = true;
+        }
         Check(failed, "cannot steal another tool's connection");
     }
     await service.ConnectAsync(new("COM123"), new());
@@ -169,7 +205,10 @@ try
     Check(service.Snapshot().Simulated && service.Snapshot().Channels == 3, "demo clearly identified and parsed through same service");
     await service.DisconnectAsync();
 }
-finally { Directory.Delete(testDirectory, true); }
+finally
+{
+    Directory.Delete(testDirectory, true);
+}
 Console.WriteLine($"PASS: {checks} serial plot checks");
 
 sealed class FakeTransport : IDeviceTransport

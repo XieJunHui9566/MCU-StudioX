@@ -50,7 +50,7 @@ if ($DistributionProfile -eq 'full')
     {
         throw 'Prepare the bundled tool runtime first: tools/Prepare-ToolRuntime.ps1'
     }
-    foreach ($id in @('agm.agrv', 'agm.pin-mapping', 'agm.logic', 'arm.gnu', 'riscv.xpack', 'wch.riscv', 'stc.sdcc', 'pc.mingw'))
+    foreach ($id in @('agm.agrv', 'agm.pin-mapping', 'agm.logic', 'arm.gnu', 'riscv.xpack', 'wch.riscv', 'stc.sdcc'))
     {
         if (!(Test-Path -LiteralPath (Join-Path $toolsets "$id/1.0.0/toolset.json")))
         {
@@ -75,13 +75,6 @@ if ($DistributionProfile -eq 'full')
         {
             throw 'AGM user licenses must remain in private user data and cannot enter published runtime assets.'
         }
-    }
-    $pcManifest = Get-Content -LiteralPath (Join-Path $toolsets 'pc.mingw/1.0.0/toolset.json') -Raw | ConvertFrom-Json
-    if ($pcManifest.purpose -ne 'windows-native' -or $pcManifest.compilerId -ne 'mingw-gcc-13.1.0' -or
-        !(Test-Path -LiteralPath (Join-Path $toolsets ('pc.mingw/1.0.0/' + $pcManifest.executables.gcc)) -PathType Leaf) -or
-        !(Test-Path -LiteralPath (Join-Path $toolsets ('pc.mingw/1.0.0/' + $pcManifest.executables.gxx)) -PathType Leaf))
-    {
-        throw 'Prepare the bundled Windows PC C/C++ runtime first: tools/Prepare-PcToolRuntime.ps1'
     }
     foreach ($file in @('stc-isp-portable-3.14.7/python.exe', 'stc-isp-portable-3.14.7/Scripts/stcgal.exe', 'stc-isp-portable-3.14.7/provenance.json'))
     {

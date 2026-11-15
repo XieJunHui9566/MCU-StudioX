@@ -29,7 +29,7 @@ public static class MicroPythonProject
 
     public static async Task ValidateAsync(string directory, ProjectManifest project, CancellationToken token = default)
     {
-        PackValidator.Token(project.Name);
+        ProjectName.Validate(project.Name);
         PackValidator.Token(project.PackId);
         PackValidator.Version(project.PackVersion);
         if (project.Kind != ProjectKind.MicroPython || project.MicroPython is null || project.EntryFile != "main.py" ||

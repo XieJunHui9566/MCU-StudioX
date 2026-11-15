@@ -26,7 +26,10 @@ internal static class SupportReportChecks
             Environment.SetEnvironmentVariable("CFLAGS", "ENVIRONMENT_VALUE_MUST_STAY_PRIVATE");
             await services.SupportReports.ExportAsync(projectRoot, reportPath, "ORIGINAL_OPERATION_DIAGNOSTIC");
         }
-        finally { Environment.SetEnvironmentVariable("CFLAGS", previous); }
+        finally
+        {
+            Environment.SetEnvironmentVariable("CFLAGS", previous);
+        }
         var text = await File.ReadAllTextAsync(reportPath);
         using var json = JsonDocument.Parse(text);
         var report = json.RootElement;

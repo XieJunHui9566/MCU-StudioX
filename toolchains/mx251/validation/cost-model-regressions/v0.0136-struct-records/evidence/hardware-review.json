@@ -1,0 +1,188 @@
+{
+  "passed": true,
+  "meaning": "Raw evidence integrity and runtime correctness checked; performance decision is recorded separately.",
+  "reviewer": "root",
+  "independentAgentReview": false,
+  "cases": [
+    {
+      "name": "parent-mcu",
+      "downloadAck": true,
+      "executionReturned": true,
+      "flashReadback": false,
+      "rawSha256": "6d3948f2d7fa1985987b44f9eee764885119ba7fd8b857f56a8613ae7b5f1aab",
+      "rawFrames": 6555,
+      "uniqueRecords": 1179,
+      "target": {
+        "Model": "AI8051U-34K64",
+        "Bsl": "7.4.1U",
+        "Magic": "78B4",
+        "IrcHz": 39943200,
+        "RawStatus": "5002617C207E30012FFFBF3E3F26DBF7FC74550078B41183BD32561D201C190100010004A0260510800E89C2F94D5F7DA7B1F8FE0000"
+      },
+      "verified": {
+        "transmittedImageMatches": true,
+        "txFrames": 281,
+        "rxFrames": 93,
+        "acknowledgedBlocks": 88,
+        "imageBytes": 5619,
+        "paddedBytes": 5632,
+        "flashReadback": false
+      }
+    },
+    {
+      "name": "candidate-mcu",
+      "downloadAck": true,
+      "executionReturned": true,
+      "flashReadback": false,
+      "rawSha256": "9436221c24c7f19fa9fe2d7e811b90c662eb0271a0cf878ab75e32592d410c2f",
+      "rawFrames": 6556,
+      "uniqueRecords": 1179,
+      "target": {
+        "Model": "AI8051U-34K64",
+        "Bsl": "7.4.1U",
+        "Magic": "78B4",
+        "IrcHz": 39943200,
+        "RawStatus": "5002617C207E30012FFFBF3E3F26DEF7FC74550078B41183BD32561D201C190100010004A0260510800E89C2F94D5F7DA7B1F8FE0000"
+      },
+      "verified": {
+        "transmittedImageMatches": true,
+        "txFrames": 281,
+        "rxFrames": 93,
+        "acknowledgedBlocks": 88,
+        "imageBytes": 5585,
+        "paddedBytes": 5632,
+        "flashReadback": false
+      }
+    },
+    {
+      "name": "parent-protocol-OFF",
+      "downloadAck": true,
+      "executionReturned": true,
+      "flashReadback": false,
+      "rawSha256": "fb1378b2d91f11ea573845282c331d166d2e761209e08157e66dd6e2796fa8e1",
+      "rawFrames": 6553,
+      "uniqueRecords": 521,
+      "target": {
+        "Model": "AI8051U-34K64",
+        "Bsl": "7.4.1U",
+        "Magic": "78B4",
+        "IrcHz": 39943200,
+        "RawStatus": "5002617C207E30012FFFBF3E3F26D8F7FC74550078B41183BD32561D201C190100010004A0260510800E89C2F94D5F7DA7B1F8FE0000"
+      },
+      "verified": {
+        "transmittedImageMatches": true,
+        "txFrames": 1022,
+        "rxFrames": 340,
+        "acknowledgedBlocks": 335,
+        "imageBytes": 21435,
+        "paddedBytes": 21440,
+        "flashReadback": false
+      }
+    },
+    {
+      "name": "candidate-protocol-OFF",
+      "downloadAck": true,
+      "executionReturned": true,
+      "flashReadback": false,
+      "rawSha256": "d3af0dec41a84a0291a24679b8fa737595cacf09fea9681cb221ee6258da6329",
+      "rawFrames": 6554,
+      "uniqueRecords": 521,
+      "target": {
+        "Model": "AI8051U-34K64",
+        "Bsl": "7.4.1U",
+        "Magic": "78B4",
+        "IrcHz": 39943200,
+        "RawStatus": "5002617C207E30012FFFBF3E3F26DEF7FC74550078B41183BD32561D201C190100010004A0260510800E89C2F94D5F7DA7B1F8FE0000"
+      },
+      "verified": {
+        "transmittedImageMatches": true,
+        "txFrames": 1022,
+        "rxFrames": 340,
+        "acknowledgedBlocks": 335,
+        "imageBytes": 21431,
+        "paddedBytes": 21440,
+        "flashReadback": false
+      }
+    },
+    {
+      "name": "parent-protocol-ON",
+      "downloadAck": true,
+      "executionReturned": true,
+      "flashReadback": false,
+      "rawSha256": "12cbde8b26662baf756c0c34bd7d52609d9e042f6c257144153de1818e1db4c3",
+      "rawFrames": 6556,
+      "uniqueRecords": 521,
+      "target": {
+        "Model": "AI8051U-34K64",
+        "Bsl": "7.4.1U",
+        "Magic": "78B4",
+        "IrcHz": 39943200,
+        "RawStatus": "5002617C207E30012FFFBF3E3F26DEF7FC74550078B41183BD32561D201C190100010004A0260510800E89C2F94D5F7DA7B1F8FE0000"
+      },
+      "verified": {
+        "transmittedImageMatches": true,
+        "txFrames": 1022,
+        "rxFrames": 340,
+        "acknowledgedBlocks": 335,
+        "imageBytes": 21423,
+        "paddedBytes": 21440,
+        "flashReadback": false
+      }
+    },
+    {
+      "name": "candidate-protocol-ON",
+      "downloadAck": true,
+      "executionReturned": true,
+      "flashReadback": false,
+      "rawSha256": "db0fbc48d6baa717050996589c3be881b1479761acdd8ba4e17334714685a3de",
+      "rawFrames": 6556,
+      "uniqueRecords": 521,
+      "target": {
+        "Model": "AI8051U-34K64",
+        "Bsl": "7.4.1U",
+        "Magic": "78B4",
+        "IrcHz": 39943200,
+        "RawStatus": "5002617C207E30012FFFBF3E3F26E7F7FC74550078B41183BD32561D201C190100010004A0260510800E89C2F94D5F7DA7B1F8FE0000"
+      },
+      "verified": {
+        "transmittedImageMatches": true,
+        "txFrames": 1022,
+        "rxFrames": 340,
+        "acknowledgedBlocks": 335,
+        "imageBytes": 21419,
+        "paddedBytes": 21440,
+        "flashReadback": false
+      }
+    },
+    {
+      "name": "restored-math",
+      "downloadAck": true,
+      "executionReturned": true,
+      "flashReadback": false,
+      "rawSha256": "8c29ef8d410734b6b10a45c7d58eef1c8d88839747770c2e94a5ee8bab3ae70d",
+      "rawFrames": 5281,
+      "uniqueRecords": 804,
+      "target": {
+        "Model": "AI8051U-34K64",
+        "Bsl": "7.4.1U",
+        "Magic": "78B4",
+        "IrcHz": 39943200,
+        "RawStatus": "5002617C207E30012FFFBF3E3F26DBF7FC74550078B41183BD32561D201C190100010004A0260510800E89C2F94D5F7DA7B1F8FE0000"
+      },
+      "verified": {
+        "transmittedImageMatches": true,
+        "txFrames": 1736,
+        "rxFrames": 578,
+        "acknowledgedBlocks": 573,
+        "imageBytes": 36615,
+        "paddedBytes": 36672,
+        "flashReadback": false
+      }
+    }
+  ],
+  "leaseAvailable": true,
+  "originalMathRestored": true,
+  "originalMathPassed": 267,
+  "originalMathTotal": 268,
+  "historicalFailure": 132
+}

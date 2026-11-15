@@ -82,7 +82,11 @@ public partial class AppearanceWindow : Window
             ErrorText.Text = mediaError ?? "";
             return mediaError is null;
         }
-        catch (Exception ex) { ErrorText.Text = ex.Message; return false; }
+        catch (Exception ex)
+        {
+            ErrorText.Text = ex.Message;
+            return false;
+        }
     }
     public void ReportMediaError(string message)
     {
@@ -133,8 +137,14 @@ public partial class AppearanceWindow : Window
             }
             UpdateMediaLabel(Path.GetFileName(dialog.FileName));
         }
-        catch (Exception ex) { ErrorText.Text = ex.Message; }
-        finally { SetBusy(false); }
+        catch (Exception ex)
+        {
+            ErrorText.Text = ex.Message;
+        }
+        finally
+        {
+            SetBusy(false);
+        }
     }
     private void Clear_Click(object sender, RoutedEventArgs e)
     {
@@ -174,8 +184,14 @@ public partial class AppearanceWindow : Window
             ThemePicker.ItemsSource = themes;
             ThemePicker.SelectedItem = theme;
         }
-        catch (Exception ex) { ErrorText.Text = ex.Message; }
-        finally { SetBusy(false); }
+        catch (Exception ex)
+        {
+            ErrorText.Text = ex.Message;
+        }
+        finally
+        {
+            SetBusy(false);
+        }
     }
     private async Task<bool> CommitAsync()
     {
@@ -198,8 +214,15 @@ public partial class AppearanceWindow : Window
             ErrorText.Text = "已保存。";
             return true;
         }
-        catch (Exception ex) { ErrorText.Text = ex.Message; return false; }
-        finally { SetBusy(false); }
+        catch (Exception ex)
+        {
+            ErrorText.Text = ex.Message;
+            return false;
+        }
+        finally
+        {
+            SetBusy(false);
+        }
     }
     private void SetBusy(bool value)
     {
@@ -233,6 +256,9 @@ public partial class AppearanceWindow : Window
         {
             preview(committedTheme, committedBackground, committedEditor);
         }
-        catch (Exception ex) { ErrorText.Text = ex.Message; }
+        catch (Exception ex)
+        {
+            ErrorText.Text = ex.Message;
+        }
     }
 }

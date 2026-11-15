@@ -82,7 +82,7 @@
       CornerRadius="4"
       Margin="0,20,0,0">
       <TextBlock
-        Text="设置可组合使用。条件和日志只接受只读整数表达式；不执行赋值或函数调用。修改设置会重新计数。实机表达式由 GDB 按 C 类型求值。"
+        Text="条件和日志支持只读整数表达式；修改设置后重新计数。"
         TextWrapping="Wrap"
         Foreground="{DynamicResource Muted}"
         LineHeight="20" />

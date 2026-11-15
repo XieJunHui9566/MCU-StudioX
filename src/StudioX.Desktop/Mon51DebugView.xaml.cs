@@ -151,7 +151,10 @@ public partial class Mon51DebugView : UserControl
             }
             MemoryWriteRequested?.Invoke(choice.Space, address, bytes);
         }
-        catch (FormatException) { ShowError("请输入完整的十六进制字节，例如 01 02 FF。"); }
+        catch (FormatException)
+        {
+            ShowError("请输入完整的十六进制字节，例如 01 02 FF。");
+        }
     }
     private void Register_Click(object sender, RoutedEventArgs e)
     {

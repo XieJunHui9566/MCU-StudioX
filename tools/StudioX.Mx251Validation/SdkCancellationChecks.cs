@@ -52,7 +52,9 @@ internal static class SdkCancellationChecks
                     await build;
                     throw new InvalidOperationException("Expected cancellation");
                 }
-                catch (OperationCanceledException) when (observed) { }
+                catch (OperationCanceledException) when (observed)
+                {
+                }
                 foreach (var rel in new[] { ".build/firmware.hex", ".build/firmware.bin", ".build/studiox-build-receipt.json", ".build/mx251/latest/firmware.hex", ".build/mx251/latest/receipt.json" })
                 {
                     if (File.Exists(Path.Combine(project, rel)))
@@ -93,6 +95,9 @@ internal static class SdkCancellationChecks
             });
             throw;
         }
-        finally { await File.WriteAllTextAsync(cmake, original); }
+        finally
+        {
+            await File.WriteAllTextAsync(cmake, original);
+        }
     }
 }

@@ -70,7 +70,9 @@ public sealed class WorkspaceFileQuerySession(WorkspaceDiscoveryService discover
                     }
                 }
             }
-            catch (OperationCanceledException) when (!token.IsCancellationRequested && scan.Cancellation.IsCancellationRequested) { }
+            catch (OperationCanceledException) when (!token.IsCancellationRequested && scan.Cancellation.IsCancellationRequested)
+            {
+            }
             token.ThrowIfCancellationRequested();
         }
     }
@@ -100,8 +102,13 @@ public sealed class WorkspaceFileQuerySession(WorkspaceDiscoveryService discover
             {
                 await scan.Task.ConfigureAwait(false);
             }
-            catch (OperationCanceledException) when (scan.Cancellation.IsCancellationRequested) { }
-            catch (Exception error) { failures.Add(error); }
+            catch (OperationCanceledException) when (scan.Cancellation.IsCancellationRequested)
+            {
+            }
+            catch (Exception error)
+            {
+                failures.Add(error);
+            }
             finally
             {
                 scan.Cancellation.Dispose();

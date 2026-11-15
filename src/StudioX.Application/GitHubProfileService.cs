@@ -18,7 +18,9 @@ public sealed class GitHubProfileService : IDisposable
     private readonly bool ownsClient;
 
     public GitHubProfileService(GitHubAuthenticationService authentication, HttpClient? client = null)
-        : this((account, token) => authentication.GetTokenAsync(account, token), client) { }
+        : this((account, token) => authentication.GetTokenAsync(account, token), client)
+    {
+    }
 
     /// <summary>离线测试可注入假令牌及 HTTP；生产环境只使用内置 GCM。</summary>
     public GitHubProfileService(Func<string?, CancellationToken, Task<string>> tokenProvider, HttpClient? client = null)
@@ -117,10 +119,22 @@ public sealed class GitHubProfileService : IDisposable
             var bytes = await ReadBoundedAsync(response.Content, AvatarLimit, token);
             return SupportedImage(bytes, mime) ? bytes : null;
         }
-        catch (HttpRequestException) { return null; }
-        catch (IOException) { return null; }
-        catch (InvalidDataException) { return null; }
-        catch (TaskCanceledException) when (!token.IsCancellationRequested) { return null; }
+        catch (HttpRequestException)
+        {
+            return null;
+        }
+        catch (IOException)
+        {
+            return null;
+        }
+        catch (InvalidDataException)
+        {
+            return null;
+        }
+        catch (TaskCanceledException) when (!token.IsCancellationRequested)
+        {
+            return null;
+        }
     }
 
     private static bool TrustedAvatarUri(Uri uri) => uri.Scheme == Uri.UriSchemeHttps

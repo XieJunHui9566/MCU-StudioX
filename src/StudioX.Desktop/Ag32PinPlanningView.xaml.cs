@@ -224,7 +224,11 @@ public partial class Ag32PinPlanningView : UserControl
                 return;
             }
         }
-        catch (StudioXException error) { PlannerStatus.Text = error.Message; return; }
+        catch (StudioXException error)
+        {
+            PlannerStatus.Text = error.Message;
+            return;
+        }
         var anchor = PackageDiagram.Children.OfType<Button>().Single(button => Equals(button.Tag, number));
         var menuGeneration = pinMenuGeneration;
         var menu = new Ag32PinFunctionMenu(anchor, pin, snapshot.Functions, assignments, snapshot.CanEdit,
@@ -300,7 +304,10 @@ public partial class Ag32PinPlanningView : UserControl
             conflicts = [.. conflicts, .. analogPins.Where(pin => assignments.Any(item => item.PinNumber == pin.Pin))
                 .Select(pin => new Ag32PinPlanConflict("analog", $"PIN_{pin.Pin} 的数字分配与 {pin.Functions} 冲突。", [pin.Pin], [pin.Functions]))];
         }
-        catch (StudioXException error) { conflicts = [.. conflicts, new("analog", error.Message, [], [])]; }
+        catch (StudioXException error)
+        {
+            conflicts = [.. conflicts, new("analog", error.Message, [], [])];
+        }
         ConflictStatus.Text = conflicts.Length == 0 ? "" : (Snapshot.CanEdit
             ? "配置冲突，修正后才能保存：\n"
             : "VE 包含分配冲突，请先在文本编辑器修正并重新读取：\n")

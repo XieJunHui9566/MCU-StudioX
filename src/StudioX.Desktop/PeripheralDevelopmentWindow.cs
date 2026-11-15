@@ -126,7 +126,12 @@ internal sealed class PeripheralDevelopmentWindow : Window
         Grid.SetRow(footer, 2);
         root.Children.Add(footer);
         Content = root;
-        Closed += (_, _) => { ended = true; lifetime.Cancel(); lifetime.Dispose(); };
+        Closed += (_, _) =>
+        {
+            ended = true;
+            lifetime.Cancel();
+            lifetime.Dispose();
+        };
         Options.SelectedIndex = 0;
     }
 
@@ -172,7 +177,11 @@ internal sealed class PeripheralDevelopmentWindow : Window
                         "\n修改后\n" + AdditionResult.Files[1].After;
                     StatusLine.Text = AdditionResult.Summary + "\n代码和依赖一起加入未保存文件；保存全部后生效，可撤销上次外设添加。";
                 }
-                catch (Exception ex) { StatusLine.Text = ex.Message; StatusLine.ToolTip = ex.ToString(); }
+                catch (Exception ex)
+                {
+                    StatusLine.Text = ex.Message;
+                    StatusLine.ToolTip = ex.ToString();
+                }
             }
             else
             {
@@ -212,9 +221,28 @@ internal sealed class PeripheralDevelopmentWindow : Window
                 }
             }
         }
-        catch (OperationCanceledException) when (ended) { }
-        catch (Exception ex) { if (!ended) { StatusLine.Text = ex.Message; StatusLine.ToolTip = ex.ToString(); PreviewResult = null; Insert.IsEnabled = false; } log(ex.ToString()); }
-        finally { validating = false; if (!ended) { IsEnabled = true; } }
+        catch (OperationCanceledException) when (ended)
+        {
+        }
+        catch (Exception ex)
+        {
+            if (!ended)
+            {
+                StatusLine.Text = ex.Message;
+                StatusLine.ToolTip = ex.ToString();
+                PreviewResult = null;
+                Insert.IsEnabled = false;
+            }
+            log(ex.ToString());
+        }
+        finally
+        {
+            validating = false;
+            if (!ended)
+            {
+                IsEnabled = true;
+            }
+        }
     }
 
     private void Copy(string? text)
@@ -228,7 +256,11 @@ internal sealed class PeripheralDevelopmentWindow : Window
             Clipboard.SetText(text);
             StatusLine.Text = "已复制。";
         }
-        catch (Exception ex) { StatusLine.Text = "复制失败：" + ex.Message; log(ex.ToString()); }
+        catch (Exception ex)
+        {
+            StatusLine.Text = "复制失败：" + ex.Message;
+            log(ex.ToString());
+        }
     }
     private static TextBox TextView()
     {

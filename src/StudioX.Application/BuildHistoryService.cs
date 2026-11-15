@@ -30,7 +30,10 @@ public sealed class BuildHistoryService(string dataDirectory, BuildMemoryService
             await JsonStore.WriteAsync(Store(project), previous.Append(snapshot).TakeLast(20).ToArray(), token);
             return snapshot;
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
     public static IReadOnlyList<BuildComparisonRow> Compare(BuildHistorySnapshot before, BuildHistorySnapshot after)
     {

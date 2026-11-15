@@ -9,8 +9,6 @@ using StudioX.Foundation;
 /// <summary>直接写入选定固件；只预检器件与保护配置，不回读、备份或恢复原程序。</summary>
 public sealed class PicDownloadService(ToolsetCatalog catalog, PicBuildService builds, string dataDirectory)
 {
-    private static readonly string[] JavaEnvironment = [.. ToolsetEnvironment.AmbientVariables, "JAVA_HOME", "JRE_HOME", "JAVA_TOOL_OPTIONS", "JDK_JAVA_OPTIONS", "_JAVA_OPTIONS", "CLASSPATH"];
-
     public async Task<PicDownloadSettings> LoadSettingsAsync(string root, CancellationToken token = default)
     {
         await RequireProjectAsync(root, token);
@@ -239,8 +237,8 @@ public sealed class PicDownloadService(ToolsetCatalog catalog, PicBuildService b
     {
         var home = PathBoundary.Resolve(dataDirectory, "pic/ipe-user");
         Directory.CreateDirectory(home);
-        return await new ProcessRunner().RunAsync(new(tools.Tool("java"), ["-Duser.home=" + home, "-Duser.language=en", "-Duser.country=US", "-Dfile.encoding=UTF-8", "-jar", tools.Tool("ipecmd"), .. arguments],
-            home, TimeSpan.FromMinutes(10), ToolsetEnvironment.Create(tools), RemoveEnvironment: JavaEnvironment,
+        return await new ProcessRunner().RunAsync(new(tools.Tool("java"), [.. PicJavaRuntime.Options(home), "-jar", tools.Tool("ipecmd"), .. arguments],
+            home, TimeSpan.FromMinutes(10), ToolsetEnvironment.Create(tools), RemoveEnvironment: PicJavaRuntime.AmbientVariables,
             Output: output, StreamCompleteOutput: true, ContainProcessTree: true), token);
     }
 

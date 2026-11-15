@@ -143,8 +143,13 @@ public sealed class PluginDebugViewSession : IAsyncDisposable
                         JsonSerializer.SerializeToElement(input, JsonStore.Options), cancellation.Token).ConfigureAwait(false);
                     Complete(revision, panel, null);
                 }
-                catch (OperationCanceledException) when (cancellation.IsCancellationRequested) { }
-                catch (Exception error) { Complete(revision, null, error.ToString()); }
+                catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
+                {
+                }
+                catch (Exception error)
+                {
+                    Complete(revision, null, error.ToString());
+                }
                 finally
                 {
                     lock (gate)
@@ -157,7 +162,9 @@ public sealed class PluginDebugViewSession : IAsyncDisposable
                 }
             }
         }
-        catch (OperationCanceledException) when (lifetime.IsCancellationRequested) { }
+        catch (OperationCanceledException) when (lifetime.IsCancellationRequested)
+        {
+        }
     }
 
     private void Complete(long revision, StudioX.Extensions.Abstractions.PluginPanelDefinition? panel, string? diagnostic)

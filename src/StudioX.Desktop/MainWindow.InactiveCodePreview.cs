@@ -20,7 +20,9 @@ public partial class MainWindow
         async Task Layout()
         {
             UpdateLayout();
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ContextIdle);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.ContextIdle);
             UpdateLayout();
         }
         double Opacity(TextEditor editor, string marker)
@@ -79,6 +81,10 @@ public partial class MainWindow
                 "closing the project removes all inactive colors and language analysis state");
             await File.WriteAllTextAsync(Path.Combine(directory, "result.txt"), "PASS " + checks.Count + "; real WPF and clangd; no firmware build or hardware\n" + string.Join('\n', checks), token);
         }
-        finally { ClearEditorDocuments(); await services.Intelligence.StopAsync(); }
+        finally
+        {
+            ClearEditorDocuments();
+            await services.Intelligence.StopAsync();
+        }
     }
 }

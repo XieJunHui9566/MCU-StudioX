@@ -44,7 +44,10 @@ public sealed class AiConversationStore
                 .ConfigureAwait(false);
             return conversation;
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
 
     public async Task<IReadOnlyList<AiConversation>> ListAsync(string project, CancellationToken token = default)
@@ -71,7 +74,10 @@ public sealed class AiConversationStore
             return conversations.OrderByDescending(item => item.UpdatedUtc)
                 .ThenByDescending(item => item.CreatedUtc).ToArray();
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
 
     public async Task<AiConversation> LoadAsync(string project, string id, CancellationToken token = default)
@@ -83,7 +89,10 @@ public sealed class AiConversationStore
         {
             return await ReadAsync(path, token).ConfigureAwait(false);
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
 
     /// <summary>仅更新 CreateAsync 创建过的对话；返回带最新更新时间的持久化快照。</summary>
@@ -109,7 +118,10 @@ public sealed class AiConversationStore
             await WriteAsync(path, stored, overwrite: true, token).ConfigureAwait(false);
             return stored;
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
 
     /// <summary>仅在用户明确选择删除某条历史时调用；创建新对话不会自动清理旧记录。</summary>
@@ -127,7 +139,10 @@ public sealed class AiConversationStore
             RejectReparsePoint(path);
             File.Delete(path);
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
 
     private string ProjectDirectory(string project, bool create)
@@ -237,11 +252,26 @@ public sealed class AiConversationStore
             }
             File.Move(temporary, path, overwrite);
         }
-        finally { if (File.Exists(temporary)) { File.Delete(temporary); } }
+        finally
+        {
+            if (File.Exists(temporary))
+            {
+                File.Delete(temporary);
+            }
+        }
     }
 
     private static AiConversation CompactForStorage(AiConversation conversation)
     {
+        // 仅最新快照决定后续请求；旧快照是重复数据，不能随可见轮次数量成倍积累。
+        conversation = conversation with
+        {
+            Turns = conversation.Turns.Select((turn, index) => index == conversation.Turns.Count - 1
+                ? turn : turn with
+                {
+                    ReplaySnapshot = null
+                }).ToArray()
+        };
         if (JsonSerializer.SerializeToUtf8Bytes(conversation, JsonStore.Options).Length <= MaxConversationBytes)
         {
             return conversation;
@@ -269,6 +299,16 @@ public sealed class AiConversationStore
             {
                 return candidate;
             }
+        }
+
+        // 极端低可压缩数据或可见历史占满空间时退回历史回放；不覆盖已有可见问答。
+        var withoutSnapshot = conversation with
+        {
+            Turns = turns.Select(turn => turn with { ReplaySnapshot = null }).ToArray()
+        };
+        if (JsonSerializer.SerializeToUtf8Bytes(withoutSnapshot, JsonStore.Options).Length <= MaxConversationBytes)
+        {
+            return withoutSnapshot;
         }
 
         throw new StudioXException("AI_HISTORY_SIZE", "对话可见消息达到 512 KiB 上限，请新建对话继续；旧历史未被覆盖。");
@@ -314,8 +354,12 @@ public sealed class AiConversationStore
                 throw new StudioXException("AI_HISTORY_PATH", "工程或对话历史路径不能经过链接。");
             }
         }
-        catch (FileNotFoundException) { }
-        catch (DirectoryNotFoundException) { }
+        catch (FileNotFoundException)
+        {
+        }
+        catch (DirectoryNotFoundException)
+        {
+        }
     }
 
     private static void RejectReparseAncestors(string path)

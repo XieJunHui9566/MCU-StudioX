@@ -48,7 +48,10 @@ internal static class HardwareSettingsChecks
                 options.Validate("IAP15L2K61S2", true, StcDownloadMode.Serial);
                 throw new InvalidOperationException("invalid settings accepted");
             }
-            catch (StudioXException error) when (error.Code == "STC_HARDWARE_OPTION") { checks.Add("invalid value rejected"); }
+            catch (StudioXException error) when (error.Code == "STC_HARDWARE_OPTION")
+            {
+                checks.Add("invalid value rejected");
+            }
         }
         var usbDraft = new StcHardwareOptions { WatchdogPowerOn = "true" };
         usbDraft.Validate("STC8H8K64U", false, StcDownloadMode.NativeUsb);
@@ -61,13 +64,19 @@ internal static class HardwareSettingsChecks
             unsupportedUsbDraft.Validate("STC8H8K64U", true, StcDownloadMode.NativeUsb);
             throw new InvalidOperationException("unqualified USB bits accepted");
         }
-        catch (StudioXException error) when (error.Code == "STC_USB_OPTIONS") { checks.Add("USB keeps inactive drafts, refuses applying bits"); }
+        catch (StudioXException error) when (error.Code == "STC_USB_OPTIONS")
+        {
+            checks.Add("USB keeps inactive drafts, refuses applying bits");
+        }
         try
         {
             StcHardwareOptions.FromValues(new Dictionary<string, string> { ["unknown"] = "true" });
             throw new InvalidOperationException("unknown field accepted");
         }
-        catch (JsonException) { checks.Add("unknown JSON properties rejected"); }
+        catch (JsonException)
+        {
+            checks.Add("unknown JSON properties rejected");
+        }
         var path = Path.Combine(output, "project");
         Directory.CreateDirectory(path);
         var saved = new StcIspSettings(Port: "COM17", ModifyHardware: false, Hardware: usbDraft);

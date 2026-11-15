@@ -290,7 +290,11 @@ public sealed partial class StcConfigurationModel
             new("clockMHz", "时钟托管", "源时钟频率 / MHz（分频前）", "editableSelect",
                 SourceClockHz is { } sourceHz ? (sourceHz / 1000000m).ToString("0.######", CultureInfo.InvariantCulture) : "",
                 Template["definitions"]!["profileData"]!["ircFrequencyPresetsHz"]!.AsArray().Select(value =>
-                { var mhz = (value!.GetValue<int>() / 1000000m).ToString("0.######", CultureInfo.InvariantCulture); return Option(mhz, mhz + " MHz"); }).ToArray()),
+
+                {
+var mhz = (value!.GetValue<int>() / 1000000m).ToString("0.######", CultureInfo.InvariantCulture);
+return Option(mhz, mhz + " MHz");
+}).ToArray()),
             Select("systemDivider", "时钟托管", "系统时钟分频", SystemDivider.ToString(CultureInfo.InvariantCulture), new[] { 1, 2, 4, 8, 16, 32, 64, 128 }.Select(value => Option(value.ToString(CultureInfo.InvariantCulture), "/ " + value)).ToArray()),
             Select("reserve", "资源保护", "保留 Mon51 串口资源（保护选项）", Reserve ? "mon51" : "none", Option("mon51", "监控保护：不初始化串口和定时器"), Option("none", "普通应用，未使用监控"))
         };

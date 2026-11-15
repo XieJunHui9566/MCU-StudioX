@@ -10,9 +10,15 @@ using StudioX.Packages;
 using StudioX.StcConfigurator;
 using StudioX.StcConfiguratorValidation;
 
-if (args.Length is not (4 or 5) || args.Length == 5 && args[4] != "--peripherals") { throw new ArgumentException("Usage: <preview-pack> <plugin-archive> <runtime> <new-output> [--peripherals]"); }
+if (args.Length is not (4 or 5) || args.Length == 5 && args[4] != "--peripherals")
+{
+    throw new ArgumentException("Usage: <preview-pack> <plugin-archive> <runtime> <new-output> [--peripherals]");
+}
 var output = Path.GetFullPath(args[3]);
-if (Directory.Exists(output)) { throw new ArgumentException("Use a new output directory."); }
+if (Directory.Exists(output))
+{
+    throw new ArgumentException("Use a new output directory.");
+}
 Directory.CreateDirectory(output);
 var checks = new List<string>();
 void Check(bool passed, string name)
@@ -38,7 +44,11 @@ void Reject(Action operation, string name)
     throw new InvalidOperationException("Expected rejection: " + name);
 }
 JsonElement Json(object value) => JsonSerializer.SerializeToElement(value);
-string Canonical(string value) { using var doc = JsonDocument.Parse(value); return Encoding.UTF8.GetString(CanonicalJson.Encode(doc.RootElement)); }
+string Canonical(string value)
+{
+    using var doc = JsonDocument.Parse(value);
+    return Encoding.UTF8.GetString(CanonicalJson.Encode(doc.RootElement));
+}
 Check(Canonical("{\"z\":1,\"a\":-0.0,\"s\":\"中文\"}") == "{\"a\":0,\"s\":\"中文\",\"z\":1}", "JCS ordinal property order, Unicode and negative zero");
 foreach (var pair in new[] { ("1e-6", "0.000001"), ("1e-7", "1e-7"), ("1e20", "100000000000000000000"), ("1e21", "1e+21"), ("333333333.33333329", "333333333.3333333"), ("4.50", "4.5"), ("2e-3", "0.002") })
 {
@@ -189,7 +199,10 @@ var pluginRepository = new PluginRepository(Path.Combine(output, "plugin-reposit
 var installed = await pluginRepository.ImportAsync(Path.GetFullPath(args[1]));
 var pluginManifestPath = installed.ManifestPath;
 var hostExe = Path.Combine(AppContext.BaseDirectory, "runtime/plugin-host/StudioX.PluginHost.exe");
-if (!File.Exists(hostExe)) { hostExe = Path.Combine(Path.GetDirectoryName(Path.GetDirectoryName(Path.GetDirectoryName(AppContext.BaseDirectory)))!, "StudioX.PluginHost/release_win-x64/StudioX.PluginHost.exe"); }
+if (!File.Exists(hostExe))
+{
+    hostExe = Path.Combine(Path.GetDirectoryName(Path.GetDirectoryName(Path.GetDirectoryName(AppContext.BaseDirectory)))!, "StudioX.PluginHost/release_win-x64/StudioX.PluginHost.exe");
+}
 var activeDocument = await File.ReadAllTextAsync(path);
 var operations = new List<string>();
 await using (var client = await PluginRuntimeClient.StartAsync(hostExe, pluginManifestPath, async (tool, arguments, token) =>
@@ -236,7 +249,10 @@ await using (var client = await PluginRuntimeClient.StartAsync(hostExe, pluginMa
 var isolatedRuntime = Path.Combine(output, "isolated-runtime");
 var isolatedHost = Path.Combine(isolatedRuntime, "plugin-host");
 Directory.CreateDirectory(isolatedHost);
-foreach (var file in Directory.GetFiles(Path.GetDirectoryName(hostExe)!)) { File.Copy(file, Path.Combine(isolatedHost, Path.GetFileName(file))); }
+foreach (var file in Directory.GetFiles(Path.GetDirectoryName(hostExe)!))
+{
+    File.Copy(file, Path.Combine(isolatedHost, Path.GetFileName(file)));
+}
 await using (var services = new WorkbenchService(isolatedRuntime, Path.Combine(output, "host-data")))
 {
     var authorizer = new ConfigurationWriteAuthorizer();
@@ -266,7 +282,9 @@ await using (var services = new WorkbenchService(isolatedRuntime, Path.Combine(o
     {
         await Save();
     }
-    catch (StudioXException) { }
+    catch (StudioXException)
+    {
+    }
     Check(await File.ReadAllTextAsync(path) == before && authorizer.Requests == 0, "unsaved editor buffers block explicit configuration save");
     unsaved = false;
     await Save();
@@ -285,7 +303,9 @@ await using (var services = new WorkbenchService(isolatedRuntime, Path.Combine(o
     {
         await Save();
     }
-    catch (StudioXException) { }
+    catch (StudioXException)
+    {
+    }
     Check(await File.ReadAllTextAsync(path) == external, "external disk change is never overwritten by stale plugin state");
 }
 await ManagedClockChecks.RunAsync(pack, Path.GetFullPath(args[1]), runtime, isolatedRuntime, output, Check);

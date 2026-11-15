@@ -1,6 +1,5 @@
 namespace StudioX.Engine.Arduino;
 
-using System.Text.RegularExpressions;
 using StudioX.Foundation;
 using StudioX.Packages;
 
@@ -27,10 +26,7 @@ public sealed class ArduinoProjectService(Func<string, CancellationToken, Task>?
     private async Task<ProjectManifest> CreateCoreAsync(string name, string boardId, string destination,
         string? importDirectory, InstalledPack? pack, string? deviceId, CancellationToken token)
     {
-        if (!Regex.IsMatch(name, @"\A[A-Za-z_][A-Za-z0-9_]{0,62}\z"))
-        {
-            throw new StudioXException("ARDUINO_NAME", "工程名请使用字母或下划线开头的英文、数字和下划线，最多 63 字符。");
-        }
+        ProjectName.Validate(name);
         var board = ArduinoBoard.Require(boardId);
         var platform = board.Platform;
         var target = Path.GetFullPath(destination);

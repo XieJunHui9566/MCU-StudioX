@@ -70,7 +70,10 @@ internal static class PickerValidation
                         .WaitAsync(TimeSpan.FromSeconds(12));
                     throw new InvalidOperationException("Expected native cancellation.");
                 }
-                catch (OperationCanceledException) { checks.Add(folder ? "native folder dialog opens on STA and cancellation closes it" : "native Keil file dialog accepts file filters and cancellation closes it"); }
+                catch (OperationCanceledException)
+                {
+                    checks.Add(folder ? "native folder dialog opens on STA and cancellation closes it" : "native Keil file dialog accepts file filters and cancellation closes it");
+                }
             }
             if (Directory.Exists(Path.Combine(scratch, "%SystemDrive%")))
             {

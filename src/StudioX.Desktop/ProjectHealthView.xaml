@@ -62,7 +62,7 @@
     <TextBlock
       x:Name="StatusText"
       Grid.Row="1"
-      Text="检查不连接设备，不修改源码、SDK、sdkconfig 或工程锁定。"
+      Text="尚未检查"
       TextWrapping="Wrap"
       Margin="0,3,0,10" />
     <DataGrid

@@ -20,13 +20,19 @@ internal sealed record PicAnalysisProfile(string[] Flags, string HeaderRoot)
         {
             throw new StudioXException("PIC_ANALYSIS", "锁定的 DFP 缺少该型号的官方寄存器头。");
         }
+        var headers = tools.ResourceDirectory("pic-headers");
+        var standardHeaders = PathBoundary.Resolve(headers, "c99");
+        if (!Directory.Exists(standardHeaders))
+        {
+            throw new StudioXException("PIC_ANALYSIS", "锁定的 XC8 缺少 C99 标准头文件目录。");
+        }
         var directory = PathBoundary.Resolve(data, "language-cache/pic/" + tools.Fingerprint + "/" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(directory);
         // 仅分析器读取此包装入口；真实编译始终使用官方 xc.h 与 DFP，保留全部 XC8 约束。
         await File.WriteAllTextAsync(Path.Combine(directory, "xc.h"),
             "#pragma once\n#define _XC_H_ 1\n#define _LIB_BUILD 1\n#define __at(address)\n#define __bit unsigned char\n" +
             "#define __interrupt(...)\n#define CLRWDT() ((void)0)\n#define NOP() ((void)0)\n" +
-            "#define __delay_ms(value) ((void)0)\n#define __delay_us(value) ((void)0)\n" +
+            "#include <builtins.h>\n" +
             "#include \"" + header + "\"\n", token);
         string[] cmakeFlags = [];
         try
@@ -38,6 +44,8 @@ internal sealed record PicAnalysisProfile(string[] Flags, string HeaderRoot)
             // 尚未构建或源码已修改时不套用旧 CMake 宏；寄存器分析入口仍可使用。
         }
         return new(["--target=i386-unknown-elf", "-std=c99", "-ffreestanding", "-ferror-limit=0", "-Wno-unknown-pragmas",
-            "-I" + directory, "-isystem", tools.ResourceDirectory("pic-headers"), .. cmakeFlags], tools.RootDirectory);
+            // 24 位整数和非重入限定词只作通用 C 分析；官方声明、延时参数和缺失的 _XTAL_FREQ 继续检查。
+            "-D__int24=_BitInt(24)", "-D__uint24=unsigned _BitInt(24)", "-D__nonreentrant=",
+            "-nostdinc", "-I" + directory, "-isystem", standardHeaders, "-isystem", headers, .. cmakeFlags], tools.RootDirectory);
     }
 }

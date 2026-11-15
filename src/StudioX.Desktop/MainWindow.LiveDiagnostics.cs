@@ -57,8 +57,13 @@ public partial class MainWindow
                 {
                     await services.Intelligence.SynchronizeDiagnosticsAsync(path, text, documents, cancellation.Token);
                 }
-                catch (OperationCanceledException) when (cancellation.IsCancellationRequested) { }
-                catch (Exception ex) { await RecordAnalysisFailureAsync("实时诊断", ex); }
+                catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
+                {
+                }
+                catch (Exception ex)
+                {
+                    await RecordAnalysisFailureAsync("实时诊断", ex);
+                }
                 finally
                 {
                     if (liveDiagnosticCancellation == cancellation)
@@ -104,7 +109,9 @@ public partial class MainWindow
                         await FlushAnalysisLogQuietlyAsync();
                     }
                 }
-                catch (OperationCanceledException) when (cancellation.IsCancellationRequested) { }
+                catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
+                {
+                }
                 catch (Exception error)
                 {
                     if (projectDirectory == root && !closing)

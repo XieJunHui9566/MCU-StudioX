@@ -79,6 +79,9 @@ internal static class ComponentChecks
             await action();
             check(false, message);
         }
-        catch (StudioXException error) { check(error.Code == code, message + " (" + error.Code + ")"); }
+        catch (StudioXException error)
+        {
+            check(error.Code == code, message + " (" + error.Code + ")");
+        }
     }
 }

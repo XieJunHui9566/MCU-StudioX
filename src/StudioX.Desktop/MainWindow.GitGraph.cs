@@ -116,7 +116,10 @@ public partial class MainWindow
             }
             ApplyDownloadConfiguration(downloadConfiguration);
         }
-        catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             if (!IsCurrentProject())
@@ -149,8 +152,14 @@ public partial class MainWindow
             }
             QueueOutlineRefresh(clear: true);
         }
-        catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }
-        catch (Exception ex) { Log("Git 工作区更新后代码索引刷新失败：" + ex); }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            Log("Git 工作区更新后代码索引刷新失败：" + ex);
+        }
         if (!IsCurrentProject())
         {
             return;

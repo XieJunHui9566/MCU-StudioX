@@ -1,0 +1,607 @@
+{
+  "method": "Static emitted CFG expanded with unchanged C trip counts, not an ISA simulator or cycle measurement",
+  "rows": [
+    {
+      "count": 0,
+      "parent": {
+        "blocks": {
+          "entry-init": {
+            "instructions": 148,
+            "MOV": 71,
+            "wordSPX": 14
+          },
+          "update-loop": {
+            "instructions": 3,
+            "MOV": 0,
+            "wordSPX": 0
+          },
+          "fold-return": {
+            "instructions": 164,
+            "MOV": 83,
+            "wordSPX": 26
+          }
+        },
+        "instructions": 315,
+        "MOV": 154,
+        "PUSH": 0,
+        "POP": 0,
+        "wordSPX": 40,
+        "opcodes": {
+          "add": 41,
+          "mov": 154,
+          "cmp": 10,
+          "jle": 1,
+          "sub": 22,
+          "anl": 25,
+          "movz": 21,
+          "mul": 8,
+          "inc": 8,
+          "jnc": 8,
+          "ejmp": 7,
+          "jc": 1,
+          "xrl": 8,
+          "eret": 1
+        },
+        "loopTrips": [
+          4,
+          0,
+          4
+        ]
+      },
+      "candidate": {
+        "blocks": {
+          "entry-init": {
+            "instructions": 141,
+            "MOV": 64,
+            "wordSPX": 12
+          },
+          "update-loop": {
+            "instructions": 3,
+            "MOV": 0,
+            "wordSPX": 0
+          },
+          "fold-return": {
+            "instructions": 143,
+            "MOV": 62,
+            "wordSPX": 8
+          }
+        },
+        "instructions": 287,
+        "MOV": 126,
+        "PUSH": 0,
+        "POP": 0,
+        "wordSPX": 20,
+        "opcodes": {
+          "add": 41,
+          "mov": 126,
+          "cmp": 10,
+          "jle": 1,
+          "sub": 22,
+          "anl": 25,
+          "movz": 21,
+          "mul": 8,
+          "inc": 8,
+          "jnc": 8,
+          "ejmp": 7,
+          "jc": 1,
+          "xrl": 8,
+          "eret": 1
+        },
+        "loopTrips": [
+          4,
+          0,
+          4
+        ]
+      },
+      "delta": {
+        "instructions": -28,
+        "MOV": -28,
+        "PUSH": 0,
+        "POP": 0,
+        "wordSPX": -20
+      }
+    },
+    {
+      "count": 1,
+      "parent": {
+        "blocks": {
+          "entry-init": {
+            "instructions": 148,
+            "MOV": 71,
+            "wordSPX": 14
+          },
+          "update-loop": {
+            "instructions": 58,
+            "MOV": 24,
+            "wordSPX": 4
+          },
+          "fold-return": {
+            "instructions": 164,
+            "MOV": 83,
+            "wordSPX": 26
+          }
+        },
+        "instructions": 370,
+        "MOV": 178,
+        "PUSH": 0,
+        "POP": 0,
+        "wordSPX": 44,
+        "opcodes": {
+          "add": 48,
+          "mov": 178,
+          "cmp": 11,
+          "jle": 1,
+          "sub": 26,
+          "anl": 30,
+          "movz": 26,
+          "mul": 9,
+          "inc": 9,
+          "jnc": 8,
+          "ejmp": 8,
+          "jc": 2,
+          "xrl": 13,
+          "eret": 1
+        },
+        "loopTrips": [
+          4,
+          1,
+          4
+        ]
+      },
+      "candidate": {
+        "blocks": {
+          "entry-init": {
+            "instructions": 141,
+            "MOV": 64,
+            "wordSPX": 12
+          },
+          "update-loop": {
+            "instructions": 59,
+            "MOV": 25,
+            "wordSPX": 4
+          },
+          "fold-return": {
+            "instructions": 143,
+            "MOV": 62,
+            "wordSPX": 8
+          }
+        },
+        "instructions": 343,
+        "MOV": 151,
+        "PUSH": 0,
+        "POP": 0,
+        "wordSPX": 24,
+        "opcodes": {
+          "add": 48,
+          "mov": 151,
+          "cmp": 11,
+          "jle": 1,
+          "sub": 26,
+          "anl": 30,
+          "movz": 26,
+          "mul": 9,
+          "inc": 9,
+          "jnc": 8,
+          "ejmp": 8,
+          "jc": 2,
+          "xrl": 13,
+          "eret": 1
+        },
+        "loopTrips": [
+          4,
+          1,
+          4
+        ]
+      },
+      "delta": {
+        "instructions": -27,
+        "MOV": -27,
+        "PUSH": 0,
+        "POP": 0,
+        "wordSPX": -20
+      }
+    },
+    {
+      "count": 4,
+      "parent": {
+        "blocks": {
+          "entry-init": {
+            "instructions": 148,
+            "MOV": 71,
+            "wordSPX": 14
+          },
+          "update-loop": {
+            "instructions": 223,
+            "MOV": 96,
+            "wordSPX": 16
+          },
+          "fold-return": {
+            "instructions": 164,
+            "MOV": 83,
+            "wordSPX": 26
+          }
+        },
+        "instructions": 535,
+        "MOV": 250,
+        "PUSH": 0,
+        "POP": 0,
+        "wordSPX": 56,
+        "opcodes": {
+          "add": 69,
+          "mov": 250,
+          "cmp": 14,
+          "jle": 1,
+          "sub": 38,
+          "anl": 45,
+          "movz": 41,
+          "mul": 12,
+          "inc": 12,
+          "jnc": 8,
+          "ejmp": 11,
+          "jc": 5,
+          "xrl": 28,
+          "eret": 1
+        },
+        "loopTrips": [
+          4,
+          4,
+          4
+        ]
+      },
+      "candidate": {
+        "blocks": {
+          "entry-init": {
+            "instructions": 141,
+            "MOV": 64,
+            "wordSPX": 12
+          },
+          "update-loop": {
+            "instructions": 227,
+            "MOV": 100,
+            "wordSPX": 16
+          },
+          "fold-return": {
+            "instructions": 143,
+            "MOV": 62,
+            "wordSPX": 8
+          }
+        },
+        "instructions": 511,
+        "MOV": 226,
+        "PUSH": 0,
+        "POP": 0,
+        "wordSPX": 36,
+        "opcodes": {
+          "add": 69,
+          "mov": 226,
+          "cmp": 14,
+          "jle": 1,
+          "sub": 38,
+          "anl": 45,
+          "movz": 41,
+          "mul": 12,
+          "inc": 12,
+          "jnc": 8,
+          "ejmp": 11,
+          "jc": 5,
+          "xrl": 28,
+          "eret": 1
+        },
+        "loopTrips": [
+          4,
+          4,
+          4
+        ]
+      },
+      "delta": {
+        "instructions": -24,
+        "MOV": -24,
+        "PUSH": 0,
+        "POP": 0,
+        "wordSPX": -20
+      }
+    },
+    {
+      "count": 16,
+      "parent": {
+        "blocks": {
+          "entry-init": {
+            "instructions": 148,
+            "MOV": 71,
+            "wordSPX": 14
+          },
+          "update-loop": {
+            "instructions": 883,
+            "MOV": 384,
+            "wordSPX": 64
+          },
+          "fold-return": {
+            "instructions": 164,
+            "MOV": 83,
+            "wordSPX": 26
+          }
+        },
+        "instructions": 1195,
+        "MOV": 538,
+        "PUSH": 0,
+        "POP": 0,
+        "wordSPX": 104,
+        "opcodes": {
+          "add": 153,
+          "mov": 538,
+          "cmp": 26,
+          "jle": 1,
+          "sub": 86,
+          "anl": 105,
+          "movz": 101,
+          "mul": 24,
+          "inc": 24,
+          "jnc": 8,
+          "ejmp": 23,
+          "jc": 17,
+          "xrl": 88,
+          "eret": 1
+        },
+        "loopTrips": [
+          4,
+          16,
+          4
+        ]
+      },
+      "candidate": {
+        "blocks": {
+          "entry-init": {
+            "instructions": 141,
+            "MOV": 64,
+            "wordSPX": 12
+          },
+          "update-loop": {
+            "instructions": 899,
+            "MOV": 400,
+            "wordSPX": 64
+          },
+          "fold-return": {
+            "instructions": 143,
+            "MOV": 62,
+            "wordSPX": 8
+          }
+        },
+        "instructions": 1183,
+        "MOV": 526,
+        "PUSH": 0,
+        "POP": 0,
+        "wordSPX": 84,
+        "opcodes": {
+          "add": 153,
+          "mov": 526,
+          "cmp": 26,
+          "jle": 1,
+          "sub": 86,
+          "anl": 105,
+          "movz": 101,
+          "mul": 24,
+          "inc": 24,
+          "jnc": 8,
+          "ejmp": 23,
+          "jc": 17,
+          "xrl": 88,
+          "eret": 1
+        },
+        "loopTrips": [
+          4,
+          16,
+          4
+        ]
+      },
+      "delta": {
+        "instructions": -12,
+        "MOV": -12,
+        "PUSH": 0,
+        "POP": 0,
+        "wordSPX": -20
+      }
+    },
+    {
+      "count": 64,
+      "parent": {
+        "blocks": {
+          "entry-init": {
+            "instructions": 148,
+            "MOV": 71,
+            "wordSPX": 14
+          },
+          "update-loop": {
+            "instructions": 3523,
+            "MOV": 1536,
+            "wordSPX": 256
+          },
+          "fold-return": {
+            "instructions": 164,
+            "MOV": 83,
+            "wordSPX": 26
+          }
+        },
+        "instructions": 3835,
+        "MOV": 1690,
+        "PUSH": 0,
+        "POP": 0,
+        "wordSPX": 296,
+        "opcodes": {
+          "add": 489,
+          "mov": 1690,
+          "cmp": 74,
+          "jle": 1,
+          "sub": 278,
+          "anl": 345,
+          "movz": 341,
+          "mul": 72,
+          "inc": 72,
+          "jnc": 8,
+          "ejmp": 71,
+          "jc": 65,
+          "xrl": 328,
+          "eret": 1
+        },
+        "loopTrips": [
+          4,
+          64,
+          4
+        ]
+      },
+      "candidate": {
+        "blocks": {
+          "entry-init": {
+            "instructions": 141,
+            "MOV": 64,
+            "wordSPX": 12
+          },
+          "update-loop": {
+            "instructions": 3587,
+            "MOV": 1600,
+            "wordSPX": 256
+          },
+          "fold-return": {
+            "instructions": 143,
+            "MOV": 62,
+            "wordSPX": 8
+          }
+        },
+        "instructions": 3871,
+        "MOV": 1726,
+        "PUSH": 0,
+        "POP": 0,
+        "wordSPX": 276,
+        "opcodes": {
+          "add": 489,
+          "mov": 1726,
+          "cmp": 74,
+          "jle": 1,
+          "sub": 278,
+          "anl": 345,
+          "movz": 341,
+          "mul": 72,
+          "inc": 72,
+          "jnc": 8,
+          "ejmp": 71,
+          "jc": 65,
+          "xrl": 328,
+          "eret": 1
+        },
+        "loopTrips": [
+          4,
+          64,
+          4
+        ]
+      },
+      "delta": {
+        "instructions": 36,
+        "MOV": 36,
+        "PUSH": 0,
+        "POP": 0,
+        "wordSPX": -20
+      }
+    },
+    {
+      "count": 255,
+      "parent": {
+        "blocks": {
+          "entry-init": {
+            "instructions": 149,
+            "MOV": 71,
+            "wordSPX": 14
+          },
+          "update-loop": {
+            "instructions": 3523,
+            "MOV": 1536,
+            "wordSPX": 256
+          },
+          "fold-return": {
+            "instructions": 164,
+            "MOV": 83,
+            "wordSPX": 26
+          }
+        },
+        "instructions": 3836,
+        "MOV": 1690,
+        "PUSH": 0,
+        "POP": 0,
+        "wordSPX": 296,
+        "opcodes": {
+          "add": 489,
+          "mov": 1690,
+          "cmp": 74,
+          "jle": 1,
+          "sjmp": 1,
+          "sub": 278,
+          "anl": 345,
+          "movz": 341,
+          "mul": 72,
+          "inc": 72,
+          "jnc": 8,
+          "ejmp": 71,
+          "jc": 65,
+          "xrl": 328,
+          "eret": 1
+        },
+        "loopTrips": [
+          4,
+          64,
+          4
+        ]
+      },
+      "candidate": {
+        "blocks": {
+          "entry-init": {
+            "instructions": 142,
+            "MOV": 64,
+            "wordSPX": 12
+          },
+          "update-loop": {
+            "instructions": 3587,
+            "MOV": 1600,
+            "wordSPX": 256
+          },
+          "fold-return": {
+            "instructions": 143,
+            "MOV": 62,
+            "wordSPX": 8
+          }
+        },
+        "instructions": 3872,
+        "MOV": 1726,
+        "PUSH": 0,
+        "POP": 0,
+        "wordSPX": 276,
+        "opcodes": {
+          "add": 489,
+          "mov": 1726,
+          "cmp": 74,
+          "jle": 1,
+          "sjmp": 1,
+          "sub": 278,
+          "anl": 345,
+          "movz": 341,
+          "mul": 72,
+          "inc": 72,
+          "jnc": 8,
+          "ejmp": 71,
+          "jc": 65,
+          "xrl": 328,
+          "eret": 1
+        },
+        "loopTrips": [
+          4,
+          64,
+          4
+        ]
+      },
+      "delta": {
+        "instructions": 36,
+        "MOV": 36,
+        "PUSH": 0,
+        "POP": 0,
+        "wordSPX": -20
+      }
+    }
+  ]
+}

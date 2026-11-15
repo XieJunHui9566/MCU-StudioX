@@ -134,7 +134,10 @@ internal static class NativeUsbOptionChecks
         {
             await action();
         }
-        catch (StudioXException error) when (error.Code == code) { return; }
+        catch (StudioXException error) when (error.Code == code)
+        {
+            return;
+        }
         throw new InvalidOperationException("Expected USB rejection: " + code);
     }
 

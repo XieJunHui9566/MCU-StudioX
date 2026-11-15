@@ -23,7 +23,10 @@ public sealed partial class ToolManagementService(ToolsetCatalog catalog, PackRe
             var known = await RegisteredAsync(token);
             await JsonStore.WriteAsync(RegistryPath, known.Append(root).Distinct(StringComparer.OrdinalIgnoreCase).ToArray(), token);
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
     public async Task ForgetProjectAsync(string project, CancellationToken token = default)
     {
@@ -32,7 +35,10 @@ public sealed partial class ToolManagementService(ToolsetCatalog catalog, PackRe
         {
             await JsonStore.WriteAsync(RegistryPath, (await RegisteredAsync(token)).Where(path => !path.Equals(project, StringComparison.OrdinalIgnoreCase)).ToArray(), token);
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
     public Task<IReadOnlyList<string>> RegisteredAsync(CancellationToken token = default) => File.Exists(RegistryPath)
         ? ReadRegistryAsync(token) : Task.FromResult<IReadOnlyList<string>>([]);
@@ -92,8 +98,14 @@ public sealed partial class ToolManagementService(ToolsetCatalog catalog, PackRe
                     }
                     versions.Add(entry);
                 }
-                catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }
-                catch (Exception error) { diagnostics.Add(error.ToString()); }
+                catch (OperationCanceledException) when (token.IsCancellationRequested)
+                {
+                    throw;
+                }
+                catch (Exception error)
+                {
+                    diagnostics.Add(error.ToString());
+                }
             }
         }
         var latest = versions.Where(version => version.Installed && System.Version.TryParse(version.Version, out _)).GroupBy(version => version.Id)
@@ -138,7 +150,10 @@ public sealed partial class ToolManagementService(ToolsetCatalog catalog, PackRe
                 ToolUsageLease.IsBusy(root), true, Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant(), tree.Stamp,
                 references.GetValueOrDefault(id + "/" + version)?.Distinct().ToArray() ?? [], Components(manifest), "未执行哈希校验；空间含目录内全部文件。");
         }
-        catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+            throw;
+        }
         catch (Exception error)
         {
             diagnostics.Add(error.ToString());

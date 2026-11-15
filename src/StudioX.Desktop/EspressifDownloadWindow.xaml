@@ -150,7 +150,7 @@
     <ComboBox
       x:Name="BaudRatePicker" />
     <TextBlock
-      Text="设置按工程保存。不会自动选择端口；串口采集占用此端口时需要先断开。点击下载后使用 SDK 实际生成的多映像布局，在确认页展示每个 BIN 的地址与 SHA-256。"
+      Text="请选择空闲串口；下载前可核对镜像和写入地址。"
       TextWrapping="Wrap"
       Foreground="{DynamicResource Muted}"
       Margin="0,18,0,0" />

@@ -41,7 +41,10 @@ public sealed class McuFavoritesService(string dataDirectory)
             await JsonStore.WriteAsync(path, new FavoritesDocument(1,
                 existing.Where(item => !SameIdentity(item, favorite)).Append(favorite).ToArray()), token);
         }
-        finally { mutationGate.Release(); }
+        finally
+        {
+            mutationGate.Release();
+        }
     }
 
     public async Task RemoveAsync(McuFavorite favorite, CancellationToken token = default)
@@ -53,7 +56,10 @@ public sealed class McuFavoritesService(string dataDirectory)
             await JsonStore.WriteAsync(path, new FavoritesDocument(1,
                 existing.Where(item => !SameIdentity(item, favorite)).ToArray()), token);
         }
-        finally { mutationGate.Release(); }
+        finally
+        {
+            mutationGate.Release();
+        }
     }
 
     public async Task<IReadOnlyList<McuFavoriteOption>> OptionsAsync(IReadOnlyList<InstalledPack> catalog, CancellationToken token = default)

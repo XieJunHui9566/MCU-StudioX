@@ -64,7 +64,10 @@ internal static class IntegrationChecks
         {
             await builder.BuildAsync(fixture);
         }
-        catch (StudioXException error) when (error.Code == "MX251_SOURCE_CHANGED") { rejected = true; }
+        catch (StudioXException error) when (error.Code == "MX251_SOURCE_CHANGED")
+        {
+            rejected = true;
+        }
         finally
         {
             await mutation;

@@ -24,7 +24,15 @@ public partial class MainWindow
         {
             return;
         }
-        var dialog = new AppearanceWindow(services, currentTheme, backgroundSettings, editorSettings, (theme, background, editor) => { ApplyTheme(theme); ApplyBackground(background); ApplyEditorSettings(editor); }) { Owner = this };
+        var dialog = new AppearanceWindow(services, currentTheme, backgroundSettings, editorSettings, (theme, background, editor) =>
+        {
+            ApplyTheme(theme);
+            ApplyBackground(background);
+            ApplyEditorSettings(editor);
+        })
+        {
+            Owner = this
+        };
         mediaFailure = dialog.ReportMediaError;
         dialog.Activated += (_, _) => UpdateVideoPlayback();
         dialog.Deactivated += (_, _) => UpdateVideoPlayback();
@@ -32,7 +40,10 @@ public partial class MainWindow
         {
             dialog.ShowDialog();
         }
-        finally { mediaFailure = null; }
+        finally
+        {
+            mediaFailure = null;
+        }
         UpdateVideoPlayback();
     }
     public void ApplyBackground(BackgroundSettings settings)

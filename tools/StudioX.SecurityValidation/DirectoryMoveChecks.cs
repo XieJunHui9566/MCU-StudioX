@@ -46,7 +46,9 @@ internal static class DirectoryMoveChecks
                 await DirectoryMoves.MoveAsync(source, destination).WaitAsync(TimeSpan.FromSeconds(5));
                 throw new InvalidOperationException("persistent sharing conflict was ignored");
             }
-            catch (IOException error) when ((uint)error.HResult is 0x80070020 or 0x80070021) { }
+            catch (IOException error) when ((uint)error.HResult is 0x80070020 or 0x80070021)
+            {
+            }
             Require(Directory.Exists(source) && !Directory.Exists(destination), "failed move must preserve source");
             using var cancelled = new CancellationTokenSource();
             move = DirectoryMoves.MoveAsync(source, destination, cancelled.Token);
@@ -56,7 +58,9 @@ internal static class DirectoryMoveChecks
                 await move;
                 throw new InvalidOperationException("cancelled sharing retry completed");
             }
-            catch (OperationCanceledException) when (cancelled.IsCancellationRequested) { }
+            catch (OperationCanceledException) when (cancelled.IsCancellationRequested)
+            {
+            }
             Require(Directory.Exists(source) && !Directory.Exists(destination), "cancellation must preserve source");
         }
         Require(await File.ReadAllTextAsync(file) == "retain me", "failed and cancelled moves must retain content");

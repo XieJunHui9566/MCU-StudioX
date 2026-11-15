@@ -49,7 +49,11 @@ public partial class MainWindow
                 {
                     component = await services.PeripheralDevelopment.ReadComponentAsync(context, target.Session.Source.RelativePath, CaptureWorkspaceBuffers());
                 }
-                catch (Exception ex) { issue = ex.Message; Log(ex.ToString()); }
+                catch (Exception ex)
+                {
+                    issue = ex.Message;
+                    Log(ex.ToString());
+                }
             }
             if (closing || project != projectDirectory)
             {
@@ -65,7 +69,11 @@ public partial class MainWindow
                 Status.Text = "外设辅助已关闭。";
             }
         }
-        catch (Exception ex) { Status.Text = "外设开发辅助：" + ex.Message; Log(ex.ToString()); }
+        catch (Exception ex)
+        {
+            Status.Text = "外设开发辅助：" + ex.Message;
+            Log(ex.ToString());
+        }
     }
 
     private async Task ApplyPeripheralAdditionAsync(TemplateInsertionTarget target, PeripheralProjectAddition addition, CancellationToken token)
@@ -169,7 +177,10 @@ public partial class MainWindow
                         }
                     }
                 }
-                catch (Exception rollbackError) { errors.Add(rollbackError); }
+                catch (Exception rollbackError)
+                {
+                    errors.Add(rollbackError);
+                }
             }
             throw new AggregateException("外设修改未完成，请核对源码与组件配置；原始应用/回滚诊断已保留。", errors);
         }

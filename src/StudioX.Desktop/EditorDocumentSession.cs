@@ -13,6 +13,7 @@ internal sealed class EditorDocumentSession(SourceDocument source)
         get; set;
     }
     public TextDocument Buffer { get; } = new(source.Text);
+    public List<(TextAnchor Start, TextAnchor End)> CollapsedFoldings { get; } = [];
     public TabItem Tab { get; } = new() { Padding = new(10, 4, 8, 4), Height = 34 };
     public TextBlock Label { get; } = new() { VerticalAlignment = System.Windows.VerticalAlignment.Center, MaxWidth = 240, TextTrimming = System.Windows.TextTrimming.CharacterEllipsis };
     public EventHandler? Changed

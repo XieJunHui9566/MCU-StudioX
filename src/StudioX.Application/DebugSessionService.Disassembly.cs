@@ -31,7 +31,10 @@ public sealed partial class DebugSessionService
             var instructions = await adapter!.ReadDisassemblyAsync(start, byteCount, token);
             return new(start, end, start, pc, instructions);
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
 
     private static uint ValidateDisassemblyRange(uint address, int byteCount)

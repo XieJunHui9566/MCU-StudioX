@@ -9,6 +9,12 @@ using StudioX.Devices;
 using StudioX.Engine;
 using StudioX.Foundation;
 
+if (args is ["--agent-workload", var agentWorkloadOutput])
+{
+    await AgentExternalWorkloadChecks.RunStandaloneAsync(Path.GetFullPath(agentWorkloadOutput));
+    return;
+}
+
 if (args is ["--workspace-sources", var workspaceSourceOutput])
 {
     await WorkspaceSourceChecks.RunAsync(Path.GetFullPath(workspaceSourceOutput));
@@ -79,7 +85,10 @@ bool RejectsSkillPath(Action action)
         action();
         return false;
     }
-    catch (StudioXException) { return true; }
+    catch (StudioXException)
+    {
+        return true;
+    }
 }
 
 await McpOperationChecks.RunAsync(Check);

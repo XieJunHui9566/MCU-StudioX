@@ -22,7 +22,8 @@ public partial class MainWindow
             checks.Add(label);
         }
         var catalog = services.Help;
-        Check(catalog.Articles.Count >= 41 && catalog.Categories.Count == 6 && catalog.Articles.Any(a => a.Id == "code-templates"), "complete offline topics in six categories include plugin API reference");
+        Check(catalog.Articles.Count >= 40 && catalog.Categories.Count == 6 && catalog.Articles.Any(a => a.Id == "code-templates"), "complete offline topics in six categories include plugin API reference");
+        Check(catalog.Articles.All(article => article.Id != "lvgl"), "retired LVGL preview help is absent");
         foreach (var article in catalog.Articles)
         {
             var minimumSections = article.Id is "plugin-api" or "plugin-api-development" ? 4 : 2;
@@ -114,7 +115,10 @@ public partial class MainWindow
             Check(helpCenter.ArticleBody.ActualWidth > 350 && helpCenter.SelectedArticle?.Id == "plugin-api-development", "custom accent and larger font preserve compact API navigation");
             Render(this, Path.Combine(directory, "plugin-api-development-custom.png"));
         }
-        finally { System.Windows.Application.Current.Resources["WorkbenchFontSize"] = originalSize; }
+        finally
+        {
+            System.Windows.Application.Current.Resources["WorkbenchFontSize"] = originalSize;
+        }
         await File.WriteAllTextAsync(Path.Combine(directory, "help-result.json"), JsonSerializer.Serialize(new
         {
             status = "passed",
@@ -125,7 +129,9 @@ public partial class MainWindow
         async Task SettleAsync()
         {
             UpdateLayout();
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ContextIdle);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.ContextIdle);
             UpdateLayout();
         }
     }

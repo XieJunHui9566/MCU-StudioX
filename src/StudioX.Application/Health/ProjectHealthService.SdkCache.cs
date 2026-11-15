@@ -45,8 +45,14 @@ public sealed partial class ProjectHealthService
                 }
             }
         }
-        catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }
-        catch (Exception error) { checks.Add(Failure("HEALTH_SDK", "SDK 身份与入口", "esp-idf-errors", HealthAction.Tools, error, project.ToolsetId, project.ToolsetVersion)); }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception error)
+        {
+            checks.Add(Failure("HEALTH_SDK", "SDK 身份与入口", "esp-idf-errors", HealthAction.Tools, error, project.ToolsetId, project.ToolsetVersion));
+        }
     }
 
     private static async Task InspectCacheAsync(string root, ProjectManifest project, ResolvedToolset? tools, List<HealthCheck> checks, CancellationToken token)
@@ -106,8 +112,14 @@ public sealed partial class ProjectHealthService
                 "未发现已有缓存的目录、编译器或 target 冲突。原生构建仍会核对完整环境与配置，不把缓存存在当作构建成功。", "build", HealthAction.ResetCache));
             }
         }
-        catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }
-        catch (Exception error) { checks.Add(Failure("HEALTH_CACHE", "配置缓存无法检查", "build-errors", HealthAction.ResetCache, error)); }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception error)
+        {
+            checks.Add(Failure("HEALTH_CACHE", "配置缓存无法检查", "build-errors", HealthAction.ResetCache, error));
+        }
     }
     private static bool SamePath(string first, string second) => EspressifPathIdentity.NormalizePath(first).Equals(
         EspressifPathIdentity.NormalizePath(second), OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal);

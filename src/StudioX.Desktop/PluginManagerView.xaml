@@ -9,7 +9,7 @@
       FontSize="21"
       FontWeight="SemiBold" />
     <TextBlock
-      Text="插件具有当前用户权限。导入只安装；点击启用即允许运行插件。工程写入、构建和设备操作仍需逐次确认。"
+      Text="启用即运行插件；插件具有当前用户权限。"
       TextWrapping="Wrap"
       Foreground="{DynamicResource Muted}"
       Margin="0,8,0,14" />

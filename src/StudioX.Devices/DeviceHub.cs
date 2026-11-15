@@ -26,7 +26,11 @@ public sealed class DeviceHub : IAsyncDisposable
             {
                 await transport.OpenAsync(cancellationToken);
             }
-            catch { await transport.DisposeAsync(); throw; }
+            catch
+            {
+                await transport.DisposeAsync();
+                throw;
+            }
             var session = new DeviceSession(transport, Release);
             lock (sync)
             {
@@ -34,7 +38,10 @@ public sealed class DeviceHub : IAsyncDisposable
             }
             return session;
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
     /// <summary>阻止串口采集与外部下载进程同时取得同一连接；调用方必须在工具退出后释放。</summary>
     public async Task<DeviceConnectionReservation> ReserveAsync(string key, CancellationToken cancellationToken = default)
@@ -51,9 +58,18 @@ public sealed class DeviceHub : IAsyncDisposable
                     throw new StudioXException("DEVICE_OWNED", $"连接 {key} 已占用；请先停止该端口的串口采集或下载。");
                 }
             }
-            return new(() => { lock (sync) { reservations.Remove(key); } });
+            return new(() =>
+            {
+                lock (sync)
+                {
+                    reservations.Remove(key);
+                }
+            });
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
     private void Release(DeviceSession session)
     {
@@ -77,7 +93,10 @@ public sealed class DeviceHub : IAsyncDisposable
                 current = sessions.Values.ToArray();
             }
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
         foreach (var session in current)
         {
             await session.DisposeAsync();

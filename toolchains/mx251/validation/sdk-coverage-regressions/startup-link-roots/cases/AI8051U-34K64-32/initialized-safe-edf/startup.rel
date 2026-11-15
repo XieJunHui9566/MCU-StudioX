@@ -1,0 +1,27 @@
+XH3
+H A areas 5 global symbols
+S __mcs251_stack_initial Ref000000
+S .__.ABS. Def000000
+S __sdcc_program_startup Ref000000
+S ___sdcc_external_startup Ref000000
+A _CODE size 0 flags 0 addr 0
+A CSEG size 0 flags 20 addr 0
+A GSINIT0 size 6 flags 20 addr 0
+S __sdcc_gsinit_startup Def000000
+A GSINIT1 size 0 flags 20 addr 0
+A GSINIT2 size C flags 20 addr 0
+A GSINIT3 size 0 flags 20 addr 0
+A GSINIT4 size 0 flags 20 addr 0
+A GSINIT5 size 0 flags 20 addr 0
+A GSINIT size 0 flags 20 addr 0
+A GSFINAL size 0 flags 20 addr 0
+T 00 00 00
+R 00 00 00 02
+T 00 00 00 C2 AF 7E F8 00 00
+R 00 00 00 02 02 07 00 00
+T 00 00 00 9A 00 00 00 E5 82 60 04 8A
+R 00 00 00 04 82 04 00 03
+T 00 00 09 00 00 00
+R 00 00 00 04 82 03 00 02
+T 00 00 0C
+R 00 00 00 04

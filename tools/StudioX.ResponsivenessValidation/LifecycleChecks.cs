@@ -40,7 +40,9 @@ internal static class LifecycleChecks
             await sending;
             throw new InvalidOperationException("已关闭会话仍完成了阻塞发送。");
         }
-        catch (OperationCanceledException) { }
+        catch (OperationCanceledException)
+        {
+        }
         if (!blocked.Closed)
         {
             throw new InvalidOperationException("发送取消后没有释放模拟传输。");
@@ -52,7 +54,13 @@ internal static class LifecycleChecks
     {
         await using var terminal = new PseudoConsoleProcess();
         var ready = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        terminal.Output += text => { if (text.Contains("ready", StringComparison.Ordinal)) { ready.TrySetResult(); } };
+        terminal.Output += text =>
+        {
+            if (text.Contains("ready", StringComparison.Ordinal))
+            {
+                ready.TrySetResult();
+            }
+        };
         await Task.Run(() => terminal.Start(Environment.ProcessPath!, "--child idle", Environment.CurrentDirectory,
             new Dictionary<string, string> { ["SystemRoot"] = Environment.GetFolderPath(Environment.SpecialFolder.Windows) }, 120, 20));
         await ready.Task.WaitAsync(TimeSpan.FromSeconds(3));
@@ -63,7 +71,9 @@ internal static class LifecycleChecks
         {
             await paste.WaitAsync(TimeSpan.FromSeconds(2));
         }
-        catch (IOException) { /* 关闭正在写入的管道应显式报告中断。 */ }
+        catch (IOException)
+        { /* 关闭正在写入的管道应显式报告中断。 */
+        }
         await terminal.Completion.WaitAsync(TimeSpan.FromSeconds(2));
         return "1 MiB paste and concurrent ConPTY shutdown completed";
     }

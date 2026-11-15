@@ -78,7 +78,9 @@ public sealed class ProcessRunner
                     process.Kill(entireProcessTree: true);
                 }
             }
-            catch (InvalidOperationException) { /* 退出与取消可能同时发生。 */ }
+            catch (InvalidOperationException)
+            { /* 退出与取消可能同时发生。 */
+            }
             await process.WaitForExitAsync(CancellationToken.None);
             timedOut = !cancellationToken.IsCancellationRequested;
         }
@@ -136,8 +138,13 @@ public sealed class ProcessRunner
                 await process.StandardInput.WriteLineAsync(input.AsMemory(), token);
             }
         }
-        catch (IOException) { /* 提前退出的宿主由退出码和原始诊断报告。 */ }
-        finally { process.StandardInput.Close(); }
+        catch (IOException)
+        { /* 提前退出的宿主由退出码和原始诊断报告。 */
+        }
+        finally
+        {
+            process.StandardInput.Close();
+        }
     }
 
     private static async Task<(string Text, bool Truncated)> DrainAsync(StreamReader reader, CancellationToken token, IProgress<string>? progress,
@@ -162,7 +169,9 @@ public sealed class ProcessRunner
                 truncated |= retained != count;
             }
         }
-        catch (OperationCanceledException) when (token.IsCancellationRequested) { }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+        }
         return (text.ToString(), truncated);
     }
 }

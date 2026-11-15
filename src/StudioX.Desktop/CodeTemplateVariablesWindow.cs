@@ -55,14 +55,29 @@ internal sealed class CodeTemplateVariablesWindow : Window
         var footer = new StackPanel();
         footer.Children.Add(status);
         var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
-        insert.Click += (_, _) => { Refresh(); if (Expansion is not null) { DialogResult = true; } };
+        insert.Click += (_, _) =>
+        {
+            Refresh();
+            if (Expansion is not null)
+            {
+                DialogResult = true;
+            }
+        };
         buttons.Children.Add(insert);
         buttons.Children.Add(new Button { Content = "取消", IsCancel = true, MinWidth = 80 });
         footer.Children.Add(buttons);
         Grid.SetRow(footer, 2);
         root.Children.Add(footer);
         Content = root;
-        Loaded += (_, _) => { Refresh(); if (Fields.Values.FirstOrDefault() is { } first) { first.Focus(); first.SelectAll(); } };
+        Loaded += (_, _) =>
+        {
+            Refresh();
+            if (Fields.Values.FirstOrDefault() is { } first)
+            {
+                first.Focus();
+                first.SelectAll();
+            }
+        };
         void Refresh()
         {
             // 构造控件时不触发刷新；用户输入后仅做文本替换和预览。
@@ -73,7 +88,14 @@ internal sealed class CodeTemplateVariablesWindow : Window
                 status.Text = "同名变量一起替换，插入后可一次撤销。";
                 insert.IsEnabled = true;
             }
-            catch (Exception ex) { Expansion = null; Preview.Clear(); status.Text = ex.Message; status.ToolTip = ex.ToString(); insert.IsEnabled = false; }
+            catch (Exception ex)
+            {
+                Expansion = null;
+                Preview.Clear();
+                status.Text = ex.Message;
+                status.ToolTip = ex.ToString();
+                insert.IsEnabled = false;
+            }
         }
     }
 }

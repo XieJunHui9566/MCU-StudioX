@@ -28,7 +28,9 @@ public partial class MainWindow
         async Task Layout()
         {
             UpdateLayout();
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ContextIdle);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.ContextIdle);
         }
         var project = Path.Combine(directory, "fixture-project");
         Directory.CreateDirectory(Path.Combine(project, ".studiox"));

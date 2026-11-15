@@ -1,0 +1,65 @@
+SDK/Profile 迁移资格门禁 v1
+
+入口：
+python RunSdkPortabilityGate.py --manifest <显式清单.json> --output <新的result.json>
+仅 Python 标准库；只读输入，唯一写入指定的新结果。不会构建、改黄金、调用设备、
+安装工具或替换 Profile。退出 0=离线证据完整，2=缺少资格项，1=证据无效。
+退出 0 绝不等于时间、实板或发布资格。
+
+清单 schema=mx251.sdk-portability-manifest.v1。路径相对清单目录或绝对路径。
+identities: compiler/engine 及必要模型源，各值为 {path,sha256}。
+sourcePins: 当前生产源文件的非空 pin 列表。
+profiles: 至少两个不同 id，各有 lock pin 及 capabilityEvidence pins；profile.lock
+的 target 必须匹配。能力证据须说明 ABI、地址空间、启动/中断和运行库契约。
+evidence: 命名 JSON 证据的 pins；dependencyPins: 这些证据的实际原始依赖 pins。
+禁止将从旧版本复制的 pass 当成当前绑定；所有哈希都检查当前实际文件。
+
+claims: 固定角色 cost-negative/cost-positive/gc-properties/capacity/source-binding/
+fallback-census/sdk-inputs/profile-feature。每项含 id、role、assertions、bindings。
+document={evidence,pointer} 指向该角色的原始结果对象；核心角色同时按已有结果
+schema核对，不仅依赖清单的自由断言。source-binding逐个核对实际生产模型源文件；
+positive须unknown=0且decision=1；negative须明确reject、两边cost已知。
+capacity还指定events及capacityFeatures：value-boundaries/node-boundaries/
+high-bitset/alias-interference/invalid-options/atomic-fallback/private-abi-rejection
+分别映射到真实latest测试事件名；历史失败保留，当前summary与全部latest事件须一致。
+assertions 每项 at={evidence,pointer}；op 为 equals/nonempty/at-least，equals
+要求精确类型相等且预期不得 null；未知状态不能算通过。
+bindings 每项 identity=<identities中的键>, at=<实际证据中的SHA字段引用>。
+gc-properties 必须绑定当前 engine；capacity 必须绑定当前 compiler。
+成本模型两项必须由当前实际生产源模型执行结果及 source-binding 相互佐证，
+不能用禁用优化、旧成本、候选消失或未知成本代替。
+
+profile-feature 每项还需要 profile、profileAt（实际结果的 target 字段）、features
+及 machineProofs（指向实际 {path,sha256} 机器字节证明）；必须绑定当前 compiler
+和 engine。每个 profile 必须累计覆盖 cross-tu/isr/data-pointer/explicit-root/
+shared-tail/opaque-fallback/indirect-fallback/missing-metadata-fallback/
+case-sensitive/startup-initialization/machine-bytes。特征映射由清单作者依据现有
+夹具语义明确给出，不是按 SDK 函数名选择优化。检查器核对声明的具体结果字段、
+当前工具身份及最终机器证明；不能替代上游语义检查器，也不是安全签名系统。
+真实夹具缺失或只能引用旧引擎时应放 pendingEvidence，不伪造当前资格。
+
+expectedProjects 固定完整集合；projects 必须一一对应，不能遗漏超标项目。
+每项目 buildRow/proofRow/censusRow/receipt 为实际证据 JSON pointer。
+startupRow 指向同一最终镜像的启动保留审计，明确保留强制链接声明和归档模块。
+当前支持 mx251.sdk-replay.results.v1、sdk最终字节证明及sdk静态census字段。
+每项目还指定 profile、receiptCompilerPointer、receiptProfilePointer；构建保持
+源顺序和宏不变，当前工具哈希/镜像/最终字节证明/census一致。逐函数拒绝诊断
+必须保留 function/stage/reason/icode。size按 Flash有效载荷，不按HEX文本长度。
+Keil参考必须记录版本、优化等级、size/speed、内存与ROM模型。
+
+time.state: NOT_MEASURED/NO_FINITE_WINDOW/PENDING_VALIDATOR，必须写确切reason。
+correctness.state: NOT_MEASURED/PENDING_VALIDATOR，必须写reason。
+v1 是离线资格入口，不内置跨外设通用硬件验证器；不接受由调用者写一个 PASS
+即晋级实测。以后接入独立硬件验证器须新增可审核的schema适配及其负例。
+结果分开报告 offlineEvidenceStatus、performanceStatus、hardwareQualified。
+当前 v1 的 hardwareQualified/overallQualified 始终 false；各工程超110%明确FAIL_SIZE，
+未测时间保持PENDING_TIME，不用平均值、不拿指令数或下载ACK充当运行周期。
+
+environment.receiptStatus=external-manifest-only 时必须记录 debt。当前环境值虽
+由矩阵封存，普通Build receipt尚无明确容量字段；不得宣称已修复。现有latest每次
+全量重编，不能把这项可复现性债描述成已确认的陈旧缓存故障。
+
+信任边界：这是已有检查器结果与原始 pins 的一致性门禁，不独立证明编译器正确。
+清单须人工审查覆盖映射、完整SDK集合和语义相同的参考配置；不得编造断言或删项目。
+所有未来SDK/Profile仍须先通过当前工具的实际性质/启动/最终字节与容量边界，再按
+授权做该板与外设的行为验证。既有profile通过不自动外推到新芯片。

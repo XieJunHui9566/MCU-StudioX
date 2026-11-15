@@ -34,6 +34,12 @@ public static class JsonStore
             }
             File.Move(temporary, fullPath, overwrite: true);
         }
-        finally { if (File.Exists(temporary)) { File.Delete(temporary); } }
+        finally
+        {
+            if (File.Exists(temporary))
+            {
+                File.Delete(temporary);
+            }
+        }
     }
 }

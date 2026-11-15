@@ -64,7 +64,7 @@ internal sealed class SourceRegistrationWindow : Window
             Height = GridLength.Auto
         });
         var heading = new StackPanel { Margin = new(0, 0, 0, 14) };
-        heading.Children.Add(new TextBlock { Text = "核对新增、移除及改名的源码 · Ctrl / Shift 多选 · 移除登记会保留磁盘文件", TextWrapping = TextWrapping.Wrap, Margin = new(0, 0, 0, 12) });
+        heading.Children.Add(new TextBlock { Text = "移除登记保留磁盘文件", TextWrapping = TextWrapping.Wrap, Margin = new(0, 0, 0, 12) });
         var selectors = new WrapPanel();
         selectors.Children.Add(new TextBlock { Text = "构建文件  ", VerticalAlignment = VerticalAlignment.Center });
         selectors.Children.Add(Configuration);
@@ -93,7 +93,7 @@ internal sealed class SourceRegistrationWindow : Window
         root.Children.Add(body);
         var footer = new StackPanel();
         footer.Children.Add(Status);
-        footer.Children.Add(new TextBlock { Text = "修改进入未保存缓冲区，可一次撤销。保存后重新配置或编译，才能刷新实际编译数据库；本窗口不运行构建。", TextWrapping = TextWrapping.Wrap, Margin = new(0, 0, 0, 12) });
+        footer.Children.Add(new TextBlock { Text = "保存修改后重新配置或编译", TextWrapping = TextWrapping.Wrap, Margin = new(0, 0, 0, 12) });
         var buttons = new WrapPanel();
         buttons.Children.Add(Preview);
         buttons.Children.Add(Apply);
@@ -108,10 +108,22 @@ internal sealed class SourceRegistrationWindow : Window
         Configuration.ItemsSource = configurations;
         Configuration.SelectedItem = context.Configuration.Source.RelativePath;
         Configuration.SelectionChanged += async (_, _) => await ReadConfigurationAsync();
-        Target.SelectionChanged += (_, _) => { if (!busy) { RefreshOperations(); } };
+        Target.SelectionChanged += (_, _) =>
+        {
+            if (!busy)
+            {
+                RefreshOperations();
+            }
+        };
         Operations.SelectionChanged += (_, _) => Invalidate();
         Preview.Click += (_, _) => PreviewSelected();
-        Apply.Click += (_, _) => { if (Plan is not null) { DialogResult = true; } };
+        Apply.Click += (_, _) =>
+        {
+            if (Plan is not null)
+            {
+                DialogResult = true;
+            }
+        };
         Closed += (_, _) => reading++;
         SetContext(context);
     }
@@ -147,8 +159,23 @@ internal sealed class SourceRegistrationWindow : Window
             }
             SetContext(value);
         }
-        catch (Exception error) { if (version == reading) { Before.Clear(); Status.Text = error.Message; log(error.ToString()); } }
-        finally { if (version == reading) { busy = false; Preview.IsEnabled = Target.SelectedItem is not null; } }
+        catch (Exception error)
+        {
+            if (version == reading)
+            {
+                Before.Clear();
+                Status.Text = error.Message;
+                log(error.ToString());
+            }
+        }
+        finally
+        {
+            if (version == reading)
+            {
+                busy = false;
+                Preview.IsEnabled = Target.SelectedItem is not null;
+            }
+        }
     }
     private void RefreshOperations()
     {
@@ -176,7 +203,12 @@ internal sealed class SourceRegistrationWindow : Window
             }
             Status.Text = $"{suggested.Count} 项待核对建议 · 当前目标登记 {context.Targets.Single(item => item.Name == target).Sources.Count} 项。请选择要应用的操作。";
         }
-        catch (Exception error) { Status.Text = error.Message; Preview.IsEnabled = false; log(error.ToString()); }
+        catch (Exception error)
+        {
+            Status.Text = error.Message;
+            Preview.IsEnabled = false;
+            log(error.ToString());
+        }
     }
     internal void PreviewSelected()
     {
@@ -192,7 +224,12 @@ internal sealed class SourceRegistrationWindow : Window
             Apply.IsEnabled = Plan.Change.CanApply;
             Status.Text = Apply.IsEnabled ? $"将修改 {Plan.Change.Path} · {Plan.Operations.Count} 项操作。请审阅后应用。" : "选中源码已经登记，无需修改。";
         }
-        catch (Exception error) { Plan = null; Status.Text = error.Message; log(error.ToString()); }
+        catch (Exception error)
+        {
+            Plan = null;
+            Status.Text = error.Message;
+            log(error.ToString());
+        }
     }
     private void Invalidate()
     {

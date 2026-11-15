@@ -25,7 +25,9 @@ public partial class MainWindow
                 throw new InvalidOperationException("缺少 C / MicroPython 模板或创建入口。");
             }
             UpdateLayout();
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.Render);
             Render(this, Path.Combine(directory, pack.Manifest.Id + "-templates.png"));
             var project = Path.Combine(directory, pack.Manifest.Id + "-python");
             await services.Projects.CreateAsync(pack, pack.Manifest.Devices.Single().Id, "micropython-minimal", "python_demo", project);
@@ -78,7 +80,9 @@ public partial class MainWindow
                     throw new InvalidOperationException("实际编辑器未提供 MicroPython 对象提示。");
                 }
                 completionWindow.UpdateLayout();
-                await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+                await Dispatcher.InvokeAsync(() =>
+                {
+                }, DispatcherPriority.Render);
                 Render(completionWindow, Path.Combine(directory, pack.Manifest.Id + "-completion.png"));
             }
             finally
@@ -94,7 +98,9 @@ public partial class MainWindow
                 ApplyTheme(theme);
                 ShowDocument(MicroPythonTab);
                 UpdateLayout();
-                await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+                await Dispatcher.InvokeAsync(() =>
+                {
+                }, DispatcherPriority.Render);
                 var ports = (ComboBox)MicroPythonPanel.FindName("PortPicker");
                 ports.ItemsSource = new[] { "COM77", "COM78" };
                 ports.SelectedItem = "COM77";
@@ -105,7 +111,9 @@ public partial class MainWindow
                     throw new InvalidOperationException("选中端口未呈现在可见输入框。");
                 }
                 editable.Text = "COM79";
-                await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.DataBind);
+                await Dispatcher.InvokeAsync(() =>
+                {
+                }, DispatcherPriority.DataBind);
                 if (ports.Text != "COM79")
                 {
                     throw new InvalidOperationException("手动输入端口未同步到下载配置。");
@@ -133,13 +141,17 @@ public partial class MainWindow
                 Width = 1100;
                 Height = 720;
                 UpdateLayout();
-                await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+                await Dispatcher.InvokeAsync(() =>
+                {
+                }, DispatcherPriority.Render);
                 var scroll = (ScrollViewer)MicroPythonPanel.FindName("PageScroll");
                 var output = (TextBox)MicroPythonPanel.FindName("OutputText");
                 output.Text = "布局检查：" + string.Concat(Enumerable.Repeat("很长的工程备份路径/", 40)) + "\nEND — 最后一行";
                 scroll.ScrollToEnd();
                 UpdateLayout();
-                await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+                await Dispatcher.InvokeAsync(() =>
+                {
+                }, DispatcherPriority.Render);
                 var bottom = output.TransformToAncestor(scroll).Transform(new Point(0, output.ActualHeight));
                 if (scroll.ScrollableHeight <= 0 || bottom.Y > scroll.ActualHeight + 1 || output.ActualHeight < 100 ||
                     output.TextWrapping != TextWrapping.Wrap || scroll.ExtentWidth > scroll.ViewportWidth + 1)
@@ -195,14 +207,16 @@ public partial class MainWindow
                 throw new InvalidOperationException("Python 引用列表未显示定义与两处使用。");
             }
             UpdateLayout();
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.Render);
             Render(this, Path.Combine(directory, packId + "-references.png"));
             ShowDocument(FindEditor("main.py")!.Tab);
             ShowFindReplace(true);
             FindText.Text = "value";
             ReplaceText.Text = "counter";
             FindWord.IsChecked = true;
-            ReplaceAll_Click(this, new RoutedEventArgs());
+            await ReplaceMatchesAsync(true);
             if (SourceEditor.Text != sample.Replace("value", "counter", StringComparison.Ordinal))
             {
                 throw new InvalidOperationException("编辑器批量替换未处理所有匹配。");
@@ -214,7 +228,7 @@ public partial class MainWindow
             }
             FindRegex.IsChecked = true;
             FindText.Text = "[";
-            ReplaceAll_Click(this, new RoutedEventArgs());
+            await ReplaceMatchesAsync(true);
             if (SourceEditor.Text != sample || !FindStatus.Text.Contains("失败", StringComparison.Ordinal))
             {
                 throw new InvalidOperationException($"非法正则检查失败：sameText={SourceEditor.Text == sample}, canEdit={CanEditSource}, status={FindStatus.Text}");
@@ -222,7 +236,7 @@ public partial class MainWindow
             FindRegex.IsChecked = false;
             FindText.Text = "value";
             SourceEditor.Select(0, 0);
-            FindMatch(false);
+            await FindMatchAsync(false);
             if (SourceEditor.SelectedText != "value")
             {
                 throw new InvalidOperationException("查找没有选中匹配文本。");
@@ -231,7 +245,9 @@ public partial class MainWindow
             {
                 ApplyTheme(theme);
                 UpdateLayout();
-                await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+                await Dispatcher.InvokeAsync(() =>
+                {
+                }, DispatcherPriority.Render);
                 Render(this, Path.Combine(directory, packId + "-find-replace-" + theme.Id + ".png"));
             }
         }

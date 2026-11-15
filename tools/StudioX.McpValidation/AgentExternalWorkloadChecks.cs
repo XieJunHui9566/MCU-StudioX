@@ -1,10 +1,38 @@
 using System.Text.Json;
 using StudioX.Application;
 using StudioX.Application.Mcp;
+using StudioX.Engine;
 using StudioX.Foundation;
 
 internal static class AgentExternalWorkloadChecks
 {
+    public static async Task RunStandaloneAsync(string root)
+    {
+        if (Directory.Exists(root))
+        {
+            throw new InvalidOperationException("Agent workload output must be a fresh directory.");
+        }
+        var project = Path.Combine(root, "project");
+        Directory.CreateDirectory(Path.Combine(project, ".studiox"));
+        Directory.CreateDirectory(Path.Combine(project, "src"));
+        await JsonStore.WriteAsync(Path.Combine(project, ".studiox", "project.json"),
+            new ProjectManifest(1, "agent-workload", "demo.pack", "1.0.0", "offline", "demo", "blank", "gcc", "1.0.0", "gcc"));
+        await using var services = new WorkbenchService(Path.Combine(root, "runtime"), Path.Combine(root, "data"));
+        var authorizer = new SwitchingAuthorizer();
+        await using var session = await StudioXMcpSession.CreateAsync(new StudioXMcpTools(services, project, authorizer));
+        var checks = 0;
+        await RunAsync(session, authorizer, project, root, (passed, description) =>
+        {
+            if (!passed)
+            {
+                throw new InvalidOperationException(description);
+            }
+            Console.WriteLine("PASS " + description);
+            checks++;
+        });
+        Console.WriteLine($"Passed {checks} focused Agent/MCP workload checks.");
+    }
+
     public static async Task RunAsync(StudioXMcpSession session, SwitchingAuthorizer authorizer,
         string project, string temporaryRoot, Action<bool, string> check)
     {
@@ -298,7 +326,7 @@ internal static class AgentExternalWorkloadChecks
 
     private static bool ValidProviderRequest(AiChatRequest request)
     {
-        if (request.Messages.Count is < 2 or > 128 ||
+        if (request.Messages.Count is < 2 or > 512 ||
             request.Messages[0].Role != "system" ||
             request.Tools is not { Count: > 0 } ||
             JsonSerializer.SerializeToUtf8Bytes(request).Length > 2 * 1024 * 1024)

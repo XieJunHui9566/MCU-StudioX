@@ -16,6 +16,11 @@ public static class Mx251Profile
 
     public static void ValidateTools(ResolvedToolset tools)
     {
+        // Catalog 已核对内容与 SDK 契约；编译、分析、下载共用本次启动的结果。
+        if (tools.VerifiedFiles is not null)
+        {
+            return;
+        }
         if (Mx251SdkProfile.Matches(tools.Manifest.Version, tools.Manifest.CompilerId))
         {
             Mx251SdkProfile.Validate(tools);

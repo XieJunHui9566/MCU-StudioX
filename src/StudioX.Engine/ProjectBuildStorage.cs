@@ -35,7 +35,10 @@ public sealed class ProjectBuildStorage : IDisposable
         {
             return new(root, family, new FileStream(path, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None));
         }
-        catch (IOException error) { throw new StudioXException("PROJECT_OUTPUT_BUSY", "此工程正在构建、下载或调试，请等待当前操作结束。", error); }
+        catch (IOException error)
+        {
+            throw new StudioXException("PROJECT_OUTPUT_BUSY", "此工程正在构建、下载或调试，请等待当前操作结束。", error);
+        }
     }
 
     public string Prepare(string area)
@@ -109,7 +112,10 @@ public sealed class ProjectBuildStorage : IDisposable
             using var json = JsonDocument.Parse(File.ReadAllBytes(record));
             return !json.RootElement.TryGetProperty("verified", out var verified) || verified.ValueKind != JsonValueKind.True;
         }
-        catch (JsonException error) { throw new StudioXException("PIC_RECOVERY_REQUIRED", "调试恢复记录无效，原备份未清理：" + record, error); }
+        catch (JsonException error)
+        {
+            throw new StudioXException("PIC_RECOVERY_REQUIRED", "调试恢复记录无效，原备份未清理：" + record, error);
+        }
     }
 
     private static void PreserveBackup(string parent, string source)

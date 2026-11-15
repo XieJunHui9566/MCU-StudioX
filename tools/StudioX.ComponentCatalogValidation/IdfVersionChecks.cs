@@ -133,7 +133,10 @@ internal static class IdfVersionChecks
             await service.EnsureSelectionAsync(selected);
             throw new InvalidOperationException("stale enabled state accepted");
         }
-        catch (StudioXException error) { check(error.Code == "ESPRESSIF_VERSION_SELECTION", "selection rechecks enabled state before creating"); }
+        catch (StudioXException error)
+        {
+            check(error.Code == "ESPRESSIF_VERSION_SELECTION", "selection rechecks enabled state before creating");
+        }
         var plan = await new ProjectToolPreparationService(catalog, manager).InspectAsync(projectPath);
         check(plan.Requirements.Single().State == ProjectToolState.Disabled, "existing project directs user to enable its exact version without downloading");
         await catalog.SetEnabledAsync("espressif.idf", "6.1.0", true);

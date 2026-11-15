@@ -93,7 +93,13 @@ internal sealed class ElfMiTransport : IGdbMiTransport
             await process.StandardInput.FlushAsync(token);
             return await completion.Task.WaitAsync(TimeSpan.FromSeconds(10), token);
         }
-        finally { lock (sync) { pending.Remove(id); } }
+        finally
+        {
+            lock (sync)
+            {
+                pending.Remove(id);
+            }
+        }
     }
 
     public async ValueTask DisposeAsync()

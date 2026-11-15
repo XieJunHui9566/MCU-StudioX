@@ -1,0 +1,70 @@
+{
+  "touched": true,
+  "touchedMeaning": "conservative flash-command attempt",
+  "flashAttempts": [
+    {
+      "name": "parent-mcu",
+      "flashCommandAttempted": true,
+      "strictGuardAccepted": true,
+      "programmingCommandObserved": true,
+      "eraseOrDataCommandObserved": true
+    },
+    {
+      "name": "candidate-mcu",
+      "flashCommandAttempted": true,
+      "strictGuardAccepted": true,
+      "programmingCommandObserved": true,
+      "eraseOrDataCommandObserved": true
+    },
+    {
+      "name": "parent-protocol-OFF",
+      "flashCommandAttempted": true,
+      "strictGuardAccepted": true,
+      "programmingCommandObserved": true,
+      "eraseOrDataCommandObserved": true
+    },
+    {
+      "name": "candidate-protocol-OFF",
+      "flashCommandAttempted": true,
+      "strictGuardAccepted": true,
+      "programmingCommandObserved": true,
+      "eraseOrDataCommandObserved": true
+    },
+    {
+      "name": "parent-protocol-ON",
+      "flashCommandAttempted": true,
+      "strictGuardAccepted": true,
+      "programmingCommandObserved": true,
+      "eraseOrDataCommandObserved": true
+    },
+    {
+      "name": "candidate-protocol-ON",
+      "flashCommandAttempted": true,
+      "strictGuardAccepted": true,
+      "programmingCommandObserved": true,
+      "eraseOrDataCommandObserved": true
+    },
+    {
+      "name": "restored-math",
+      "flashCommandAttempted": true,
+      "strictGuardAccepted": true,
+      "programmingCommandObserved": true,
+      "eraseOrDataCommandObserved": true
+    }
+  ],
+  "restored": true,
+  "leaseReleased": true,
+  "configurationWritten": false,
+  "flashReadback": false,
+  "identityMaskUsed": true,
+  "planSha256": "aaf0e36c7d229368417bcad065fe89255d2b04a3470607d7815e31b03a232ca5",
+  "expectedTargetsSha256": "622ff990b69bf23f88112db7e3afe7f80e51c293c507f378ce6e430f88e4b786",
+  "authorizationPath": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\AI8051U_IDENTITY_AUTHORIZATION.json",
+  "authorizationSha256": "f8eee26f2e74e9a2130bdaf8fb8d66086a801f1d4ce630b8ad20416cdb36c8d2",
+  "policySha256": "ca856fefefef82680eea2a26a931b3ed4d083f90649710fb117d0d7d0abe76ec",
+  "executionScopeSha256": "d0fe67782bbaa14a9b8234e1540e40f4f559083c13522ac9c6246d38fa7c6119",
+  "cliAssemblySha256": "f8df8f683524b150126a3b1d4e8d646a3a2ca23dda96b85609d7c6369092c4c1",
+  "error": null,
+  "restorationError": null,
+  "hostUtc": "2026-10-28T20:47:18.924851+00:00"
+}

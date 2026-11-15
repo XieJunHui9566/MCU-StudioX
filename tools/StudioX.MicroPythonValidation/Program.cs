@@ -14,7 +14,10 @@ if (args is not [var packsRoot, var python, var output])
     return 2;
 }
 var root = Path.GetFullPath(output);
-if (Directory.Exists(root)) { throw new InvalidOperationException("Output must be new"); }
+if (Directory.Exists(root))
+{
+    throw new InvalidOperationException("Output must be new");
+}
 Directory.CreateDirectory(root);
 var results = new List<string>();
 void Check(bool passed, string message)
@@ -33,7 +36,10 @@ async Task Reject(Func<Task> action, string code, string description)
         await action();
         throw new InvalidOperationException("未拒绝：" + description);
     }
-    catch (StudioXException error) when (error.Code == code) { Check(true, description); }
+    catch (StudioXException error) when (error.Code == code)
+    {
+        Check(true, description);
+    }
 }
 var repository = new PackRepository(Path.Combine(root, "packs"));
 var assistance = new PythonAssistanceService();
@@ -83,7 +89,10 @@ foreach (var chip in new[] { "RP2040", "RP2350" })
         Check(executed.Output.Trim() == "中文输出" && executed.Error == "", "碎片 UTF-8 输出重组");
         var errorResult = await session.ExecuteAsync("raise ValueError('保留诊断')");
         Check(errorResult.Error.Contains("ValueError: 保留诊断", StringComparison.Ordinal) && session.IsConnected, "保留解释器原始错误且帧边界有效");
-        await Reject(async () => { await hub.OpenAsync(new FixtureTransport(python, deviceRoot, selected)); }, "DEVICE_OWNED", "单一设备连接所有者");
+        await Reject(async () =>
+        {
+            await hub.OpenAsync(new FixtureTransport(python, deviceRoot, selected));
+        }, "DEVICE_OWNED", "单一设备连接所有者");
         var oldBytes = Encoding.UTF8.GetBytes("print('旧程序')\n");
         await File.WriteAllBytesAsync(Path.Combine(deviceRoot, "main.py"), oldBytes);
         var bytes = Encoding.UTF8.GetBytes("# 中文脚本\n" + string.Concat(Enumerable.Repeat("print('sample')\n", 100)));
@@ -105,7 +114,9 @@ foreach (var chip in new[] { "RP2040", "RP2350" })
         Check((await session.ExecuteAsync("print('still ready')")).Output.Contains("still ready", StringComparison.Ordinal), "脚本异常后结束帧完整，REPL 可继续使用");
         runOutput.Clear();
         Check(!await session.RunScriptAsync("missing.py", text => runOutput.Append(text)) && runOutput.ToString().Contains("missing.py", StringComparison.Ordinal), "缺失脚本报告原始错误而非运行成功");
-        await Reject(() => session.RunScriptAsync("../main.py", _ => { }), "MICROPYTHON_PATH", "运行拒绝越界脚本路径");
+        await Reject(() => session.RunScriptAsync("../main.py", _ =>
+        {
+        }), "MICROPYTHON_PATH", "运行拒绝越界脚本路径");
 
         transport!.RunForeverNext = true;
         var firstOutput = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -141,7 +152,9 @@ foreach (var chip in new[] { "RP2040", "RP2350" })
             transport.FinishRun();
             Check(await running.WaitAsync(TimeSpan.FromSeconds(3)), "持续运行最终正常退出并解析结束帧");
             transport.RunForeverNext = true;
-            running = session.RunScriptAsync("main.py", _ => { });
+            running = session.RunScriptAsync("main.py", _ =>
+            {
+            });
             await Task.Delay(150);
         }
         var interrupts = transport.Interrupts;
@@ -177,7 +190,10 @@ foreach (var chip in new[] { "RP2040", "RP2350" })
                 await session.ExecuteAsync("print(1)", cancel.Token);
                 throw new InvalidOperationException("未取消");
             }
-            catch (OperationCanceledException) { Check(!session.IsConnected && transport.Closed, "取消等待并释放端口"); }
+            catch (OperationCanceledException)
+            {
+                Check(!session.IsConnected && transport.Closed, "取消等待并释放端口");
+            }
         }
         await using var wrong = new MicroPythonSessionService(hub, _ => new FixtureTransport(python, deviceRoot, selected) { WrongIdentity = true });
         await Reject(() => wrong.ConnectAsync(destination, "COM77"), "MICROPYTHON_IDENTITY", "拒绝解释器板型不匹配");

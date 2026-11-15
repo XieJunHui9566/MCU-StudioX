@@ -123,12 +123,18 @@ public sealed partial class DebugSessionService
             {
                 await ReleaseAdapterAsync();
             }
-            catch (Exception cleanup) { Trace("连接失败后的清理：" + cleanup); }
+            catch (Exception cleanup)
+            {
+                Trace("连接失败后的清理：" + cleanup);
+            }
             Snapshot = DebugSnapshot.Empty;
             SetState(DebugState.Faulted, "实机连接失败：" + ex.Message);
             throw;
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
     private string NormalizeSource(string file)
     {
@@ -154,8 +160,12 @@ public sealed partial class DebugSessionService
                 }
             }
         }
-        catch (IOException) { /* 日志读取失败时保留未确认结论及原始异常。 */ }
-        catch (UnauthorizedAccessException) { /* 同上。 */ }
+        catch (IOException)
+        { /* 日志读取失败时保留未确认结论及原始异常。 */
+        }
+        catch (UnauthorizedAccessException)
+        { /* 同上。 */
+        }
         var usbFailure = new[] { "error reading USB data", "error writing USB data", "CMD_INFO failed", "CMD_CONNECT failed",
             "CMD_DISCONNECT failed", "LIBUSB_ERROR", "could not read product string", "error reading adapter response" }
             .Any(marker => diagnostics.Contains(marker, StringComparison.OrdinalIgnoreCase));

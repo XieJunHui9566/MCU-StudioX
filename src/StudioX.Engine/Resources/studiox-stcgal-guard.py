@@ -59,28 +59,34 @@ def install_option_safety():
     option_types.Stc8Option.set_p20_state = p20_level
 
     original_split = protocols.Stc8dProtocol.set_option
+
     def set_partition(self, name, value):
         if name == "program_eeprom_split":
             # 先验证再改配置镜像；251 的地址空间尚无该后端的容量契约，拒绝套用 64 KiB。
             if self.model.mcs251:
-                raise StcProtocolException("StudioX: MCS-251 partition requires a qualified address-space backend")
+                raise StcProtocolException(
+                    "StudioX: MCS-251 partition requires a qualified address-space backend"
+                )
             if not self.model.iap:
                 raise ValueError("program_eeprom_split is unsupported for this non-IAP target")
             size = option_types.Utils.to_int(value)
             if size < 512 or size > min(65024, self.model.total) or size % 512:
                 raise ValueError("program_eeprom_split exceeds target capacity or alignment")
         return original_split(self, name, value)
+
     protocols.Stc8dProtocol.set_option = set_partition
 
     def unqualified_family(name):
         return bool(re.match(r"^(?:STC|IAP|IRC)(?:12H|15H)", name, re.IGNORECASE))
 
     original_selector = protocols.StcAutoProtocol.initialize_model
+
     def select_protocol(self):
         original_selector(self)
         if unqualified_family(self.model.name):
             self.protocol_name = None
             print("StudioX: new STC12H/STC15H protocol is not qualified; legacy fallback disabled")
+
     protocols.StcAutoProtocol.initialize_model = select_protocol
 
     def checked_call(original, minimum=None):
@@ -88,65 +94,115 @@ def install_option_safety():
         def invoke(self, *args, **kwargs):
             packet = args[0] if args else getattr(self, "status_packet", None)
             if minimum is not None and (packet is None or len(packet) < minimum):
-                raise StcProtocolException("StudioX: short status/options packet for " + original.__qualname__)
+                raise StcProtocolException(
+                    "StudioX: short status/options packet for " + original.__qualname__
+                )
             try:
                 return original(self, *args, **kwargs)
             except (IndexError, struct.error, AssertionError) as error:
-                raise StcProtocolException("StudioX: malformed response for " + original.__qualname__) from error
+                raise StcProtocolException(
+                    "StudioX: malformed response for " + original.__qualname__
+                ) from error
+
         return invoke
 
     # 按协议字段边界检查，不按器件名猜测短包的缺失字段。
     status_lengths = {
-        protocols.Stc89Protocol: 20, protocols.Stc89AProtocol: 23,
-        protocols.Stc12AProtocol: 19, protocols.Stc12BaseProtocol: 19, protocols.Stc15AProtocol: 19,
-        protocols.Stc15Protocol: 23, protocols.Stc8Protocol: 40,
+        protocols.Stc89Protocol: 20,
+        protocols.Stc89AProtocol: 23,
+        protocols.Stc12AProtocol: 19,
+        protocols.Stc12BaseProtocol: 19,
+        protocols.Stc15AProtocol: 19,
+        protocols.Stc15Protocol: 23,
+        protocols.Stc8Protocol: 40,
     }
-    classes = (protocols.StcBaseProtocol, protocols.StcAutoProtocol,
-               protocols.Stc89Protocol, protocols.Stc89AProtocol,
-               protocols.Stc12AOptionsMixIn, protocols.Stc12OptionsMixIn, protocols.Stc12BaseProtocol,
-               protocols.Stc12AProtocol, protocols.Stc12BProtocol, protocols.Stc12Protocol,
-               protocols.Stc15AProtocol, protocols.Stc15Protocol,
-               protocols.Stc8Protocol, protocols.Stc8dProtocol, protocols.Stc8gProtocol)
+    classes = (
+        protocols.StcBaseProtocol,
+        protocols.StcAutoProtocol,
+        protocols.Stc89Protocol,
+        protocols.Stc89AProtocol,
+        protocols.Stc12AOptionsMixIn,
+        protocols.Stc12OptionsMixIn,
+        protocols.Stc12BaseProtocol,
+        protocols.Stc12AProtocol,
+        protocols.Stc12BProtocol,
+        protocols.Stc12Protocol,
+        protocols.Stc15AProtocol,
+        protocols.Stc15Protocol,
+        protocols.Stc8Protocol,
+        protocols.Stc8dProtocol,
+        protocols.Stc8gProtocol,
+    )
     for cls in classes:
-        for name in ("initialize_status", "initialize_options", "initialize_model", "get_status_packet", "program_options"):
+        for name in (
+            "initialize_status",
+            "initialize_options",
+            "initialize_model",
+            "get_status_packet",
+            "program_options",
+        ):
             original = cls.__dict__.get(name)
             if original is None or getattr(original, "__isabstractmethod__", False):
                 continue
-            minimum = status_lengths.get(cls) if name == "initialize_status" else 23 if name == "initialize_model" else None
+            minimum = (
+                status_lengths.get(cls)
+                if name == "initialize_status"
+                else 23 if name == "initialize_model" else None
+            )
             setattr(cls, name, checked_call(original, minimum))
 
     original_read = protocols.StcBaseProtocol.read_packet
+
     @functools.wraps(original_read)
     def read_packet(self):
         data = checked_call(original_read)(self)
         if not data:
             raise StcProtocolException("StudioX: empty protocol response")
         return data
+
     protocols.StcBaseProtocol.read_packet = read_packet
 
     original_program = StcGal.program_mcu
+
     @functools.wraps(original_program)
     def program_mcu(self):
         if self.protocol.model.mcs251:
-            raise StcProtocolException("StudioX: MCS-251 HEX/address-space programming is unsupported by this legacy backend; use a qualified backend")
+            raise StcProtocolException(
+                "StudioX: MCS-251 HEX/address-space programming is unsupported by this legacy backend; use a qualified backend"
+            )
         if unqualified_family(self.protocol.model.name):
-            raise StcProtocolException("StudioX: STC12H/STC15H cannot use a legacy STC12/STC15 programming protocol")
+            raise StcProtocolException(
+                "StudioX: STC12H/STC15H cannot use a legacy STC12/STC15 programming protocol"
+            )
         original_load = self.load_file_auto
+
         def load_checked(file):
             data = original_load(file)
-            code = self.protocol.split_code if self.protocol.split_code is not None else self.protocol.model.code
-            eeprom = self.protocol.split_eeprom if self.protocol.split_eeprom is not None else self.protocol.model.eeprom
+            code = (
+                self.protocol.split_code
+                if self.protocol.split_code is not None
+                else self.protocol.model.code
+            )
+            eeprom = (
+                self.protocol.split_eeprom
+                if self.protocol.split_eeprom is not None
+                else self.protocol.model.eeprom
+            )
             if min(code, eeprom) < 0 or code + eeprom > self.protocol.model.total:
                 raise StcProtocolException("StudioX: invalid code/EEPROM partition")
             capacity = eeprom if file is self.opts.eeprom_image else code + eeprom
             if len(data) > capacity:
-                raise StcProtocolException("StudioX: image exceeds target region; truncation refused")
+                raise StcProtocolException(
+                    "StudioX: image exceeds target region; truncation refused"
+                )
             return data
+
         self.load_file_auto = load_checked
         try:
             return original_program(self)
         finally:
             self.load_file_auto = original_load
+
     StcGal.program_mcu = program_mcu
     protocols._studiox_option_safety = True
 
@@ -265,16 +321,22 @@ class GuardedStcGal(StcGal):
             checked_options = copy.deepcopy(self.protocol.options)
             for name, value in hardware.items():
                 if name not in available:
-                    raise StcProtocolException("StudioX: option unavailable on detected silicon: " + name)
+                    raise StcProtocolException(
+                        "StudioX: option unavailable on detected silicon: " + name
+                    )
                 current = checked_options.get_option(name)
                 if name == "cpu_core_voltage" and current == "unknown":
-                    raise StcProtocolException("StudioX: CPU core voltage is not recognized on detected silicon; no erase/write")
+                    raise StcProtocolException(
+                        "StudioX: CPU core voltage is not recognized on detected silicon; no erase/write"
+                    )
                 if isinstance(current, bool) and value not in ("true", "false"):
                     raise StcProtocolException("StudioX: invalid boolean option: " + name)
                 try:
                     checked_options.set_option(name, value)
                 except (ValueError, TypeError) as error:
-                    raise StcProtocolException("StudioX: option invalid for detected silicon: " + name) from error
+                    raise StcProtocolException(
+                        "StudioX: option invalid for detected silicon: " + name
+                    ) from error
             self.opts.option = list(self.opts.option or []) + [
                 name + "=" + value for name, value in sorted(hardware.items())
             ]
@@ -296,9 +358,15 @@ class GuardedStcGal(StcGal):
             # 先识别实际选项类再决定是否存在时钟源位；STC15A/STC8 只有 RC 校准，不能发送未知选项。
             available = {name for name, _, _ in self.protocol.options.options}
             if "clock_source" in available:
-                self.opts.option = list(getattr(self.opts, "option", None) or []) + ["clock_source=" + self.clock_mode]
-            elif self.clock_mode == "external" or not isinstance(self.protocol.options, (option_types.Stc15AOption, option_types.Stc8Option)):
-                raise StcProtocolException("StudioX: clock source option unsupported on detected silicon; no erase/write")
+                self.opts.option = list(getattr(self.opts, "option", None) or []) + [
+                    "clock_source=" + self.clock_mode
+                ]
+            elif self.clock_mode == "external" or not isinstance(
+                self.protocol.options, (option_types.Stc15AOption, option_types.Stc8Option)
+            ):
+                raise StcProtocolException(
+                    "StudioX: clock source option unsupported on detected silicon; no erase/write"
+                )
         self._studiox_last_program_progress = None
         self.protocol.progress_cb = self.report_program_progress
         print("STUDIOX_TARGET_VERIFIED " + self.expected_model, flush=True)
@@ -367,6 +435,7 @@ class GuardedStcGal(StcGal):
 def validate_hardware_options(text):
     if len(text) > 8192:
         raise ValueError("hardware options too large")
+
     def unique(pairs):
         values = {}
         for key, value in pairs:
@@ -374,20 +443,36 @@ def validate_hardware_options(text):
                 raise ValueError("duplicate hardware option: " + key)
             values[key] = value
         return values
+
     values = json.loads(text, object_pairs_hook=unique)
-    flags = {"reset_pin_enabled", "watchdog_por_enabled", "watchdog_stop_idle",
-             "eeprom_lvd_inhibit", "eeprom_erase_enabled", "bsl_pindetect_enabled",
-             "uart2_passthrough", "uart1_remap", "epwm_open_drain", "cpu_6t_enabled",
-             "ale_enabled", "xram_enabled"}
+    flags = {
+        "reset_pin_enabled",
+        "watchdog_por_enabled",
+        "watchdog_stop_idle",
+        "eeprom_lvd_inhibit",
+        "eeprom_erase_enabled",
+        "bsl_pindetect_enabled",
+        "uart2_passthrough",
+        "uart1_remap",
+        "epwm_open_drain",
+        "cpu_6t_enabled",
+        "ale_enabled",
+        "xram_enabled",
+    }
     choices = {name: ("true", "false") for name in flags}
-    choices.update({
-        "clock_gain": ("low", "high"), "watchdog_prescale": tuple(str(2 ** i) for i in range(1, 9)),
-        "low_voltage_reset": ("true", "false", "low", "high"),
-        "low_voltage_threshold": tuple(str(i) for i in range(8)),
-        "por_reset_delay": ("short", "long"), "rstout_por_state": ("low", "high"),
-        "uart2_pin_mode": ("normal", "push-pull"), "cpu_core_voltage": ("low", "mid", "high"),
-        "oscillator_stable_delay": ("4096", "8192", "16384", "32768"),
-    })
+    choices.update(
+        {
+            "clock_gain": ("low", "high"),
+            "watchdog_prescale": tuple(str(2**i) for i in range(1, 9)),
+            "low_voltage_reset": ("true", "false", "low", "high"),
+            "low_voltage_threshold": tuple(str(i) for i in range(8)),
+            "por_reset_delay": ("short", "long"),
+            "rstout_por_state": ("low", "high"),
+            "uart2_pin_mode": ("normal", "push-pull"),
+            "cpu_core_voltage": ("low", "mid", "high"),
+            "oscillator_stable_delay": ("4096", "8192", "16384", "32768"),
+        }
+    )
     if not isinstance(values, dict):
         raise ValueError("hardware options must be an object")
     for key, value in values.items():

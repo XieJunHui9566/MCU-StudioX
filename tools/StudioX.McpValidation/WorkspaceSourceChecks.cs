@@ -176,7 +176,10 @@ internal static class WorkspaceSourceChecks
                 new("./ForestFireAlarm.ino", AgentEditorSession.Hash(draftText), [new("smoke = 50", "smoke = 52")])], "duplicate aliases");
             throw new InvalidOperationException("Duplicate aliases were accepted.");
         }
-        catch (StudioXException error) when (error.Code == "AGENT_PLAN_SIZE") { Check(true, "canonical aliases cannot bypass duplicate-file plan guards"); }
+        catch (StudioXException error) when (error.Code == "AGENT_PLAN_SIZE")
+        {
+            Check(true, "canonical aliases cannot bypass duplicate-file plan guards");
+        }
 
         await File.WriteAllTextAsync(Path.Combine(output, "outside.ino"), "OUTSIDE_MARKER");
         Directory.CreateDirectory(Path.Combine(project, "secrets"));

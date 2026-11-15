@@ -6,6 +6,39 @@ using StudioX.Foundation;
 using StudioX.Packages;
 using StudioX.WorkspaceEditingValidation;
 
+if (args is ["--verify-failed-build-completion", var buildRuntime, var buildPacks, var buildOutput])
+{
+    await FailedBuildCompletionChecks.RunAsync(Path.GetFullPath(buildRuntime), Path.GetFullPath(buildPacks), Path.GetFullPath(buildOutput));
+    return;
+}
+
+if (args is ["--verify-pack-standard-headers", var packRuntime, var headerPack, var headerDevice, var headerTemplate, var packHeaderOutput])
+{
+    var output = Path.GetFullPath(packHeaderOutput);
+    if (Directory.Exists(output))
+    {
+        throw new IOException("Use a new output directory.");
+    }
+    Directory.CreateDirectory(output);
+    var pack = await new PackRepository(Path.Combine(output, "packs")).ImportAsync(Path.GetFullPath(headerPack));
+    var generated = Path.Combine(output, "project");
+    await new ProjectService().CreateAsync(pack, headerDevice, headerTemplate, "StandardHeaders", generated);
+    await StandardHeaderAnalysisChecks.RunAsync(Path.GetFullPath(packRuntime), generated, Path.Combine(output, "analysis"));
+    return;
+}
+
+if (args is ["--verify-core-standard-headers", var coreRuntime, var coreProject, var coreOutput])
+{
+    await StandardHeaderAnalysisChecks.RunAsync(Path.GetFullPath(coreRuntime), Path.GetFullPath(coreProject), Path.GetFullPath(coreOutput), coreOnly: true);
+    return;
+}
+
+if (args is ["--verify-standard-headers", var headerRuntime, var headerProject, var headerOutput])
+{
+    await StandardHeaderAnalysisChecks.RunAsync(Path.GetFullPath(headerRuntime), Path.GetFullPath(headerProject), Path.GetFullPath(headerOutput));
+    return;
+}
+
 if (args is ["--verify-sdcc-model-analysis", var modelRuntime, var modelPack, var modelOutput])
 {
     await SdccModelAnalysisChecks.RunAsync(Path.GetFullPath(modelRuntime), Path.GetFullPath(modelPack), Path.GetFullPath(modelOutput));
@@ -40,10 +73,16 @@ if (args is ["--verify-stc-completion", var stcRuntime, var stcProject, var stcO
     return;
 }
 
-if (args.Length != 2) { throw new ArgumentException("runtime directory, new output directory required"); }
+if (args.Length != 2)
+{
+    throw new ArgumentException("runtime directory, new output directory required");
+}
 var runtime = Path.GetFullPath(args[0]);
 var root = Path.GetFullPath(args[1]);
-if (Directory.Exists(root)) { throw new IOException("Use a new output directory."); }
+if (Directory.Exists(root))
+{
+    throw new IOException("Use a new output directory.");
+}
 Directory.CreateDirectory(root);
 var checks = new List<string>();
 void Check(bool condition, string message)
@@ -70,6 +109,7 @@ async Task Reject(Func<Task> action, string message)
 }
 DiagnosticTextChecks.Run(Check);
 CompletionTriggerChecks.Run(Check);
+SnippetCompletionChecks.Run(Check);
 var project = Path.Combine(root, "中文工程 with spaces");
 Directory.CreateDirectory(Path.Combine(project, "src"));
 Directory.CreateDirectory(Path.Combine(project, "include"));
@@ -151,7 +191,10 @@ using (var recovering = new EditorSessionStore(data))
 }
 
 var failedData = Path.Combine(root, "failed-recovery-data");
-using (var beforeFailure = new EditorSessionStore(failedData)) { await beforeFailure.SaveAsync(snapshot); }
+using (var beforeFailure = new EditorSessionStore(failedData))
+{
+    await beforeFailure.SaveAsync(snapshot);
+}
 using (var failed = new EditorSessionStore(failedData))
 {
     _ = await failed.ClaimLatestAsync();
@@ -186,6 +229,8 @@ await File.WriteAllTextAsync(Path.Combine(fixture, "src/main.c"), main);
 await File.WriteAllTextAsync(Path.Combine(fixture, "src/other.c"), other);
 await using var intelligence = new CodeIntelligenceService(runtime, Path.Combine(root, "language-data"));
 await intelligence.StartAsync(fixture);
+await CompletionLatencyChecks.RunAsync(intelligence, header, root, Check);
+await SnippetCompletionChecks.RunAsync(intelligence, fixture, root, Check);
 CodeDocumentSnapshot[] documents = [new("src/main.c", main), new("src/other.c", other), new("include/shared.h", header)];
 var refs = await intelligence.ReferencesAsync("src/main.c", main, main.IndexOf("shared_value", StringComparison.Ordinal), documents);
 Check(refs.Count >= 4 && refs.Count(r => r.DocumentPath == "src/other.c") == 1, "real clangd references cross files and exclude shadowed variables");
@@ -199,7 +244,10 @@ var broken = main.Replace("return shared_value + helper()", "return unknown_symb
 CodeDocumentSnapshot[] brokenWorkspace = [new("src/main.c", broken), new("src/other.c", other), new("include/shared.h", header)];
 await intelligence.SynchronizeDiagnosticsAsync("src/main.c", broken, brokenWorkspace);
 await intelligence.DocumentSymbolsAsync("src/main.c", broken, documents: brokenWorkspace);
-for (var attempt = 0; attempt < 50 && !intelligence.GetDiagnostics().Any(b => b.Path == "src/main.c" && b.Text == broken && b.Items.Any(d => d.Severity == 1)); attempt++) { await Task.Delay(100); }
+for (var attempt = 0; attempt < 50 && !intelligence.GetDiagnostics().Any(b => b.Path == "src/main.c" && b.Text == broken && b.Items.Any(d => d.Severity == 1)); attempt++)
+{
+    await Task.Delay(100);
+}
 Check(intelligence.GetDiagnostics().Any(b => b.Path == "src/main.c" && b.Text == broken && b.Items.Any(d => d.Message.Contains("unknown_symbol", StringComparison.Ordinal))), "real-time diagnostics arrive for unsaved broken text");
 await intelligence.DocumentSymbolsAsync("src/other.c", other, documents: brokenWorkspace);
 Check(intelligence.GetDiagnostics().Any(b => b.Path == "src/main.c" && b.Items.Any(d => d.Message.Contains("unknown_symbol", StringComparison.Ordinal))), "refreshing another file does not erase current live error");
@@ -212,10 +260,16 @@ Check(intelligence.GetDiagnostics().Count == 0, "navigation and late clangd publ
 intelligence.SetDiagnosticsSuspended(false);
 Check(intelligence.GetDiagnostics().Count == 0, "resuming does not revive stale cached diagnostics");
 await intelligence.SynchronizeDiagnosticsAsync("src/main.c", broken, brokenWorkspace);
-for (var attempt = 0; attempt < 50 && !intelligence.GetDiagnostics().Any(b => b.Text == broken && b.Items.Any(d => d.Message.Contains("unknown_symbol", StringComparison.Ordinal))); attempt++) { await Task.Delay(100); }
+for (var attempt = 0; attempt < 50 && !intelligence.GetDiagnostics().Any(b => b.Text == broken && b.Items.Any(d => d.Message.Contains("unknown_symbol", StringComparison.Ordinal))); attempt++)
+{
+    await Task.Delay(100);
+}
 Check(!intelligence.DiagnosticsSuspended && intelligence.GetDiagnostics().Any(b => b.Text == broken && b.Items.Any(d => d.Message.Contains("unknown_symbol", StringComparison.Ordinal))), "diagnostics resume by reparsing unchanged source after debug");
 await intelligence.SynchronizeDiagnosticsAsync("src/main.c", main, [new("src/main.c", main)]);
-for (var attempt = 0; attempt < 50 && !intelligence.GetDiagnostics().Any(b => b.Path == "src/main.c" && b.Text == main); attempt++) { await Task.Delay(100); }
+for (var attempt = 0; attempt < 50 && !intelligence.GetDiagnostics().Any(b => b.Path == "src/main.c" && b.Text == main); attempt++)
+{
+    await Task.Delay(100);
+}
 Check(intelligence.GetDiagnostics().Where(b => b.Path == "src/main.c").All(b => b.Text == main && b.Items.All(d => d.Severity != 1)), "fixed text clears earlier version diagnostics");
 var cpp = "namespace app { struct Meter { int value; int get() { return value; } }; }\nstruct Other { int value; };\nint use(app::Meter& m, Other& other) { return m.value + other.value; }\n";
 await File.WriteAllTextAsync(Path.Combine(fixture, "src/meter.cpp"), cpp);

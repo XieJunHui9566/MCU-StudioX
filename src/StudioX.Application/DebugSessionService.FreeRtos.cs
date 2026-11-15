@@ -16,6 +16,9 @@ public sealed partial class DebugSessionService
                 (target.IsWch || target.IsRp2350 || target.Core.StartsWith("Cortex-M", StringComparison.Ordinal)) ? true : (bool?)null;
             return await new FreeRtosInspector(adapter as GdbDebugAdapter ?? throw Error("当前 MDB 后端不提供 FreeRTOS 内核检查。"), stackGrowsDown).ReadAsync(objectSymbols, token);
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
 }

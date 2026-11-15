@@ -13,7 +13,10 @@ public sealed partial class McuCodeGenerationService
         {
             await RecoverCoreAsync(root, token).ConfigureAwait(false);
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
 
     private string JournalDirectory(string root) => Path.Combine(dataDirectory, "mcu-generation-transactions", Hash(Utf8.GetBytes(Path.GetFullPath(root).ToUpperInvariant()))!);
@@ -41,7 +44,13 @@ public sealed partial class McuCodeGenerationService
             }, JsonStore.Options), token).ConfigureAwait(false);
             File.Move(markerTemporary, marker, overwrite: false);
         }
-        finally { if (File.Exists(markerTemporary)) { File.Delete(markerTemporary); } }
+        finally
+        {
+            if (File.Exists(markerTemporary))
+            {
+                File.Delete(markerTemporary);
+            }
+        }
         try
         {
             foreach (var change in changes)
@@ -61,7 +70,10 @@ public sealed partial class McuCodeGenerationService
             {
                 await RecoverCoreAsync(root, CancellationToken.None).ConfigureAwait(false);
             }
-            catch (Exception recovery) { throw new AggregateException("生成中断且恢复存在冲突；备份与待恢复标记已保留。", original, recovery); }
+            catch (Exception recovery)
+            {
+                throw new AggregateException("生成中断且恢复存在冲突；备份与待恢复标记已保留。", original, recovery);
+            }
             throw;
         }
     }
@@ -158,6 +170,12 @@ public sealed partial class McuCodeGenerationService
             await CheckAsync(root, change, token).ConfigureAwait(false);
             File.Move(temporary, path, overwrite: before is not null);
         }
-        finally { if (File.Exists(temporary)) { File.Delete(temporary); } }
+        finally
+        {
+            if (File.Exists(temporary))
+            {
+                File.Delete(temporary);
+            }
+        }
     }
 }

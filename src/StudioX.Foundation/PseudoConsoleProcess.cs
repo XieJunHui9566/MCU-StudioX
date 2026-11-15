@@ -175,7 +175,10 @@ public sealed class PseudoConsoleProcess : IAsyncDisposable
             await stream.WriteAsync(Encoding.UTF8.GetBytes(text));
             await stream.FlushAsync();
         }
-        finally { inputGate.Release(); }
+        finally
+        {
+            inputGate.Release();
+        }
     }
     public void Resize(int columns, int rows)
     {
@@ -210,7 +213,10 @@ public sealed class PseudoConsoleProcess : IAsyncDisposable
                 input?.Dispose();
                 input = null;
             }
-            finally { inputGate.Release(); }
+            finally
+            {
+                inputGate.Release();
+            }
             await reader;
             await completion;
             output?.Dispose();

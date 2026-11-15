@@ -5,8 +5,8 @@ using System.Text.Json;
 
 public sealed partial class AiAgentService
 {
-    private const int LowActiveProtocolMessages = 44;
-    private const int LowActiveProtocolChars = 48_000;
+    private const int LowActiveProtocolMessages = 120;
+    private const int LowActiveProtocolChars = 64_000;
 
     /// <summary>保留 JSON 值与字符串内容，只消除缩进和中文 Unicode 转义，降低模型实际读取量。</summary>
     private static string CompactToolJson(string text)
@@ -16,22 +16,28 @@ public sealed partial class AiAgentService
             using var json = JsonDocument.Parse(text);
             return JsonSerializer.Serialize(json.RootElement, SkillCatalogJsonOptions);
         }
-        catch (JsonException) { return text; }
+        catch (JsonException)
+        {
+            return text;
+        }
     }
 
     /// <summary>越过高水位时批量回收到低水位，并在协议末尾追加一次不可变的执行记录。</summary>
-    private static void CompactCurrentProtocol(List<AiChatMessage> protocol, AiAgentCheckpoint checkpoint)
+    private static void CompactCurrentProtocol(List<AiChatMessage> protocol, AiAgentCheckpoint checkpoint,
+        int maximumMessages = MaxActiveProtocolMessages, int maximumChars = MaxActiveProtocolChars,
+        int lowMessages = LowActiveProtocolMessages, int lowChars = LowActiveProtocolChars,
+        bool preserveLatestBatch = true)
     {
-        if (protocol.Count <= MaxActiveProtocolMessages &&
-            ProtocolCharacters(protocol) <= MaxActiveProtocolChars)
+        if (protocol.Count <= maximumMessages &&
+            ProtocolCharacters(protocol) <= maximumChars)
         {
             return;
         }
 
         var compacted = new List<string>();
         var compactedCalls = 0;
-        while (protocol.Count > LowActiveProtocolMessages ||
-               ProtocolCharacters(protocol) > LowActiveProtocolChars)
+        while (protocol.Count > lowMessages ||
+               ProtocolCharacters(protocol) > lowChars)
         {
             var batch = FindOldestCompleteToolBatch(protocol);
             if (batch is null)
@@ -39,8 +45,8 @@ public sealed partial class AiAgentService
                 break;
             }
             var (start, size) = batch.Value;
-            // 最近一批结果仍是模型下一步的直接输入，不能只留下状态回执。
-            if (!protocol.Skip(start + size).Any(message =>
+            // 活动任务的最近一批结果仍是下一步的直接输入；已结束任务在续聊边界可整体回收。
+            if (preserveLatestBatch && !protocol.Skip(start + size).Any(message =>
                     message.Role == "assistant" && message.ToolCalls is { Count: > 0 }))
             {
                 break;
@@ -146,7 +152,9 @@ public sealed partial class AiAgentService
                 }
             }
         }
-        catch (JsonException) { }
+        catch (JsonException)
+        {
+        }
         return JsonSerializer.Serialize(fields);
     }
 
@@ -159,11 +167,13 @@ public sealed partial class AiAgentService
         private long? cacheMiss;
         private int requestsWithUsage;
         private int requestsWithCacheDetails;
+        private bool allCacheHitsKnown = true;
+        private bool allCacheMissesKnown = true;
 
         public void Add(AiTokenUsage usage)
         {
             requestsWithUsage++;
-            if (usage.PromptCacheHitTokens is not null || usage.PromptCacheMissTokens is not null)
+            if (usage.PromptCacheHitTokens is not null && usage.PromptCacheMissTokens is not null)
             {
                 requestsWithCacheDetails++;
             }
@@ -172,10 +182,12 @@ public sealed partial class AiAgentService
             Add(ref total, usage.TotalTokens);
             Add(ref cacheHit, usage.PromptCacheHitTokens);
             Add(ref cacheMiss, usage.PromptCacheMissTokens);
+            allCacheHitsKnown &= usage.PromptCacheHitTokens is not null;
+            allCacheMissesKnown &= usage.PromptCacheMissTokens is not null;
         }
 
         public AiAgentUsageTotals? Build() => requestsWithUsage == 0 ? null :
-            new(prompt, completion, total, cacheHit, cacheMiss,
+            new(prompt, completion, total, allCacheHitsKnown ? cacheHit : null, allCacheMissesKnown ? cacheMiss : null,
                 requestsWithUsage, requestsWithCacheDetails);
 
         private static void Add(ref long? sum, int? value)
@@ -286,7 +298,9 @@ public sealed partial class AiAgentService
                     }
                 }
             }
-            catch (JsonException) { }
+            catch (JsonException)
+            {
+            }
             return "";
         }
 
@@ -329,7 +343,9 @@ public sealed partial class AiAgentService
                     }
                 }
             }
-            catch (JsonException) { }
+            catch (JsonException)
+            {
+            }
             return null;
         }
 
@@ -345,7 +361,9 @@ public sealed partial class AiAgentService
                     return value.GetString();
                 }
             }
-            catch (JsonException) { }
+            catch (JsonException)
+            {
+            }
             return null;
         }
     }

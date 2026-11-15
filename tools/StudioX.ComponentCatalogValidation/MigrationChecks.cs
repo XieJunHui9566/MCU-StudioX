@@ -78,7 +78,10 @@ internal static class MigrationChecks
                 await migration.CreateAndBuildAsync(preview, token: cancel.Token);
                 throw new InvalidOperationException("Cancellation ignored");
             }
-            catch (OperationCanceledException) { check(!Directory.Exists(destination), "cancellation before creation leaves original and destination untouched"); }
+            catch (OperationCanceledException)
+            {
+                check(!Directory.Exists(destination), "cancellation before creation leaves original and destination untouched");
+            }
         }
         var before = await Snapshot(root);
         var result = await migration.CreateAndBuildAsync(preview);
@@ -127,6 +130,9 @@ internal static class MigrationChecks
             await action();
             throw new InvalidOperationException(label);
         }
-        catch (StudioXException error) { check(error.Code == code, label); }
+        catch (StudioXException error)
+        {
+            check(error.Code == code, label);
+        }
     }
 }

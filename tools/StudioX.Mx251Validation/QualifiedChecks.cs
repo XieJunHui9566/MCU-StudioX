@@ -112,7 +112,10 @@ internal static class QualifiedChecks
             await builder.BuildAsync(pRoot);
             throw new InvalidOperationException("Wrong target accepted");
         }
-        catch (StudioXException e) when (e.Code == "MX251_TARGET") { await Check(true, "target mismatch rejected"); }
+        catch (StudioXException e) when (e.Code == "MX251_TARGET")
+        {
+            await Check(true, "target mismatch rejected");
+        }
         await Empty(pRoot, "target mismatch");
         await File.WriteAllTextAsync(configPath, originalConfig);
         await Build(pRoot, "target-recovery");
@@ -124,17 +127,29 @@ internal static class QualifiedChecks
                 await builder.BuildAsync(pRoot);
                 throw new InvalidOperationException("Concurrent CLI lock ignored");
             }
-            catch (StudioXException e) when (e.Code == "MX251_BUSY") { await Check(Hash(Path.Combine(pRoot, ".build/firmware.hex")) == before, "active CLI lease preserves output"); }
+            catch (StudioXException e) when (e.Code == "MX251_BUSY")
+            {
+                await Check(Hash(Path.Combine(pRoot, ".build/firmware.hex")) == before, "active CLI lease preserves output");
+            }
         }
         using (var cancel = new CancellationTokenSource())
         {
             await File.WriteAllTextAsync(cmakeFile, originalCmake + "\nmessage(STATUS \"MX251_CONFIGURE_CANCEL\")\nexecute_process(COMMAND \"${CMAKE_COMMAND}\" -E sleep 20)\n");
             try
             {
-                await builder.BuildAsync(pRoot, cancellationToken: cancel.Token, output: new Output(line => { if (line.Contains("MX251_CONFIGURE_CANCEL")) { cancel.Cancel(); } }));
+                await builder.BuildAsync(pRoot, cancellationToken: cancel.Token, output: new Output(line =>
+                {
+                    if (line.Contains("MX251_CONFIGURE_CANCEL"))
+                    {
+                        cancel.Cancel();
+                    }
+                }));
                 throw new InvalidOperationException("Configure cancellation ignored");
             }
-            catch (OperationCanceledException) { await Check(cancel.IsCancellationRequested, "configure child process cancelled"); }
+            catch (OperationCanceledException)
+            {
+                await Check(cancel.IsCancellationRequested, "configure child process cancelled");
+            }
         }
         await Empty(pRoot, "configure cancelled");
         await File.WriteAllTextAsync(cmakeFile, originalCmake);
@@ -166,7 +181,10 @@ internal static class QualifiedChecks
                 await task;
                 throw new InvalidOperationException("Expected cancelled compilation");
             }
-            catch (OperationCanceledException) { await Check(cancelled, "cancelled actual second pass"); }
+            catch (OperationCanceledException)
+            {
+                await Check(cancelled, "cancelled actual second pass");
+            }
         }
         await Empty(pRoot, "cancelled");
         await Check(File.Exists(Path.Combine(pRoot, ".build/mx251/latest/owner.json")), "cancelled directory ownership retained");

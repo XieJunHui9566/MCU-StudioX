@@ -6,7 +6,6 @@ using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Threading;
-using ICSharpCode.AvalonEdit.Document;
 using StudioX.Application;
 
 public partial class MainWindow
@@ -40,7 +39,11 @@ public partial class MainWindow
         icon.SetBinding(StudioX.Desktop.Icon.ForegroundProperty, new Binding("Foreground") { RelativeSource = new RelativeSource(RelativeSourceMode.FindAncestor, typeof(Button), 1) });
         var close = new Button { Content = icon, Style = (Style)FindResource("DocumentTabCloseButton"), ToolTip = "关闭标签 (Ctrl+W)", Tag = tab };
         AutomationProperties.SetName(close, "关闭标签");
-        close.Click += async (_, e) => { e.Handled = true; await RunAsync(_ => CloseWorkspaceTabAsync(tab)); };
+        close.Click += async (_, e) =>
+        {
+            e.Handled = true;
+            await RunAsync(_ => CloseWorkspaceTabAsync(tab));
+        };
         row.Children.Add(close);
         return row;
     }
@@ -70,7 +73,21 @@ public partial class MainWindow
         label.Children.Add(new FileIcon { FileName = source.RelativePath, Width = 19, Height = 19, Margin = new Thickness(0, 0, 7, 0), VerticalAlignment = VerticalAlignment.Center });
         label.Children.Add(session.Label);
         session.Tab.Header = CreateTabHeader(session.Tab, label);
-        session.Changed = (_, _) => { UpdateEditorHeader(session); InvalidateBuildAssembly("源码存在修改，请保存并重新编译后查看汇编。"); guideSaved = false; guideBuild = null; RefreshFirstProjectGuide(); QueuePluginDocumentEvent("document.changed", session); services.Intelligence.InvalidateDiagnostics(); HideSymbolHover(); ClearBuildDiagnostics(); agentEditorSession?.InvalidateValidation(); QueueLiveDiagnostics(); CommandManager.InvalidateRequerySuggested(); };
+        session.Changed = (_, _) =>
+        {
+            UpdateEditorHeader(session);
+            InvalidateBuildAssembly("源码存在修改，请保存并重新编译后查看汇编。");
+            guideSaved = false;
+            guideBuild = null;
+            RefreshFirstProjectGuide();
+            QueuePluginDocumentEvent("document.changed", session);
+            services.Intelligence.InvalidateDiagnostics();
+            HideSymbolHover();
+            ClearBuildDiagnostics();
+            agentEditorSession?.InvalidateValidation();
+            QueueLiveDiagnostics();
+            CommandManager.InvalidateRequerySuggested();
+        };
         session.Buffer.TextChanged += session.Changed;
         editorDocuments.Add(session);
         WorkspaceTabs.Items.Insert(editorDocuments.Count(e => e.Group == 0), session.Tab);
@@ -103,7 +120,13 @@ public partial class MainWindow
             {
                 RefreshFirstProjectGuide();
             }
-            _ = Dispatcher.BeginInvoke(() => { if (tabs.SelectedItem == selected) { selected.BringIntoView(); } }, DispatcherPriority.Loaded);
+            _ = Dispatcher.BeginInvoke(() =>
+            {
+                if (tabs.SelectedItem == selected)
+                {
+                    selected.BringIntoView();
+                }
+            }, DispatcherPriority.Loaded);
         }
     }
 
@@ -148,7 +171,7 @@ public partial class MainWindow
                 mirroredSession = null;
             }
             session.Tab.Content = EditorSurface;
-            SourceEditor.Document = session.Buffer;
+            sourceFolding!.SetDocument(session);
             SourceEditor.IsReadOnly = session.Source.IsReadOnly || services.Debugger.IsActive;
             var start = Math.Clamp(session.SelectionStart, 0, session.Buffer.TextLength);
             SourceEditor.Select(start, Math.Clamp(session.SelectionLength, 0, session.Buffer.TextLength - start));
@@ -178,7 +201,10 @@ public partial class MainWindow
                 SourceEditor.ScrollToHorizontalOffset(session.HorizontalOffset);
             }, DispatcherPriority.Loaded);
         }
-        finally { changingEditor = false; }
+        finally
+        {
+            changingEditor = false;
+        }
         RefreshSplitMirror();
         QueueOutlineRefresh(clear: true);
         QueueLiveDiagnostics();
@@ -295,7 +321,10 @@ public partial class MainWindow
             }
             return true;
         }
-        finally { WorkspaceTabs.IsEnabled = wasEnabled; }
+        finally
+        {
+            WorkspaceTabs.IsEnabled = wasEnabled;
+        }
     }
 
     private async Task CloseWorkspaceTabAsync(TabItem tab, Func<SourceDocument, MessageBoxResult>? decide = null)
@@ -363,7 +392,7 @@ public partial class MainWindow
                 editorViewRevision++;
                 session.Tab.Content = null;
                 activeEditor = null;
-                SourceEditor.Document = new TextDocument();
+                sourceFolding!.SetDocument(null);
                 SourceEditor.IsReadOnly = true;
                 RefreshDiagnosticMarkers();
             }
@@ -377,12 +406,15 @@ public partial class MainWindow
             if (mirroredSession == session)
             {
                 mirroredSession = null;
-                mirrorEditor.Document = new TextDocument();
+                mirrorFolding!.SetDocument(null);
             }
             UpdateSplitVisibility();
             UpdateEditorHeaders();
         }
-        finally { changingEditor = wasChanging; }
+        finally
+        {
+            changingEditor = wasChanging;
+        }
         var selected = (DocumentTabs(session).SelectedItem as TabItem)?.Tag as EditorDocumentSession
             ?? (WorkspaceTabs.SelectedItem as TabItem)?.Tag as EditorDocumentSession
             ?? (secondaryTabs?.SelectedItem as TabItem)?.Tag as EditorDocumentSession;
@@ -408,7 +440,10 @@ public partial class MainWindow
                 RemoveEditor(session);
             }
         }
-        finally { changingEditor = false; }
+        finally
+        {
+            changingEditor = false;
+        }
     }
     private async void CloseDocument_Click(object sender, RoutedEventArgs e)
     {

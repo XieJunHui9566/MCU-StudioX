@@ -133,7 +133,13 @@ internal sealed class InstalledServices
                 throw new InvalidOperationException("Actual installed toolchain build failed; see its original log.");
             }
         }
-        finally { foreach (var (name, value) in previous) { Environment.SetEnvironmentVariable(name, value); } }
+        finally
+        {
+            foreach (var (name, value) in previous)
+            {
+                Environment.SetEnvironmentVariable(name, value);
+            }
+        }
     }
 
     internal async Task CaptureMemoryAsync(string project, string data, string output)

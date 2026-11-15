@@ -20,7 +20,9 @@ public partial class MainWindow
         }
         async Task Drain()
         {
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Background);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.Background);
             await layout();
         }
         bool HasColor(OutputTone tone)
@@ -115,7 +117,9 @@ public partial class MainWindow
             }, cancellation.Token);
             throw new InvalidOperationException("Cancelled monitor accepted.");
         }
-        catch (OperationCanceledException) when (cancellation.IsCancellationRequested) { }
+        catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
+        {
+        }
         await Drain();
         var cancelled = BuildLog.Text;
         lateOutput!.Report("STUDIOX_ISP_PROGRESS 61440 61440\n");

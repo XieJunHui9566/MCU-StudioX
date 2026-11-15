@@ -144,7 +144,10 @@ internal static class PdfMcpChecks
             check(externalInfo.Contains("\"pageCount\":2", StringComparison.Ordinal),
                 "approved external directory supports read-only PDF inspection");
         }
-        finally { authorizer.Allow = priorApproval; }
+        finally
+        {
+            authorizer.Allow = priorApproval;
+        }
     }
 
     // The fixture is generated in the test's unique temp directory and removed by Program's cleanup.

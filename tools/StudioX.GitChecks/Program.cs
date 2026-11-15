@@ -9,7 +9,15 @@ var git = new GitRepositoryService(runtime);
 var output = Path.Combine(root, ".artifacts", "git-terminal-" + DateTime.Now.ToString("yyyyMMdd-HHmmss"));
 Directory.CreateDirectory(output);
 var checks = 0;
-void Check(bool value, string label) { if (!value) { throw new Exception(label); } checks++; Console.WriteLine("PASS " + label); }
+void Check(bool value, string label)
+{
+    if (!value)
+    {
+        throw new Exception(label);
+    }
+    checks++;
+    Console.WriteLine("PASS " + label);
+}
 async Task<string> Run(string cwd, params string[] command)
 {
     var result = await new ProcessRunner().RunAsync(new(git.Executable, command, cwd, TimeSpan.FromSeconds(30), git.Environment(), RemoveEnvironment: GitRepositoryService.AmbientVariables));
@@ -38,7 +46,10 @@ try
     await new ProjectService(new GitRepositoryService(Path.Combine(output, "absent-runtime")).InitializeAsync).CreateAsync(pack, device.Id, device.Templates.First().Id, "missing", missing);
     throw new Exception("Missing Git did not fail");
 }
-catch (StudioXException ex) when (ex.Code == "GIT_MISSING") { Check(!Directory.Exists(missing) && !Directory.EnumerateDirectories(output, ".studiox-create-*").Any(), "Git failure leaves no partial project"); }
+catch (StudioXException ex) when (ex.Code == "GIT_MISSING")
+{
+    Check(!Directory.Exists(missing) && !Directory.EnumerateDirectories(output, ".studiox-create-*").Any(), "Git failure leaves no partial project");
+}
 await Run(project, "config", "user.name", "StudioX Test");
 await Run(project, "config", "user.email", "test@example.invalid");
 await Run(project, "add", ".");
@@ -133,6 +144,9 @@ screen.Feed("\x1b[2J\x1b[H\x1b[31m红色\x1b[0m\r\n");
 Check(screen.Snapshot().Display.Text.StartsWith("红色") && screen.Snapshot().Display.Spans.Any(s => s.Style.Foreground is not null), "VT CJK cells and color");
 screen.Feed("\x1b[?25l");
 Check(!screen.Snapshot().CursorVisible && screen.Snapshot().CursorOffset >= 0, "hidden cursor still provides position for output following");
-for (var i = 0; i < 1200; i++) { screen.Feed("line\r\n"); }
+for (var i = 0; i < 1200; i++)
+{
+    screen.Feed("line\r\n");
+}
 Check(screen.Snapshot().Display.TrimmedLines > 0, "bounded console history");
 Console.WriteLine($"PASS: {checks} Git / terminal checks. Artifacts: {output}");

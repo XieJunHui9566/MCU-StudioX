@@ -16,7 +16,9 @@ public sealed class Mon51Client : IAsyncDisposable
     private bool disposed;
 
     public Mon51Client(DeviceSession session, string logPath)
-        : this(session, logPath, "parameters not supplied") { }
+        : this(session, logPath, "parameters not supplied")
+    {
+    }
 
     public Mon51Client(DeviceSession session, string logPath, string connectionParameters)
     {
@@ -298,6 +300,10 @@ public sealed class Mon51Client : IAsyncDisposable
         {
             await session.DisposeAsync();
         }
-        finally { Record("CLOSE", session.Key); await log.DisposeAsync(); }
+        finally
+        {
+            Record("CLOSE", session.Key);
+            await log.DisposeAsync();
+        }
     }
 }

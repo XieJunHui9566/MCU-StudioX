@@ -1,0 +1,47 @@
+--- a/src/mcs251/gen.c
++++ b/src/mcs251/gen.c
+@@ -738,9 +738,25 @@
+    of MCS251 DR28. DR28 is outside the register set allocated by the shared
+    MCS-51 backend, which leaves all ABI argument registers intact. */
+ static void
+-mcs251LoadCallTarget (operand *oper, iCode *ic)
++mcs251LoadCallTarget (operand *oper, iCode *ic, bool nativeCall)
+ {
+   wassert (FUNCPTRSIZE == 3);
++
++  if (nativeCall)
++    {
++      /* 保留低字节到高字节的读取顺序，包括 volatile/栈上目标。
++         SEND 前的原生路径已保存 DPTR；无 SEND 时它属于调用破坏区。
++         全部源字节先入栈，再清零 DPX，避免目标本身位于 DPTR 时覆盖源。
++         显式清零高字节后搬入 DR28，不借用 R0-R2 或改变 PSW 标志。 */
++      pushSide (oper, FUNCPTRSIZE, ic);
++      emitcode ("mov", "dpx,#0x00000000");
++      emitpop ("dpxl");
++      emitpop ("dph");
++      emitpop ("dpl");
++      emitcode ("mov", "dr28,dpx");
++      _G.dptrCache.valid = false;
++      return;
++    }
+ 
+   /* r0-r2 can already hold the first argument when SENDs are lowered.
+      Preserve them while reversing the three pointer bytes for POP DR28. */
+@@ -1670,7 +1686,7 @@
+               emitpush ("dph");
+               emitpush ("dpxl");
+             }
+-          mcs251LoadCallTarget (IC_LEFT (ic), ic);
++          mcs251LoadCallTarget (IC_LEFT (ic), ic, nativeCall);
+           if (nativeCall)
+             {
+               emitpop ("dpxl");
+@@ -1707,7 +1723,7 @@
+             }
+ 
+           /* now get the called address into dptr / DR28 */
+-          mcs251LoadCallTarget (IC_LEFT (ic), ic);
++          mcs251LoadCallTarget (IC_LEFT (ic), ic, nativeCall);
+ 
+           if (swapBanks)
+             {

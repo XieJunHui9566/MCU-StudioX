@@ -61,14 +61,18 @@ if ($DistributionProfile -eq 'light' -and @('runtime/toolsets', 'runtime/hdl', '
 {
     throw 'Light installer payload contains development tools.'
 }
-if ($DistributionProfile -eq 'full')
+foreach ($id in $(if ($DistributionProfile -eq 'full')
+        {
+            @('agm.agrv', 'arm.gnu', 'riscv.xpack', 'wch.riscv')
+        }
+        else
+        {
+            @()
+        }))
 {
-    # 完整发行按实际组件清单检查，允许独立版本演进和可公开分发的组件组合。
-    # 每个目录的身份、版本与清单由统一函数核对，不绑定早期厂商工具版本。
-    $bundledComponents = @(Get-StudioXBundledComponents $payload)
-    if (!$bundledComponents.Count)
+    if (!(Test-Path -LiteralPath (Join-Path $payload "runtime/toolsets/$id/1.0.0/toolset.json")))
     {
-        throw 'Full installer payload must contain development components.'
+        throw "Missing bundled toolset: $id"
     }
 }
 if (!(Test-Path -LiteralPath (Join-Path $payload 'runtime/languages/clangd/bin/clangd.exe')))

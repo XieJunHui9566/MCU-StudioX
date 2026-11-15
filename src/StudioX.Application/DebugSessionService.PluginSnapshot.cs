@@ -23,6 +23,9 @@ public sealed partial class DebugSessionService
                 Reason = matches ? Reason : "当前调试会话属于其他工程"
             };
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
 }

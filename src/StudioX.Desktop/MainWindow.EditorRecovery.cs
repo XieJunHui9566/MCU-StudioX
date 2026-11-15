@@ -136,7 +136,10 @@ public partial class MainWindow
                     DocumentTabs(visible).SelectedItem = visible.Tab;
                 }
             }
-            finally { changingEditor = false; }
+            finally
+            {
+                changingEditor = false;
+            }
             var selected = FindEditor(snapshot.ActivePath ?? "") ?? editorDocuments.FirstOrDefault();
             if (selected is not null)
             {
@@ -152,7 +155,10 @@ public partial class MainWindow
                 (documents.Any(d => d.Notice is not null) ? "；磁盘差异说明见构建日志。" : "。");
             QueueLiveDiagnostics();
         }
-        finally { restoringEditorSession = false; }
+        finally
+        {
+            restoringEditorSession = false;
+        }
     });
 
     private async Task<bool> SkipMissingEditorProjectAsync(string directory, CancellationToken token)

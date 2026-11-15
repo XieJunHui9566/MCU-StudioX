@@ -77,7 +77,10 @@ public sealed partial class CodeIntelligenceService
                 }
             }
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
 
     /// <summary>只返回当前内存文档的声明；不使用工作区搜索，避免把头文件库函数混入列表。</summary>
@@ -101,7 +104,10 @@ public sealed partial class CodeIntelligenceService
             }, token).ConfigureAwait(false);
             return ReadDocumentSymbols(response, text, uri, token);
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
 
     private static IReadOnlyList<CodeDocumentSymbol> ReadDocumentSymbols(JsonElement response, string text, string uri, CancellationToken token, int depth = 0)
@@ -159,6 +165,9 @@ public sealed partial class CodeIntelligenceService
             }
             return CodePositions.ToOffset(text, range.Start) <= CodePositions.ToOffset(text, range.End) ? range : null;
         }
-        catch (Exception ex) when (ex is JsonException or ArgumentOutOfRangeException) { return null; }
+        catch (Exception ex) when (ex is JsonException or ArgumentOutOfRangeException)
+        {
+            return null;
+        }
     }
 }

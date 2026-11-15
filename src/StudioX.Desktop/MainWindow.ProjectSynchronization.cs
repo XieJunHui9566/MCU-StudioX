@@ -60,7 +60,9 @@ public partial class MainWindow
                 await SynchronizeProjectFilesAsync(batch, token);
             }
         }
-        catch (OperationCanceledException) when (token.IsCancellationRequested) { }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+        }
         catch (Exception error)
         {
             Log("工程文件自动同步失败；F5 可重试：" + error);
@@ -149,7 +151,10 @@ public partial class MainWindow
                         }
                     }
                 }
-                catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }
+                catch (OperationCanceledException) when (token.IsCancellationRequested)
+                {
+                    throw;
+                }
                 catch (Exception error)
                 {
                     if (!Current())
@@ -188,8 +193,14 @@ public partial class MainWindow
             {
                 await services.Intelligence.RefreshFilesAsync(batch, token);
             }
-            catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }
-            catch (Exception error) { await RecordAnalysisFailureAsync("工程文件已同步，语言服务需要重试", error); }
+            catch (OperationCanceledException) when (token.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception error)
+            {
+                await RecordAnalysisFailureAsync("工程文件已同步，语言服务需要重试", error);
+            }
             if (Current())
             {
                 RefreshActiveEditorMetadata();

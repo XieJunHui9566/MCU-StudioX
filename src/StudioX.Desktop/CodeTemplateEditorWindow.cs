@@ -115,11 +115,30 @@ internal sealed class CodeTemplateEditorWindow : Window
                 saving = false;
                 DialogResult = true;
             }
-            catch (Exception ex) { status.Text = ex.Message; status.ToolTip = ex.ToString(); log(ex.ToString()); }
-            finally { saving = false; save.IsEnabled = true; }
+            catch (Exception ex)
+            {
+                status.Text = ex.Message;
+                status.ToolTip = ex.ToString();
+                log(ex.ToString());
+            }
+            finally
+            {
+                saving = false;
+                save.IsEnabled = true;
+            }
         };
-        Closing += (_, e) => { if (saving) { e.Cancel = true; } };
-        Loaded += (_, _) => { NameField.Focus(); NameField.SelectAll(); };
+        Closing += (_, e) =>
+        {
+            if (saving)
+            {
+                e.Cancel = true;
+            }
+        };
+        Loaded += (_, _) =>
+        {
+            NameField.Focus();
+            NameField.SelectAll();
+        };
         void AddField(string label, Control control, int row, int column)
         {
             var panel = new StackPanel { Margin = new(column == 0 ? 0 : 12, 0, 0, 10) };

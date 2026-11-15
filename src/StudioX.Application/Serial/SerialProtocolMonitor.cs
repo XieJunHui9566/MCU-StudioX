@@ -77,7 +77,14 @@ public sealed class SerialProtocolMonitor(string? hostExecutable = null) : IAsyn
                 worker = Task.Run(() => RunAsync(newChannel, options, ownedScript, token));
             }
         }
-        finally { if (script is not null) { await script.DisposeAsync(); } configuration.Release(); }
+        finally
+        {
+            if (script is not null)
+            {
+                await script.DisposeAsync();
+            }
+            configuration.Release();
+        }
     }
     public void Observe(SerialRecord record)
     {
@@ -218,7 +225,9 @@ public sealed class SerialProtocolMonitor(string? hostExecutable = null) : IAsyn
                 await Task.Delay(25, token);
             }
         }
-        catch (OperationCanceledException) when (token.IsCancellationRequested) { }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+        }
         catch (Exception ex)
         {
             lock (sync)
@@ -228,7 +237,13 @@ public sealed class SerialProtocolMonitor(string? hostExecutable = null) : IAsyn
                 version++;
             }
         }
-        finally { if (script is not null) { await script.DisposeAsync(); } }
+        finally
+        {
+            if (script is not null)
+            {
+                await script.DisposeAsync();
+            }
+        }
         async Task Flush(int side)
         {
             if (script is null)
@@ -304,6 +319,9 @@ public sealed class SerialProtocolMonitor(string? hostExecutable = null) : IAsyn
             disposed = true;
             await StopCoreAsync();
         }
-        finally { configuration.Release(); }
+        finally
+        {
+            configuration.Release();
+        }
     }
 }

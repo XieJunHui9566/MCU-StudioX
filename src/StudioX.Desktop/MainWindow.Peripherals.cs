@@ -77,6 +77,10 @@ public partial class MainWindow
                 view.ClearReading("请先绑定 SVD 并选择寄存器。");
             }
         }
-        catch (Exception ex) { view.ClearReading(ex.ToString()); throw; }
+        catch (Exception ex)
+        {
+            view.ClearReading(ex.ToString());
+            throw;
+        }
     });
 }

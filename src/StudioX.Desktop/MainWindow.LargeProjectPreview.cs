@@ -15,7 +15,9 @@ public partial class MainWindow
         var measurements = new List<object>();
         async Task Measure(string phase, Func<Task> action)
         {
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.ApplicationIdle);
             var watch = Stopwatch.StartNew();
             var allocated = GC.GetTotalAllocatedBytes(true);
             var previous = TimeSpan.Zero;
@@ -32,7 +34,9 @@ public partial class MainWindow
             try
             {
                 await action();
-                await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);
+                await Dispatcher.InvokeAsync(() =>
+                {
+                }, DispatcherPriority.ApplicationIdle);
             }
             finally
             {
@@ -53,22 +57,39 @@ public partial class MainWindow
         }
         await Measure("tree-initial-wide-directory", () => PopulateProjectTreeAsync("大工程性能验证"));
         var source = await FindProjectNodeAsync("src") ?? throw new InvalidOperationException("Missing source directory");
-        await Measure("tree-collapse-reexpand", async () => { source.IsExpanded = false; source.IsExpanded = true; await LoadChildrenAsync(source); });
+        await Measure("tree-collapse-reexpand", async () =>
+        {
+            source.IsExpanded = false;
+            source.IsExpanded = true;
+            await LoadChildrenAsync(source);
+        });
         if (source.Items.Count != 6000)
         {
             throw new InvalidOperationException("Source entries missing");
         }
         var first = (TreeViewItem)source.Items[0];
         first.IsSelected = true;
-        await Measure("tree-repeat-expansion-selection", async () => { source.IsExpanded = false; source.IsExpanded = true; await LoadChildrenAsync(source); });
+        await Measure("tree-repeat-expansion-selection", async () =>
+        {
+            source.IsExpanded = false;
+            source.IsExpanded = true;
+            await LoadChildrenAsync(source);
+        });
         if (!ReferenceEquals(source.Items[0], first))
         {
             throw new InvalidOperationException("Re-expansion recreated nodes");
         }
         first.IsSelected = true;
         StudioX.Application.Editing.WorkspaceFileIndex? index = null;
-        await Measure("quick-open-cold", async () => { index = await services.WorkspaceDiscovery.CreateIndexAsync(fixture); await index.SearchAsync("source5999"); });
-        await Measure("quick-open-second-query", async () => { await index!.SearchAsync("header079"); });
+        await Measure("quick-open-cold", async () =>
+        {
+            index = await services.WorkspaceDiscovery.CreateIndexAsync(fixture);
+            await index.SearchAsync("source5999");
+        });
+        await Measure("quick-open-second-query", async () =>
+        {
+            await index!.SearchAsync("header079");
+        });
         await Measure("tree-refresh-preserves-selection", () => RefreshProjectTreeAsync());
         source = await FindProjectNodeAsync("src") ?? throw new InvalidOperationException("Missing refreshed directory");
         if (source.Items.Count != 6000 || SelectedProjectEntry?.RelativePath != "src/source0000.c")
@@ -80,14 +101,24 @@ public partial class MainWindow
         {
             var cancelled = false;
             var timer = new DispatcherTimer(DispatcherPriority.Input, Dispatcher) { Interval = TimeSpan.FromMilliseconds(30) };
-            timer.Tick += (_, _) => { timer.Stop(); cancellation.Cancel(); };
+            timer.Tick += (_, _) =>
+            {
+                timer.Stop();
+                cancellation.Cancel();
+            };
             timer.Start();
             try
             {
                 await PopulateProjectTreeAsync("取消验证", token: cancellation.Token);
             }
-            catch (OperationCanceledException) when (cancellation.IsCancellationRequested) { cancelled = true; }
-            finally { timer.Stop(); }
+            catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
+            {
+                cancelled = true;
+            }
+            finally
+            {
+                timer.Stop();
+            }
             if (!cancelled)
             {
                 throw new InvalidOperationException("UI cancellation did not stop wide directory loading");
@@ -123,7 +154,9 @@ public partial class MainWindow
         try
         {
             await OpenFromCommandLineAsync(fixture);
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.ApplicationIdle);
             gaps.Add((watch.Elapsed - previous).TotalMilliseconds);
             if (activeDocument is null || !services.Intelligence.IsReady)
             {
@@ -162,7 +195,9 @@ public partial class MainWindow
                 }
             }
             UpdateLayout();
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.Render);
             Render(this, Path.Combine(directory, "project-open.png"));
             QueueBuildMemoryRefresh(fixture);
             var obsolete = buildMemoryRefreshTask;
@@ -171,13 +206,19 @@ public partial class MainWindow
                 throw new InvalidOperationException("Cannot close fixture");
             }
             await obsolete.WaitAsync(TimeSpan.FromSeconds(10));
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.ApplicationIdle);
             if (projectDirectory is not null || BuildMemory.AnalysisStatus.Text != "打开工程并编译后显示占用。")
             {
                 throw new InvalidOperationException("Old self-check overwrote closed project state");
             }
             await File.WriteAllTextAsync(Path.Combine(directory, "result.txt"), "PASS: isolated ESP-IDF editor and real clangd ready before background memory self-check; editing/undo works, Stop cancels self-check without blocking Build, close cancels analysis and rejects late callbacks; no firmware build or hardware access.\n");
         }
-        finally { timer.Stop(); timer.Tick -= Tick; }
+        finally
+        {
+            timer.Stop();
+            timer.Tick -= Tick;
+        }
     }
 }

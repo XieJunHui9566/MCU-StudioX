@@ -64,7 +64,10 @@ internal static class PinAliasChecks
             model.GenerateFiles();
             throw new ArgumentException("Duplicate aliases generated.");
         }
-        catch (InvalidOperationException) { check(true, "generator refuses duplicate aliases even without the UI"); }
+        catch (InvalidOperationException)
+        {
+            check(true, "generator refuses duplicate aliases even without the UI");
+        }
         Name(uartPin, "led");
         check(model.Errors().Count == 0 && Header().Contains("#define led P36\n", StringComparison.Ordinal), "C aliases retain case-sensitive spelling");
         Name("pad-4", "STATUS_LED");

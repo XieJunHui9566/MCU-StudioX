@@ -24,7 +24,13 @@ public partial class MainWindow
             }
             var window = new PluginToolWindow(this, panel.Title, host);
             var launcher = new Button { Content = "在独立窗口打开：" + panel.Title, HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 12, 0, 8) };
-            launcher.Click += (_, _) => { if (CanRunPlugin(pluginId)) { window.ShowOrActivate(); } };
+            launcher.Click += (_, _) =>
+            {
+                if (CanRunPlugin(pluginId))
+                {
+                    window.ShowOrActivate();
+                }
+            };
             body.Children.Add(launcher);
             pluginWindows.Add(key, (window, launcher));
         }

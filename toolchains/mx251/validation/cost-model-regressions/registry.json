@@ -1,0 +1,13 @@
+{
+  "schema": 1,
+  "policy": "Every cost-model change must reject all preserved negative cases; integrity-only is not qualification.",
+  "cases": [
+    {
+      "id": "v0.0136-struct-records",
+      "directory": "v0.0136-struct-records",
+      "manifestSha256": "5275c5bfd2b922fd00cad510e91a14e0f830d6f9a224fc892d7700364621d358",
+      "requiredDecision": "reject",
+      "permanent": true
+    }
+  ]
+}

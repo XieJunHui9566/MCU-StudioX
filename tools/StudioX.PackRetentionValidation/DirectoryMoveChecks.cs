@@ -50,7 +50,9 @@ internal static class DirectoryMoveChecks
                     await DirectoryMoves.MoveAsync(cancelledSource, cancelledTarget, cancellation.Token);
                     throw new InvalidOperationException("Cancelled sharing wait unexpectedly completed.");
                 }
-                catch (OperationCanceledException) when (cancellation.IsCancellationRequested) { }
+                catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
+                {
+                }
             }
         }
         if (!Directory.Exists(cancelledSource) || Directory.Exists(cancelledTarget))
@@ -67,7 +69,9 @@ internal static class DirectoryMoveChecks
             await DirectoryMoves.MoveAsync(cancelledSource, occupied);
             throw new InvalidOperationException("Existing destination was replaced.");
         }
-        catch (IOException) { }
+        catch (IOException)
+        {
+        }
         if (!Directory.Exists(cancelledSource) || await File.ReadAllTextAsync(Path.Combine(occupied, "content.txt")) != "existing target")
         {
             throw new InvalidOperationException("Existing destination changed.");

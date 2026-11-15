@@ -4,6 +4,24 @@ using StudioX.Engine;
 using StudioX.Foundation;
 using StudioX.Packages;
 
+if (args is ["--named-existing", var existingRuntime, var existingRoot, var existingOutput])
+{
+    await ProjectNameChecks.VerifyExistingAsync(Path.GetFullPath(existingRuntime), Path.GetFullPath(existingRoot), Path.GetFullPath(existingOutput));
+    return 0;
+}
+
+if (args is ["--named-backend", var backendRuntime, var backendPacks, var backendOutput, var backend])
+{
+    await ProjectNameChecks.RunBackendAsync(Path.GetFullPath(backendRuntime), Path.GetFullPath(backendPacks), Path.GetFullPath(backendOutput), backend);
+    return 0;
+}
+
+if (args is ["--project-name", var nameRuntime, var namePacks, var nameOutput])
+{
+    await ProjectNameChecks.RunAsync(Path.GetFullPath(nameRuntime), Path.GetFullPath(namePacks), Path.GetFullPath(nameOutput));
+    return 0;
+}
+
 if (args is ["--memory-model", var memoryRuntime, var memoryPack, var memoryOutput])
 {
     await MemoryModelChecks.RunAsync(Path.GetFullPath(memoryRuntime), Path.GetFullPath(memoryPack), Path.GetFullPath(memoryOutput));
@@ -31,14 +49,23 @@ if (args.Length is not (3 or 4))
     return 2;
 }
 var output = Path.GetFullPath(args[2]);
-if (Directory.Exists(output) || File.Exists(output)) { throw new InvalidOperationException("验收输出目录必须尚不存在。"); }
+if (Directory.Exists(output) || File.Exists(output))
+{
+    throw new InvalidOperationException("验收输出目录必须尚不存在。");
+}
 Directory.CreateDirectory(output);
 var pack = await new PackRepository(Path.Combine(output, "repository")).ImportAsync(Path.GetFullPath(args[1]));
-if (pack.Manifest.Id != "stc.stc8") { throw new InvalidOperationException("传入的不是 STC8 单包。"); }
+if (pack.Manifest.Id != "stc.stc8")
+{
+    throw new InvalidOperationException("传入的不是 STC8 单包。");
+}
 var selectedDevices = args.Length == 4
     ? pack.Manifest.Devices.Where(device => device.Id.Equals(args[3], StringComparison.OrdinalIgnoreCase)).ToArray()
     : pack.Manifest.Devices.ToArray();
-if (selectedDevices.Length == 0) { throw new InvalidOperationException("包内没有请求验证的器件型号。"); }
+if (selectedDevices.Length == 0)
+{
+    throw new InvalidOperationException("包内没有请求验证的器件型号。");
+}
 var toolsets = new ToolsetCatalog(Path.Combine(Path.GetFullPath(args[0]), "toolsets"));
 var builder = new BuildService(toolsets);
 var downloader = new OpenOcdService(toolsets);
@@ -118,7 +145,9 @@ foreach (var device in selectedDevices)
                 await builder.SaveSettingsAsync(path, new ProjectBuildSettings(CodeRomSizeBytes: limit.MaximumBytes + 1));
                 throw new InvalidOperationException("超出器件有效容量的设置被接受。");
             }
-            catch (StudioXException ex) when (ex.Code == "BUILD_SETTINGS") { }
+            catch (StudioXException ex) when (ex.Code == "BUILD_SETTINGS")
+            {
+            }
             await builder.SaveSettingsAsync(path, new ProjectBuildSettings(CodeRomSizeBytes: 8192));
             var limited = await builder.BuildAsync(path);
             if (!limited.Success)

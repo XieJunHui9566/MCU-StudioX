@@ -4,12 +4,26 @@ using StudioX.Application.Editing;
 using StudioX.Engine;
 using StudioX.Foundation;
 
-if (args.Length is < 1 or > 2) { throw new ArgumentException("Usage: <new-output> [real-compilation-inputs.json]"); }
+if (args.Length is < 1 or > 2)
+{
+    throw new ArgumentException("Usage: <new-output> [real-compilation-inputs.json]");
+}
 var output = Path.GetFullPath(args[0]);
-if (Directory.Exists(output)) { throw new IOException("Use a new output directory."); }
+if (Directory.Exists(output))
+{
+    throw new IOException("Use a new output directory.");
+}
 Directory.CreateDirectory(output);
 var checks = new List<string>();
-void Check(bool value, string message) { if (!value) { throw new InvalidOperationException(message); } checks.Add(message); Console.WriteLine("PASS " + message); }
+void Check(bool value, string message)
+{
+    if (!value)
+    {
+        throw new InvalidOperationException(message);
+    }
+    checks.Add(message);
+    Console.WriteLine("PASS " + message);
+}
 async Task Reject(Func<Task> action, string code, string message)
 {
     try
@@ -17,7 +31,10 @@ async Task Reject(Func<Task> action, string code, string message)
         await action();
         throw new InvalidOperationException("Expected rejection: " + message);
     }
-    catch (StudioXException error) when (error.Code == code) { Check(true, message); }
+    catch (StudioXException error) when (error.Code == code)
+    {
+        Check(true, message);
+    }
 }
 var files = new ProjectFileService();
 var service = new SourceRegistrationService(files);
@@ -146,7 +163,23 @@ await Reject(() => Task.FromResult(service.Prepare(context, "当前组件", [new
 await Write("main/nested/CMakeLists.txt", "idf_component_register(SRCS child.c)\n");
 await Write("main/nested/child.c", "int child;\n");
 Check(!service.Suggest(context, "当前组件", (await service.DiscoverAsync(project)).Sources, []).Any(item => item.Path == "main/nested/child.c"), "nested component source is not suggested to its parent");
-using (var cancelled = new CancellationTokenSource()) { cancelled.Cancel(); try { await service.DiscoverAsync(project, cancelled.Token); throw new InvalidOperationException("Cancellation ignored."); } catch (OperationCanceledException) { Check(true, "discovery cancellation exits without writes"); } }
+using (var cancelled = new CancellationTokenSource())
+{
+    cancelled.Cancel();
+    try
+    {
+        await service.DiscoverAsync(project, cancelled.Token);
+        throw new InvalidOperationException("Cancellation ignored.");
+    }
+    catch (OperationCanceledException)
+    {
+        Check(true, "discovery cancellation exits without writes");
+    }
+}
 var realCompilation = "not_requested";
-if (args.Length == 2) { await RealSourceRegistrationChecks.RunAsync(Path.Combine(output, "real-compilation"), Path.GetFullPath(args[1]), service, files, Check); realCompilation = "passed"; }
+if (args.Length == 2)
+{
+    await RealSourceRegistrationChecks.RunAsync(Path.Combine(output, "real-compilation"), Path.GetFullPath(args[1]), service, files, Check);
+    realCompilation = "passed";
+}
 await JsonStore.WriteAsync(Path.Combine(output, "result.json"), new { success = true, checks, realCompilation, hardware = false });

@@ -29,7 +29,11 @@ internal static class SettingsChecks
             {
                 await action();
             }
-            catch (StudioXException ex) when (ex.Code == code) { Check(true, code); return; }
+            catch (StudioXException ex) when (ex.Code == code)
+            {
+                Check(true, code);
+                return;
+            }
             throw new Exception("Expected " + code);
         }
         var repo = new PackRepository(Path.Combine(output, "packs"));
@@ -83,7 +87,10 @@ internal static class SettingsChecks
                 await service.SaveModelAsync(project, settings, "small", canceled.Token);
                 throw new Exception("Expected cancellation");
             }
-            catch (OperationCanceledException) { Check((await service.ReadAsync(project)).Model == "large", "cancellation preserves model"); }
+            catch (OperationCanceledException)
+            {
+                Check((await service.ReadAsync(project)).Model == "large", "cancellation preserves model");
+            }
         }
         var external = JsonNode.Parse(await File.ReadAllTextAsync(path))!;
         external["optimization"] = "size";

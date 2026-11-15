@@ -1,0 +1,7 @@
+cmake_minimum_required(VERSION 3.25)
+project(MX251_STC32G_CALL_APPLICATION NONE)
+include("${MX251_PROJECT_MODULE}")
+add_library(app INTERFACE)
+target_sources(app INTERFACE main.c usb_poll.c stc32g_test.h vectors.h mixed/callers.c mixed/callees.c mixed/wide-ordinary-calls.h native/callers.c native/callees.c native/wide-ordinary-calls.h)
+set_source_files_properties(main.c usb_poll.c PROPERTIES MX251_BACKEND legacy)
+mx251_firmware(app)

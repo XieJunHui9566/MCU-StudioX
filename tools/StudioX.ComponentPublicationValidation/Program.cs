@@ -96,11 +96,17 @@ if (args.Length is 4 or 5 && args[0] == "--verify-online-catalog")
     Console.WriteLine("PASS IDE verifies the public HTTPS directory against the pinned publisher key");
     return;
 }
-if (args.Length != 3) { throw new ArgumentException("Usage: <repository> <candidate.json> <new output directory>"); }
+if (args.Length != 3)
+{
+    throw new ArgumentException("Usage: <repository> <candidate.json> <new output directory>");
+}
 var repository = Path.GetFullPath(args[0]);
 var candidatePath = Path.GetFullPath(args[1]);
 var output = Path.GetFullPath(args[2]);
-if (Directory.Exists(output)) { throw new InvalidOperationException("Use a new validation directory."); }
+if (Directory.Exists(output))
+{
+    throw new InvalidOperationException("Use a new validation directory.");
+}
 Directory.CreateDirectory(output);
 var checks = new List<string>();
 void Check(bool passed, string description)
@@ -131,7 +137,10 @@ try
     await distribution.ReadAsync(tampered, key);
     Check(false, "tampered catalog rejected");
 }
-catch (StudioXException ex) { Check(ex.Code == "CATALOG_SIGNATURE", "IDE rejects a changed catalog with the original signature"); }
+catch (StudioXException ex)
+{
+    Check(ex.Code == "CATALOG_SIGNATURE", "IDE rejects a changed catalog with the original signature");
+}
 using (var wrong = RSA.Create(3072))
 {
     var wrongKey = Path.Combine(output, "wrong-publisher.pem");
@@ -141,7 +150,10 @@ using (var wrong = RSA.Create(3072))
         await distribution.ReadAsync(catalogPath, wrongKey);
         Check(false, "wrong publisher rejected");
     }
-    catch (StudioXException ex) { Check(ex.Code == "CATALOG_SIGNATURE", "IDE rejects a catalog when the selected publisher key differs"); }
+    catch (StudioXException ex)
+    {
+        Check(ex.Code == "CATALOG_SIGNATURE", "IDE rejects a catalog when the selected publisher key differs");
+    }
 }
 var toolCatalog = new ToolsetCatalog(Path.Combine(output, "isolated-runtime/toolsets"));
 var management = new ToolManagementService(toolCatalog, new PackRepository(Path.Combine(data, "packs")), new RecentProjectService(data), data);
@@ -172,9 +184,18 @@ var start = new ProcessStartInfo(installed.Tool("sdcc"))
     RedirectStandardOutput = true,
     RedirectStandardError = true
 };
-foreach (var argument in new[] { "-mmcs51", "--model-small", "--out-fmt-ihx", "-o", "firmware.ihx", "main.c" }) { start.ArgumentList.Add(argument); }
+foreach (var argument in new[] { "-mmcs51", "--model-small", "--out-fmt-ihx", "-o", "firmware.ihx", "main.c" })
+{
+    start.ArgumentList.Add(argument);
+}
 start.Environment.Clear();
-foreach (var name in new[] { "SystemRoot", "WINDIR", "ComSpec" }) { if (Environment.GetEnvironmentVariable(name) is { } value) { start.Environment[name] = value; } }
+foreach (var name in new[] { "SystemRoot", "WINDIR", "ComSpec" })
+{
+    if (Environment.GetEnvironmentVariable(name) is { } value)
+    {
+        start.Environment[name] = value;
+    }
+}
 start.Environment["PATH"] = ToolsetEnvironment.Create(installed)["PATH"];
 start.Environment["TEMP"] = start.Environment["TMP"] = native;
 using var process = Process.Start(start) ?? throw new InvalidOperationException("Cannot start the verified compiler.");
@@ -185,7 +206,11 @@ try
 {
     await process.WaitForExitAsync(timeout.Token);
 }
-catch { process.Kill(entireProcessTree: true); throw; }
+catch
+{
+    process.Kill(entireProcessTree: true);
+    throw;
+}
 await File.WriteAllTextAsync(Path.Combine(native, "compiler-stdout.txt"), await stdout);
 await File.WriteAllTextAsync(Path.Combine(native, "compiler-stderr.txt"), await stderr);
 var firmware = Path.Combine(native, "firmware.ihx");
@@ -236,7 +261,11 @@ async Task RunCMakeAsync(string name, params string[] arguments)
     {
         await running.WaitForExitAsync(deadline.Token);
     }
-    catch { running.Kill(entireProcessTree: true); throw; }
+    catch
+    {
+        running.Kill(entireProcessTree: true);
+        throw;
+    }
     await File.WriteAllTextAsync(Path.Combine(native, name + "-stdout.txt"), await outputTask);
     await File.WriteAllTextAsync(Path.Combine(native, name + "-stderr.txt"), await errorTask);
     Check(running.ExitCode == 0, "imported CMake/Ninja " + name + " succeeds with the isolated component environment");

@@ -81,7 +81,13 @@ internal sealed class ProcessJob : IDisposable
                 await Task.Delay(20);
             }
         }
-        finally { foreach (var process in processes) { process.Dispose(); } }
+        finally
+        {
+            foreach (var process in processes)
+            {
+                process.Dispose();
+            }
+        }
     }
     private void CaptureProcessHandles(List<SafeProcessHandle> processes)
     {
@@ -134,7 +140,10 @@ internal sealed class ProcessJob : IDisposable
                 }
                 return;
             }
-            finally { Marshal.FreeHGlobal(buffer); }
+            finally
+            {
+                Marshal.FreeHGlobal(buffer);
+            }
         }
     }
     public void Dispose() => handle.Dispose();

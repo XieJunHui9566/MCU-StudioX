@@ -213,7 +213,10 @@ public partial class MainWindow
                 {
                     await RefreshAg32PinMappingStatusAsync(CancellationToken.None);
                 }
-                catch (Exception error) { Log("时序状态刷新失败：" + error); }
+                catch (Exception error)
+                {
+                    Log("时序状态刷新失败：" + error);
+                }
             }
         }
     });

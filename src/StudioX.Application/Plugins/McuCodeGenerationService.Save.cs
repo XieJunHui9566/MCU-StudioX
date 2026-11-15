@@ -72,7 +72,10 @@ public sealed partial class McuCodeGenerationService
             }
             await CommitAsync(root, [new("device.mcuconfig", before, bytes)], hasDirtyBuffers, token).ConfigureAwait(false);
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
 
         async Task<PluginCatalogEntry> ProviderAsync()
         {

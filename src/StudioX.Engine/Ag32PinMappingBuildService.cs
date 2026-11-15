@@ -40,7 +40,13 @@ public sealed partial class Ag32PinMappingBuildService(ToolsetCatalog catalog, s
             token.ThrowIfCancellationRequested();
             File.Move(temporary, target, true);
         }
-        finally { if (File.Exists(temporary)) { File.Delete(temporary); } }
+        finally
+        {
+            if (File.Exists(temporary))
+            {
+                File.Delete(temporary);
+            }
+        }
     }
 
     public Task<Ag32PinMappingBuildReport> BuildAsync(string projectDirectory, IProgress<string>? progress = null,
@@ -72,6 +78,7 @@ public sealed partial class Ag32PinMappingBuildService(ToolsetCatalog catalog, s
             var assignablePins = pins.Pins.Where(pin => pin.CanAssign).Select(pin => pin.Number).ToHashSet();
             var source = await Ag32PinMappingValidation.ReadSourceAsync(root, settings, assignablePins, profile, token);
             Ag32PeripheralSupport.Validate(project.DeviceId, source, new Ag32PinPlanDocument(source).Assignments);
+            await ValidateLicenseAsync(token);
             var sourceHash = Hash(source);
             var locked = new ToolchainLock(1, settings.ToolsetId, settings.ToolsetVersion, tools.Fingerprint);
             var lockPath = PathBoundary.Resolve(root, Ag32PinMappingReceipt.LockRelativePath);
@@ -185,7 +192,10 @@ public sealed partial class Ag32PinMappingBuildService(ToolsetCatalog catalog, s
                     RemovePrivateRuntime(privateRun);
                 }
             }
-            finally { gate.Release(); }
+            finally
+            {
+                gate.Release();
+            }
         }
         async Task<Ag32PinMappingBuildReport> FinishAsync(ProcessResult result, string[] artifacts)
         {

@@ -62,7 +62,10 @@ public sealed partial class ProjectFileService(Editing.LocalHistoryService? hist
         {
             text = encoding.GetString(bytes, offset, bytes.Length - offset);
         }
-        catch (DecoderFallbackException) { throw new StudioXException("EDITOR_ENCODING", "文件不是 UTF-8 / 带 BOM 的 UTF-16 文本，暂不支持此编码。"); }
+        catch (DecoderFallbackException)
+        {
+            throw new StudioXException("EDITOR_ENCODING", "文件不是 UTF-8 / 带 BOM 的 UTF-16 文本，暂不支持此编码。");
+        }
         EditorTextSafety.Validate(text, token);
         var managed = CMakeGenerator.IsManagedFile(relativePath, text) || Ag32SystemSupport.IsManagedFile(relativePath, text);
         return new(relativePath, text, encoding, Convert.ToHexString(SHA256.HashData(bytes)), managed || (File.GetAttributes(path) & FileAttributes.ReadOnly) != 0,
@@ -107,7 +110,13 @@ public sealed partial class ProjectFileService(Editing.LocalHistoryService? hist
                 File.Move(temporary, path, overwrite: true);
             }
         }
-        finally { if (File.Exists(temporary)) { File.Delete(temporary); } }
+        finally
+        {
+            if (File.Exists(temporary))
+            {
+                File.Delete(temporary);
+            }
+        }
         return document with
         {
             Text = text,

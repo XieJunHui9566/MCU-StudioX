@@ -51,7 +51,14 @@ public partial class MainWindow
             Mon51Tools.ShowSourceTools();
         });
         Mon51Tools.InstructionRequested += () => _ = RunAsync(token => services.Debugger.MonitorSession!.StepInstructionAsync(token));
-        Mon51Tools.SourceStepChanged += enabled => { if (services.Debugger.MonitorSession is { } monitor) { monitor.SourceStepping = enabled; UpdateDebugControls(); } };
+        Mon51Tools.SourceStepChanged += enabled =>
+        {
+            if (services.Debugger.MonitorSession is { } monitor)
+            {
+                monitor.SourceStepping = enabled;
+                UpdateDebugControls();
+            }
+        };
         Mon51Tools.MemoryWriteRequested += (space, address, bytes) => _ = RunAsync(token => services.Debugger.MonitorSession!.WriteMemoryAsync(space, address, bytes, token));
         Mon51Tools.RegisterWriteRequested += (register, value) => _ = RunAsync(token => services.Debugger.MonitorSession!.SetRegisterAsync(register, value, token));
         Mon51Tools.VariableWriteRequested += (expression, value) => _ = RunAsync(token => services.Debugger.MonitorSession!.SetVariableAsync(expression, value, token));
@@ -70,7 +77,11 @@ public partial class MainWindow
         };
         foreach (var view in new[] { GeneralDebugTools, Mon51Tools.SourceTools })
         {
-            view.FrameSelected += level => _ = RunAsync(async token => { await services.Debugger.RefreshAsync(level, token); await NavigateSelectedDebugFrameAsync(); });
+            view.FrameSelected += level => _ = RunAsync(async token =>
+            {
+                await services.Debugger.RefreshAsync(level, token);
+                await NavigateSelectedDebugFrameAsync();
+            });
             view.WatchChanged += (expression, remove) => _ = RunAsync(token => services.Debugger.ChangeWatchAsync(expression, remove, token));
             view.BreakpointChanged += (id, enabled) => _ = RunAsync(token => services.Debugger.ChangeBreakpointAsync(id, enabled, token));
             view.BreakpointSettings += id =>
@@ -130,7 +141,11 @@ public partial class MainWindow
             {
                 await PersistBreakpointLinesAsync();
             }
-            catch (Exception ex) { Log(ex.ToString()); Status.Text = "断点位置保存失败：" + ex.Message; }
+            catch (Exception ex)
+            {
+                Log(ex.ToString());
+                Status.Text = "断点位置保存失败：" + ex.Message;
+            }
         };
         RefreshDebugUi();
     }
@@ -159,7 +174,10 @@ public partial class MainWindow
                     {
                         await debugNavigationTask;
                     }
-                    catch (Exception ex) { DebugTools.AppendOutput(ex.ToString()); }
+                    catch (Exception ex)
+                    {
+                        DebugTools.AppendOutput(ex.ToString());
+                    }
                 }
             }, DispatcherPriority.Background);
         });
@@ -558,7 +576,9 @@ public partial class MainWindow
             existing = FindEditor(relative) ?? AddEditor(source);
         }
         ShowDocument(existing.Tab);
-        await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Loaded);
+        await Dispatcher.InvokeAsync(() =>
+        {
+        }, DispatcherPriority.Loaded);
         if (root != projectDirectory || activeEditor != existing || closing)
         {
             return;

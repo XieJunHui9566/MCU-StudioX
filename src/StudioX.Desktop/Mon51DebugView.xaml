@@ -157,7 +157,7 @@
           </WrapPanel>
           <TextBlock
             Grid.Row="1"
-            Text="请输入完整指令的起始地址。软件断点临时写入 A5，暂停和结束时恢复；范围 0003–DBFC。"
+            Text="指令起始地址：0003–DBFC"
             TextWrapping="Wrap"
             Foreground="{DynamicResource Muted}"
             Margin="0,5"
@@ -206,7 +206,7 @@
           x:Name="EditControls"
           Margin="12,6">
           <TextBlock
-            Text="暂停时修改保存的寄存器上下文，写后回读核对。P 标志只读，由 A 自动计算。"
+            Text="暂停时可编辑；P 标志由 A 自动计算。"
             TextWrapping="Wrap"
             Margin="0,0,0,8" />
           <WrapPanel>
@@ -245,7 +245,7 @@
               Padding="10,3" />
           </WrapPanel>
           <TextBlock
-            Text="RAM 写入开放 DATA/IDATA 00–7F 与 XDATA 0000–03FF。CODE 编辑由地址断点管理；下载入口使用独立下载服务。"
+            Text="可写范围：DATA/IDATA 00–7F；XDATA 0000–03FF。"
             TextWrapping="Wrap"
             Foreground="{DynamicResource Muted}"
             Margin="0,14,0,0" />

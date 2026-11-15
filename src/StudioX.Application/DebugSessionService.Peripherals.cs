@@ -38,7 +38,10 @@ public sealed partial class DebugSessionService
             Trace($"SVD 读取 {register.Path} @0x{register.Address:x8}: 0x{value:x}（宿主请求时间 {DateTimeOffset.UtcNow:O}）");
             return value;
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
     public async Task WritePeripheralAsync(string deviceId, SvdRegister register, long revision, ulong value, CancellationToken token = default)
     {
@@ -65,7 +68,10 @@ public sealed partial class DebugSessionService
             PeripheralRevision++;
             Changed?.Invoke();
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
     private void RequirePeripheral(string deviceId, SvdRegister register, long revision)
     {

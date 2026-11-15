@@ -79,7 +79,10 @@ public sealed partial class ToolManagementService
                 _ = await new ToolEnvironmentService(catalog).RepairAsync(entry, fresh.Archive, throttled, token, installOnly: true, expectedArchiveHash: fresh.ArchiveSha256);
                 return new DevelopmentComponentInstallResult(fresh.Identity, fresh.Fingerprint, false);
             }
-            finally { gate.Release(); }
+            finally
+            {
+                gate.Release();
+            }
         }, token);
 
     private async Task VerifyInstalledComponentAsync(ToolArchivePreview preview, IProgress<string> progress, CancellationToken token)

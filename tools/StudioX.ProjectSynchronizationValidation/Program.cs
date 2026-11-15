@@ -30,7 +30,11 @@ var batches = Channel.CreateUnbounded<ProjectChangeBatch>();
 var observed = new ConcurrentQueue<ProjectChangeBatch>();
 using (var session = new ProjectChangeService().Watch(project))
 {
-    session.Changed += batch => { observed.Enqueue(batch); batches.Writer.TryWrite(batch); };
+    session.Changed += batch =>
+    {
+        observed.Enqueue(batch);
+        batches.Writer.TryWrite(batch);
+    };
     async Task<ProjectChangeBatch> Wait(Func<ProjectChangeBatch, bool> predicate)
     {
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(8));
@@ -139,7 +143,10 @@ await using (var query = new WorkspaceFileQuerySession(new(files), project))
         await query.SearchAsync("", cancelled.Token);
         throw new InvalidOperationException("Cancelled query ran.");
     }
-    catch (OperationCanceledException) { Check(true, "cancelled query does not cancel shared discovery"); }
+    catch (OperationCanceledException)
+    {
+        Check(true, "cancelled query does not cancel shared discovery");
+    }
     Check((await query.SearchAsync("fresh")).Count == 1, "shared discovery remains usable after query cancellation");
     File.Delete(Path.Combine(project, "src/fresh.c"));
     query.Invalidate();

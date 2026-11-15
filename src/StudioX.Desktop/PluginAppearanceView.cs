@@ -223,7 +223,7 @@ internal sealed class PluginAppearanceView : UserControl
         {
             swatches.Children.Add(new Border { Background = Color(key), Width = 40, Height = 8, Margin = new Thickness(0, 0, 6, 0), CornerRadius = new CornerRadius(3), ToolTip = draft.Theme.Colors[key] });
         }
-        status.Text = "预览尚未保存 · 动态壁纸、背景透明度与编辑器柔光设置保留。";
+        status.Text = "预览未保存";
         PendingArtworkPreview = PreviewArtworkAsync(draft.Theme, ++artworkPreviewGeneration);
     }
 
@@ -269,7 +269,7 @@ internal sealed class PluginAppearanceView : UserControl
         try
         {
             await apply(draft);
-            status.Text = "已保存配色与字体，下次启动自动恢复。动态壁纸继续使用原设置。";
+            status.Text = "配色与字体已保存";
         }
         catch (Exception error)
         {

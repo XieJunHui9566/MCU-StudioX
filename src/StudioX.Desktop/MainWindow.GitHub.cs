@@ -65,7 +65,9 @@ public partial class MainWindow
                 GitHubAvatarImage.Visibility = Visibility.Visible;
             }
         }
-        catch (OperationCanceledException) when (cancellation.IsCancellationRequested) { }
+        catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
+        {
+        }
         catch (Exception ex) when (ex is GitHubApiException { StatusCode: HttpStatusCode.Unauthorized }
             or StudioXException { Code: "GITHUB_AUTH_REQUIRED" })
         {

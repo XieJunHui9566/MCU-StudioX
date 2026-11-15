@@ -95,7 +95,10 @@ public sealed class StcConfiguratorPlugin : IStudioXPlugin
             await (host ?? throw new InvalidOperationException("插件未激活。")).PublishPanelAsync(panel, token);
             return JsonSerializer.SerializeToElement(model.View(status, bound), Json);
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
 
     private async Task ReloadAsync(CancellationToken token)

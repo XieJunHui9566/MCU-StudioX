@@ -20,7 +20,12 @@ internal static class EspressifNativePath
         return native;
     }
 
-    internal static string For(string path)
+    internal static string For(string path) => Resolve(path, false);
+
+    // 用户目录可使用中文；短路径仅用于去除 SDK 前端不接受的空格。工具组件仍执行原 ASCII 校验。
+    internal static string ForProject(string path) => Resolve(path, true);
+
+    private static string Resolve(string path, bool project)
     {
         var full = Path.GetFullPath(path);
         if (!OperatingSystem.IsWindows())
@@ -30,7 +35,17 @@ internal static class EspressifNativePath
         var buffer = new StringBuilder(32768);
         var count = GetShortPathName(full, buffer, (uint)buffer.Capacity);
         var native = count > 0 && count < buffer.Capacity ? buffer.ToString() : full;
-        Validate(native, full);
+        if (project)
+        {
+            if (native.Any(char.IsWhiteSpace) || native.Contains(';'))
+            {
+                throw new StudioXException("ESPRESSIF_PATH", "ESP 工程需要不含空格的执行路径，当前磁盘没有可用的短路径：" + full);
+            }
+        }
+        else
+        {
+            Validate(native, full);
+        }
         return native;
     }
 

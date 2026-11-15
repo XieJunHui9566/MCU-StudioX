@@ -54,7 +54,9 @@ public partial class MainWindow
                     CurrentProjectDeviceId.Text = device;
                     ShowDocument(source.Tab);
                     UpdateProjectActions(busy: false);
-                    await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ContextIdle);
+                    await Dispatcher.InvokeAsync(() =>
+                    {
+                    }, DispatcherPriority.ContextIdle);
                     UpdateLayout();
                     var supported = device is "IAP15F2K61S2" or "IAP15L2K61S2";
                     var label = theme.Id + " / " + device;

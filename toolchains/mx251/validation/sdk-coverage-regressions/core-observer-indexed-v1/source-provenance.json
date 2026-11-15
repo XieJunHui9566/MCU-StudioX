@@ -1,0 +1,290 @@
+{
+  "originalCompiler": {
+    "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-bitops-20261031\\experiments\\native-indexed-two-use\\host-v5\\build\\sdcc.exe",
+    "sha256": "ba46ab1e6a525fc324ca60225a7c70484ec6f27fbfc97ef802203d4779e065c7"
+  },
+  "originalDecoder": {
+    "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-bitops-20261031\\experiments\\native-indexed-two-use\\check_word_regions_v5.py",
+    "sha256": "65c1e75dd40ffc5914ae8b6131083259d4b0b5388939ecb9981a63e2c31f9df9"
+  },
+  "originalExecutor": {
+    "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-bitops-20261031\\experiments\\native-indexed-two-use\\seal_observer_counterexample_v5.py",
+    "sha256": "838624b0244bd48feca0761bf6056ed6b4128b223b00678dcecbff990340fa22"
+  },
+  "origins": [
+    {
+      "local": "cases/acc.c",
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-bitops-20261031\\experiments\\native-indexed-two-use\\permanent-observer-case-v6\\acc.c",
+        "sha256": "f367b7b294cd06448011f6d8ba06b2c3d9e1b7758c8afc9f048f60aa67cc1608"
+      }
+    },
+    {
+      "local": "cases/b.c",
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-bitops-20261031\\experiments\\native-indexed-two-use\\permanent-observer-case-v6\\b.c",
+        "sha256": "9b525de962a514f524abc52c29c6ddd84a3101230a44939b33045c9f007f6201"
+      }
+    },
+    {
+      "local": "cases/psw.c",
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-bitops-20261031\\experiments\\native-indexed-two-use\\permanent-observer-case-v6\\psw.c",
+        "sha256": "99bfaa3dac12bbe0f83070dc10a4de7a45a98a4d9e13414e7c350c5d640f2201"
+      }
+    },
+    {
+      "local": "cases/psw1.c",
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-bitops-20261031\\experiments\\native-indexed-two-use\\permanent-observer-case-v6\\psw1.c",
+        "sha256": "60258d214d4051428992b817acc11dc39b26c9a6aebf5fe2d84f8a61a00fbce8"
+      }
+    },
+    {
+      "local": "cases/objects.contract",
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-bitops-20261031\\experiments\\native-indexed-two-use\\permanent-observer-case-v6\\objects.contract",
+        "sha256": "d239f0104c311bbed3d71868145245e1bb955f6295bd4e2b247792053c000c6f"
+      }
+    },
+    {
+      "local": "cases/inputs.json",
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-bitops-20261031\\experiments\\native-indexed-two-use\\permanent-observer-case-v6\\inputs.json",
+        "sha256": "3de18421f6c44a924ee57889c9595355e7704c533a87471a30f3cd6e7fbfb5a4"
+      }
+    },
+    {
+      "local": "historical-v5/results.json",
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-bitops-20261031\\experiments\\native-indexed-two-use\\observer-counterexample-v5\\results.json",
+        "sha256": "8b72cbae94263b3092923fe3b3834ca54238a2811105412c2e9850bcff009ab1"
+      }
+    },
+    {
+      "local": "historical-v5\\small-acc-off\\probe.c",
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-bitops-20261031\\experiments\\native-indexed-two-use\\observer-diagnostics-v5\\small-acc\\probe.c",
+        "sha256": "f367b7b294cd06448011f6d8ba06b2c3d9e1b7758c8afc9f048f60aa67cc1608"
+      }
+    },
+    {
+      "local": "historical-v5\\small-acc-off\\probe.asm",
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-bitops-20261031\\experiments\\native-indexed-two-use\\observer-diagnostics-v5\\small-acc\\off.asm",
+        "sha256": "a7ace75908e5ce80e04b5c80b4f14ec792e27bc9d00c2ac1fb8cec79715d2a3f"
+      }
+    },
+    {
+      "local": "historical-v5\\small-acc-off\\probe.rel",
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-bitops-20261031\\experiments\\native-indexed-two-use\\observer-counterexample-v5\\small-acc-off\\probe.rel",
+        "sha256": "c50a40534231bdf2b41e78c800c62bf7118a99a6833aa60c5a3631ff5bdbc320"
+      }
+    },
+    {
+      "local": "historical-v5\\small-acc-off\\probe.lst",
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-bitops-20261031\\experiments\\native-indexed-two-use\\observer-counterexample-v5\\small-acc-off\\probe.lst",
+        "sha256": "3d2cf414ddf9434729f907707f6c2abc4ff0bb13046f118e201b339310caf97a"
+      }
+    },
+    {
+      "local": "historical-v5\\small-acc-on\\probe.c",
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-bitops-20261031\\experiments\\native-indexed-two-use\\observer-diagnostics-v5\\small-acc\\probe.c",
+        "sha256": "f367b7b294cd06448011f6d8ba06b2c3d9e1b7758c8afc9f048f60aa67cc1608"
+      }
+    },
+    {
+      "local": "historical-v5\\small-acc-on\\probe.asm",
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-bitops-20261031\\experiments\\native-indexed-two-use\\observer-diagnostics-v5\\small-acc\\on.asm",
+        "sha256": "db6a3a96957ec7e9c5ba1b65ae4259130f1e210ecfac900e0687e870d87b2820"
+      }
+    },
+    {
+      "local": "historical-v5\\small-acc-on\\probe.rel",
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-bitops-20261031\\experiments\\native-indexed-two-use\\observer-counterexample-v5\\small-acc-on\\probe.rel",
+        "sha256": "7f8c6395b09b293533b6bde91a0f3103e35ecd952e3c15d09d6003bc816b27f3"
+      }
+    },
+    {
+      "local": "historical-v5\\small-acc-on\\probe.lst",
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-bitops-20261031\\experiments\\native-indexed-two-use\\observer-counterexample-v5\\small-acc-on\\probe.lst",
+        "sha256": "1a03f3219455725db2fe7007e04b0daf05440bf654b6c0408421d1b0688d1862"
+      }
+    },
+    {
+      "local": "historical-v5\\small-b-off\\probe.c",
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-bitops-20261031\\experiments\\native-indexed-two-use\\observer-diagnostics-v5\\small-b\\probe.c",
+        "sha256": "9b525de962a514f524abc52c29c6ddd84a3101230a44939b33045c9f007f6201"
+      }
+    },
+    {
+      "local": "historical-v5\\small-b-off\\probe.asm",
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-bitops-20261031\\experiments\\native-indexed-two-use\\observer-diagnostics-v5\\small-b\\off.asm",
+        "sha256": "3a70a6609181484fcc3fa939171e5e652005309da63abc5b433a33011c910b82"
+      }
+    },
+    {
+      "local": "historical-v5\\small-b-off\\probe.rel",
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-bitops-20261031\\experiments\\native-indexed-two-use\\observer-counterexample-v5\\small-b-off\\probe.rel",
+        "sha256": "2ae9fe94fa628b23e1a79a21d0c37a83114667bd4e49a0147cd8f8434bd41a75"
+      }
+    },
+    {
+      "local": "historical-v5\\small-b-off\\probe.lst",
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-bitops-20261031\\experiments\\native-indexed-two-use\\observer-counterexample-v5\\small-b-off\\probe.lst",
+        "sha256": "7a0a2959cbffe96e504f01191ee37c74490ce3efb30ee5a36c520e454d4a9fb5"
+      }
+    },
+    {
+      "local": "historical-v5\\small-b-on\\probe.c",
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-bitops-20261031\\experiments\\native-indexed-two-use\\observer-diagnostics-v5\\small-b\\probe.c",
+        "sha256": "9b525de962a514f524abc52c29c6ddd84a3101230a44939b33045c9f007f6201"
+      }
+    },
+    {
+      "local": "historical-v5\\small-b-on\\probe.asm",
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-bitops-20261031\\experiments\\native-indexed-two-use\\observer-diagnostics-v5\\small-b\\on.asm",
+        "sha256": "aa6552cc3c54bcec0c6e20888ce68f05e8dbae28f48602eba4f92858396f6974"
+      }
+    },
+    {
+      "local": "historical-v5\\small-b-on\\probe.rel",
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-bitops-20261031\\experiments\\native-indexed-two-use\\observer-counterexample-v5\\small-b-on\\probe.rel",
+        "sha256": "5320296b554a81aef546e954ab7cffce1e18b946ec4a11a7a64a420cf6dc415f"
+      }
+    },
+    {
+      "local": "historical-v5\\small-b-on\\probe.lst",
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-bitops-20261031\\experiments\\native-indexed-two-use\\observer-counterexample-v5\\small-b-on\\probe.lst",
+        "sha256": "5c357d665e5e2115e7f743706f5623ee681239e12592cad3e6de988ab34381ca"
+      }
+    },
+    {
+      "local": "historical-v5\\large-acc-off\\probe.c",
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-bitops-20261031\\experiments\\native-indexed-two-use\\observer-diagnostics-v5\\large-acc\\probe.c",
+        "sha256": "f367b7b294cd06448011f6d8ba06b2c3d9e1b7758c8afc9f048f60aa67cc1608"
+      }
+    },
+    {
+      "local": "historical-v5\\large-acc-off\\probe.asm",
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-bitops-20261031\\experiments\\native-indexed-two-use\\observer-diagnostics-v5\\large-acc\\off.asm",
+        "sha256": "0346f7d19171810c080a17ff194e06d2d2f2430ba3496cc7dd46412ef618cc82"
+      }
+    },
+    {
+      "local": "historical-v5\\large-acc-off\\probe.rel",
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-bitops-20261031\\experiments\\native-indexed-two-use\\observer-counterexample-v5\\large-acc-off\\probe.rel",
+        "sha256": "8a58fd13aad6a9d555886ef0f3eb42cc8fd9826d724fa413a58dd0658a907078"
+      }
+    },
+    {
+      "local": "historical-v5\\large-acc-off\\probe.lst",
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-bitops-20261031\\experiments\\native-indexed-two-use\\observer-counterexample-v5\\large-acc-off\\probe.lst",
+        "sha256": "2bcb0129bd1c9397e743624134528c764be3981c8d24b58b5c9c53fc03c37a04"
+      }
+    },
+    {
+      "local": "historical-v5\\large-acc-on\\probe.c",
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-bitops-20261031\\experiments\\native-indexed-two-use\\observer-diagnostics-v5\\large-acc\\probe.c",
+        "sha256": "f367b7b294cd06448011f6d8ba06b2c3d9e1b7758c8afc9f048f60aa67cc1608"
+      }
+    },
+    {
+      "local": "historical-v5\\large-acc-on\\probe.asm",
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-bitops-20261031\\experiments\\native-indexed-two-use\\observer-diagnostics-v5\\large-acc\\on.asm",
+        "sha256": "5bb23561b589e23443aa6cb5b98755d5a2c559db8594e6c8b3238de7a275daa0"
+      }
+    },
+    {
+      "local": "historical-v5\\large-acc-on\\probe.rel",
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-bitops-20261031\\experiments\\native-indexed-two-use\\observer-counterexample-v5\\large-acc-on\\probe.rel",
+        "sha256": "3db3b2e88c95ad4017b7c748f730aa2deec29e96b6cd6ca449f2209252824fc3"
+      }
+    },
+    {
+      "local": "historical-v5\\large-acc-on\\probe.lst",
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-bitops-20261031\\experiments\\native-indexed-two-use\\observer-counterexample-v5\\large-acc-on\\probe.lst",
+        "sha256": "42cfd1b897cef52c4081607e702cf0760162e3701d89657ca349761328d3d37c"
+      }
+    },
+    {
+      "local": "historical-v5\\large-b-off\\probe.c",
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-bitops-20261031\\experiments\\native-indexed-two-use\\observer-diagnostics-v5\\large-b\\probe.c",
+        "sha256": "9b525de962a514f524abc52c29c6ddd84a3101230a44939b33045c9f007f6201"
+      }
+    },
+    {
+      "local": "historical-v5\\large-b-off\\probe.asm",
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-bitops-20261031\\experiments\\native-indexed-two-use\\observer-diagnostics-v5\\large-b\\off.asm",
+        "sha256": "160eb97399a83965ed8c8f0d88184dfe14e86118b2224b985e65d7c4411f7cd0"
+      }
+    },
+    {
+      "local": "historical-v5\\large-b-off\\probe.rel",
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-bitops-20261031\\experiments\\native-indexed-two-use\\observer-counterexample-v5\\large-b-off\\probe.rel",
+        "sha256": "d0577d4573ab206e6df57f9ca27ff24552bdecdf7bec4b9d6ac865859dbde035"
+      }
+    },
+    {
+      "local": "historical-v5\\large-b-off\\probe.lst",
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-bitops-20261031\\experiments\\native-indexed-two-use\\observer-counterexample-v5\\large-b-off\\probe.lst",
+        "sha256": "ba24c20ce2243093de6645721c06cde2f038a668fd26b02520eaafc645f92db3"
+      }
+    },
+    {
+      "local": "historical-v5\\large-b-on\\probe.c",
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-bitops-20261031\\experiments\\native-indexed-two-use\\observer-diagnostics-v5\\large-b\\probe.c",
+        "sha256": "9b525de962a514f524abc52c29c6ddd84a3101230a44939b33045c9f007f6201"
+      }
+    },
+    {
+      "local": "historical-v5\\large-b-on\\probe.asm",
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-bitops-20261031\\experiments\\native-indexed-two-use\\observer-diagnostics-v5\\large-b\\on.asm",
+        "sha256": "8ea26ca5a665ffd82452974b8bbef5d875342cbec793564ad21f42ccde9a5e79"
+      }
+    },
+    {
+      "local": "historical-v5\\large-b-on\\probe.rel",
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-bitops-20261031\\experiments\\native-indexed-two-use\\observer-counterexample-v5\\large-b-on\\probe.rel",
+        "sha256": "adee4c985ee5848d756b1f658b13f7dfeb363f133a8d47fe441d41928ca9ac1b"
+      }
+    },
+    {
+      "local": "historical-v5\\large-b-on\\probe.lst",
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-bitops-20261031\\experiments\\native-indexed-two-use\\observer-counterexample-v5\\large-b-on\\probe.lst",
+        "sha256": "6f4f7886a2827208a64a78d878d94801ee9a4c282f22525e728bac87bb57a7e3"
+      }
+    }
+  ],
+  "explanation": "Archived actual V5 outputs; never regenerated with the current compiler. Absolute original paths are provenance only, not execution dependencies."
+}

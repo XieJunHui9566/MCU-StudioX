@@ -19,9 +19,17 @@ public partial class MainWindow
         var settings = await services.PicDownloads.LoadSettingsAsync(root, token);
         BeginBuildOutput("PIC CMake + Ninja 调试构建", "编译中");
         var lines = new OutputLineBuffer();
-        var output = new Progress<string>(text => { foreach (var line in lines.Append(text)) { Log(line); } });
+        var output = new Progress<string>(text =>
+        {
+            foreach (var line in lines.Append(text))
+            {
+                Log(line);
+            }
+        });
         var build = await services.Builds.BuildPicDebugAsync(root, output, token);
-        await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Background);
+        await Dispatcher.InvokeAsync(() =>
+        {
+        }, DispatcherPriority.Background);
         if (lines.Flush() is { } tail)
         {
             Log(tail);
@@ -77,12 +85,20 @@ public partial class MainWindow
             return;
         }
         var lines = new OutputLineBuffer();
-        var output = new Progress<string>(text => { foreach (var line in lines.Append(text)) { Log(line); } });
+        var output = new Progress<string>(text =>
+        {
+            foreach (var line in lines.Append(text))
+            {
+                Log(line);
+            }
+        });
         BeginBuildOutput("PICkit3 直接写入与校验", "下载中");
         try
         {
             var report = await services.PicDownloads.DownloadApprovedAsync(root, preview.ApprovalId, output, token);
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Background);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.Background);
             if (lines.Flush() is { } tail)
             {
                 Log(tail);
@@ -93,7 +109,9 @@ public partial class MainWindow
         }
         catch (Exception failure)
         {
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Background);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.Background);
             if (lines.Flush() is { } tail)
             {
                 Log(tail);

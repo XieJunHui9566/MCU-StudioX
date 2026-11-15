@@ -187,34 +187,6 @@
       CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
   <ItemGroup>
-    <Content
-      Include="$(StudioXRuntimeAssetsDirectory)/toolsets/pc.mingw/**/*"
-      Condition="'$(StudioXDistributionProfile)' == 'full'"
-      Link="runtime/toolsets/pc.mingw/%(RecursiveDir)%(Filename)%(Extension)"
-      CopyToOutputDirectory="Never"
-      CopyToPublishDirectory="PreserveNewest" />
-    <StudioXPcRuntimeFiles
-      Include="$(StudioXRuntimeAssetsDirectory)/toolsets/pc.mingw/**/*"
-      Condition="'$(StudioXDistributionProfile)' == 'full'" />
-    <Content
-      Include="../../licenses/PC-Toolchain-NOTICE.md"
-      Link="licenses/PC-Toolchain-NOTICE.md"
-      CopyToOutputDirectory="PreserveNewest"
-      CopyToPublishDirectory="PreserveNewest"
-      Condition="Exists('../../licenses/PC-Toolchain-NOTICE.md')" />
-  </ItemGroup>
-  <!-- PC SDK 为只读内置资源；同卷开发构建用硬链接节省空间，发布目录仍独立复制。 -->
-  <Target
-    Name="StudioXCopyPcToolchainForDevelopment"
-    Condition="'$(StudioXDistributionProfile)' == 'full'"
-    AfterTargets="CopyFilesToOutputDirectory">
-    <Copy
-      SourceFiles="@(StudioXPcRuntimeFiles)"
-      DestinationFiles="@(StudioXPcRuntimeFiles-&gt;'$(TargetDir)runtime/toolsets/pc.mingw/%(RecursiveDir)%(Filename)%(Extension)')"
-      SkipUnchangedFiles="true"
-      UseHardlinksIfPossible="true" />
-  </Target>
-  <ItemGroup>
     <StudioXEspressifRuntimeFiles
       Include="$(StudioXRuntimeAssetsDirectory)/toolsets/espressif.idf/**/*"
       Condition="'$(StudioXDistributionProfile)' == 'full'">

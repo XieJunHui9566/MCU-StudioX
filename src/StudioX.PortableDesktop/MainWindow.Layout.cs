@@ -31,7 +31,11 @@ internal sealed partial class MainWindow
         // 与 Windows 版保持相同的区域顺序、默认尺寸和语义颜色。
         var layout = new Grid { RowDefinitions = new RowDefinitions("38,30,39,*,26") };
         // 根容器也必须绘制背景，离屏截图与真实窗口才不会出现透明黑底。
-        themePainters.Add(() => { layout.Background = ColorBrush("Background"); welcome.Background = ColorBrush("Background"); });
+        themePainters.Add(() =>
+        {
+            layout.Background = ColorBrush("Background");
+            welcome.Background = ColorBrush("Background");
+        });
         InstallWorkbenchButtonTheme();
         layout.RowDefinitions[0].Height = new GridLength(WorkbenchVisuals.TitleHeight);
         layout.RowDefinitions[1].Height = new GridLength(WorkbenchVisuals.MenuHeight);
@@ -207,7 +211,11 @@ internal sealed partial class MainWindow
                 Group("文件(F)", Item("新建工程…   Ctrl+N", () => RunOperationAsync(NewProjectAsync)), Item("打开工程…   Ctrl+O", () => RunOperationAsync(PickProjectAsync)),
                     Item("保存   Ctrl+S", () => RunOperationAsync(SaveDocumentAsync)), Item("全部保存   Ctrl+Shift+S", () => RunOperationAsync(SaveAllAsync)),
                     Item("关闭标签   Ctrl+W", () => RunOperationAsync(CloseActiveAsync)), Item("关闭工程   Ctrl+Shift+W", () => RunOperationAsync(CloseProjectAsync)), Item("退出", Close)),
-                Group("编辑(E)", Item("撤销   Ctrl+Z", () => editor.Undo()), Item("重做   Ctrl+Y", () => editor.Redo()), Item("查找   Ctrl+F", () => { searchPanel.Open(); editor.Focus(); })),
+                Group("编辑(E)", Item("撤销   Ctrl+Z", () => editor.Undo()), Item("重做   Ctrl+Y", () => editor.Redo()), Item("查找   Ctrl+F", () =>
+                {
+searchPanel.Open();
+editor.Focus();
+})),
                 Group("视图(V)", Item("欢迎", ShowWelcome), Item("工程窗口   Alt+1", ToggleProject), Item("底部输出   Alt+4", () => ShowOutput(!outputVisible)), Item("外观与背景…", () => RunOperationAsync(ShowAppearanceAsync))),
                 Group("构建(B)", Item("编译   F7", () => RunOperationAsync(BuildProjectAsync)), Item("下载固件…"), Item("停止", () => operationCancellation?.Cancel())),
                 Group("调试(D)", Item("启动调试"), Item("附加到设备…"), Item("断点")),
@@ -247,7 +255,11 @@ internal sealed partial class MainWindow
     private Border Surface(Control child, string color = "Surface", Thickness? border = null, string borderColor = "Border", Thickness? margin = null)
     {
         var surface = new Border { Child = child, BorderThickness = border ?? new Thickness(0), Margin = margin ?? new Thickness(0) };
-        themePainters.Add(() => { surface.Background = ColorBrush(color); surface.BorderBrush = ColorBrush(borderColor); });
+        themePainters.Add(() =>
+        {
+            surface.Background = ColorBrush(color);
+            surface.BorderBrush = ColorBrush(borderColor);
+        });
         surface.Background = ColorBrush(color);
         surface.BorderBrush = ColorBrush(borderColor);
         return surface;
@@ -281,7 +293,12 @@ internal sealed partial class MainWindow
         button.Height = 28;
         button.Padding = new Thickness(8, 3);
         button.BorderThickness = new Thickness(0);
-        themePainters.Add(() => { button.Background = ColorBrush("Surface"); button.Foreground = ColorBrush("Text"); symbol.InvalidateVisual(); });
+        themePainters.Add(() =>
+        {
+            button.Background = ColorBrush("Surface");
+            button.Foreground = ColorBrush("Text");
+            symbol.InvalidateVisual();
+        });
         ToolTip.SetTip(button, tip);
     }
 

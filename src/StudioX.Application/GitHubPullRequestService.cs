@@ -16,7 +16,9 @@ public sealed class GitHubPullRequestService : IDisposable
     private readonly bool ownsClient;
 
     public GitHubPullRequestService(GitHubAuthenticationService authentication, HttpClient? client = null)
-        : this((account, token) => authentication.GetTokenAsync(account, token), client) { }
+        : this((account, token) => authentication.GetTokenAsync(account, token), client)
+    {
+    }
 
     /// <summary>允许离线测试注入假 HTTP 处理器和假凭据提供器。</summary>
     public GitHubPullRequestService(Func<string?, CancellationToken, Task<string>> tokenProvider, HttpClient? client = null)
@@ -297,7 +299,9 @@ public sealed class GitHubPullRequestService : IDisposable
             using var document = await JsonDocument.ParseAsync(stream, cancellationToken: token);
             serverMessage = OptionalString(document.RootElement, "message");
         }
-        catch (JsonException) { }
+        catch (JsonException)
+        {
+        }
         var prefix = response.StatusCode switch
         {
             HttpStatusCode.Unauthorized => "登录已过期或 GitHub 拒绝凭据，请重新登录。",

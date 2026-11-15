@@ -5,8 +5,27 @@ using System.Text;
 using System.Runtime.CompilerServices;
 
 var checks = 0;
-void Check(bool condition, string label) { if (!condition) { throw new Exception(label); } checks++; }
-void Reject(Action action, string label) { try { action(); } catch (ArgumentException) { checks++; return; } throw new Exception(label); }
+void Check(bool condition, string label)
+{
+    if (!condition)
+    {
+        throw new Exception(label);
+    }
+    checks++;
+}
+void Reject(Action action, string label)
+{
+    try
+    {
+        action();
+    }
+    catch (ArgumentException)
+    {
+        checks++;
+        return;
+    }
+    throw new Exception(label);
+}
 Check(SerialCodec.Encode("00 0x01 a5 FF", SerialTextMode.Hex, SerialLineEnding.None, false).SequenceEqual(new byte[] { 0, 1, 0xa5, 255 }), "HEX payload changed");
 Reject(() => SerialCodec.Encode("A", SerialTextMode.Hex, SerialLineEnding.None, false), "Partial hex accepted");
 Reject(() => SerialCodec.Encode("GG", SerialTextMode.Hex, SerialLineEnding.None, false), "Invalid hex accepted");
@@ -17,7 +36,11 @@ Reject(() => SerialCodec.Encode("😀", SerialTextMode.Gb2312, SerialLineEnding.
 Check(Encoding.UTF8.GetString(SerialCodec.Encode(@"\e[31m红\e[0m\r\n", SerialTextMode.Utf8, SerialLineEnding.None, true)) == "\x1b[31m红\x1b[0m\r\n", "ANSI escapes mismatch");
 Reject(() => new SerialSettings("COM15", 0).Validate(), "Bad baud accepted");
 Reject(() => new SerialSettings("COM15", StopBits: StopBits.OnePointFive).Validate(), "8/1.5 bits accepted");
-foreach (var flow in Enum.GetValues<Handshake>()) { new SerialSettings("COM15", FlowControl: flow).Validate(); checks++; }
+foreach (var flow in Enum.GetValues<Handshake>())
+{
+    new SerialSettings("COM15", FlowControl: flow).Validate();
+    checks++;
+}
 var now = DateTimeOffset.UtcNow;
 var terminal = new AnsiTerminal();
 terminal.Feed("\x1b[3", now, true);
@@ -44,7 +67,10 @@ terminal.Clear();
 terminal.Feed("\x1b[31mRAW", now, false);
 Check(terminal.Snapshot(false).Text == @"\x1B[31mRAW", "ANSI raw display failed");
 terminal.Clear();
-for (var i = 0; i < 2200; i++) { terminal.Feed(i + "\r\n", now, true); }
+for (var i = 0; i < 2200; i++)
+{
+    terminal.Feed(i + "\r\n", now, true);
+}
 Check(terminal.Snapshot(false).TrimmedLines > 0 && terminal.Snapshot(false).Text.Split('\n').Length <= 2000, "Scrollback limit failed");
 foreach (var mode in new[] { SerialTextMode.Utf8, SerialTextMode.Gb2312 })
 {
@@ -74,7 +100,10 @@ await using (var hub = new DeviceHub())
     {
         await hub.OpenAsync(new FakeTransport());
     }
-    catch { rejected = true; }
+    catch
+    {
+        rejected = true;
+    }
     Check(rejected, "Duplicate connection owner accepted");
     await session.DisposeAsync();
     Check(fake.Closed, "Connection not released");
@@ -108,7 +137,10 @@ await using (var hub = new DeviceHub())
     {
         await service.SendAsync([0xa5]);
     }
-    catch (IOException ex) { sendFailed = ex.Message.Contains("部分字节"); }
+    catch (IOException ex)
+    {
+        sendFailed = ex.Message.Contains("部分字节");
+    }
     Check(sendFailed && service.Status.Sent == 4, "Timed out send counted as success");
     stream.TimeoutSend = false;
     await service.ExportAsync(Path.Combine(fixture, "capture.bin"));
@@ -161,7 +193,10 @@ await using (var hub = new DeviceHub())
     {
         service.AnalyzeOffline([1]);
     }
-    catch (InvalidOperationException) { offlineRejected = true; }
+    catch (InvalidOperationException)
+    {
+        offlineRejected = true;
+    }
     Check(offlineRejected, "Offline input accepted during live capture");
     await service.DisconnectAsync();
 }

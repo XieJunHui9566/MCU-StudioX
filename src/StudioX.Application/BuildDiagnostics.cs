@@ -85,7 +85,9 @@ public static partial class BuildDiagnostics
                 }
             }
         }
-        catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException) { }
+        catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException)
+        {
+        }
         return null;
     }
 

@@ -45,7 +45,13 @@ public partial class MicroPythonView : UserControl
         session.Diagnostic += text =>
         {
             var revision = projectRevision;
-            Dispatcher.BeginInvoke(() => { if (revision == projectRevision) { Append(text); } });
+            Dispatcher.BeginInvoke(() =>
+            {
+                if (revision == projectRevision)
+                {
+                    Append(text);
+                }
+            });
         };
         UpdateControls();
     }
@@ -247,7 +253,10 @@ public partial class MicroPythonView : UserControl
             {
                 Process.Start(new ProcessStartInfo(settings.FirmwarePage) { UseShellExecute = true });
             }
-            catch (Exception ex) { Append(ex.ToString()); }
+            catch (Exception ex)
+            {
+                Append(ex.ToString());
+            }
         }
     }
 

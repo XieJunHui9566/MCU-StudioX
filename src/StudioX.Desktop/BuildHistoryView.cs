@@ -39,7 +39,13 @@ public sealed class BuildHistoryView : UserControl
         foreach (var (title, action) in new[] { ("刷新历史", "refresh"), ("保存当前构建快照", "capture"), ("比较", "compare"), ("导出对比", "export") })
         {
             var button = new Button { Content = title, Margin = new(0, 0, 8, 0), Padding = new(10, 5, 10, 5) };
-            button.Click += async (_, _) => { if (Requested is { } run) { await run(action); } };
+            button.Click += async (_, _) =>
+            {
+                if (Requested is { } run)
+                {
+                    await run(action);
+                }
+            };
             buttons.Children.Add(button);
         }
         top.Children.Add(buttons);

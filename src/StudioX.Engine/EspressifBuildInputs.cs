@@ -2,7 +2,6 @@ namespace StudioX.Engine;
 
 using System.Text;
 using System.Text.Json;
-using System.Text.RegularExpressions;
 using StudioX.Foundation;
 
 /// <summary>构建凭据只覆盖工程和已锁定工具；外部组件、头文件与库须先复制到工程。</summary>
@@ -60,8 +59,7 @@ internal static class EspressifBuildInputs
                 {
                     foreach (var fragment in fragments.EnumerateArray())
                     {
-                        var arguments = Regex.Matches(fragment.GetProperty("fragment").GetString()!, "\"[^\"]*\"|[^\\s]+")
-                            .Select(match => match.Value.Trim('"')).ToArray();
+                        var arguments = CMakeCommandLine.Split(fragment.GetProperty("fragment").GetString()!);
                         for (var i = 0; i < arguments.Length; i++)
                         {
                             var argument = arguments[i];
@@ -125,7 +123,12 @@ internal static class EspressifBuildInputs
                     {
                         boundary.Allowed(line.Trim().Trim('"'), currentGraph);
                     }
-                    catch (StudioXException exception) { invalid = exception; lines.Clear(); return; }
+                    catch (StudioXException exception)
+                    {
+                        invalid = exception;
+                        lines.Clear();
+                        return;
+                    }
                 }
                 if (lines.Length > 32768)
                 {
@@ -141,13 +144,13 @@ internal static class EspressifBuildInputs
             {
                 dependencyTree = mode == "deps";
                 count = 0;
-                var arguments = new List<string> { "-C", EspressifNativePath.For(graph), "-t", mode };
+                var arguments = new List<string> { "-C", EspressifNativePath.ForProject(graph), "-t", mode };
                 if (mode == "inputs")
                 {
                     arguments.Add("all");
                 }
                 var result = await new ProcessRunner().RunAsync(new(tools.Tool("ninja"), arguments,
-                    EspressifNativePath.For(root), TimeSpan.FromMinutes(2), environment, RemoveEnvironment: ToolsetEnvironment.AmbientVariables,
+                    EspressifNativePath.ForProject(root), TimeSpan.FromMinutes(2), environment, RemoveEnvironment: ToolsetEnvironment.AmbientVariables,
                     Output: output, StreamCompleteOutput: true), token);
                 // 依赖树会超过日志缓存上限；流式观察器检查完整输出，inputs 另覆盖嵌入资源与预编库。
                 if (invalid is not null)

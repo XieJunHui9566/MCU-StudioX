@@ -1,0 +1,33 @@
+XH3
+H A areas 5 global symbols
+S s_XISEG Ref000000
+S l_XINIT Ref000000
+S s_XINIT Ref000000
+S .__.ABS. Def000000
+A _CODE size 0 flags 0 addr 0
+A CSEG size 0 flags 20 addr 0
+A GSINIT0 size 0 flags 20 addr 0
+A GSINIT1 size 0 flags 20 addr 0
+A GSINIT2 size 0 flags 20 addr 0
+A GSINIT3 size 2D flags 20 addr 0
+S __mcs51_genXINIT Def000000
+A GSINIT4 size 0 flags 20 addr 0
+A GSINIT5 size 0 flags 20 addr 0
+A GSINIT size 0 flags 20 addr 0
+A GSFINAL size 0 flags 20 addr 0
+T 00 00 00
+R 00 00 00 05
+T 00 00 00 90 00 00 75 84 00 00 00 7F 1E 90
+R 00 00 00 05 02 04 00 02 F3 03 08 00 02
+T 00 00 09 00 00 75 84 00 00 00 7E 38 00 00 7E 74
+R 00 00 00 05 02 03 00 00 F3 03 07 00 00
+T 00 00 14 00 00 7E D0 00 00 00 BE 38 00 00 68 0E
+R 00 00 00 05 02 03 00 01 F3 03 07 00 01
+T 00 00 1F
+R 00 00 00 05
+T 00 00 1F 7E 1B B0 7A EB B0 0B 1C 0B EC 1B 3C 78
+R 00 00 00 05
+T 00 00 2C F2
+R 00 00 00 05
+T 00 00 2D
+R 00 00 00 05

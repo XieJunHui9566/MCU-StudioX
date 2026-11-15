@@ -27,8 +27,12 @@ public partial class MainWindow
         async Task Layout()
         {
             UpdateLayout();
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Loaded);
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.Loaded);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.Render);
         }
         await OpenProjectAsync(fixture, CancellationToken.None);
         try
@@ -88,6 +92,10 @@ public partial class MainWindow
             Check(projectDirectory == fixture && ProjectTree.Items.Count > 0, "主文件/目录改名后工程不能重新打开");
             await File.WriteAllTextAsync(Path.Combine(directory, "result.txt"), "PASS: themed context menu, file/folder rename with dirty buffers/undo/caret/history, save at renamed path, create/open/select, copy collision selection, rename dialog and reopen without src/main.c. Only fixture files modified; clipboard untouched.\n");
         }
-        finally { explorerMenu!.IsOpen = false; ClearEditorDocuments(); }
+        finally
+        {
+            explorerMenu!.IsOpen = false;
+            ClearEditorDocuments();
+        }
     }
 }

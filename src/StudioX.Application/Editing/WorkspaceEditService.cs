@@ -15,7 +15,7 @@ public sealed class WorkspaceEditService(ProjectFileService files)
         => Task.Run(async () =>
         {
             // 即使工程没有文件，也要明确报告非法正则表达式和通配规则。
-            _ = TextSearchService.Find("", options, replacement);
+            _ = TextSearchService.Find("", options, replacement, token);
             var included = Globs(include);
             var excluded = Globs(exclude);
             var open = buffers.Where(b => !Path.IsPathRooted(b.Source.RelativePath)).ToDictionary(b => b.Source.RelativePath, StringComparer.OrdinalIgnoreCase);
@@ -72,7 +72,7 @@ public sealed class WorkspaceEditService(ProjectFileService files)
                         continue;
                     }
                     var text = buffer?.Text ?? source.Text;
-                    var found = TextSearchService.Find(text, options, replacement);
+                    var found = TextSearchService.Find(text, options, replacement, token);
                     if (found.Count == 0)
                     {
                         continue;

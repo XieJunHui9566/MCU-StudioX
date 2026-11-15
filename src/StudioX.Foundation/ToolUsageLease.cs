@@ -52,9 +52,16 @@ public sealed class ToolUsageLease : IDisposable
                 }
                 return lease;
             }
-            catch { lease.Dispose(); throw; }
+            catch
+            {
+                lease.Dispose();
+                throw;
+            }
         }
-        catch (IOException error) { throw new StudioXException("TOOLS_BUSY", "工具正在使用或维护，请等待操作结束后重试。", error); }
+        catch (IOException error)
+        {
+            throw new StudioXException("TOOLS_BUSY", "工具正在使用或维护，请等待操作结束后重试。", error);
+        }
     }
     public static bool IsBusy(string toolRoot)
     {
@@ -68,7 +75,10 @@ public sealed class ToolUsageLease : IDisposable
             using var probe = new FileStream(path, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
             return false;
         }
-        catch (IOException) { return true; }
+        catch (IOException)
+        {
+            return true;
+        }
     }
     public static ToolUsageLease? ForExecutable(string executable)
     {

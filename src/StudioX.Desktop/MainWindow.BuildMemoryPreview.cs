@@ -52,7 +52,9 @@ public partial class MainWindow
         source.Buffer.Text = original;
         await BuildAndCheck();
         UpdateLayout();
-        await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+        await Dispatcher.InvokeAsync(() =>
+        {
+        }, DispatcherPriority.Render);
         Render(this, Path.Combine(directory, "build-memory.png"));
         await File.WriteAllTextAsync(Path.Combine(directory, "result.txt"), "PASS: real F407 build shows FLASH/RAM/CCM; close clears, reopen restores; compiler failure clears, next successful build restores. Only isolated fixture changed; no hardware access.\n");
         async Task BuildAndCheck()

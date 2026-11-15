@@ -29,7 +29,10 @@ public partial class AiSettingsWindow
             mcpLoaded = true;
             McpPanel.IsEnabled = true;
         }
-        catch (Exception ex) { ErrorText.Text = "无法读取自定义 MCP 配置：" + ex.Message; }
+        catch (Exception ex)
+        {
+            ErrorText.Text = "无法读取自定义 MCP 配置：" + ex.Message;
+        }
     }
 
     private void McpAdd_Click(object sender, RoutedEventArgs e) => EditMcp(null);

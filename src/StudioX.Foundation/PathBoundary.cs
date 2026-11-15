@@ -12,11 +12,7 @@ public static class PathBoundary
         var parts = relative.Split('/');
         foreach (var part in parts)
         {
-            if (part.Length == 0 || part is "." or ".." || part.EndsWith('.') || part.EndsWith(' ') ||
-                part.Any(c => c < 32 || "<>:\"|?*".Contains(c)) || IsReserved(part))
-            {
-                throw new StudioXException("PATH_UNSAFE", $"路径含非法组成部分：{relative}");
-            }
+            ValidateFileName(part);
         }
         var absoluteRoot = Path.GetFullPath(root).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
         var result = Path.GetFullPath(Path.Combine(absoluteRoot, Path.Combine(parts)));
@@ -36,9 +32,19 @@ public static class PathBoundary
         return result;
     }
 
+    /// <summary>校验单个文件名，同时拒绝 Windows 设备别名；不访问文件系统。</summary>
+    public static void ValidateFileName(string name)
+    {
+        if (name.Length == 0 || name is "." or ".." || name.EndsWith('.') || name.EndsWith(' ') ||
+            name.Any(c => c < 32 || "<>:\"|?*/\\".Contains(c)) || IsReserved(name))
+        {
+            throw new StudioXException("PATH_UNSAFE", $"路径含非法组成部分：{name}");
+        }
+    }
+
     private static bool IsReserved(string part)
     {
-        var stem = part.Split('.')[0].ToUpperInvariant();
+        var stem = part.Split('.')[0].TrimEnd(' ').ToUpperInvariant();
         return stem is "CON" or "PRN" or "AUX" or "NUL" ||
             // Win32 同样把上标 ¹、²、³ 当作端口设备数字，不能作为普通组件文件名。
             (stem.Length == 4 && (stem.StartsWith("COM", StringComparison.Ordinal) || stem.StartsWith("LPT", StringComparison.Ordinal)) &&

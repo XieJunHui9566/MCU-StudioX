@@ -17,12 +17,26 @@ if (args is ["--build", var buildOutput, var toolsRoot, var pack, var device, va
     await RealArchiveChecks.BuildAsync(Path.GetFullPath(buildOutput), Path.GetFullPath(toolsRoot), Path.GetFullPath(pack), device, template);
     return;
 }
-if (args.Length != 3) { throw new ArgumentException("Use <new-output> <repository> <7z.exe>."); }
+if (args.Length != 3)
+{
+    throw new ArgumentException("Use <new-output> <repository> <7z.exe>.");
+}
 var output = Path.GetFullPath(args[0]);
-if (Directory.Exists(output)) { throw new ArgumentException("Use new output."); }
+if (Directory.Exists(output))
+{
+    throw new ArgumentException("Use new output.");
+}
 Directory.CreateDirectory(output);
 var checks = new List<string>();
-void Check(bool condition, string text) { if (!condition) { throw new InvalidOperationException(text); } checks.Add(text); Console.WriteLine("PASS " + text); }
+void Check(bool condition, string text)
+{
+    if (!condition)
+    {
+        throw new InvalidOperationException(text);
+    }
+    checks.Add(text);
+    Console.WriteLine("PASS " + text);
+}
 async Task Reject(Func<Task> action, string code)
 {
     try
@@ -30,7 +44,10 @@ async Task Reject(Func<Task> action, string code)
         await action();
         throw new InvalidOperationException("Expected " + code);
     }
-    catch (StudioXException error) when (error.Code == code) { Check(true, "reject " + code); }
+    catch (StudioXException error) when (error.Code == code)
+    {
+        Check(true, "reject " + code);
+    }
 }
 async Task Run(string executable, params string[] arguments)
 {
@@ -159,7 +176,10 @@ try
     await File.WriteAllTextAsync(Path.Combine(corruptRoot, "中文 名称.txt"), "corrupt source");
     var corrupt = Path.Combine(output, "corrupt.mcutoolchain");
     await ToolchainArchiveWriter.WriteAsync(corruptRoot, payload.Keys.Prepend("toolset.json"), corrupt);
-    await Reject(async () => { await manager.InstallAsync(await manager.PreviewInstallAsync(corrupt)); }, "TOOL_HASH");
+    await Reject(async () =>
+    {
+        await manager.InstallAsync(await manager.PreviewInstallAsync(corrupt));
+    }, "TOOL_HASH");
     var before = await File.ReadAllBytesAsync(Path.Combine(installedRoot, "中文 名称.txt"));
     await Reject(() => new ToolEnvironmentService(installed).RepairAsync(entry, corrupt, null), "TOOL_HASH");
     Check((await File.ReadAllBytesAsync(Path.Combine(installedRoot, "中文 名称.txt"))).SequenceEqual(before) && !Directory.EnumerateDirectories(installed.RootDirectory, ".repair-*").Any(),
@@ -173,7 +193,10 @@ try
             await new ToolEnvironmentService(catalog).ExportAsync(entry, cancelOutput, progress, cancelled.Token);
             throw new InvalidOperationException("Cancellation ignored");
         }
-        catch (OperationCanceledException) { Check(!File.Exists(cancelOutput) && !Directory.EnumerateFiles(output, "cancelled.mcutoolchain.tmp-*").Any(), "cancelled managed export removes partial archive"); }
+        catch (OperationCanceledException)
+        {
+            Check(!File.Exists(cancelOutput) && !Directory.EnumerateFiles(output, "cancelled.mcutoolchain.tmp-*").Any(), "cancelled managed export removes partial archive");
+        }
     }
     using (var cancelled = new CancellationTokenSource())
     {
@@ -181,7 +204,13 @@ try
         try
         {
             await new ToolEnvironmentService(new(cancelRoot)).RepairAsync(entry, solid,
-                new ImmediateProgress(text => { if (text.StartsWith("校验副本：", StringComparison.Ordinal)) { cancelled.Cancel(); } }), cancelled.Token);
+                new ImmediateProgress(text =>
+                {
+                    if (text.StartsWith("校验副本：", StringComparison.Ordinal))
+                    {
+                        cancelled.Cancel();
+                    }
+                }), cancelled.Token);
             throw new InvalidOperationException("Cancellation ignored");
         }
         catch (OperationCanceledException)

@@ -32,7 +32,10 @@ internal static class LaunchChecks
                 await action();
                 throw new InvalidOperationException("Accepted: " + name);
             }
-            catch (StudioXException error) when (error.Code == code) { checks.Add(name); }
+            catch (StudioXException error) when (error.Code == code)
+            {
+                checks.Add(name);
+            }
         }
         var packs = new PackRepository(Path.Combine(output, "packs"));
         var pack = await packs.ImportAsync(archive);
@@ -140,7 +143,10 @@ internal static class LaunchChecks
                     await launch.StartAsync(project, BuildAsync, progress, cancel.Token);
                     throw new InvalidOperationException("Cancellation accepted");
                 }
-                catch (OperationCanceledException) { checks.Add(target + " cancelled handshake does not become an ISP fallback"); }
+                catch (OperationCanceledException)
+                {
+                    checks.Add(target + " cancelled handshake does not become an ISP fallback");
+                }
             }
             Check(setup.Executions == 1 && current.Closed && !debug.IsActive, target + " cancellation releases ownership without setup");
             current = new("COM18", new()

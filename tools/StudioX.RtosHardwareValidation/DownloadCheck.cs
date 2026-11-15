@@ -112,7 +112,10 @@ internal sealed class DownloadCheck
                 errors.Add(new StudioXException("RTOS_DOWNLOAD_FAILED", "本次 MCP 下载没有通过产品校验；请查看记录中的原始日志路径。"));
             }
         }
-        catch (Exception ex) { errors.Add(ex); }
+        catch (Exception ex)
+        {
+            errors.Add(ex);
+        }
         finally
         {
             await JsonStore.WriteAsync(Path.Combine(output, "download-result.json"), new

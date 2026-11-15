@@ -41,6 +41,7 @@ public sealed record ArduinoProjectSettings(string BoardId, ArduinoLibrary[] Lib
 
     public static void ValidateProject(string root, ProjectManifest project)
     {
+        ProjectName.Validate(project.Name);
         project.Arduino?.Validate();
         var board = project.Arduino is null ? null : ArduinoBoard.Require(project.Arduino.BoardId);
         var platform = board?.Platform;
@@ -54,5 +55,12 @@ public sealed record ArduinoProjectSettings(string BoardId, ArduinoLibrary[] Lib
             throw new StudioXException("ARDUINO_PROJECT", "Arduino 工程身份、目录名、入口或工具版本不一致。");
         }
         _ = PathBoundary.Resolve(root, project.EntryFile);
+    }
+
+    internal static string SketchIdentifier(string name)
+    {
+        var identifier = ProjectName.BuildIdentifier(name);
+        return identifier.Length <= 63 ? identifier : "firmware_" +
+            Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(name)))[..16].ToLowerInvariant();
     }
 }

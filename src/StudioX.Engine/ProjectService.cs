@@ -7,7 +7,7 @@ public sealed partial class ProjectService(Func<string, CancellationToken, Task>
 {
     public static BuildPlan Plan(InstalledPack pack, string deviceId, string templateId, string name, bool enableAg32Logic = false)
     {
-        PackValidator.Token(name);
+        ProjectName.Validate(name);
         var device = pack.Manifest.Devices.SingleOrDefault(d => d.Id == deviceId)
             ?? throw new StudioXException("PROJECT_DEVICE", "请选择明确的芯片型号。");
         if (!device.Templates.Any(t => t.Id == templateId))
@@ -237,7 +237,13 @@ public sealed partial class ProjectService(Func<string, CancellationToken, Task>
             await PublishDirectoryAsync(staging, target, cancellationToken);
             return plan.Project;
         }
-        finally { if (Directory.Exists(staging)) { Directory.Delete(staging, recursive: true); } }
+        finally
+        {
+            if (Directory.Exists(staging))
+            {
+                Directory.Delete(staging, recursive: true);
+            }
+        }
     }
 
     internal static async Task PublishDirectoryAsync(string staging, string target, CancellationToken token)
@@ -309,7 +315,7 @@ public sealed partial class ProjectService(Func<string, CancellationToken, Task>
         }
         else
         {
-            PackValidator.Token(project.Name);
+            ProjectName.Validate(project.Name);
         }
         if (project.Logic is { } logic && (project.Kind != ProjectKind.Pack ||
             Ag32DeviceCatalog.Find(project.DeviceId) is not { CanMap: true } profile ||

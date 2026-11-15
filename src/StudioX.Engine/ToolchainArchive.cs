@@ -199,7 +199,10 @@ public sealed class ToolchainArchive : IDisposable
                 throw new StudioXException("TOOLS_ARCHIVE", "归档文件内容不完整。");
             }
         }
-        finally { ArrayPool<byte>.Shared.Return(buffer); }
+        finally
+        {
+            ArrayPool<byte>.Shared.Return(buffer);
+        }
     }
 
     public void Dispose()

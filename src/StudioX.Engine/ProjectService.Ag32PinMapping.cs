@@ -84,7 +84,10 @@ public sealed partial class ProjectService
                 }
             }
         }
-        finally { pinMappingGate.Release(); }
+        finally
+        {
+            pinMappingGate.Release();
+        }
     }
 
     private static void ValidateAg32PinMappingSettings(string directory, ProjectManifest project)

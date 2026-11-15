@@ -41,7 +41,10 @@ public partial class MainWindow
                     }
                 }), token: token);
             }
-            finally { checking = false; }
+            finally
+            {
+                checking = false;
+            }
             Log("编译前健康检查：" + health.Summary);
             guideHealthPassed = health.Errors == 0;
             RefreshFirstProjectGuide();
@@ -56,11 +59,23 @@ public partial class MainWindow
             BuildMemory.SetMessage("正在编译，完成后更新占用…");
             var buildClock = System.Diagnostics.Stopwatch.StartNew();
             var report = await services.Builds.BuildAsync(directory,
-                new Progress<string>(text => { Status.Text = text; ReportBuildActivity(text); }), token,
-                new Progress<string>(text => { foreach (var line in outputLines.Append(text)) { ToolLine(line); } }));
+                new Progress<string>(text =>
+                {
+                    Status.Text = text;
+                    ReportBuildActivity(text);
+                }), token,
+                new Progress<string>(text =>
+                {
+                    foreach (var line in outputLines.Append(text))
+                    {
+                        ToolLine(line);
+                    }
+                }));
             buildClock.Stop();
             // 等待 Progress 已投递的输出，避免工具尾部文本排到中文结论之后。
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Background);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.Background);
             FlushToolOutput();
             ReportBuildActivity("整理构建结果");
             try
@@ -96,7 +111,10 @@ public partial class MainWindow
                         await services.BuildHistory.CaptureAsync(directory, buildClock.Elapsed.TotalSeconds, token);
                     }
                 }
-                catch (Exception error) when (error is not OperationCanceledException) { Log("构建历史保存失败，原始编译结果保持有效：" + error); }
+                catch (Exception error) when (error is not OperationCanceledException)
+                {
+                    Log("构建历史保存失败，原始编译结果保持有效：" + error);
+                }
                 if ((currentProjectManifest?.Espressif is not null || IsZephyrProject) &&
                     string.Equals(projectDirectory, directory, StringComparison.OrdinalIgnoreCase))
                 {
@@ -126,7 +144,9 @@ public partial class MainWindow
         {
             ClearBuildDiagnostics();
             BuildMemory.SetMessage("编译已取消，请重新编译以更新占用。");
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Background);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.Background);
             FlushToolOutput();
             Log("编译已取消，退出代码：不可用（用户停止）");
             FinishBuildOutput("编译已取消", null);
@@ -136,7 +156,9 @@ public partial class MainWindow
         {
             ClearBuildDiagnostics();
             BuildMemory.SetMessage("编译失败，暂无本次占用数据。");
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Background);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.Background);
             FlushToolOutput();
             Log(ex.ToString());
             FinishBuildOutput("编译失败，原始诊断见下方输出", false);
@@ -146,7 +168,9 @@ public partial class MainWindow
         }
         finally
         {
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Background);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.Background);
             FlushToolOutput();
             // 产物目录不进入源码监听；成功、失败和取消后都要呈现实际磁盘状态。
             await RefreshBuildArtifactsTreeAsync(directory);
@@ -156,7 +180,10 @@ public partial class MainWindow
                 {
                     await RefreshAg32PinMappingStatusAsync(CancellationToken.None);
                 }
-                catch (Exception error) { Log("时序状态刷新失败，原始构建结果保留：" + error); }
+                catch (Exception error)
+                {
+                    Log("时序状态刷新失败，原始构建结果保留：" + error);
+                }
             }
         }
     }

@@ -2,7 +2,7 @@ namespace StudioX.Application.Mcp;
 
 using StudioX.Foundation;
 
-/// <summary>外部目录的只读路径边界与敏感文件过滤；PDF、LVGL、浏览和复制使用同一规则。</summary>
+/// <summary>外部目录的只读路径边界与敏感文件过滤；PDF、浏览和复制使用同一规则。</summary>
 internal static class ExternalProjectPathPolicy
 {
     internal static string CombineExternalPath(string sourcePath, string relative) =>

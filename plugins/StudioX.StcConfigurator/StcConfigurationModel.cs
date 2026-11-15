@@ -147,7 +147,11 @@ public sealed partial class StcConfigurationModel
             ValidateShape();
             code = "";
         }
-        catch { Document = before; throw; }
+        catch
+        {
+            Document = before;
+            throw;
+        }
     }
 
     private void SyncGpioRequests()

@@ -40,7 +40,10 @@ internal sealed class Mx251OutputLease : IDisposable
             }
             return new(lease, token);
         }
-        catch (IOException error) { throw new StudioXException("MX251_BUSY", "该工程的 MX251 输出正在被另一构建使用，未更改已有产物。", error); }
+        catch (IOException error)
+        {
+            throw new StudioXException("MX251_BUSY", "该工程的 MX251 输出正在被另一构建使用，未更改已有产物。", error);
+        }
     }
     public void Dispose() => stream.Dispose();
 }

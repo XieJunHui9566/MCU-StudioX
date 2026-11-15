@@ -93,7 +93,10 @@ internal static class GpioElectricalChecks
             await builder.ValidateBuiltAsync(root);
             throw new InvalidOperationException("Changed ASF accepted");
         }
-        catch (StudioXException error) when (error.Code == "AG32_GPIO_OPTIONS") { Check(true, "changed electrical constraint rejects old image receipt"); }
+        catch (StudioXException error) when (error.Code == "AG32_GPIO_OPTIONS")
+        {
+            Check(true, "changed electrical constraint rejects old image receipt");
+        }
         await File.WriteAllTextAsync(asf, asfText);
         var routed = Path.Combine(root, ".build/ag32-mapping/pins_routed.v");
         var routedText = await File.ReadAllTextAsync(routed);
@@ -103,7 +106,10 @@ internal static class GpioElectricalChecks
             await builder.ValidateBuiltAsync(root);
             throw new InvalidOperationException("Changed physical IO accepted");
         }
-        catch (StudioXException error) when (error.Code == "AG32_GPIO_OPTIONS") { Check(true, "wrong actual IO pull setting rejects old image receipt"); }
+        catch (StudioXException error) when (error.Code == "AG32_GPIO_OPTIONS")
+        {
+            Check(true, "wrong actual IO pull setting rejects old image receipt");
+        }
         await File.WriteAllTextAsync(routed, routedText);
         await File.WriteAllTextAsync(source, File.ReadAllText(source).Replace(" #LED1", " #@StudioX:GPIO pull=BAD output=PUSH_PULL #LED1"));
         try
@@ -111,7 +117,10 @@ internal static class GpioElectricalChecks
             await planner.ReadAsync(root);
             throw new InvalidOperationException("Malformed GPIO metadata accepted");
         }
-        catch (StudioXException error) when (error.Code == "AG32_GPIO_OPTIONS") { Check(true, "malformed metadata cannot silently become floating push-pull"); }
+        catch (StudioXException error) when (error.Code == "AG32_GPIO_OPTIONS")
+        {
+            Check(true, "malformed metadata cannot silently become floating push-pull");
+        }
         await File.WriteAllBytesAsync(source, original);
         var fresh = await planner.ReadAsync(root);
         await planner.ApplyAsync(root, fresh, [new("GPIO4_4", 2, "OUTPUT", "LED1", "UP", "OPEN_DRAIN")], fresh.Clocks);

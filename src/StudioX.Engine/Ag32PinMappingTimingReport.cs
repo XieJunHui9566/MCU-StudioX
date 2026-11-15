@@ -44,7 +44,10 @@ internal sealed record Ag32PinMappingTimingReport(string Sha256, int Covered, in
                     expanded.Write(buffer, 0, count);
                 }
             }
-            catch (InvalidDataException ex) { throw new StudioXException("AG32_MAPPING_TIMING", "时序报告压缩数据损坏：" + name, ex); }
+            catch (InvalidDataException ex)
+            {
+                throw new StudioXException("AG32_MAPPING_TIMING", "时序报告压缩数据损坏：" + name, ex);
+            }
             var text = new UTF8Encoding(false, true).GetString(expanded.ToArray());
             if (!text.Contains("Coverage report", StringComparison.Ordinal))
             {
