@@ -18,7 +18,8 @@ internal static class McpErrorPropagationChecks
         var providers = ((System.Collections.IEnumerable)typeof(StudioXMcpTools)
             .GetField("providers", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(tools)!)
             .Cast<object>().ToArray();
-        check(providers.Select(provider => provider.GetType()).Distinct().Count() == 22 &&
+        // LVGL-PC 预览已移除，注册表保留其余 21 个独立工具组。
+        check(providers.Select(provider => provider.GetType()).Distinct().Count() == 21 &&
               providers.Any(provider => provider.GetType().Name == "CustomServerMcpTools") &&
               providers.Any(provider => provider.GetType().Name == "ManagedDownloadMcpTools") &&
               typeof(StudioXMcpTools).GetMethods().All(method =>
