@@ -22,6 +22,14 @@ public partial class MainWindow
             }
             checks.Add(label);
         }
+        Check(ProjectToolsMenu.Items.OfType<MenuItem>().All(item => !item.Header.ToString()!.Contains("LVGL", StringComparison.Ordinal)) &&
+            workbenchCommands.All(command => !command.Title.Contains("延时与波特率", StringComparison.Ordinal)),
+            "retired LVGL and STC timing actions are absent from menus and commands");
+        Check(sourceContextMenu is null || sourceContextMenu.Items.OfType<MenuItem>()
+                .All(item => !item.Header.ToString()!.Contains("延时与波特率", StringComparison.Ordinal)),
+            "retired STC timing action is absent from the source context menu");
+        Check(WorkspaceTabs.Items.OfType<TabItem>().All(item => !Equals(item.Header, "LVGL PC 预览")),
+            "retired LVGL preview document is absent");
         var originalFont = System.Windows.Application.Current.Resources["WorkbenchFontFamily"];
         var originalSize = System.Windows.Application.Current.Resources["WorkbenchFontSize"];
         var custom = ThemeService.Dark with
@@ -48,6 +56,34 @@ public partial class MainWindow
             foreach (var theme in new[] { ThemeService.Dark, ThemeService.Light, custom })
             {
                 ApplyTheme(theme);
+                var selectedTab = WorkspaceTabs.SelectedItem;
+                var packagesVisibility = PackagesTab.Visibility;
+                PackagesTab.Visibility = Visibility.Visible;
+                WorkspaceTabs.SelectedItem = PackagesTab;
+                ProjectName.Text = "四梯开发板";
+                System.Windows.Application.Current.Resources["WorkbenchFontSize"] = 18d;
+                await Settle();
+                ProjectName.BringIntoView();
+                await Settle();
+                Save(this, theme.Id + "-chinese-project-name.png");
+                WorkspaceTabs.SelectedItem = selectedTab;
+                PackagesTab.Visibility = packagesVisibility;
+                ShowBottom(0);
+                BottomRow.Height = new GridLength(300);
+                BuildLog.Clear();
+                BeginBuildOutput("MX251 构建进度演示");
+                ReportBuildToolLine("[MX251] 编译源文件 [1/2] src/OLED.c");
+                Check(buildOutputMeasurement?.Percent == 50 && buildOutputPhase == "MX251 · 编译源文件", "MX251 uses actual source counts");
+                await Settle();
+                Save(this, theme.Id + "-mx251-progress.png");
+                ReportBuildToolLine("[MX251] 编译源文件 [2/2] src/OLED.c");
+                Check(buildOutputActive, "source count completion is not build success");
+                ReportBuildToolLine("[MX251] 链接固件");
+                Check(buildOutputMeasurement is null && buildOutputPhase == "MX251 · 链接固件", "link stage clears previous percentage");
+                System.Windows.Application.Current.Resources["WorkbenchFontSize"] = 18d;
+                await Settle();
+                Save(this, theme.Id + "-mx251-link-large.png");
+                FinishBuildOutput("进度演示结束", null);
                 foreach (var (name, create) in cases)
                 {
                     System.Windows.Application.Current.Resources["WorkbenchFontFamily"] = new FontFamily("Microsoft YaHei UI");
@@ -88,7 +124,10 @@ public partial class MainWindow
                                 theme.Id + " AI user text follows OnAccent");
                         }
                     }
-                    finally { dialog.Close(); }
+                    finally
+                    {
+                        dialog.Close();
+                    }
                 }
             }
             await JsonStore.WriteAsync(Path.Combine(directory, "result.json"), new
@@ -111,7 +150,9 @@ public partial class MainWindow
 
         async Task Settle()
         {
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.ApplicationIdle);
             await Task.Delay(50);
         }
         void Save(Window window, string name)

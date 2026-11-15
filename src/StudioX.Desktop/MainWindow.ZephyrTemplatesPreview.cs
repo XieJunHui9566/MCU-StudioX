@@ -18,7 +18,9 @@ public partial class MainWindow
         SelectPack(pack);
         DevicePicker.SelectedItem = DevicePicker.Items.Cast<DeviceDefinition>().Single(d => d.Id == "STM32F407ZG");
         TemplatePicker.SelectedItem = TemplatePicker.Items.Cast<ProjectTemplate>().Single(ZephyrTemplateCatalog.IsZephyr);
-        await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);
+        await Dispatcher.InvokeAsync(() =>
+        {
+        }, DispatcherPriority.ApplicationIdle);
         if (!CreateProjectButton.IsEnabled || ArduinoTemplatePanel.Visibility != Visibility.Collapsed ||
             IdfVersionPanel.Visibility != Visibility.Collapsed || !SelectedDevelopmentComponents.Text.Contains("自定义板级", StringComparison.Ordinal))
         {
@@ -34,7 +36,9 @@ public partial class MainWindow
             throw new InvalidOperationException("Zephyr 构建、硬件隔离或板级 DTS 编辑状态不正确。");
         }
         UpdateLayout();
-        await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+        await Dispatcher.InvokeAsync(() =>
+        {
+        }, DispatcherPriority.Render);
         Render(this, Path.Combine(directory, "zephyr-project.png"));
         await File.WriteAllTextAsync(Path.Combine(directory, "result.txt"),
             "PASS MCU-first Zephyr template; no Arduino/IDF selectors; build enabled; hardware disabled; editable project-owned DTS.\n");

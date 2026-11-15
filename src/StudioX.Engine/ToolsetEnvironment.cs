@@ -8,6 +8,7 @@ public static class ToolsetEnvironment
     public static readonly string[] AmbientVariables = ["GCC_EXEC_PREFIX", "COMPILER_PATH", "LIBRARY_PATH", "CPATH", "C_INCLUDE_PATH", "CPLUS_INCLUDE_PATH", "OBJC_INCLUDE_PATH", "CC", "CXX", "AS", "AR", "LD", "CFLAGS", "CXXFLAGS", "CPPFLAGS", "LDFLAGS", "ASMFLAGS", "CMAKE_TOOLCHAIN_FILE", "CMAKE_GENERATOR", "CMAKE_GENERATOR_PLATFORM", "CMAKE_GENERATOR_TOOLSET", "CMAKE_PREFIX_PATH", "CMAKE_PROGRAM_PATH", "CMAKE_INCLUDE_PATH", "CMAKE_LIBRARY_PATH", "PYTHONHOME", "PYTHONPATH", "PYTHONPYCACHEPREFIX", "OPENOCD_SCRIPTS", "IDF_PATH", "IDF_TOOLS_PATH", "IDF_PYTHON_ENV_PATH", "IDF_TARGET", "ESP_IDF_VERSION", "ESP_ROM_ELF_DIR", "SDKCONFIG", "SDKCONFIG_DEFAULTS", "IDF_CCACHE_ENABLE", "VIRTUAL_ENV", "PYTHONUSERBASE", "_IDF_PY_SET_TARGET_ACTION", "EXTRA_CFLAGS", "EXTRA_CXXFLAGS", "EXTRA_CPPFLAGS", "MSYSTEM", "XTENSA_GNU_CONFIG"];
     public static Dictionary<string, string> Create(ResolvedToolset tools) => new()
     {
+        [Mx251VerifiedTools.EnvironmentKey] = "",
         ["PATH"] = string.Join(Path.PathSeparator, tools.Manifest.Executables.Keys.Select(role => Path.GetDirectoryName(tools.Tool(role))!).Distinct(HostPlatform.PathComparer)
             .Concat(OperatingSystem.IsWindows() ? [Environment.GetFolderPath(Environment.SpecialFolder.System)] : ["/usr/bin", "/bin"])),
         ["PYTHONDONTWRITEBYTECODE"] = "1",

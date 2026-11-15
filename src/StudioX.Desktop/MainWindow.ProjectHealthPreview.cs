@@ -96,7 +96,9 @@ public partial class MainWindow
         async Task SettleAsync()
         {
             UpdateLayout();
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ContextIdle);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.ContextIdle);
             UpdateLayout();
         }
     }

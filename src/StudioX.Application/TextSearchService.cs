@@ -8,7 +8,11 @@ using StudioX.Foundation;
 public static class TextSearchService
 {
     public static IReadOnlyList<TextSearchMatch> Find(string text, TextSearchOptions options, string? replacement = null)
+        => Find(text, options, replacement, CancellationToken.None);
+
+    public static IReadOnlyList<TextSearchMatch> Find(string text, TextSearchOptions options, string? replacement, CancellationToken token)
     {
+        token.ThrowIfCancellationRequested();
         if (options.Pattern.Length == 0)
         {
             return [];
@@ -34,6 +38,7 @@ public static class TextSearchService
         long outputLength = text.Length;
         for (var match = expression.Match(text); match.Success; match = match.NextMatch())
         {
+            token.ThrowIfCancellationRequested();
             if (clock.ElapsedMilliseconds > 1000 || result.Count >= 50000)
             {
                 throw new StudioXException("SEARCH_LIMIT", "匹配结果超过 50,000 处或搜索耗时过长，请缩小查找范围。");
@@ -49,6 +54,7 @@ public static class TextSearchService
             }
             result.Add(new(match.Index, match.Length, value));
         }
+        token.ThrowIfCancellationRequested();
         return result;
     }
 }

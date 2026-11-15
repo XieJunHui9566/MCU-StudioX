@@ -95,7 +95,10 @@ internal static class ToolPreparationChecks
                 await service.InstallAsync(plan, requirement, preview, token: cancel.Token);
                 check(false, "cancel install");
             }
-            catch (OperationCanceledException) { check(!Directory.Exists(Path.Combine(toolsets.RootDirectory, "test.gcc/1.0.0")), "cancelled preparation leaves target tool version unpublished"); }
+            catch (OperationCanceledException)
+            {
+                check(!Directory.Exists(Path.Combine(toolsets.RootDirectory, "test.gcc/1.0.0")), "cancelled preparation leaves target tool version unpublished");
+            }
         }
         await service.InstallAsync(plan, requirement, preview);
         var installed = await service.InspectAsync(project, listing);
@@ -119,6 +122,9 @@ internal static class ToolPreparationChecks
             await action();
             check(false, label);
         }
-        catch (StudioXException error) { check(error.Code == code, label); }
+        catch (StudioXException error)
+        {
+            check(error.Code == code, label);
+        }
     }
 }

@@ -93,7 +93,9 @@ public sealed class GitHubAuthenticationService(GitRepositoryService git)
                     process.Kill(entireProcessTree: true);
                 }
             }
-            catch (InvalidOperationException) { }
+            catch (InvalidOperationException)
+            {
+            }
             await process.WaitForExitAsync(CancellationToken.None);
             token.ThrowIfCancellationRequested();
             throw new StudioXException("GITHUB_GCM_TIMEOUT", "读取 GitHub 凭据超时。");

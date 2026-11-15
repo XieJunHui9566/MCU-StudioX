@@ -25,7 +25,6 @@
 | 故障资料 | `Application/Health/SupportReportService` 只读收集版本、工程锁、工具身份、健康检查和有界原始日志；Desktop 仅选择本机输出文件 |
 | 调试和 RTOS | `DebugMcpTools` 调用 `DebugSessionService`；Engine 的 MI、反汇编与 FreeRTOS 检查独立于 WPF |
 | 模拟设备和采集 | `Application/Simulation/SimulationLabService.cs` 拥有会话、两路订阅和记录器；Desktop 只显示事件 |
-| LVGL PC 预览 | Engine 扫描库、构建和启动原生窗口，Application 管预览会话/资源，Desktop 提供配置与状态 |
 | 插件安装与信任 | `Extensions/PluginRepository` 校验归档并原子发布；`Application/Plugins/PluginManagerService` 保存当前内容的启用指纹 |
 | 插件宿主兼容 | `PluginHostCapabilities` 声明应用可提供的 API/贡献；插件目录检查缺少的能力和 .NET 宿主组件，启用前展示原因并拒绝不兼容内容 |
 | 插件运行与主机调用 | `PluginWorkspaceSession` 拥有独立进程；`PluginWorkspaceBroker` 复用应用工具和授权，负责释放插件设备观察者 |
@@ -52,4 +51,3 @@ AI 控制器、用量呈现、协议解析和路径策略独立于主窗口状�
 - 桌面控制器验证对话隔离、草稿、审批卡消失、API 用量缺失值与脏缓冲区。
 - 文档预览验证连续文件写入后的即时刷新，以及光标、选区和滚动。
 - 工程生命周期验证旧 Agent 等待、退出顺序、取消与错误传递。
-- LVGL 使用隔离自定义 UI 夹具验证真实 PC 构建和窗口，不连接开发板。

@@ -51,6 +51,12 @@ public static class PackArchiveWriter
             }
             File.Move(temporary, output, overwrite: false);
         }
-        finally { if (File.Exists(temporary)) { File.Delete(temporary); } }
+        finally
+        {
+            if (File.Exists(temporary))
+            {
+                File.Delete(temporary);
+            }
+        }
     }
 }

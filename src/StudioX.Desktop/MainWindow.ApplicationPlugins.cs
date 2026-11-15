@@ -65,20 +65,29 @@ public partial class MainWindow
             {
                 await session.DisposeAsync();
             }
-            catch (Exception error) { PluginManager.Log(error.ToString()); }
+            catch (Exception error)
+            {
+                PluginManager.Log(error.ToString());
+            }
             if (ownsInvocation)
             {
                 try
                 {
                     await pluginInvocationTask;
                 }
-                catch (Exception error) { PluginManager.Log(error.ToString()); }
+                catch (Exception error)
+                {
+                    PluginManager.Log(error.ToString());
+                }
             }
             pluginApplicationCancellation?.Dispose();
             pluginApplicationCancellation = null;
             RemovePluginSessionUi(session);
             RebuildPluginCommandUi();
         }
-        finally { pluginWorkspaceGate.Release(); }
+        finally
+        {
+            pluginWorkspaceGate.Release();
+        }
     }
 }

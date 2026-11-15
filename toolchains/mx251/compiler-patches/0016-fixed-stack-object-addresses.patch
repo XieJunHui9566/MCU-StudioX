@@ -1,0 +1,265 @@
+--- a/src/mcs251/wide.c
++++ b/src/mcs251/wide.c
+@@ -1000,6 +1000,27 @@
+   }
+ }
+ 
++/* MIR 变换后的候选独立重建活跃信息与分配输入；保留 ABI pin 和对象布局。 */
++static void
++wide_reset_allocation(wide_function *f)
++{
++  /* 复制候选不能继承旧图、权重或调用保存结论；位置和 pin 重新交给
++   * 原分配器，所有实际内存节点及 CFG 后继原封不动。 */
++  for(int v=0;v<f->nv;++v) {
++    f->values[v].edges=(wide_bits){{0}};f->values[v].reads=f->values[v].weight=0;
++    f->values[v].reg=f->values[v].slot=-1;
++  }
++  f->frame=0;for(int v=0;v<f->no;++v)f->frame+=f->objects[v].size;
++  for(int i=0;i<f->nn;++i) {
++    wide_node *n=&f->nodes[i];n->in=n->out=(wide_bits){{0}};n->callSaveOmit=0;
++    int values[WA_MAX+2]={n->left.value,n->right.value,n->addressIndex.value};
++    for(unsigned k=0;k<n->stackArgs;++k)values[k+3]=n->stackOperands[k].value;
++    for(unsigned k=0;k<3+n->stackArgs;++k)if(wb_has(n->use,values[k])) {
++      ++f->values[values[k]].reads;f->values[values[k]].weight+=1+4*n->origin->depth;
++    }
++  }
++}
++
+ /* 只合并入口直线前缀中的同地址空间数据指针副本。入口 RECEIVE 的
+  * 规范化位模式保持不变；不合并指向的内存，不移动任何读取或写入。 */
+ static unsigned
+@@ -1054,23 +1075,141 @@
+     ++copies;
+   }
+   if(copies) {
+-    /* 复制候选不能继承旧图、权重或调用保存结论；位置和 pin 重新交给
+-     * 原分配器，所有实际内存节点及 CFG 后继原封不动。 */
+-    for(int v=0;v<f->nv;++v) {
+-      f->values[v].edges=(wide_bits){{0}};f->values[v].reads=f->values[v].weight=0;
+-      f->values[v].reg=f->values[v].slot=-1;
+-    }
+-    f->frame=0;for(int v=0;v<f->no;++v)f->frame+=f->objects[v].size;
++    wide_reset_allocation(f);
++  }
++  return copies;
++}
++
++/* 单定义对象地址的支配缓存只描述值来源，不描述或缓存对象内容。
++ * 使用真实 CFG（包括 switch 全部表项）：移除定义节点后，仍可从入口
++ * 到达的节点不受该定义支配。不可达节点不作任何优化推断。 */
++typedef struct {
++  int entry,definitions[WV_MAX],definition[WV_MAX];
++  unsigned char reachable[WN_MAX],ready[WV_MAX],without[WV_MAX][WN_MAX];
++} wide_address_dominance;
++
++static void
++wide_address_reachable(wide_function *f,int entry,int omitted,unsigned char *seen)
++{
++  int queue[WN_MAX],head=0,tail=0;
++  memset(seen,0,WN_MAX);
++  if(entry<0 || entry==omitted)return;
++  seen[entry]=1;queue[tail++]=entry;
++  while(head<tail) {
++    wide_node *n=&f->nodes[queue[head++]];
++    for(int k=0;k<2+n->jumpCount;++k) {
++      int next=k<2?n->succ[k]:f->jumpSuccessors[n->jumpStart+k-2];
++      if(next<0 || next==omitted)continue;
++      wassert(next<f->nn);if(seen[next])continue;
++      wassert(tail<WN_MAX);seen[next]=1;queue[tail++]=next;
++    }
++  }
++}
++
++static bool
++wide_address_dominates(wide_function *f,wide_address_dominance *d,int value,int use)
++{
++  if(value<0 || d->definitions[value]!=1 || use<0 || !d->reachable[use])return false;
++  int definition=d->definition[value];
++  if(definition==use || !d->reachable[definition])return false;
++  if(!d->ready[value]) {
++    wide_address_reachable(f,d->entry,definition,d->without[value]);d->ready[value]=1;
++  }
++  return !d->without[value][use];
++}
++
++static bool
++wide_fixed_address_value(wide_value *v)
++{
++  return v->pointer && !v->codePointer && v->width==4 && !v->floating && !v->sign &&
++    !v->symbolSnapshot && IS_PTR(v->sym->type) && getSize(v->sym->type)==3 &&
++    !isVolatile(v->sym->type) && !isAtomic(v->sym->type);
++}
++
++static bool
++wide_fixed_address_delta(wide_operand o,int64_t *delta)
++{
++  if(o.value>=0 || o.floating || o.codePointer ||
++     (o.width!=1 && o.width!=2 && o.width!=4))return false;
++  uint32_t value=o.literal;
++  if(o.sign && o.width<4 && (value&(UINT32_C(1)<<(8*o.width-1))))
++    value|=~((UINT32_C(1)<<(8*o.width))-1);
++  *delta=value;
++  if(o.sign && (value&UINT32_C(0x80000000)))*delta-=INT64_C(1)<<32;
++  return true;
++}
++
++static unsigned
++wide_fixed_stack_addresses(wide_function *f)
++{
++  if(!f->no)return 0;
++  wide_address_dominance *d=Safe_alloc(sizeof *d);memset(d,0,sizeof *d);d->entry=-1;
++  int object[WV_MAX],offset[WV_MAX]={0};unsigned changedUses=0;
++  for(int v=0;v<f->nv;++v) {object[v]=-1;d->definition[v]=-1;}
++  for(int i=0;i<f->nn;++i) {
++    if(f->nodes[i].op==FUNCTION) {if(d->entry>=0) {Safe_free(d);return 0;}d->entry=i;}
++    for(int v=0;v<f->nv;++v)if(wb_has(f->nodes[i].def,v)) {
++      ++d->definitions[v];d->definition[v]=i;
++    }
++  }
++  if(d->entry<0) {Safe_free(d);return 0;}
++  wide_address_reachable(f,d->entry,-1,d->reachable);
++  /* 只从本地完整对象生长身份，不推断 phi、动态偏移或循环携带值。
++   * 派生值的来源定义必须支配派生点，不能以源码排列顺序代替。 */
++  bool changed;
++  do {
++    changed=false;
+     for(int i=0;i<f->nn;++i) {
+-      wide_node *n=&f->nodes[i];n->in=n->out=(wide_bits){{0}};n->callSaveOmit=0;
+-      int values[WA_MAX+2]={n->left.value,n->right.value,n->addressIndex.value};
+-      for(unsigned k=0;k<n->stackArgs;++k)values[k+3]=n->stackOperands[k].value;
+-      for(unsigned k=0;k<3+n->stackArgs;++k)if(wb_has(n->use,values[k])) {
+-        ++f->values[values[k]].reads;f->values[values[k]].weight+=1+4*n->origin->depth;
+-      }
+-    }
+-  }
+-  return copies;
++      wide_node *n=&f->nodes[i];int v=n->result,source=-1,o=-1;int64_t position=0;
++      if(v<0 || !d->reachable[i] || d->definitions[v]!=1 || d->definition[v]!=i ||
++         object[v]>=0 || !wide_fixed_address_value(&f->values[v]))continue;
++      if(n->op==WM_ADDRESS && n->addressObject>=0 && !n->addressOp) {
++        o=n->addressObject;position=n->addressOffset;
++        if(o>=f->no || n->addressSymbol!=f->objects[o].sym)continue;
++      } else {
++        int64_t delta=0;
++        if((n->op=='=' || n->op==CAST) && n->width==4 && n->right.width==4)
++          source=n->right.value;
++        else if((n->op=='+' || n->op=='-') && n->width==4 && n->left.width==4 &&
++                wide_fixed_address_delta(n->right,&delta)) {
++          source=n->left.value;if(n->op=='-')delta=-delta;
++        } else continue;
++        if(source<0 || source==v || object[source]<0 ||
++           !wide_fixed_address_value(&f->values[source]) ||
++           DCL_TYPE(f->values[source].sym->type)!=DCL_TYPE(f->values[v].sym->type) ||
++           !wide_address_dominates(f,d,source,i))continue;
++        o=object[source];position=offset[source]+delta;
++      }
++      if(o>=0 && position>=0 && position<=f->objects[o].size) {
++        object[v]=o;offset[v]=(int)position;changed=true;
++      }
++    }
++  } while(changed);
++  for(int i=0;i<f->nn;++i) {
++    wide_node *n=&f->nodes[i];int source=n->left.value;
++    if((n->op!=WM_LOAD && n->op!=WM_STORE) || n->addressObject>=0 || n->codeAccess ||
++       source<0 || n->left.width!=4 || object[source]<0 || !wide_address_dominates(f,d,source,i))continue;
++    int o=object[source];int64_t position=offset[source],delta=0;
++    if(n->addressOp) {
++      if((n->addressOp!='+' && n->addressOp!='-') ||
++         !wide_fixed_address_delta(n->addressIndex,&delta))continue;
++      position+=n->addressOp=='+'?delta:-delta;
++    }
++    int physical=n->pointerAccess?3:n->width;
++    if(physical<1 || position<0 || position>f->objects[o].size ||
++       physical>f->objects[o].size-position)continue;
++    /* 留在原节点的字节/字/三字节指针事务保持原序、原宽度；不跨越
++     * CALL 缓存内容。自存指针仍是右值，不能清除其真正的读取。 */
++    n->addressObject=o;n->addressOffset=(int)position;n->addressSymbol=f->objects[o].sym;
++    n->left.value=-1;n->addressOp=0;n->addressIndex=(wide_operand){.value=-1};
++    if(n->right.value!=source) {wide_bits removed={{0}};wb_set(&removed,source);n->use=wb_minus(n->use,removed);}
++    dbuf_printf(f->diagnostics,"; wide stack-address folded function=%s node=%d source=%d definition=%d object=%d offset=%d physical=%d volatile-bytes=%d\n",
++      currFunc->name,i,source,d->definition[source],o,(int)position,physical,n->byteAccess);
++    ++changedUses;
++  }
++  Safe_free(d);
++  if(changedUses) {wide_remove_dead_addresses(f);wide_reset_allocation(f);}
++  return changedUses;
+ }
+ 
+ static void
+@@ -1322,7 +1461,7 @@
+ }
+ 
+ static mcs251_wide_result
+-wide_choose_pointer_copy(wide_function *f)
++wide_choose_pointer_copy(wide_function *f,wide_selection_cost *cost)
+ {
+   wide_function *trial=Safe_alloc(sizeof *trial);memcpy(trial,f,sizeof *trial);
+   struct dbuf_s originalCode,originalDiagnostics,trialCode,trialDiagnostics;
+@@ -1331,7 +1470,7 @@
+   trial->candidateOutput=&trialCode;trial->diagnostics=&trialDiagnostics;
+   unsigned copies=wide_entry_pointer_copies(trial);
+   mcs251_wide_result result;
+-  if(!copies)result=wide_choose_allocation(f,NULL);
++  if(!copies)result=wide_choose_allocation(f,cost);
+   else {
+     struct dbuf_s *code=f->candidateOutput,*diagnostics=f->diagnostics;
+     wide_selection_cost oldCost={0},newCost={0};bool selected=false;
+@@ -1353,6 +1492,49 @@
+     struct dbuf_s *chosenCode=selected?&trialCode:&originalCode;
+     struct dbuf_s *chosenDiagnostics=selected?&trialDiagnostics:&originalDiagnostics;
+     wide_pointer_copy_audit(diagnostics,selected?"original":"trial",selected?&originalDiagnostics:&trialDiagnostics);
++    dbuf_append(diagnostics,dbuf_get_buf(chosenDiagnostics),dbuf_get_length(chosenDiagnostics));
++    if(result==MCS251_WIDE_ACCEPTED)dbuf_append(code,dbuf_get_buf(chosenCode),dbuf_get_length(chosenCode));
++    if(cost && result==MCS251_WIDE_ACCEPTED)*cost=selected?newCost:oldCost;
++  }
++  dbuf_destroy(&originalCode);dbuf_destroy(&originalDiagnostics);
++  dbuf_destroy(&trialCode);dbuf_destroy(&trialDiagnostics);Safe_free(trial);
++  return result;
++}
++
++/* 完整 V0.0122 选择器作为基线。固定栈地址候选只在实际发射后同时
++ * 不增编码字节、加权指令和栈帧时采用；内部错误不能伪装成回退。 */
++static mcs251_wide_result
++wide_choose_stack_addresses(wide_function *f)
++{
++  wide_function *trial=Safe_alloc(sizeof *trial);memcpy(trial,f,sizeof *trial);
++  struct dbuf_s originalCode,originalDiagnostics,trialCode,trialDiagnostics;
++  dbuf_init(&originalCode,1024);dbuf_init(&originalDiagnostics,256);
++  dbuf_init(&trialCode,1024);dbuf_init(&trialDiagnostics,256);
++  trial->candidateOutput=&trialCode;trial->diagnostics=&trialDiagnostics;
++  unsigned accesses=wide_fixed_stack_addresses(trial);
++  mcs251_wide_result result;
++  if(!accesses)result=wide_choose_pointer_copy(f,NULL);
++  else {
++    struct dbuf_s *code=f->candidateOutput,*diagnostics=f->diagnostics;
++    wide_selection_cost oldCost={0},newCost={0};bool selected=false;
++    f->candidateOutput=&originalCode;f->diagnostics=&originalDiagnostics;
++    result=wide_choose_pointer_copy(f,&oldCost);
++    f->candidateOutput=code;f->diagnostics=diagnostics;
++    mcs251_wide_result originalResult=result,trialResult=MCS251_WIDE_FALLBACK;
++    if(result==MCS251_WIDE_ACCEPTED) {
++      wide_liveness(trial);trialResult=wide_choose_pointer_copy(trial,&newCost);
++      if(trialResult==MCS251_WIDE_ERROR)result=MCS251_WIDE_ERROR;
++      else selected=trialResult==MCS251_WIDE_ACCEPTED && !oldCost.unknown && !newCost.unknown &&
++        newCost.bytes<=oldCost.bytes && newCost.heuristic<=oldCost.heuristic && newCost.frame<=oldCost.frame &&
++        (newCost.bytes<oldCost.bytes || newCost.heuristic<oldCost.heuristic || newCost.frame<oldCost.frame);
++    }
++    dbuf_printf(diagnostics,"; wide stack-address choice function=%s accesses=%u selected=%u original-result=%d trial-result=%d old-bytes=%u new-bytes=%u old-unknown=%u new-unknown=%u old-weighted=%u new-weighted=%u old-frame=%d new-frame=%d old-spills=%u new-spills=%u\n",
++      currFunc->name,accesses,selected,originalResult,trialResult,oldCost.bytes,newCost.bytes,oldCost.unknown,newCost.unknown,
++      oldCost.heuristic,newCost.heuristic,oldCost.frame,newCost.frame,oldCost.spills,newCost.spills);
++    struct dbuf_s *chosenCode=selected?&trialCode:&originalCode;
++    struct dbuf_s *chosenDiagnostics=selected?&trialDiagnostics:&originalDiagnostics;
++    /* 复用逐行前缀容器；新增外层前缀明确区分旧候选和获选候选。 */
++    wide_pointer_copy_audit(diagnostics,selected?"stack-original":"stack-trial",selected?&originalDiagnostics:&trialDiagnostics);
+     dbuf_append(diagnostics,dbuf_get_buf(chosenDiagnostics),dbuf_get_length(chosenDiagnostics));
+     if(result==MCS251_WIDE_ACCEPTED)dbuf_append(code,dbuf_get_buf(chosenCode),dbuf_get_length(chosenCode));
+   }
+@@ -1436,7 +1618,7 @@
+     wide_fold_extensions(f);
+     wide_liveness(f);
+     if(WA_FAIL("after-transform"))goto fallback;
+-    result=wide_choose_pointer_copy(f);
++    result=wide_choose_stack_addresses(f);
+     if(result==MCS251_WIDE_ACCEPTED && WA_FAIL("after-emit")) {
+       dbuf_append_str(output,"\n_mx251_discarded_test_marker:\n\t.db 0xa5\n");
+       result=MCS251_WIDE_FALLBACK;

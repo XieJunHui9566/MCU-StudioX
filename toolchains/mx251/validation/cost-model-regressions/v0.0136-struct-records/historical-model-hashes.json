@@ -1,0 +1,7 @@
+{
+  "wide.c": "0fcce7ed5449ebb43faa6e528a5f09ded5399f2876795d949e3ad807b0a7d0dd",
+  "wide_branch.c.inc": "fe0ac8082a3463121329e8cc2c5d150c3015ec571410a22c946ec1b0cb7e97fd",
+  "wide_cost.h": "407402ba1c4bf70b8da201404bef6ebc4b3fd2985aaa9d60143ded8b785cf66c",
+  "wide_emit.c.inc": "3757c78b201a02fcba4fe14287cf53052afea57a1baa64d76e75bbb34569262c",
+  "wide_local_copies.c.inc": "9299e288e6d4b0ae3f2f7124bd845a8962401cae87d69405c9f70a9b2a6e7207"
+}

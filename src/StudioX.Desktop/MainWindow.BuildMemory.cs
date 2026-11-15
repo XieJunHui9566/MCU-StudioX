@@ -74,7 +74,10 @@ public partial class MainWindow
                 BuildMemory.SetReport(report);
             }
         }
-        catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             // 分析是可选展示，不把统计异常转换为固件编译失败。

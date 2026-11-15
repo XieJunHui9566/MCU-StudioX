@@ -27,9 +27,15 @@ if (args is ["--usb-hardware", var hardwareImage, var hardwareLog])
     await NativeUsbHardwareCheck.RunAsync(hardwareImage, hardwareLog);
     return;
 }
-if (args.Length != 4) { throw new ArgumentException("需要 tool-runtime、STC 包、新输出目录与本机 stcgal.exe。"); }
+if (args.Length != 4)
+{
+    throw new ArgumentException("需要 tool-runtime、STC 包、新输出目录与本机 stcgal.exe。");
+}
 var output = Path.GetFullPath(args[2]);
-if (Directory.Exists(output) || File.Exists(output)) { throw new InvalidOperationException("请选择不存在的验收输出目录。"); }
+if (Directory.Exists(output) || File.Exists(output))
+{
+    throw new InvalidOperationException("请选择不存在的验收输出目录。");
+}
 Directory.CreateDirectory(output);
 var pack = await new PackRepository(Path.Combine(output, "repository")).ImportAsync(Path.GetFullPath(args[1]));
 var device = pack.Manifest.Devices.Single(d => d.Id == "IAP15F2K61S2");
@@ -55,7 +61,9 @@ try
     await service.PrepareAsync(project, settings);
     throw new Exception("未编译固件被接受。");
 }
-catch (StudioXException ex) when (ex.Code == "STC_ISP_BUILD") { }
+catch (StudioXException ex) when (ex.Code == "STC_ISP_BUILD")
+{
+}
 var build = await new BuildService(catalog).BuildAsync(project);
 Check(build.Success, "SDCC 实际编译：" + build.Log);
 var existingSnapshots = Directory.EnumerateDirectories(Path.Combine(project, ".build"), "stc-isp-*").Count();
@@ -84,7 +92,10 @@ try
     await service.VerifyPreparedAsync(prepared);
     throw new InvalidOperationException("硬件配置改变后仍接受旧下载快照。");
 }
-catch (StudioXException ex) when (ex.Code == "STC_ISP_PREPARE") { Check(true, "硬件选项改变使旧准备快照失效"); }
+catch (StudioXException ex) when (ex.Code == "STC_ISP_PREPARE")
+{
+    Check(true, "硬件选项改变使旧准备快照失效");
+}
 var hardwarePrepared = await service.PrepareAsync(project, hardwareSettings);
 await service.VerifyPreparedAsync(hardwarePrepared);
 Check(hardwarePrepared.Settings == hardwareSettings, "硬件配置固定在通过复核的下载快照内");
@@ -99,8 +110,14 @@ try
         CodeRomSizeBytes: 0xdbfd, Mon51Profile: true));
     foreach (var action in new Func<Task>[]
     {
-        async () => { await service.PreviewAsync(project, settings); },
-        async () => { await service.PrepareAsync(project, settings); },
+        async () =>
+        {
+await service.PreviewAsync(project, settings);
+},
+        async () =>
+        {
+await service.PrepareAsync(project, settings);
+},
         () => service.VerifyPreparedAsync(prepared)
     })
     {
@@ -109,7 +126,9 @@ try
             await action();
             throw new InvalidOperationException("Mon51 工程进入了会擦除监控区的普通 ISP 通道。");
         }
-        catch (StudioXException ex) when (ex.Code == "STC_ISP_MON51") { }
+        catch (StudioXException ex) when (ex.Code == "STC_ISP_MON51")
+        {
+        }
     }
     Check(Directory.EnumerateDirectories(Path.Combine(project, ".build"), "stc-isp-*").Count() == snapshotsBeforeMon51 &&
         Convert.ToHexString(SHA256.HashData(await File.ReadAllBytesAsync(prepared.Image))) == prepared.ImageSha256,
@@ -134,7 +153,9 @@ try
     await service.VerifyPreparedAsync(prepared);
     throw new Exception("确认后修改的快照被接受。");
 }
-catch (StudioXException ex) when (ex.Code == "STC_ISP_PREPARE") { }
+catch (StudioXException ex) when (ex.Code == "STC_ISP_PREPARE")
+{
+}
 await File.WriteAllBytesAsync(prepared.Image, originalSnapshot);
 await service.VerifyPreparedAsync(prepared);
 await service.SaveSettingsAsync(project, settings with { Port = "COM6" });
@@ -143,7 +164,9 @@ try
     await service.VerifyPreparedAsync(prepared);
     throw new Exception("确认后改变的串口被接受。");
 }
-catch (StudioXException ex) when (ex.Code == "STC_ISP_PREPARE") { }
+catch (StudioXException ex) when (ex.Code == "STC_ISP_PREPARE")
+{
+}
 await service.SaveSettingsAsync(project, settings);
 await service.VerifyPreparedAsync(prepared);
 Check((await service.LoadSettingsAsync(project)).ClockFrequencyHz == 11059200, "工程时钟持久化精度");
@@ -155,7 +178,9 @@ try
     });
     throw new Exception("未保存频率被接受。");
 }
-catch (StudioXException ex) when (ex.Code == "STC_ISP_BUILD") { }
+catch (StudioXException ex) when (ex.Code == "STC_ISP_BUILD")
+{
+}
 try
 {
     await service.SaveSettingsAsync(project, settings with
@@ -164,7 +189,9 @@ try
     });
     throw new Exception("超范围频率被接受。");
 }
-catch (StudioXException ex) when (ex.Code == "STC_ISP_CLOCK") { }
+catch (StudioXException ex) when (ex.Code == "STC_ISP_CLOCK")
+{
+}
 var scriptTest = await new ProcessRunner().RunAsync(new(prepared.PythonExecutable,
     [Path.GetFullPath("tools/StudioX.StcIspValidation/guard_offline.py"), prepared.GuardScript, prepared.Image],
     Path.GetFullPath("."), TimeSpan.FromSeconds(15), RemoveEnvironment: ["PYTHONHOME", "PYTHONPATH"]));

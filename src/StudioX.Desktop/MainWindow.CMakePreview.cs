@@ -38,7 +38,9 @@ public partial class MainWindow
                 popup.CompletionList.ListBox.SelectedItem = popup.CompletionList.CompletionData.First(item => item.Text == expected);
                 UpdateLayout();
                 popup.UpdateLayout();
-                await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+                await Dispatcher.InvokeAsync(() =>
+                {
+                }, DispatcherPriority.Render);
                 Render(popup, Path.Combine(directory, name + ".png"));
                 var before = SourceEditor.Text;
                 popup.CompletionList.HandleKey(new KeyEventArgs(Keyboard.PrimaryDevice, PresentationSource.FromVisual(SourceEditor), 0, Key.Tab) { RoutedEvent = Keyboard.KeyDownEvent });
@@ -80,7 +82,9 @@ public partial class MainWindow
             await assistTask;
             completionWindow!.CompletionList.SelectItem("target_sources");
             completionWindow.CompletionList.RequestInsertion(EventArgs.Empty);
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Background);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.Background);
             await assistTask;
             if (!SourceEditor.Text.EndsWith("target_sources()", StringComparison.Ordinal) || SourceEditor.CaretOffset != SourceEditor.Text.Length - 1 || completionWindow is null || !completionWindow.CompletionList.CompletionData.Any(item => item.Text == "firmware"))
             {
@@ -108,7 +112,9 @@ public partial class MainWindow
             await assistTask;
             var signature = signatureWindow ?? throw new InvalidOperationException("缺少 CMake 用法提示。");
             signature.UpdateLayout();
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.Render);
             Render(signature, Path.Combine(directory, "usage.png"));
             CloseCodeAssistance();
             Show(declarations + "#[=[ target_inc| ]=]");
@@ -132,6 +138,12 @@ public partial class MainWindow
             ApplyTheme(ThemeService.Dark);
             await File.WriteAllTextAsync(Path.Combine(directory, "result.txt"), "PASS: CMake command/target/scope/variable/path/value completion, parentheses and brace reuse, Tab insertion and undo, auto command/space triggers, .cmake dispatch, usage help, comment suppression, stale cancellation, dark/light UI. clangd stopped during checks. Project files unchanged.\n");
         }
-        finally { CloseCodeAssistance(); await assistTask; renderingAssistancePreview = false; ShowSource(original); }
+        finally
+        {
+            CloseCodeAssistance();
+            await assistTask;
+            renderingAssistancePreview = false;
+            ShowSource(original);
+        }
     }
 }

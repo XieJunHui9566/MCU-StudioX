@@ -16,7 +16,9 @@ public partial class MainWindow
             var dialog = new CubeMxImportWindow(inspection) { Owner = this, ShowActivated = false, WindowStartupLocation = WindowStartupLocation.Manual, Left = -18000 };
             dialog.Show();
             dialog.UpdateLayout();
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.Render);
             if (dialog.ConfigurePreset != "Debug")
             {
                 throw new InvalidOperationException("Import did not select the actual Debug preset.");
@@ -27,7 +29,9 @@ public partial class MainWindow
         ApplyTheme(ThemeService.Dark);
         ShowDocument(WelcomeTab);
         UpdateLayout();
-        await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+        await Dispatcher.InvokeAsync(() =>
+        {
+        }, DispatcherPriority.Render);
         Render(this, Path.Combine(directory, "welcome.png"));
         await OpenFromCommandLineAsync(fixture);
         if (activeDocument?.RelativePath != "Core/Src/main.c" || !services.Intelligence.IsReady || !BuildButton.IsEnabled || !DownloadButton.IsEnabled || (await FindProjectNodeAsync("Core/Src"))?.IsExpanded != true)
@@ -62,7 +66,9 @@ public partial class MainWindow
         await TravelNavigationAsync(backwards: true);
         SourceEditor.ScrollToLine(65);
         UpdateLayout();
-        await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+        await Dispatcher.InvokeAsync(() =>
+        {
+        }, DispatcherPriority.Render);
         Render(this, Path.Combine(directory, "workspace.png"));
         await CloseProjectAsync(CancellationToken.None);
         if (ProjectTree.Items.Count != 0 || services.Intelligence.IsReady)

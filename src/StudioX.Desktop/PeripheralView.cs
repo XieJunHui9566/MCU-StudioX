@@ -47,12 +47,18 @@ public sealed class PeripheralView : UserControl
         var body = new DockPanel { Margin = new(16) };
         var top = new StackPanel();
         top.Children.Add(new TextBlock { Text = "外设寄存器 · CMSIS-SVD", FontSize = 22 });
-        top.Children.Add(new TextBlock { Text = "先核对 SVD 与工程器件。只在已校验固件的实机暂停会话中读写；不自动轮询外设。", TextWrapping = TextWrapping.Wrap, Margin = new(0, 8, 0, 8) });
+        top.Children.Add(new TextBlock { Text = "暂停调试后读写；SVD 须与器件匹配。", TextWrapping = TextWrapping.Wrap, Margin = new(0, 8, 0, 8) });
         var actions = new WrapPanel();
         foreach (var (title, action) in new[] { ("导入并绑定 SVD…", "import"), ("读取选中寄存器", "read"), ("确认完整值写入…", "write") })
         {
             var button = new Button { Content = title, Margin = new(0, 0, 8, 8), Padding = new(10, 5, 10, 5) };
-            button.Click += async (_, _) => { if (Requested is { } run) { await run(action); } };
+            button.Click += async (_, _) =>
+            {
+                if (Requested is { } run)
+                {
+                    await run(action);
+                }
+            };
             actions.Children.Add(button);
         }
         actions.Children.Add(new TextBlock { Text = "写入值", VerticalAlignment = VerticalAlignment.Center, Margin = new(0, 0, 8, 8) });

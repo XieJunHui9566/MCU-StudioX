@@ -23,7 +23,9 @@ public partial class MainWindow
             var at = unsaved.IndexOf("INT_DisableIntGlobal", StringComparison.Ordinal) + 3;
             SourceEditor.CaretOffset = at;
             UpdateLayout();
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.Render);
             var view = SourceEditor.TextArea.TextView;
             view.EnsureVisualLines();
             var visual = view.GetVisualPosition(new TextViewPosition(buffer.GetLocation(at)), VisualYPosition.LineMiddle);
@@ -40,7 +42,9 @@ public partial class MainWindow
                 await hoverTask;
                 var tip = symbolToolTip ?? throw new InvalidOperationException("悬停未显示：" + Status.Text);
                 tip.UpdateLayout();
-                await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+                await Dispatcher.InvokeAsync(() =>
+                {
+                }, DispatcherPriority.Render);
                 if (tip.Content is not StackPanel body || !body.Children.OfType<TextBlock>().Any(label => label.Text.Contains("interrupt.h:14:", StringComparison.Ordinal)))
                 {
                     throw new InvalidOperationException("悬停缺少准确声明位置。");
@@ -55,7 +59,9 @@ public partial class MainWindow
             menu.PlacementTarget = SourceEditor;
             menu.IsOpen = true;
             menu.UpdateLayout();
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.Render);
             Render(menu, Path.Combine(directory, "context-menu.png"));
             if (menu.Items[^1] is not MenuItem { IsEnabled: true })
             {
@@ -72,7 +78,9 @@ public partial class MainWindow
             {
                 throw new InvalidOperationException("右键声明跳转失败：" + Status.Text);
             }
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.Render);
             Render(this, Path.Combine(directory, "declaration.png"));
             await TravelNavigationAsync(backwards: true);
             if (SourceEditor.Document != buffer || SourceEditor.Text != unsaved || SourceEditor.CaretOffset != at)

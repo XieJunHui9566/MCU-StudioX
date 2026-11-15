@@ -13,7 +13,7 @@ public static class PicProject
         {
             throw new StudioXException("PROJECT_PIC", "PIC 工程身份或模式配置无效。");
         }
-        PackValidator.Token(project.Name);
+        ProjectName.Validate(project.Name);
         var pack = await JsonStore.ReadAsync<PackManifest>(PathBoundary.Resolve(root, "device/manifest.json"), token);
         var device = pack.Devices.SingleOrDefault(item => item.Id == project.DeviceId);
         if (pack.FormatVersion != 1 || pack.Id != project.PackId || pack.Version != project.PackVersion || device is null ||

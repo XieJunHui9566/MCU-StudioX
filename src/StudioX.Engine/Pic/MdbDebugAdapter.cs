@@ -122,8 +122,14 @@ public sealed class MdbDebugAdapter : IDebugAdapter
             }
             EmitStop(frame, binding is null ? null : pair.Key, binding is null ? "end-stepping-range" : "breakpoint-hit");
         }
-        catch (Exception failure) { OnFailure(failure); }
-        finally { stops.Release(); }
+        catch (Exception failure)
+        {
+            OnFailure(failure);
+        }
+        finally
+        {
+            stops.Release();
+        }
     }
     private void EmitStop(DebugFrame frame, string? breakpoint, string reason) => RecordReceived?.Invoke(
         "*stopped,reason=" + MiRecord.Quote(reason) + (breakpoint is null ? "" : ",bkptno=" + MiRecord.Quote(breakpoint)) +
@@ -164,7 +170,10 @@ public sealed class MdbDebugAdapter : IDebugAdapter
                 throw new StudioXException("PIC_DEBUG_SYMBOLS", "调试后端未返回当前 ELF 的源码位置，请核对调试构建和目标时钟。");
             }
         }
-        finally { suppressStops = false; }
+        finally
+        {
+            suppressStops = false;
+        }
     }
 
     public async Task<(string Number, bool Verified, SourceLocation? Location)> InsertAsync(SourceBreakpoint point, CancellationToken token)
@@ -324,8 +333,14 @@ public sealed class MdbDebugAdapter : IDebugAdapter
             }
             EmitStop(current, null, pauseStepOut ? "signal-received" : "end-stepping-range");
         }
-        catch (Exception failure) { OnFailure(failure); }
-        finally { suppressStops = false; }
+        catch (Exception failure)
+        {
+            OnFailure(failure);
+        }
+        finally
+        {
+            suppressStops = false;
+        }
     }
 
     public async Task<string> EvaluateAsync(string expression, CancellationToken token = default)
@@ -379,7 +394,10 @@ public sealed class MdbDebugAdapter : IDebugAdapter
             {
                 registers.Add(new(name, await EvaluateAsync(name, token)));
             }
-            catch (StudioXException ex) when (ex.Code is "MDB_COMMAND" or "MDB_VALUE") { registers.Add(new(name, "不可用：" + ex.Message)); }
+            catch (StudioXException ex) when (ex.Code is "MDB_COMMAND" or "MDB_VALUE")
+            {
+                registers.Add(new(name, "不可用：" + ex.Message));
+            }
         }
         var locals = new List<DebugVariable>();
         var selected = -1;
@@ -408,7 +426,10 @@ public sealed class MdbDebugAdapter : IDebugAdapter
             {
                 watched.Add(new(watch, await EvaluateAsync(watch, token)));
             }
-            catch (Exception ex) when (ex is StudioXException or ArgumentException) { watched.Add(new(watch, "不可用：" + ex.Message)); }
+            catch (Exception ex) when (ex is StudioXException or ArgumentException)
+            {
+                watched.Add(new(watch, "不可用：" + ex.Message));
+            }
         }
         return new(registers.ToArray(), frames, locals.ToArray(), watched.ToArray(), frame);
     }

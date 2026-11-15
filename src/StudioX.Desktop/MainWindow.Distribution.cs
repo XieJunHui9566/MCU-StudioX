@@ -45,7 +45,10 @@ public partial class MainWindow
                 + string.Join("\n", plans.Select(p => $"磁盘 {p.Directory}：预计需要 {p.RequiredBytes:N0} 字节（含暂存），可用 {p.AvailableBytes:N0} 字节"))
                 + $"\n插件 API：{entry.PluginApi}；框架：{string.Join(", ", entry.Frameworks ?? [])}\n更新说明：{entry.ReleaseNotes}");
         }
-        catch (Exception error) { distributionView!.SetDetail(error.ToString()); }
+        catch (Exception error)
+        {
+            distributionView!.SetDetail(error.ToString());
+        }
     }
     private Task RunDistributionAsync(string action) => action == "required" ? ShowProjectToolsAsync() : RunAsync(async token =>
     {
@@ -213,7 +216,14 @@ public partial class MainWindow
             }
             view.SetStatus("安装完成。组件需要重新编译；插件请到管理页确认启用；已有开发环境组件版本锁定保持不变。");
         }
-        catch (Exception error) { view.SetDetail(error.ToString()); throw; }
-        finally { view.SetBusy(false); }
+        catch (Exception error)
+        {
+            view.SetDetail(error.ToString());
+            throw;
+        }
+        finally
+        {
+            view.SetBusy(false);
+        }
     });
 }

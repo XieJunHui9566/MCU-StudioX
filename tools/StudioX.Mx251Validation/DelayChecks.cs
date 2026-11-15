@@ -84,7 +84,10 @@ internal static class DelayChecks
             {
                 await builder.BuildAsync(root);
             }
-            catch (StudioXException error) when (error.Code == "MX251_BUSY") { busy = true; }
+            catch (StudioXException error) when (error.Code == "MX251_BUSY")
+            {
+                busy = true;
+            }
             Check(busy && File.Exists(Path.Combine(root, ".build/firmware.hex")), "second process cannot clean a busy project or invalidate its result");
         }
         await isp.SaveSettingsAsync(root, new(IrcHz: 24000000));
@@ -103,7 +106,10 @@ internal static class DelayChecks
             var result = await builder.BuildAsync(root);
             rejected = !result.Success && result.Log.Contains("MX251_NAKED_FALLTHROUGH");
         }
-        catch (StudioXException error) when (error.Code == "MX251_NAKED_FALLTHROUGH") { rejected = true; }
+        catch (StudioXException error) when (error.Code == "MX251_NAKED_FALLTHROUGH")
+        {
+            rejected = true;
+        }
         Check(rejected && !File.Exists(Path.Combine(root, ".build/studiox-build-receipt.json")), "naked C fallthrough rejected without valid firmware receipt");
         var failedRun = Directory.GetDirectories(Path.Combine(root, ".build/mx251")).Order().Last();
         Check(!File.Exists(Path.Combine(failedRun, "firmware.hex")) && !File.Exists(Path.Combine(root, ".build/firmware.hex")), "unsafe final and public hex removed, original diagnostics retained");
@@ -116,7 +122,10 @@ internal static class DelayChecks
             {
                 passed = (await builder.BuildAsync(root)).Success;
             }
-            catch (StudioXException e) when (e.Code == "MX251_NAKED_FALLTHROUGH") { passed = false; }
+            catch (StudioXException e) when (e.Code == "MX251_NAKED_FALLTHROUGH")
+            {
+                passed = false;
+            }
             Check(passed == expected, "naked control flow " + body);
         }
         await File.WriteAllTextAsync(main, valid);
@@ -156,7 +165,10 @@ internal static class DelayChecks
             var edits = await editor.FormatAsync(new WorkspaceBufferSnapshot(originalDocument, withAsm), null, 0, [new("src/main.c", withAsm)]);
             safeFormat = edits.All(e => e.After.Contains("__asm nop __endasm", StringComparison.Ordinal));
         }
-        catch (StudioXException error) when (error.Code == "SDCC_ASM_EDIT") { safeFormat = true; }
+        catch (StudioXException error) when (error.Code == "SDCC_ASM_EDIT")
+        {
+            safeFormat = true;
+        }
         Check(safeFormat, "formatting cannot replace real assembly with analysis whitespace");
         var bad = await Diagnostics(withAsm + "\nvoid wrong(void){ unknown_identifier=1; }\n");
         Check(bad.Items.Any(d => d.Severity == 1 && d.Message.Contains("unknown_identifier")), "real C error after assembly remains visible");

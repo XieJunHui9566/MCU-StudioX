@@ -34,11 +34,15 @@ public partial class MainWindow
         {
             ApplyTheme(theme);
             UpdateLayout();
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.Render);
             Render(MainToolbar, Path.Combine(directory, "toolbar-" + theme.Id + ".png"));
             DownloadProbePicker.IsDropDownOpen = true;
             UpdateLayout();
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.Render);
             if (DownloadProbePicker.Template.FindName("PART_Popup", DownloadProbePicker) is Popup { Child: FrameworkElement popup })
             {
                 popup.UpdateLayout();
@@ -56,7 +60,9 @@ public partial class MainWindow
             dialog.Show();
             dialog.UpdateLayout();
             Check(((TextBox)dialog.FindName("SpeedInput")).Text == "1250" && ((TextBox)dialog.FindName("SerialInput")).Text == "probe-123", "Settings not restored");
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.Render);
             Render(dialog, Path.Combine(directory, "settings-" + theme.Id + ".png"));
             dialog.Close();
         }
@@ -81,13 +87,17 @@ public partial class MainWindow
         ApplyTheme(ThemeService.Dark);
         Width = 1100;
         UpdateLayout();
-        await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+        await Dispatcher.InvokeAsync(() =>
+        {
+        }, DispatcherPriority.Render);
         var right = CancelButton.TranslatePoint(new Point(CancelButton.ActualWidth, 0), MainToolbar).X;
         Check(right < MainToolbar.ActualWidth - 76, "Toolbar actions overlap appearance button at minimum width");
         Render(MainToolbar, Path.Combine(directory, "toolbar-minimum.png"));
         Width = 1460;
         UpdateLayout();
-        await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+        await Dispatcher.InvokeAsync(() =>
+        {
+        }, DispatcherPriority.Render);
         Render(this, Path.Combine(directory, "workspace.png"));
         await CloseProjectAsync(CancellationToken.None);
         await File.WriteAllTextAsync(Path.Combine(directory, "result.txt"), "PASS: native STM32, CubeMX, AG32 toolbar; 3 probe selections; settings roundtrip; per-project persistence/reopen; clear serial on probe change; busy/close state; dark/light settings/dropdown; 1100px toolbar. No hardware accessed.\n");

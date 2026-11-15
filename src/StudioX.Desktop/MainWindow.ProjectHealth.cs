@@ -41,7 +41,13 @@ public partial class MainWindow
         projectHealthView!.SetBusy(true, deep ? "正在完整校验开发环境组件，可用顶部停止按钮取消…" : "正在检查工程配置与必要工具入口…");
         try
         {
-            var report = await services.ProjectHealth.InspectAsync(root, deep, new Progress<string>(text => { if (request == healthRequest) { projectHealthView.SetBusy(true, text); } }), token);
+            var report = await services.ProjectHealth.InspectAsync(root, deep, new Progress<string>(text =>
+            {
+                if (request == healthRequest)
+                {
+                    projectHealthView.SetBusy(true, text);
+                }
+            }), token);
             ++healthRequest;
             if (!string.IsNullOrWhiteSpace(diagnostic))
             {
@@ -65,7 +71,11 @@ public partial class MainWindow
             projectHealthView.SetBusy(false, "检查已取消；已完成的旧报告不代表本次检查结果。请重新检查。");
             throw;
         }
-        finally { ++healthRequest; projectHealthView.SetBusy(false); }
+        finally
+        {
+            ++healthRequest;
+            projectHealthView.SetBusy(false);
+        }
     });
     private Task ChooseHealthProjectAsync()
     {

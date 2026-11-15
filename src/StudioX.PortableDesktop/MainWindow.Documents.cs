@@ -96,7 +96,11 @@ internal sealed partial class MainWindow
             row.Children.Add(FileIcon(buffer.Snapshot.Source.RelativePath));
             row.Children.Add(label);
             var close = new Button { Content = new WorkbenchIcon("close") { Width = 12, Height = 12 }, Height = 22, Width = 22, Padding = new Thickness(3), BorderThickness = new Thickness(0) };
-            close.Click += (_, e) => { e.Handled = true; RunOperationAsync(token => CloseBufferAsync(buffer, token)); };
+            close.Click += (_, e) =>
+            {
+                e.Handled = true;
+                RunOperationAsync(token => CloseBufferAsync(buffer, token));
+            };
             var select = buffer.SelectButton;
             var wired = select.Content is not null;
             select.Content = row;
@@ -105,7 +109,13 @@ internal sealed partial class MainWindow
             select.BorderThickness = new Thickness(0, 0, 0, 2);
             if (!wired)
             {
-                select.Click += (_, _) => { if (!busy && !closing) { SelectBuffer(buffer); } };
+                select.Click += (_, _) =>
+                {
+                    if (!busy && !closing)
+                    {
+                        SelectBuffer(buffer);
+                    }
+                };
                 select.PointerPressed += (_, e) =>
                 {
                     if (e.GetCurrentPoint(select).Properties.IsMiddleButtonPressed)

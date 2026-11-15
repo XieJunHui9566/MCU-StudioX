@@ -60,12 +60,18 @@ public partial class MainWindow
         var review = new AgentChangesView();
         review.BindTypography(SourceEditor);
         IReadOnlyList<WorkspaceFileChange> submitted = [];
-        review.ApplyRequested = _ => { submitted = review.Selected(plan); return Task.CompletedTask; };
+        review.ApplyRequested = _ =>
+        {
+            submitted = review.Selected(plan);
+            return Task.CompletedTask;
+        };
         var tab = AddToolTab("AI 修改", review);
         ShowDocument(tab);
         review.Refresh("AI 修改审阅 · 离线界面验收", "尚未编译 / 未连接硬件", [plan]);
         UpdateLayout();
-        await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+        await Dispatcher.InvokeAsync(() =>
+        {
+        }, DispatcherPriority.Render);
         var picker = Descendants(review).OfType<ComboBox>().Single();
         Check(picker.Items.Count == 2 && review.Comparison.Before.Text == original && review.Comparison.After.Text == main.After,
             "多文件计划默认显示完整原文和计划结果");
@@ -85,7 +91,9 @@ public partial class MainWindow
         review.Refresh("刷新后的任务", "尚未编译", [plan]);
         Check(review.Selected(plan).Single(c => c.Path == main.Path).Matches.Count == 1, "刷新计划保留用户选择且控件可以安全重新挂载");
         UpdateLayout();
-        await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+        await Dispatcher.InvokeAsync(() =>
+        {
+        }, DispatcherPriority.Render);
         foreach (var toggle in Descendants(review).OfType<CheckBox>().Where(c => c.IsEnabled).ToArray())
         {
             toggle.IsChecked = true;
@@ -110,9 +118,13 @@ public partial class MainWindow
                 System.Windows.Application.Current.Resources["WorkbenchFontSize"] = size;
                 SourceEditor.FontSize = size;
                 review.RefreshTheme();
-                await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);
+                await Dispatcher.InvokeAsync(() =>
+                {
+                }, DispatcherPriority.ApplicationIdle);
                 UpdateLayout();
-                await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+                await Dispatcher.InvokeAsync(() =>
+                {
+                }, DispatcherPriority.Render);
                 Check(review.Comparison.Before.FontSize == size && review.Comparison.After.FontSize == size,
                     theme.Id + "/" + size + "：已打开的对照跟随源码字号");
                 var hunkList = Descendants(review).OfType<ListBox>().Single(list =>
@@ -138,7 +150,9 @@ public partial class MainWindow
         Width = 1060;
         Height = 820;
         UpdateLayout();
-        await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+        await Dispatcher.InvokeAsync(() =>
+        {
+        }, DispatcherPriority.Render);
         var beforeBounds = review.Comparison.Before.TransformToAncestor(review).TransformBounds(new Rect(review.Comparison.Before.RenderSize));
         var afterBounds = review.Comparison.After.TransformToAncestor(review).TransformBounds(new Rect(review.Comparison.After.RenderSize));
         Render(this, Path.Combine(directory, "compact-large.png"));
@@ -167,7 +181,9 @@ public partial class MainWindow
         Height = 1000;
         review.MaxWidth = 620;
         UpdateLayout();
-        await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+        await Dispatcher.InvokeAsync(() =>
+        {
+        }, DispatcherPriority.Render);
         beforeBounds = review.Comparison.Before.TransformToAncestor(review).TransformBounds(new Rect(review.Comparison.Before.RenderSize));
         afterBounds = review.Comparison.After.TransformToAncestor(review).TransformBounds(new Rect(review.Comparison.After.RenderSize));
         Check(afterBounds.Top > beforeBounds.Bottom && beforeBounds.Height > 70 && afterBounds.Height > 70,

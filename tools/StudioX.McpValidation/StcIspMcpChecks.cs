@@ -20,7 +20,10 @@ internal static class StcIspMcpChecks
         {
             await services.StcIsp.PreviewAsync(project, new StcIspSettings(Port: "COM5"));
         }
-        catch (StudioXException ex) when (ex.Code == "STC_ISP_DEVICE") { engineRejected = true; }
+        catch (StudioXException ex) when (ex.Code == "STC_ISP_DEVICE")
+        {
+            engineRejected = true;
+        }
         check(plan.Contains("error", StringComparison.OrdinalIgnoreCase) && engineRejected &&
             Directory.EnumerateDirectories(sessions, "stc-isp-*").Count() == before &&
             !authorizer.Requests.Any(request => request.Tool == "stc_isp_plan"),

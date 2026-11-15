@@ -1,0 +1,46 @@
+{
+  "name": "MX251",
+  "version": "0.0129",
+  "displayName": "MX251 V0.0129",
+  "status": "development",
+  "lstQualified": false,
+  "pendingTargets": [
+    "Both targets: installed toolchain/device packs/download integration for current profiles, broad floating/ISR/full-Flash, large native math and cross-host reproducibility remain incomplete; independent CMake/Ninja entry preserved."
+  ],
+  "additionalValidation": "validation/README.txt",
+  "buildChain": [
+    "CMake",
+    "Ninja",
+    "MX251"
+  ],
+  "scope": "Development: conservative unsigned integer scheduling compared outside the full previous selector; exact ABI and legacy fallback retained. Fourteen changed calls/callback images and both original firmware restorations independently raw-reviewed. Not installed, not LST.",
+  "compilerPatch": "compiler-patches/0001-target-interrupt-vectors.patch",
+  "compilerPatches": [
+    "compiler-patches/0001-target-interrupt-vectors.patch",
+    "compiler-patches/0002-direct-stack-byte-transfers.patch",
+    "compiler-patches/0003-ordinary-abi-passthrough.patch",
+    "compiler-patches/0004-cross-file-interrupt-contract.patch",
+    "compiler-patches/0005-isr-redeclaration-identity.patch",
+    "compiler-patches/0006-wide-encoded-byte-cost.patch",
+    "compiler-patches/0007-shared-register-facts.patch",
+    "compiler-patches/0008-wide-fallback-isolation.patch",
+    "compiler-patches/0009-native-indirect-calls.patch",
+    "compiler-patches/0010-native-target-loader.patch",
+    "compiler-patches/0011-native-stack-send.patch",
+    "compiler-patches/0012-call-effects-audit.patch",
+    "compiler-patches/0013-leaf-call-feedback.patch",
+    "compiler-patches/0014-call-aware-allocation.patch",
+    "compiler-patches/0015-entry-pointer-copy.patch",
+    "compiler-patches/0016-fixed-stack-object-addresses.patch",
+    "compiler-patches/0017-far-integer-word-transfers.patch",
+    "compiler-patches/0018-pure-far-address-send.patch",
+    "compiler-patches/0019-indexed-code-address.patch",
+    "compiler-patches/0020-adjacent-field-address.patch",
+    "compiler-patches/0021-stack-argument-plan.patch",
+    "compiler-patches/0022-integer-scheduling.patch"
+  ],
+  "targets": [
+    "STC32G12K128",
+    "AI8051U-34K64-32"
+  ]
+}

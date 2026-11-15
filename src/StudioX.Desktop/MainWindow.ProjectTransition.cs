@@ -15,7 +15,6 @@ public partial class MainWindow
             await DisposeAiMcpSessionAsync();
         },
         persistBreakpointsAsync: PersistBreakpointLinesAsync,
-        stopPreviewAsync: LvglPreview.StopProjectAsync,
         stopDebuggerAsync: StopProjectDebuggerAsync,
         stopEditorAsync: StopProjectEditorAsync);
 

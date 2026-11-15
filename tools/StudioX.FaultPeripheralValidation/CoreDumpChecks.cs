@@ -30,7 +30,10 @@ internal static class CoreDumpChecks
                     await service.DecodeCoreDumpAsync(project, dump, "b64", wrong);
                     throw new InvalidOperationException("Expected mismatch rejection");
                 }
-                catch (StudioXException e) when (e.Code == "FAULT_DUMP") { check(e.Message.Contains("SHA256", StringComparison.OrdinalIgnoreCase), "mismatched ELF rejected with original tool diagnostic"); }
+                catch (StudioXException e) when (e.Code == "FAULT_DUMP")
+                {
+                    check(e.Message.Contains("SHA256", StringComparison.OrdinalIgnoreCase), "mismatched ELF rejected with original tool diagnostic");
+                }
                 var raw = Path.Combine(root, "esp32.raw");
                 // IDF 正文按行独立填充 Base64；按官方加载器的方式逐行拼回二进制。
                 var decodedLines = (await File.ReadAllLinesAsync(dump)).Where(line => !string.IsNullOrWhiteSpace(line))
@@ -72,7 +75,10 @@ os.unlink(loader.core_elf_file)
                     await service.DecodeCoreDumpAsync(project, core, "elf", wrong);
                     throw new InvalidOperationException("Expected direct core mismatch rejection");
                 }
-                catch (StudioXException e) when (e.Code == "FAULT_DUMP") { check(e.Message.Contains("SHA-256", StringComparison.OrdinalIgnoreCase), "direct core ELF with mismatched symbols rejected before GDB"); }
+                catch (StudioXException e) when (e.Code == "FAULT_DUMP")
+                {
+                    check(e.Message.Contains("SHA-256", StringComparison.OrdinalIgnoreCase), "direct core ELF with mismatched symbols rejected before GDB");
+                }
             }
             else
             {
@@ -86,7 +92,10 @@ os.unlink(loader.core_elf_file)
                     await service.DecodeCoreDumpAsync(project, dump, "b64", elf);
                     throw new InvalidOperationException("Expected target rejection");
                 }
-                catch (StudioXException e) when (e.Code == "FAULT_DUMP") { check(e.Message.Contains("target", StringComparison.OrdinalIgnoreCase), "mismatched target rejected before GDB and never probes serial ports"); }
+                catch (StudioXException e) when (e.Code == "FAULT_DUMP")
+                {
+                    check(e.Message.Contains("target", StringComparison.OrdinalIgnoreCase), "mismatched target rejected before GDB and never probes serial ports");
+                }
             }
         }
     }

@@ -40,19 +40,6 @@ public partial class MainWindow
         Check(BuildOutputParser.Measure("[23:54:32] text") is null && BuildOutputParser.Measure("[9/8] text") is null &&
             BuildOutputParser.Measure("[1/0] text") is null && BuildOutputParser.Measure("[130%] text") is null, "timestamps and invalid tool measurements do not fabricate progress");
         Check(BuildOutputParser.Measure("[25%] Building C object")?.Detail == "25%", "percentage-only tools do not invent task counts");
-        LvglPreview.RenderSnapshot(new("fixture", "Building", "PC 构建", false, false,
-            "校验开发环境组件 pc.mingw / 1.0.0… 25%（1/4）\nwarning: PC verification notice\n校验开发环境组件 pc.mingw / 1.0.0… 100%（4/4）\n[PC 配置]\n-- Configuring\n", null, null));
-        Check(LvglPreview.DiagnosticLog.IsReadOnly && LvglPreview.DiagnosticLog.Text.Split('\n').Count(l => l.Contains("校验开发环境组件")) == 1 &&
-            LvglPreview.DiagnosticLog.Text.Contains("warning: PC verification notice") &&
-            LvglPreview.DiagnosticLog.Text.Split('\n').Last().StartsWith("[进度] PC 配置 [", StringComparison.Ordinal) &&
-            !LvglPreview.DiagnosticLog.Text.Split('\n').Last().Contains('%'), "PC verification coalesces in place, preserves warnings and resets counts before configuration");
-        LvglPreview.RenderSnapshot(new("fixture", "Building", "PC 构建", false, false,
-            "[PC 配置]\n[PC 编译]\n[3/8] Building C object\n", null, null));
-        Check(LvglPreview.DiagnosticLog.Text.Contains("[进度] PC 编译 [=========>--------------] 38% (3/8)"),
-            "PC compilation presents its own reported task counts in the current stage");
-        LvglPreview.RenderSnapshot(new("fixture", "BuildFailed", "PC 构建失败", false, false, "error: expected failure\n", null, null));
-        Check(!LvglPreview.DiagnosticLog.Text.Contains("[进度]") && LvglPreview.DiagnosticLog.Text.Contains("[失败] PC 构建失败"),
-            "PC failure stops active progress without inventing completion");
         var buffer = new OutputLineBuffer();
         var lines = new[] { "one\r", "\ntw", "o\n[1/", "4] compile\r", "\nwarning: notice\nlast tail" }.SelectMany(buffer.Append).ToArray();
         Check(lines.SequenceEqual(new[] { "one", "two", "[1/4] compile", "warning: notice" }) && buffer.Flush() == "last tail",
@@ -92,8 +79,6 @@ public partial class MainWindow
         {
             ApplyTheme(theme);
             await Layout();
-            Check(((SolidColorBrush)LvglPreview.DiagnosticLog.Background).Color == ((SolidColorBrush)System.Windows.Application.Current.Resources["EditorSurface"]).Color,
-                "PC output background follows the actual theme and keeps diagnostic text readable: " + theme.Id);
             var renderedColors = BuildLog.TextArea.TextView.VisualLines.SelectMany(l => l.Elements)
                 .Select(e => e.TextRunProperties.ForegroundBrush).OfType<SolidColorBrush>().Select(b => b.Color).ToHashSet();
             foreach (var tone in new[] { OutputTone.Information, OutputTone.Success, OutputTone.Warning, OutputTone.Error })
@@ -211,7 +196,9 @@ public partial class MainWindow
             var menu = BuildLog.ContextMenu!;
             menu.PlacementTarget = BuildLog;
             menu.IsOpen = true;
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.ApplicationIdle);
             menu.ApplyTemplate();
             menu.UpdateLayout();
             Check(menu.Background is SolidColorBrush background && menu.Foreground is SolidColorBrush foreground &&
@@ -278,7 +265,9 @@ public partial class MainWindow
         async Task Layout()
         {
             UpdateLayout();
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.Render);
             BuildLog.TextArea.TextView.EnsureVisualLines();
         }
         void CaptureOutput(string path)

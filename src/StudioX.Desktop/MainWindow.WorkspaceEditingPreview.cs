@@ -43,7 +43,9 @@ public partial class MainWindow
             Check(actual.Documents.Count == expected.Documents.Count && actual.Documents.Select(d => d.Path).SequenceEqual(expected.Documents.Select(d => d.Path)), "restart restores tab order");
             Check(actual.Documents.Zip(expected.Documents).All(pair => pair.First.Draft == pair.Second.Draft && pair.First.Baseline == pair.Second.Baseline), "restart restores unsaved buffers and disk baselines");
             Check(actual.Documents.Zip(expected.Documents).All(pair => pair.First.Caret == pair.Second.Caret && pair.First.SelectionStart == pair.Second.SelectionStart && pair.First.SelectionLength == pair.Second.SelectionLength), "restart restores caret and selection");
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.Render);
             Render(this, Path.Combine(directory, "session-restored.png"));
             await File.WriteAllTextAsync(Path.Combine(directory, "recovery-result.txt"), "PASS " + checks.Count + "\n" + string.Join('\n', checks));
             return;
@@ -71,7 +73,10 @@ public partial class MainWindow
             await UndoWorkspaceChangesAsync();
             throw new InvalidOperationException("Expected stale batch undo rejection");
         }
-        catch (StudioXException ex) when (ex.Code == "WORKSPACE_UNDO_STALE") { Check(true, "batch undo rejects independently changed buffers"); }
+        catch (StudioXException ex) when (ex.Code == "WORKSPACE_UNDO_STALE")
+        {
+            Check(true, "batch undo rejects independently changed buffers");
+        }
         FindEditor("src/main.c")!.Buffer.UndoStack.Redo();
         await UndoWorkspaceChangesAsync();
         Check(FindEditor("src/main.c")!.Buffer.Text == dirty && !FindEditor("src/other.c")!.IsDirty, "batch undo restores all earlier buffer states");
@@ -80,7 +85,9 @@ public partial class MainWindow
         {
             ApplyTheme(theme);
             UpdateLayout();
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.Render);
             Render(this, Path.Combine(directory, "workspace-search-" + theme.Id + ".png"));
         }
         ApplyTheme(ThemeService.Dark);
@@ -97,7 +104,9 @@ public partial class MainWindow
         WorkspaceSearch.Files.SelectedItem = WorkspaceSearch.Files.Items.Cast<WorkspaceChangeRow>().Single(r => r.Path == "src/main.c");
         WorkspaceSearch.ResultTabs.SelectedIndex = 1;
         ShowDocument(WorkspaceSearchTab);
-        await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+        await Dispatcher.InvokeAsync(() =>
+        {
+        }, DispatcherPriority.Render);
         Render(this, Path.Combine(directory, "semantic-rename.png"));
         await ApplyWorkspaceChangesAsync(CancellationToken.None);
         Check(FindEditor("src/other.c")!.Buffer.Text.Contains("int shared_value = 7; return shared_value;", StringComparison.Ordinal), "UI semantic rename preserves local shadow");
@@ -150,7 +159,9 @@ public partial class MainWindow
             logWindow.LogText.Text.Contains("ArgumentOutOfRangeException", StringComparison.Ordinal) && logWindow.LogText.Text.Contains("暂不支持此编码", StringComparison.Ordinal),
             "explicit analysis log viewer retains tool messages and original exceptions");
         logWindow.Show();
-        await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+        await Dispatcher.InvokeAsync(() =>
+        {
+        }, DispatcherPriority.Render);
         Render(logWindow, Path.Combine(directory, "language-analysis-log.png"));
         logWindow.Close();
         QueueLiveDiagnostics();
@@ -175,7 +186,9 @@ public partial class MainWindow
             "valid errors return after idle while the build output stays unchanged");
         ShowBottom(4);
         UpdateLayout();
-        await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ContextIdle);
+        await Dispatcher.InvokeAsync(() =>
+        {
+        }, DispatcherPriority.ContextIdle);
         UpdateLayout();
         Check(ProblemsGrid.ActualWidth > 600 && ProblemsGrid.Columns[^1].ActualWidth > 200, "problems panel columns remain readable after layout");
         Render(this, Path.Combine(directory, "live-diagnostics.png"));

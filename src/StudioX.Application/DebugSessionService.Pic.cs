@@ -46,7 +46,10 @@ public sealed partial class DebugSessionService
                         await finish();
                     }
                 }
-                finally { heldOwnership?.Dispose(); }
+                finally
+                {
+                    heldOwnership?.Dispose();
+                }
             };
             adapter = current;
             IsHardware = serial is not null;
@@ -75,7 +78,11 @@ public sealed partial class DebugSessionService
             SetState(DebugState.Faulted, "PIC 调试启动失败：" + failure.Message);
             throw;
         }
-        finally { ownership?.Dispose(); gate.Release(); }
+        finally
+        {
+            ownership?.Dispose();
+            gate.Release();
+        }
     }
 
     public async Task WritePicFileRegistersAsync(uint address, byte[] values, CancellationToken token = default)
@@ -92,7 +99,10 @@ public sealed partial class DebugSessionService
             Snapshot = Highlight(await pic.ReadAsync(watches, Snapshot.SelectedFrame, token), Snapshot);
             Changed?.Invoke();
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
 
     private sealed class PicProgress(Action<string> report) : IProgress<string>

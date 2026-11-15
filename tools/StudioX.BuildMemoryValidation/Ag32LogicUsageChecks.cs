@@ -37,7 +37,10 @@ internal static class Ag32LogicUsageChecks
                 await Ag32LogicUsageAnalyzer.AnalyzeAsync(logPath);
                 throw new InvalidOperationException("Malformed final statistic accepted: " + invalid);
             }
-            catch (InvalidDataException) { check(true, "malformed final count rejects stale earlier data: " + invalid); }
+            catch (InvalidDataException)
+            {
+                check(true, "malformed final count rejects stale earlier data: " + invalid);
+            }
         }
         project = project with
         {
@@ -70,7 +73,9 @@ internal static class Ag32LogicUsageChecks
         {
             await new BuildService(new ToolsetCatalog(Path.Combine(root, "missing-tools"))).BuildAsync(root);
         }
-        catch (StudioXException) { }
+        catch (StudioXException)
+        {
+        }
         report = await service.ReadAsync(root);
         check(report.LogicUsage is null && report.Targets.Count == 0 && !File.Exists(snapshotPath), "failed build clears both logic and memory snapshots");
     }

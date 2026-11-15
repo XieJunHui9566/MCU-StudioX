@@ -17,16 +17,31 @@ void Check(bool condition, string description)
 var order = new List<string>();
 var agentFinished = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
 var coordinator = new ProjectTransitionCoordinator(
-    async () => { order.Add("agent"); await agentFinished.Task; },
-    () => { order.Add("breakpoints"); return Task.CompletedTask; },
-    _ => { order.Add("preview"); return Task.CompletedTask; },
-    _ => { order.Add("debugger"); return Task.CompletedTask; },
-    _ => { order.Add("editor"); return Task.CompletedTask; });
+    async () =>
+    {
+        order.Add("agent");
+        await agentFinished.Task;
+    },
+    () =>
+    {
+        order.Add("breakpoints");
+        return Task.CompletedTask;
+    },
+    _ =>
+    {
+        order.Add("debugger");
+        return Task.CompletedTask;
+    },
+    _ =>
+    {
+        order.Add("editor");
+        return Task.CompletedTask;
+    });
 var transition = coordinator.StopCurrentAsync(CancellationToken.None);
 Check(!transition.IsCompleted && order.SequenceEqual(["agent"]), "project transition waits for the previous Agent call before releasing project resources");
 agentFinished.SetResult();
 await transition;
-Check(order.SequenceEqual(["agent", "breakpoints", "preview", "debugger", "editor"]), "open and close share an ordered transition; editor anchors are released after debugger navigation");
+Check(order.SequenceEqual(["agent", "breakpoints", "debugger", "editor"]), "open and close share an ordered transition; editor anchors are released after debugger navigation");
 
 order.Clear();
 using var cancelled = new CancellationTokenSource();
@@ -40,13 +55,20 @@ catch (OperationCanceledException)
 {
     Check(order.Count == 0, "cancelled project transition keeps the current project untouched");
 }
-var failure = new InvalidOperationException("original preview failure");
+var failure = new InvalidOperationException("original breakpoint persistence failure");
 var failingCoordinator = new ProjectTransitionCoordinator(
     () => Task.CompletedTask,
-    () => Task.CompletedTask,
-    _ => Task.FromException(failure),
-    _ => { order.Add("debugger"); return Task.CompletedTask; },
-    _ => { order.Add("editor"); return Task.CompletedTask; });
+    () => Task.FromException(failure),
+    _ =>
+    {
+        order.Add("debugger");
+        return Task.CompletedTask;
+    },
+    _ =>
+    {
+        order.Add("editor");
+        return Task.CompletedTask;
+    });
 try
 {
     await failingCoordinator.StopCurrentAsync(CancellationToken.None);

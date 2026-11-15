@@ -29,10 +29,18 @@ public partial class MainWindow
                     await SynchronizeProjectTreeAsync(new(directory, 0, [], RequiresRescan: true), lifetime.Token);
                 }
             }
-            finally { projectSyncGate.Release(); }
+            finally
+            {
+                projectSyncGate.Release();
+            }
         }
-        catch (OperationCanceledException) when (lifetime.IsCancellationRequested) { }
-        catch (Exception error) { Log("构建产物目录刷新失败，可按 F5 重试；原始构建结果保留：" + error); }
+        catch (OperationCanceledException) when (lifetime.IsCancellationRequested)
+        {
+        }
+        catch (Exception error)
+        {
+            Log("构建产物目录刷新失败，可按 F5 重试；原始构建结果保留：" + error);
+        }
     }
 
     private TreeViewItem CreateProjectNode(ProjectEntry item)
@@ -53,7 +61,13 @@ public partial class MainWindow
         {
             node.Items.Add(new TreeViewItem { Header = "正在读取…", IsEnabled = false });
             node.Expanded += Directory_Expanded;
-            node.Collapsed += (_, args) => { if (args.OriginalSource == node) { SetFolderIcon(node, false); } };
+            node.Collapsed += (_, args) =>
+            {
+                if (args.OriginalSource == node)
+                {
+                    SetFolderIcon(node, false);
+                }
+            };
         }
         return node;
     }
@@ -178,7 +192,9 @@ public partial class MainWindow
                 }
                 if (i % 128 == 127)
                 {
-                    await Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Background, token);
+                    await Dispatcher.InvokeAsync(() =>
+                    {
+                    }, System.Windows.Threading.DispatcherPriority.Background, token);
                 }
             }
         }

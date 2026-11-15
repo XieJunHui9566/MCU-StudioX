@@ -87,7 +87,13 @@ internal static class PicHardwareDebug
             Console.WriteLine("PASS " + label);
         }
         var logGate = new object();
-        services.Debugger.Output += text => { lock (logGate) { File.AppendAllText(Path.Combine(output, "session.log"), text + "\n"); } };
+        services.Debugger.Output += text =>
+        {
+            lock (logGate)
+            {
+                File.AppendAllText(Path.Combine(output, "session.log"), text + "\n");
+            }
+        };
         await services.Debugger.OpenProjectAsync(project);
         await services.Debugger.ChangeWatchAsync("debug_counter", false);
         var lines = (await File.ReadAllTextAsync(Path.Combine(project, "src/main.c"))).Replace("\r\n", "\n").Split('\n');
@@ -117,7 +123,10 @@ internal static class PicHardwareDebug
             await services.Debugger.ExecuteAsync(DebugAction.Reset);
             Check(services.Debugger.Snapshot.Registers.Single(r => r.Name == "pc").Value == "0x0", "hardware reset refreshes PC");
         }
-        finally { await services.Debugger.StopAsync(); }
+        finally
+        {
+            await services.Debugger.StopAsync();
+        }
         Check(services.Debugger.State == DebugState.Disconnected, "hardware session exits and releases probe after original firmware restoration");
         await JsonStore.WriteAsync(Path.Combine(output, "result.json"), new
         {

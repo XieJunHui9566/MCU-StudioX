@@ -1,0 +1,21 @@
+{
+  "name": "startup-initialization-contract",
+  "sources": ["main.c"],
+  "keepSymbols": [],
+  "expectFallback": false,
+  "mustKeep": ["_main"],
+  "mustRemove": ["_unused_initializer_path"],
+  "checkExternalDeclaration": false,
+  "startupSymbols": ["__mcs51_genXINIT", "__mcs51_genXRAMCLEAR", "__mcs51_genRAMCLEAR"],
+  "startupArchiveMembers": ["crtclear.rel", "crtxinit.rel", "crtxclear.rel"],
+  "dataSymbols": ["_initialized_bytes", "_initialized_word", "_bss_bytes", "_data_bss", "_copy_target"],
+  "checks": [
+    "Nonzero XDATA byte-array and wide-word initialization preserve XINIT contents",
+    "DATA and XDATA BSS declarations retain their clearing CRT members",
+    "Compiler pure declarations continue to force all three required CRT archive extractions",
+    "CODE source and allocated XDATA copy target remain present",
+    "An unrelated truly unused function is removed without changing initialization contract",
+    "Final reassembled RELs and linked occupied HEX bytes independently reconstruct"
+  ],
+  "notProved": ["actual reset-time initialization", "hardware correctness", "cycles", "ISR runtime behavior"]
+}

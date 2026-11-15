@@ -1,0 +1,62 @@
+XH3
+H 1A areas 4 global symbols
+M probe
+O -mmcs251 --model-small
+S _observer Def0000E0
+S .__.ABS. Def000000
+S _io Def0000B1
+A _CODE size 0 flags 0 addr 0
+A RSEG size 0 flags 8 addr 0
+A RSEG0 size 0 flags 8 addr 0
+A RSEG1 size 0 flags 8 addr 0
+A REG_BANK_0 size 8 flags 4 addr 0
+A DSEG size 0 flags 0 addr 0
+A ISEG size 0 flags 0 addr 0
+A IABS size 0 flags 8 addr 0
+A BSEG size 0 flags 80 addr 0
+A PSEG size 0 flags 50 addr 0
+A XSEG size 0 flags 40 addr 0
+A XABS size 0 flags 48 addr 0
+A XISEG size 0 flags 40 addr 0
+A HOME size 0 flags 20 addr 0
+A GSINIT0 size 0 flags 20 addr 0
+A GSINIT1 size 0 flags 20 addr 0
+A GSINIT2 size 0 flags 20 addr 0
+A GSINIT3 size 0 flags 20 addr 0
+A GSINIT4 size 0 flags 20 addr 0
+A GSINIT5 size 0 flags 20 addr 0
+A GSINIT size 0 flags 20 addr 0
+A GSFINAL size 0 flags 20 addr 0
+A CSEG size 39 flags 20 addr 0
+S ___m251r4_f Def000000
+A CONST size 0 flags 20 addr 0
+A XINIT size 0 flags 20 addr 0
+A CABS size 0 flags 28 addr 0
+T 00 00 00
+R 00 00 00 02
+T 00 00 00
+R 00 00 00 03
+T 00 00 00
+R 00 00 00 04
+T 00 00 00
+R 00 00 00 16
+T 00 00 00
+R 00 00 00 16
+T 00 00 00 5E 64 00 FF 7F 13 0B 1E 5E 24 00 FF 0B
+R 00 00 00 16
+T 00 00 0D 1A C0 7D 5C 7E 91 F0 7A 91 B1 0B 1A A0
+R 00 00 00 16
+T 00 00 1A 7D 3A 7C 97 7A 91 B1 29 93 00 06 BE 90
+R 00 00 00 16
+T 00 00 27 07 68 05 7E 90 00 80 03
+R 00 00 00 16
+T 00 00 2F
+R 00 00 00 16
+T 00 00 2F 7E 90 01
+R 00 00 00 16
+T 00 00 32
+R 00 00 00 16
+T 00 00 32 7A 91 B1 7E 71 E0 AA
+R 00 00 00 16
+T 00 00 39
+R 00 00 00 16

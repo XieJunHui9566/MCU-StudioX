@@ -41,7 +41,7 @@
     <TextBox
       x:Name="SerialInput" />
     <TextBlock
-      Text="设置按工程保存。点击工具栏“下载”后，自动保存、编译、写入 Flash、校验并复位运行。"
+      Text="下载会保存、编译并烧录固件，完成后复位运行。"
       TextWrapping="Wrap"
       Foreground="{DynamicResource Muted}"
       Margin="0,18,0,0" />

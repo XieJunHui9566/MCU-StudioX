@@ -20,7 +20,10 @@ var root = explicitPaths ? Path.GetFullPath(args[1]) : Path.GetFullPath(Path.Com
 var hostExecutable = explicitPaths ? Path.GetFullPath(args[2]) : Path.Combine(root, "src/StudioX.PluginHost/bin/Debug/net10.0/StudioX.PluginHost.exe");
 var legacySource = explicitPaths ? Path.GetFullPath(args[3]) : Path.Combine(root, "examples/StudioX.SampleDecoder/bin/Debug/net10.0");
 var scratch = explicitPaths ? Path.GetFullPath(args[4]) : Path.Combine(root, "artifacts/validation/plugin-runtime-" + Guid.NewGuid().ToString("N"));
-if (Directory.Exists(scratch) || File.Exists(scratch)) { throw new IOException("Use a new validation output directory."); }
+if (Directory.Exists(scratch) || File.Exists(scratch))
+{
+    throw new IOException("Use a new validation output directory.");
+}
 Directory.CreateDirectory(scratch);
 var results = new List<string>();
 var originalSecret = Environment.GetEnvironmentVariable("STUDIOX_VALIDATION_SECRET");

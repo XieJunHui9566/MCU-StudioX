@@ -11,22 +11,40 @@ using StudioX.Engine;
 using StudioX.Extensions;
 using StudioX.Foundation;
 
-if (args.Length != 4) { throw new ArgumentException("runtime, fixture, sample DLL, NEW output directory required"); }
+if (args.Length != 4)
+{
+    throw new ArgumentException("runtime, fixture, sample DLL, NEW output directory required");
+}
 var runtime = Path.GetFullPath(args[0]);
 var fixture = Path.GetFullPath(args[1]);
 var sampleDll = Path.GetFullPath(args[2]);
 var root = Path.GetFullPath(args[3]);
-if (Directory.Exists(root)) { throw new IOException("Use a new output directory."); }
+if (Directory.Exists(root))
+{
+    throw new IOException("Use a new output directory.");
+}
 Directory.CreateDirectory(root);
 var checks = new List<string>();
-void Check(bool condition, string message) { if (!condition) { throw new InvalidOperationException(message); } checks.Add(message); Console.WriteLine("PASS " + message); }
+void Check(bool condition, string message)
+{
+    if (!condition)
+    {
+        throw new InvalidOperationException(message);
+    }
+    checks.Add(message);
+    Console.WriteLine("PASS " + message);
+}
 async Task Reject(Func<Task> action, string message)
 {
     try
     {
         await action();
     }
-    catch (Exception ex) when (ex is StudioXException or IOException or ArgumentException or OperationCanceledException) { Check(true, message); return; }
+    catch (Exception ex) when (ex is StudioXException or IOException or ArgumentException or OperationCanceledException)
+    {
+        Check(true, message);
+        return;
+    }
     throw new InvalidOperationException("Expected rejection: " + message);
 }
 var project = Path.Combine(root, "project");
@@ -51,7 +69,10 @@ var plan = LocalHistoryService.RestorePlan(new(source, source.Text), versions[0]
 Check(plan.After == original && (await files.ReadAsync(project, "src/main.c")).Text == source.Text, "history restoration previews without writing disk");
 await Reject(() => Task.FromResult(LocalHistoryService.RestorePlan(new(source, source.Text), versions[0] with { Hash = "bad" })), "corrupt history cannot restore");
 Check((await history.ListAsync(Path.Combine(root, "other-project"), "src/main.c")).Count == 0, "history is isolated by project");
-for (var i = 0; i < 54; i++) { await history.CaptureAsync(project, "src/main.c", "version " + i, "retention"); }
+for (var i = 0; i < 54; i++)
+{
+    await history.CaptureAsync(project, "src/main.c", "version " + i, "retention");
+}
 Check((await history.ListAsync(project, "src/main.c")).Count == 50, "history retention bounds each file to 50 versions");
 var layout = new WorkbenchLayoutService(data);
 await layout.SaveAsync(new(Width: -1, Height: 50000, SplitRatio: 3));
@@ -108,15 +129,27 @@ Check(await File.ReadAllTextAsync(Path.Combine(backup, "tool.exe")) == "damaged"
 await Reject(() => environment.RepairAsync(row with { Version = "9.0.0" }, archive, null), "offline repair refuses wrong locked version");
 var corrupt = Path.Combine(root, "corrupt.studioxtools");
 await LegacyZipFixture(archive, corrupt);
-using (var zip = ZipFile.Open(corrupt, ZipArchiveMode.Update)) { zip.GetEntry("tool.exe")!.Delete(); await using var output = zip.CreateEntry("tool.exe").Open(); await output.WriteAsync(Encoding.UTF8.GetBytes("bad")); }
+using (var zip = ZipFile.Open(corrupt, ZipArchiveMode.Update))
+{
+    zip.GetEntry("tool.exe")!.Delete();
+    await using var output = zip.CreateEntry("tool.exe").Open();
+    await output.WriteAsync(Encoding.UTF8.GetBytes("bad"));
+}
 await Reject(() => environment.RepairAsync(row, corrupt, null), "corrupt offline archive rejected before installed tools are replaced");
 await environment.VerifyAsync(row, null);
 Check(true, "failed repair preserves usable installed version");
 var linked = Path.Combine(root, "linked.studioxtools");
 await LegacyZipFixture(archive, linked);
-using (var zip = ZipFile.Open(linked, ZipArchiveMode.Update)) { zip.GetEntry("tool.exe")!.ExternalAttributes = unchecked((int)0xA1FF0000); }
+using (var zip = ZipFile.Open(linked, ZipArchiveMode.Update))
+{
+    zip.GetEntry("tool.exe")!.ExternalAttributes = unchecked((int)0xA1FF0000);
+}
 await Reject(() => environment.RepairAsync(row, linked, null), "offline repair rejects symbolic link entries before replacement");
-using (var zip = ZipFile.Open(corrupt, ZipArchiveMode.Update)) { await using var output = zip.CreateEntry("../escape").Open(); await output.WriteAsync(new byte[] { 1 }); }
+using (var zip = ZipFile.Open(corrupt, ZipArchiveMode.Update))
+{
+    await using var output = zip.CreateEntry("../escape").Open();
+    await output.WriteAsync(new byte[] { 1 });
+}
 await Reject(() => environment.RepairAsync(row, corrupt, null), "unindexed archive traversal rejected");
 Check(TroubleshootingService.Explain("TOOLSET_MISSING").Action == "tools", "missing tool diagnostic offers environment action");
 Check(TroubleshootingService.Explain("fatal error: shared.h: file not found").Action == "problems", "missing include diagnostic offers source navigation");
@@ -177,13 +210,22 @@ await using (var legacy = await PluginRuntimeClient.StartAsync(Path.Combine(runt
 var discovery = new WorkspaceDiscoveryService(files);
 var large = Path.Combine(root, "large-sdk");
 Directory.CreateDirectory(large);
-for (var i = 0; i < 12000; i++) { var dir = Path.Combine(large, "module" + i / 100); Directory.CreateDirectory(dir); await File.WriteAllTextAsync(Path.Combine(dir, "header" + i + ".h"), "int sdk_symbol;\n"); }
+for (var i = 0; i < 12000; i++)
+{
+    var dir = Path.Combine(large, "module" + i / 100);
+    Directory.CreateDirectory(dir);
+    await File.WriteAllTextAsync(Path.Combine(dir, "header" + i + ".h"), "int sdk_symbol;\n");
+}
 var watch = Stopwatch.StartNew();
 var found = await discovery.FilesAsync(large, "header11999");
 watch.Stop();
 Check(found.Count == 1, "quick open locates file in 12000-file SDK fixture");
 var quickOpenMs = watch.ElapsedMilliseconds;
-using (var cancelled = new CancellationTokenSource()) { cancelled.Cancel(); await Reject(() => discovery.FilesAsync(large, "header", cancelled.Token), "large tree quick open cancels stale requests"); }
+using (var cancelled = new CancellationTokenSource())
+{
+    cancelled.Cancel();
+    await Reject(() => discovery.FilesAsync(large, "header", cancelled.Token), "large tree quick open cancels stale requests");
+}
 watch.Restart();
 await Reject(() => new WorkspaceEditService(files).SearchAsync(large, new("sdk_symbol", true, true, false), null, "*.h", "", true, []), "large SDK search rejects oversized result with explicit limit diagnostic");
 watch.Stop();

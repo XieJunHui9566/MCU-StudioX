@@ -27,7 +27,9 @@ public partial class MainWindow
         {
             FlushPluginPanels();
             UpdateLayout();
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.Render);
         }
         Check(!TextFontCatalog.IsTextFamily("AmdtSymbols") && !TextFontCatalog.IsTextFamily("Wingdings") &&
             !TextFontCatalog.IsTextFamily("Webdings") && !TextFontCatalog.IsTextFamily("Segoe MDL2 Assets"),

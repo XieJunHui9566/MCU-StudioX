@@ -30,7 +30,9 @@ public partial class MainWindow
                 BracketPairs.Find("{}", "C", canceled.Token);
                 throw new InvalidOperationException("取消未生效");
             }
-            catch (OperationCanceledException) { }
+            catch (OperationCanceledException)
+            {
+            }
         }
 
         await OpenProjectAsync(project, CancellationToken.None);
@@ -65,7 +67,9 @@ public partial class MainWindow
             SourceEditor.Select(0, 0);
             SourceEditor.ScrollToHome();
             UpdateLayout();
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.Render);
             var view = SourceEditor.TextArea.TextView;
             var actualColors = bracketColors.Brackets.Select(bracket =>
             {

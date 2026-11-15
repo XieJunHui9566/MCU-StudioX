@@ -131,7 +131,9 @@ internal sealed partial class RetentionChecks(string output)
             await repository.PruneSupersededAsync(cancellation.Token);
             throw new InvalidOperationException("Cancellation was ignored.");
         }
-        catch (OperationCanceledException) { }
+        catch (OperationCanceledException)
+        {
+        }
         Require((await repository.ListCatalogAsync()).Count == 2, "cancelled operation preserves both versions");
         Pass("pre-cancelled cleanup preserves all installations");
     }

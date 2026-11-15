@@ -1,0 +1,23 @@
+#include "indirect.h"
+type_n_old_pair volatile fp_n_old_pair=n_old_pair;
+type_n_native_pair volatile fp_n_native_pair=n_native_pair;
+type_n_mutate volatile fp_n_mutate=n_mutate;
+type_n_old_many volatile fp_n_old_many=n_old_many;
+type_n_choose_pointer volatile fp_n_choose_pointer=n_choose_pointer;
+type_n_old_float volatile fp_n_old_float=n_old_float;
+type_n_native_float volatile fp_n_native_float=n_native_float;
+type_n_old_store volatile fp_n_old_store=n_old_store;
+type_n_legacy_bridge volatile fp_n_legacy_bridge=n_legacy_bridge;
+type_n_callback_value volatile fp_n_callback_value=n_callback_value;
+type_n_forward_float volatile fp_n_forward_float=n_forward_float;
+type_n_recursive_value volatile fp_n_recursive_value=n_recursive_value;
+type_n_c_pair volatile fp_n_c_pair=n_c_pair;
+type_n_c_native volatile fp_n_c_native=n_c_native;
+type_n_c_recur volatile fp_n_c_recur=n_c_recur;
+type_n_c_alias volatile fp_n_c_alias=n_c_alias;
+type_n_c_many volatile fp_n_c_many=n_c_many;
+type_n_c_pointer volatile fp_n_c_pointer=n_c_pointer;
+type_n_c_float volatile fp_n_c_float=n_c_float;
+type_n_c_pressure volatile fp_n_c_pressure=n_c_pressure;
+type_n_c_frame volatile fp_n_c_frame=n_c_frame;
+type_n_c_callback volatile fp_n_c_callback=n_c_callback;

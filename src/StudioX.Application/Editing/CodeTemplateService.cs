@@ -74,7 +74,13 @@ public sealed partial class CodeTemplateService(string dataDirectory)
             token.ThrowIfCancellationRequested();
             File.Move(temporary, path, overwrite: true);
         }
-        finally { if (File.Exists(temporary)) { File.Delete(temporary); } }
+        finally
+        {
+            if (File.Exists(temporary))
+            {
+                File.Delete(temporary);
+            }
+        }
     }
 
     public static bool Supports(CodeTemplate template, string language) => template.Language == "全部" || template.Language == language || template.Language == "C/C++" && language is "C" or "C++";
@@ -136,7 +142,10 @@ public sealed partial class CodeTemplateService(string dataDirectory)
         {
             file = JsonSerializer.Deserialize<TemplateFile>(bytes, JsonStore.Options) ?? throw Error("模板文件为空：" + path);
         }
-        catch (JsonException ex) { throw new StudioXException("CODE_TEMPLATE_JSON", "模板 JSON 无效：" + path, ex); }
+        catch (JsonException ex)
+        {
+            throw new StudioXException("CODE_TEMPLATE_JSON", "模板 JSON 无效：" + path, ex);
+        }
         if (file.FormatVersion != 1 || file.Templates is null)
         {
             throw Error("仅支持代码模板格式 1：" + path);

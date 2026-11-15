@@ -53,7 +53,10 @@ internal static class FaultChecks
             await service.ReadPausedAsync();
             check(false, "disconnected fault reading rejected");
         }
-        catch (StudioXException) { check(true, "disconnected fault read never creates hardware session"); }
+        catch (StudioXException)
+        {
+            check(true, "disconnected fault read never creates hardware session");
+        }
         try
         {
             _ = FaultAnalyzer.Analyze(evidence with
@@ -62,6 +65,9 @@ internal static class FaultChecks
             });
             check(false, "unknown fault format");
         }
-        catch (StudioXException e) { check(e.Code == "FAULT_FORMAT", "unknown fault evidence format rejected"); }
+        catch (StudioXException e)
+        {
+            check(e.Code == "FAULT_FORMAT", "unknown fault evidence format rejected");
+        }
     }
 }

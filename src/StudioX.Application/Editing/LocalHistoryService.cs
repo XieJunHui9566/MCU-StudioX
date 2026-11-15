@@ -45,7 +45,10 @@ public sealed class LocalHistoryService(string dataDirectory)
                 }
             }
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
     public async Task<IReadOnlyList<LocalHistoryEntry>> ListAsync(string project, string path, CancellationToken token = default)
     {
@@ -73,7 +76,10 @@ public sealed class LocalHistoryService(string dataDirectory)
             }
             return result;
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
     public static WorkspaceFileChange RestorePlan(WorkspaceBufferSnapshot buffer, LocalHistoryEntry entry)
     {

@@ -54,11 +54,22 @@ if (args is ["--download-offline", var downloadProject, var downloadOutput])
 {
     return await DownloadChecks.RunAsync(Path.GetFullPath(downloadProject), Path.GetFullPath(downloadOutput));
 }
-if (args is not [var output]) { Console.Error.WriteLine("Usage: StudioX.Mon51Validation <new-output-directory>"); return 2; }
+if (args is not [var output])
+{
+    Console.Error.WriteLine("Usage: StudioX.Mon51Validation <new-output-directory>");
+    return 2;
+}
 var root = Path.GetFullPath(output);
 Directory.CreateDirectory(root);
 var checks = new List<string>();
-void Check(bool condition, string name) { if (!condition) { throw new InvalidOperationException(name); } checks.Add(name); }
+void Check(bool condition, string name)
+{
+    if (!condition)
+    {
+        throw new InvalidOperationException(name);
+    }
+    checks.Add(name);
+}
 async Task Reject(Func<Task> action, string code, string name)
 {
     try
@@ -66,7 +77,10 @@ async Task Reject(Func<Task> action, string code, string name)
         await action();
         throw new InvalidOperationException("Accepted: " + name);
     }
-    catch (StudioXException ex) when (ex.Code == code) { checks.Add(name); }
+    catch (StudioXException ex) when (ex.Code == code)
+    {
+        checks.Add(name);
+    }
 }
 var project = Path.Combine(root, "project");
 Directory.CreateDirectory(Path.Combine(project, ".studiox"));
@@ -140,7 +154,10 @@ await Reject(() => debug.ExecuteAsync(DebugAction.Continue), "MON51_BREAKPOINT_U
 Check(debug.State == DebugState.Stopped && !fixture.Commands.Any(c => c.SequenceEqual(new byte[] { 8, 0 })), "unbound continue leaves target paused");
 await monitor.ChangeSourceBreakpointAsync("pending", null);
 Check(debug.IsActive && !debug.IsHardware && debug.State == DebugState.Stopped && monitor.IsSimulated, "facade shares active state, fixture visibly simulated");
-await Reject(async () => { using var conflict = await hub.ReserveAsync(fixture.Key); }, "DEVICE_OWNED", "single connection owner enforced");
+await Reject(async () =>
+{
+    using var conflict = await hub.ReserveAsync(fixture.Key);
+}, "DEVICE_OWNED", "single connection owner enforced");
 Check(debug.Snapshot.Registers.Single(r => r.Name == "A").Value == "0x11" && debug.Snapshot.Registers.Single(r => r.Name == "B").Value == "0x22" && debug.Snapshot.Registers.Single(r => r.Name == "DPTR").Value == "0x1234" && debug.Snapshot.Registers.Single(r => r.Name == "PSW").Value == "0x84" && debug.Snapshot.Registers.Single(r => r.Name == "SP").Value == "0x09", "19-byte register map and fragmented replies");
 foreach (var space in new[] { Mon51MemorySpace.DataSfr, Mon51MemorySpace.Idata, Mon51MemorySpace.Xdata })
 {
@@ -181,7 +198,10 @@ await Reject(() => monitor.ReadMemoryAsync(Mon51MemorySpace.Idata, 0, 4), "MON51
 await debug.ExecuteAsync(DebugAction.Continue);
 await debug.StopAsync();
 Check(!debug.IsActive && debug.MonitorSession is null && fixture.Running && fixture.Code[0xa8] == 0xe5, "stop restores original opcode, resumes and clears facade");
-using (var released = await hub.ReserveAsync(fixture.Key)) { checks.Add("connection released after stop"); }
+using (var released = await hub.ReserveAsync(fixture.Key))
+{
+    checks.Add("connection released after stop");
+}
 Check(!fixture.Commands.Any(c => c[0] == 6), "no erase command exposed or transmitted");
 
 var uncertain = new Mon51OfflineTransport();
@@ -195,7 +215,9 @@ await using (var session = new Mon51DebugSession(Path.Combine(root, "uncertain")
         await session.ExecuteAsync(DebugAction.Continue);
         throw new InvalidOperationException("write failure accepted");
     }
-    catch (IOException) { }
+    catch (IOException)
+    {
+    }
     Check(session.State == DebugState.Faulted && uncertain.Code[0xa8] == 0xa5 && Directory.GetFiles(Path.Combine(root, "uncertain", "debug", "mon51-recovery")).Length == 1, "uncertain write preserves original-byte recovery journal");
     await session.StopAsync();
     Check(uncertain.Code[0xa8] == 0xe5 && Directory.GetFiles(Path.Combine(root, "uncertain", "debug", "mon51-recovery")).Length == 0, "cleanup recovers uncertain write and removes only verified journal");
@@ -206,7 +228,14 @@ await failedSession.ConnectAsync(hub, restoration, project);
 await failedSession.AddBreakpointAsync(0xa8);
 await failedSession.ExecuteAsync(DebugAction.Continue);
 restoration.FailRestore = true;
-try { await failedSession.StopAsync(); throw new InvalidOperationException("restoration failure accepted"); } catch (IOException) { }
+try
+{
+    await failedSession.StopAsync();
+    throw new InvalidOperationException("restoration failure accepted");
+}
+catch (IOException)
+{
+}
 Check(failedSession.State == DebugState.Faulted && !failedSession.HasConnection && !restoration.Running && Directory.GetFiles(Path.Combine(root, "restore-failure", "debug", "mon51-recovery")).Length == 1, "failed restore closes port, preserves evidence and leaves target paused");
 await Reject(() => failedSession.StopAsync(), "MON51_RECOVERY", "repeated stop cannot falsely confirm restoration");
 var forbiddenReconnect = new Mon51DebugSession(Path.Combine(root, "restore-failure"));

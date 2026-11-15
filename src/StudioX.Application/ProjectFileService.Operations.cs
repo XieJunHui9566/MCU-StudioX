@@ -114,7 +114,11 @@ public sealed partial class ProjectFileService
             {
                 Move(temporary, target);
             }
-            catch { Move(temporary, source); throw; }
+            catch
+            {
+                Move(temporary, source);
+                throw;
+            }
         }
         else
         {
@@ -197,7 +201,10 @@ public sealed partial class ProjectFileService
             }
             throw;
         }
-        finally { Directory.Delete(PathBoundary.Resolve(project, stagingRelative), recursive: true); }
+        finally
+        {
+            Directory.Delete(PathBoundary.Resolve(project, stagingRelative), recursive: true);
+        }
     }, token);
 
     private static void EnsureCopySource(string full)

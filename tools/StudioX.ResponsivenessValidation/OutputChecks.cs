@@ -42,6 +42,9 @@ internal static class OutputChecks
             }
             return new("output-allocation-and-progress", true, watch.ElapsedMilliseconds, $"2000 lines, {allocated} allocated bytes; line/progress checks passed");
         }
-        catch (Exception error) { return new("output-allocation-and-progress", false, watch.ElapsedMilliseconds, error.ToString()); }
+        catch (Exception error)
+        {
+            return new("output-allocation-and-progress", false, watch.ElapsedMilliseconds, error.ToString());
+        }
     }
 }

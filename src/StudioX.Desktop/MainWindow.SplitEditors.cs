@@ -52,6 +52,7 @@ public partial class MainWindow
         secondaryTabs.SelectionChanged += WorkspaceTabs_SelectionChanged;
         mirrorEditor.SetResourceReference(BackgroundProperty, "EditorSurface");
         mirrorEditor.SetResourceReference(ForegroundProperty, "Text");
+        mirrorFolding = new(mirrorEditor, error => Log("分栏代码折叠：" + error));
         mirrorEditor.PreviewMouseDown += (_, e) =>
         {
             if (mirroredSession is not { } session || movingEditor)
@@ -65,7 +66,13 @@ public partial class MainWindow
             SourceEditor.CaretOffset = Math.Clamp(offset, 0, session.Buffer.TextLength);
             SourceEditor.Focus();
         };
-        mirrorEditor.GotKeyboardFocus += (_, _) => { if (!movingEditor && mirroredSession is { } session) { ShowDocument(session.Tab); } };
+        mirrorEditor.GotKeyboardFocus += (_, _) =>
+        {
+            if (!movingEditor && mirroredSession is { } session)
+            {
+                ShowDocument(session.Tab);
+            }
+        };
         WorkspaceTabs.AllowDrop = true;
         WorkspaceTabs.PreviewDrop += (_, e) => DropEditor(e, 0);
         secondaryTabs.PreviewDrop += (_, e) => DropEditor(e, 1);
@@ -156,7 +163,11 @@ public partial class MainWindow
             target.SelectedItem = session.Tab;
             UpdateSplitVisibility();
         }
-        finally { changingEditor = false; movingEditor = false; }
+        finally
+        {
+            changingEditor = false;
+            movingEditor = false;
+        }
         ShowDocument(session.Tab);
         RefreshSplitMirror();
         QueueEditorCheckpoint();
@@ -199,7 +210,7 @@ public partial class MainWindow
             return;
         }
         mirroredSession = candidate;
-        mirrorEditor.Document = candidate.Buffer;
+        mirrorFolding!.SetDocument(candidate);
         mirrorEditor.FontFamily = SourceEditor.FontFamily;
         mirrorEditor.FontSize = SourceEditor.FontSize;
         var color = (Color)ColorConverter.ConvertFromString(currentTheme.Colors["Background"]);
@@ -207,7 +218,13 @@ public partial class MainWindow
         RefreshInactiveCode();
         candidate.Tab.Content = mirrorEditor;
         mirrorEditor.CaretOffset = Math.Clamp(candidate.CaretOffset, 0, candidate.Buffer.TextLength);
-        _ = Dispatcher.BeginInvoke(() => { if (mirroredSession == candidate) { mirrorEditor.ScrollToVerticalOffset(candidate.VerticalOffset); } }, DispatcherPriority.Loaded);
+        _ = Dispatcher.BeginInvoke(() =>
+        {
+            if (mirroredSession == candidate)
+            {
+                mirrorEditor.ScrollToVerticalOffset(candidate.VerticalOffset);
+            }
+        }, DispatcherPriority.Loaded);
     }
     private WorkbenchLayout CaptureWorkbenchLayout()
     {

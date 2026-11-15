@@ -31,7 +31,10 @@ internal static class PeripheralAdditionChecks
                 await operation();
                 throw new InvalidOperationException("Expected rejection: " + label);
             }
-            catch (StudioXException ex) when (ex.Code == code) { check(true, label); }
+            catch (StudioXException ex) when (ex.Code == code)
+            {
+                check(true, label);
+            }
         }
 
         const string originalCMake = "# original user comment\r\nidf_component_register(SRCS \"nested/app.c\"\r\n INCLUDE_DIRS \".\" PRIV_REQUIRES freertos esp_system)\r\n# keep this tail\r\n";
@@ -96,7 +99,10 @@ internal static class PeripheralAdditionChecks
         {
             await Reject(() => service.ReadComponentAsync(context, sourcePath, []), "PERIPHERAL_CMAKE_UNSUPPORTED", "unrecognized nearest entry is not bypassed to guess an outer component");
         }
-        finally { File.Delete(nestedCMake); }
+        finally
+        {
+            File.Delete(nestedCMake);
+        }
         await Reject(() => service.ReadComponentAsync(context, "Device/sdk/app.c", []), "PERIPHERAL_COMPONENT", "case variants of reserved device paths remain protected");
         var componentForLimit = await service.ReadComponentAsync(context, sourcePath, []);
         var largeSource = componentForLimit.Source with
@@ -128,7 +134,10 @@ internal static class PeripheralAdditionChecks
         {
             await Reject(() => service.ValidateAdditionAsync(addition, []), "PERIPHERAL_ADDITION_STALE", "CMake becoming read-only blocks the entire addition");
         }
-        finally { File.SetAttributes(cmakeFile, FileAttributes.Normal); }
+        finally
+        {
+            File.SetAttributes(cmakeFile, FileAttributes.Normal);
+        }
         var saved = await files.SaveAsync(root, addition.Files[1].Source, addition.Files[1].After);
         check((await File.ReadAllBytesAsync(cmakeFile)).AsSpan().StartsWith(new byte[] { 0xef, 0xbb, 0xbf }) && saved.Text == addition.Files[1].After,
             "normal editor save preserves CMake UTF-8 BOM");

@@ -11,16 +11,8 @@ public sealed partial class ComponentMigrationService(PackRepository packs, Buil
     private readonly SemaphoreSlim gate = new(1, 1);
     public async Task<string> SuggestDirectoryNameAsync(string sourceDirectory, CancellationToken token = default)
     {
-        var project = await ProjectService.ReadAsync(sourceDirectory, token);
+        _ = await ProjectService.ReadAsync(sourceDirectory, token);
         var name = Path.GetFileName(Path.GetFullPath(sourceDirectory).TrimEnd(Path.DirectorySeparatorChar));
-        if (project.Espressif is not null)
-        {
-            name = System.Text.RegularExpressions.Regex.Replace(name, "[^A-Za-z0-9._-]", "-").Trim('-', '.');
-            if (name.Length == 0)
-            {
-                name = "project";
-            }
-        }
         return name + "-upgrade";
     }
     public async Task<IReadOnlyList<InstalledPack>> ListTargetsAsync(string sourceDirectory, CancellationToken token = default)
@@ -59,7 +51,10 @@ public sealed partial class ComponentMigrationService(PackRepository packs, Buil
             {
                 EspressifProjectPath.ValidateNewDirectory(destination);
             }
-            catch (StudioXException error) { blockers.Add(error.Code + ": " + error.Message); }
+            catch (StudioXException error)
+            {
+                blockers.Add(error.Code + ": " + error.Message);
+            }
         }
         if (project.Espressif != oldPlan.Project.Espressif || project.PinMapping != oldPlan.Project.PinMapping || project.Logic != oldPlan.Project.Logic)
         {
@@ -171,7 +166,10 @@ public sealed partial class ComponentMigrationService(PackRepository packs, Buil
             await SaveResultAsync(result);
             return result;
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }, token);
 
     private static Task SaveResultAsync(ComponentMigrationResult result) => JsonStore.WriteAsync(PathBoundary.Resolve(result.DestinationDirectory,

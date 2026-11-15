@@ -26,10 +26,14 @@ public partial class MainWindow
         {
             FlushPluginPanels();
             UpdateLayout();
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.Render);
             FlushPluginPanels();
             UpdateLayout();
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.Render);
         }
         JsonElement Empty() => JsonSerializer.SerializeToElement(new
         {
@@ -148,14 +152,20 @@ public partial class MainWindow
                 await PluginManifest.ReadAsync(Path.Combine(source, "plugin.json"));
                 throw new InvalidOperationException("范围未拒绝");
             }
-            catch (StudioXException error) when (error.Code == "PLUGIN_SCOPE") { Check(true, "拒绝无效运行范围或工程能力：" + invalid.Scope + "/" + string.Join(",", invalid.HostTools ?? invalid.Capabilities)); }
+            catch (StudioXException error) when (error.Code == "PLUGIN_SCOPE")
+            {
+                Check(true, "拒绝无效运行范围或工程能力：" + invalid.Scope + "/" + string.Join(",", invalid.HostTools ?? invalid.Capabilities));
+            }
         }
         try
         {
             PluginContributionValidator.Validate(manifest, new([new("context", "Context", "projectContext")], [], []));
             throw new InvalidOperationException("工程上下文未拒绝");
         }
-        catch (StudioXException error) when (error.Code == "PLUGIN_CONTRIBUTION") { Check(true, "应用命令不能注册工程上下文入口"); }
+        catch (StudioXException error) when (error.Code == "PLUGIN_CONTRIBUTION")
+        {
+            Check(true, "应用命令不能注册工程上下文入口");
+        }
         var legacyJson = JsonSerializer.SerializeToElement(projectManifest, JsonStore.Options);
         var legacy = legacyJson.EnumerateObject().Where(property => property.Name != "scope").ToDictionary(property => property.Name, property => property.Value);
         await JsonStore.WriteAsync(Path.Combine(source, "plugin.json"), legacy);

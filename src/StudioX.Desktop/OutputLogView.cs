@@ -23,7 +23,13 @@ public sealed class OutputLogView : TextEditor
         menu.Items.Add(new MenuItem { Header = "复制", Command = ApplicationCommands.Copy, CommandTarget = TextArea });
         menu.Items.Add(new MenuItem { Header = "全选", Command = ApplicationCommands.SelectAll, CommandTarget = TextArea });
         ContextMenu = menu;
-        TextChanged += (_, _) => { if (Document.TextLength == 0) { progressAnchor = null; } };
+        TextChanged += (_, _) =>
+        {
+            if (Document.TextLength == 0)
+            {
+                progressAnchor = null;
+            }
+        };
     }
 
     /// <summary>诊断插在活动进度行之前，后续刷新不会覆盖它们。</summary>

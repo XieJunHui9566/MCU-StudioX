@@ -87,7 +87,10 @@ internal sealed class ProgrammerExpression(ProgrammerWord word, string expressio
             Next();
             return word.Parse(current);
         }
-        finally { depth--; }
+        finally
+        {
+            depth--;
+        }
     }
 
     private static int Priority(string value) => value switch

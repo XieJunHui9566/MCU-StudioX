@@ -76,6 +76,9 @@ public sealed class Mon51LaunchService(DebugSessionService debugger, IMon51Setup
                 }
             }
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
 }

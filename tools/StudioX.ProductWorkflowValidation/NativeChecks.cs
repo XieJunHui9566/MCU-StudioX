@@ -67,12 +67,18 @@ internal static class NativeChecks
             await history.CaptureAsync(project);
             check(false, "stale build snapshot");
         }
-        catch (StudioXException error) { check(error.Code == "BUILD_HISTORY_STALE", "source change prevents recording stale build as current"); }
+        catch (StudioXException error)
+        {
+            check(error.Code == "BUILD_HISTORY_STALE", "source change prevents recording stale build as current");
+        }
         try
         {
             await new FirmwareFaultService(catalog).SymbolizeAsync(project, report);
             check(false, "stale fault symbols");
         }
-        catch (StudioXException error) { check(error.Code == "FAULT_ELF", "source change prevents mapping old fault ELF onto changed source"); }
+        catch (StudioXException error)
+        {
+            check(error.Code == "FAULT_ELF", "source change prevents mapping old fault ELF onto changed source");
+        }
     }
 }

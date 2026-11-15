@@ -248,7 +248,9 @@ public sealed class Mon51OfflineTransport : IDeviceTransport
             await Task.Delay(UserEraseReplyDelay, token);
             Boot([0, 0, 0, 0]);
         }
-        catch (OperationCanceledException) when (token.IsCancellationRequested) { }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+        }
     }
     private void Data(byte[] payload)
     {

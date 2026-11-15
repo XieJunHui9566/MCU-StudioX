@@ -105,7 +105,10 @@ internal static class Ag32LogicProjectChecks
                   reusedPin.Errors.Count == 0,
                 "Potentially valid pin sharing must be reported for review without a hard rejection");
         }
-        finally { await File.WriteAllTextAsync(pinMapPath, pinMap); }
+        finally
+        {
+            await File.WriteAllTextAsync(pinMapPath, pinMap);
+        }
         Pass("Logic inspection rejects out-of-range pins and flags possible multiplexing for review");
 
         var alienDevice = pack.Manifest.Devices.Single() with
@@ -141,7 +144,10 @@ internal static class Ag32LogicProjectChecks
             await File.WriteAllTextAsync(manifestPath, document.ToJsonString(JsonStore.Options));
             await RejectAsync(() => ProjectService.ReadAsync(logicPath), "PROJECT_LOGIC_SETTINGS");
         }
-        finally { await File.WriteAllTextAsync(manifestPath, original); }
+        finally
+        {
+            await File.WriteAllTextAsync(manifestPath, original);
+        }
         Pass("Reopen rejects a tampered 100-pin logic target");
 
         try
@@ -163,7 +169,10 @@ internal static class Ag32LogicProjectChecks
             await File.WriteAllTextAsync(ordinaryManifestPath, document.ToJsonString(JsonStore.Options));
             await RejectAsync(() => ProjectService.EnableAg32PinMappingAsync(ordinaryPath), "PROJECT_PIN_MAPPING_DEVICE");
         }
-        finally { await File.WriteAllTextAsync(ordinaryManifestPath, ordinaryManifest); }
+        finally
+        {
+            await File.WriteAllTextAsync(ordinaryManifestPath, ordinaryManifest);
+        }
         var localPackPath = Path.Combine(ordinaryPath, "device", "manifest.json");
         var localPack = await File.ReadAllTextAsync(localPackPath);
         try
@@ -173,7 +182,10 @@ internal static class Ag32LogicProjectChecks
             await File.WriteAllTextAsync(localPackPath, document.ToJsonString(JsonStore.Options));
             await RejectAsync(() => ProjectService.EnableAg32PinMappingAsync(ordinaryPath), "PROJECT_PIN_MAPPING_DEVICE");
         }
-        finally { await File.WriteAllTextAsync(localPackPath, localPack); }
+        finally
+        {
+            await File.WriteAllTextAsync(localPackPath, localPack);
+        }
         using (var cancellation = new CancellationTokenSource())
         {
             cancellation.Cancel();
@@ -182,7 +194,9 @@ internal static class Ag32LogicProjectChecks
                 await ProjectService.EnableAg32PinMappingAsync(ordinaryPath, cancellation.Token);
                 throw new InvalidOperationException("Expected cancelled enable");
             }
-            catch (OperationCanceledException) { }
+            catch (OperationCanceledException)
+            {
+            }
             Check(await File.ReadAllTextAsync(ordinaryManifestPath) == ordinaryManifest && await File.ReadAllTextAsync(ordinaryPinMapPath) == ordinaryPinMap,
                 "Cancelled enable must preserve metadata and VE");
         }
@@ -206,7 +220,10 @@ internal static class Ag32LogicProjectChecks
         {
             action();
         }
-        catch (StudioXException ex) when (ex.Code == code) { return; }
+        catch (StudioXException ex) when (ex.Code == code)
+        {
+            return;
+        }
         throw new InvalidOperationException("Expected rejection " + code);
     }
 
@@ -216,7 +233,10 @@ internal static class Ag32LogicProjectChecks
         {
             await action();
         }
-        catch (StudioXException ex) when (ex.Code == code) { return; }
+        catch (StudioXException ex) when (ex.Code == code)
+        {
+            return;
+        }
         throw new InvalidOperationException("Expected rejection " + code);
     }
 }

@@ -66,10 +66,6 @@
           Text="外观与背景"
           FontSize="23"
           FontWeight="SemiBold" />
-        <TextBlock
-          Text="选择界面主题，为工作台添加自己的背景。"
-          Foreground="{DynamicResource Muted}"
-          Margin="0,8,0,22" />
         <Grid>
           <Grid.ColumnDefinitions>
             <ColumnDefinition />
@@ -151,6 +147,7 @@
             FontSize="12" />
           <Slider
             x:Name="GlowStrengthSlider"
+            ToolTip="调整代码文字的柔光强度。"
             Grid.Column="1"
             Minimum="0"
             Maximum="100"
@@ -167,11 +164,6 @@
             VerticalAlignment="Center"
             HorizontalAlignment="Right" />
         </Grid>
-        <TextBlock
-          Text="同色柔光随强度更明亮，清晰字形叠加在光晕上方。"
-          Foreground="{DynamicResource Muted}"
-          FontSize="11"
-          TextWrapping="Wrap" />
         <Border
           Height="1"
           Background="{DynamicResource Border}"
@@ -179,11 +171,6 @@
         <TextBlock
           Text="工作台背景"
           FontWeight="SemiBold" />
-        <TextBlock
-          Text="默认为代码和日志保留纯色底色，可按需开启透明工作区。"
-          Foreground="{DynamicResource Muted}"
-          FontSize="12"
-          Margin="0,7,0,16" />
         <StackPanel
           Orientation="Horizontal">
           <Button
@@ -346,7 +333,7 @@
           Checked="Settings_Changed"
           Unchecked="Settings_Changed" />
         <TextBlock
-          Text="视频默认静音循环，最小化时自动暂停。建议使用 H.264 MP4；&#xA;其他视频格式取决于系统解码器。图片上限 50 MiB，视频上限 512 MiB。"
+          Text="图片 ≤ 50 MiB；视频 ≤ 512 MiB，推荐 H.264 MP4。"
           Foreground="{DynamicResource Muted}"
           FontSize="11"
           LineHeight="19" />

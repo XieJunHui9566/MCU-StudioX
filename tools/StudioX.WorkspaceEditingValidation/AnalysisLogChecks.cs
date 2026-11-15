@@ -23,7 +23,10 @@ internal static class AnalysisLogChecks
                 await service.FlushAnalysisLogAsync();
                 throw new InvalidOperationException("Expected locked log rejection.");
             }
-            catch (IOException) { check(true, "archive write failures expose the original IO exception"); }
+            catch (IOException)
+            {
+                check(true, "archive write failures expose the original IO exception");
+            }
         }
         await service.FlushAnalysisLogAsync();
         check((await File.ReadAllTextAsync(service.AnalysisLogPath)).Contains("locked-file-retry", StringComparison.Ordinal), "failed archive batch survives a later successful retry");

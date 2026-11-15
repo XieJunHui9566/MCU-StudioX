@@ -60,7 +60,11 @@ public sealed partial class Ag32PinMappingBuildService
             await File.WriteAllBytesAsync(stagedLicense, license, token);
             return run;
         }
-        catch { RemovePrivateRuntime(run); throw; }
+        catch
+        {
+            RemovePrivateRuntime(run);
+            throw;
+        }
     }
 
     internal void RemovePrivateRuntime(string run)

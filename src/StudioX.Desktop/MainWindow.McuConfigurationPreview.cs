@@ -39,7 +39,11 @@ public partial class MainWindow
         async Task Layout()
         {
             await Task.Delay(100);
-            await Dispatcher.InvokeAsync(() => { FlushPluginPanels(); UpdateLayout(); }, DispatcherPriority.ContextIdle);
+            await Dispatcher.InvokeAsync(() =>
+            {
+                FlushPluginPanels();
+                UpdateLayout();
+            }, DispatcherPriority.ContextIdle);
         }
         PluginMcuConfigurationView View() => pluginPanels.Values.SelectMany(item => PluginDescendants(item.Host)).OfType<PluginMcuConfigurationView>().Single();
         async Task Wait(Func<bool> condition)

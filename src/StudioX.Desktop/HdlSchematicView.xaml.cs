@@ -32,9 +32,21 @@ public partial class HdlSchematicView : UserControl
         Surface.NodeActivated += ActivateNode;
         foreach (var box in new[] { Sources, Includes, Defines, TopModule })
         {
-            box.TextChanged += (_, _) => { if (Result is not null) { MarkStale(); } };
+            box.TextChanged += (_, _) =>
+            {
+                if (Result is not null)
+                {
+                    MarkStale();
+                }
+            };
         }
-        Flatten.Click += (_, _) => { if (Result is not null) { MarkStale(); } };
+        Flatten.Click += (_, _) =>
+        {
+            if (Result is not null)
+            {
+                MarkStale();
+            }
+        };
     }
 
     public void Configure(HdlSchematicService value, HdlSchematicSettings settings)

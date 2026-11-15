@@ -43,6 +43,9 @@ internal static class DebugPlanChecks
             }, tools, Path.Combine(root, "fixture.elf"), connectUnderReset: true);
             check(false, "unsupported reset probe rejected");
         }
-        catch (StudioXException error) { check(error.Code == "DEBUG_RESET_CONNECT", "unsupported reset probe rejected before any tool launch"); }
+        catch (StudioXException error)
+        {
+            check(error.Code == "DEBUG_RESET_CONNECT", "unsupported reset probe rejected before any tool launch");
+        }
     }
 }

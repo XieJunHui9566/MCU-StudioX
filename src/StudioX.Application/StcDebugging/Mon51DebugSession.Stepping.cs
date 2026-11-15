@@ -73,7 +73,10 @@ public sealed partial class Mon51DebugSession
             }
             SetState(DebugState.Stopped, "源码单步达到 128 条指令上限，保持暂停；可切换指令步进");
         }
-        finally { IsSourceStepActive = false; }
+        finally
+        {
+            IsSourceStepActive = false;
+        }
     }
 
     private async Task StepOutCoreAsync(CancellationToken token)
@@ -100,7 +103,10 @@ public sealed partial class Mon51DebugSession
             await StepCoreAsync(token);
             SetState(DebugState.Stopped, $"指令单步完成 · PC=0x{Pc:X4}");
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
 
     public async Task<DebugDisassembly> ReadDisassemblyAsync(uint? address = null, int count = 128, CancellationToken token = default)
@@ -134,6 +140,9 @@ public sealed partial class Mon51DebugSession
             }
             return new(start, start + (uint)count, start, Pc, rows.ToArray());
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
 }

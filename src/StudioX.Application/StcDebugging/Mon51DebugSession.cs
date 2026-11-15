@@ -95,7 +95,11 @@ public sealed partial class Mon51DebugSession(string dataDirectory, string confi
                     : transport.IsSimulated ? "protocol fixture" : "parameters unavailable";
                 client = new Mon51Client(session, LogPath, parameters);
             }
-            catch { await session.DisposeAsync(); throw; }
+            catch
+            {
+                await session.DisposeAsync();
+                throw;
+            }
             try
             {
                 Version = await client.SynchronizeAsync(true, token);
@@ -130,7 +134,10 @@ public sealed partial class Mon51DebugSession(string dataDirectory, string confi
             Output?.Invoke("连接原始日志：" + LogPath);
             throw;
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
 
     public async Task ExecuteAsync(DebugAction action, CancellationToken token = default)
@@ -198,7 +205,10 @@ public sealed partial class Mon51DebugSession(string dataDirectory, string confi
             Output?.Invoke(ex.ToString());
             throw;
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
 
     private async Task ObserveStopAsync(CancellationToken token)
@@ -236,10 +246,15 @@ public sealed partial class Mon51DebugSession(string dataDirectory, string confi
                     SetState(DebugState.Stopped, $"{description} · PC=0x{Pc:X4}");
                     return;
                 }
-                finally { gate.Release(); }
+                finally
+                {
+                    gate.Release();
+                }
             }
         }
-        catch (OperationCanceledException) when (token.IsCancellationRequested) { }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+        }
         catch (Exception ex)
         {
             SetState(DebugState.Faulted, "异步停止检查失败；断点恢复尚未确认：" + ex.Message);
@@ -256,8 +271,15 @@ public sealed partial class Mon51DebugSession(string dataDirectory, string confi
             await ReadSnapshotAsync(token);
             Changed?.Invoke();
         }
-        catch (Exception ex) { SetState(DebugState.Faulted, "读取寄存器失败：" + ex.Message); throw; }
-        finally { gate.Release(); }
+        catch (Exception ex)
+        {
+            SetState(DebugState.Faulted, "读取寄存器失败：" + ex.Message);
+            throw;
+        }
+        finally
+        {
+            gate.Release();
+        }
     }
 
     public async Task<byte[]> ReadMemoryAsync(Mon51MemorySpace space, ushort address, int count, CancellationToken token = default)
@@ -269,7 +291,10 @@ public sealed partial class Mon51DebugSession(string dataDirectory, string confi
             RequireStopped();
             return await client!.ReadAsync(space, address, count, token);
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
 
     public async Task SetPcAsync(ushort address, CancellationToken token = default)
@@ -285,8 +310,15 @@ public sealed partial class Mon51DebugSession(string dataDirectory, string confi
             await SetPcCoreAsync(address, token);
             SetState(DebugState.Stopped, $"PC 已设置为 0x{Pc:X4}；尚未执行");
         }
-        catch (Exception ex) { SetState(DebugState.Faulted, "PC 设置未完整确认：" + ex.Message); throw; }
-        finally { gate.Release(); }
+        catch (Exception ex)
+        {
+            SetState(DebugState.Faulted, "PC 设置未完整确认：" + ex.Message);
+            throw;
+        }
+        finally
+        {
+            gate.Release();
+        }
     }
 
     public async Task AddBreakpointAsync(ushort address, CancellationToken token = default)
@@ -321,7 +353,10 @@ public sealed partial class Mon51DebugSession(string dataDirectory, string confi
             manualPoints.Add(address);
             Changed?.Invoke();
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
 
     public async Task RemoveBreakpointAsync(ushort address, CancellationToken token = default)
@@ -337,7 +372,10 @@ public sealed partial class Mon51DebugSession(string dataDirectory, string confi
             }
             Changed?.Invoke();
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
 
     private async Task SetPcCoreAsync(ushort address, CancellationToken token)
@@ -491,7 +529,10 @@ public sealed partial class Mon51DebugSession(string dataDirectory, string confi
                     client = null;
                 }
             }
-            finally { gate.Release(); }
+            finally
+            {
+                gate.Release();
+            }
         }
         if (runningTask is not null)
         {
@@ -534,7 +575,10 @@ public sealed partial class Mon51DebugSession(string dataDirectory, string confi
                 client = null;
             }
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
 
     public async ValueTask DisposeAsync()
@@ -547,6 +591,10 @@ public sealed partial class Mon51DebugSession(string dataDirectory, string confi
         {
             await StopAsync();
         }
-        finally { disposed = true; runningLifetime?.Dispose(); }
+        finally
+        {
+            disposed = true;
+            runningLifetime?.Dispose();
+        }
     }
 }

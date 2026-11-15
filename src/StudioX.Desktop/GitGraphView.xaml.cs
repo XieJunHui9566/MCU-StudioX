@@ -86,6 +86,7 @@ public partial class GitGraphView : UserControl
         DiffBox.Text = projectDirectory is null ? "打开工程后可查看 Git 历史。" : "打开 Git 图谱后读取提交历史。";
         DetailTitle.Text = "选择一条提交查看详情";
         DetailMetadata.Text = "";
+        ShowEmptyHistory(projectDirectory is null ? "打开工程以查看 Git 历史" : "准备读取提交历史", DiffBox.Text);
         CurrentBranchText.Text = projectDirectory is null ? "未打开工程" : "待读取";
         WorkingSummary.Text = projectDirectory is null ? "打开工程后显示更改" : "待读取";
         GitStatus.Text = projectDirectory is null ? "请先打开工程" : "准备读取本地仓库";
@@ -115,9 +116,24 @@ public partial class GitGraphView : UserControl
         {
             await RefreshCoreAsync();
         }
-        catch (OperationCanceledException) when (token.IsCancellationRequested) { }
-        catch (Exception ex) { if (version == projectVersion) { ShowFailure("读取 Git 图谱失败", ex, dialog: false); } }
-        finally { if (version == projectVersion) { busy = false; UpdateActions(); } }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+        }
+        catch (Exception ex)
+        {
+            if (version == projectVersion)
+            {
+                ShowFailure("读取 Git 图谱失败", ex, dialog: false);
+            }
+        }
+        finally
+        {
+            if (version == projectVersion)
+            {
+                busy = false;
+                UpdateActions();
+            }
+        }
     }
 
     private async Task RefreshCoreAsync()
@@ -193,6 +209,7 @@ public partial class GitGraphView : UserControl
         var labels = snapshot.Refs.GroupBy(r => r.Hash, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(g => g.Key, g => (IReadOnlyList<string>)g.Select(r => r.Name).ToArray(), StringComparer.OrdinalIgnoreCase);
         var rows = visible.Select((commit, i) => new GitCommitRow(commit, graph[i], labels.GetValueOrDefault(commit.Hash) ?? [])).ToArray();
+        EmptyHistory.Visibility = rows.Length == 0 ? Visibility.Visible : Visibility.Collapsed;
         CommitList.ItemsSource = rows;
         CommitList.SelectedItem = rows.FirstOrDefault(r => r.Commit.Hash == selectHash) ?? rows.FirstOrDefault();
         if (rows.Length == 0)
@@ -201,6 +218,7 @@ public partial class GitGraphView : UserControl
             DetailMetadata.Text = "";
             DiffBox.Text = snapshot.Commits.Count == 0 ? "先暂存文件并创建首次提交。" : "调整分支筛选或搜索词。";
             ChangedFilesList.ItemsSource = null;
+            ShowEmptyHistory(DetailTitle.Text, DiffBox.Text);
         }
     }
 
@@ -278,7 +296,9 @@ public partial class GitGraphView : UserControl
             await RefreshCoreAsync();
             GitStatus.Text = label + "完成。";
         }
-        catch (OperationCanceledException) when (token.IsCancellationRequested) { }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+        }
         catch (Exception ex)
         {
             // 合并产生冲突时 Git 会返回非零退出码，但工作区已经改变；仍需重载代码与状态。
@@ -297,7 +317,10 @@ public partial class GitGraphView : UserControl
                     }
                     await RefreshCoreAsync();
                 }
-                catch (Exception refreshError) { LogDiagnostic?.Invoke("Git 操作失败后刷新工作区失败：" + refreshError); }
+                catch (Exception refreshError)
+                {
+                    LogDiagnostic?.Invoke("Git 操作失败后刷新工作区失败：" + refreshError);
+                }
             }
             ShowFailure(label + "失败", ex, dialog: true);
         }
@@ -388,8 +411,16 @@ public partial class GitGraphView : UserControl
             }
             await MutateAsync("发布当前分支", (dir, token) => service.PublishBranchAsync(dir, remote.Trim(), branch, token));
         }
-        catch (OperationCanceledException) when (token.IsCancellationRequested) { }
-        catch (Exception ex) { if (version == projectVersion) { ShowFailure("读取远端配置失败", ex, dialog: true); } }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+        }
+        catch (Exception ex)
+        {
+            if (version == projectVersion)
+            {
+                ShowFailure("读取远端配置失败", ex, dialog: true);
+            }
+        }
     }
     private void Settings_Click(object sender, RoutedEventArgs e)
     {
@@ -437,8 +468,16 @@ public partial class GitGraphView : UserControl
             }
             await MutateAsync("保存提交身份", (dir, token) => service.SetLocalIdentityAsync(dir, name.Trim(), email.Trim(), token));
         }
-        catch (OperationCanceledException) when (token.IsCancellationRequested) { }
-        catch (Exception ex) { if (version == projectVersion) { ShowFailure("读取提交身份失败", ex, dialog: true); } }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+        }
+        catch (Exception ex)
+        {
+            if (version == projectVersion)
+            {
+                ShowFailure("读取提交身份失败", ex, dialog: true);
+            }
+        }
     }
     private async Task ConfigureRemoteAsync()
     {
@@ -472,8 +511,16 @@ public partial class GitGraphView : UserControl
             }
             await MutateAsync("添加远端", (dir, token) => service.AddRemoteAsync(dir, name.Trim(), url.Trim(), token));
         }
-        catch (OperationCanceledException) when (token.IsCancellationRequested) { }
-        catch (Exception ex) { if (version == projectVersion) { ShowFailure("读取远端配置失败", ex, dialog: true); } }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+        }
+        catch (Exception ex)
+        {
+            if (version == projectVersion)
+            {
+                ShowFailure("读取远端配置失败", ex, dialog: true);
+            }
+        }
     }
     private void Filter_Changed(object sender, SelectionChangedEventArgs e)
     {
@@ -662,6 +709,12 @@ public partial class GitGraphView : UserControl
         }
         var version = ++detailVersion;
         selectedCommitHash = hash;
+        selectedDetails = null;
+        ShowDetailPane("提交详情", hasFileList: true);
+        DetailTitle.Text = "正在读取提交…";
+        DetailMetadata.Text = hash;
+        ChangedFilesList.ItemsSource = null;
+        DiffBox.Text = "正在读取差异…";
         GitStatus.Text = "正在读取提交详情…";
         try
         {
@@ -684,8 +737,16 @@ public partial class GitGraphView : UserControl
             }
             GitStatus.Text = $"提交 {hash[..Math.Min(8, hash.Length)]} · {details.Files.Count} 个文件";
         }
-        catch (OperationCanceledException) when (projectCancellation.IsCancellationRequested) { }
-        catch (Exception ex) { if (version == detailVersion) { ShowFailure("读取提交详情失败", ex, dialog: false); } }
+        catch (OperationCanceledException) when (projectCancellation.IsCancellationRequested)
+        {
+        }
+        catch (Exception ex)
+        {
+            if (version == detailVersion)
+            {
+                ShowFailure("读取提交详情失败", ex, dialog: false);
+            }
+        }
     }
     private void ChangedFiles_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
@@ -709,8 +770,16 @@ public partial class GitGraphView : UserControl
                 DiffBox.Text = diff.Text + (diff.Truncated ? "\n… 差异已截断" : "");
             }
         }
-        catch (OperationCanceledException) when (projectCancellation.IsCancellationRequested) { }
-        catch (Exception ex) { if (version == detailVersion) { ShowFailure("读取差异失败", ex, dialog: false); } }
+        catch (OperationCanceledException) when (projectCancellation.IsCancellationRequested)
+        {
+        }
+        catch (Exception ex)
+        {
+            if (version == detailVersion)
+            {
+                ShowFailure("读取差异失败", ex, dialog: false);
+            }
+        }
     }
     private async Task ShowWorkingDiffAsync(GitWorkingFile file)
     {
@@ -725,6 +794,7 @@ public partial class GitGraphView : UserControl
         selectedCommitHash = null;
         selectedDetails = null;
         DetailTitle.Text = file.Path;
+        ShowDetailPane("工作区更改", hasFileList: false);
         DetailMetadata.Text = "工作区更改 · " + (file.IsUntracked ? "未跟踪" : $"索引 {file.IndexStatus} / 工作区 {file.WorkTreeStatus}");
         ChangedFilesList.ItemsSource = null;
         DiffBox.Text = "正在读取差异…";
@@ -753,8 +823,16 @@ public partial class GitGraphView : UserControl
                 DiffBox.Text = string.Join("\n\n", parts) + (truncated ? "\n… 差异已截断" : "");
             }
         }
-        catch (OperationCanceledException) when (token.IsCancellationRequested) { }
-        catch (Exception ex) { if (version == detailVersion && project == projectVersion) { ShowFailure("读取工作区差异失败", ex, dialog: false); } }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+        }
+        catch (Exception ex)
+        {
+            if (version == detailVersion && project == projectVersion)
+            {
+                ShowFailure("读取工作区差异失败", ex, dialog: false);
+            }
+        }
     }
     private async void Compare_Click(object sender, RoutedEventArgs e) => await CompareSelectedAsync();
     private async Task CompareSelectedAsync()
@@ -781,6 +859,7 @@ public partial class GitGraphView : UserControl
         selectedCommitHash = null;
         selectedDetails = null;
         DetailTitle.Text = "提交比较";
+        ShowDetailPane("提交比较", hasFileList: false);
         DetailMetadata.Text = $"{from[..Math.Min(8, from.Length)]} → {to[..Math.Min(8, to.Length)]}";
         ChangedFilesList.ItemsSource = null;
         DiffBox.Text = "正在比较提交…";
@@ -793,8 +872,16 @@ public partial class GitGraphView : UserControl
                 GitStatus.Text = "已比较两条提交。";
             }
         }
-        catch (OperationCanceledException) when (projectCancellation.IsCancellationRequested) { }
-        catch (Exception ex) { if (version == detailVersion) { ShowFailure("比较提交失败", ex, dialog: false); } }
+        catch (OperationCanceledException) when (projectCancellation.IsCancellationRequested)
+        {
+        }
+        catch (Exception ex)
+        {
+            if (version == detailVersion)
+            {
+                ShowFailure("比较提交失败", ex, dialog: false);
+            }
+        }
     }
 
     private string? PromptText(string title, string label, string initial)
@@ -832,6 +919,7 @@ public partial class GitGraphView : UserControl
         public string Author => Commit.Author;
         public string DateText => Commit.AuthoredAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm");
         public string ShortHash => Commit.Hash[..Math.Min(8, Commit.Hash.Length)];
+        public string RefText => string.Join(" · ", Refs);
     }
     private sealed record GitWorkingRow(GitWorkingFile File)
     {

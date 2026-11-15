@@ -155,7 +155,10 @@ public sealed class AgentEditorSession(WorkbenchService services, string project
             Changed?.Invoke();
             return plan;
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
     public async Task UndoAsync(string id, CancellationToken token = default)
         => await UndoPlansAsync([Find(id)], token);
@@ -209,7 +212,10 @@ public sealed class AgentEditorSession(WorkbenchService services, string project
             ValidationStatus = "已撤销修改，原验证结果已过期";
             Changed?.Invoke();
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
     public async Task SaveForBuildAsync(CancellationToken token = default)
     {
@@ -248,7 +254,12 @@ public sealed class AgentEditorSession(WorkbenchService services, string project
         }
         var inverse = new List<TextSearchMatch>();
         var delta = 0;
-        var positions = change.Matches.OrderBy(m => m.Start).Select(m => { var at = m.Start + delta; delta += m.Replacement.Length - m.Length; return (Match: m, At: at); }).ToArray();
+        var positions = change.Matches.OrderBy(m => m.Start).Select(m =>
+        {
+            var at = m.Start + delta;
+            delta += m.Replacement.Length - m.Length;
+            return (Match: m, At: at);
+        }).ToArray();
         foreach (var (edit, at) in positions.Reverse())
         {
             var left = change.After.Substring(Math.Max(0, at - 32), Math.Min(32, at));

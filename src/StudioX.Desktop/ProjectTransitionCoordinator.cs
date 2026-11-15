@@ -4,7 +4,6 @@ namespace StudioX.Desktop;
 internal sealed class ProjectTransitionCoordinator(
     Func<Task> stopAgentAsync,
     Func<Task> persistBreakpointsAsync,
-    Func<CancellationToken, Task> stopPreviewAsync,
     Func<CancellationToken, Task> stopDebuggerAsync,
     Func<CancellationToken, Task> stopEditorAsync)
 {
@@ -14,7 +13,6 @@ internal sealed class ProjectTransitionCoordinator(
         await stopAgentAsync();
         token.ThrowIfCancellationRequested();
         await persistBreakpointsAsync();
-        await stopPreviewAsync(token);
         // 断点先持久化；调试导航结束后才能释放编辑器文本锚点。
         await stopDebuggerAsync(token);
         await stopEditorAsync(token);

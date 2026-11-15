@@ -29,7 +29,9 @@ public partial class MainWindow
         {
             ApplyTheme(theme);
             UpdateLayout();
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.Render);
             Render(this, Path.Combine(directory, "editor-" + theme.Id + ".png"));
         }
         ApplyTheme(ThemeService.Dark);
@@ -42,7 +44,9 @@ public partial class MainWindow
                 GlowStrength = strength
             });
             UpdateLayout();
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.Render);
             Render(SourceEditor, Path.Combine(directory, $"glow-{strength:0}.png"));
         }
         ApplyEditorSettings(savedEditor);
@@ -55,7 +59,9 @@ public partial class MainWindow
             }
             await OpenSourceAsync(relative, CancellationToken.None);
             UpdateLayout();
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.Render);
             if (activeDocument?.ReadOnlyReason is not null)
             {
                 var before = SourceEditor.Text;
@@ -73,10 +79,17 @@ public partial class MainWindow
         {
             throw new InvalidOperationException("用户根配置不应只读。");
         }
-        await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+        await Dispatcher.InvokeAsync(() =>
+        {
+        }, DispatcherPriority.Render);
         Render(this, Path.Combine(directory, "user-cmake.png"));
         var settings = new AppearanceWindow(services, currentTheme, backgroundSettings, editorSettings,
-            (theme, background, editor) => { ApplyTheme(theme); ApplyBackground(background); ApplyEditorSettings(editor); })
+            (theme, background, editor) =>
+            {
+                ApplyTheme(theme);
+                ApplyBackground(background);
+                ApplyEditorSettings(editor);
+            })
         {
             Owner = this,
             ShowActivated = false,
@@ -86,7 +99,9 @@ public partial class MainWindow
         };
         settings.Show();
         settings.UpdateLayout();
-        await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+        await Dispatcher.InvokeAsync(() =>
+        {
+        }, DispatcherPriority.Render);
         Render(settings, Path.Combine(directory, "editor-settings.png"));
         settings.Close();
         await File.WriteAllTextAsync(Path.Combine(directory, "result.txt"), "Loaded all nine syntax definitions (dark/light). Rendered source, header, CMake and editor settings. Project files were not modified.\n");
@@ -101,11 +116,18 @@ public partial class MainWindow
         {
             ApplyTheme(theme);
             UpdateLayout();
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.Render);
             Render(this, Path.Combine(directory, theme.Id + ".png"));
         }
         ApplyTheme(ThemeService.Dark);
-        var settings = new AppearanceWindow(services, currentTheme, backgroundSettings, editorSettings, (theme, background, editor) => { ApplyTheme(theme); ApplyBackground(background); ApplyEditorSettings(editor); })
+        var settings = new AppearanceWindow(services, currentTheme, backgroundSettings, editorSettings, (theme, background, editor) =>
+        {
+            ApplyTheme(theme);
+            ApplyBackground(background);
+            ApplyEditorSettings(editor);
+        })
         {
             Owner = this,
             ShowActivated = false,
@@ -115,7 +137,9 @@ public partial class MainWindow
         };
         settings.Show();
         settings.UpdateLayout();
-        await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+        await Dispatcher.InvokeAsync(() =>
+        {
+        }, DispatcherPriority.Render);
         Render(settings, Path.Combine(directory, "appearance.png"));
         settings.Close();
         AiSidebarColumn.Width = new GridLength(400);
@@ -152,16 +176,22 @@ public partial class MainWindow
         {
             ApplyTheme(theme);
             UpdateLayout();
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.Render);
             Render(this, Path.Combine(directory, "ai-" + theme.Id + ".png"));
         }
         ApplyTheme(ThemeService.Dark);
         AiSidebarColumn.Width = new GridLength(320);
         UpdateLayout();
-        await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+        await Dispatcher.InvokeAsync(() =>
+        {
+        }, DispatcherPriority.Render);
         Render(this, Path.Combine(directory, "ai-compact.dark.png"));
         AiHistoryPopup.IsOpen = true;
-        await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+        await Dispatcher.InvokeAsync(() =>
+        {
+        }, DispatcherPriority.Render);
         if (AiHistoryPopup.Child is not FrameworkElement historyPanel ||
             historyPanel.ActualWidth <= 0 || historyPanel.ActualHeight <= 0)
         {
@@ -178,7 +208,9 @@ public partial class MainWindow
         DrainAiActivityProgress();
         AiActivity.ExpandReasoningPreview();
         UpdateLayout();
-        await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+        await Dispatcher.InvokeAsync(() =>
+        {
+        }, DispatcherPriority.Render);
         Render(this, Path.Combine(directory, "ai-working.dark.png"));
         FinishAiActivity();
         var previousProject = projectDirectory;
@@ -195,7 +227,9 @@ public partial class MainWindow
                     "将 src/main.c 中的 LED 闪烁间隔改为 200 ms。仅用于界面预览。",
                     StudioXMcpPermission.FileWrite), aiProjectGeneration, previewApprovalCancellation.Token);
             UpdateLayout();
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.Render);
             Render(this, Path.Combine(directory, "ai-approval.dark.png"));
         }
         finally

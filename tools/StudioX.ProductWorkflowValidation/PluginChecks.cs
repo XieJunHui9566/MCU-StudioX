@@ -69,6 +69,9 @@ internal static class PluginChecks
             await manager.RollbackAsync(previous);
             check(false, "rollback archive changed");
         }
-        catch (StudioXException error) { check(error.Code == "PLUGIN_ROLLBACK_CHANGED", "changed rollback archive rejected before replacing current plugin"); }
+        catch (StudioXException error)
+        {
+            check(error.Code == "PLUGIN_ROLLBACK_CHANGED", "changed rollback archive rejected before replacing current plugin");
+        }
     }
 }

@@ -106,7 +106,13 @@ public sealed partial class PluginManagerService : IAsyncDisposable
             token.ThrowIfCancellationRequested();
             File.Move(temp, archive);
         }
-        finally { if (File.Exists(temp)) { File.Delete(temp); } }
+        finally
+        {
+            if (File.Exists(temp))
+            {
+                File.Delete(temp);
+            }
+        }
     }
 
     public Task<IReadOnlyList<PluginRollbackVersion>> ListRollbackAsync(string id, CancellationToken token = default) => Task.Run<IReadOnlyList<PluginRollbackVersion>>(() =>

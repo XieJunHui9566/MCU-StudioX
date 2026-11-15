@@ -75,6 +75,10 @@ public partial class MainWindow
                 }
             }
         }
-        catch (Exception error) { view.SetDiagnostic(error.ToString()); throw; }
+        catch (Exception error)
+        {
+            view.SetDiagnostic(error.ToString());
+            throw;
+        }
     });
 }

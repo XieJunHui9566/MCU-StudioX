@@ -284,7 +284,13 @@ public static class Ag32SystemSupport
             token.ThrowIfCancellationRequested();
             File.Move(temporary, path, true);
         }
-        finally { if (File.Exists(temporary)) { File.Delete(temporary); } }
+        finally
+        {
+            if (File.Exists(temporary))
+            {
+                File.Delete(temporary);
+            }
+        }
     }
 
     private static string Resource(string extension)

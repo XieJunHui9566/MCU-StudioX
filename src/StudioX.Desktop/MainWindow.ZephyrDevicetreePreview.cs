@@ -31,7 +31,9 @@ public partial class MainWindow
             throw new InvalidOperationException("文件结构没有显示当前 DTS 源文件中的节点层级。");
         }
         UpdateLayout();
-        await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+        await Dispatcher.InvokeAsync(() =>
+        {
+        }, DispatcherPriority.Render);
         Render(this, Path.Combine(directory, "zephyr-devicetree.png"));
 
         var leds = outlineSymbols.SelectMany(symbol => symbol.Children).Single(symbol => symbol is { Kind: 255, Name: "leds" });

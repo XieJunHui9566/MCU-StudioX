@@ -54,7 +54,13 @@ internal static class AcquisitionChecks
         await JsonStore.WriteAsync(fixture.ProjectFile, fixture.Manifest);
         using (var cancelled = new CancellationTokenSource())
         {
-            var progress = new ImmediateProgress(text => { if (text == "已安装 test.acquire/1.0.0") { cancelled.Cancel(); } });
+            var progress = new ImmediateProgress(text =>
+            {
+                if (text == "已安装 test.acquire/1.0.0")
+                {
+                    cancelled.Cancel();
+                }
+            });
             await Cancel(() => fixture.Service.InstallManualAsync(plan, previews, progress, cancelled.Token),
                 "cancellation between components stops the remaining batch", check);
         }
@@ -164,7 +170,10 @@ internal static class AcquisitionChecks
             await action();
             throw new InvalidOperationException(label);
         }
-        catch (StudioXException error) { check(error.Code == code, label + " · " + error.Code); }
+        catch (StudioXException error)
+        {
+            check(error.Code == code, label + " · " + error.Code);
+        }
     }
     private static async Task Cancel(Func<Task> action, string label, Action<bool, string> check)
     {
@@ -173,7 +182,10 @@ internal static class AcquisitionChecks
             await action();
             throw new InvalidOperationException(label);
         }
-        catch (OperationCanceledException) { check(true, label); }
+        catch (OperationCanceledException)
+        {
+            check(true, label);
+        }
     }
     private sealed class ImmediateProgress(Action<string> action) : IProgress<string>
     {

@@ -22,7 +22,11 @@ public sealed class PicDebugService(ToolsetCatalog catalog, PicBuildService buil
         {
             return await StartCoreAsync(root, serial, storage, output, token);
         }
-        catch { storage.Dispose(); throw; }
+        catch
+        {
+            storage.Dispose();
+            throw;
+        }
     }
 
     private async Task<MdbDebugAdapter> StartCoreAsync(string root, string? serial, ProjectBuildStorage storage, IProgress<string>? output, CancellationToken token)
@@ -109,7 +113,12 @@ public sealed class PicDebugService(ToolsetCatalog catalog, PicBuildService buil
                     });
                 }
             }
-            finally { probe?.Dispose(); toolLease.Dispose(); storage.Dispose(); }
+            finally
+            {
+                probe?.Dispose();
+                toolLease.Dispose();
+                storage.Dispose();
+            }
         }
         MdbDebugAdapter? adapter = null;
         try
@@ -173,7 +182,10 @@ public sealed class PicDebugService(ToolsetCatalog catalog, PicBuildService buil
                     await Finish();
                 }
             }
-            catch (Exception cleanup) { throw new AggregateException("PIC 调试启动失败，退出恢复也未完整确认；请保留原始日志和 before.hex。", failure, cleanup); }
+            catch (Exception cleanup)
+            {
+                throw new AggregateException("PIC 调试启动失败，退出恢复也未完整确认；请保留原始日志和 before.hex。", failure, cleanup);
+            }
             throw;
         }
     }
@@ -182,8 +194,8 @@ public sealed class PicDebugService(ToolsetCatalog catalog, PicBuildService buil
     {
         var home = PathBoundary.Resolve(dataDirectory, "pic/mdb-ipe-user");
         Directory.CreateDirectory(home);
-        var result = await new ProcessRunner().RunAsync(new(tools.Tool("java"), ["-Duser.home=" + home, "-Duser.language=en", "-Duser.country=US", "-Dfile.encoding=UTF-8", "-jar", tools.Tool("ipecmd"), .. arguments],
-            home, TimeSpan.FromMinutes(5), ToolsetEnvironment.Create(tools), RemoveEnvironment: [.. ToolsetEnvironment.AmbientVariables, "JAVA_HOME", "JRE_HOME", "JAVA_TOOL_OPTIONS", "JDK_JAVA_OPTIONS", "_JAVA_OPTIONS", "CLASSPATH"],
+        var result = await new ProcessRunner().RunAsync(new(tools.Tool("java"), [.. PicJavaRuntime.Options(home), "-jar", tools.Tool("ipecmd"), .. arguments],
+            home, TimeSpan.FromMinutes(5), ToolsetEnvironment.Create(tools), RemoveEnvironment: PicJavaRuntime.AmbientVariables,
             Output: output, StreamCompleteOutput: true, ContainProcessTree: true), token);
         var text = result.StandardOutput + "\n" + result.StandardError;
         await File.AppendAllTextAsync(logPath, string.Join(' ', arguments) + "\n" + text + "\n", CancellationToken.None);

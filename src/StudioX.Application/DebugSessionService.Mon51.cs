@@ -105,7 +105,9 @@ public sealed partial class DebugSessionService
                 {
                     await LoadMon51SymbolsCoreAsync(monitor, token);
                 }
-                catch (StudioXException ex) when (IsMon51SymbolError(ex)) { }
+                catch (StudioXException ex) when (IsMon51SymbolError(ex))
+                {
+                }
             }
             catch (Exception error)
             {
@@ -118,7 +120,11 @@ public sealed partial class DebugSessionService
                     await monitor.AbortStartAsync();
                     await monitor.DisposeAsync();
                 }
-                catch (Exception cleanup) { released = false; Trace("连接失败后的清理诊断：" + cleanup); }
+                catch (Exception cleanup)
+                {
+                    released = false;
+                    Trace("连接失败后的清理诊断：" + cleanup);
+                }
                 MonitorSession = null;
                 IsHardware = false;
                 HardwareTargetName = null;
@@ -139,7 +145,10 @@ public sealed partial class DebugSessionService
             SessionLogPath = monitor.LogPath;
             return true;
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
 
     public async Task LoadMon51SymbolsAsync(CancellationToken token = default)
@@ -149,7 +158,10 @@ public sealed partial class DebugSessionService
         {
             await LoadMon51SymbolsCoreAsync(MonitorSession ?? throw Error("请先连接 Mon51。"), token);
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
 
     private static bool IsMon51SymbolError(StudioXException error) => error.Code is "MON51_SOURCE_CHANGED" or "MON51_SYMBOLS" or "MON51_ARTIFACT_CHANGED" or "MON51_IMAGE_MISMATCH" or "MON51_CDB";

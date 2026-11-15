@@ -1,0 +1,63 @@
+MX251 native floating runtime source build
+
+BuildNativeFloat.py creates the existing 64-member small/stack-auto native
+floating archive from source. It requires no reference archive, IDE service,
+installed StudioX directory, or global environment change. CMake records the
+complete member graph; Ninja executes compilation, ABI-preserving assembly
+rewrites, assembly and deterministic archiving. No hardware is accessed.
+
+Public invocation (all tool/input paths supplied by the caller):
+
+python -B BuildNativeFloat.py --source SOURCE --compiler SDCC_EXE
+  --toolchain TOOLCHAIN_ROOT --cmake CMAKE_EXE --ninja NINJA_EXE
+  --output NEW_OUTPUT_DIRECTORY
+
+Run the invocation as one shell command. Python 3.11 or newer, CMake 3.25 or
+newer and the locked Windows toolchain layout are required. This preserves the
+currently verified Windows host contract; it does not claim Linux/macOS support.
+TOOLCHAIN_ROOT/bin must provide sdcpp.exe, sdas251.exe and sdar.exe plus their
+runtime dependencies. The compiler may be an explicitly selected overlay.
+SOURCE must contain the complete effective device/include and device/lib trees.
+
+NEW_OUTPUT_DIRECTORY must not exist and must be outside source/toolchain/builder
+inputs. The entry never deletes or reuses an earlier build directory. Unknown
+or unsupported models are not inferred: this recipe only builds small/stack-auto.
+
+Source, headers/includes, recipe implementation, compiler, supporting tool
+directory, CMake, Ninja and Python executable hashes are recorded in input-lock.json
+and rechecked before publishing. Public and per-member tool calls retain raw
+stdout, stderr and command JSON. The calling process environment is unchanged;
+only child processes receive the explicit locked tool search path.
+
+Successful outputs:
+  libnativefloat.lib      Complete archive with deterministic member order
+  receipt.json            Archive/compiler/input-lock hashes and all64 members
+  input-lock.json         Source/header/tool content evidence
+  CMakeLists.txt, build/  Actual CMake/Ninja graph and logs
+  objects/               Compiled ASM/REL/LST, bridge outputs and raw logs
+
+Failure outputs retain diagnostics and failure.json, without a final archive or
+successful receipt. Consume the archive only after checking status=complete,
+archiveSha256 and the selected compiler/input hashes in receipt.json. The hidden
+worker options are internal CMake build steps, not profile publication commands.
+
+The frozen recipe retains original size flags, std-c23, small/stack-auto,
+per-member native/wide flags, ABI2-to-ABI4 conversion bridges, native float symbol
+renames, and the shared fsmul_fast.inc assembly prefix. Sincos/tancot wide-helper
+admission checks remain explicit. It introduces no new math approximation,
+rounding policy, supported input domain, calling convention, or memory model.
+
+Integration boundary:
+  BuildSource.py still builds the compiler/assembler/linker; it is unchanged.
+  A candidate pipeline first obtains the intended compiler, invokes this entry,
+  verifies the receipt, and copies the library into isolated target profiles.
+  The copied profile content lock must record the resulting archive hash.
+  A compiler change cannot silently retain a runtime cache keyed only by version:
+  any reuse must match compiler/source/header/recipe/support-tool contents.
+  Existing CMake/Ninja firmware entry and SDK content validation remain shared
+  between CLI and IDE. This entry does not install, select defaults, bump versions,
+  grant target qualification or alter application-project source ownership.
+
+Mathematical/ABI/ISR validation and complete firmware comparisons are still
+required before promoting changed runtime images. A successful source build is
+not hardware acceptance, IEEE754 certification or permission to replace tools.

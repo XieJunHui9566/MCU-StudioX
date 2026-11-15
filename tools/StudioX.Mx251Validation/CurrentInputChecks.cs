@@ -76,7 +76,10 @@ internal static class CurrentInputChecks
                 await isp.PrepareAsync(root);
                 return true;
             }
-            catch (StudioXException e) when (e.Code == "MX251_ISP") { return false; }
+            catch (StudioXException e) when (e.Code == "MX251_ISP")
+            {
+                return false;
+            }
         }
         void NoFirmware(string label)
         {
@@ -133,7 +136,10 @@ internal static class CurrentInputChecks
             }));
             throw new InvalidOperationException("Changed configure input incorrectly published");
         }
-        catch (StudioXException e) when (e.Code == "MX251_SOURCE_CHANGED") { Check(changedDuringBuild == 1, "during-build input change rejects publication"); }
+        catch (StudioXException e) when (e.Code == "MX251_SOURCE_CHANGED")
+        {
+            Check(changedDuringBuild == 1, "during-build input change rejects publication");
+        }
         NoFirmware("input change");
         await Build("after-input-change");
         await File.WriteAllTextAsync(cmakePath, nestedCMake + "\nmessage(FATAL_ERROR \"expected configure failure\")\n");
@@ -153,7 +159,10 @@ internal static class CurrentInputChecks
             await builder.BuildAsync(root);
             throw new InvalidOperationException("Invalid configuration accepted");
         }
-        catch (StudioXException e) { Check(e.Code == "MX251_CLOCK", "early invalid configuration rejected"); }
+        catch (StudioXException e)
+        {
+            Check(e.Code == "MX251_CLOCK", "early invalid configuration rejected");
+        }
         NoFirmware("early rejection");
         await File.WriteAllTextAsync(configPath, config);
         await Build("early-recovery");
@@ -162,10 +171,19 @@ internal static class CurrentInputChecks
             await File.WriteAllTextAsync(cmakePath, nestedCMake + "\nmessage(STATUS \"MX251_CANCEL_POINT\")\nexecute_process(COMMAND \"${CMAKE_COMMAND}\" -E sleep 10)\n");
             try
             {
-                await builder.BuildAsync(root, cancellationToken: cancel.Token, output: new Output(line => { if (line.Contains("MX251_CANCEL_POINT")) { cancel.Cancel(); } }));
+                await builder.BuildAsync(root, cancellationToken: cancel.Token, output: new Output(line =>
+                {
+                    if (line.Contains("MX251_CANCEL_POINT"))
+                    {
+                        cancel.Cancel();
+                    }
+                }));
                 throw new InvalidOperationException("Cancellation did not stop build");
             }
-            catch (OperationCanceledException) { Check(cancel.IsCancellationRequested, "configuration cancellation propagated"); }
+            catch (OperationCanceledException)
+            {
+                Check(cancel.IsCancellationRequested, "configuration cancellation propagated");
+            }
         }
         NoFirmware("cancelled");
         await File.WriteAllTextAsync(cmakePath, nestedCMake);

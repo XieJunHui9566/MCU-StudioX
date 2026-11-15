@@ -87,11 +87,29 @@ try
             {
                 $last = [Math]::Min($offset + 127, $files.Count - 1)
                 $batch = $files[$offset..$last]
-                $formatArguments = @('format', 'whitespace', $sourceRoot, '--folder', '--include') + $batch
-                & dotnet @formatArguments
-                if ($LASTEXITCODE -ne 0)
+                # 嵌套回调的缩进锚点有时需要 SDK 再处理一遍；仅重排发生变化的文件。
+                # 固定点检查保证本次写回后，下一次 -Check 不再产生新的排版差异。
+                $pendingFiles = $batch
+                for ($pass = 0; $pass -lt 3 -and $pendingFiles.Count -gt 0; $pass++)
                 {
-                    throw 'C# whitespace style check failed.'
+                    $beforePass = @{}
+                    foreach ($relative in $pendingFiles)
+                    {
+                        $beforePass[$relative] = [IO.File]::ReadAllText((Join-Path $sourceRoot $relative))
+                    }
+                    $formatArguments = @('format', 'whitespace', $sourceRoot, '--folder', '--include') + $pendingFiles
+                    & dotnet @formatArguments
+                    if ($LASTEXITCODE -ne 0)
+                    {
+                        throw 'C# whitespace style check failed.'
+                    }
+                    $pendingFiles = @($pendingFiles | Where-Object {
+                            [IO.File]::ReadAllText((Join-Path $sourceRoot $_)) -cne $beforePass[$_]
+                        })
+                }
+                if ($pendingFiles.Count -gt 0)
+                {
+                    throw 'C# whitespace formatting did not converge within three passes.'
                 }
             }
         }

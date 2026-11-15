@@ -46,7 +46,10 @@ public static partial class Mx251SdkProfile
         {
             return JsonDocument.Parse(File.ReadAllBytes(file));
         }
-        catch (JsonException error) { throw new StudioXException("MX251_SDK", "SDK 清单不是有效 JSON。", error); }
+        catch (JsonException error)
+        {
+            throw new StudioXException("MX251_SDK", "SDK 清单不是有效 JSON。", error);
+        }
     }
     internal static void Validate(ResolvedToolset tools)
     {

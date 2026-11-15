@@ -22,7 +22,9 @@ public partial class MainWindow
         }
         async Task Settle()
         {
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ContextIdle);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.ContextIdle);
             UpdateLayout();
         }
         Width = 1440;
@@ -81,7 +83,9 @@ public partial class MainWindow
         {
             await services.DebugLaunch.StartAsync(Path.Combine(directory, "missing-project"), false);
         }
-        catch (Exception) { /* 缺少工程是界面验证输入；原始错误由应用服务保留。 */ }
+        catch (Exception)
+        { /* 缺少工程是界面验证输入；原始错误由应用服务保留。 */
+        }
         var connection = new DebugConnectionWindow(services.DebugLaunch, "离线连接记录示例：本地准备失败，未访问探针", false,
             (_, _) => throw new InvalidOperationException("预览禁止连接"), review: true)
         {

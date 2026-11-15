@@ -24,8 +24,12 @@ public partial class MainWindow
         async Task Layout()
         {
             UpdateLayout();
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Loaded);
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.Loaded);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.Render);
         }
         async Task<string> Fixture(string name)
         {
@@ -98,7 +102,10 @@ public partial class MainWindow
             await DeleteRecentProjectAsync(new("示例工程", keep, DateTimeOffset.Now), CancellationToken.None, _ => true);
             throw new InvalidOperationException("Open project deleted.");
         }
-        catch (StudioXException ex) when (ex.Code == "PROJECT_DELETE_OPEN") { checks.Add("service also rejects open project deletion"); }
+        catch (StudioXException ex) when (ex.Code == "PROJECT_DELETE_OPEN")
+        {
+            checks.Add("service also rejects open project deletion");
+        }
         await CloseProjectAsync(CancellationToken.None);
         await DeleteRecentProjectAsync(target, CancellationToken.None, _ => true);
         Check(!Directory.Exists(recycle) && !(await services.RecentProjects.LoadAsync()).Any(p => p.Directory == recycle) && File.Exists(Path.Combine(keep, "src/main.c")), "confirmed deletion recycles only selected path and refreshes list");

@@ -37,7 +37,10 @@ public partial class MainWindow
         {
             toolManagementView.SetReport(await services.ToolManagement.InspectAsync(toolManagementProject, token: token));
         }
-        finally { toolManagementView.SetBusy(false); }
+        finally
+        {
+            toolManagementView.SetBusy(false);
+        }
     }
     private Task RunToolManagementActionAsync(string action)
     {
@@ -96,7 +99,13 @@ public partial class MainWindow
             }
             var progressEnabled = true;
             toolManagementView!.SetBusy(true);
-            var progress = new Progress<string>(text => { if (progressEnabled) { toolManagementView.SetBusy(true, text); } });
+            var progress = new Progress<string>(text =>
+            {
+                if (progressEnabled)
+                {
+                    toolManagementView.SetBusy(true, text);
+                }
+            });
             try
             {
                 if (action == "install")
@@ -222,13 +231,20 @@ public partial class MainWindow
                     {
                         await RefreshToolManagementAsync(CancellationToken.None);
                     }
-                    catch (Exception refreshFailure) { Log(FailureDiagnostic(refreshFailure)); }
+                    catch (Exception refreshFailure)
+                    {
+                        Log(FailureDiagnostic(refreshFailure));
+                    }
                     toolManagementView.SetBusy(false, "操作失败：" + error.Message);
                     toolManagementView.DetailText.Text = FailureDiagnostic(error);
                 }
                 throw;
             }
-            finally { progressEnabled = false; toolManagementView.SetBusy(false); }
+            finally
+            {
+                progressEnabled = false;
+                toolManagementView.SetBusy(false);
+            }
         });
     }
     private static string ComponentImpact(ManagedToolVersion selected) => $"{selected.Name}\n{selected.Id} / {selected.Version} · {selected.StateText}\n"
@@ -260,7 +276,11 @@ public partial class MainWindow
                 await services.ToolManagement.ForgetProjectAsync(project, token);
                 list.ItemsSource = await services.ToolManagement.RegisteredAsync(token);
             }
-            catch (Exception error) { Log(FailureDiagnostic(error)); MessageBox.Show(this, error.Message, "登记管理"); }
+            catch (Exception error)
+            {
+                Log(FailureDiagnostic(error));
+                MessageBox.Show(this, error.Message, "登记管理");
+            }
         };
         new Window
         {

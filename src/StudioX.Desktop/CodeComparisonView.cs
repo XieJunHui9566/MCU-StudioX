@@ -104,7 +104,10 @@ internal sealed class CodeComparisonView : Grid
             After.ScrollToHome();
             RefreshTheme();
         }
-        finally { syncing = false; }
+        finally
+        {
+            syncing = false;
+        }
         return true;
     }
 
@@ -116,7 +119,10 @@ internal sealed class CodeComparisonView : Grid
             Focus(Before, beforeOffset);
             Focus(After, afterOffset);
         }
-        finally { syncing = false; }
+        finally
+        {
+            syncing = false;
+        }
         static void Focus(TextEditor editor, int offset)
         {
             editor.CaretOffset = Math.Clamp(offset, 0, editor.Document.TextLength);
@@ -200,7 +206,10 @@ internal sealed class CodeComparisonView : Grid
             // 直接设置偏移不会自动刷新 ScrollViewer 缓存，滚动条及后续滚轮路由也须使用新值。
             scroll.ScrollOwner?.InvalidateScrollInfo();
         }
-        finally { syncing = false; }
+        finally
+        {
+            syncing = false;
+        }
     }
 
     internal int MapOffset(int offset, bool fromBefore)

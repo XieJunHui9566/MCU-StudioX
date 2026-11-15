@@ -25,7 +25,9 @@ public partial class MainWindow
         {
             ApplyTheme(theme);
             UpdateLayout();
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.Render);
             Render(this, Path.Combine(directory, "rp2350-templates-" + theme.Id + ".png"));
         }
         ApplyTheme(ThemeService.Dark);
@@ -39,7 +41,9 @@ public partial class MainWindow
             throw new InvalidOperationException("RP2350 下载、调试或语言服务入口未就绪。");
         }
         UpdateLayout();
-        await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+        await Dispatcher.InvokeAsync(() =>
+        {
+        }, DispatcherPriority.Render);
         Render(this, Path.Combine(directory, "rp2350-c-editor.png"));
         await File.WriteAllTextAsync(Path.Combine(directory, "result.txt"), "PASS: Raspberry Pi logo, 3 C templates, new project, language service and CMSIS-DAP download/debug configuration. No hardware access.\n");
     }

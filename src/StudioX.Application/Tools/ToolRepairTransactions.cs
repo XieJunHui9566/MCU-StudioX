@@ -37,7 +37,13 @@ internal static class ToolRepairTransactions
                 File.Move(path, history, overwrite: false);
             }
         }
-        finally { if (File.Exists(temporary)) { File.Delete(temporary); } }
+        finally
+        {
+            if (File.Exists(temporary))
+            {
+                File.Delete(temporary);
+            }
+        }
     }
 
     internal static async Task<ToolRepairRecord> ReadAsync(string root, string key, CancellationToken token)
@@ -89,8 +95,14 @@ internal static class ToolRepairTransactions
                     items.Add(await PreviewAsync(root, record, token));
                 }
             }
-            catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }
-            catch (Exception error) { diagnostics.Add(error.ToString()); }
+            catch (OperationCanceledException) when (token.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception error)
+            {
+                diagnostics.Add(error.ToString());
+            }
         }
         return (items, diagnostics);
     }

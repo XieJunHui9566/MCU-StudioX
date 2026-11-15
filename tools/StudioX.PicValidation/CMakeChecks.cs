@@ -71,7 +71,10 @@ internal static class CMakeChecks
             await ProjectService.ReadAsync(project);
             throw new InvalidOperationException("Old PIC accepted");
         }
-        catch (StudioXException error) when (error.Code == "PIC_CMAKE_REQUIRED") { Check(true, "legacy direct-XC8 projects are rejected without migration"); }
+        catch (StudioXException error) when (error.Code == "PIC_CMAKE_REQUIRED")
+        {
+            Check(true, "legacy direct-XC8 projects are rejected without migration");
+        }
         await File.WriteAllTextAsync(cmake, text);
         await JsonStore.WriteAsync(Path.Combine(output, "result.json"), new
         {

@@ -154,7 +154,10 @@ public sealed partial class StcConfigurationModel
                 }
             }
         }
-        catch (ArgumentException error) { errors.Add(error.Message); }
+        catch (ArgumentException error)
+        {
+            errors.Add(error.Message);
+        }
         for (var index = 0; index < 3; index++)
         {
             var id = "T" + index;

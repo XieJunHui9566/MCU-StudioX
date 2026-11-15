@@ -146,7 +146,10 @@ internal static class NativeUsbChecks
         await RejectAsync(() => service.VerifyPreparedAsync(hardwarePrepared), "STC_ISP_BUILD");
         prepared = await service.PrepareAsync(project, settings);
         backend.Multiple = true;
-        await RejectAsync(async () => { await service.DownloadPreparedAsync(prepared); }, "STC_USB_MULTIPLE");
+        await RejectAsync(async () =>
+        {
+            await service.DownloadPreparedAsync(prepared);
+        }, "STC_USB_MULTIPLE");
         Check(backend.Opens == 0, "multiple bootloaders never auto-select a board");
         backend.Multiple = false;
         var report = await service.DownloadPreparedAsync(prepared);
@@ -154,7 +157,10 @@ internal static class NativeUsbChecks
             "complete application service through real built HEX and injected USB ACKs");
         Check(backend.Last!.Writes.All(item => item.Length == 65), "service writes Windows report ID plus 64 payload bytes");
         backend.Absent = true;
-        await RejectAsync(async () => { await service.DownloadPreparedAsync(prepared); }, "STC_USB_NOT_FOUND");
+        await RejectAsync(async () =>
+        {
+            await service.DownloadPreparedAsync(prepared);
+        }, "STC_USB_NOT_FOUND");
         Check(backend.Opens == 1, "absent bootloader waits then times out without opening another device");
         using (var cancel = new CancellationTokenSource(30))
         {
@@ -163,12 +169,18 @@ internal static class NativeUsbChecks
                 await service.DownloadPreparedAsync(prepared, token: cancel.Token);
                 throw new Exception("Cancellation ignored.");
             }
-            catch (OperationCanceledException) { Check(backend.Opens == 1, "USB waiting can be cancelled without writes"); }
+            catch (OperationCanceledException)
+            {
+                Check(backend.Opens == 1, "USB waiting can be cancelled without writes");
+            }
         }
         backend.Absent = false;
         // 此处仅注入模拟 HID；真实编译固件与录制应答长度可能不同，因此只检查擦除前的设置变化保护。
         backend.BeforeOpen = () => File.WriteAllText(Path.Combine(project, "src/main.c"), "void main(void) { while (1) {} }\n");
-        await RejectAsync(async () => { await service.DownloadPreparedAsync(prepared); }, "STC_ISP_BUILD");
+        await RejectAsync(async () =>
+        {
+            await service.DownloadPreparedAsync(prepared);
+        }, "STC_ISP_BUILD");
         Check(backend.Last!.Writes.Count == 1, "source change after discovery rejected after identity and before erase");
         await File.WriteAllLinesAsync(Path.Combine(output, "checks.txt"), checks);
         Console.WriteLine($"PASS {checks.Count} native USB checks; no real hardware opened.");
@@ -193,7 +205,10 @@ internal static class NativeUsbChecks
         {
             await action();
         }
-        catch (StudioXException error) when (error.Code == code) { return; }
+        catch (StudioXException error) when (error.Code == code)
+        {
+            return;
+        }
         throw new InvalidOperationException("Expected rejection " + code);
     }
 

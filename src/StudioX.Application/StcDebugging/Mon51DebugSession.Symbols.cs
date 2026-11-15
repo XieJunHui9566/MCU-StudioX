@@ -113,14 +113,20 @@ public sealed partial class Mon51DebugSession
             SetState(DebugState.Stopped, SymbolsStatus + $" · PC=0x{Pc:X4}");
             Output?.Invoke($"HEX: {bundle.ImagePath} · SHA-256 {bundle.ImageSha256}\nCDB: {bundle.SymbolsPath} · SHA-256 {bundle.SymbolsSha256}\n源码指纹: {bundle.SourceStamp}");
         }
-        catch (StudioXException ex) when (ex.Code is "MON51_IMAGE_MISMATCH" or "MON51_CDB" or "MON51_STATE" or "MON51_BREAKPOINT_RANGE" or "MON51_BREAKPOINT_ORIGINAL") { throw; }
+        catch (StudioXException ex) when (ex.Code is "MON51_IMAGE_MISMATCH" or "MON51_CDB" or "MON51_STATE" or "MON51_BREAKPOINT_RANGE" or "MON51_BREAKPOINT_ORIGINAL")
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             SetState(DebugState.Faulted, "符号核对未完整确认，请结束会话恢复断点：" + ex.Message);
             Output?.Invoke(ex.ToString());
             throw;
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
 
     public async Task SetPreferencesAsync(IEnumerable<SourceBreakpoint> pointsToSet, IEnumerable<string> watchesToSet, CancellationToken token = default)
@@ -135,7 +141,10 @@ public sealed partial class Mon51DebugSession
             await ReadSnapshotAsync(token);
             Changed?.Invoke();
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
 
     public async Task ReportSymbolsUnavailableAsync(string reason, CancellationToken token = default)
@@ -154,7 +163,10 @@ public sealed partial class Mon51DebugSession
             await ReadSnapshotAsync(token);
             SetState(DebugState.Stopped, SymbolsStatus);
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
 
     public async Task SelectFrameAsync(int? frame, CancellationToken token = default)
@@ -171,7 +183,10 @@ public sealed partial class Mon51DebugSession
             await ReadSnapshotAsync(token);
             Changed?.Invoke();
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
 
     private async Task CheckSourcesAsync(CancellationToken token)
@@ -484,7 +499,10 @@ public sealed partial class Mon51DebugSession
             memoryCache.Clear();
             return (await EvaluateCoreAsync(expression, token)).ToString(CultureInfo.InvariantCulture);
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
 
     private async Task<DebugVariable> VariableRowAsync(string name, DebugSnapshot previous, CancellationToken token)

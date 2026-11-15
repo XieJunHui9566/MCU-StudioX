@@ -114,7 +114,7 @@
     <TextBlock
       Grid.Row="3"
       x:Name="TerminalStatus"
-      Text="命令在当前工程目录运行 · git status / git add / git commit / git pull"
+      Text="终端未启动"
       Foreground="{DynamicResource Muted}"
       FontSize="11"
       TextTrimming="CharacterEllipsis"

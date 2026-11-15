@@ -1,0 +1,1670 @@
+{
+  "schema": "mx251.permanent-startup-link-roots.v1",
+  "purpose": "Reject the actual 35f startup-root loss while accepting preserved startup contracts; no hardware claims",
+  "contract": {
+    "startupSymbols": [
+      "__mcs51_genXINIT",
+      "__mcs51_genXRAMCLEAR",
+      "__mcs51_genRAMCLEAR"
+    ],
+    "startupArchiveMembers": [
+      "crtclear.rel",
+      "crtxinit.rel",
+      "crtxclear.rel"
+    ],
+    "dataSymbols": [
+      "_initialized_bytes",
+      "_initialized_word",
+      "_bss_bytes",
+      "_data_bss",
+      "_copy_target"
+    ]
+  },
+  "sourceDecoder": {
+    "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-math-reducer-20261031\\validation\\LinkProofMath.py",
+    "sha256": "a47aefc26b148ffa2b5dc333ace094e878011b2ac1d8b606822366657fa706a9",
+    "bytes": 12676
+  },
+  "packagingScript": {
+    "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\package_startup_roots.py",
+    "sha256": "5b3ea453cceb2512639603bd78d67c6364f42e4e393c8a3245fd17199294e2a3",
+    "bytes": 6310
+  },
+  "decoderAdaptation": "Only replace the archive import with fail-closed stub; actual selected library members are extracted to individual REL files in original selected order. Relocation arithmetic unchanged.",
+  "cases": [
+    {
+      "target": "AI8051U-34K64-32",
+      "name": "parent",
+      "expectedStartup": "PASS",
+      "sourceSession": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-dead-imports-startup-safe\\AI8051U-34K64-32\\off\\.build\\mx251\\latest\\gc-linkproof-session.json",
+        "sha256": "38e30e21e73571c79cdb3db9cc5a1f723e9727b815bd8c583e62fed8c0a4a8f9",
+        "bytes": 4285
+      },
+      "sourceResult": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-dead-imports-startup-safe\\results.json",
+        "sha256": "2b201680232e669fb9be2b5defbfc77dc666a6af9c08e79da6776ed323de0b7c",
+        "bytes": 25360
+      },
+      "directObjects": [
+        "cases/AI8051U-34K64-32/parent/u0.rel",
+        "cases/AI8051U-34K64-32/parent/u1.rel",
+        "cases/AI8051U-34K64-32/parent/startup.rel"
+      ],
+      "members": [
+        {
+          "path": "cases/AI8051U-34K64-32/parent/member-00-crtclear.rel",
+          "name": "crtclear.rel",
+          "sha256": "240be2833ed3179f92327457765a192ecefd181f9986425ab961c4205b696795",
+          "originalArchive": {
+            "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-v0.0155\\private-tools\\lib\\mcs251-small-stack-auto\\mcs251.lib",
+            "sha256": "6f46d3cbf9a10279a7ad8f4bf48ea957a9f1a227f6e6e9311db7086df5fd7ee3",
+            "bytes": 10588
+          },
+          "originalOffset": 3624
+        },
+        {
+          "path": "cases/AI8051U-34K64-32/parent/member-01-crtxinit.rel",
+          "name": "crtxinit.rel",
+          "sha256": "c93ec5c6b5d03775abb587516bf4ca34040dfb1df697f10851a8385795113089",
+          "originalArchive": {
+            "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-v0.0155\\private-tools\\lib\\mcs251-small-stack-auto\\mcs251.lib",
+            "sha256": "6f46d3cbf9a10279a7ad8f4bf48ea957a9f1a227f6e6e9311db7086df5fd7ee3",
+            "bytes": 10588
+          },
+          "originalOffset": 1464
+        },
+        {
+          "path": "cases/AI8051U-34K64-32/parent/member-02-crtxclear.rel",
+          "name": "crtxclear.rel",
+          "sha256": "6a53a954b3f61bd9064a33ce4e229de382b11507cf68b7ff023de3525d04fd18",
+          "originalArchive": {
+            "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-v0.0155\\private-tools\\lib\\mcs251-small-stack-auto\\mcs251.lib",
+            "sha256": "6f46d3cbf9a10279a7ad8f4bf48ea957a9f1a227f6e6e9311db7086df5fd7ee3",
+            "bytes": 10588
+          },
+          "originalOffset": 2424
+        },
+        {
+          "path": "cases/AI8051U-34K64-32/parent/member-03-_startup.rel",
+          "name": "_startup.rel",
+          "sha256": "727e6db8b79d35190601ff8cae3e228aa4e1f13bede50b2bfdfd06862d01c822",
+          "originalArchive": {
+            "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-v0.0155\\private-tools\\lib\\mcs251-small-stack-auto\\libsdcc.lib",
+            "sha256": "6da881753937f2bfcd7801929825c6c6fea2c6e9c030144bcdecef05fcb2d8e5",
+            "bytes": 760280
+          },
+          "originalOffset": 678918
+        }
+      ],
+      "assemblies": [
+        "cases/AI8051U-34K64-32/parent/u0.asm",
+        "cases/AI8051U-34K64-32/parent/u1.asm",
+        "cases/AI8051U-34K64-32/parent/startup.asm"
+      ],
+      "initializedProbe": false,
+      "image": "cases/AI8051U-34K64-32/parent/firmware.hex",
+      "map": "cases/AI8051U-34K64-32/parent/linked.partial.map"
+    },
+    {
+      "target": "AI8051U-34K64-32",
+      "name": "rejected-35f",
+      "expectedStartup": "REJECT",
+      "sourceSession": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-dead-imports-ordinal\\AI8051U-34K64-32\\on\\.build\\mx251\\latest\\gc-linkproof-session.json",
+        "sha256": "7e632c2384f0747d02cc642e6b587b470d2f233136aa40ffec4719cb98be8e98",
+        "bytes": 2838
+      },
+      "sourceResult": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-dead-imports-ordinal\\results.json",
+        "sha256": "a4b9a226d126e7c557df60e48b84e665ea1d82f03645d676a3f12809fd43903b",
+        "bytes": 25152
+      },
+      "directObjects": [
+        "cases/AI8051U-34K64-32/rejected-35f/u0.rel",
+        "cases/AI8051U-34K64-32/rejected-35f/u1.rel",
+        "cases/AI8051U-34K64-32/rejected-35f/startup.rel"
+      ],
+      "members": [
+        {
+          "path": "cases/AI8051U-34K64-32/rejected-35f/member-00-_startup.rel",
+          "name": "_startup.rel",
+          "sha256": "727e6db8b79d35190601ff8cae3e228aa4e1f13bede50b2bfdfd06862d01c822",
+          "originalArchive": {
+            "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-v0.0155\\private-tools\\lib\\mcs251-small-stack-auto\\libsdcc.lib",
+            "sha256": "6da881753937f2bfcd7801929825c6c6fea2c6e9c030144bcdecef05fcb2d8e5",
+            "bytes": 760280
+          },
+          "originalOffset": 678918
+        }
+      ],
+      "assemblies": [
+        "cases/AI8051U-34K64-32/rejected-35f/u0.asm",
+        "cases/AI8051U-34K64-32/rejected-35f/u1.asm",
+        "cases/AI8051U-34K64-32/rejected-35f/startup.asm"
+      ],
+      "initializedProbe": false,
+      "image": "cases/AI8051U-34K64-32/rejected-35f/firmware.hex",
+      "map": "cases/AI8051U-34K64-32/rejected-35f/linked.partial.map"
+    },
+    {
+      "target": "AI8051U-34K64-32",
+      "name": "safe-edf",
+      "expectedStartup": "PASS",
+      "sourceSession": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-dead-imports-startup-safe\\AI8051U-34K64-32\\on\\.build\\mx251\\latest\\gc-linkproof-session.json",
+        "sha256": "0531594d68a57acbed624b1d43137e452a04280b4720a89f6c3b05d16cdaa220",
+        "bytes": 4279
+      },
+      "sourceResult": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-dead-imports-startup-safe\\results.json",
+        "sha256": "2b201680232e669fb9be2b5defbfc77dc666a6af9c08e79da6776ed323de0b7c",
+        "bytes": 25360
+      },
+      "directObjects": [
+        "cases/AI8051U-34K64-32/safe-edf/u0.rel",
+        "cases/AI8051U-34K64-32/safe-edf/u1.rel",
+        "cases/AI8051U-34K64-32/safe-edf/startup.rel"
+      ],
+      "members": [
+        {
+          "path": "cases/AI8051U-34K64-32/safe-edf/member-00-crtclear.rel",
+          "name": "crtclear.rel",
+          "sha256": "240be2833ed3179f92327457765a192ecefd181f9986425ab961c4205b696795",
+          "originalArchive": {
+            "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-v0.0155\\private-tools\\lib\\mcs251-small-stack-auto\\mcs251.lib",
+            "sha256": "6f46d3cbf9a10279a7ad8f4bf48ea957a9f1a227f6e6e9311db7086df5fd7ee3",
+            "bytes": 10588
+          },
+          "originalOffset": 3624
+        },
+        {
+          "path": "cases/AI8051U-34K64-32/safe-edf/member-01-crtxinit.rel",
+          "name": "crtxinit.rel",
+          "sha256": "c93ec5c6b5d03775abb587516bf4ca34040dfb1df697f10851a8385795113089",
+          "originalArchive": {
+            "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-v0.0155\\private-tools\\lib\\mcs251-small-stack-auto\\mcs251.lib",
+            "sha256": "6f46d3cbf9a10279a7ad8f4bf48ea957a9f1a227f6e6e9311db7086df5fd7ee3",
+            "bytes": 10588
+          },
+          "originalOffset": 1464
+        },
+        {
+          "path": "cases/AI8051U-34K64-32/safe-edf/member-02-crtxclear.rel",
+          "name": "crtxclear.rel",
+          "sha256": "6a53a954b3f61bd9064a33ce4e229de382b11507cf68b7ff023de3525d04fd18",
+          "originalArchive": {
+            "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-v0.0155\\private-tools\\lib\\mcs251-small-stack-auto\\mcs251.lib",
+            "sha256": "6f46d3cbf9a10279a7ad8f4bf48ea957a9f1a227f6e6e9311db7086df5fd7ee3",
+            "bytes": 10588
+          },
+          "originalOffset": 2424
+        },
+        {
+          "path": "cases/AI8051U-34K64-32/safe-edf/member-03-_startup.rel",
+          "name": "_startup.rel",
+          "sha256": "727e6db8b79d35190601ff8cae3e228aa4e1f13bede50b2bfdfd06862d01c822",
+          "originalArchive": {
+            "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-v0.0155\\private-tools\\lib\\mcs251-small-stack-auto\\libsdcc.lib",
+            "sha256": "6da881753937f2bfcd7801929825c6c6fea2c6e9c030144bcdecef05fcb2d8e5",
+            "bytes": 760280
+          },
+          "originalOffset": 678918
+        }
+      ],
+      "assemblies": [
+        "cases/AI8051U-34K64-32/safe-edf/u0.asm",
+        "cases/AI8051U-34K64-32/safe-edf/u1.asm",
+        "cases/AI8051U-34K64-32/safe-edf/startup.asm"
+      ],
+      "initializedProbe": false,
+      "image": "cases/AI8051U-34K64-32/safe-edf/firmware.hex",
+      "map": "cases/AI8051U-34K64-32/safe-edf/linked.partial.map"
+    },
+    {
+      "target": "AI8051U-34K64-32",
+      "name": "initialized-parent",
+      "expectedStartup": "PASS",
+      "sourceSession": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-startup-contract\\AI8051U-34K64-32\\off\\.build\\mx251\\latest\\gc-linkproof-session.json",
+        "sha256": "d3ea22b90ce13030080ce4bbca83888a3925752ca7cfc04d2b0dc670f7b8d888",
+        "bytes": 3880
+      },
+      "sourceResult": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-startup-contract\\results.json",
+        "sha256": "cf474d26ca15da4934b7466892924c6992a7e0e97c4681a2ed9d609e12080445",
+        "bytes": 26358
+      },
+      "directObjects": [
+        "cases/AI8051U-34K64-32/initialized-parent/u0.rel",
+        "cases/AI8051U-34K64-32/initialized-parent/startup.rel"
+      ],
+      "members": [
+        {
+          "path": "cases/AI8051U-34K64-32/initialized-parent/member-00-crtclear.rel",
+          "name": "crtclear.rel",
+          "sha256": "240be2833ed3179f92327457765a192ecefd181f9986425ab961c4205b696795",
+          "originalArchive": {
+            "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-v0.0155\\private-tools\\lib\\mcs251-small-stack-auto\\mcs251.lib",
+            "sha256": "6f46d3cbf9a10279a7ad8f4bf48ea957a9f1a227f6e6e9311db7086df5fd7ee3",
+            "bytes": 10588
+          },
+          "originalOffset": 3624
+        },
+        {
+          "path": "cases/AI8051U-34K64-32/initialized-parent/member-01-crtxinit.rel",
+          "name": "crtxinit.rel",
+          "sha256": "c93ec5c6b5d03775abb587516bf4ca34040dfb1df697f10851a8385795113089",
+          "originalArchive": {
+            "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-v0.0155\\private-tools\\lib\\mcs251-small-stack-auto\\mcs251.lib",
+            "sha256": "6f46d3cbf9a10279a7ad8f4bf48ea957a9f1a227f6e6e9311db7086df5fd7ee3",
+            "bytes": 10588
+          },
+          "originalOffset": 1464
+        },
+        {
+          "path": "cases/AI8051U-34K64-32/initialized-parent/member-02-crtxclear.rel",
+          "name": "crtxclear.rel",
+          "sha256": "6a53a954b3f61bd9064a33ce4e229de382b11507cf68b7ff023de3525d04fd18",
+          "originalArchive": {
+            "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-v0.0155\\private-tools\\lib\\mcs251-small-stack-auto\\mcs251.lib",
+            "sha256": "6f46d3cbf9a10279a7ad8f4bf48ea957a9f1a227f6e6e9311db7086df5fd7ee3",
+            "bytes": 10588
+          },
+          "originalOffset": 2424
+        },
+        {
+          "path": "cases/AI8051U-34K64-32/initialized-parent/member-03-_startup.rel",
+          "name": "_startup.rel",
+          "sha256": "727e6db8b79d35190601ff8cae3e228aa4e1f13bede50b2bfdfd06862d01c822",
+          "originalArchive": {
+            "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-v0.0155\\private-tools\\lib\\mcs251-small-stack-auto\\libsdcc.lib",
+            "sha256": "6da881753937f2bfcd7801929825c6c6fea2c6e9c030144bcdecef05fcb2d8e5",
+            "bytes": 760280
+          },
+          "originalOffset": 678918
+        }
+      ],
+      "assemblies": [
+        "cases/AI8051U-34K64-32/initialized-parent/u0.asm",
+        "cases/AI8051U-34K64-32/initialized-parent/startup.asm"
+      ],
+      "initializedProbe": true,
+      "image": "cases/AI8051U-34K64-32/initialized-parent/firmware.hex",
+      "map": "cases/AI8051U-34K64-32/initialized-parent/linked.partial.map"
+    },
+    {
+      "target": "AI8051U-34K64-32",
+      "name": "initialized-safe-edf",
+      "expectedStartup": "PASS",
+      "sourceSession": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-startup-contract\\AI8051U-34K64-32\\on\\.build\\mx251\\latest\\gc-linkproof-session.json",
+        "sha256": "a1ea41017ee4669e2b02fc74c03a74a1f11f3b819cd2e2bb77f221351a6149f8",
+        "bytes": 3875
+      },
+      "sourceResult": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-startup-contract\\results.json",
+        "sha256": "cf474d26ca15da4934b7466892924c6992a7e0e97c4681a2ed9d609e12080445",
+        "bytes": 26358
+      },
+      "directObjects": [
+        "cases/AI8051U-34K64-32/initialized-safe-edf/u0.rel",
+        "cases/AI8051U-34K64-32/initialized-safe-edf/startup.rel"
+      ],
+      "members": [
+        {
+          "path": "cases/AI8051U-34K64-32/initialized-safe-edf/member-00-crtclear.rel",
+          "name": "crtclear.rel",
+          "sha256": "240be2833ed3179f92327457765a192ecefd181f9986425ab961c4205b696795",
+          "originalArchive": {
+            "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-v0.0155\\private-tools\\lib\\mcs251-small-stack-auto\\mcs251.lib",
+            "sha256": "6f46d3cbf9a10279a7ad8f4bf48ea957a9f1a227f6e6e9311db7086df5fd7ee3",
+            "bytes": 10588
+          },
+          "originalOffset": 3624
+        },
+        {
+          "path": "cases/AI8051U-34K64-32/initialized-safe-edf/member-01-crtxinit.rel",
+          "name": "crtxinit.rel",
+          "sha256": "c93ec5c6b5d03775abb587516bf4ca34040dfb1df697f10851a8385795113089",
+          "originalArchive": {
+            "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-v0.0155\\private-tools\\lib\\mcs251-small-stack-auto\\mcs251.lib",
+            "sha256": "6f46d3cbf9a10279a7ad8f4bf48ea957a9f1a227f6e6e9311db7086df5fd7ee3",
+            "bytes": 10588
+          },
+          "originalOffset": 1464
+        },
+        {
+          "path": "cases/AI8051U-34K64-32/initialized-safe-edf/member-02-crtxclear.rel",
+          "name": "crtxclear.rel",
+          "sha256": "6a53a954b3f61bd9064a33ce4e229de382b11507cf68b7ff023de3525d04fd18",
+          "originalArchive": {
+            "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-v0.0155\\private-tools\\lib\\mcs251-small-stack-auto\\mcs251.lib",
+            "sha256": "6f46d3cbf9a10279a7ad8f4bf48ea957a9f1a227f6e6e9311db7086df5fd7ee3",
+            "bytes": 10588
+          },
+          "originalOffset": 2424
+        },
+        {
+          "path": "cases/AI8051U-34K64-32/initialized-safe-edf/member-03-_startup.rel",
+          "name": "_startup.rel",
+          "sha256": "727e6db8b79d35190601ff8cae3e228aa4e1f13bede50b2bfdfd06862d01c822",
+          "originalArchive": {
+            "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-v0.0155\\private-tools\\lib\\mcs251-small-stack-auto\\libsdcc.lib",
+            "sha256": "6da881753937f2bfcd7801929825c6c6fea2c6e9c030144bcdecef05fcb2d8e5",
+            "bytes": 760280
+          },
+          "originalOffset": 678918
+        }
+      ],
+      "assemblies": [
+        "cases/AI8051U-34K64-32/initialized-safe-edf/u0.asm",
+        "cases/AI8051U-34K64-32/initialized-safe-edf/startup.asm"
+      ],
+      "initializedProbe": true,
+      "image": "cases/AI8051U-34K64-32/initialized-safe-edf/firmware.hex",
+      "map": "cases/AI8051U-34K64-32/initialized-safe-edf/linked.partial.map"
+    },
+    {
+      "target": "STC32G12K128",
+      "name": "parent",
+      "expectedStartup": "PASS",
+      "sourceSession": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-dead-imports-startup-safe\\STC32G12K128\\off\\.build\\mx251\\latest\\gc-linkproof-session.json",
+        "sha256": "0a77e6ea9ea2732b9a6c56e6aa2ecbd8603d6d382ac977a18c7caedefc84ab54",
+        "bytes": 4262
+      },
+      "sourceResult": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-dead-imports-startup-safe\\results.json",
+        "sha256": "2b201680232e669fb9be2b5defbfc77dc666a6af9c08e79da6776ed323de0b7c",
+        "bytes": 25360
+      },
+      "directObjects": [
+        "cases/STC32G12K128/parent/u0.rel",
+        "cases/STC32G12K128/parent/u1.rel",
+        "cases/STC32G12K128/parent/startup.rel"
+      ],
+      "members": [
+        {
+          "path": "cases/STC32G12K128/parent/member-00-crtclear.rel",
+          "name": "crtclear.rel",
+          "sha256": "240be2833ed3179f92327457765a192ecefd181f9986425ab961c4205b696795",
+          "originalArchive": {
+            "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-v0.0155\\private-tools\\lib\\mcs251-small-stack-auto\\mcs251.lib",
+            "sha256": "6f46d3cbf9a10279a7ad8f4bf48ea957a9f1a227f6e6e9311db7086df5fd7ee3",
+            "bytes": 10588
+          },
+          "originalOffset": 3624
+        },
+        {
+          "path": "cases/STC32G12K128/parent/member-01-crtxinit.rel",
+          "name": "crtxinit.rel",
+          "sha256": "c93ec5c6b5d03775abb587516bf4ca34040dfb1df697f10851a8385795113089",
+          "originalArchive": {
+            "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-v0.0155\\private-tools\\lib\\mcs251-small-stack-auto\\mcs251.lib",
+            "sha256": "6f46d3cbf9a10279a7ad8f4bf48ea957a9f1a227f6e6e9311db7086df5fd7ee3",
+            "bytes": 10588
+          },
+          "originalOffset": 1464
+        },
+        {
+          "path": "cases/STC32G12K128/parent/member-02-crtxclear.rel",
+          "name": "crtxclear.rel",
+          "sha256": "6a53a954b3f61bd9064a33ce4e229de382b11507cf68b7ff023de3525d04fd18",
+          "originalArchive": {
+            "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-v0.0155\\private-tools\\lib\\mcs251-small-stack-auto\\mcs251.lib",
+            "sha256": "6f46d3cbf9a10279a7ad8f4bf48ea957a9f1a227f6e6e9311db7086df5fd7ee3",
+            "bytes": 10588
+          },
+          "originalOffset": 2424
+        },
+        {
+          "path": "cases/STC32G12K128/parent/member-03-_startup.rel",
+          "name": "_startup.rel",
+          "sha256": "727e6db8b79d35190601ff8cae3e228aa4e1f13bede50b2bfdfd06862d01c822",
+          "originalArchive": {
+            "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-v0.0155\\private-tools\\lib\\mcs251-small-stack-auto\\libsdcc.lib",
+            "sha256": "6da881753937f2bfcd7801929825c6c6fea2c6e9c030144bcdecef05fcb2d8e5",
+            "bytes": 760280
+          },
+          "originalOffset": 678918
+        }
+      ],
+      "assemblies": [
+        "cases/STC32G12K128/parent/u0.asm",
+        "cases/STC32G12K128/parent/u1.asm",
+        "cases/STC32G12K128/parent/startup.asm"
+      ],
+      "initializedProbe": false,
+      "image": "cases/STC32G12K128/parent/firmware.hex",
+      "map": "cases/STC32G12K128/parent/linked.partial.map"
+    },
+    {
+      "target": "STC32G12K128",
+      "name": "rejected-35f",
+      "expectedStartup": "REJECT",
+      "sourceSession": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-dead-imports-ordinal\\STC32G12K128\\on\\.build\\mx251\\latest\\gc-linkproof-session.json",
+        "sha256": "934a7f3bdd513c6c423769a0cc406048a773883966e3fd1f8e68ba6612833645",
+        "bytes": 2815
+      },
+      "sourceResult": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-dead-imports-ordinal\\results.json",
+        "sha256": "a4b9a226d126e7c557df60e48b84e665ea1d82f03645d676a3f12809fd43903b",
+        "bytes": 25152
+      },
+      "directObjects": [
+        "cases/STC32G12K128/rejected-35f/u0.rel",
+        "cases/STC32G12K128/rejected-35f/u1.rel",
+        "cases/STC32G12K128/rejected-35f/startup.rel"
+      ],
+      "members": [
+        {
+          "path": "cases/STC32G12K128/rejected-35f/member-00-_startup.rel",
+          "name": "_startup.rel",
+          "sha256": "727e6db8b79d35190601ff8cae3e228aa4e1f13bede50b2bfdfd06862d01c822",
+          "originalArchive": {
+            "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-v0.0155\\private-tools\\lib\\mcs251-small-stack-auto\\libsdcc.lib",
+            "sha256": "6da881753937f2bfcd7801929825c6c6fea2c6e9c030144bcdecef05fcb2d8e5",
+            "bytes": 760280
+          },
+          "originalOffset": 678918
+        }
+      ],
+      "assemblies": [
+        "cases/STC32G12K128/rejected-35f/u0.asm",
+        "cases/STC32G12K128/rejected-35f/u1.asm",
+        "cases/STC32G12K128/rejected-35f/startup.asm"
+      ],
+      "initializedProbe": false,
+      "image": "cases/STC32G12K128/rejected-35f/firmware.hex",
+      "map": "cases/STC32G12K128/rejected-35f/linked.partial.map"
+    },
+    {
+      "target": "STC32G12K128",
+      "name": "safe-edf",
+      "expectedStartup": "PASS",
+      "sourceSession": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-dead-imports-startup-safe\\STC32G12K128\\on\\.build\\mx251\\latest\\gc-linkproof-session.json",
+        "sha256": "a9a83faf205f51c320ca888a0abbd74a02b06fa808af439a2e0ed6e812f781ad",
+        "bytes": 4256
+      },
+      "sourceResult": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-dead-imports-startup-safe\\results.json",
+        "sha256": "2b201680232e669fb9be2b5defbfc77dc666a6af9c08e79da6776ed323de0b7c",
+        "bytes": 25360
+      },
+      "directObjects": [
+        "cases/STC32G12K128/safe-edf/u0.rel",
+        "cases/STC32G12K128/safe-edf/u1.rel",
+        "cases/STC32G12K128/safe-edf/startup.rel"
+      ],
+      "members": [
+        {
+          "path": "cases/STC32G12K128/safe-edf/member-00-crtclear.rel",
+          "name": "crtclear.rel",
+          "sha256": "240be2833ed3179f92327457765a192ecefd181f9986425ab961c4205b696795",
+          "originalArchive": {
+            "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-v0.0155\\private-tools\\lib\\mcs251-small-stack-auto\\mcs251.lib",
+            "sha256": "6f46d3cbf9a10279a7ad8f4bf48ea957a9f1a227f6e6e9311db7086df5fd7ee3",
+            "bytes": 10588
+          },
+          "originalOffset": 3624
+        },
+        {
+          "path": "cases/STC32G12K128/safe-edf/member-01-crtxinit.rel",
+          "name": "crtxinit.rel",
+          "sha256": "c93ec5c6b5d03775abb587516bf4ca34040dfb1df697f10851a8385795113089",
+          "originalArchive": {
+            "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-v0.0155\\private-tools\\lib\\mcs251-small-stack-auto\\mcs251.lib",
+            "sha256": "6f46d3cbf9a10279a7ad8f4bf48ea957a9f1a227f6e6e9311db7086df5fd7ee3",
+            "bytes": 10588
+          },
+          "originalOffset": 1464
+        },
+        {
+          "path": "cases/STC32G12K128/safe-edf/member-02-crtxclear.rel",
+          "name": "crtxclear.rel",
+          "sha256": "6a53a954b3f61bd9064a33ce4e229de382b11507cf68b7ff023de3525d04fd18",
+          "originalArchive": {
+            "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-v0.0155\\private-tools\\lib\\mcs251-small-stack-auto\\mcs251.lib",
+            "sha256": "6f46d3cbf9a10279a7ad8f4bf48ea957a9f1a227f6e6e9311db7086df5fd7ee3",
+            "bytes": 10588
+          },
+          "originalOffset": 2424
+        },
+        {
+          "path": "cases/STC32G12K128/safe-edf/member-03-_startup.rel",
+          "name": "_startup.rel",
+          "sha256": "727e6db8b79d35190601ff8cae3e228aa4e1f13bede50b2bfdfd06862d01c822",
+          "originalArchive": {
+            "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-v0.0155\\private-tools\\lib\\mcs251-small-stack-auto\\libsdcc.lib",
+            "sha256": "6da881753937f2bfcd7801929825c6c6fea2c6e9c030144bcdecef05fcb2d8e5",
+            "bytes": 760280
+          },
+          "originalOffset": 678918
+        }
+      ],
+      "assemblies": [
+        "cases/STC32G12K128/safe-edf/u0.asm",
+        "cases/STC32G12K128/safe-edf/u1.asm",
+        "cases/STC32G12K128/safe-edf/startup.asm"
+      ],
+      "initializedProbe": false,
+      "image": "cases/STC32G12K128/safe-edf/firmware.hex",
+      "map": "cases/STC32G12K128/safe-edf/linked.partial.map"
+    },
+    {
+      "target": "STC32G12K128",
+      "name": "initialized-parent",
+      "expectedStartup": "PASS",
+      "sourceSession": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-startup-contract\\STC32G12K128\\off\\.build\\mx251\\latest\\gc-linkproof-session.json",
+        "sha256": "a96c26d2ef26755bac4bd46dd9ba45bca06d0b9c3cd3377df96d532cee7ee5f0",
+        "bytes": 3861
+      },
+      "sourceResult": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-startup-contract\\results.json",
+        "sha256": "cf474d26ca15da4934b7466892924c6992a7e0e97c4681a2ed9d609e12080445",
+        "bytes": 26358
+      },
+      "directObjects": [
+        "cases/STC32G12K128/initialized-parent/u0.rel",
+        "cases/STC32G12K128/initialized-parent/startup.rel"
+      ],
+      "members": [
+        {
+          "path": "cases/STC32G12K128/initialized-parent/member-00-crtclear.rel",
+          "name": "crtclear.rel",
+          "sha256": "240be2833ed3179f92327457765a192ecefd181f9986425ab961c4205b696795",
+          "originalArchive": {
+            "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-v0.0155\\private-tools\\lib\\mcs251-small-stack-auto\\mcs251.lib",
+            "sha256": "6f46d3cbf9a10279a7ad8f4bf48ea957a9f1a227f6e6e9311db7086df5fd7ee3",
+            "bytes": 10588
+          },
+          "originalOffset": 3624
+        },
+        {
+          "path": "cases/STC32G12K128/initialized-parent/member-01-crtxinit.rel",
+          "name": "crtxinit.rel",
+          "sha256": "c93ec5c6b5d03775abb587516bf4ca34040dfb1df697f10851a8385795113089",
+          "originalArchive": {
+            "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-v0.0155\\private-tools\\lib\\mcs251-small-stack-auto\\mcs251.lib",
+            "sha256": "6f46d3cbf9a10279a7ad8f4bf48ea957a9f1a227f6e6e9311db7086df5fd7ee3",
+            "bytes": 10588
+          },
+          "originalOffset": 1464
+        },
+        {
+          "path": "cases/STC32G12K128/initialized-parent/member-02-crtxclear.rel",
+          "name": "crtxclear.rel",
+          "sha256": "6a53a954b3f61bd9064a33ce4e229de382b11507cf68b7ff023de3525d04fd18",
+          "originalArchive": {
+            "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-v0.0155\\private-tools\\lib\\mcs251-small-stack-auto\\mcs251.lib",
+            "sha256": "6f46d3cbf9a10279a7ad8f4bf48ea957a9f1a227f6e6e9311db7086df5fd7ee3",
+            "bytes": 10588
+          },
+          "originalOffset": 2424
+        },
+        {
+          "path": "cases/STC32G12K128/initialized-parent/member-03-_startup.rel",
+          "name": "_startup.rel",
+          "sha256": "727e6db8b79d35190601ff8cae3e228aa4e1f13bede50b2bfdfd06862d01c822",
+          "originalArchive": {
+            "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-v0.0155\\private-tools\\lib\\mcs251-small-stack-auto\\libsdcc.lib",
+            "sha256": "6da881753937f2bfcd7801929825c6c6fea2c6e9c030144bcdecef05fcb2d8e5",
+            "bytes": 760280
+          },
+          "originalOffset": 678918
+        }
+      ],
+      "assemblies": [
+        "cases/STC32G12K128/initialized-parent/u0.asm",
+        "cases/STC32G12K128/initialized-parent/startup.asm"
+      ],
+      "initializedProbe": true,
+      "image": "cases/STC32G12K128/initialized-parent/firmware.hex",
+      "map": "cases/STC32G12K128/initialized-parent/linked.partial.map"
+    },
+    {
+      "target": "STC32G12K128",
+      "name": "initialized-safe-edf",
+      "expectedStartup": "PASS",
+      "sourceSession": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-startup-contract\\STC32G12K128\\on\\.build\\mx251\\latest\\gc-linkproof-session.json",
+        "sha256": "652e8c46f3fc9511b22aca82aa286d7a94187afa43ced47751b22040b9850f7f",
+        "bytes": 3856
+      },
+      "sourceResult": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-startup-contract\\results.json",
+        "sha256": "cf474d26ca15da4934b7466892924c6992a7e0e97c4681a2ed9d609e12080445",
+        "bytes": 26358
+      },
+      "directObjects": [
+        "cases/STC32G12K128/initialized-safe-edf/u0.rel",
+        "cases/STC32G12K128/initialized-safe-edf/startup.rel"
+      ],
+      "members": [
+        {
+          "path": "cases/STC32G12K128/initialized-safe-edf/member-00-crtclear.rel",
+          "name": "crtclear.rel",
+          "sha256": "240be2833ed3179f92327457765a192ecefd181f9986425ab961c4205b696795",
+          "originalArchive": {
+            "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-v0.0155\\private-tools\\lib\\mcs251-small-stack-auto\\mcs251.lib",
+            "sha256": "6f46d3cbf9a10279a7ad8f4bf48ea957a9f1a227f6e6e9311db7086df5fd7ee3",
+            "bytes": 10588
+          },
+          "originalOffset": 3624
+        },
+        {
+          "path": "cases/STC32G12K128/initialized-safe-edf/member-01-crtxinit.rel",
+          "name": "crtxinit.rel",
+          "sha256": "c93ec5c6b5d03775abb587516bf4ca34040dfb1df697f10851a8385795113089",
+          "originalArchive": {
+            "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-v0.0155\\private-tools\\lib\\mcs251-small-stack-auto\\mcs251.lib",
+            "sha256": "6f46d3cbf9a10279a7ad8f4bf48ea957a9f1a227f6e6e9311db7086df5fd7ee3",
+            "bytes": 10588
+          },
+          "originalOffset": 1464
+        },
+        {
+          "path": "cases/STC32G12K128/initialized-safe-edf/member-02-crtxclear.rel",
+          "name": "crtxclear.rel",
+          "sha256": "6a53a954b3f61bd9064a33ce4e229de382b11507cf68b7ff023de3525d04fd18",
+          "originalArchive": {
+            "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-v0.0155\\private-tools\\lib\\mcs251-small-stack-auto\\mcs251.lib",
+            "sha256": "6f46d3cbf9a10279a7ad8f4bf48ea957a9f1a227f6e6e9311db7086df5fd7ee3",
+            "bytes": 10588
+          },
+          "originalOffset": 2424
+        },
+        {
+          "path": "cases/STC32G12K128/initialized-safe-edf/member-03-_startup.rel",
+          "name": "_startup.rel",
+          "sha256": "727e6db8b79d35190601ff8cae3e228aa4e1f13bede50b2bfdfd06862d01c822",
+          "originalArchive": {
+            "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-v0.0155\\private-tools\\lib\\mcs251-small-stack-auto\\libsdcc.lib",
+            "sha256": "6da881753937f2bfcd7801929825c6c6fea2c6e9c030144bcdecef05fcb2d8e5",
+            "bytes": 760280
+          },
+          "originalOffset": 678918
+        }
+      ],
+      "assemblies": [
+        "cases/STC32G12K128/initialized-safe-edf/u0.asm",
+        "cases/STC32G12K128/initialized-safe-edf/startup.asm"
+      ],
+      "initializedProbe": true,
+      "image": "cases/STC32G12K128/initialized-safe-edf/firmware.hex",
+      "map": "cases/STC32G12K128/initialized-safe-edf/linked.partial.map"
+    }
+  ],
+  "files": [
+    {
+      "path": "relocation.py",
+      "sha256": "3d1b158079ec8828bc2adae04c63a8bdb80079a1815b6dfa3d08071b20cec432",
+      "bytes": 12648
+    },
+    {
+      "path": "cases/AI8051U-34K64-32/parent/u0.rel",
+      "sha256": "ad2df5f96c3433ee4910baea0842f028219de88f4c1e6d34c7d7973abcce0b2f",
+      "bytes": 2130,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-dead-imports-startup-safe\\AI8051U-34K64-32\\off\\.build\\mx251\\latest\\u0.rel",
+        "sha256": "ad2df5f96c3433ee4910baea0842f028219de88f4c1e6d34c7d7973abcce0b2f",
+        "bytes": 2130
+      }
+    },
+    {
+      "path": "cases/AI8051U-34K64-32/parent/u0.asm",
+      "sha256": "80fbaf0550b1a972c240d4f3b6ea1c59b647a024812ee09f69025eea5ce8925d",
+      "bytes": 6557,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-dead-imports-startup-safe\\AI8051U-34K64-32\\off\\.build\\mx251\\latest\\u0.asm",
+        "sha256": "80fbaf0550b1a972c240d4f3b6ea1c59b647a024812ee09f69025eea5ce8925d",
+        "bytes": 6557
+      }
+    },
+    {
+      "path": "cases/AI8051U-34K64-32/parent/u1.rel",
+      "sha256": "48ea7e110ae13bebbf6f0a1580bce1a0f8f57b7de01c3b2c547a50060bc399df",
+      "bytes": 1324,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-dead-imports-startup-safe\\AI8051U-34K64-32\\off\\.build\\mx251\\latest\\u1.rel",
+        "sha256": "48ea7e110ae13bebbf6f0a1580bce1a0f8f57b7de01c3b2c547a50060bc399df",
+        "bytes": 1324
+      }
+    },
+    {
+      "path": "cases/AI8051U-34K64-32/parent/u1.asm",
+      "sha256": "d26aacaf445bcb7bd4e38dfc42c83bc804b96dbc7e96f67e0efcd6512b164cf0",
+      "bytes": 5810,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-dead-imports-startup-safe\\AI8051U-34K64-32\\off\\.build\\mx251\\latest\\u1.asm",
+        "sha256": "d26aacaf445bcb7bd4e38dfc42c83bc804b96dbc7e96f67e0efcd6512b164cf0",
+        "bytes": 5810
+      }
+    },
+    {
+      "path": "cases/AI8051U-34K64-32/parent/startup.rel",
+      "sha256": "07d4b1395fd32e5c987e904b0ceef7692e4cc4e2ea3541e3946b8a5f403a9de1",
+      "bytes": 731,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-dead-imports-startup-safe\\AI8051U-34K64-32\\off\\.build\\mx251\\latest\\startup.rel",
+        "sha256": "07d4b1395fd32e5c987e904b0ceef7692e4cc4e2ea3541e3946b8a5f403a9de1",
+        "bytes": 731
+      }
+    },
+    {
+      "path": "cases/AI8051U-34K64-32/parent/startup.asm",
+      "sha256": "b13e2b892cd04dcb9059af6e6e475de4c8a32dfd9764ecd88dceecc46afb7cdb",
+      "bytes": 2029,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-dead-imports-startup-safe\\AI8051U-34K64-32\\off\\.build\\mx251\\latest\\startup.asm",
+        "sha256": "b13e2b892cd04dcb9059af6e6e475de4c8a32dfd9764ecd88dceecc46afb7cdb",
+        "bytes": 2029
+      }
+    },
+    {
+      "path": "cases/AI8051U-34K64-32/parent/member-00-crtclear.rel",
+      "sha256": "240be2833ed3179f92327457765a192ecefd181f9986425ab961c4205b696795",
+      "bytes": 524
+    },
+    {
+      "path": "cases/AI8051U-34K64-32/parent/member-01-crtxinit.rel",
+      "sha256": "c93ec5c6b5d03775abb587516bf4ca34040dfb1df697f10851a8385795113089",
+      "bytes": 899
+    },
+    {
+      "path": "cases/AI8051U-34K64-32/parent/member-02-crtxclear.rel",
+      "sha256": "6a53a954b3f61bd9064a33ce4e229de382b11507cf68b7ff023de3525d04fd18",
+      "bytes": 1140
+    },
+    {
+      "path": "cases/AI8051U-34K64-32/parent/member-03-_startup.rel",
+      "sha256": "727e6db8b79d35190601ff8cae3e228aa4e1f13bede50b2bfdfd06862d01c822",
+      "bytes": 1070
+    },
+    {
+      "path": "cases/AI8051U-34K64-32/parent/linked.partial.map",
+      "sha256": "c7c476e26130c8476a5f84af3115b27e5c1ee727e0006db8c58c87fbe0ab3b9f",
+      "bytes": 11914,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-dead-imports-startup-safe\\AI8051U-34K64-32\\off\\.build\\mx251\\latest\\linked.partial.map",
+        "sha256": "c7c476e26130c8476a5f84af3115b27e5c1ee727e0006db8c58c87fbe0ab3b9f",
+        "bytes": 11914
+      }
+    },
+    {
+      "path": "cases/AI8051U-34K64-32/parent/firmware.hex",
+      "sha256": "f34369ccb52da91466cdde391348d12aa50e00aa78b6c5dd327d0c478a7772a6",
+      "bytes": 585,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-dead-imports-startup-safe\\AI8051U-34K64-32\\off\\.build\\mx251\\latest\\firmware.hex",
+        "sha256": "f34369ccb52da91466cdde391348d12aa50e00aa78b6c5dd327d0c478a7772a6",
+        "bytes": 585
+      }
+    },
+    {
+      "path": "cases/AI8051U-34K64-32/rejected-35f/u0.rel",
+      "sha256": "7830f15ce04205069c12328a5a34dd52d76e1a33e5e66c5976d2b125a9ad883e",
+      "bytes": 1839,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-dead-imports-ordinal\\AI8051U-34K64-32\\on\\.build\\mx251\\latest\\u0.rel",
+        "sha256": "7830f15ce04205069c12328a5a34dd52d76e1a33e5e66c5976d2b125a9ad883e",
+        "bytes": 1839
+      }
+    },
+    {
+      "path": "cases/AI8051U-34K64-32/rejected-35f/u0.asm",
+      "sha256": "30b2d9a612e472b067bda336f62196a054a4d5b4cf2cfce61f68aecb83cf0a5d",
+      "bytes": 5205,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-dead-imports-ordinal\\AI8051U-34K64-32\\on\\.build\\mx251\\latest\\u0.asm",
+        "sha256": "30b2d9a612e472b067bda336f62196a054a4d5b4cf2cfce61f68aecb83cf0a5d",
+        "bytes": 5205
+      }
+    },
+    {
+      "path": "cases/AI8051U-34K64-32/rejected-35f/u1.rel",
+      "sha256": "3cb70552dbea1ddf154d1b474cbc9800593473d20b1a0f0ca73d854ecd527c52",
+      "bytes": 1124,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-dead-imports-ordinal\\AI8051U-34K64-32\\on\\.build\\mx251\\latest\\u1.rel",
+        "sha256": "3cb70552dbea1ddf154d1b474cbc9800593473d20b1a0f0ca73d854ecd527c52",
+        "bytes": 1124
+      }
+    },
+    {
+      "path": "cases/AI8051U-34K64-32/rejected-35f/u1.asm",
+      "sha256": "2036c19ec96a6885d4085b9efeb6a211a26a80a9bbf2b30445b6e51eb13d3372",
+      "bytes": 4697,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-dead-imports-ordinal\\AI8051U-34K64-32\\on\\.build\\mx251\\latest\\u1.asm",
+        "sha256": "2036c19ec96a6885d4085b9efeb6a211a26a80a9bbf2b30445b6e51eb13d3372",
+        "bytes": 4697
+      }
+    },
+    {
+      "path": "cases/AI8051U-34K64-32/rejected-35f/startup.rel",
+      "sha256": "07d4b1395fd32e5c987e904b0ceef7692e4cc4e2ea3541e3946b8a5f403a9de1",
+      "bytes": 731,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-dead-imports-ordinal\\AI8051U-34K64-32\\on\\.build\\mx251\\latest\\startup.rel",
+        "sha256": "07d4b1395fd32e5c987e904b0ceef7692e4cc4e2ea3541e3946b8a5f403a9de1",
+        "bytes": 731
+      }
+    },
+    {
+      "path": "cases/AI8051U-34K64-32/rejected-35f/startup.asm",
+      "sha256": "b13e2b892cd04dcb9059af6e6e475de4c8a32dfd9764ecd88dceecc46afb7cdb",
+      "bytes": 2029,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-dead-imports-ordinal\\AI8051U-34K64-32\\on\\.build\\mx251\\latest\\startup.asm",
+        "sha256": "b13e2b892cd04dcb9059af6e6e475de4c8a32dfd9764ecd88dceecc46afb7cdb",
+        "bytes": 2029
+      }
+    },
+    {
+      "path": "cases/AI8051U-34K64-32/rejected-35f/member-00-_startup.rel",
+      "sha256": "727e6db8b79d35190601ff8cae3e228aa4e1f13bede50b2bfdfd06862d01c822",
+      "bytes": 1070
+    },
+    {
+      "path": "cases/AI8051U-34K64-32/rejected-35f/linked.partial.map",
+      "sha256": "043f75a26192f0dbf0d693c64551c04b31695ecb969d356a24b33ca749f734bf",
+      "bytes": 10014,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-dead-imports-ordinal\\AI8051U-34K64-32\\on\\.build\\mx251\\latest\\linked.partial.map",
+        "sha256": "043f75a26192f0dbf0d693c64551c04b31695ecb969d356a24b33ca749f734bf",
+        "bytes": 10014
+      }
+    },
+    {
+      "path": "cases/AI8051U-34K64-32/rejected-35f/firmware.hex",
+      "sha256": "a7a43ead23ac2787885926fb8d66e60bc3c1c39be22b66295506033c0306900a",
+      "bytes": 249,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-dead-imports-ordinal\\AI8051U-34K64-32\\on\\.build\\mx251\\latest\\firmware.hex",
+        "sha256": "a7a43ead23ac2787885926fb8d66e60bc3c1c39be22b66295506033c0306900a",
+        "bytes": 249
+      }
+    },
+    {
+      "path": "cases/AI8051U-34K64-32/safe-edf/u0.rel",
+      "sha256": "19cf31554eb96515310cc3b7c5ae0bf163a9904985eef1ebed1c9fd2334ff40a",
+      "bytes": 1933,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-dead-imports-startup-safe\\AI8051U-34K64-32\\on\\.build\\mx251\\latest\\u0.rel",
+        "sha256": "19cf31554eb96515310cc3b7c5ae0bf163a9904985eef1ebed1c9fd2334ff40a",
+        "bytes": 1933
+      }
+    },
+    {
+      "path": "cases/AI8051U-34K64-32/safe-edf/u0.asm",
+      "sha256": "6c040581cdf32b0ce0ee7b4823d566cc48191227b3245fad5f7094275d2acb04",
+      "bytes": 5287,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-dead-imports-startup-safe\\AI8051U-34K64-32\\on\\.build\\mx251\\latest\\u0.asm",
+        "sha256": "6c040581cdf32b0ce0ee7b4823d566cc48191227b3245fad5f7094275d2acb04",
+        "bytes": 5287
+      }
+    },
+    {
+      "path": "cases/AI8051U-34K64-32/safe-edf/u1.rel",
+      "sha256": "3cb70552dbea1ddf154d1b474cbc9800593473d20b1a0f0ca73d854ecd527c52",
+      "bytes": 1124,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-dead-imports-startup-safe\\AI8051U-34K64-32\\on\\.build\\mx251\\latest\\u1.rel",
+        "sha256": "3cb70552dbea1ddf154d1b474cbc9800593473d20b1a0f0ca73d854ecd527c52",
+        "bytes": 1124
+      }
+    },
+    {
+      "path": "cases/AI8051U-34K64-32/safe-edf/u1.asm",
+      "sha256": "2036c19ec96a6885d4085b9efeb6a211a26a80a9bbf2b30445b6e51eb13d3372",
+      "bytes": 4697,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-dead-imports-startup-safe\\AI8051U-34K64-32\\on\\.build\\mx251\\latest\\u1.asm",
+        "sha256": "2036c19ec96a6885d4085b9efeb6a211a26a80a9bbf2b30445b6e51eb13d3372",
+        "bytes": 4697
+      }
+    },
+    {
+      "path": "cases/AI8051U-34K64-32/safe-edf/startup.rel",
+      "sha256": "07d4b1395fd32e5c987e904b0ceef7692e4cc4e2ea3541e3946b8a5f403a9de1",
+      "bytes": 731,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-dead-imports-startup-safe\\AI8051U-34K64-32\\on\\.build\\mx251\\latest\\startup.rel",
+        "sha256": "07d4b1395fd32e5c987e904b0ceef7692e4cc4e2ea3541e3946b8a5f403a9de1",
+        "bytes": 731
+      }
+    },
+    {
+      "path": "cases/AI8051U-34K64-32/safe-edf/startup.asm",
+      "sha256": "b13e2b892cd04dcb9059af6e6e475de4c8a32dfd9764ecd88dceecc46afb7cdb",
+      "bytes": 2029,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-dead-imports-startup-safe\\AI8051U-34K64-32\\on\\.build\\mx251\\latest\\startup.asm",
+        "sha256": "b13e2b892cd04dcb9059af6e6e475de4c8a32dfd9764ecd88dceecc46afb7cdb",
+        "bytes": 2029
+      }
+    },
+    {
+      "path": "cases/AI8051U-34K64-32/safe-edf/member-00-crtclear.rel",
+      "sha256": "240be2833ed3179f92327457765a192ecefd181f9986425ab961c4205b696795",
+      "bytes": 524
+    },
+    {
+      "path": "cases/AI8051U-34K64-32/safe-edf/member-01-crtxinit.rel",
+      "sha256": "c93ec5c6b5d03775abb587516bf4ca34040dfb1df697f10851a8385795113089",
+      "bytes": 899
+    },
+    {
+      "path": "cases/AI8051U-34K64-32/safe-edf/member-02-crtxclear.rel",
+      "sha256": "6a53a954b3f61bd9064a33ce4e229de382b11507cf68b7ff023de3525d04fd18",
+      "bytes": 1140
+    },
+    {
+      "path": "cases/AI8051U-34K64-32/safe-edf/member-03-_startup.rel",
+      "sha256": "727e6db8b79d35190601ff8cae3e228aa4e1f13bede50b2bfdfd06862d01c822",
+      "bytes": 1070
+    },
+    {
+      "path": "cases/AI8051U-34K64-32/safe-edf/linked.partial.map",
+      "sha256": "674b0426b046f19f72c82eff0d7a55d5a4f6dcb78af926ffebe1987e11f032d1",
+      "bytes": 11798,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-dead-imports-startup-safe\\AI8051U-34K64-32\\on\\.build\\mx251\\latest\\linked.partial.map",
+        "sha256": "674b0426b046f19f72c82eff0d7a55d5a4f6dcb78af926ffebe1987e11f032d1",
+        "bytes": 11798
+      }
+    },
+    {
+      "path": "cases/AI8051U-34K64-32/safe-edf/firmware.hex",
+      "sha256": "3b7c1f09a144eeea370f1421a0fd9a1b128808eeb11bdc30699fb5a63079840c",
+      "bytes": 567,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-dead-imports-startup-safe\\AI8051U-34K64-32\\on\\.build\\mx251\\latest\\firmware.hex",
+        "sha256": "3b7c1f09a144eeea370f1421a0fd9a1b128808eeb11bdc30699fb5a63079840c",
+        "bytes": 567
+      }
+    },
+    {
+      "path": "cases/AI8051U-34K64-32/initialized-parent/u0.rel",
+      "sha256": "e8ff8062dd33ee5bbcb32b28d1f8f1cccd9c36ec573015537862d69ffdb8fb9b",
+      "bytes": 3394,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-startup-contract\\AI8051U-34K64-32\\off\\.build\\mx251\\latest\\u0.rel",
+        "sha256": "e8ff8062dd33ee5bbcb32b28d1f8f1cccd9c36ec573015537862d69ffdb8fb9b",
+        "bytes": 3394
+      }
+    },
+    {
+      "path": "cases/AI8051U-34K64-32/initialized-parent/u0.asm",
+      "sha256": "2bfe3e353c1bb0274311ba9240e08af7b7a2d3d26a00ec67111778d3579b0f3f",
+      "bytes": 8429,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-startup-contract\\AI8051U-34K64-32\\off\\.build\\mx251\\latest\\u0.asm",
+        "sha256": "2bfe3e353c1bb0274311ba9240e08af7b7a2d3d26a00ec67111778d3579b0f3f",
+        "bytes": 8429
+      }
+    },
+    {
+      "path": "cases/AI8051U-34K64-32/initialized-parent/startup.rel",
+      "sha256": "07d4b1395fd32e5c987e904b0ceef7692e4cc4e2ea3541e3946b8a5f403a9de1",
+      "bytes": 731,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-startup-contract\\AI8051U-34K64-32\\off\\.build\\mx251\\latest\\startup.rel",
+        "sha256": "07d4b1395fd32e5c987e904b0ceef7692e4cc4e2ea3541e3946b8a5f403a9de1",
+        "bytes": 731
+      }
+    },
+    {
+      "path": "cases/AI8051U-34K64-32/initialized-parent/startup.asm",
+      "sha256": "b13e2b892cd04dcb9059af6e6e475de4c8a32dfd9764ecd88dceecc46afb7cdb",
+      "bytes": 2029,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-startup-contract\\AI8051U-34K64-32\\off\\.build\\mx251\\latest\\startup.asm",
+        "sha256": "b13e2b892cd04dcb9059af6e6e475de4c8a32dfd9764ecd88dceecc46afb7cdb",
+        "bytes": 2029
+      }
+    },
+    {
+      "path": "cases/AI8051U-34K64-32/initialized-parent/member-00-crtclear.rel",
+      "sha256": "240be2833ed3179f92327457765a192ecefd181f9986425ab961c4205b696795",
+      "bytes": 524
+    },
+    {
+      "path": "cases/AI8051U-34K64-32/initialized-parent/member-01-crtxinit.rel",
+      "sha256": "c93ec5c6b5d03775abb587516bf4ca34040dfb1df697f10851a8385795113089",
+      "bytes": 899
+    },
+    {
+      "path": "cases/AI8051U-34K64-32/initialized-parent/member-02-crtxclear.rel",
+      "sha256": "6a53a954b3f61bd9064a33ce4e229de382b11507cf68b7ff023de3525d04fd18",
+      "bytes": 1140
+    },
+    {
+      "path": "cases/AI8051U-34K64-32/initialized-parent/member-03-_startup.rel",
+      "sha256": "727e6db8b79d35190601ff8cae3e228aa4e1f13bede50b2bfdfd06862d01c822",
+      "bytes": 1070
+    },
+    {
+      "path": "cases/AI8051U-34K64-32/initialized-parent/linked.partial.map",
+      "sha256": "06291facd8ced017ef343f467a3f7a70690b6787f8796b4309d94b4e7db8efc6",
+      "bytes": 14096,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-startup-contract\\AI8051U-34K64-32\\off\\.build\\mx251\\latest\\linked.partial.map",
+        "sha256": "06291facd8ced017ef343f467a3f7a70690b6787f8796b4309d94b4e7db8efc6",
+        "bytes": 14096
+      }
+    },
+    {
+      "path": "cases/AI8051U-34K64-32/initialized-parent/firmware.hex",
+      "sha256": "2c5648b4f13d03d146185072aaa7cded3001efdf579757b181a493f551031905",
+      "bytes": 786,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-startup-contract\\AI8051U-34K64-32\\off\\.build\\mx251\\latest\\firmware.hex",
+        "sha256": "2c5648b4f13d03d146185072aaa7cded3001efdf579757b181a493f551031905",
+        "bytes": 786
+      }
+    },
+    {
+      "path": "cases/AI8051U-34K64-32/initialized-safe-edf/u0.rel",
+      "sha256": "d1e7c24b536a1581b94651dc9c875c3c580e448e76a5eef21b87eb376ba18310",
+      "bytes": 3199,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-startup-contract\\AI8051U-34K64-32\\on\\.build\\mx251\\latest\\u0.rel",
+        "sha256": "d1e7c24b536a1581b94651dc9c875c3c580e448e76a5eef21b87eb376ba18310",
+        "bytes": 3199
+      }
+    },
+    {
+      "path": "cases/AI8051U-34K64-32/initialized-safe-edf/u0.asm",
+      "sha256": "996418b7573399a88ab8f1a083b623349566b60532bb1ada09cee12b93e3dd6c",
+      "bytes": 7015,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-startup-contract\\AI8051U-34K64-32\\on\\.build\\mx251\\latest\\u0.asm",
+        "sha256": "996418b7573399a88ab8f1a083b623349566b60532bb1ada09cee12b93e3dd6c",
+        "bytes": 7015
+      }
+    },
+    {
+      "path": "cases/AI8051U-34K64-32/initialized-safe-edf/startup.rel",
+      "sha256": "07d4b1395fd32e5c987e904b0ceef7692e4cc4e2ea3541e3946b8a5f403a9de1",
+      "bytes": 731,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-startup-contract\\AI8051U-34K64-32\\on\\.build\\mx251\\latest\\startup.rel",
+        "sha256": "07d4b1395fd32e5c987e904b0ceef7692e4cc4e2ea3541e3946b8a5f403a9de1",
+        "bytes": 731
+      }
+    },
+    {
+      "path": "cases/AI8051U-34K64-32/initialized-safe-edf/startup.asm",
+      "sha256": "b13e2b892cd04dcb9059af6e6e475de4c8a32dfd9764ecd88dceecc46afb7cdb",
+      "bytes": 2029,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-startup-contract\\AI8051U-34K64-32\\on\\.build\\mx251\\latest\\startup.asm",
+        "sha256": "b13e2b892cd04dcb9059af6e6e475de4c8a32dfd9764ecd88dceecc46afb7cdb",
+        "bytes": 2029
+      }
+    },
+    {
+      "path": "cases/AI8051U-34K64-32/initialized-safe-edf/member-00-crtclear.rel",
+      "sha256": "240be2833ed3179f92327457765a192ecefd181f9986425ab961c4205b696795",
+      "bytes": 524
+    },
+    {
+      "path": "cases/AI8051U-34K64-32/initialized-safe-edf/member-01-crtxinit.rel",
+      "sha256": "c93ec5c6b5d03775abb587516bf4ca34040dfb1df697f10851a8385795113089",
+      "bytes": 899
+    },
+    {
+      "path": "cases/AI8051U-34K64-32/initialized-safe-edf/member-02-crtxclear.rel",
+      "sha256": "6a53a954b3f61bd9064a33ce4e229de382b11507cf68b7ff023de3525d04fd18",
+      "bytes": 1140
+    },
+    {
+      "path": "cases/AI8051U-34K64-32/initialized-safe-edf/member-03-_startup.rel",
+      "sha256": "727e6db8b79d35190601ff8cae3e228aa4e1f13bede50b2bfdfd06862d01c822",
+      "bytes": 1070
+    },
+    {
+      "path": "cases/AI8051U-34K64-32/initialized-safe-edf/linked.partial.map",
+      "sha256": "4817dbc63785aedb54fbc197ec7dcb0595ede629f19d4569a146fd2f5128961c",
+      "bytes": 14042,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-startup-contract\\AI8051U-34K64-32\\on\\.build\\mx251\\latest\\linked.partial.map",
+        "sha256": "4817dbc63785aedb54fbc197ec7dcb0595ede629f19d4569a146fd2f5128961c",
+        "bytes": 14042
+      }
+    },
+    {
+      "path": "cases/AI8051U-34K64-32/initialized-safe-edf/firmware.hex",
+      "sha256": "46bae777a3b427fc42d8e9ebeffbc6f9b304f010fa4c7ff423907bb25e8bab21",
+      "bytes": 778,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-startup-contract\\AI8051U-34K64-32\\on\\.build\\mx251\\latest\\firmware.hex",
+        "sha256": "46bae777a3b427fc42d8e9ebeffbc6f9b304f010fa4c7ff423907bb25e8bab21",
+        "bytes": 778
+      }
+    },
+    {
+      "path": "cases/STC32G12K128/parent/u0.rel",
+      "sha256": "a44e7f19fd2c03360aa1993894c0a3094f6c482715a6a1204a3f61cdb511c569",
+      "bytes": 6894,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-dead-imports-startup-safe\\STC32G12K128\\off\\.build\\mx251\\latest\\u0.rel",
+        "sha256": "a44e7f19fd2c03360aa1993894c0a3094f6c482715a6a1204a3f61cdb511c569",
+        "bytes": 6894
+      }
+    },
+    {
+      "path": "cases/STC32G12K128/parent/u0.asm",
+      "sha256": "f85a6e8f19e77acb830d5a64882da5d814372f46d965d5d3d89fec520d08ade7",
+      "bytes": 9711,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-dead-imports-startup-safe\\STC32G12K128\\off\\.build\\mx251\\latest\\u0.asm",
+        "sha256": "f85a6e8f19e77acb830d5a64882da5d814372f46d965d5d3d89fec520d08ade7",
+        "bytes": 9711
+      }
+    },
+    {
+      "path": "cases/STC32G12K128/parent/u1.rel",
+      "sha256": "48ea7e110ae13bebbf6f0a1580bce1a0f8f57b7de01c3b2c547a50060bc399df",
+      "bytes": 1324,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-dead-imports-startup-safe\\STC32G12K128\\off\\.build\\mx251\\latest\\u1.rel",
+        "sha256": "48ea7e110ae13bebbf6f0a1580bce1a0f8f57b7de01c3b2c547a50060bc399df",
+        "bytes": 1324
+      }
+    },
+    {
+      "path": "cases/STC32G12K128/parent/u1.asm",
+      "sha256": "d26aacaf445bcb7bd4e38dfc42c83bc804b96dbc7e96f67e0efcd6512b164cf0",
+      "bytes": 5810,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-dead-imports-startup-safe\\STC32G12K128\\off\\.build\\mx251\\latest\\u1.asm",
+        "sha256": "d26aacaf445bcb7bd4e38dfc42c83bc804b96dbc7e96f67e0efcd6512b164cf0",
+        "bytes": 5810
+      }
+    },
+    {
+      "path": "cases/STC32G12K128/parent/startup.rel",
+      "sha256": "d78c9bbda2a8aaa10d5e4787fceb322c9b9d0b4b65bcca40dfb4c039648dbd07",
+      "bytes": 743,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-dead-imports-startup-safe\\STC32G12K128\\off\\.build\\mx251\\latest\\startup.rel",
+        "sha256": "d78c9bbda2a8aaa10d5e4787fceb322c9b9d0b4b65bcca40dfb4c039648dbd07",
+        "bytes": 743
+      }
+    },
+    {
+      "path": "cases/STC32G12K128/parent/startup.asm",
+      "sha256": "7225a696352a34eb5c32566c6783bf2018a65e9879d8adf4f53d6fbbf53fd876",
+      "bytes": 2280,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-dead-imports-startup-safe\\STC32G12K128\\off\\.build\\mx251\\latest\\startup.asm",
+        "sha256": "7225a696352a34eb5c32566c6783bf2018a65e9879d8adf4f53d6fbbf53fd876",
+        "bytes": 2280
+      }
+    },
+    {
+      "path": "cases/STC32G12K128/parent/member-00-crtclear.rel",
+      "sha256": "240be2833ed3179f92327457765a192ecefd181f9986425ab961c4205b696795",
+      "bytes": 524
+    },
+    {
+      "path": "cases/STC32G12K128/parent/member-01-crtxinit.rel",
+      "sha256": "c93ec5c6b5d03775abb587516bf4ca34040dfb1df697f10851a8385795113089",
+      "bytes": 899
+    },
+    {
+      "path": "cases/STC32G12K128/parent/member-02-crtxclear.rel",
+      "sha256": "6a53a954b3f61bd9064a33ce4e229de382b11507cf68b7ff023de3525d04fd18",
+      "bytes": 1140
+    },
+    {
+      "path": "cases/STC32G12K128/parent/member-03-_startup.rel",
+      "sha256": "727e6db8b79d35190601ff8cae3e228aa4e1f13bede50b2bfdfd06862d01c822",
+      "bytes": 1070
+    },
+    {
+      "path": "cases/STC32G12K128/parent/linked.partial.map",
+      "sha256": "621056d462deb189c5db8c61e4f6e1001fae1f0dcf75367586b364e7b47c2665",
+      "bytes": 12026,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-dead-imports-startup-safe\\STC32G12K128\\off\\.build\\mx251\\latest\\linked.partial.map",
+        "sha256": "621056d462deb189c5db8c61e4f6e1001fae1f0dcf75367586b364e7b47c2665",
+        "bytes": 12026
+      }
+    },
+    {
+      "path": "cases/STC32G12K128/parent/firmware.hex",
+      "sha256": "fce463da2f9a758e2c212d32dda09d7aca74416951fccbdd3f0adbda4208f977",
+      "bytes": 1903,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-dead-imports-startup-safe\\STC32G12K128\\off\\.build\\mx251\\latest\\firmware.hex",
+        "sha256": "fce463da2f9a758e2c212d32dda09d7aca74416951fccbdd3f0adbda4208f977",
+        "bytes": 1903
+      }
+    },
+    {
+      "path": "cases/STC32G12K128/rejected-35f/u0.rel",
+      "sha256": "b5ea88c98fd8fe8dbd5be03a6be5de2ba6233f4c195616758506b0682f3df4f1",
+      "bytes": 6603,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-dead-imports-ordinal\\STC32G12K128\\on\\.build\\mx251\\latest\\u0.rel",
+        "sha256": "b5ea88c98fd8fe8dbd5be03a6be5de2ba6233f4c195616758506b0682f3df4f1",
+        "bytes": 6603
+      }
+    },
+    {
+      "path": "cases/STC32G12K128/rejected-35f/u0.asm",
+      "sha256": "195d9258ae8f4ba612b6e013da7f9439bafe5064e0862d4539a70f2d0341ce0b",
+      "bytes": 8231,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-dead-imports-ordinal\\STC32G12K128\\on\\.build\\mx251\\latest\\u0.asm",
+        "sha256": "195d9258ae8f4ba612b6e013da7f9439bafe5064e0862d4539a70f2d0341ce0b",
+        "bytes": 8231
+      }
+    },
+    {
+      "path": "cases/STC32G12K128/rejected-35f/u1.rel",
+      "sha256": "3cb70552dbea1ddf154d1b474cbc9800593473d20b1a0f0ca73d854ecd527c52",
+      "bytes": 1124,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-dead-imports-ordinal\\STC32G12K128\\on\\.build\\mx251\\latest\\u1.rel",
+        "sha256": "3cb70552dbea1ddf154d1b474cbc9800593473d20b1a0f0ca73d854ecd527c52",
+        "bytes": 1124
+      }
+    },
+    {
+      "path": "cases/STC32G12K128/rejected-35f/u1.asm",
+      "sha256": "2036c19ec96a6885d4085b9efeb6a211a26a80a9bbf2b30445b6e51eb13d3372",
+      "bytes": 4697,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-dead-imports-ordinal\\STC32G12K128\\on\\.build\\mx251\\latest\\u1.asm",
+        "sha256": "2036c19ec96a6885d4085b9efeb6a211a26a80a9bbf2b30445b6e51eb13d3372",
+        "bytes": 4697
+      }
+    },
+    {
+      "path": "cases/STC32G12K128/rejected-35f/startup.rel",
+      "sha256": "d78c9bbda2a8aaa10d5e4787fceb322c9b9d0b4b65bcca40dfb4c039648dbd07",
+      "bytes": 743,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-dead-imports-ordinal\\STC32G12K128\\on\\.build\\mx251\\latest\\startup.rel",
+        "sha256": "d78c9bbda2a8aaa10d5e4787fceb322c9b9d0b4b65bcca40dfb4c039648dbd07",
+        "bytes": 743
+      }
+    },
+    {
+      "path": "cases/STC32G12K128/rejected-35f/startup.asm",
+      "sha256": "7225a696352a34eb5c32566c6783bf2018a65e9879d8adf4f53d6fbbf53fd876",
+      "bytes": 2280,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-dead-imports-ordinal\\STC32G12K128\\on\\.build\\mx251\\latest\\startup.asm",
+        "sha256": "7225a696352a34eb5c32566c6783bf2018a65e9879d8adf4f53d6fbbf53fd876",
+        "bytes": 2280
+      }
+    },
+    {
+      "path": "cases/STC32G12K128/rejected-35f/member-00-_startup.rel",
+      "sha256": "727e6db8b79d35190601ff8cae3e228aa4e1f13bede50b2bfdfd06862d01c822",
+      "bytes": 1070
+    },
+    {
+      "path": "cases/STC32G12K128/rejected-35f/linked.partial.map",
+      "sha256": "1f3ad91f7e70811f86e764a626344ce46feef15d7fed6b8f96e05c22da1a9308",
+      "bytes": 10126,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-dead-imports-ordinal\\STC32G12K128\\on\\.build\\mx251\\latest\\linked.partial.map",
+        "sha256": "1f3ad91f7e70811f86e764a626344ce46feef15d7fed6b8f96e05c22da1a9308",
+        "bytes": 10126
+      }
+    },
+    {
+      "path": "cases/STC32G12K128/rejected-35f/firmware.hex",
+      "sha256": "5d1492c9666c9a428a01c5dbc47c75a7037b3c549568b91e1568a42cb6eb0d54",
+      "bytes": 1567,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-dead-imports-ordinal\\STC32G12K128\\on\\.build\\mx251\\latest\\firmware.hex",
+        "sha256": "5d1492c9666c9a428a01c5dbc47c75a7037b3c549568b91e1568a42cb6eb0d54",
+        "bytes": 1567
+      }
+    },
+    {
+      "path": "cases/STC32G12K128/safe-edf/u0.rel",
+      "sha256": "768180137b1b8dc63be8ae10c07867d0d4cdddef00685be1b8342399001d2ae7",
+      "bytes": 6697,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-dead-imports-startup-safe\\STC32G12K128\\on\\.build\\mx251\\latest\\u0.rel",
+        "sha256": "768180137b1b8dc63be8ae10c07867d0d4cdddef00685be1b8342399001d2ae7",
+        "bytes": 6697
+      }
+    },
+    {
+      "path": "cases/STC32G12K128/safe-edf/u0.asm",
+      "sha256": "4dded815938e705c93c9151ad9cfd2b3ad1a084029f38a4769290b884e5a4519",
+      "bytes": 8313,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-dead-imports-startup-safe\\STC32G12K128\\on\\.build\\mx251\\latest\\u0.asm",
+        "sha256": "4dded815938e705c93c9151ad9cfd2b3ad1a084029f38a4769290b884e5a4519",
+        "bytes": 8313
+      }
+    },
+    {
+      "path": "cases/STC32G12K128/safe-edf/u1.rel",
+      "sha256": "3cb70552dbea1ddf154d1b474cbc9800593473d20b1a0f0ca73d854ecd527c52",
+      "bytes": 1124,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-dead-imports-startup-safe\\STC32G12K128\\on\\.build\\mx251\\latest\\u1.rel",
+        "sha256": "3cb70552dbea1ddf154d1b474cbc9800593473d20b1a0f0ca73d854ecd527c52",
+        "bytes": 1124
+      }
+    },
+    {
+      "path": "cases/STC32G12K128/safe-edf/u1.asm",
+      "sha256": "2036c19ec96a6885d4085b9efeb6a211a26a80a9bbf2b30445b6e51eb13d3372",
+      "bytes": 4697,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-dead-imports-startup-safe\\STC32G12K128\\on\\.build\\mx251\\latest\\u1.asm",
+        "sha256": "2036c19ec96a6885d4085b9efeb6a211a26a80a9bbf2b30445b6e51eb13d3372",
+        "bytes": 4697
+      }
+    },
+    {
+      "path": "cases/STC32G12K128/safe-edf/startup.rel",
+      "sha256": "d78c9bbda2a8aaa10d5e4787fceb322c9b9d0b4b65bcca40dfb4c039648dbd07",
+      "bytes": 743,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-dead-imports-startup-safe\\STC32G12K128\\on\\.build\\mx251\\latest\\startup.rel",
+        "sha256": "d78c9bbda2a8aaa10d5e4787fceb322c9b9d0b4b65bcca40dfb4c039648dbd07",
+        "bytes": 743
+      }
+    },
+    {
+      "path": "cases/STC32G12K128/safe-edf/startup.asm",
+      "sha256": "7225a696352a34eb5c32566c6783bf2018a65e9879d8adf4f53d6fbbf53fd876",
+      "bytes": 2280,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-dead-imports-startup-safe\\STC32G12K128\\on\\.build\\mx251\\latest\\startup.asm",
+        "sha256": "7225a696352a34eb5c32566c6783bf2018a65e9879d8adf4f53d6fbbf53fd876",
+        "bytes": 2280
+      }
+    },
+    {
+      "path": "cases/STC32G12K128/safe-edf/member-00-crtclear.rel",
+      "sha256": "240be2833ed3179f92327457765a192ecefd181f9986425ab961c4205b696795",
+      "bytes": 524
+    },
+    {
+      "path": "cases/STC32G12K128/safe-edf/member-01-crtxinit.rel",
+      "sha256": "c93ec5c6b5d03775abb587516bf4ca34040dfb1df697f10851a8385795113089",
+      "bytes": 899
+    },
+    {
+      "path": "cases/STC32G12K128/safe-edf/member-02-crtxclear.rel",
+      "sha256": "6a53a954b3f61bd9064a33ce4e229de382b11507cf68b7ff023de3525d04fd18",
+      "bytes": 1140
+    },
+    {
+      "path": "cases/STC32G12K128/safe-edf/member-03-_startup.rel",
+      "sha256": "727e6db8b79d35190601ff8cae3e228aa4e1f13bede50b2bfdfd06862d01c822",
+      "bytes": 1070
+    },
+    {
+      "path": "cases/STC32G12K128/safe-edf/linked.partial.map",
+      "sha256": "a08f02d68c154e6415175c04882b0b2217a7db65c05ac3f6812af74d2fc6ec0d",
+      "bytes": 11910,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-dead-imports-startup-safe\\STC32G12K128\\on\\.build\\mx251\\latest\\linked.partial.map",
+        "sha256": "a08f02d68c154e6415175c04882b0b2217a7db65c05ac3f6812af74d2fc6ec0d",
+        "bytes": 11910
+      }
+    },
+    {
+      "path": "cases/STC32G12K128/safe-edf/firmware.hex",
+      "sha256": "314d99be4e7cafe74a5622eb1de6db7b432e21845fe07de4e8ebe953e5bdc2f2",
+      "bytes": 1885,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-dead-imports-startup-safe\\STC32G12K128\\on\\.build\\mx251\\latest\\firmware.hex",
+        "sha256": "314d99be4e7cafe74a5622eb1de6db7b432e21845fe07de4e8ebe953e5bdc2f2",
+        "bytes": 1885
+      }
+    },
+    {
+      "path": "cases/STC32G12K128/initialized-parent/u0.rel",
+      "sha256": "b34b75fd79e0b05be5f3fb294f98bb83782e4c5d307b5f77fc8b653184d22a5c",
+      "bytes": 8158,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-startup-contract\\STC32G12K128\\off\\.build\\mx251\\latest\\u0.rel",
+        "sha256": "b34b75fd79e0b05be5f3fb294f98bb83782e4c5d307b5f77fc8b653184d22a5c",
+        "bytes": 8158
+      }
+    },
+    {
+      "path": "cases/STC32G12K128/initialized-parent/u0.asm",
+      "sha256": "7df856ed4c41ca1697a125d79a57f2bb47b0044166102969fd60704c6fd8868d",
+      "bytes": 11583,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-startup-contract\\STC32G12K128\\off\\.build\\mx251\\latest\\u0.asm",
+        "sha256": "7df856ed4c41ca1697a125d79a57f2bb47b0044166102969fd60704c6fd8868d",
+        "bytes": 11583
+      }
+    },
+    {
+      "path": "cases/STC32G12K128/initialized-parent/startup.rel",
+      "sha256": "d78c9bbda2a8aaa10d5e4787fceb322c9b9d0b4b65bcca40dfb4c039648dbd07",
+      "bytes": 743,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-startup-contract\\STC32G12K128\\off\\.build\\mx251\\latest\\startup.rel",
+        "sha256": "d78c9bbda2a8aaa10d5e4787fceb322c9b9d0b4b65bcca40dfb4c039648dbd07",
+        "bytes": 743
+      }
+    },
+    {
+      "path": "cases/STC32G12K128/initialized-parent/startup.asm",
+      "sha256": "7225a696352a34eb5c32566c6783bf2018a65e9879d8adf4f53d6fbbf53fd876",
+      "bytes": 2280,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-startup-contract\\STC32G12K128\\off\\.build\\mx251\\latest\\startup.asm",
+        "sha256": "7225a696352a34eb5c32566c6783bf2018a65e9879d8adf4f53d6fbbf53fd876",
+        "bytes": 2280
+      }
+    },
+    {
+      "path": "cases/STC32G12K128/initialized-parent/member-00-crtclear.rel",
+      "sha256": "240be2833ed3179f92327457765a192ecefd181f9986425ab961c4205b696795",
+      "bytes": 524
+    },
+    {
+      "path": "cases/STC32G12K128/initialized-parent/member-01-crtxinit.rel",
+      "sha256": "c93ec5c6b5d03775abb587516bf4ca34040dfb1df697f10851a8385795113089",
+      "bytes": 899
+    },
+    {
+      "path": "cases/STC32G12K128/initialized-parent/member-02-crtxclear.rel",
+      "sha256": "6a53a954b3f61bd9064a33ce4e229de382b11507cf68b7ff023de3525d04fd18",
+      "bytes": 1140
+    },
+    {
+      "path": "cases/STC32G12K128/initialized-parent/member-03-_startup.rel",
+      "sha256": "727e6db8b79d35190601ff8cae3e228aa4e1f13bede50b2bfdfd06862d01c822",
+      "bytes": 1070
+    },
+    {
+      "path": "cases/STC32G12K128/initialized-parent/linked.partial.map",
+      "sha256": "9940e0420eced2769c806bf5ef197feff6c67843f662e422d286656e171749dc",
+      "bytes": 14208,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-startup-contract\\STC32G12K128\\off\\.build\\mx251\\latest\\linked.partial.map",
+        "sha256": "9940e0420eced2769c806bf5ef197feff6c67843f662e422d286656e171749dc",
+        "bytes": 14208
+      }
+    },
+    {
+      "path": "cases/STC32G12K128/initialized-parent/firmware.hex",
+      "sha256": "bed428f5b8c6fcb502c06577ba7c149d548d5ba7b407db8e58d20ff93e6cfcab",
+      "bytes": 2104,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-startup-contract\\STC32G12K128\\off\\.build\\mx251\\latest\\firmware.hex",
+        "sha256": "bed428f5b8c6fcb502c06577ba7c149d548d5ba7b407db8e58d20ff93e6cfcab",
+        "bytes": 2104
+      }
+    },
+    {
+      "path": "cases/STC32G12K128/initialized-safe-edf/u0.rel",
+      "sha256": "f01c8f8a042999118c0b4a836c9397bdc10f8f127ef650b2f878a6911944cfdb",
+      "bytes": 7963,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-startup-contract\\STC32G12K128\\on\\.build\\mx251\\latest\\u0.rel",
+        "sha256": "f01c8f8a042999118c0b4a836c9397bdc10f8f127ef650b2f878a6911944cfdb",
+        "bytes": 7963
+      }
+    },
+    {
+      "path": "cases/STC32G12K128/initialized-safe-edf/u0.asm",
+      "sha256": "416ce48b9b6deb8716c0a8c89c5b8706cf78889d8f4a5254c6217377a3698bff",
+      "bytes": 10041,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-startup-contract\\STC32G12K128\\on\\.build\\mx251\\latest\\u0.asm",
+        "sha256": "416ce48b9b6deb8716c0a8c89c5b8706cf78889d8f4a5254c6217377a3698bff",
+        "bytes": 10041
+      }
+    },
+    {
+      "path": "cases/STC32G12K128/initialized-safe-edf/startup.rel",
+      "sha256": "d78c9bbda2a8aaa10d5e4787fceb322c9b9d0b4b65bcca40dfb4c039648dbd07",
+      "bytes": 743,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-startup-contract\\STC32G12K128\\on\\.build\\mx251\\latest\\startup.rel",
+        "sha256": "d78c9bbda2a8aaa10d5e4787fceb322c9b9d0b4b65bcca40dfb4c039648dbd07",
+        "bytes": 743
+      }
+    },
+    {
+      "path": "cases/STC32G12K128/initialized-safe-edf/startup.asm",
+      "sha256": "7225a696352a34eb5c32566c6783bf2018a65e9879d8adf4f53d6fbbf53fd876",
+      "bytes": 2280,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-startup-contract\\STC32G12K128\\on\\.build\\mx251\\latest\\startup.asm",
+        "sha256": "7225a696352a34eb5c32566c6783bf2018a65e9879d8adf4f53d6fbbf53fd876",
+        "bytes": 2280
+      }
+    },
+    {
+      "path": "cases/STC32G12K128/initialized-safe-edf/member-00-crtclear.rel",
+      "sha256": "240be2833ed3179f92327457765a192ecefd181f9986425ab961c4205b696795",
+      "bytes": 524
+    },
+    {
+      "path": "cases/STC32G12K128/initialized-safe-edf/member-01-crtxinit.rel",
+      "sha256": "c93ec5c6b5d03775abb587516bf4ca34040dfb1df697f10851a8385795113089",
+      "bytes": 899
+    },
+    {
+      "path": "cases/STC32G12K128/initialized-safe-edf/member-02-crtxclear.rel",
+      "sha256": "6a53a954b3f61bd9064a33ce4e229de382b11507cf68b7ff023de3525d04fd18",
+      "bytes": 1140
+    },
+    {
+      "path": "cases/STC32G12K128/initialized-safe-edf/member-03-_startup.rel",
+      "sha256": "727e6db8b79d35190601ff8cae3e228aa4e1f13bede50b2bfdfd06862d01c822",
+      "bytes": 1070
+    },
+    {
+      "path": "cases/STC32G12K128/initialized-safe-edf/linked.partial.map",
+      "sha256": "e3bfd51e88ba7c1a2f2710789eef5ab8ff8eea4d61d553ebdf5a78fb019f3732",
+      "bytes": 14154,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-startup-contract\\STC32G12K128\\on\\.build\\mx251\\latest\\linked.partial.map",
+        "sha256": "e3bfd51e88ba7c1a2f2710789eef5ab8ff8eea4d61d553ebdf5a78fb019f3732",
+        "bytes": 14154
+      }
+    },
+    {
+      "path": "cases/STC32G12K128/initialized-safe-edf/firmware.hex",
+      "sha256": "8580536172eca7a6f4e47f2373d8b07b07f9204c442d3b51335570d3432f7e41",
+      "bytes": 2096,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\replays\\gc-real-startup-contract\\STC32G12K128\\on\\.build\\mx251\\latest\\firmware.hex",
+        "sha256": "8580536172eca7a6f4e47f2373d8b07b07f9204c442d3b51335570d3432f7e41",
+        "bytes": 2096
+      }
+    },
+    {
+      "path": "fixtures/gc-case-sensitive-imports/common.h",
+      "sha256": "efc6f9ca19d34a719075fec0a79dbfc7f2c0704d0e5e3c38c4f207fd59e8cfc8",
+      "bytes": 100,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\tests\\gc-case-sensitive-imports\\common.h",
+        "sha256": "efc6f9ca19d34a719075fec0a79dbfc7f2c0704d0e5e3c38c4f207fd59e8cfc8",
+        "bytes": 100
+      }
+    },
+    {
+      "path": "fixtures/gc-case-sensitive-imports/main.c",
+      "sha256": "87aae9a47d69d47f07a7557f61d5aec255f7052b283807a5aea72df9091ac1d6",
+      "bytes": 255,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\tests\\gc-case-sensitive-imports\\main.c",
+        "sha256": "87aae9a47d69d47f07a7557f61d5aec255f7052b283807a5aea72df9091ac1d6",
+        "bytes": 255
+      }
+    },
+    {
+      "path": "fixtures/gc-case-sensitive-imports/manifest.json",
+      "sha256": "206ed9ec1c18675dc9b4dd2a46abbeaa26e191ebc2bfccdec622269dc1120e0c",
+      "bytes": 807,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\tests\\gc-case-sensitive-imports\\manifest.json",
+        "sha256": "206ed9ec1c18675dc9b4dd2a46abbeaa26e191ebc2bfccdec622269dc1120e0c",
+        "bytes": 807
+      }
+    },
+    {
+      "path": "fixtures/gc-case-sensitive-imports/remote.c",
+      "sha256": "0777793bcc0ed73b10993144bd97992f3746c529e69c2dbc7cb7ffaa0f78a21f",
+      "bytes": 134,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\tests\\gc-case-sensitive-imports\\remote.c",
+        "sha256": "0777793bcc0ed73b10993144bd97992f3746c529e69c2dbc7cb7ffaa0f78a21f",
+        "bytes": 134
+      }
+    },
+    {
+      "path": "fixtures/gc-startup-initialization/common.h",
+      "sha256": "cc0ffde5bee54fde47d9789bbee1cbff818537d74001f62f69b9446d872b3c1c",
+      "bytes": 40,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\tests\\gc-startup-initialization\\common.h",
+        "sha256": "cc0ffde5bee54fde47d9789bbee1cbff818537d74001f62f69b9446d872b3c1c",
+        "bytes": 40
+      }
+    },
+    {
+      "path": "fixtures/gc-startup-initialization/main.c",
+      "sha256": "05019641951ed10f4ef8033f6b3313557968f062255001215c8e484e678b5158",
+      "bytes": 831,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\tests\\gc-startup-initialization\\main.c",
+        "sha256": "05019641951ed10f4ef8033f6b3313557968f062255001215c8e484e678b5158",
+        "bytes": 831
+      }
+    },
+    {
+      "path": "fixtures/gc-startup-initialization/manifest.json",
+      "sha256": "2199109ebfbf48586f5a6aba9e543c53e041e0602717db5185d007bb35e27b5d",
+      "bytes": 1129,
+      "original": {
+        "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\tests\\gc-startup-initialization\\manifest.json",
+        "sha256": "2199109ebfbf48586f5a6aba9e543c53e041e0602717db5185d007bb35e27b5d",
+        "bytes": 1129
+      }
+    }
+  ],
+  "hardwareExecuted": false
+}

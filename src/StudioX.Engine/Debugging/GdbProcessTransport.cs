@@ -38,7 +38,10 @@ public sealed class GdbProcessTransport : IGdbMiTransport
         {
             await tclReady.Task.WaitAsync(TimeSpan.FromSeconds(2), token);
         }
-        catch (TimeoutException ex) { throw new StudioXException("OPENOCD_PLOT_UNAVAILABLE", "本次 OpenOCD 未确认 Tcl 采样端口，请查看调试日志；普通源码调试仍可使用。", ex); }
+        catch (TimeoutException ex)
+        {
+            throw new StudioXException("OPENOCD_PLOT_UNAVAILABLE", "本次 OpenOCD 未确认 Tcl 采样端口，请查看调试日志；普通源码调试仍可使用。", ex);
+        }
         if (memoryClient is null)
         {
             var connection = new OpenOcdMemoryClient();
@@ -47,7 +50,11 @@ public sealed class GdbProcessTransport : IGdbMiTransport
                 await connection.ConnectAsync(tclPort, token);
                 memoryClient = connection;
             }
-            catch { await connection.DisposeAsync(); throw; }
+            catch
+            {
+                await connection.DisposeAsync();
+                throw;
+            }
         }
         return await memoryClient.ReadAsync(address, count, token);
     }
@@ -69,7 +76,12 @@ public sealed class GdbProcessTransport : IGdbMiTransport
                 AutoFlush = true
             };
         }
-        catch { job?.Dispose(); lease.Dispose(); throw; }
+        catch
+        {
+            job?.Dispose();
+            lease.Dispose();
+            throw;
+        }
     }
     public static async Task<(GdbProcessTransport Transport, OpenOcdDebugPlan Plan)> StartAsync(HardwareDebugPreparation preparation, CancellationToken token)
     {
@@ -107,7 +119,11 @@ public sealed class GdbProcessTransport : IGdbMiTransport
             transport.readers.Add(transport.ObserveExitAsync(transport.gdb, "GDB"));
             return (transport, plan);
         }
-        catch { await transport.DisposeAsync(); throw; }
+        catch
+        {
+            await transport.DisposeAsync();
+            throw;
+        }
     }
     private Process Launch(string executable, string[] arguments, HardwareDebugPreparation preparation)
     {
@@ -145,7 +161,21 @@ public sealed class GdbProcessTransport : IGdbMiTransport
         {
             job.Add(process);
         }
-        catch { try { if (!process.HasExited) { process.Kill(true); } } finally { process.Dispose(); } throw; }
+        catch
+        {
+            try
+            {
+                if (!process.HasExited)
+                {
+                    process.Kill(true);
+                }
+            }
+            finally
+            {
+                process.Dispose();
+            }
+            throw;
+        }
         WriteLog($"START {process.Id}: {executable}");
         return process;
     }
@@ -217,7 +247,10 @@ public sealed class GdbProcessTransport : IGdbMiTransport
                 }
             }
         }
-        catch (Exception ex) { Fail(ex); }
+        catch (Exception ex)
+        {
+            Fail(ex);
+        }
     }
     private async Task ObserveExitAsync(Process process, string name)
     {
@@ -278,7 +311,10 @@ public sealed class GdbProcessTransport : IGdbMiTransport
                 await gdb.StandardInput.WriteLineAsync(command.AsMemory(), deadline.Token);
                 await gdb.StandardInput.FlushAsync(deadline.Token);
             }
-            finally { writes.Release(); }
+            finally
+            {
+                writes.Release();
+            }
             var result = await completion.Task.WaitAsync(deadline.Token);
             if (command.Contains("-target-select ", StringComparison.Ordinal) && MiRecord.Parse(result).Class == "connected")
             {
@@ -297,7 +333,10 @@ public sealed class GdbProcessTransport : IGdbMiTransport
             Fail(ex);
             throw;
         }
-        finally { pending.TryRemove(id, out _); }
+        finally
+        {
+            pending.TryRemove(id, out _);
+        }
     }
     private void WriteLog(string text)
     {
@@ -352,7 +391,11 @@ public sealed class GdbProcessTransport : IGdbMiTransport
                 progress?.Report(new("restored", "OpenOCD 已确认目标恢复运行。"));
                 targetConnected = false;
             }
-            catch (Exception ex) { detachFailure = ex; WriteLog("结束会话未能确认目标恢复运行：" + ex.Message); }
+            catch (Exception ex)
+            {
+                detachFailure = ex;
+                WriteLog("结束会话未能确认目标恢复运行：" + ex.Message);
+            }
         }
         if (Interlocked.Exchange(ref disposed, 1) != 0)
         {
@@ -377,8 +420,13 @@ public sealed class GdbProcessTransport : IGdbMiTransport
                             process.Kill(true);
                         }
                     }
-                    catch (InvalidOperationException) { }
-                    catch (System.ComponentModel.Win32Exception ex) { WriteLog("进程回收失败，交由作业对象清理：" + ex.Message); }
+                    catch (InvalidOperationException)
+                    {
+                    }
+                    catch (System.ComponentModel.Win32Exception ex)
+                    {
+                        WriteLog("进程回收失败，交由作业对象清理：" + ex.Message);
+                    }
                 }
             }
         }
@@ -389,7 +437,26 @@ public sealed class GdbProcessTransport : IGdbMiTransport
             {
                 await Task.WhenAll(readers);
             }
-            finally { gdb?.Dispose(); openocd?.Dispose(); try { lock (logSync) { log.Dispose(); } } finally { foreach (var toolLease in toolLeases) { toolLease.Dispose(); } lease.Dispose(); } }
+            finally
+            {
+                gdb?.Dispose();
+                openocd?.Dispose();
+                try
+                {
+                    lock (logSync)
+                    {
+                        log.Dispose();
+                    }
+                }
+                finally
+                {
+                    foreach (var toolLease in toolLeases)
+                    {
+                        toolLease.Dispose();
+                    }
+                    lease.Dispose();
+                }
+            }
         }
         if (detachFailure is not null)
         {

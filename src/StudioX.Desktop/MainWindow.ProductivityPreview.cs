@@ -37,7 +37,9 @@ public partial class MainWindow
             var actual = CaptureEditorWorkspace();
             Check(actual.Documents.Select(d => (d.Path, d.Draft, d.Group, d.Selected, d.Caret, d.SelectionStart, d.SelectionLength)).SequenceEqual(expected.Documents.Select(d => (d.Path, d.Draft, d.Group, d.Selected, d.Caret, d.SelectionStart, d.SelectionLength))), "restart restores groups, selected tabs, order, drafts, caret and selection");
             Check(actual.ActivePath == expected.ActivePath && secondaryTabs?.Visibility == Visibility.Visible, "restart restores active group and visible split");
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ContextIdle);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.ContextIdle);
             UpdateLayout();
             Check(mirroredSession is not null && mirrorEditor.IsVisible && mirrorEditor.Document == mirroredSession.Buffer, "restart displays the inactive group's selected document rather than the welcome page");
             Render(this, Path.Combine(directory, "split-restored.png"));
@@ -68,7 +70,9 @@ public partial class MainWindow
         var secondText = second.Buffer.Text;
         MoveEditorGroup(second, 1);
         UpdateLayout();
-        await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ContextIdle);
+        await Dispatcher.InvokeAsync(() =>
+        {
+        }, DispatcherPriority.ContextIdle);
         Check(secondaryTabs?.IsVisible == true && mirroredSession == first && mirrorEditor.Document == first.Buffer, "split shows both documents with shared buffer ownership");
         SourceEditor.AppendText("// right draft\n");
         SourceEditor.Undo();
@@ -85,7 +89,9 @@ public partial class MainWindow
         Width = 1100;
         Height = 760;
         UpdateLayout();
-        await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ContextIdle);
+        await Dispatcher.InvokeAsync(() =>
+        {
+        }, DispatcherPriority.ContextIdle);
         Render(this, Path.Combine(directory, "split-compact.png"));
         Check(SourceEditor.ActualWidth > 250 && mirrorEditor.ActualWidth > 250, $"both editor columns remain usable in compact window: active={SourceEditor.ActualWidth}, mirror={mirrorEditor.ActualWidth}, left={editorGroups!.ColumnDefinitions[0].ActualWidth}, right={editorGroups.ColumnDefinitions[2].ActualWidth}");
         await ShowToolEnvironmentAsync();

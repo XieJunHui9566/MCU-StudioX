@@ -32,8 +32,14 @@ if (args.Length == 2 && args[0] == "--prune")
     return;
 }
 
-if (args.Length != 1) { throw new ArgumentException("Usage: StudioX.PackRetentionValidation <new-output-directory> | --prune <absolute-pack-root>"); }
+if (args.Length != 1)
+{
+    throw new ArgumentException("Usage: StudioX.PackRetentionValidation <new-output-directory> | --prune <absolute-pack-root>");
+}
 var output = Path.GetFullPath(args[0]);
-if (Directory.Exists(output) || File.Exists(output)) { throw new ArgumentException("Use a new output directory."); }
+if (Directory.Exists(output) || File.Exists(output))
+{
+    throw new ArgumentException("Use a new output directory.");
+}
 Directory.CreateDirectory(output);
 await new RetentionChecks(output).RunAsync();

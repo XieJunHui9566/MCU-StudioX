@@ -78,7 +78,11 @@ public partial class MainWindow
                 HdlWorkflow.MarkStale();
             }
         }
-        catch (Exception error) { Log("仿真快照检查失败：" + error); HdlWorkflow.MarkStale(); }
+        catch (Exception error)
+        {
+            Log("仿真快照检查失败：" + error);
+            HdlWorkflow.MarkStale();
+        }
     }
 
     private async Task SaveHdlBuildSettingsAsync(CancellationToken token)

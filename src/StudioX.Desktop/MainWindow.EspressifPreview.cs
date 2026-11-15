@@ -27,7 +27,9 @@ public partial class MainWindow
         {
             ApplyTheme(theme);
             UpdateLayout();
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.Render);
             var visuals = Visuals(VendorPicker).ToArray();
             Check(visuals.OfType<Image>().Any(image => image.IsVisible && image.ActualWidth > 0 && ReferenceEquals(image.Source, vendor.Logo)) &&
                 !visuals.OfType<TextBlock>().Any(text => text.IsVisible && text.Text == vendor.Monogram),
@@ -50,7 +52,9 @@ public partial class MainWindow
         {
             ApplyTheme(theme);
             UpdateLayout();
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.Render);
             var memory = Visuals(BuildMemory).ToArray();
             var sdkDetails = memory.OfType<Expander>().Single(control => control.Name == "SdkDetails");
             Check(!sdkDetails.IsExpanded && memory.OfType<ItemsControl>().Single(control => control.Name == "VisibleRegions").Items.Count == 2,
@@ -58,7 +62,9 @@ public partial class MainWindow
             Render(this, Path.Combine(directory, "workspace-" + theme.Id + ".png"));
             sdkDetails.IsExpanded = true;
             UpdateLayout();
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.Render);
             Check(Visuals(BuildMemory).OfType<ItemsControl>().Single(control => control.Name == "SdkDetailRows").Items.Count > 0,
                 "Expanded ESP resources omitted SDK region details");
             Render(this, Path.Combine(directory, "workspace-resources-detail-" + theme.Id + ".png"));
@@ -77,33 +83,47 @@ public partial class MainWindow
             Check(portPicker.Text == configuration.Settings.Port,
                 "Settings automatically selected an unapproved port");
             portPicker.IsDropDownOpen = true;
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.Render);
             var item = portPicker.ItemContainerGenerator.ContainerFromItem("COM12") as ComboBoxItem
                 ?? throw new InvalidOperationException("WPF did not realize selectable port item");
             item.IsSelected = true;
             portPicker.IsDropDownOpen = false;
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.Render);
             var portEditor = portPicker.Template.FindName("PART_EditableTextBox", portPicker) as TextBox
                 ?? throw new InvalidOperationException("Editable COM picker omitted WPF text editor");
             Check(portEditor.IsVisible && portEditor.ActualWidth > 0 && portEditor.Text == "COM12" &&
                 portPicker.Text == "COM12" && settings.ReadSettings().Port == "COM12", "Selected port disappeared from visible editor or save value");
             await settings.RefreshPortsAsync();
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.Render);
             Check((string?)portPicker.SelectedItem == "COM12" && portEditor.Text == "COM12" && settings.ReadSettings().Port == "COM12",
                 "Refreshing available ports lost matched selected COM");
             refreshedPorts = ["COM7"];
             await settings.RefreshPortsAsync();
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.Render);
             Check(portPicker.SelectedItem is null && portEditor.Text == "COM12" && settings.ReadSettings().Port == "COM12",
                 "Disconnected selected COM was cleared or replaced by refresh");
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.Render);
             Render(settings, Path.Combine(directory, "settings-" + theme.Id + ".png"));
             portEditor.Text = "com35";
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.Render);
             Check(portPicker.Text == "com35" && settings.ReadSettings().Port == "COM35", "Manually typed COM was not synchronized to save value");
             refreshedPorts = ["COM35", "COM7"];
             await settings.RefreshPortsAsync();
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.Render);
             Check((string?)portPicker.SelectedItem == "COM35" && portEditor.Text.Equals("com35", StringComparison.OrdinalIgnoreCase) &&
                 settings.ReadSettings().Port == "COM35", "Reappeared manually typed COM was not restored on refresh");
             settings.Close();
@@ -119,7 +139,9 @@ public partial class MainWindow
             var details = ((TextBox)review.FindName("LayoutDetails")).Text;
             Check(preview.Layout.Images.All(image => details.Contains(image.Sha256, StringComparison.Ordinal)) &&
                 details.Contains(preview.Layout.LayoutSha256, StringComparison.Ordinal), "Confirmation omitted image or layout hashes");
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.Render);
             Render(review, Path.Combine(directory, "review-" + theme.Id + ".png"));
             review.Close();
         }
@@ -131,7 +153,9 @@ public partial class MainWindow
         {
             ApplyTheme(theme);
             UpdateLayout();
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.Render);
             Render(this, Path.Combine(directory, "project-details-" + theme.Id + ".png"));
         }
         UpdateProjectActions(true);

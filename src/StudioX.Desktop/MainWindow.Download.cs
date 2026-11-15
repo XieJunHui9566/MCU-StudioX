@@ -44,7 +44,10 @@ public partial class MainWindow
             DownloadProbePicker.ToolTip = configuration is null ? "打开工程后选择该器件支持的烧录器" :
                 $"{configuration.Device.Id} · {probe!.DisplayName} · {probe.Transport.ToUpperInvariant()} · {configuration.Options.SpeedKhz} kHz\n选择按当前工程保存；速度与序列号可在下载设置中修改。";
         }
-        finally { updatingDownloadPicker = false; }
+        finally
+        {
+            updatingDownloadPicker = false;
+        }
         RefreshDebugUi();
         UpdateProjectActions(projectActionsBusy);
     }
@@ -69,7 +72,10 @@ public partial class MainWindow
                 };
                 Status.Text = "烧录器已切换为 " + probe.DisplayName;
             }
-            finally { ApplyDownloadConfiguration(downloadConfiguration); }
+            finally
+            {
+                ApplyDownloadConfiguration(downloadConfiguration);
+            }
         });
     }
 
@@ -216,7 +222,9 @@ public partial class MainWindow
                 Status.Text = "正在下载与校验 MCU 固件及 VE 映射…";
                 var approvedResult = await services.Downloads.DownloadApprovedAsync(root, options,
                     preview.Configuration.Device.Id, preview.ApprovalSha256, output, token);
-                await Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Background);
+                await Dispatcher.InvokeAsync(() =>
+                {
+                }, System.Windows.Threading.DispatcherPriority.Background);
                 Log("下载日志：" + approvedResult.LogPath);
                 Log(approvedResult.Summary);
                 Status.Text = approvedResult.Summary;
@@ -225,7 +233,9 @@ public partial class MainWindow
         }
         Status.Text = "正在下载与校验…";
         var result = await services.Downloads.DownloadAsync(root, options, output, token);
-        await Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Background);
+        await Dispatcher.InvokeAsync(() =>
+        {
+        }, System.Windows.Threading.DispatcherPriority.Background);
         Log("下载日志：" + result.LogPath);
         Log(result.Summary);
         Status.Text = result.Summary;

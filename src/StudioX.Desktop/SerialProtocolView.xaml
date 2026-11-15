@@ -264,7 +264,7 @@
     <TextBlock
       Grid.Row="3"
       x:Name="StatusText"
-      Text="选择解析器后点击应用。解析只观察数据，不会自动发送或应答。"
+      Text="尚未应用解析器"
       Foreground="{DynamicResource Muted}"
       Margin="0,6,0,0"
       TextTrimming="CharacterEllipsis" />

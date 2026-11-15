@@ -30,7 +30,9 @@ public sealed class KeilImporterPlugin : IStudioXPlugin
     private string confirmationId = "confirm_unavailable";
     private string message = "填写源工程，加载 Target；明确选择 STM32 型号和构建支持，预览自动生成的 CMake 后移植并编译。";
 
-    public KeilImporterPlugin() : this(new WindowsPathPicker()) { }
+    public KeilImporterPlugin() : this(new WindowsPathPicker())
+    {
+    }
 
     public KeilImporterPlugin(IPathPicker picker)
     {

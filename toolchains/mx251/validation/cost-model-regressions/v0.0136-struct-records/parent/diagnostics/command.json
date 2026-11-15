@@ -1,0 +1,14 @@
+[
+  "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-v0.0136\\host\\build\\sdcc.exe",
+  "-mmcs251",
+  "--model-small",
+  "--opt-code-speed",
+  "--stack-auto",
+  "--mcs251-wide-backend",
+  "--mcs251-native-int-runtime",
+  "-c",
+  "struct_records.c",
+  "-o",
+  "u6.rel",
+  "--dump-i-code"
+]

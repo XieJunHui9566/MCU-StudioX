@@ -5,10 +5,16 @@ using StudioX.Foundation;
 using StudioX.Packages;
 
 // 通过 IDE 的真实同步和导入服务验收发布目录；HTTP 只读本地快照，不连接硬件或用户包仓库。
-if (args.Length != 2) { throw new ArgumentException("Usage: StudioX.Arm32PublicValidation <public-repository> <new-output-directory>"); }
+if (args.Length != 2)
+{
+    throw new ArgumentException("Usage: StudioX.Arm32PublicValidation <public-repository> <new-output-directory>");
+}
 var source = Path.GetFullPath(args[0]);
 var output = Path.GetFullPath(args[1]);
-if (Directory.Exists(output) || File.Exists(output)) { throw new ArgumentException("Use a new output directory."); }
+if (Directory.Exists(output) || File.Exists(output))
+{
+    throw new ArgumentException("Use a new output directory.");
+}
 Directory.CreateDirectory(output);
 using var document = JsonDocument.Parse(await File.ReadAllTextAsync(Path.Combine(source, "index.json")));
 var expected = document.RootElement.GetProperty("packs").GetArrayLength();

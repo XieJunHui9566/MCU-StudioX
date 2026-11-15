@@ -37,9 +37,13 @@ public partial class MainWindow
         }
         async Task Settle()
         {
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ContextIdle);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.ContextIdle);
             await debugNavigationTask;
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ContextIdle);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.ContextIdle);
         }
         async Task WaitStopped()
         {
@@ -89,7 +93,10 @@ public partial class MainWindow
                 await Settle();
                 Render(menu, Path.Combine(directory, "breakpoint-menu-" + theme.Id + ".png"));
             }
-            finally { menu.IsOpen = false; }
+            finally
+            {
+                menu.IsOpen = false;
+            }
         }
         ApplyTheme(ThemeService.Dark);
         DebugContinue_Click(this, new RoutedEventArgs());

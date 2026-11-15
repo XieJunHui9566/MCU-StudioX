@@ -31,7 +31,10 @@ internal static class StorageChecks
                 action();
                 throw new InvalidOperationException("Expected " + code);
             }
-            catch (StudioXException error) when (error.Code == code) { Check(true, code + " rejected"); }
+            catch (StudioXException error) when (error.Code == code)
+            {
+                Check(true, code + " rejected");
+            }
         }
         string Project(string name)
         {
@@ -59,7 +62,10 @@ internal static class StorageChecks
             Check(storage.Prepare(area) == latest && !File.Exists(Path.Combine(latest, "stale.obj")) &&
                 !Directory.Exists(first) && !Directory.Exists(second) && File.Exists(Path.Combine(user, "keep.txt")) &&
                 Directory.GetDirectories(Path.GetDirectoryName(latest)!).Length == 2, area + " rotates only latest and preserves user directories");
-            Reject("PROJECT_OUTPUT_BUSY", () => { using var other = ProjectBuildStorage.Acquire(root, family); });
+            Reject("PROJECT_OUTPUT_BUSY", () =>
+            {
+                using var other = ProjectBuildStorage.Acquire(root, family);
+            });
         }
         var download = Project("download-backup");
         using (var storage = ProjectBuildStorage.Acquire(download, "pic"))
@@ -82,7 +88,10 @@ internal static class StorageChecks
                 storage.Prepare("arduino");
                 throw new InvalidOperationException("Family mismatch accepted");
             }
-            catch (ArgumentException) { Check(true, "lease cannot clean a different output family"); }
+            catch (ArgumentException)
+            {
+                Check(true, "lease cannot clean a different output family");
+            }
         }
         var debug = Project("debug-recovery");
         using (var storage = ProjectBuildStorage.Acquire(debug, "pic"))

@@ -60,7 +60,7 @@ public partial class HdlWorkflowView : UserControl
         Surface.SetWaveform(null);
         Summary.Text = message;
         LogButton.IsEnabled = false;
-        CursorText.Text = "点击定位，按住左键拖动时间光标；筛选结果最多显示 128 条。";
+        CursorText.Text = "尚未选择时间点";
     }
     public void ShowResult(HdlSimulationResult result)
     {

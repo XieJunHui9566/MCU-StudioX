@@ -1,0 +1,332 @@
+[
+  {
+    "suite": "mcu",
+    "mode": "OFF",
+    "function": "identity",
+    "parentTicks": [
+      53,
+      53,
+      53
+    ],
+    "candidateTicks": [
+      53,
+      53,
+      53
+    ],
+    "parentMedianTicks": 53,
+    "candidateMedianTicks": 53,
+    "deltaTicks": 0,
+    "parentSystemClocks": 79.5,
+    "candidateSystemClocks": 79.5,
+    "changePercent": 0.0,
+    "repeats": 8
+  },
+  {
+    "suite": "mcu",
+    "mode": "OFF",
+    "function": "sum_bytes",
+    "parentTicks": [
+      789,
+      789,
+      789
+    ],
+    "candidateTicks": [
+      789,
+      789,
+      789
+    ],
+    "parentMedianTicks": 789,
+    "candidateMedianTicks": 789,
+    "deltaTicks": 0,
+    "parentSystemClocks": 1183.5,
+    "candidateSystemClocks": 1183.5,
+    "changePercent": 0.0,
+    "repeats": 8
+  },
+  {
+    "suite": "mcu",
+    "mode": "OFF",
+    "function": "copy_xor",
+    "parentTicks": [
+      1734,
+      1734,
+      1734
+    ],
+    "candidateTicks": [
+      1734,
+      1734,
+      1734
+    ],
+    "parentMedianTicks": 1734,
+    "candidateMedianTicks": 1734,
+    "deltaTicks": 0,
+    "parentSystemClocks": 2601.0,
+    "candidateSystemClocks": 2601.0,
+    "changePercent": 0.0,
+    "repeats": 8
+  },
+  {
+    "suite": "mcu",
+    "mode": "OFF",
+    "function": "ring_buffer",
+    "parentTicks": [
+      2255,
+      2255,
+      2255
+    ],
+    "candidateTicks": [
+      2254,
+      2254,
+      2254
+    ],
+    "parentMedianTicks": 2255,
+    "candidateMedianTicks": 2254,
+    "deltaTicks": -1,
+    "parentSystemClocks": 3382.5,
+    "candidateSystemClocks": 3381.0,
+    "changePercent": -0.044345898004438666,
+    "repeats": 8
+  },
+  {
+    "suite": "mcu",
+    "mode": "OFF",
+    "function": "state_machine",
+    "parentTicks": [
+      2069,
+      2069,
+      2069
+    ],
+    "candidateTicks": [
+      2070,
+      2070,
+      2069
+    ],
+    "parentMedianTicks": 2069,
+    "candidateMedianTicks": 2070,
+    "deltaTicks": 1,
+    "parentSystemClocks": 3103.5,
+    "candidateSystemClocks": 3105.0,
+    "changePercent": 0.04833252779119501,
+    "repeats": 8
+  },
+  {
+    "suite": "mcu",
+    "mode": "OFF",
+    "function": "frame_parser",
+    "parentTicks": [
+      1287,
+      1287,
+      1287
+    ],
+    "candidateTicks": [
+      1288,
+      1287,
+      1287
+    ],
+    "parentMedianTicks": 1287,
+    "candidateMedianTicks": 1287,
+    "deltaTicks": 0,
+    "parentSystemClocks": 1930.5,
+    "candidateSystemClocks": 1930.5,
+    "changePercent": 0.0,
+    "repeats": 8
+  },
+  {
+    "suite": "mcu",
+    "mode": "OFF",
+    "function": "struct_records",
+    "parentTicks": [
+      2963,
+      2963,
+      2964
+    ],
+    "candidateTicks": [
+      3030,
+      3030,
+      3030
+    ],
+    "parentMedianTicks": 2963,
+    "candidateMedianTicks": 3030,
+    "deltaTicks": 67,
+    "parentSystemClocks": 4444.5,
+    "candidateSystemClocks": 4545.0,
+    "changePercent": 2.2612217347283137,
+    "repeats": 8
+  },
+  {
+    "suite": "mcu",
+    "mode": "OFF",
+    "function": "crc16",
+    "parentTicks": [
+      5325,
+      5325,
+      5325
+    ],
+    "candidateTicks": [
+      5325,
+      5325,
+      5325
+    ],
+    "parentMedianTicks": 5325,
+    "candidateMedianTicks": 5325,
+    "deltaTicks": 0,
+    "parentSystemClocks": 7987.5,
+    "candidateSystemClocks": 7987.5,
+    "changePercent": 0.0,
+    "repeats": 8
+  },
+  {
+    "suite": "mcu",
+    "mode": "OFF",
+    "function": "call_chain",
+    "parentTicks": [
+      2796,
+      2796,
+      2796
+    ],
+    "candidateTicks": [
+      2796,
+      2796,
+      2796
+    ],
+    "parentMedianTicks": 2796,
+    "candidateMedianTicks": 2796,
+    "deltaTicks": 0,
+    "parentSystemClocks": 4194.0,
+    "candidateSystemClocks": 4194.0,
+    "changePercent": 0.0,
+    "repeats": 8
+  },
+  {
+    "suite": "protocol",
+    "mode": "OFF",
+    "function": "case-0",
+    "parentTicks": [
+      34,
+      34,
+      34
+    ],
+    "candidateTicks": [
+      34,
+      34,
+      34
+    ],
+    "parentMedianTicks": 34,
+    "candidateMedianTicks": 34,
+    "deltaTicks": 0,
+    "parentSystemClocks": 408,
+    "candidateSystemClocks": 408,
+    "changePercent": 0.0,
+    "repeats": 1
+  },
+  {
+    "suite": "protocol",
+    "mode": "OFF",
+    "function": "case-32",
+    "parentTicks": [
+      87,
+      87,
+      87
+    ],
+    "candidateTicks": [
+      87,
+      88,
+      87
+    ],
+    "parentMedianTicks": 87,
+    "candidateMedianTicks": 87,
+    "deltaTicks": 0,
+    "parentSystemClocks": 1044,
+    "candidateSystemClocks": 1044,
+    "changePercent": 0.0,
+    "repeats": 1
+  },
+  {
+    "suite": "protocol",
+    "mode": "OFF",
+    "function": "case-63",
+    "parentTicks": [
+      7353,
+      7353,
+      7352
+    ],
+    "candidateTicks": [
+      7353,
+      7353,
+      7352
+    ],
+    "parentMedianTicks": 7353,
+    "candidateMedianTicks": 7353,
+    "deltaTicks": 0,
+    "parentSystemClocks": 88236,
+    "candidateSystemClocks": 88236,
+    "changePercent": 0.0,
+    "repeats": 1
+  },
+  {
+    "suite": "protocol",
+    "mode": "ON",
+    "function": "case-0",
+    "parentTicks": [
+      34,
+      35,
+      34
+    ],
+    "candidateTicks": [
+      34,
+      34,
+      34
+    ],
+    "parentMedianTicks": 34,
+    "candidateMedianTicks": 34,
+    "deltaTicks": 0,
+    "parentSystemClocks": 408,
+    "candidateSystemClocks": 408,
+    "changePercent": 0.0,
+    "repeats": 1
+  },
+  {
+    "suite": "protocol",
+    "mode": "ON",
+    "function": "case-32",
+    "parentTicks": [
+      87,
+      88,
+      88
+    ],
+    "candidateTicks": [
+      88,
+      87,
+      87
+    ],
+    "parentMedianTicks": 88,
+    "candidateMedianTicks": 87,
+    "deltaTicks": -1,
+    "parentSystemClocks": 1056,
+    "candidateSystemClocks": 1044,
+    "changePercent": -1.1363636363636354,
+    "repeats": 1
+  },
+  {
+    "suite": "protocol",
+    "mode": "ON",
+    "function": "case-63",
+    "parentTicks": [
+      7286,
+      7287,
+      7287
+    ],
+    "candidateTicks": [
+      7287,
+      7286,
+      7287
+    ],
+    "parentMedianTicks": 7287,
+    "candidateMedianTicks": 7287,
+    "deltaTicks": 0,
+    "parentSystemClocks": 87444,
+    "candidateSystemClocks": 87444,
+    "changePercent": 0.0,
+    "repeats": 1
+  }
+]

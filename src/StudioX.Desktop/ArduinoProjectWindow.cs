@@ -27,7 +27,7 @@ public sealed class ArduinoProjectWindow : Window
         boards.SelectedIndex = -1;
         name.Text = importedName ?? "Arduino_Demo";
         var panel = new StackPanel { Margin = new(24) };
-        panel.Children.Add(new TextBlock { Text = "工程名称（英文、数字、下划线）" });
+        panel.Children.Add(new TextBlock { Text = "工程名称（支持中文）" });
         panel.Children.Add(name);
         panel.Children.Add(new TextBlock { Text = "目标开发板" });
         panel.Children.Add(boards);

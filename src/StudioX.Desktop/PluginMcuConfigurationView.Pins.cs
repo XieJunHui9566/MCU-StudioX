@@ -39,7 +39,11 @@ internal sealed partial class PluginMcuConfigurationView
         workspace.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         var drawing = new StackPanel { Margin = new Thickness(0, 0, 18, 0) };
         var zoomBar = new DockPanel { Margin = new Thickness(0, 0, 0, 8) };
-        zoomBar.Children.Add(Button("居中适配", () => { packageViewport?.ResetView(); return Task.CompletedTask; }));
+        zoomBar.Children.Add(Button("居中适配", () =>
+        {
+            packageViewport?.ResetView();
+            return Task.CompletedTask;
+        }));
         var zoomText = Text(packageZoom.ToString("P0"), 12);
         zoomText.Width = 44;
         DockPanel.SetDock(zoomText, Dock.Right);

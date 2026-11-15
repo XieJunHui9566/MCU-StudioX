@@ -42,13 +42,19 @@ internal static class GuardChecks
             {
                 await action();
             }
-            catch (Exception e) when (e is InvalidDataException or InvalidOperationException or TimeoutException or OperationCanceledException) { checks++; return; }
+            catch (Exception e) when (e is InvalidDataException or InvalidOperationException or TimeoutException or OperationCanceledException)
+            {
+                checks++;
+                return;
+            }
             throw new Exception("Expected rejection.");
         }
         byte[] identity = Convert.FromHexString("510104FF000000000000000000000071000000");
         byte[] status = Convert.FromHexString("50026295608030012FFFBF3E3F26EDF7FC74550078B41183BD32561D201C190100010004A0260510800E89C2F94D5F7DA7B1F8FE0000");
         var f = new FakeTransport();
-        var p = new BridgeProtocol(f, _ => { });
+        var p = new BridgeProtocol(f, _ =>
+        {
+        });
         await Reject(() => p.WriteConfiguration(new(40015200, 128, 48), default));
         await Reject(() => p.Program([0], default));
         await Reject(() => p.BeginProgramming(null, default));
@@ -61,7 +67,9 @@ internal static class GuardChecks
         byte[] wrong = status.ToArray();
         wrong[21] ^= 1;
         f = new(identity, wrong);
-        p = new(f, _ => { });
+        p = new(f, _ =>
+        {
+        });
         await Reject(() => p.Detect(default));
         if (f.Writes.Any(x => x[2] == 0x43))
         {
@@ -69,7 +77,9 @@ internal static class GuardChecks
         }
         checks++;
         f = new(identity, status, [0xff]);
-        p = new(f, _ => { });
+        p = new(f, _ =>
+        {
+        });
         await p.Detect(default);
         await Reject(() => p.BeginProgramming(null, default));
         if (f.Writes.Any(x => x[2] == 0x43 && x[8] == 3))
@@ -78,7 +88,9 @@ internal static class GuardChecks
         }
         checks++;
         f = new(identity, status, [1], [5], [3, 0x78, 0xb4, 0, 0, 0, 0, 0], [2, 0]);
-        p = new(f, _ => { });
+        p = new(f, _ =>
+        {
+        });
         await p.Detect(default);
         await p.BeginProgramming(null, default);
         await Reject(() => p.Program(new byte[128], default));
@@ -92,13 +104,17 @@ internal static class GuardChecks
         }
         checks++;
         f = new(identity, status, [1], [5]);
-        p = new(f, _ => { });
+        p = new(f, _ =>
+        {
+        });
         await p.Detect(default);
         await p.BeginProgramming(null, default);
         await Reject(() => p.Program([0], default));
         await Reject(() => p.Run(default));
         f = new(identity, status);
-        p = new(f, _ => { });
+        p = new(f, _ =>
+        {
+        });
         await p.Detect(default);
         using (var c = new CancellationTokenSource())
         {
@@ -113,25 +129,48 @@ internal static class GuardChecks
         }
         foreach (var bad in new[] { new DeviceConfiguration(1, "AI8051U-34K64", 8, 40000000), new(1, "AI8051U-34K64", 32, 48000001), new(2, "AI8051U-34K64", 32, 40000000), new(1, "STC8", 32, 40000000) })
         {
-            await Reject(() => { bad.Validate(); return Task.CompletedTask; });
+            await Reject(() =>
+            {
+                bad.Validate();
+                return Task.CompletedTask;
+            });
         }
         var info = new TargetInfo("AI8051U-34K64", "7.4.1U", "78B4", 40015200, Convert.ToHexString(status));
         DeviceConfiguration.CheckExisting(info);
         checks++;
         status[10] ^= 1;
-        await Reject(() => { DeviceConfiguration.CheckExisting(info with { RawStatus = Convert.ToHexString(status) }); return Task.CompletedTask; });
+        await Reject(() =>
+        {
+            DeviceConfiguration.CheckExisting(info with
+            {
+                RawStatus = Convert.ToHexString(status)
+            });
+            return Task.CompletedTask;
+        });
         byte[] options = DeviceConfiguration.BuildOptions(40015200, 128, 48);
         if (Convert.ToHexString(options) != "0400005AA5FFFFFF00FFFF00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00FF02629560803001FFFFFF3E3FBFAFF7FCFE")
         {
             throw new Exception("Options differ from official successful capture.");
         }
         checks++;
-        await Reject(() => { DeviceConfiguration.BuildOptions(0, 128, 48); return Task.CompletedTask; });
-        await Reject(() => { DeviceConfiguration.BuildOptions(40015200, 128, 0xff); return Task.CompletedTask; });
+        await Reject(() =>
+        {
+            DeviceConfiguration.BuildOptions(0, 128, 48);
+            return Task.CompletedTask;
+        });
+        await Reject(() =>
+        {
+            DeviceConfiguration.BuildOptions(40015200, 128, 0xff);
+            return Task.CompletedTask;
+        });
         foreach (var invalid in new[] { (0u, (byte)1, 24000000), (24000000u, (byte)0, 24000000),
             (24000000u, (byte)9, 24000000), (25000000u, (byte)1, 24000000), (48000000u, (byte)2, 48000000) })
         {
-            await Reject(() => { DeviceConfiguration.BuildOptions(invalid.Item1, 128, 32, invalid.Item2, invalid.Item3); return Task.CompletedTask; });
+            await Reject(() =>
+            {
+                DeviceConfiguration.BuildOptions(invalid.Item1, 128, 32, invalid.Item2, invalid.Item3);
+                return Task.CompletedTask;
+            });
         }
         return new
         {

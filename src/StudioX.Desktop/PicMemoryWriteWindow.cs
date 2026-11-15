@@ -51,7 +51,10 @@ public sealed class PicMemoryWriteWindow : Window
                 }
                 DialogResult = true;
             }
-            catch (Exception failure) when (failure is FormatException or OverflowException) { error.Text = failure.Message; }
+            catch (Exception failure) when (failure is FormatException or OverflowException)
+            {
+                error.Text = failure.Message;
+            }
         };
         panel.Children.Add(actions);
         Content = panel;

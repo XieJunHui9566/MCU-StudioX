@@ -166,25 +166,43 @@ public sealed class StudioXMcpSession : IAsyncDisposable
         {
             await client.DisposeAsync().ConfigureAwait(false);
         }
-        catch (Exception ex) { errors.Add(ex); }
+        catch (Exception ex)
+        {
+            errors.Add(ex);
+        }
         try
         {
             await server.DisposeAsync().ConfigureAwait(false);
         }
-        catch (Exception ex) { errors.Add(ex); }
+        catch (Exception ex)
+        {
+            errors.Add(ex);
+        }
         try
         {
             await tools.DisposeAsync().ConfigureAwait(false);
         }
-        catch (Exception ex) { errors.Add(ex); }
+        catch (Exception ex)
+        {
+            errors.Add(ex);
+        }
         try
         {
             await serverLoop.ConfigureAwait(false);
         }
-        catch (OperationCanceledException) { }
-        catch (IOException) { }
-        catch (ObjectDisposedException) { }
-        catch (Exception ex) { errors.Add(ex); }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (IOException)
+        {
+        }
+        catch (ObjectDisposedException)
+        {
+        }
+        catch (Exception ex)
+        {
+            errors.Add(ex);
+        }
         if (errors.Count > 0)
         {
             throw new AggregateException("MCP 会话清理失败。", errors);

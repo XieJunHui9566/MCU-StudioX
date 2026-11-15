@@ -58,7 +58,10 @@ internal static class SdccModelAnalysisChecks
                 checks.Add(selected + ": real clangd accepts only __SDCC_MODEL_" + expected + ", stdint and an unchanged source");
                 Console.WriteLine("PASS " + checks[^1]);
             }
-            finally { await File.WriteAllLinesAsync(Path.Combine(data, "language.log"), service.DrainLog()); }
+            finally
+            {
+                await File.WriteAllLinesAsync(Path.Combine(data, "language.log"), service.DrainLog());
+            }
         }
         await JsonStore.WriteAsync(Path.Combine(output, "result.json"), new
         {

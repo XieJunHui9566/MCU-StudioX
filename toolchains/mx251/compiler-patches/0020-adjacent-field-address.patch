@@ -1,0 +1,119 @@
+--- a/src/mcs251/wide_emit.c.inc
++++ b/src/mcs251/wide_emit.c.inc
+@@ -332,7 +332,7 @@
+ }
+ 
+ static void
+-wmemory(wide_function *f,wide_node *n)
++wmemory(wide_function *f,wide_node *n,bool addressReady)
+ {
+   if(n->pointerAccess){wmemory_pointer(f,n);return;}
+   if(n->codeAccess) {
+@@ -354,7 +354,8 @@
+   bool store=n->op==WM_STORE;
+   if(!n->byteAccess) {
+     int address;
+-    if(n->addressOp) {
++    if(addressReady)address=16;
++    else if(n->addressOp) {
+       /* 保留原四字节加减与24位指针规范化，只省去中间地址的存储。
+        * DR16/DR20均为保留寄存器；先形成地址，再装载待写入的数据。 */
+       we(f,"; wide indexed address op=%c index-width=%d\n",n->addressOp,n->addressIndex.width);
+@@ -417,6 +418,83 @@
+     }
+   }
+   if(!store)wstore(f,n->result,20);
++}
++
++
++/* 只规划相邻普通存储；WM_NOP 无真实效果，其他节点一律终止。
++ * 基址是现有 MIR 契约中的不可取址临时值，不能由 C 对象写入重定义。
++ * DR16/DR20 是保留 scratch；数据保持原取样顺序，不跨越读、调用或标签。
++ * 每步保留 24 位规范化，不依赖 @DR+disp 的跨顶端回绕语义。 */
++static bool
++wstore_chain_offset(wide_function *f,wide_node *n,int64_t *offset)
++{
++  if(n->op!=WM_STORE || (n->addressOp!='+' && n->addressOp!='-') ||
++     n->addressObject>=0 || n->byteAccess || n->codeAccess || n->pointerAccess ||
++     n->left.value<0 || n->left.width!=4 || n->left.codePointer ||
++     (n->width!=1 && n->width!=2 && n->width!=4) ||
++     n->right.width!=n->width || n->right.floating ||
++     n->addressIndex.value>=0 || n->addressIndex.floating || n->addressIndex.codePointer ||
++     (n->addressIndex.width!=1 && n->addressIndex.width!=2 && n->addressIndex.width!=4) ||
++     n->result>=0 || n->def.w[0] || n->def.w[1])return false;
++  wide_value *base=&f->values[n->left.value];
++  if(!base->pointer || base->codePointer || base->symbolSnapshot || base->reg<0 ||
++     base->width!=4 || base->sym->addrtaken || isVolatile(base->sym->type) ||
++     isAtomic(base->sym->type) ||
++     (wide_mask(base->reg,4)&((wide_mask(16,4)|wide_mask(20,4))|MCS251_AB_BYTES)))return false;
++  if(n->right.value>=0) {
++    wide_value *data=&f->values[n->right.value];
++    if(data->width!=n->width || data->pointer ||
++       (data->reg>=0 && (wide_mask(data->reg,data->width)&(wide_mask(16,4)|wide_mask(20,4)))))return false;
++  }
++  unsigned bits=8*n->addressIndex.width;
++  uint32_t raw=n->addressIndex.literal;
++  if(bits<32)raw&=(UINT32_C(1)<<bits)-1;
++  int64_t value=raw;
++  if(n->addressIndex.sign && (raw&(UINT32_C(1)<<(bits-1))))
++    value-=INT64_C(1)<<bits;
++  *offset=n->addressOp=='-'?-value:value;
++  return true;
++}
++
++static int
++wmemory_store_chain(wide_function *f,int first)
++{
++  wide_node *head=&f->nodes[first];int64_t previous;
++  if(!wstore_chain_offset(f,head,&previous))return first;
++  int last=first;int64_t initial=previous;
++  /* 先验证完整局部计划，再发射；失败节点仍由原路径处理。差值使用
++   * int64_t，避免 32 位有符号减法溢出，且只选现有 imm16 ADD/SUB。
++   * 原 offset=0 时没有 ADD；不能用一个更长的 ADD 替掉短 MOV。 */
++  for(int j=first+1;j<f->nn;++j) {
++    wide_node *n=&f->nodes[j];int64_t offset;
++    if(n->op==WM_NOP)continue;
++    if(!wstore_chain_offset(f,n,&offset) || n->left.value!=head->left.value ||
++       n->addressIndex.width!=head->addressIndex.width ||
++       n->addressIndex.sign!=head->addressIndex.sign)break;
++    int64_t delta=offset-previous;
++    if(delta < -65535 || delta > 65535 || (!offset && delta))break;
++    last=j;previous=offset;
++  }
++  if(last==first)return first;
++  previous=initial;
++  for(int j=first;j<=last;++j) {
++    wide_node *n=&f->nodes[j];int64_t offset;
++    if(n->op==WM_NOP)continue;
++    bool valid=wstore_chain_offset(f,n,&offset);wassert(valid);(void)valid;
++    f->emitWeight=1+4*n->origin->depth;
++    if(j==first)wmemory(f,n,false);
++    else {
++      int64_t delta=offset-previous;
++      we(f,"; wide store-chain base=v%d previous=%lld offset=%lld delta=%ld\n",n->left.value,(long long)previous,(long long)offset,(long)delta);
++      if(delta)we(f,"\t%s\tdr16,#0x%04lx\n",delta<0?"sub":"add",(unsigned long)(delta<0?-delta:delta));
++      we(f,"\tanl\twr16,#0x00ff\n");
++      wmemory(f,n,true);
++    }
++    previous=offset;
++  }
++  /* 地址 ADD/SUB 的 CY/OV 可不同；宽 MIR 不跨存储保留这些标志。
++   * 条件使用者重新定义标志，数据访问宽度及实际事务次序没有变化。 */
++  return last;
+ }
+ 
+ static void
+@@ -1100,7 +1178,12 @@
+       we(f,"; wide local snapshot %s %s\n",n->op==WM_OBJECT_STORE?"store":"load",n->addressSymbol->rname);
+       wmemory_stack(f,&memory);break;
+     }
+-    case WM_LOAD:case WM_STORE:wmemory(f,n);break;
++    case WM_STORE: {
++      int last=wmemory_store_chain(f,i);
++      if(last>i)i=last;else wmemory(f,n,false);
++      break;
++    }
++    case WM_LOAD:wmemory(f,n,false);break;
+     case WM_SYMBOL_LOAD:case WM_SYMBOL_STORE:wmemory_symbol(f,n);break;
+     case WM_BIT_CAST:
+       wtest_zero(f,n->right);wboolean_result(f,n,"jne");break;

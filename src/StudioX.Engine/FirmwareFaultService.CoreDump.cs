@@ -88,7 +88,11 @@ public sealed partial class FirmwareFaultService
                     [match ? $"转储的 ELF 摘要已匹配（{embedded!.Length} 个十六进制字符）；不代表本轮连接了实板。" : "此旧格式转储未提供 ELF 摘要，符号对应仍需自行确认。",
                         "只使用工程锁定的工具；保留原始输入，未读取设备、下载 ROM 或执行 ELF 自动加载脚本。"], [], output, elfHash, evidence);
             }
-            catch (Exception ex) { decodingError = ex; throw; }
+            catch (Exception ex)
+            {
+                decodingError = ex;
+                throw;
+            }
             finally
             {
                 try
@@ -122,7 +126,10 @@ public sealed partial class FirmwareFaultService
                 }
                 return;
             }
-            catch (IOException) when (attempt < 5) { await Task.Delay(100 * (attempt + 1)); }
+            catch (IOException) when (attempt < 5)
+            {
+                await Task.Delay(100 * (attempt + 1));
+            }
         }
     }
     private static async Task<string> SnapshotAsync(string source, string target, int maximum, CancellationToken token)

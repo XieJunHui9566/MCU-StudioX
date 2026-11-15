@@ -1,0 +1,55 @@
+--- a/src/SDCCsymt.c
++++ b/src/SDCCsymt.c
+@@ -1683,6 +1683,15 @@
+                 error = 1;
+               if (compareTypeExact (csym->type, sym->type, sym->level, true) != 1)
+                 error = 1;
++              /* ISR 槽及影响函数体的属性也是声明契约；普通 C 类型
++               * 比较不检查槽号，不能让后来的原型改变已登记的中断。 */
++              if (TARGET_IS_MCS251 && IS_FUNC (sym->type) && IFFUNC_ISISR (sym->type) &&
++                  (FUNC_INTNO (csym->type) != FUNC_INTNO (sym->type) ||
++                   IFFUNC_ISCRITICAL (csym->type) != IFFUNC_ISCRITICAL (sym->type) ||
++                   IFFUNC_ISREENT (csym->type) != IFFUNC_ISREENT (sym->type) ||
++                   IFFUNC_ISINLINE (csym->type) != IFFUNC_ISINLINE (sym->type) ||
++                   (IS_STATIC (sym->etype) && !IS_STATIC (csym->etype))))
++                error = 1;
+             }
+ 
+           if (error)
+@@ -1704,6 +1713,19 @@
+                 fprintf (stderr, " at 0x%x", SPEC_ADDR (sym->etype));
+               fprintf (stderr, "'\n");
+ #endif
++              continue;
++            }
++
++          /* 同一 ISR 的兼容重复声明仍指向原实体。保留定义、段成员
++           * 和向量引用；从本次待分配链移除重复原型，避免重复登记。
++           * 函数体走 checkFunction，重复定义仍由原检查拒绝。 */
++          if (TARGET_IS_MCS251 && !sym->level && IS_FUNC (sym->type) && IFFUNC_ISISR (sym->type))
++            {
++              symPtrPtr = symHead;
++              while (*symPtrPtr && *symPtrPtr != sym)
++                symPtrPtr = &(*symPtrPtr)->next;
++              if (*symPtrPtr == sym)
++                *symPtrPtr = sym->next;
+               continue;
+             }
+ 
+@@ -3970,6 +3992,16 @@
+ 
+   if (FUNC_ISISR (csym->type) != FUNC_ISISR (sym->type))
+     werrorfl (sym->fileDef, sym->lineDef, E_PREV_DECL_CONFLICT, csym->name, "interrupt", csym->fileDef, csym->lineDef);
++
++  /* 定义与既有原型必须使用同一中断槽；不允许声明合并时
++   * 留下旧向量、却为新槽生成函数体和链接契约。 */
++  if (TARGET_IS_MCS251 && FUNC_ISISR (csym->type) && FUNC_ISISR (sym->type) &&
++      FUNC_INTNO (csym->type) != FUNC_INTNO (sym->type))
++    {
++      werrorfl (sym->fileDef, sym->lineDef, E_PREV_DECL_CONFLICT, csym->name,
++                "interrupt number", csym->fileDef, csym->lineDef);
++      return 0;
++    }
+ 
+   /* I don't think this is necessary for interrupts. An isr is a  */
+   /* root in the calling tree.                                    */

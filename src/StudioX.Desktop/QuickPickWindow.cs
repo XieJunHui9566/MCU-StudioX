@@ -69,8 +69,16 @@ internal sealed class QuickPickWindow : Window
                 e.Handled = true;
             }
         };
-        Loaded += async (_, _) => { Query.Focus(); await RefreshAsync(); };
-        Closed += (_, _) => { finished = true; cancellation?.Cancel(); };
+        Loaded += async (_, _) =>
+        {
+            Query.Focus();
+            await RefreshAsync();
+        };
+        Closed += (_, _) =>
+        {
+            finished = true;
+            cancellation?.Cancel();
+        };
     }
     private void Accept()
     {
@@ -99,8 +107,24 @@ internal sealed class QuickPickWindow : Window
             Results.SelectedIndex = items.Count > 0 ? 0 : -1;
             status.Text = items.Count == 0 ? "没有匹配项" : $"{items.Count} 项 · Enter 打开 · Esc 取消";
         }
-        catch (OperationCanceledException) when (current.IsCancellationRequested) { }
-        catch (Exception ex) { if (!finished && !current.IsCancellationRequested) { status.Text = ex.Message; status.ToolTip = ex.ToString(); } }
-        finally { if (cancellation == current) { cancellation = null; } current.Dispose(); }
+        catch (OperationCanceledException) when (current.IsCancellationRequested)
+        {
+        }
+        catch (Exception ex)
+        {
+            if (!finished && !current.IsCancellationRequested)
+            {
+                status.Text = ex.Message;
+                status.ToolTip = ex.ToString();
+            }
+        }
+        finally
+        {
+            if (cancellation == current)
+            {
+                cancellation = null;
+            }
+            current.Dispose();
+        }
     }
 }

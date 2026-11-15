@@ -1,0 +1,35 @@
+{
+  "passed": true,
+  "candidateAccepted": false,
+  "parentManifestVerified": true,
+  "parentFiles": 8127,
+  "unchangedGitStatus": true,
+  "installedFilesChanged": false,
+  "automationPaused": true,
+  "standingAuthorizationUnchanged": true,
+  "hardwareRestored": true,
+  "leaseFree": true,
+  "sourceReconstructed": true,
+  "cleanBuildIdentical": true,
+  "fixedMatrix": {
+    "firmwareCases": 36,
+    "identicalFirmware": 32,
+    "expectedRejects": 12,
+    "compiledFunctionInstances": 1280,
+    "wideInstances": 662,
+    "changedFunctionInstances": 6,
+    "unknownInstructionsBefore": 0,
+    "unknownInstructionsAfter": 0,
+    "fullyKnownBefore": 662,
+    "fullyKnownAfter": 662,
+    "costMismatches": 0,
+    "remainingUnknown": []
+  },
+  "visual": {
+    "staticImage": "register-occupancy.png",
+    "staticImageInspected": true,
+    "nonOverlappingLiveRegisterIntervalsChecked": true,
+    "interactivePreview": false,
+    "reason": "Browser URL security policy rejected file:// access. No server/alternate browser or other bypass attempted; local HTML/JSON statically checked, separately generated PNG inspected."
+  }
+}

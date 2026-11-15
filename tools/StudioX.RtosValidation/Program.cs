@@ -14,8 +14,18 @@ var output = Path.GetFullPath(outputDirectory);
 Directory.CreateDirectory(output);
 var fixture = Path.GetFullPath("tools/StudioX.RtosValidation/Fixtures/freertos-snapshot.c");
 var passed = new List<string>();
-void Pass(string message) { passed.Add(message); Console.WriteLine("PASS " + message); }
-void Check(bool condition, string message) { if (!condition) { throw new InvalidOperationException(message); } }
+void Pass(string message)
+{
+    passed.Add(message);
+    Console.WriteLine("PASS " + message);
+}
+void Check(bool condition, string message)
+{
+    if (!condition)
+    {
+        throw new InvalidOperationException(message);
+    }
+}
 var armRoot = Path.Combine(runtime, "toolsets", "arm.gnu", "1.0.0", "gcc", "bin");
 var wchRoot = Path.Combine(runtime, "toolsets", "wch.riscv", "1.0.0", "gcc", "bin");
 var armGdb = Path.Combine(armRoot, "arm-none-eabi-gdb.exe");
@@ -286,7 +296,9 @@ await using (var adapter = new GdbDebugAdapter(truncatedMemory))
         await new FreeRtosInspector(adapter, true).ReadAsync();
         throw new InvalidOperationException("Expected GDB_PROTOCOL for truncated stack memory.");
     }
-    catch (StudioXException exception) when (exception.Code == "GDB_PROTOCOL") { }
+    catch (StudioXException exception) when (exception.Code == "GDB_PROTOCOL")
+    {
+    }
 }
 Pass("Truncated stack memory replies fail with GDB_PROTOCOL and cannot produce a false watermark");
 
@@ -309,7 +321,9 @@ Pass("Truncated stack memory replies fail with GDB_PROTOCOL and cannot produce a
         await read;
         throw new InvalidOperationException("Expected active RTOS cancellation.");
     }
-    catch (OperationCanceledException) { }
+    catch (OperationCanceledException)
+    {
+    }
     Check(delayed.Commands.Count == first + 1 && !delayed.Disposed,
         "Cancellation after the first completed read must not send another MI command or dispose the transport.");
     var fresh = await new FreeRtosInspector(adapter, true).ReadAsync();
@@ -329,7 +343,9 @@ Pass("Truncated stack memory replies fail with GDB_PROTOCOL and cannot produce a
         await new FreeRtosInspector(adapter).ReadAsync();
         throw new InvalidOperationException("Expected GDB_PROTOCOL for duplicate value.");
     }
-    catch (StudioXException exception) when (exception.Code == "GDB_PROTOCOL") { }
+    catch (StudioXException exception) when (exception.Code == "GDB_PROTOCOL")
+    {
+    }
     Pass("Ambiguous MI numeric fields fail with GDB_PROTOCOL");
 }
 
@@ -345,7 +361,9 @@ Pass("Truncated stack memory replies fail with GDB_PROTOCOL and cannot produce a
             await new FreeRtosInspector(adapter).ReadAsync([invalid]);
             throw new InvalidOperationException("Expected invalid object symbol rejection.");
         }
-        catch (ArgumentException) { }
+        catch (ArgumentException)
+        {
+        }
     }
     using var cancellation = new CancellationTokenSource();
     cancellation.Cancel();
@@ -354,7 +372,9 @@ Pass("Truncated stack memory replies fail with GDB_PROTOCOL and cannot produce a
         await new FreeRtosInspector(adapter).ReadAsync(token: cancellation.Token);
         throw new InvalidOperationException("Expected canceled read.");
     }
-    catch (OperationCanceledException) { }
+    catch (OperationCanceledException)
+    {
+    }
     Check(native.Commands.Count == first, "Invalid handles and pre-cancellation must issue no MI command.");
     Pass("Function calls, assignment, indexing and command injection are rejected before MI; cancellation also sends nothing");
 }

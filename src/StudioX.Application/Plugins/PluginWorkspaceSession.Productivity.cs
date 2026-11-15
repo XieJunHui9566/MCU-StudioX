@@ -18,7 +18,10 @@ public sealed partial class PluginWorkspaceSession
             {
                 await InvokeAsync(plugin.Id, "event", kind, json, deadline.Token);
             }
-            catch (Exception ex) when (!token.IsCancellationRequested) { AddDiagnostic(plugin.Id, ex.ToString()); }
+            catch (Exception ex) when (!token.IsCancellationRequested)
+            {
+                AddDiagnostic(plugin.Id, ex.ToString());
+            }
         }
     }
     public async Task<IReadOnlyList<PluginCompletion>> CompleteAsync(PluginLanguageRequest request, CancellationToken token = default)
@@ -44,7 +47,10 @@ public sealed partial class PluginWorkspaceSession
                     }
                     results.AddRange(items);
                 }
-                catch (Exception ex) when (!token.IsCancellationRequested) { AddDiagnostic(plugin.Id, ex.ToString()); }
+                catch (Exception ex) when (!token.IsCancellationRequested)
+                {
+                    AddDiagnostic(plugin.Id, ex.ToString());
+                }
             }
         }
         return results.Take(512).ToArray();

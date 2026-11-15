@@ -53,7 +53,10 @@ internal static class FamilyMigrationChecks
                 var edited = await service.PreviewAsync(root, next, Path.Combine(output, "edited-copy"));
                 check(!edited.CanCreate && edited.Blockers.Any(b => b.Contains("AG32_SYSTEM_MODIFIED")), project.DeviceId + " edited generated system file is preserved for review");
             }
-            finally { await File.WriteAllBytesAsync(path, bytes); }
+            finally
+            {
+                await File.WriteAllBytesAsync(path, bytes);
+            }
         }
     }
     private sealed record Case(string Id, string Archive, string Device, string Template, bool Logic = false);
@@ -287,10 +290,18 @@ internal static class FamilyMigrationChecks
     {
         EspressifPackProfile.ValidateFramework(new("esp-idf", "esp32s3", "5.4.2"));
         check(true, "IDF adapter accepts explicit 5.x release identity without downloading or claiming a real build of that release");
-        await Reject(() => { EspressifPackProfile.ValidateFramework(new("esp-idf", "esp32s3", "latest")); return Task.CompletedTask; }, "PACK_ESPRESSIF_SDK", "IDF latest/range cannot replace an exact version", check);
+        await Reject(() =>
+        {
+            EspressifPackProfile.ValidateFramework(new("esp-idf", "esp32s3", "latest"));
+            return Task.CompletedTask;
+        }, "PACK_ESPRESSIF_SDK", "IDF latest/range cannot replace an exact version", check);
         EspressifPackProfile.ValidateFramework(new("esp-idf", "esp32s3", "6.1.0"));
         check(true, "IDF 6.x adapter accepts an exact release identity independently of SDK payload validation");
-        await Reject(() => { EspressifPackProfile.ValidateFramework(new("esp-idf", "esp32s3", "7.0.0")); return Task.CompletedTask; }, "PACK_ESPRESSIF_SDK", "unadapted IDF major requires explicit adapter work", check);
+        await Reject(() =>
+        {
+            EspressifPackProfile.ValidateFramework(new("esp-idf", "esp32s3", "7.0.0"));
+            return Task.CompletedTask;
+        }, "PACK_ESPRESSIF_SDK", "unadapted IDF major requires explicit adapter work", check);
         var root = Path.Combine(output, "legacy-logic-lock");
         var mapping = new string('a', 64);
         var logic = new string('b', 64);
@@ -309,7 +320,10 @@ internal static class FamilyMigrationChecks
             await operation();
             throw new InvalidOperationException(label);
         }
-        catch (StudioXException error) { check(error.Code == code, label + ": " + error.Code); }
+        catch (StudioXException error)
+        {
+            check(error.Code == code, label + ": " + error.Code);
+        }
     }
     private static async Task<string> SnapshotAsync(string root)
     {

@@ -52,7 +52,10 @@ internal static class CustomMcpChecks
         {
             AiMcpSettingsService.Validate([server with { Endpoint = "http://remote.example/mcp" }]);
         }
-        catch (StudioXException) { rejected = true; }
+        catch (StudioXException)
+        {
+            rejected = true;
+        }
         check(rejected, "custom MCP rejects plaintext remote HTTP while allowing explicit local HTTP");
         await using (var redirectTarget = new ServerFixture())
         {
@@ -208,10 +211,15 @@ internal static class CustomMcpChecks
                         context.Response.ContentLength64 = payload.Length;
                         await context.Response.OutputStream.WriteAsync(payload, stop.Token);
                     }
-                    finally { context.Response.Close(); }
+                    finally
+                    {
+                        context.Response.Close();
+                    }
                 }
             }
-            catch (Exception ex) when (stop.IsCancellationRequested && ex is OperationCanceledException or HttpListenerException or ObjectDisposedException) { }
+            catch (Exception ex) when (stop.IsCancellationRequested && ex is OperationCanceledException or HttpListenerException or ObjectDisposedException)
+            {
+            }
         }
         public async ValueTask DisposeAsync()
         {

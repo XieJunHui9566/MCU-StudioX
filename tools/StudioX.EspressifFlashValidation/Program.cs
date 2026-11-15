@@ -112,7 +112,10 @@ async Task RejectMutation(Action<JsonObject> mutation, string label)
     var json = LayoutJson("esp32c3");
     mutation(json);
     await WriteLayout(json);
-    await Reject(async () => { _ = await ReadLayout(); }, label);
+    await Reject(async () =>
+    {
+        _ = await ReadLayout();
+    }, label);
 }
 await RejectMutation(json => json["extra_esptool_args"]!["chip"] = "esp32c6", "target mismatch rejected");
 await RejectMutation(json => ((JsonObject)json["extra_esptool_args"]!).Remove("chip"), "non-8266 missing chip rejected");
@@ -139,23 +142,38 @@ Check((await ReadLayout()).Images.Length == 2, "native SDK string false encrypte
 await RejectMutation(json => ((JsonArray)json["write_flash_args"]!).Add("--erase-all"), "arbitrary write options rejected");
 await RejectMutation(json => json["extra_esptool_args"]!["after"] = "no_reset", "security reset mode rejected");
 await WriteLayout(LayoutJson("esp32c3"));
-await Reject(async () => { _ = await ReadLayout(capacity: 2 * 1024 * 1024); }, "configured capacity exceeds known module physical flash");
+await Reject(async () =>
+{
+    _ = await ReadLayout(capacity: 2 * 1024 * 1024);
+}, "configured capacity exceeds known module physical flash");
 await File.WriteAllTextAsync(Path.Combine(fixture, "sdkconfig"), "CONFIG_SECURE_FLASH_ENC_ENABLED=y\n");
-await Reject(async () => { _ = await ReadLayout(); }, "sdkconfig flash encryption rejected");
+await Reject(async () =>
+{
+    _ = await ReadLayout();
+}, "sdkconfig flash encryption rejected");
 File.Delete(Path.Combine(fixture, "sdkconfig"));
 await File.WriteAllTextAsync(Path.Combine(fixture, "sdkconfig"), "CONFIG_SECURE_BOOT=y\n");
-await Reject(async () => { _ = await ReadLayout(); }, "sdkconfig secure boot rejected despite ordinary JSON image");
+await Reject(async () =>
+{
+    _ = await ReadLayout();
+}, "sdkconfig secure boot rejected despite ordinary JSON image");
 File.Delete(Path.Combine(fixture, "sdkconfig"));
 Directory.CreateDirectory(Path.Combine(fixture, ".build", "bootloader", "config"));
 var bootloaderConfig = Path.Combine(fixture, ".build", "bootloader", "config", "sdkconfig.h");
 await File.WriteAllTextAsync(bootloaderConfig, "#define CONFIG_SECURE_BOOT_V1_ENABLED 1\n");
-await Reject(async () => { _ = await ReadLayout(); }, "generated bootloader secure boot rejected without root sdkconfig flag");
+await Reject(async () =>
+{
+    _ = await ReadLayout();
+}, "generated bootloader secure boot rejected without root sdkconfig flag");
 await File.WriteAllTextAsync(bootloaderConfig, "#define CONFIG_SECURE_BOOT_V2_RSA_SUPPORTED 1\n");
 var actualConfig = Path.Combine(fixture, "actual-sdkconfig");
 var descriptionPath = Path.Combine(fixture, ".build", "project_description.json");
 await File.WriteAllTextAsync(actualConfig, "CONFIG_SECURE_FLASH_ENC_ENABLED=y\n");
 await File.WriteAllTextAsync(descriptionPath, new JsonObject { ["config_file"] = actualConfig }.ToJsonString());
-await Reject(async () => { _ = await ReadLayout(); }, "redirected actual SDK config encryption rejected");
+await Reject(async () =>
+{
+    _ = await ReadLayout();
+}, "redirected actual SDK config encryption rejected");
 await File.WriteAllTextAsync(actualConfig, "# CONFIG_SECURE_BOOT is not set\nCONFIG_SECURE_BOOT_V2_RSA_SUPPORTED=y\n");
 Check((await ReadLayout()).Images.Length == 2, "disabled security and supported capability remain ordinary firmware");
 File.Delete(descriptionPath);
@@ -163,21 +181,33 @@ File.Delete(actualConfig);
 File.Delete(bootloaderConfig);
 var repeated = LayoutJson("esp32c3").ToJsonString().Replace("\"chip\":\"esp32c3\"", "\"chip\":\"esp32c3\",\"chip\":\"esp32c6\"", StringComparison.Ordinal);
 await File.WriteAllTextAsync(Path.Combine(fixture, ".build", "flasher_args.json"), repeated);
-await Reject(async () => { _ = await ReadLayout(); }, "duplicate JSON fields rejected");
+await Reject(async () =>
+{
+    _ = await ReadLayout();
+}, "duplicate JSON fields rejected");
 
 await using (var hub = new DeviceHub())
 {
     using (await hub.ReserveAsync("serial:COM12"))
     {
-        await Reject(async () => { using var lease = await hub.ReserveAsync("serial:com12"); }, "port reservation is case insensitive", "DEVICE_OWNED");
+        await Reject(async () =>
+        {
+            using var lease = await hub.ReserveAsync("serial:com12");
+        }, "port reservation is case insensitive", "DEVICE_OWNED");
         var transport = new FakeTransport("serial:COM12");
-        await Reject(async () => { await using var session = await hub.OpenAsync(transport); }, "serial capture cannot open reserved flash port", "DEVICE_OWNED");
+        await Reject(async () =>
+        {
+            await using var session = await hub.OpenAsync(transport);
+        }, "serial capture cannot open reserved flash port", "DEVICE_OWNED");
         Check(transport.OpenCount == 0, "reservation refuses capture before hardware open");
     }
     var opened = new FakeTransport("serial:COM12");
     await using (var session = await hub.OpenAsync(opened))
     {
-        await Reject(async () => { using var lease = await hub.ReserveAsync("serial:COM12"); }, "flash cannot reserve captured port", "DEVICE_OWNED");
+        await Reject(async () =>
+        {
+            using var lease = await hub.ReserveAsync("serial:COM12");
+        }, "flash cannot reserve captured port", "DEVICE_OWNED");
     }
     using var released = await hub.ReserveAsync("serial:COM12");
     Check(opened.OpenCount == 1 && opened.DisposeCount == 1, "serial and flash ownership releases without duplicate handles");

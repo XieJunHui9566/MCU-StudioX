@@ -4,21 +4,39 @@ using StudioX.Application.Editing;
 using StudioX.Application.Mcp;
 using StudioX.Foundation;
 
-if (args is not [var runtimeArg, var fixtureArg, var outputArg]) { throw new ArgumentException("runtime, fixture, new output required"); }
+if (args is not [var runtimeArg, var fixtureArg, var outputArg])
+{
+    throw new ArgumentException("runtime, fixture, new output required");
+}
 var runtime = Path.GetFullPath(runtimeArg);
 var fixture = Path.GetFullPath(fixtureArg);
 var root = Path.GetFullPath(outputArg);
-if (Directory.Exists(root)) { throw new IOException("Use a new directory"); }
+if (Directory.Exists(root))
+{
+    throw new IOException("Use a new directory");
+}
 Directory.CreateDirectory(root);
 var checks = new List<string>();
-void Check(bool condition, string name) { if (!condition) { throw new InvalidOperationException(name); } checks.Add(name); Console.WriteLine("PASS " + name); }
+void Check(bool condition, string name)
+{
+    if (!condition)
+    {
+        throw new InvalidOperationException(name);
+    }
+    checks.Add(name);
+    Console.WriteLine("PASS " + name);
+}
 async Task Reject(Func<Task> action, string name)
 {
     try
     {
         await action();
     }
-    catch (Exception e) when (e is StudioXException or IOException or OperationCanceledException) { Check(true, name); return; }
+    catch (Exception e) when (e is StudioXException or IOException or OperationCanceledException)
+    {
+        Check(true, name);
+        return;
+    }
     throw new InvalidOperationException("Expected rejection: " + name);
 }
 foreach (var permission in Enum.GetValues<StudioXMcpPermission>())
@@ -71,7 +89,11 @@ await session.ApplyAsync(conflict.Id);
 editor.Documents[source.RelativePath] = editor.Documents[source.RelativePath] with { Text = editor.Documents[source.RelativePath].Text.Replace("= 5;", "= 99;") };
 await Reject(() => session.UndoAsync(conflict.Id), "undo refuses to replace user edits inside the changed region");
 await Reject(() => session.ReadAsync("../outside.c"), "full mode cannot escape the bound project through editor paths");
-using (var cancelled = new CancellationTokenSource()) { cancelled.Cancel(); await Reject(() => session.SaveForBuildAsync(cancelled.Token), "cancelled task cannot save before build"); }
+using (var cancelled = new CancellationTokenSource())
+{
+    cancelled.Cancel();
+    await Reject(() => session.SaveForBuildAsync(cancelled.Token), "cancelled task cannot save before build");
+}
 editor.BeforeSave = () => editor.Documents[source.RelativePath] = editor.Documents[source.RelativePath] with { Text = editor.Documents[source.RelativePath].Text + "// saving race\n" };
 await Reject(() => session.SaveForBuildAsync(), "saving stale approval snapshot is rejected");
 editor.BeforeSave = null;

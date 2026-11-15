@@ -192,7 +192,10 @@ public sealed class BuildMemoryService(ToolsetCatalog? toolsets = null)
             }
             return report;
         }
-        catch (Exception ex) when (IsAnalysisError(ex)) { return new([], "暂无法分析：" + ex.Message); }
+        catch (Exception ex) when (IsAnalysisError(ex))
+        {
+            return new([], "暂无法分析：" + ex.Message);
+        }
     }
     private static bool IsAnalysisError(Exception ex) => ex is IOException or InvalidDataException or UnauthorizedAccessException or JsonException or
         StudioXException or OverflowException or FormatException;

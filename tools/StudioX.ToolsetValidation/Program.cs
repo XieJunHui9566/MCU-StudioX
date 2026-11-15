@@ -3,7 +3,10 @@ using System.Text.Json;
 using StudioX.Engine;
 using StudioX.Foundation;
 
-if (args is ["--self-check", var checkDirectory]) { return await CacheChecks.RunAsync(checkDirectory); }
+if (args is ["--self-check", var checkDirectory])
+{
+    return await CacheChecks.RunAsync(checkDirectory);
+}
 if (args is ["--verify-runtime", var toolsetsRoot, var toolsetId, var toolsetVersion, var compilerId])
 {
     var resolved = await new ToolsetCatalog(toolsetsRoot).ResolveAsync(toolsetId, toolsetVersion, compilerId,
@@ -11,9 +14,15 @@ if (args is ["--verify-runtime", var toolsetsRoot, var toolsetId, var toolsetVer
     Console.WriteLine($"PASS: {resolved.Manifest.Id} {resolved.Manifest.Version}, {resolved.Manifest.Sha256.Count} indexed files verified.");
     return 0;
 }
-if (args is not ["--build-benchmark", var toolsets, var source, var destination]) { return 2; }
+if (args is not ["--build-benchmark", var toolsets, var source, var destination])
+{
+    return 2;
+}
 var root = Path.GetFullPath(destination);
-if (Directory.Exists(root)) { throw new InvalidOperationException("Use a new benchmark directory."); }
+if (Directory.Exists(root))
+{
+    throw new InvalidOperationException("Use a new benchmark directory.");
+}
 var fixture = Path.Combine(root, "fixture");
 foreach (var path in Directory.EnumerateFiles(source, "*", SearchOption.AllDirectories))
 {

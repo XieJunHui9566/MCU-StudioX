@@ -38,8 +38,14 @@ public sealed class WindowsPathPicker : IPathPicker
                 }
                 completion.TrySetResult(Show(request, token));
             }
-            catch (OperationCanceledException) { completion.TrySetCanceled(token); }
-            catch (Exception error) { completion.TrySetException(error); }
+            catch (OperationCanceledException)
+            {
+                completion.TrySetCanceled(token);
+            }
+            catch (Exception error)
+            {
+                completion.TrySetException(error);
+            }
         })
         {
             IsBackground = true,
@@ -77,7 +83,10 @@ public sealed class WindowsPathPicker : IPathPicker
                 {
                     dialog.SetFolder(folder);
                 }
-                finally { Marshal.FinalReleaseComObject(folder); }
+                finally
+                {
+                    Marshal.FinalReleaseComObject(folder);
+                }
             }
             if (!request.Folder && File.Exists(request.InitialPath))
             {
@@ -135,9 +144,15 @@ public sealed class WindowsPathPicker : IPathPicker
                     {
                         return Marshal.PtrToStringUni(path) ?? throw new InvalidOperationException("选择窗口没有返回文件系统路径。");
                     }
-                    finally { Marshal.FreeCoTaskMem(path); }
+                    finally
+                    {
+                        Marshal.FreeCoTaskMem(path);
+                    }
                 }
-                finally { Marshal.FinalReleaseComObject(item); }
+                finally
+                {
+                    Marshal.FinalReleaseComObject(item);
+                }
             }
             finally
             {

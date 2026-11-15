@@ -3,9 +3,15 @@ using StudioX.Engine;
 using StudioX.Foundation;
 using StudioX.Packages;
 
-if (args.Length < 3) { throw new ArgumentException("tools-root pack-root new-output [--route]"); }
+if (args.Length < 3)
+{
+    throw new ArgumentException("tools-root pack-root new-output [--route]");
+}
 var output = Path.GetFullPath(args[2]);
-if (Directory.Exists(output)) { throw new IOException("Use a new output directory."); }
+if (Directory.Exists(output))
+{
+    throw new IOException("Use a new output directory.");
+}
 Directory.CreateDirectory(output);
 var checks = new List<string>();
 void Check(bool value, string description)
@@ -96,7 +102,10 @@ foreach (var file in Directory.GetFiles(Path.GetFullPath(args[1]), "*.mcupack"))
                 await mapping.ValidateBuiltAsync(root);
                 throw new InvalidOperationException("Stale image accepted");
             }
-            catch (StudioXException ex) when (ex.Code == "AG32_MAPPING_STALE") { Check(true, "Changing analog plan invalidates the existing image"); }
+            catch (StudioXException ex) when (ex.Code == "AG32_MAPPING_STALE")
+            {
+                Check(true, "Changing analog plan invalidates the existing image");
+            }
             var analogOnly = await mapping.BuildAsync(root, new Progress<string>(Console.WriteLine));
             Check(analogOnly.Success, "Analog-only image with zero GPIO mappings routes: " + analogOnly.LogPath);
             _ = await mapping.ValidateBuiltAsync(root);

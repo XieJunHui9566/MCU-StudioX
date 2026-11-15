@@ -36,7 +36,15 @@ internal static class RegisterChecks
     // 稀疏、非连续的寄存器编号，防止未来按 M4 固定索引映射 M3 的寄存器。
     private sealed class RegisterTransport(bool fpu, bool riscv = false) : IGdbMiTransport
     {
-        public event Action<string>? RecordReceived { add { } remove { } }
+        public event Action<string>? RecordReceived
+        {
+            add
+            {
+            }
+            remove
+            {
+            }
+        }
         public Task<string> ExecuteAsync(string command, CancellationToken token = default)
         {
             var index = command.IndexOf('-');

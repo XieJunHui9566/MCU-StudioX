@@ -4,9 +4,9 @@
 
 面向多系列 MCU 的独立 Windows 重型 IDE，目标是**开箱即用、新手友好、功能完整、通过插件扩展，并保持系统运行环境独立**。当前源码版本 **0.2.6.15**，采用 **C# / .NET 10 / WPF**。AG32、STM32、CH32、RP 等系列共享通用工程与编辑能力。产品从 `0.1.0-foundation` 开始，与历史插件 `0.17` 分开版本管理。
 
-使用方式是「安装 IDE → 选择器件包与开发环境组件 → 开发」。轻量版按工程需要获取开发环境组件，保留内置 Git 和语言服务。`.mcupack` 保存器件信息、启动/链接文件、厂商源码与工程模板。**当前为 0.2.6 LTS 维护版，已接通编辑、构建下载、源码与反汇编调试、FreeRTOS 状态、串口终端、协议解析、串口绘图和 LVGL PC 窗口预览。**
+使用方式是「安装 IDE → 选择器件包与开发环境组件 → 开发」。轻量版按工程需要获取开发环境组件，保留内置 Git 和语言服务。`.mcupack` 保存器件信息、启动/链接文件、厂商源码与工程模板。**当前为 0.2.6 LTS 维护版，已接通编辑、构建下载、源码与反汇编调试、FreeRTOS 状态、串口终端、协议解析和串口绘图。**
 
-2026-11-03 修订提供对应源码、轻量安装版与完整安装版，集成 MX251 0.0170（测试）及 AI8051U 串口/USB 下载适配。产品版本保持 0.2.6.15。[下载本次安装包与源码](https://github.com/XieJunHui9566/MCU-StudioX/releases/tag/v0.2.6.15-update-20261103)，详见 [本次发行说明](docs/RELEASE-0.2.6.15-20261103.md)。AI 用法与 DeepSeek 输入优化见 [检查记录](docs/AI_ASSISTANT_REDESIGN_20261030.md)。
+当前源码另包含 PIC16F877A/PICkit3 下载和 AI 助手重做；源码与现有安装包可能不同。本轮只更新源码，检查范围见 [源码风格与安全检查](docs/SOURCE_AUDIT_20261030.md)，AI 用法与 DeepSeek 输入优化见 [检查记录](docs/AI_ASSISTANT_REDESIGN_20261030.md)。
 
 ## 0.2.6 LTS · 可靠性与安全维护
 
@@ -101,10 +101,9 @@ Mon51 监控固件随器件包提供，IDE 内制作仿真芯片，开始调试�
 
 - 内置 ESP-IDF 5.5.4，支持 ESP32/WROOM、P4、S3、C3/C5/C6；ESP8266 使用独立 RTOS SDK 3.4。模板采用对应 SDK 的官方示例。
 - 「器件与模板 → ESP 模组与存储」提供 125 个已核实预设及自定义配置，设置 Flash、PSRAM、适用的芯片版本与单双核。配置独立保存，构建核对 SDK 实际接受的参数；内置 Agent 和外部 MCP 可以读取所选规格。
-- LVGL 8.3.x 可使用内置 PC C/C++ 工具链在 Windows 窗口预览自定义 UI；支持多层目录中的库发现、入口与资源审阅，分别展示目标构建占用和 PC 运行统计。
 - 修复 AG32 `.ve` 文件实际高亮时崩溃的问题；拆分会话、协议、授权、文件同步与模拟设备职责，并统一源码及注释约定。
 
-详细用法见 [Espressif 支持](docs/ESPRESSIF_SUPPORT.md)、[LVGL PC 预览](docs/LVGL-PC-PREVIEW.md)和[源码职责导航](docs/RESPONSIBILITIES.md)。
+详细用法见 [Espressif 支持](docs/ESPRESSIF_SUPPORT.md)和[源码职责导航](docs/RESPONSIBILITIES.md)。
 
 ## 在线器件包
 

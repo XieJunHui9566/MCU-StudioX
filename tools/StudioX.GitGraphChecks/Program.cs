@@ -102,13 +102,19 @@ try
     await graph.DeleteBranchAsync(repository, "unmerged");
     throw new Exception("unsafe branch deletion succeeded");
 }
-catch (StudioXException ex) when (ex.Code == "GIT_COMMAND") { Check(true, "unmerged branch cannot be deleted by GUI"); }
+catch (StudioXException ex) when (ex.Code == "GIT_COMMAND")
+{
+    Check(true, "unmerged branch cannot be deleted by GUI");
+}
 try
 {
     await graph.StageAsync(repository, ["../outside.txt"]);
     throw new Exception("escaping path accepted");
 }
-catch (StudioXException ex) when (ex.Code == "GIT_PATH") { Check(true, "path traversal is rejected"); }
+catch (StudioXException ex) when (ex.Code == "GIT_PATH")
+{
+    Check(true, "path traversal is rejected");
+}
 
 var remote = Path.Combine(output, "remote repo.git");
 await Run(output, "init", "--bare", "--initial-branch=main", remote);
@@ -136,7 +142,10 @@ try
     await graph.FetchAsync(repository);
     throw new Exception("fetch without a remote succeeded");
 }
-catch (StudioXException ex) when (ex.Code == "GIT_REMOTE") { Check(true, "fetch explains when no remote is connected"); }
+catch (StudioXException ex) when (ex.Code == "GIT_REMOTE")
+{
+    Check(true, "fetch explains when no remote is connected");
+}
 await graph.AddRemoteAsync(repository, "origin", remote);
 await graph.FetchAsync(repository, "origin", "ignored for local path");
 Check(true, "selected GitHub account does not affect local bare remotes");
@@ -148,13 +157,19 @@ try
     await graph.AddRemoteAsync(repository, "--all", remote);
     throw new Exception("option-like remote name accepted");
 }
-catch (StudioXException ex) when (ex.Code == "GIT_REMOTE") { Check(true, "option-like remote names are rejected"); }
+catch (StudioXException ex) when (ex.Code == "GIT_REMOTE")
+{
+    Check(true, "option-like remote names are rejected");
+}
 try
 {
     await graph.AddRemoteAsync(repository, "credential", "https://user:secret@github.com/example/repo.git");
     throw new Exception("credential URL accepted");
 }
-catch (StudioXException ex) when (ex.Code == "GIT_REMOTE") { Check(true, "embedded credentials are rejected for new remotes"); }
+catch (StudioXException ex) when (ex.Code == "GIT_REMOTE")
+{
+    Check(true, "embedded credentials are rejected for new remotes");
+}
 await graph.PublishBranchAsync(repository, "origin", "main");
 Check((await graph.GetSnapshotAsync(repository)).Upstream == "origin/main", "first publish sets upstream");
 Check(await Run(remote, "for-each-ref", "--format=%(refname)", "refs/heads") == "refs/heads/main",
@@ -166,7 +181,10 @@ try
     await graph.CloneAsync(remote, peer);
     throw new Exception("existing clone target accepted");
 }
-catch (StudioXException ex) when (ex.Code == "GIT_CLONE_EXISTS") { Check(true, "clone preserves an existing target directory"); }
+catch (StudioXException ex) when (ex.Code == "GIT_CLONE_EXISTS")
+{
+    Check(true, "clone preserves an existing target directory");
+}
 var failedTarget = Path.Combine(output, "failed clone");
 try
 {
@@ -206,7 +224,10 @@ try
     await graph.PushAsync(repository);
     throw new Exception("mirror remote was pushed");
 }
-catch (StudioXException ex) when (ex.Code == "GIT_MIRROR") { Check(true, "mirror push is blocked in GUI"); }
+catch (StudioXException ex) when (ex.Code == "GIT_MIRROR")
+{
+    Check(true, "mirror push is blocked in GUI");
+}
 await Run(repository, "config", "--unset", "remote.origin.mirror");
 await Run(peer, "switch", "-c", "feature");
 await File.WriteAllTextAsync(Path.Combine(peer, "peer-feature.txt"), "feature\n");
@@ -335,6 +356,9 @@ try
     await graph.GetSnapshotAsync(nested);
     throw new Exception("parent repository was accepted");
 }
-catch (StudioXException ex) when (ex.Code == "GIT_NOT_PROJECT_REPOSITORY") { Check(true, "parent repository cannot be modified accidentally"); }
+catch (StudioXException ex) when (ex.Code == "GIT_NOT_PROJECT_REPOSITORY")
+{
+    Check(true, "parent repository cannot be modified accidentally");
+}
 
 Console.WriteLine($"PASS: {checks} Git graph checks. Artifacts: {output}");

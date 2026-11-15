@@ -44,9 +44,15 @@ internal static class BuiltSymbolsChecks
                     await StcDebugArtifacts.ReadAsync(project);
                     throw new InvalidOperationException("Accepted: " + name);
                 }
-                catch (StudioXException ex) when (ex.Code == code) { checks.Add(name); }
+                catch (StudioXException ex) when (ex.Code == code)
+                {
+                    checks.Add(name);
+                }
             }
-            finally { await File.WriteAllBytesAsync(path, original); }
+            finally
+            {
+                await File.WriteAllBytesAsync(path, original);
+            }
         }
         await RejectChanged(bundle.SymbolsPath, System.Text.Encoding.UTF8.GetBytes(bundle.SymbolsText + "\n"), "MON51_ARTIFACT_CHANGED", "changed CDB rejected");
         var source = symbols.Lines[0].File;

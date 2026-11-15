@@ -29,7 +29,7 @@
           TextWrapping="Wrap" />
       </WrapPanel>
       <TextBlock
-        Text="暂停、单步和选择栈帧后自动刷新。此视图只解释 IDE 已读取的快照。"
+        Text="暂停、单步或切换栈帧后刷新"
         Foreground="{DynamicResource Muted}"
         TextWrapping="Wrap"
         Margin="0,0,0,12" />

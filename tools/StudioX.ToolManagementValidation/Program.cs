@@ -16,13 +16,27 @@ if (args is ["--hold", var leasedRoot])
     Console.ReadLine();
     return;
 }
-if (args.Length != 2) { throw new ArgumentException("Usage: tool-management-validation <new-output> <ninja.exe>"); }
+if (args.Length != 2)
+{
+    throw new ArgumentException("Usage: tool-management-validation <new-output> <ninja.exe>");
+}
 var output = Path.GetFullPath(args[0]);
-if (Directory.Exists(output)) { throw new InvalidOperationException("Use a new evidence directory."); }
+if (Directory.Exists(output))
+{
+    throw new InvalidOperationException("Use a new evidence directory.");
+}
 Directory.CreateDirectory(output);
 var ninja = await File.ReadAllBytesAsync(args[1]);
 var checks = new List<string>();
-void Check(bool value, string label) { if (!value) { throw new InvalidOperationException(label); } checks.Add(label); Console.WriteLine("PASS " + label); }
+void Check(bool value, string label)
+{
+    if (!value)
+    {
+        throw new InvalidOperationException(label);
+    }
+    checks.Add(label);
+    Console.WriteLine("PASS " + label);
+}
 async Task Reject(Func<Task> operation, string code)
 {
     try
@@ -30,7 +44,10 @@ async Task Reject(Func<Task> operation, string code)
         await operation();
         throw new InvalidOperationException("Expected " + code);
     }
-    catch (StudioXException error) when (error.Code == code) { Check(true, "reject " + code); }
+    catch (StudioXException error) when (error.Code == code)
+    {
+        Check(true, "reject " + code);
+    }
 }
 async Task LegacyZipFixture(string source, string destination)
 {
@@ -132,7 +149,10 @@ using (var lease = ToolUsageLease.Acquire(oldRoot))
 {
     Check((await service.InspectAsync(null)).Versions.Single(version => version.Version == "1.1.0").Busy, "active shared lease is visible in occupancy report");
     await Reject(() => service.RetireAsync(report.Versions.Single(version => version.Version == "1.1.0"), null), "TOOLS_PROTECTED");
-    await Reject(() => Task.Run(() => { using var exclusive = ToolUsageLease.Acquire(oldRoot, true); }), "TOOLS_BUSY");
+    await Reject(() => Task.Run(() =>
+    {
+        using var exclusive = ToolUsageLease.Acquire(oldRoot, true);
+    }), "TOOLS_BUSY");
 }
 using (var exclusive = ToolUsageLease.Acquire(oldRoot, true))
 {
@@ -148,7 +168,10 @@ start.ArgumentList.Add(oldRoot);
 using (var child = Process.Start(start)!)
 {
     Check(await child.StandardOutput.ReadLineAsync().WaitAsync(TimeSpan.FromSeconds(10)) == "READY", "separate process holds a live tool lease");
-    await Reject(() => Task.Run(() => { using var lease = ToolUsageLease.Acquire(oldRoot, true); }), "TOOLS_BUSY");
+    await Reject(() => Task.Run(() =>
+    {
+        using var lease = ToolUsageLease.Acquire(oldRoot, true);
+    }), "TOOLS_BUSY");
     await child.StandardInput.WriteLineAsync("finish");
     await child.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(10));
     Check(child.ExitCode == 0 && !ToolUsageLease.IsBusy(oldRoot), "cross-process occupancy releases after process exit");
@@ -229,7 +252,11 @@ await Reject(() => service.PreviewInstallAsync(conflictArchive), "TOOLS_VERSION_
 Check((await service.PreviewInstallAsync(archive)).AlreadyInstalled, "conflicting same-version import never overwrites installed identity");
 var corruptDuplicate = Path.Combine(output, "corrupt-duplicate.mcutoolchain");
 await LegacyZipFixture(archive, corruptDuplicate);
-using (var zip = ZipFile.Open(corruptDuplicate, ZipArchiveMode.Update)) { using var text = new StreamWriter(zip.GetEntry("probe.exe")!.Open()); text.Write("corrupt"); }
+using (var zip = ZipFile.Open(corruptDuplicate, ZipArchiveMode.Update))
+{
+    using var text = new StreamWriter(zip.GetEntry("probe.exe")!.Open());
+    text.Write("corrupt");
+}
 var corruptDuplicatePreview = await service.PreviewInstallAsync(corruptDuplicate);
 await Reject(() => service.InstallAsync(corruptDuplicatePreview), "TOOL_HASH");
 var installedProbe = Path.Combine(catalog.RootDirectory, "test.gcc", "10.0.0", "probe.exe");
@@ -258,14 +285,22 @@ var changedArchive = Path.Combine(output, "changed.studioxtools");
 await new ToolEnvironmentService(nextSource).ExportAsync(newEntry with { Version = "11.0.0" }, changedArchive, null);
 await LegacyZipFixture(changedArchive, changedArchive);
 var changedPreview = await service.PreviewInstallAsync(changedArchive);
-using (var zip = ZipFile.Open(changedArchive, ZipArchiveMode.Update)) { using var text = new StreamWriter(zip.GetEntry("probe.exe")!.Open()); text.Write("corrupt"); }
+using (var zip = ZipFile.Open(changedArchive, ZipArchiveMode.Update))
+{
+    using var text = new StreamWriter(zip.GetEntry("probe.exe")!.Open());
+    text.Write("corrupt");
+}
 await Reject(() => service.InstallAsync(changedPreview), "TOOLS_CHANGED");
 var corruptPreview = await service.PreviewInstallAsync(changedArchive);
 await Reject(() => service.InstallAsync(corruptPreview), "TOOL_HASH");
 Check(!Directory.Exists(Path.Combine(catalog.RootDirectory, "test.gcc", "11.0.0")), "invalid content is never published as installed");
 var traversalArchive = Path.Combine(output, "traversal.studioxtools");
 File.Copy(changedArchive, traversalArchive);
-using (var zip = ZipFile.Open(traversalArchive, ZipArchiveMode.Update)) { using var text = new StreamWriter(zip.CreateEntry("../escape.exe").Open()); text.Write("forbidden"); }
+using (var zip = ZipFile.Open(traversalArchive, ZipArchiveMode.Update))
+{
+    using var text = new StreamWriter(zip.CreateEntry("../escape.exe").Open());
+    text.Write("forbidden");
+}
 await Reject(() => service.PreviewInstallAsync(traversalArchive), "PATH_UNSAFE");
 Check(!File.Exists(Path.Combine(output, "escape.exe")), "archive traversal never writes outside staging");
 var toPurge = (await service.InspectAsync(null)).Versions.Single(version => version.Version == "1.1.0");
@@ -284,7 +319,10 @@ using (var occupied = new FileStream(retiredProbe, FileMode.Open, FileAccess.Rea
         await service.PurgeAsync(purgeEntry, null);
         throw new InvalidOperationException("Expected occupied file failure");
     }
-    catch (IOException) { Check(File.Exists(Path.Combine(toPurgeDirectory, "retirement.json")), "interrupted permanent deletion retains its management record"); }
+    catch (IOException)
+    {
+        Check(File.Exists(Path.Combine(toPurgeDirectory, "retirement.json")), "interrupted permanent deletion retains its management record");
+    }
 }
 purgeEntry = (await service.InspectAsync(null)).Versions.Single(version => !version.Installed);
 Check(!purgeEntry.CanRestore && purgeEntry.CanPurge && purgeEntry.RetirementState == "purging", "partially deleted version offers retry without pretending it can restore");
@@ -359,7 +397,10 @@ using (var canceled = new CancellationTokenSource())
         await inventory.VerifyProjectAsync(project, token: canceled.Token);
         throw new InvalidOperationException("Expected cancellation");
     }
-    catch (OperationCanceledException) { Check(true, "canceled project check never launches a component or leaves a use lease"); }
+    catch (OperationCanceledException)
+    {
+        Check(true, "canceled project check never launches a component or leaves a use lease");
+    }
 }
 var projectAfterVerification = await File.ReadAllBytesAsync(Path.Combine(project, ".studiox", "project.json"));
 var lockAfterVerification = await File.ReadAllBytesAsync(lockFile);

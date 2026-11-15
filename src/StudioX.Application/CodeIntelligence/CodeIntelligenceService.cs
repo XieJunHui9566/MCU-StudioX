@@ -8,8 +8,9 @@ using StudioX.Engine;
 using StudioX.Foundation;
 using StudioX.Packages;
 
-public sealed partial class CodeIntelligenceService(string runtimeDirectory, string dataDirectory) : IAsyncDisposable
+public sealed partial class CodeIntelligenceService(string runtimeDirectory, string dataDirectory, ToolsetCatalog? sharedTools = null) : IAsyncDisposable
 {
+    private readonly ToolsetCatalog toolsets = sharedTools ?? new(Path.Combine(runtimeDirectory, "toolsets"), dataDirectory);
     private readonly SemaphoreSlim gate = new(1, 1);
     private readonly ConcurrentQueue<string> log = new();
     private LanguageServerConnection? connection;
@@ -19,6 +20,7 @@ public sealed partial class CodeIntelligenceService(string runtimeDirectory, str
     private string? arduinoLibrariesRoot;
     private readonly Dictionary<string, string> synchronizedDocuments = new(StringComparer.OrdinalIgnoreCase);
     private readonly HashSet<string> documentsNeedingReparse = new(StringComparer.OrdinalIgnoreCase);
+    private readonly HashSet<string> documentsAwaitingAst = new(StringComparer.OrdinalIgnoreCase);
     private int version;
     private bool supportsAst;
     private bool espressifAnalysis;
@@ -47,7 +49,10 @@ public sealed partial class CodeIntelligenceService(string runtimeDirectory, str
             retryDisconnectedServer = false;
             await StartCoreAsync(directory, token).ConfigureAwait(false);
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
     private async Task StartCoreAsync(string directory, CancellationToken token)
     {
@@ -63,6 +68,7 @@ public sealed partial class CodeIntelligenceService(string runtimeDirectory, str
             }
             synchronizedDocuments.Clear();
             documentsNeedingReparse.Clear();
+            documentsAwaitingAst.Clear();
             version = 0;
             projectRoot = Path.GetFullPath(directory);
             var project = await ProjectService.ReadAsync(projectRoot, token).ConfigureAwait(false);
@@ -192,7 +198,7 @@ public sealed partial class CodeIntelligenceService(string runtimeDirectory, str
             else if (Mx251SdkProfile.Matches(project))
             {
                 // SDK 自己声明标准头文件根目录；不能沿用 R89 的布局或枚举新版身份。
-                var tools = await new ToolsetCatalog(Path.Combine(runtimeDirectory, "toolsets"), dataDirectory)
+                var tools = await toolsets
                     .ResolveAsync(project.ToolsetId, project.ToolsetVersion, project.CompilerId, token).ConfigureAwait(false);
                 compilerHeaders = PathBoundary.Resolve(tools.ResourceDirectory("sdcc"), "include");
                 flags = [.. flags, "-nostdinc", "-isystem", compilerHeaders.Replace('\\', '/')];
@@ -203,7 +209,8 @@ public sealed partial class CodeIntelligenceService(string runtimeDirectory, str
                 if (Directory.Exists(headers))
                 {
                     compilerHeaders = headers;
-                    flags = [.. flags, "-isystem", headers.Replace('\\', '/')];
+                    // 标准声明全部取自锁定的 SDCC；clang 自带 stdarg/stddef 不能与其 size_t、va_list 混用。
+                    flags = [.. flags, "-nostdinc", "-isystem", headers.Replace('\\', '/')];
                 }
             }
             var cache = Path.Combine(dataDirectory, "language-cache", Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(projectRoot)))[..16]);
@@ -298,7 +305,7 @@ public sealed partial class CodeIntelligenceService(string runtimeDirectory, str
                             {
                                 completionItem = new
                                 {
-                                    snippetSupport = false,
+                                    snippetSupport = true,
                                     documentationFormat = new[] { "plaintext" },
                                     insertReplaceSupport = false
                                 }
@@ -346,7 +353,11 @@ public sealed partial class CodeIntelligenceService(string runtimeDirectory, str
                 analysisInputs = AnalysisInputStamp.Capture(runtimeDirectory, analysisDirectory, project, analysisResponseFiles);
                 analysisProject = project;
             }
-            catch { await server.DisposeAsync().ConfigureAwait(false); throw; }
+            catch
+            {
+                await server.DisposeAsync().ConfigureAwait(false);
+                throw;
+            }
         }
     }
 
@@ -356,10 +367,9 @@ public sealed partial class CodeIntelligenceService(string runtimeDirectory, str
         {
             "riscv" => device.CpuFlags.Any(f => f.StartsWith("-march=rv64", StringComparison.Ordinal)) ? "riscv64-unknown-elf" : "riscv32-unknown-elf",
             "arm" or "cortex-m" => "arm-none-eabi",
-            // clangd 没有 MCS-51 目标；在此只提供通用 C 编辑索引，构建仍由 SDCC 执行。
-            "mcs51" => null,
-            // 通用 32 位无操作系统解析环境，避免 Windows 隐式 size_t 与 SDK 冲突；不模拟 251 ABI。
-            "mcs251" => "i386-unknown-none",
+            // clangd 没有 MCS-51/251 目标；只提供通用无操作系统 C 索引，避免 Windows 隐式类型和声明。
+            // 此目标不模拟 51/251 的 int、指针、地址空间或调用 ABI；实际编译继续使用锁定编译器。
+            "mcs51" or "mcs251" => "i386-unknown-none",
             _ => throw new StudioXException("LANGUAGE_TARGET", "当前代码提示服务尚未支持此器件架构：" + device.Architecture)
         };
         // 只传递影响 C/C++ 解析的参数；不执行编译器，也不把链接/下载参数交给语言服务。
@@ -377,6 +387,8 @@ public sealed partial class CodeIntelligenceService(string runtimeDirectory, str
                 "-D__bit=unsigned char", "-D__at(x)=", "-D__data=", "-D__idata=", "-D__pdata=", "-D__xdata=", "-D__code=", "-D__far=",
                 "-D__interrupt(x)=", "-D__using(x)=", "-D__reentrant=", "-D__critical=", "-D__naked=", "-D__banked=", "-D__nonbanked="
             ]);
+            // 新版标准头通过编译器内建游标实现 va_start；仅提供可解析表达式，不仿真目标栈布局。
+            result.Add("-D__va_start=((unsigned char *)0)");
         }
         var cpuFlags = device.CpuFlags;
         // clangd 不识别沁恒 XW 扩展；仅语言分析使用标准 ISA，实际编译仍使用包内原始参数。
@@ -402,7 +414,7 @@ public sealed partial class CodeIntelligenceService(string runtimeDirectory, str
         return result.ToArray();
     }
 
-    private async Task<string> SynchronizeAsync(string relativePath, string text, CancellationToken token, bool forceReparse = false)
+    private async Task<string> SynchronizeAsync(string relativePath, string text, CancellationToken token, bool forceReparse = false, bool waitForAst = true)
     {
         var server = connection ?? throw new StudioXException("LANGUAGE_NOT_READY", "代码提示服务尚未就绪。");
         var path = ResolveDocumentPath(relativePath);
@@ -449,15 +461,7 @@ public sealed partial class CodeIntelligenceService(string runtimeDirectory, str
                 }
             }, token).ConfigureAwait(false);
             synchronizedDocuments[uri] = text;
-            // 首次打开等待 AST 与头文件符号就绪，避免第一轮只返回无类型的词语候选。
-            documentsNeedingReparse.Add(uri);
-            await server.RequestAsync("textDocument/documentSymbol", new
-            {
-                textDocument = new
-                {
-                    uri
-                }
-            }, token).ConfigureAwait(false);
+            documentsAwaitingAst.Add(uri);
         }
         else if (synchronizedText != text)
         {
@@ -471,7 +475,11 @@ public sealed partial class CodeIntelligenceService(string runtimeDirectory, str
                 contentChanges = new[] { new { text = sdccAnalysis ? SdccAssemblyProjection.Create(text) : text } }
             }, token).ConfigureAwait(false);
             synchronizedDocuments[uri] = text;
-            documentsNeedingReparse.Add(uri);
+            documentsAwaitingAst.Add(uri);
+        }
+        // 补全请求本身会解析最新草稿；导航、重构和诊断仍保留严格的 AST 屏障。
+        if (waitForAst && documentsAwaitingAst.Contains(uri))
+        {
             await server.RequestAsync("textDocument/documentSymbol", new
             {
                 textDocument = new
@@ -479,6 +487,7 @@ public sealed partial class CodeIntelligenceService(string runtimeDirectory, str
                     uri
                 }
             }, token).ConfigureAwait(false);
+            documentsAwaitingAst.Remove(uri);
         }
         documentsNeedingReparse.Remove(uri);
         return uri;
@@ -493,7 +502,8 @@ public sealed partial class CodeIntelligenceService(string runtimeDirectory, str
         await gate.WaitAsync(token).ConfigureAwait(false);
         try
         {
-            var uri = await SynchronizeWorkspaceAsync(relativePath, text, documents, token).ConfigureAwait(false);
+            var cold = !synchronizedDocuments.ContainsKey(new Uri(ResolveDocumentPath(relativePath)).AbsoluteUri);
+            var uri = await SynchronizeWorkspaceAsync(relativePath, text, documents, token, waitForAst: false).ConfigureAwait(false);
             var position = CodePositions.FromOffset(text, offset);
             var parameters = new
             {
@@ -514,10 +524,10 @@ public sealed partial class CodeIntelligenceService(string runtimeDirectory, str
             var response = await connection!.RequestAsync("textDocument/completion", parameters, token).ConfigureAwait(false);
             JsonElement Items(JsonElement value) => value.ValueKind == JsonValueKind.Array ? value : value.ValueKind == JsonValueKind.Object && value.TryGetProperty("items", out var values) ? values : default;
             var items = Items(response);
-            // 首轮 AST 完成后，clangd 的头文件索引可能仍在提交；空结果只补查一次，输入变化可随时取消。
-            if (items.ValueKind == JsonValueKind.Array && items.GetArrayLength() == 0)
+            // 仅冷启动补查一次；普通空结果不再阻塞后续输入 250ms。
+            if (cold && items.ValueKind == JsonValueKind.Array && items.GetArrayLength() == 0)
             {
-                await Task.Delay(250, token).ConfigureAwait(false);
+                await Task.Delay(40, token).ConfigureAwait(false);
                 items = Items(await connection.RequestAsync("textDocument/completion", parameters, token).ConfigureAwait(false));
             }
             if (items.ValueKind != JsonValueKind.Array)
@@ -527,11 +537,8 @@ public sealed partial class CodeIntelligenceService(string runtimeDirectory, str
             var result = new List<CodeSuggestion>();
             foreach (var item in items.EnumerateArray())
             {
-                // 当前只接受当前文件内的普通文本替换，不隐式执行命令或插入其他文件的内容。
-                if (item.TryGetProperty("insertTextFormat", out var format) && format.GetInt32() == 2)
-                {
-                    continue;
-                }
+                // 仅接收当前文件的替换；片段只解析编号占位符，不执行命令或隐式修改其他文件。
+                var isSnippet = item.TryGetProperty("insertTextFormat", out var format) && format.GetInt32() == 2;
                 if (item.TryGetProperty("additionalTextEdits", out var additional) && additional.GetArrayLength() > 0)
                 {
                     continue;
@@ -547,12 +554,24 @@ public sealed partial class CodeIntelligenceService(string runtimeDirectory, str
                         range = JsonSerializer.Deserialize<CodeRange>(span, JsonStore.Options);
                     }
                 }
-                result.Add(new(label, insertion, String(item, "filterText", insertion), String(item, "detail"), Documentation(item),
-                    item.TryGetProperty("kind", out var kind) ? kind.GetInt32() : 1, range, String(item, "sortText", label)));
+                var snippet = isSnippet ? CodeSnippet.Parse(insertion) : null;
+                if (isSnippet && snippet is null)
+                {
+                    RecordAnalysisLog("不支持的 clangd 补全片段：" + item.GetRawText());
+                    continue;
+                }
+                result.Add(new(label, snippet?.Text ?? insertion, String(item, "filterText", snippet is null ? insertion : label.Trim()), String(item, "detail"), Documentation(item),
+                    item.TryGetProperty("kind", out var kind) ? kind.GetInt32() : 1, range, String(item, "sortText", label))
+                {
+                    Snippet = snippet
+                });
             }
             return result.OrderBy(item => item.SortText, StringComparer.Ordinal).ToArray();
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
     public async Task<CodeSignature?> SignatureAsync(string relativePath, string text, int offset, CancellationToken token = default, IReadOnlyList<CodeDocumentSnapshot>? documents = null)
     {
@@ -597,7 +616,10 @@ public sealed partial class CodeIntelligenceService(string runtimeDirectory, str
                 response.TryGetProperty("activeParameter", out var globalParameter) ? globalParameter.GetInt32() : 0;
             return new(label, Documentation(signature), parameters, activeParameter);
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
     private static string String(JsonElement element, string name, string fallback = "") => element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString()! : fallback;
     private static string Documentation(JsonElement element) => element.TryGetProperty("documentation", out var value) ? value.ValueKind == JsonValueKind.String ? value.GetString()! : String(value, "value") : "";
@@ -626,12 +648,16 @@ public sealed partial class CodeIntelligenceService(string runtimeDirectory, str
             importedCommands.Clear();
             synchronizedDocuments.Clear();
             documentsNeedingReparse.Clear();
+            documentsAwaitingAst.Clear();
             if (previous is not null)
             {
                 await previous.DisposeAsync().ConfigureAwait(false);
             }
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
     public async ValueTask DisposeAsync()
     {

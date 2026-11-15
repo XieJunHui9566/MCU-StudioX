@@ -63,4 +63,4 @@ await files.SaveAsync(project, document, token);
 
 第一方 Python、PowerShell 和 C/H 的排版入口、固定格式器及检查方式见 `tools/Format-FirstPartySources.ps1`。Python 比较 AST，C/H 核对 token，PowerShell 校验语法；字符串中的生成内容保留原值。嵌入式 C/C++ 还要遵循 MCU 技能中的并发、超时、容量和准确料号约束。
 
-职责调整必须运行相关离线行为验证，不能只看到编译成功。当前重点门禁包括 AI 协议与缓存、MCP 完整契约、审批卡移除、工程隔离、实时编辑同步、设备释放和 LVGL 自定义 UI。测试须使用隔离夹具，保留真实工程的未提交改动。
+职责调整必须运行相关离线行为验证，不能只看到编译成功。当前重点门禁包括 AI 协议与缓存、MCP 完整契约、审批卡移除、工程隔离、实时编辑同步和设备释放。测试须使用隔离夹具，保留真实工程的未提交改动。

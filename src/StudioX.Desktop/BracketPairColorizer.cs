@@ -79,9 +79,24 @@ internal sealed class BracketPairColorizer : DocumentColorizingTransformer, IDis
             Brackets = result;
             editor.TextArea.TextView.Redraw();
         }
-        catch (OperationCanceledException) when (request.IsCancellationRequested) { }
-        catch (Exception ex) { if (!disposed && revision == version) { onError(ex); } }
-        finally { if (cancellation == request) { cancellation = null; } request.Dispose(); }
+        catch (OperationCanceledException) when (request.IsCancellationRequested)
+        {
+        }
+        catch (Exception ex)
+        {
+            if (!disposed && revision == version)
+            {
+                onError(ex);
+            }
+        }
+        finally
+        {
+            if (cancellation == request)
+            {
+                cancellation = null;
+            }
+            request.Dispose();
+        }
     }
     protected override void ColorizeLine(DocumentLine line)
     {

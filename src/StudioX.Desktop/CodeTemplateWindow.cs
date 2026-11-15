@@ -41,7 +41,7 @@ internal sealed class CodeTemplateWindow : Window
         {
             Height = GridLength.Auto
         });
-        root.Children.Add(new TextBlock { Text = "双击或点击插入调用模板 · 选中源码后可从编辑菜单保存为模板 · Ctrl+Space 调用缩写", TextWrapping = TextWrapping.Wrap, Margin = new(0, 0, 0, 14) });
+        root.Children.Add(new TextBlock { Text = "双击插入 · Ctrl+Space 调用缩写", TextWrapping = TextWrapping.Wrap, Margin = new(0, 0, 0, 14) });
         var content = new Grid();
         content.ColumnDefinitions.Add(new()
         {
@@ -114,7 +114,14 @@ internal sealed class CodeTemplateWindow : Window
         language.SelectionChanged += (_, _) => Refresh();
         Templates.SelectionChanged += (_, _) => Describe();
         Templates.MouseDoubleClick += (_, _) => Accept();
-        Templates.PreviewKeyDown += (_, e) => { if (e.Key == Key.Enter) { Accept(); e.Handled = true; } };
+        Templates.PreviewKeyDown += (_, e) =>
+        {
+            if (e.Key == Key.Enter)
+            {
+                Accept();
+                e.Handled = true;
+            }
+        };
         insert.Click += (_, _) => Accept();
         create.Click += async (_, _) => await EditAsync(false, false);
         edit.Click += async (_, _) => await EditAsync(true, false);
@@ -135,7 +142,13 @@ internal sealed class CodeTemplateWindow : Window
                 await service.SaveAsync(project, entry.Scope, store.Revision, store.Templates.Where(t => t.Id != entry.Template.Id).ToArray());
             });
         };
-        Closing += (_, e) => { if (busy) { e.Cancel = true; } };
+        Closing += (_, e) =>
+        {
+            if (busy)
+            {
+                e.Cancel = true;
+            }
+        };
         Refresh();
         void Accept()
         {
@@ -192,8 +205,18 @@ internal sealed class CodeTemplateWindow : Window
                     Templates.SelectedItem = Templates.Items.OfType<CodeTemplateEntry>().FirstOrDefault(e => e.Template.Id == selectedId);
                 }
             }
-            catch (Exception ex) { status.Text = ex.Message; status.ToolTip = ex.ToString(); log(ex.ToString()); }
-            finally { busy = false; create.IsEnabled = true; Describe(); }
+            catch (Exception ex)
+            {
+                status.Text = ex.Message;
+                status.ToolTip = ex.ToString();
+                log(ex.ToString());
+            }
+            finally
+            {
+                busy = false;
+                create.IsEnabled = true;
+                Describe();
+            }
         }
         void Refresh()
         {

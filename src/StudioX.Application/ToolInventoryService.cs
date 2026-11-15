@@ -27,8 +27,14 @@ public sealed class ToolInventoryService(ToolsetCatalog catalog)
                 text.AppendLine($"  编译器标识：{manifest.CompilerId}");
                 text.AppendLine(catalog.IsEnabled(manifest.Id, manifest.Version) ? "  已安装 · 使用此组件时校验，未变化时复用结果" : "  已禁用 · 可在开发环境组件管理中启用");
             }
-            catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }
-            catch (Exception ex) { text.AppendLine("  检查失败：" + ex); }
+            catch (OperationCanceledException) when (token.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                text.AppendLine("  检查失败：" + ex);
+            }
             text.AppendLine();
         }
         return text.Length > 0 ? text.ToString() : "尚未安装开发环境组件。请在开发环境组件管理中从 GitHub 获取，或导入工程要求的 .mcutoolchain。";

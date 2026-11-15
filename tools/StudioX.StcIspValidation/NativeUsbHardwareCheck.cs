@@ -46,7 +46,11 @@ internal static class NativeUsbHardwareCheck
                 await Task.Delay(200, cancel.Token);
             }
         }
-        catch (Exception error) { Write(error + "\n"); throw; }
+        catch (Exception error)
+        {
+            Write(error + "\n");
+            throw;
+        }
     }
 
     private sealed class SynchronousOutput(Action<string> output) : IProgress<string>

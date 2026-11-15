@@ -50,7 +50,10 @@ public sealed partial class DebugSessionService
                 RequireImageVerificationEvidence(output.ToString(), preparation.ImageByteCount, preparation.LogPath, truncated);
             }
         }
-        finally { adapter.RecordReceived -= Observe; }
+        finally
+        {
+            adapter.RecordReceived -= Observe;
+        }
     }
 
     internal static void RequireImageVerificationEvidence(string output, ulong expectedBytes, string logPath, bool truncated = false)

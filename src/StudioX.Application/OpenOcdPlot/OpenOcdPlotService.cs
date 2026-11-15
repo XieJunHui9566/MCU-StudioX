@@ -61,7 +61,10 @@ public sealed class OpenOcdPlotService(IOpenOcdPlotSource source, int capacity =
                 status = "变量已解析。开始采集后，使用调试工具栏的运行按钮让目标继续执行。";
             }
         }
-        finally { operations.Release(); }
+        finally
+        {
+            operations.Release();
+        }
     }
 
     public void Remove(int index)
@@ -134,7 +137,10 @@ public sealed class OpenOcdPlotService(IOpenOcdPlotSource source, int capacity =
                 worker = Task.Run(() => CaptureAsync(selected, intervalMs, cancellation.Token));
             }
         }
-        finally { operations.Release(); }
+        finally
+        {
+            operations.Release();
+        }
     }
 
     private async Task CaptureAsync(OpenOcdPlotChannel[] selected, int periodMs, CancellationToken token)
@@ -243,7 +249,10 @@ public sealed class OpenOcdPlotService(IOpenOcdPlotSource source, int capacity =
             cancellation?.Cancel();
             await worker;
         }
-        finally { operations.Release(); }
+        finally
+        {
+            operations.Release();
+        }
     }
 
     public string ExportCsv()
@@ -293,6 +302,9 @@ public sealed class OpenOcdPlotService(IOpenOcdPlotSource source, int capacity =
             await worker;
             cancellation?.Dispose();
         }
-        finally { operations.Release(); }
+        finally
+        {
+            operations.Release();
+        }
     }
 }

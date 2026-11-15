@@ -49,7 +49,10 @@ public partial class MainWindow
             projectToolsView.SetDetail(error.ToString());
             throw;
         }
-        finally { projectToolsView.SetBusy(false); }
+        finally
+        {
+            projectToolsView.SetBusy(false);
+        }
     }
 
     private void ShowProjectToolDetail(ProjectToolRequirement item)
@@ -104,7 +107,13 @@ public partial class MainWindow
         {
             var view = projectToolsView!;
             var acceptingProgress = true;
-            var progress = new Progress<string>(text => { if (acceptingProgress) { view.SetStatus(text); } });
+            var progress = new Progress<string>(text =>
+            {
+                if (acceptingProgress)
+                {
+                    view.SetStatus(text);
+                }
+            });
             view.SetBusy(true);
             try
             {
@@ -230,13 +239,20 @@ public partial class MainWindow
                     {
                         await RefreshProjectToolsAsync(CancellationToken.None);
                     }
-                    catch (Exception refreshError) { Log(refreshError.ToString()); }
+                    catch (Exception refreshError)
+                    {
+                        Log(refreshError.ToString());
+                    }
                 }
                 view.SetStatus(error is OperationCanceledException ? "操作已取消；已安装组件与已落盘下载进度保留，下次可继续。" : error.Message);
                 view.SetDetail(error.ToString());
                 throw;
             }
-            finally { acceptingProgress = false; view.SetBusy(false); }
+            finally
+            {
+                acceptingProgress = false;
+                view.SetBusy(false);
+            }
         });
     }
 }

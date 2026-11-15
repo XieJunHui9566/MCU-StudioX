@@ -3,6 +3,10 @@ namespace StudioX.Engine;
 using StudioX.Foundation;
 public sealed record ResolvedToolset(ToolsetManifest Manifest, string RootDirectory, string Fingerprint)
 {
+    internal IReadOnlyDictionary<string, VerifiedToolFile>? VerifiedFiles
+    {
+        get; init;
+    }
     public string Tool(string role) => PathBoundary.Resolve(RootDirectory, Manifest.Executables.TryGetValue(role, out var path)
         ? path : throw new StudioXException("TOOL_ROLE", $"开发环境组件缺少组件：{role}"));
     public string ResourceDirectory(string role) => PathBoundary.Resolve(RootDirectory, Manifest.ResourceDirectories is not null && Manifest.ResourceDirectories.TryGetValue(role, out var path)
@@ -40,3 +44,5 @@ public sealed record ResolvedToolset(ToolsetManifest Manifest, string RootDirect
         };
     }
 }
+
+internal sealed record VerifiedToolFile(string Sha256, long Length, long LastWriteUtcTicks, long CreationUtcTicks);

@@ -38,8 +38,20 @@ public sealed class ProjectTerminalService(GitRepositoryService git) : IAsyncDis
                 status = "正在启动工程终端…";
                 screen.Reply += reply => _ = ReplyAsync(source, reply);
             }
-            source.Output += text => { lock (sync) { screen.Feed(text); } };
-            source.ReadError += ex => { lock (sync) { status = ex.ToString(); } };
+            source.Output += text =>
+            {
+                lock (sync)
+                {
+                    screen.Feed(text);
+                }
+            };
+            source.ReadError += ex =>
+            {
+                lock (sync)
+                {
+                    status = ex.ToString();
+                }
+            };
             var environment = System.Environment.GetEnvironmentVariables().Cast<System.Collections.DictionaryEntry>()
                 .Where(p => !((string)p.Key).StartsWith("GIT_", StringComparison.OrdinalIgnoreCase))
                 .ToDictionary(p => (string)p.Key, p => (string)p.Value!, StringComparer.OrdinalIgnoreCase);
@@ -52,7 +64,11 @@ public sealed class ProjectTerminalService(GitRepositoryService git) : IAsyncDis
             {
                 await Task.Run(() => source.Start(Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.System), "cmd.exe"), "/d /q /k \"chcp 65001 >nul\"", directory, environment, 120, 20));
             }
-            catch { await source.DisposeAsync(); throw; }
+            catch
+            {
+                await source.DisposeAsync();
+                throw;
+            }
             shell = source;
             lock (sync)
             {
@@ -61,7 +77,10 @@ public sealed class ProjectTerminalService(GitRepositoryService git) : IAsyncDis
             }
             monitor = MonitorAsync(source);
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
     private async Task MonitorAsync(PseudoConsoleProcess source)
     {
@@ -78,7 +97,13 @@ public sealed class ProjectTerminalService(GitRepositoryService git) : IAsyncDis
         {
             await source.WriteAsync(reply);
         }
-        catch (Exception ex) { lock (sync) { status = ex.Message; } }
+        catch (Exception ex)
+        {
+            lock (sync)
+            {
+                status = ex.Message;
+            }
+        }
     }
     public Task SendAsync(string input) => shell?.WriteAsync(input) ?? throw new InvalidOperationException("请先启动工程终端。");
     public void ClearHistory()
@@ -109,7 +134,10 @@ public sealed class ProjectTerminalService(GitRepositoryService git) : IAsyncDis
         {
             await StopCoreAsync();
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
     private async Task StopCoreAsync()
     {

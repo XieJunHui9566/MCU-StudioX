@@ -50,7 +50,33 @@ public partial class MainWindow
         }
         header.Children.Add(categories);
         var next = new Button { Content = advice.Action == "tool-management" ? "打开开发环境组件管理" : advice.Action == "health" ? "检查工程配置缓存" : advice.Action == "tools" ? "打开开发环境组件" : advice.Action == "problems" ? "查看问题列表" : advice.Action == "serial" ? "查看串口会话" : advice.Action == "history" ? "查看本地历史" : "查看构建日志", HorizontalAlignment = HorizontalAlignment.Left, Margin = new(0, 0, 0, 12) };
-        next.Click += async (_, _) => { if (advice.Action == "tool-management") { await ShowToolManagementAsync(); } else if (advice.Action == "health") { await ShowProjectHealthAsync(diagnostic: diagnostic); } else if (advice.Action == "tools") { await ShowToolEnvironmentAsync(); } else if (advice.Action == "serial") { ShowDocument(SerialTab); } else if (advice.Action == "history") { await ShowLocalHistoryAsync(); } else { ShowBottom(advice.Action == "problems" ? 4 : 0); } };
+        next.Click += async (_, _) =>
+        {
+            if (advice.Action == "tool-management")
+            {
+                await ShowToolManagementAsync();
+            }
+            else if (advice.Action == "health")
+            {
+                await ShowProjectHealthAsync(diagnostic: diagnostic);
+            }
+            else if (advice.Action == "tools")
+            {
+                await ShowToolEnvironmentAsync();
+            }
+            else if (advice.Action == "serial")
+            {
+                ShowDocument(SerialTab);
+            }
+            else if (advice.Action == "history")
+            {
+                await ShowLocalHistoryAsync();
+            }
+            else
+            {
+                ShowBottom(advice.Action == "problems" ? 4 : 0);
+            }
+        };
         header.Children.Add(next);
         var manual = new Button { Content = "查看完整故障处理手册", HorizontalAlignment = HorizontalAlignment.Left, Margin = new(0, 0, 0, 12) };
         manual.Click += async (_, _) => await ShowHelpAsync(services.Help.DiagnosticTopic(category ?? diagnostic));

@@ -538,7 +538,10 @@ public partial class MainWindow
                     project = Path.GetFileName(previous.Project)
                 }, deadline.Token);
             }
-            catch (Exception error) { PluginManager.Log(error.ToString()); }
+            catch (Exception error)
+            {
+                PluginManager.Log(error.ToString());
+            }
         }
         pendingDocumentEvents.Clear();
         pluginGeneration++;

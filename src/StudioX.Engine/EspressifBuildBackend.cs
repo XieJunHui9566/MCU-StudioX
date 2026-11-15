@@ -5,9 +5,22 @@ using StudioX.Engine.Debugging;
 using StudioX.Foundation;
 
 /// <summary>使用 SDK 的原生构建入口，保留应用、引导程序和分区表之间的关系。</summary>
-internal sealed class EspressifBuildBackend
+internal sealed class EspressifBuildBackend(string? dataDirectory = null)
 {
     internal async Task<BuildReport> ExecuteAsync(string root, ProjectManifest project, ResolvedToolset tools,
+        ProjectBuildSettings settings, bool configureOnly, IProgress<string>? progress, IProgress<string>? output,
+        CancellationToken token)
+    {
+        if (OperatingSystem.IsWindows() && root.Any(c => c > 127 || char.IsWhiteSpace(c)))
+        {
+            return await EspressifProjectWorkspace.ExecuteAsync(dataDirectory ?? Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MCUStudioX"), root, project, tools, settings, configureOnly,
+                progress, output, token, ExecuteCoreAsync);
+        }
+        return await ExecuteCoreAsync(root, project, tools, settings, configureOnly, progress, output, token);
+    }
+
+    private async Task<BuildReport> ExecuteCoreAsync(string root, ProjectManifest project, ResolvedToolset tools,
         ProjectBuildSettings settings, bool configureOnly, IProgress<string>? progress, IProgress<string>? output,
         CancellationToken token)
     {
@@ -31,15 +44,15 @@ internal sealed class EspressifBuildBackend
             log.AppendLine($"{sdk.Framework} {sdk.SdkVersion} · target={sdk.Target}");
             log.AppendLine("工程编译参数：" + settings.SummaryFor(project));
             var module = await EspressifModuleConfiguration.ReadAsync(root, token);
-            var identity = new CacheIdentity(root, tools.RootDirectory, tools.Fingerprint, sdk, settings, module.Settings, EspressifNativeTools.Revision);
+            var identity = new CacheIdentity(root, tools.RootDirectory, tools.Fingerprint, sdk, settings, module.Settings, EspressifNativeTools.RevisionFor(sdk));
             var moduleBase = await EspressifModuleSdkConfig.PrepareAsync(root, module, token);
             if (moduleBase is not null)
             {
                 log.AppendLine("模块配置保留原生选项：" + Path.GetRelativePath(root, moduleBase));
             }
             var environment = await EspressifBuildEnvironment.CreateAsync(root, tools, sdk, token);
-            var nativeRoot = EspressifNativePath.For(root);
-            var nativeBuild = EspressifNativePath.For(build);
+            var nativeRoot = EspressifNativePath.ForProject(root);
+            var nativeBuild = EspressifNativePath.ForProject(build);
             var python = EspressifNativePath.ForExecutable(tools.Tool("python"));
             var frontend = PathBoundary.Resolve(environment["IDF_PATH"], "tools/idf.py");
             var configure = new List<string> { frontend, "-C", nativeRoot, "-B", nativeBuild, "-G", "Ninja", "-D", "IDF_TARGET=" + sdk.Target,
@@ -53,7 +66,7 @@ internal sealed class EspressifBuildBackend
             if (settings.HasOverrides)
             {
                 await settings.PrepareCMakeAsync(build, project, token);
-                configure.AddRange(["-D", "CMAKE_PROJECT_INCLUDE=" + CmakePath(EspressifNativePath.For(PathBoundary.Resolve(build, "studiox-compiler-options.cmake")))]);
+                configure.AddRange(["-D", "CMAKE_PROJECT_INCLUDE=" + CmakePath(EspressifNativePath.ForProject(PathBoundary.Resolve(build, "studiox-compiler-options.cmake")))]);
             }
             if (module.Settings.HasOverrides)
             {
@@ -63,7 +76,7 @@ internal sealed class EspressifBuildBackend
                 // 此处追加已存在的 SDK 组件，保留用户计算出的组件根；不能改用户的 COMPONENTS 或模板文件。
                 var script = "if(NOT BOOTLOADER_BUILD AND CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)\n" +
                     "  execute_process(COMMAND \"${PYTHON}\" -c \"import os,sys; a,b,c=(os.path.normcase(os.path.realpath(x)) for x in sys.argv[1:]); sys.exit(0 if a in (b,c) else 1)\"\n" +
-                    "    \"${sdkconfig}\" \"" + CmakePath(EspressifNativePath.For(moduleBase!)) + "\" \"${CMAKE_BINARY_DIR}/studiox-module-sdkconfig\"\n" +
+                    "    \"${sdkconfig}\" \"" + CmakePath(EspressifNativePath.ForProject(moduleBase!)) + "\" \"${CMAKE_BINARY_DIR}/studiox-module-sdkconfig\"\n" +
                     "    RESULT_VARIABLE _studiox_base_match)\n" +
                     "  if(NOT _studiox_base_match EQUAL 0)\n" +
                     "    message(FATAL_ERROR \"MCU StudioX: custom SDKCONFIG has not been configured as the module base. Save the native SDK settings selection and build once before choosing a module, or configure once with the native SDK; user configuration remains unchanged.\")\n" +
@@ -73,7 +86,7 @@ internal sealed class EspressifBuildBackend
                     (psram ? "  list(APPEND components esp_psram)\n  list(REMOVE_DUPLICATES components)\n" : "") + "endif()\n" +
                     (settings.HasOverrides ? "include(\"${CMAKE_CURRENT_LIST_DIR}/studiox-compiler-options.cmake\")\n" : "");
                 await File.WriteAllTextAsync(hook, script, token);
-                configure.AddRange(["-D", "CMAKE_PROJECT_INCLUDE=" + CmakePath(EspressifNativePath.For(hook))]);
+                configure.AddRange(["-D", "CMAKE_PROJECT_INCLUDE=" + CmakePath(EspressifNativePath.ForProject(hook))]);
             }
             if (!File.Exists(cachePath) || await JsonStore.ReadAsync<CacheIdentity>(cachePath, token) != identity)
             {
@@ -292,7 +305,10 @@ internal sealed class EspressifBuildBackend
                         File.Move(entry.Destination, entry.Source);
                     }
                 }
-                catch (Exception restore) { errors.Add(restore); }
+                catch (Exception restore)
+                {
+                    errors.Add(restore);
+                }
             }
             if (errors.Count > 1)
             {

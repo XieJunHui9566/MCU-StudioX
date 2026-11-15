@@ -68,7 +68,10 @@ public sealed class SerialTerminalService(DeviceHub hub, string dataDirectory, F
             }
             consumer = ConsumeAsync(opened, subscription, lifetime.Token);
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
     private async Task ConsumeAsync(DeviceSession source, FrameSubscription frames, CancellationToken token)
     {
@@ -102,7 +105,9 @@ public sealed class SerialTerminalService(DeviceHub hub, string dataDirectory, F
                 }
             }
         }
-        catch (OperationCanceledException) when (token.IsCancellationRequested) { }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+        }
         catch (Exception ex)
         {
             if (!token.IsCancellationRequested)
@@ -285,7 +290,10 @@ public sealed class SerialTerminalService(DeviceHub hub, string dataDirectory, F
             {
                 await session!.SendAsync(bytes).ConfigureAwait(false);
             }
-            catch (TimeoutException ex) { throw new IOException("发送超时，可能受到 CTS/XOFF 流控阻塞；部分字节可能已发送，请勿盲目重发。", ex); }
+            catch (TimeoutException ex)
+            {
+                throw new IOException("发送超时，可能受到 CTS/XOFF 流控阻塞；部分字节可能已发送，请勿盲目重发。", ex);
+            }
             lock (sync)
             {
                 sent += bytes.Length;
@@ -294,7 +302,10 @@ public sealed class SerialTerminalService(DeviceHub hub, string dataDirectory, F
                 Display(record);
             }
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
     public async Task PollPinsAsync()
     {
@@ -322,9 +333,19 @@ public sealed class SerialTerminalService(DeviceHub hub, string dataDirectory, F
                     }
                 }
             }
-            catch (Exception ex) when (ex is IOException or InvalidOperationException) { lock (sync) { pins = null; message = "串口状态读取失败：" + ex.Message; } }
+            catch (Exception ex) when (ex is IOException or InvalidOperationException)
+            {
+                lock (sync)
+                {
+                    pins = null;
+                    message = "串口状态读取失败：" + ex.Message;
+                }
+            }
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
     public async Task SetOutputsAsync(bool dtr, bool rts)
     {
@@ -336,7 +357,10 @@ public sealed class SerialTerminalService(DeviceHub hub, string dataDirectory, F
                 await Task.Run(() => transport.SetOutputs(dtr, rts)).ConfigureAwait(false);
             }
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
     public void Clear()
     {
@@ -424,7 +448,10 @@ public sealed class SerialTerminalService(DeviceHub hub, string dataDirectory, F
         {
             await DisconnectCoreAsync().ConfigureAwait(false);
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
     private async Task DisconnectCoreAsync()
     {
@@ -467,6 +494,9 @@ public sealed class SerialTerminalService(DeviceHub hub, string dataDirectory, F
             await DisconnectCoreAsync().ConfigureAwait(false);
             await Protocol.DisposeAsync().ConfigureAwait(false);
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
 }

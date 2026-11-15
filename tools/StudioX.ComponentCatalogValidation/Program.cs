@@ -15,12 +15,26 @@ var idfOriginal = args is ["--idf-original", _, _];
 var idfProjectCheck = args is ["--idf-project-check", _, _, _];
 var acquisition = args is ["--acquisition", _, _] or ["--acquisition", _, _, "--online"];
 var families = args.Length is 4 or 5 && args[0] == "--families";
-if (!acquisition && !stcPack && !migration && !junction && !families && !familyComponents && !sdkRevision && !familyBoundaries && !familyEntryPoints && !idfVersions && !idfImports && !idfImportedCheck && !idfOriginal && !idfProjectCheck && args.Length is not (2 or 3)) { throw new ArgumentException("Use a documented validation mode and new output directory."); }
+if (!acquisition && !stcPack && !migration && !junction && !families && !familyComponents && !sdkRevision && !familyBoundaries && !familyEntryPoints && !idfVersions && !idfImports && !idfImportedCheck && !idfOriginal && !idfProjectCheck && args.Length is not (2 or 3))
+{
+    throw new ArgumentException("Use a documented validation mode and new output directory.");
+}
 var output = Path.GetFullPath(args[acquisition || stcPack || migration || junction || families || familyComponents || sdkRevision || familyBoundaries || familyEntryPoints || idfVersions || idfImports || idfImportedCheck || idfOriginal || idfProjectCheck ? 1 : 0]);
-if (Directory.Exists(output) || File.Exists(output)) { throw new ArgumentException("Output must be new."); }
+if (Directory.Exists(output) || File.Exists(output))
+{
+    throw new ArgumentException("Output must be new.");
+}
 Directory.CreateDirectory(output);
 var checks = new List<string>();
-void Check(bool value, string text) { if (!value) { throw new InvalidOperationException(text); } checks.Add(text); Console.WriteLine("PASS " + text); }
+void Check(bool value, string text)
+{
+    if (!value)
+    {
+        throw new InvalidOperationException(text);
+    }
+    checks.Add(text);
+    Console.WriteLine("PASS " + text);
+}
 try
 {
     if (acquisition)
@@ -85,7 +99,10 @@ try
             await service.PreviewAsync(Path.GetFullPath(args[2]), placeholder, target);
             throw new InvalidOperationException("Junction accepted");
         }
-        catch (StudioXException error) { Check(error.Code == "PATH_LINK" && !Directory.Exists(target), "junction parent cannot alias a migration destination into the original project"); }
+        catch (StudioXException error)
+        {
+            Check(error.Code == "PATH_LINK" && !Directory.Exists(target), "junction parent cannot alias a migration destination into the original project");
+        }
     }
     else
     {

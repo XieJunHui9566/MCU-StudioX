@@ -18,6 +18,14 @@ foreach ($entry in $manifest.sha256.PSObject.Properties)
         throw ('IPE runtime content differs: ' + $entry.Name)
     }
 }
+$indexedFiles = @($manifest.sha256.PSObject.Properties.Name) + @('toolset.json')
+$unindexedFiles = @(Get-ChildItem -LiteralPath $source -File -Recurse | ForEach-Object {
+        [IO.Path]::GetRelativePath($source, $_.FullName).Replace('\', '/')
+    } | Where-Object { $_ -cnotin $indexedFiles })
+if ($unindexedFiles.Count)
+{
+    throw ('IPE runtime contains unindexed files; repair it before preparing MDB: ' + (($unindexedFiles | Select-Object -First 10) -join ', '))
+}
 # 此入口的前端来自本机官方 MPLAB X 6.35；版本与后端分别记录，不能冒称官方整套 6.20。
 $frontendHash = 'B9358445C951BBF5A58C8626EAF4984121D2604C198E5777B8BD1501BE16AB3E'
 if ((Get-FileHash -LiteralPath $MdbJar).Hash -ne $frontendHash)
@@ -25,29 +33,57 @@ if ((Get-FileHash -LiteralPath $MdbJar).Hash -ne $frontendHash)
     throw 'MDB command frontend does not match the validated 6.35 component.'
 }
 $target = Join-Path ([IO.Path]::GetFullPath($RuntimeDirectory)) 'toolsets/microchip.mdb/6.20.635'
-if (Test-Path -LiteralPath $target) { throw 'Never overwrite a prepared debug component.' }
+if (Test-Path -LiteralPath $target)
+{
+    throw 'Never overwrite a prepared debug component.'
+}
 foreach ($item in Get-ChildItem -LiteralPath $source -Recurse -Force)
 {
-    if ($item.Attributes -band [IO.FileAttributes]::ReparsePoint) { throw 'Debug component cannot contain links.' }
+    if ($item.Attributes -band [IO.FileAttributes]::ReparsePoint)
+    {
+        throw 'Debug component cannot contain links.'
+    }
 }
 New-Item -ItemType Directory -Path (Split-Path -Parent $target) -Force | Out-Null
 Copy-Item -LiteralPath $source -Destination $target -Recurse
 New-Item -ItemType Directory -Path (Join-Path $target 'mplab_platform/lib') -Force | Out-Null
 Copy-Item -LiteralPath $MdbJar -Destination (Join-Path $target 'mplab_platform/lib/mdb.jar')
-[ordered]@{backend = 'MPLAB X / IPE 6.20'; frontend = 'MDB CLI from MPLAB X 6.35';
-    frontendSha256 = $frontendHash; backendManifestSha256 = (Get-FileHash -LiteralPath (Join-Path $source 'toolset.json')).Hash;
-    scope = 'StudioX private integration; compatibility must be validated separately; no external IDE or system Java';
-    licenses = 'Original docs and ThirdParty retained; no redistribution grant implied'} |
+[ordered]@{backend        = 'MPLAB X / IPE 6.20';
+    frontend              = 'MDB CLI from MPLAB X 6.35';
+    frontendSha256        = $frontendHash;
+    backendManifestSha256 = (Get-FileHash -LiteralPath (Join-Path $source 'toolset.json')).Hash;
+    scope                 = 'StudioX private integration; compatibility must be validated separately; no external IDE or system Java';
+    licenses              = 'Original docs and ThirdParty retained; no redistribution grant implied'
+} |
     ConvertTo-Json | Set-Content -LiteralPath (Join-Path $target 'debug-sources.json') -Encoding utf8
 $hashes = [ordered]@{}
 foreach ($file in Get-ChildItem -LiteralPath $target -File -Recurse | Where-Object Name -ne 'toolset.json' | Sort-Object FullName)
 {
     $hashes[[IO.Path]::GetRelativePath($target, $file.FullName).Replace('\', '/')] = (Get-FileHash -LiteralPath $file.FullName).Hash
 }
-[ordered]@{formatVersion = 1; id = 'microchip.mdb'; version = '6.20.635'; host = 'win-x64';
-    compilerId = 'mdb-pickit3'; purpose = 'pic-mdb'; displayName = 'PICkit3 MDB / backend 6.20, CLI 6.35';
-    executables = [ordered]@{java = $manifest.executables.java; mdb = 'mplab_platform/lib/mdb.jar'; ipecmd = $manifest.executables.ipecmd};
-    componentVersions = [ordered]@{mdbCore = '6.20'; mdbCli = '6.35'; jre = '8.0.345'; PIC16Fxxx_DFP = '1.6.156'};
-    resourceDirectories = [ordered]@{ipe = 'mplab_platform/mplab_ipe'; pic = 'packs/Microchip/PIC16Fxxx_DFP/1.6.156'};
-    sha256 = $hashes} | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $target 'toolset.json') -Encoding utf8
+[ordered]@{
+    formatVersion       = 1;
+    id                  = 'microchip.mdb';
+    version             = '6.20.635';
+    host                = 'win-x64';
+    compilerId          = 'mdb-pickit3';
+    purpose             = 'pic-mdb';
+    displayName         = 'PICkit3 MDB / backend 6.20, CLI 6.35';
+    executables         = [ordered]@{
+        java   = $manifest.executables.java;
+        mdb    = 'mplab_platform/lib/mdb.jar';
+        ipecmd = $manifest.executables.ipecmd
+    };
+    componentVersions   = [ordered]@{
+        mdbCore       = '6.20';
+        mdbCli        = '6.35';
+        jre           = '8.0.345';
+        PIC16Fxxx_DFP = '1.6.156'
+    };
+    resourceDirectories = [ordered]@{
+        ipe = 'mplab_platform/mplab_ipe';
+        pic = 'packs/Microchip/PIC16Fxxx_DFP/1.6.156'
+    };
+    sha256              = $hashes
+} | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $target 'toolset.json') -Encoding utf8
 Get-FileHash -LiteralPath (Join-Path $target 'toolset.json')

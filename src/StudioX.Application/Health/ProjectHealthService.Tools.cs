@@ -112,7 +112,14 @@ public sealed partial class ProjectHealthService
             }
             return resolved;
         }
-        catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }
-        catch (Exception error) { checks.Add(Failure("HEALTH_TOOLS", title, "tool-environment", HealthAction.Tools, error, id, version)); return null; }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception error)
+        {
+            checks.Add(Failure("HEALTH_TOOLS", title, "tool-environment", HealthAction.Tools, error, id, version));
+            return null;
+        }
     }
 }

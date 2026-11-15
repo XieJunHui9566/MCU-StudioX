@@ -16,7 +16,6 @@
 | `SerialPlotMcpTools` | 串口收发、原始数据、绘图采集 | 本 MCP 会话创建的串口/绘图实例 |
 | `FirmwareDownloadMcpTools` / `StcIspMcpTools` | 下载规划与逐次授权烧录 | 下载服务 |
 | `DeviceCatalogMcpTools` / `MicrochipMcpTools` | 本机器件包与厂商资料 | 查询服务 |
-| `LvglMcpTools` | UI 配置、PC 预览、输入、截图与资源报告 | LVGL 预览服务 |
 | `SkillMcpTools` | 技能元数据、说明和参考文件 | 技能服务 |
 | `PdfMcpTools` | PDF 列表、文字、搜索、页面图像 | 单次 PDF 读取 |
 | `QmdMcpTools` | 绑定工程的 BM25 快照与索引 | 工程有界缓存 |
@@ -28,7 +27,7 @@
 
 - `McpSessionContext` 保存工程身份、宿主审批入口及应用服务，不持有业务设备或浏览游标。
 - `McpWorkspaceAccess` 校验绑定工程；`McpWorkspacePathPolicy` 统一源码读写路径规则。
-- `ExternalProjectAccess` 保存当前会话的外部只读授权；`ExternalProjectPathPolicy` 为浏览、复制、PDF 和 LVGL 提供相同的路径、链接与敏感文件过滤。
+- `ExternalProjectAccess` 保存当前会话的外部只读授权；`ExternalProjectPathPolicy` 为浏览、复制和 PDF 提供相同的路径、链接与敏感文件过滤。
 - `McpDebugAccess` 为下载和调试提供一致的工程占用检查。
 - `StudioXMcpDiagnosticFunction` 仅将有明确错误码的业务错误转换为可展示诊断，隐藏凭据；未知异常保留 SDK 的处理方式。
 

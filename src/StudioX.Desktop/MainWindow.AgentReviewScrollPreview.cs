@@ -226,7 +226,9 @@ public partial class MainWindow
             for (var pass = 0; pass < 4; pass++)
             {
                 UpdateLayout();
-                await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);
+                await Dispatcher.InvokeAsync(() =>
+                {
+                }, DispatcherPriority.ApplicationIdle);
             }
         }
 

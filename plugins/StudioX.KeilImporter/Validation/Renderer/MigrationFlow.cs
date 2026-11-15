@@ -60,8 +60,15 @@ internal sealed class MigrationFlow
                 exitCode = 0;
                 Console.WriteLine("PASS installed renderer migration: " + flow.checks.Count);
             }
-            catch (Exception error) { Write(false, error.ToString()); Console.Error.WriteLine(error); }
-            finally { app.Shutdown(); }
+            catch (Exception error)
+            {
+                Write(false, error.ToString());
+                Console.Error.WriteLine(error);
+            }
+            finally
+            {
+                app.Shutdown();
+            }
             void Write(bool success, string? error) => File.WriteAllText(Path.Combine(output, "flow.json"),
                 JsonSerializer.Serialize(new
                 {

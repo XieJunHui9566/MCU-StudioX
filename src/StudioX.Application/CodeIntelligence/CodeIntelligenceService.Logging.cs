@@ -53,7 +53,10 @@ public sealed partial class CodeIntelligenceService
             }
             throw;
         }
-        finally { analysisLogGate.Release(); }
+        finally
+        {
+            analysisLogGate.Release();
+        }
     }
 
     /// <summary>按需读取最近内容；完整原文保存在当前会话日志及三个轮转文件中。</summary>
@@ -80,6 +83,9 @@ public sealed partial class CodeIntelligenceService
             return "[独立语言分析日志；视图最多显示最近 256 Ki 字符，每次约 2 MiB 轮转，保留三个旧文件]\n" +
                 (text.Length == 0 ? "暂无语言分析日志。" : text);
         }
-        finally { analysisLogGate.Release(); }
+        finally
+        {
+            analysisLogGate.Release();
+        }
     }
 }

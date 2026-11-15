@@ -99,7 +99,11 @@ public partial class SerialProtocolView : UserControl
             version = -1;
             RefreshFrames();
         }
-        finally { changing = false; ApplyButton.IsEnabled = true; }
+        finally
+        {
+            changing = false;
+            ApplyButton.IsEnabled = true;
+        }
     }
     private async void Apply_Click(object sender, RoutedEventArgs e)
     {
@@ -107,7 +111,10 @@ public partial class SerialProtocolView : UserControl
         {
             await ApplyAsync();
         }
-        catch (Exception ex) { Error(ex); }
+        catch (Exception ex)
+        {
+            Error(ex);
+        }
     }
     private async void LoadScript_Click(object sender, RoutedEventArgs e)
     {
@@ -124,7 +131,10 @@ public partial class SerialProtocolView : UserControl
         {
             await ApplyAsync();
         }
-        catch (Exception ex) { Error(ex); }
+        catch (Exception ex)
+        {
+            Error(ex);
+        }
     }
     private async void SaveExample_Click(object sender, RoutedEventArgs e)
     {
@@ -140,7 +150,10 @@ public partial class SerialProtocolView : UserControl
             await System.IO.File.WriteAllTextAsync(dialog.FileName, content);
             StatusText.Text = "示例已保存。修改后点击加载脚本；更新脚本后点击应用 / 重载。";
         }
-        catch (Exception ex) { Error(ex); }
+        catch (Exception ex)
+        {
+            Error(ex);
+        }
     }
     private async void Demo_Click(object sender, RoutedEventArgs e)
     {
@@ -168,7 +181,10 @@ public partial class SerialProtocolView : UserControl
             await Task.Delay(100);
             RefreshFrames();
         }
-        catch (Exception ex) { Error(ex); }
+        catch (Exception ex)
+        {
+            Error(ex);
+        }
     }
     private void Frame_Changed(object sender, SelectionChangedEventArgs e)
     {
@@ -211,7 +227,10 @@ public partial class SerialProtocolView : UserControl
             await service.Protocol.ExportAsync(dialog.FileName);
             StatusText.Text = "已导出全部保留的解析帧：" + dialog.FileName;
         }
-        catch (Exception ex) { Error(ex); }
+        catch (Exception ex)
+        {
+            Error(ex);
+        }
     }
     private void Error(Exception ex)
     {

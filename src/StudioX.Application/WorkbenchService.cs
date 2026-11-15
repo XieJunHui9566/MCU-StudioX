@@ -82,7 +82,6 @@ public sealed class WorkbenchService : IAsyncDisposable
     {
         get;
     }
-    public StcTiming.StcTimingService StcTiming { get; } = new();
     public McuCodeGenerationService McuCodeGeneration
     {
         get;
@@ -139,7 +138,6 @@ public sealed class WorkbenchService : IAsyncDisposable
         ComponentMigration = new(Packs, Builds);
         BuildMemory = new BuildMemoryService(Toolsets);
         BuildHistory = new(DataDirectory, BuildMemory);
-        LvglPreview = new Lvgl.LvglPreviewService(Toolsets, DataDirectory);
         Ag32Logic = new Ag32LogicWorkflowService();
         HdlSchematic = new HdlSchematicService(RuntimeDirectory);
         HdlWorkflow = new HdlWorkflowService(Toolsets, Path.Combine(DataDirectory, "licenses", "ag32-pin-mapping"));
@@ -182,7 +180,7 @@ public sealed class WorkbenchService : IAsyncDisposable
         EspressifDocumentation = new EspressifDocumentationService(DataDirectory);
         EspressifComponents = new EspressifComponentRegistryService();
         AiChat = new AiChatClient(AiCredentials);
-        Intelligence = new CodeIntelligenceService(RuntimeDirectory, DataDirectory);
+        Intelligence = new CodeIntelligenceService(RuntimeDirectory, DataDirectory, Toolsets);
         Serial = new Serial.SerialTerminalService(Devices, DataDirectory, scriptHostExecutable: Path.Combine(RuntimeDirectory, "plugin-host", "StudioX.PluginHost.exe"));
         MicroPython = new MicroPython.MicroPythonSessionService(Devices);
         SerialPlot = new SerialPlot.SerialPlotService(Devices, DataDirectory);
@@ -192,7 +190,6 @@ public sealed class WorkbenchService : IAsyncDisposable
         McuCodeGeneration = new(PluginManager, Files, ProjectClocks, DataDirectory);
         Builds.ProjectClocks = ProjectClocks;
         StcIsp.ProjectClocks = ProjectClocks;
-        StcTiming.ProjectClocks = ProjectClocks;
         GraphicalClockControl = new(ProjectClocks, StcIsp, Files);
         PluginSettings = new PluginSettingsService(DataDirectory);
         Simulation = new SimulationLabService(Devices);
@@ -311,10 +308,6 @@ public sealed class WorkbenchService : IAsyncDisposable
     }
 
     public BuildService Builds
-    {
-        get;
-    }
-    public Lvgl.LvglPreviewService LvglPreview
     {
         get;
     }
@@ -506,7 +499,6 @@ public sealed class WorkbenchService : IAsyncDisposable
         cleanup.Run(GitHubProfiles.Dispose);
         await cleanup.RunAsync(EspressifDocumentation.DisposeAsync);
         await cleanup.RunAsync(EspressifComponents.DisposeAsync);
-        await cleanup.RunAsync(LvglPreview.DisposeAsync);
         await cleanup.RunAsync(Terminal.DisposeAsync);
         await cleanup.RunAsync(Simulation.DisposeAsync);
         await cleanup.RunAsync(SerialPlot.DisposeAsync);

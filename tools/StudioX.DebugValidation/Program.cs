@@ -43,13 +43,29 @@ if (args is ["--rp2350-hardware", var rpHwPack, var rpHwRuntime, var rpHwOutput,
 {
     return await Rp2350HardwareChecks.RunAsync(rpHwPack, rpHwRuntime, rpHwOutput, rpSerial);
 }
-if (args is not [var packArchive, var runtime, var outputDirectory]) { return 2; }
+if (args is not [var packArchive, var runtime, var outputDirectory])
+{
+    return 2;
+}
 var root = Path.GetFullPath(outputDirectory);
-if (Directory.Exists(root)) { throw new InvalidOperationException("Use a new validation directory."); }
+if (Directory.Exists(root))
+{
+    throw new InvalidOperationException("Use a new validation directory.");
+}
 Directory.CreateDirectory(root);
 var passed = new List<string>();
-void Pass(string message) { passed.Add(message); Console.WriteLine("PASS " + message); }
-void Check(bool value, string message) { if (!value) { throw new InvalidOperationException(message); } }
+void Pass(string message)
+{
+    passed.Add(message);
+    Console.WriteLine("PASS " + message);
+}
+void Check(bool value, string message)
+{
+    if (!value)
+    {
+        throw new InvalidOperationException(message);
+    }
+}
 async Task Reject(Func<Task> action, string code)
 {
     try
@@ -57,7 +73,9 @@ async Task Reject(Func<Task> action, string code)
         await action();
         throw new InvalidOperationException("Expected " + code);
     }
-    catch (StudioXException ex) when (ex.Code == code) { }
+    catch (StudioXException ex) when (ex.Code == code)
+    {
+    }
 }
 async Task Wait(Func<bool> condition)
 {
@@ -71,7 +89,14 @@ var parsed = MiRecord.Parse("17^done,stack=[frame={level=\"0\",func=\"main\",arg
 Check(parsed.Token == 17 && parsed.Data.Get("stack")!.Values.Count() == 2 && parsed.Data.Get("stack")!.Values.First().Get("args")!.Values.First().String("value") == "a\"b\n", "MI nested/duplicate fields");
 var quoted = "E:/有 空格/firmware \"x\".elf\n";
 Check(MiRecord.Parse("~" + MiRecord.Quote(quoted)).Data.Text == quoted, "MI quoting");
-try { MiRecord.Parse("1^done,stack=[{bad=\"x\""); throw new InvalidOperationException("Expected bad MI"); } catch (FormatException) { }
+try
+{
+    MiRecord.Parse("1^done,stack=[{bad=\"x\"");
+    throw new InvalidOperationException("Expected bad MI");
+}
+catch (FormatException)
+{
+}
 Pass("MI nested lists, duplicate frame fields, escaped strings, Unicode paths, malformed input");
 await DisassemblyChecks.RunAdapterAsync(Pass);
 
@@ -81,7 +106,13 @@ var project = await DebugSessionService.CreateExampleAsync(repository, root, Pat
 await File.WriteAllTextAsync(Path.Combine(root, "project-path.txt"), project);
 await using var session = new DebugSessionService(Path.Combine(root, "user-data"));
 var output = new List<string>();
-session.Output += text => { lock (output) { output.Add(text); } };
+session.Output += text =>
+{
+    lock (output)
+    {
+        output.Add(text);
+    }
+};
 await session.OpenProjectAsync(project);
 await Reject(() => session.ExecuteAsync(DebugAction.Continue), "DEBUG_STATE");
 await Reject(() => session.ReadDisassemblyAsync(), "DEBUG_STATE");
@@ -133,7 +164,10 @@ var memory = await session.ReadMemoryAsync(0x20000000);
 Check(memory.StartsWith("010000000100000003000000", StringComparison.Ordinal), "Little-endian memory");
 await Reject(() => session.ReadMemoryAsync(0x40000000), "GDB_COMMAND");
 Pass("Watch errors, side-effect rejection, read-only memory and invalid-address errors");
-foreach (var point in session.Breakpoints.ToArray()) { await session.ChangeBreakpointAsync(point.Id, false); }
+foreach (var point in session.Breakpoints.ToArray())
+{
+    await session.ChangeBreakpointAsync(point.Id, false);
+}
 await session.ExecuteAsync(DebugAction.Continue);
 await Wait(() => session.State == DebugState.Running);
 await session.ExecuteAsync(DebugAction.Pause);
@@ -156,9 +190,15 @@ await session.UpdateLinesAsync(new Dictionary<string, int> { [saved[0].Id] = sav
 await session.OpenProjectAsync(project);
 Check(session.Breakpoints[0].Line == saved[0].Line + 1, "Edited line persisted");
 Pass("Project isolation, breakpoint/watch persistence, edited line persistence");
-foreach (var point in session.Breakpoints.ToArray()) { await session.ChangeBreakpointAsync(point.Id, null); }
+foreach (var point in session.Breakpoints.ToArray())
+{
+    await session.ChangeBreakpointAsync(point.Id, null);
+}
 await session.StartOfflineAsync();
-foreach (var line in F407DebugExample.ExecutableLines) { await session.ToggleBreakpointAsync(F407DebugExample.RelativeFile, line); }
+foreach (var line in F407DebugExample.ExecutableLines)
+{
+    await session.ToggleBreakpointAsync(F407DebugExample.RelativeFile, line);
+}
 Check(session.Breakpoints.Count(b => b.Verified) == 6 && session.Breakpoints.Count(b => !b.Verified) == 1, "Hardware breakpoint resource error");
 var unbound = session.Breakpoints.Single(b => !b.Verified);
 await session.ChangeBreakpointAsync(session.Breakpoints.First(b => b.Verified).Id, false);
@@ -172,6 +212,9 @@ var manifest = await JsonStore.ReadAsync<ToolsetManifest>(Path.Combine(runtime, 
 var tools = new ResolvedToolset(manifest, Path.Combine(runtime, "toolsets/arm.gnu/1.0.0"), "offline-plan-only");
 await ProbePlanChecks.RunAsync(project, configuration, tools, downloads, root, Pass);
 await SpecialBreakpointChecks.RunAsync(session, project, Pass);
-lock (output) { File.WriteAllLines(Path.Combine(root, "mi-transcript.txt"), output); }
+lock (output)
+{
+    File.WriteAllLines(Path.Combine(root, "mi-transcript.txt"), output);
+}
 await File.WriteAllLinesAsync(Path.Combine(root, "result.txt"), passed.Prepend("PASS — offline only; no chip connected or accessed"));
 return 0;

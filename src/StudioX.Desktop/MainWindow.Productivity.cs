@@ -25,8 +25,16 @@ public partial class MainWindow
         Add(WorkspaceViewMenu, "快速打开文件…", "Ctrl+P", () => projectDirectory is not null, () => ShowQuickOpenAsync(false));
         Add(WorkspaceViewMenu, "搜索工程符号…", "Ctrl+T", () => services.Intelligence.IsReady, () => ShowQuickOpenAsync(true));
         Add(WorkspaceViewMenu, "命令面板…", "Ctrl+Shift+P", () => true, ShowPaletteAsync);
-        Add(WorkspaceViewMenu, "移到另一编辑分组", "Ctrl+Alt+Right", () => activeEditor is not null, () => { MoveEditorGroup(activeEditor!, activeEditor!.Group == 0 ? 1 : 0); return Task.CompletedTask; });
-        Add(WorkspaceViewMenu, "合并编辑分组", "", () => secondaryTabs?.Items.Count > 0, () => { MergeEditorGroups(); return Task.CompletedTask; });
+        Add(WorkspaceViewMenu, "移到另一编辑分组", "Ctrl+Alt+Right", () => activeEditor is not null, () =>
+        {
+            MoveEditorGroup(activeEditor!, activeEditor!.Group == 0 ? 1 : 0);
+            return Task.CompletedTask;
+        });
+        Add(WorkspaceViewMenu, "合并编辑分组", "", () => secondaryTabs?.Items.Count > 0, () =>
+        {
+            MergeEditorGroups();
+            return Task.CompletedTask;
+        });
         Add(DevelopmentComponentsMenu, "开发环境组件管理…", "", () => !projectActionsBusy, () => ShowToolManagementAsync());
         Add(DevelopmentComponentsMenu, "准备工程开发环境组件…", "", () => !projectActionsBusy, () => ShowProjectToolsAsync());
         DevelopmentComponentsMenu.Items.Add(new Separator());
@@ -51,7 +59,11 @@ public partial class MainWindow
         Add(HelpRootMenu, "工程健康检查…", "", () => !projectActionsBusy, () => ShowProjectHealthAsync());
         Add(HelpRootMenu, "导出故障资料…", "", () => !projectActionsBusy, ExportSupportReportAsync);
         InputBindings.Add(new KeyBinding(new PluginUiCommand(() => ShowHelpAsync(), () => true), new KeyGesture(Key.F1)));
-        workbenchCommands.Add(new("在工程中查找", "Ctrl+Shift+F", () => projectDirectory is not null, () => { ShowWorkspaceSearch(false); return Task.CompletedTask; }));
+        workbenchCommands.Add(new("在工程中查找", "Ctrl+Shift+F", () => projectDirectory is not null, () =>
+        {
+            ShowWorkspaceSearch(false);
+            return Task.CompletedTask;
+        }));
         workbenchCommands.Add(new("保存全部文件", "Ctrl+Shift+S", () => projectDirectory is not null, () => RunAsync(t => SaveAllSourcesAsync(RequireProject(), t))));
         InputBindings.Add(new KeyBinding(new PluginUiCommand(() => ShowQuickOpenAsync(false), () => projectDirectory is not null), new KeyGesture(Key.P, ModifierKeys.Control)));
         InputBindings.Add(new KeyBinding(new PluginUiCommand(() => ShowQuickOpenAsync(true), () => services.Intelligence.IsReady), new KeyGesture(Key.T, ModifierKeys.Control)));
@@ -59,7 +71,14 @@ public partial class MainWindow
         InputBindings.Add(new KeyBinding(new PluginUiCommand(ShowQuickFixesAsync, () => CanUseLanguageEditing), new KeyGesture(Key.OemPeriod, ModifierKeys.Control)));
         // 保留 Ctrl+.，并提供不依赖标点键映射的入口。
         InputBindings.Add(new KeyBinding(new PluginUiCommand(ShowQuickFixesAsync, () => CanUseLanguageEditing), new KeyGesture(Key.Enter, ModifierKeys.Alt)));
-        InputBindings.Add(new KeyBinding(new PluginUiCommand(() => { if (activeEditor is not null) { MoveEditorGroup(activeEditor, 1 - activeEditor.Group); } return Task.CompletedTask; }, () => activeEditor is not null), new KeyGesture(Key.Right, ModifierKeys.Control | ModifierKeys.Alt)));
+        InputBindings.Add(new KeyBinding(new PluginUiCommand(() =>
+        {
+            if (activeEditor is not null)
+            {
+                MoveEditorGroup(activeEditor, 1 - activeEditor.Group);
+            }
+            return Task.CompletedTask;
+        }, () => activeEditor is not null), new KeyGesture(Key.Right, ModifierKeys.Control | ModifierKeys.Alt)));
         if (sourceContextMenu is not null)
         {
             foreach (var item in workbenchCommands.Take(4))
@@ -150,7 +169,10 @@ public partial class MainWindow
             {
                 await fileQuery.DisposeAsync();
             }
-            catch (Exception error) { Log("快速打开文件发现失败：" + error); }
+            catch (Exception error)
+            {
+                Log("快速打开文件发现失败：" + error);
+            }
         }
         if (!accepted || project != projectDirectory)
         {

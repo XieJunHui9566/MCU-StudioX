@@ -26,6 +26,11 @@ public partial class EntryNameWindow : Window
             ProjectFileService.ValidateEntryName(EntryName);
             DialogResult = true;
         }
-        catch (Exception ex) { ErrorLabel.Text = ex.Message; ErrorLabel.Visibility = Visibility.Visible; NameInput.Focus(); }
+        catch (Exception ex)
+        {
+            ErrorLabel.Text = ex.Message;
+            ErrorLabel.Visibility = Visibility.Visible;
+            NameInput.Focus();
+        }
     }
 }

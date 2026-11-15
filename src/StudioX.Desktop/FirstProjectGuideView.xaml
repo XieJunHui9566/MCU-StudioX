@@ -19,11 +19,6 @@
         FontSize="26"
         FontWeight="SemiBold" />
       <TextBlock
-        Text="从准确选择目标，到读懂第一次编译结果。操作后点击顶部“第一个工程引导”标签返回继续。"
-        Foreground="{DynamicResource Muted}"
-        TextWrapping="Wrap"
-        Margin="0,8,0,0" />
-      <TextBlock
         x:Name="ContextText"
         TextWrapping="Wrap"
         Foreground="{DynamicResource Muted}"
@@ -114,12 +109,6 @@
               Click="Help_Click"
               Margin="0,0,8,8" />
           </WrapPanel>
-          <TextBlock
-            Text="引导不会自动连接设备或写入固件。健康检查和软件编译不能代替实板验证。"
-            TextWrapping="Wrap"
-            Foreground="{DynamicResource Muted}"
-            FontSize="12"
-            Margin="0,16,0,0" />
         </StackPanel>
       </ScrollViewer>
     </Grid>

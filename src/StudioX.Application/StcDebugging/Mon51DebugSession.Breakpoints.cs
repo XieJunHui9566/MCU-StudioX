@@ -107,14 +107,22 @@ public sealed partial class Mon51DebugSession
             {
                 await RebindSourcePointsAsync(token);
             }
-            catch { sourcePoints = previous; await RebindSourcePointsAsync(CancellationToken.None); throw; }
+            catch
+            {
+                sourcePoints = previous;
+                await RebindSourcePointsAsync(CancellationToken.None);
+                throw;
+            }
             if (PreferencesChanged is { } save)
             {
                 await save();
             }
             Changed?.Invoke();
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
 
     public async Task ChangeSourceBreakpointAsync(string id, bool? enabled, CancellationToken token = default)
@@ -131,7 +139,10 @@ public sealed partial class Mon51DebugSession
             }
             Changed?.Invoke();
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
 
     public async Task ChangeWatchAsync(string expression, bool remove, CancellationToken token = default)
@@ -170,7 +181,10 @@ public sealed partial class Mon51DebugSession
             }
             Changed?.Invoke();
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
 
     private async Task<bool> HandleSourceStopAsync(CancellationToken token)
@@ -282,6 +296,9 @@ public sealed partial class Mon51DebugSession
             var location = symbols?.Bind(PathBoundary.Resolve(projectPath!, file), line) ?? throw new StudioXException("MON51_CAPABILITY", "光标行没有已核对的可执行源码映射。");
             await RunTemporaryAsync(location.Address, "已运行到光标", null, token);
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
 }

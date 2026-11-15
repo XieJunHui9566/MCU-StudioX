@@ -56,7 +56,9 @@ public partial class MainWindow
         async Task LayoutAsync()
         {
             UpdateLayout();
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.Render);
         }
         await OpenProjectAsync(fixture, CancellationToken.None);
         try
@@ -139,10 +141,14 @@ public partial class MainWindow
                 .Single(item => item.Tag is Ag32PinFunction function && function.Name == name);
             async Task ChooseAsync(MenuItem item)
             {
-                await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);
+                await Dispatcher.InvokeAsync(() =>
+                {
+                }, DispatcherPriority.ApplicationIdle);
                 // Invoke 经过 WPF 的关闭、延迟 Click 流程；直接 RaiseEvent 会遗漏该顺序。
                 ((IInvokeProvider)new MenuItemAutomationPeer(item).GetPattern(PatternInterface.Invoke)).Invoke();
-                await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);
+                await Dispatcher.InvokeAsync(() =>
+                {
+                }, DispatcherPriority.ApplicationIdle);
             }
 
             var pinMenu = OpenPinMenu(2);
@@ -150,7 +156,9 @@ public partial class MainWindow
                 "左键点击打开引脚菜单，未选功能时不改变分配");
             pinMenu.IsOpen = false;
             // WPF 在弹出层完成关闭后发出 Closed，等待输入队列清理引用。
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.ApplicationIdle);
             for (var attempt = 0; attempt < 20 && planner.ActivePinMenu is not null; attempt++)
             {
                 await Task.Delay(50);

@@ -12,6 +12,8 @@ PICkit3 下载使用 StudioX 管理的私有 `microchip.ipe/6.20.0` 运行组件
 
 PICkit3 使用 Windows 通用 HID USB 驱动，无需安装 WinUSB、关闭签名校验或改绑其他 Microchip 工具驱动。连接后需核对具体设备绑定状态。
 
+下载、调试回读和 MDB 共用 `PicJavaRuntime` 启动参数，使用厂商 `mplablogger.dir` 属性将 IPECMD 的 `MPLABXLog.xml` 写入相应用户数据目录的 `logs` 子目录，并将 Java 临时目录固定在同一用户数据目录的 `tmp` 下；MDB 自身会将日志改到该受控临时目录。只设置 Java 用户目录或进程工作目录不足以阻止 IPECMD 按 JAR 所在位置写日志。Java 注入变量与 `MPLAB_LOG_OUTPUT_FILE` 不传入子进程；发行工具目录继续完整校验，不把生成日志列入哈希白名单。`TOOL_HASH` 的文件集合错误会列出组件版本及新增、缺失路径。回归入口 `StudioX.PicValidation --runtime-logs <新证据目录> <runtime>` 重复枚举编程器、启动 MDB 模拟器并再次完整校验组件，不连接或烧录实板。
+
 - [XC8 官方下载](https://www.microchip.com/en-us/tools-resources/develop/mplab-xc-compilers/xc8)
 - [DFP 官方仓库](https://packs.download.microchip.com/)
 - [IPE 安装说明](https://developerhelp.microchip.com/xwiki/bin/view/software-tools/ipe/installation/)

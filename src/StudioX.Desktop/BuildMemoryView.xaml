@@ -250,7 +250,7 @@
           </ItemsControl>
           <TextBlock
             x:Name="AnalysisStatus"
-            Text="编译成功后显示各存储区占用。"
+            Text="尚未构建"
             Foreground="{DynamicResource Muted}"
             FontSize="10"
             TextWrapping="Wrap"

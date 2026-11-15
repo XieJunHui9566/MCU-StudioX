@@ -167,7 +167,9 @@ public partial class MainWindow
                         }
                     }
                     FocusStcSettings();
-                    await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ContextIdle);
+                    await Dispatcher.InvokeAsync(() =>
+                    {
+                    }, DispatcherPriority.ContextIdle);
                     UpdateLayout();
                     Check(StcDownloadTab.IsSelected && BuildExtendedSettings.Parent == StcBuildExtrasHost &&
                         !BuildSettingsCard.IsAncestorOf(StcIspPanel) && !BuildSettingsCard.IsAncestorOf(Mx251IspPanel), target + ": dedicated page owns transport and build extras");
@@ -179,7 +181,9 @@ public partial class MainWindow
                         SdccMemoryModelPicker.SelectedValue = SdccMemoryModel.Large;
                         DevicesAndTemplates_Click(this, new RoutedEventArgs());
                         SdccMemorySettingsPanel.BringIntoView();
-                        await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ContextIdle);
+                        await Dispatcher.InvokeAsync(() =>
+                        {
+                        }, DispatcherPriority.ContextIdle);
                         Render(this, Path.Combine(directory, target + "-" + theme.Id + "-memory-model.png"));
                         FocusStcSettings();
                     }
@@ -191,10 +195,14 @@ public partial class MainWindow
                     {
                         StcIspPanel.BringIntoView();
                     }
-                    await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ContextIdle);
+                    await Dispatcher.InvokeAsync(() =>
+                    {
+                    }, DispatcherPriority.ContextIdle);
                     Render(this, Path.Combine(directory, target + "-" + theme.Id + "-transport.png"));
                     StcHardwareCard.BringIntoView();
-                    await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ContextIdle);
+                    await Dispatcher.InvokeAsync(() =>
+                    {
+                    }, DispatcherPriority.ContextIdle);
                     var saveBounds = SaveStcHardwareButton.TransformToAncestor(WorkspaceTabs).TransformBounds(new Rect(SaveStcHardwareButton.RenderSize));
                     Check(SaveStcHardwareButton.IsVisible && saveBounds.Top >= 0 && saveBounds.Bottom <= WorkspaceTabs.ActualHeight,
                         target + ": save action stays visible while scrolling long options");
@@ -218,7 +226,10 @@ public partial class MainWindow
                 checks
             });
         }
-        finally { System.Windows.Application.Current.Resources["WorkbenchFontSize"] = originalSize; }
+        finally
+        {
+            System.Windows.Application.Current.Resources["WorkbenchFontSize"] = originalSize;
+        }
     }
 
     private static async Task WriteStcBuildSettingsPreviewProjectAsync(string root, ProjectManifest project)

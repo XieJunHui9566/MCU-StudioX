@@ -63,7 +63,10 @@ public sealed class OpenOcdMemoryClient : IAsyncDisposable
             client.Dispose();
             throw;
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
 
     public static byte[] ParseResponse(string response, int count)

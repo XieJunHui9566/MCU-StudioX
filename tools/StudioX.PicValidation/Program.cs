@@ -6,6 +6,12 @@ using StudioX.Foundation;
 using StudioX.Packages;
 using StudioX.PicValidation;
 
+if (args is ["--runtime-logs", var logEvidence, var logRuntime])
+{
+    await RuntimeLogChecks.RunAsync(Path.GetFullPath(logEvidence), Path.GetFullPath(logRuntime));
+    return;
+}
+
 if (args is ["--storage", var storageEvidence])
 {
     await StorageChecks.RunAsync(Path.GetFullPath(storageEvidence));

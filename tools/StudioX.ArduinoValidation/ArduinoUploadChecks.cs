@@ -60,7 +60,10 @@ internal static class ArduinoUploadChecks
                 await action();
                 throw new InvalidOperationException("Expected " + code);
             }
-            catch (StudioXException error) when (error.Code == code) { Check(true, message); }
+            catch (StudioXException error) when (error.Code == code)
+            {
+                Check(true, message);
+            }
         }
         var mode = Path.Combine(evidence, "uploader-mode.txt");
         var fixtureRoot = Path.Combine(evidence, "runtime/toolsets/arduino.avr/1.8.8");
@@ -96,7 +99,10 @@ internal static class ArduinoUploadChecks
         var rebuilt = await service.PreviewUploadAsync(root);
         Check(rebuilt.ApprovalId != preview.ApprovalId && Directory.GetDirectories(Path.Combine(root, ".build/arduino")).Length == 1,
             "each build gets a new receipt while only latest output remains");
-        await Reject(async () => { await service.UploadApprovedAsync(root, "COM9876", preview.ApprovalId); }, "ARDUINO_UPLOAD_CHANGED",
+        await Reject(async () =>
+        {
+            await service.UploadApprovedAsync(root, "COM9876", preview.ApprovalId);
+        }, "ARDUINO_UPLOAD_CHANGED",
             "identical rebuild still revokes the earlier upload approval");
         preview = rebuilt;
         var sourceHash = await ArduinoSourceSnapshot.HashAsync(root, true, CancellationToken.None);
@@ -123,12 +129,18 @@ internal static class ArduinoUploadChecks
             (await File.ReadAllTextAsync(failed.LogPath)).Contains("stk500_getsync"),
             "uploader failure propagates exit code and original bootloader diagnostic");
         available = [];
-        await Reject(async () => { await service.UploadApprovedAsync(root, "COM9876", preview.ApprovalId); },
+        await Reject(async () =>
+        {
+            await service.UploadApprovedAsync(root, "COM9876", preview.ApprovalId);
+        },
             "ARDUINO_PORT_UNAVAILABLE", "disconnected saved port is rejected without choosing another device");
         available = ["COM9876"];
         using (await devices.ReserveAsync("serial:COM9876"))
         {
-            await Reject(async () => { await service.UploadApprovedAsync(root, "COM9876", preview.ApprovalId); },
+            await Reject(async () =>
+            {
+                await service.UploadApprovedAsync(root, "COM9876", preview.ApprovalId);
+            },
                 "DEVICE_OWNED", "upload respects the serial session owner");
         }
         File.Delete(mode + ".called");
@@ -147,7 +159,10 @@ internal static class ArduinoUploadChecks
                 await uploading;
                 throw new InvalidOperationException("Upload cancellation ignored.");
             }
-            catch (OperationCanceledException) { Check(true, "upload cancellation terminates CLI and uploader tree"); }
+            catch (OperationCanceledException)
+            {
+                Check(true, "upload cancellation terminates CLI and uploader tree");
+            }
         }
         var cancellationLogs = Directory.GetFiles(Path.Combine(root, ".build/arduino-upload"), "upload.log", SearchOption.AllDirectories);
         Check(cancellationLogs.Any(path => File.ReadAllText(path).Contains("OperationCanceledException")),
@@ -162,11 +177,20 @@ internal static class ArduinoUploadChecks
         var nano = await service.ChangeBoardAsync(root, project, "nano-old");
         Check(nano.Arduino!.BoardId == "nano-old" && nano.DeviceId == ArduinoBoard.Require("nano-old").Fqbn,
             "existing AVR project can explicitly select Nano old bootloader");
-        await Reject(async () => { await service.PreviewUploadAsync(root); }, "ARDUINO_BUILD_REQUIRED",
+        await Reject(async () =>
+        {
+            await service.PreviewUploadAsync(root);
+        }, "ARDUINO_BUILD_REQUIRED",
             "board change revokes previous firmware approval");
-        await Reject(async () => { await service.ChangeBoardAsync(root, project, "uno"); }, "ARDUINO_PROJECT_CHANGED",
+        await Reject(async () =>
+        {
+            await service.ChangeBoardAsync(root, project, "uno");
+        }, "ARDUINO_PROJECT_CHANGED",
             "stale manager configuration cannot overwrite a newer board selection");
-        await Reject(async () => { await service.ChangeBoardAsync(root, nano, "esp32"); }, "ARDUINO_DEVICE",
+        await Reject(async () =>
+        {
+            await service.ChangeBoardAsync(root, nano, "esp32");
+        }, "ARDUINO_DEVICE",
             "board configuration cannot change the underlying chip family");
         Check((await builds.BuildAsync(root)).Success && (await service.PreviewUploadAsync(root)).Board.Id == "nano-old",
             "changed board configuration compiles and produces a matching upload preview");

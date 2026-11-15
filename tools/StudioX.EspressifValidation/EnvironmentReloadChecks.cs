@@ -60,7 +60,10 @@ internal static class EnvironmentReloadChecks
                     await service.RefreshEnvironmentAsync(token);
                     throw new InvalidOperationException("Expected response cycle rejection.");
                 }
-                catch (StudioXException error) when (error.Code == "LANGUAGE_ESPRESSIF_RESPONSE") { check(true, "recursive response inputs stop analysis with a specific bounded-read diagnostic"); }
+                catch (StudioXException error) when (error.Code == "LANGUAGE_ESPRESSIF_RESPONSE")
+                {
+                    check(true, "recursive response inputs stop analysis with a specific bounded-read diagnostic");
+                }
                 await File.WriteAllBytesAsync(responsePath, originalResponse, token);
                 check(await service.RefreshEnvironmentAsync(token), "repairing response arguments restores language analysis");
             }
@@ -72,7 +75,10 @@ internal static class EnvironmentReloadChecks
                 await service.RefreshEnvironmentAsync(token);
                 throw new InvalidOperationException("Expected generated target rejection.");
             }
-            catch (StudioXException error) when (error.Code == "LANGUAGE_CACHE_TARGET") { check(true, "generated target conflict is reported explicitly"); }
+            catch (StudioXException error) when (error.Code == "LANGUAGE_CACHE_TARGET")
+            {
+                check(true, "generated target conflict is reported explicitly");
+            }
             check(!service.IsReady && service.GetDiagnostics().Count == 0, "failed environment refresh withdraws old diagnostics and stops using the stale server");
             check(!await service.RefreshEnvironmentAsync(token), "unchanged invalid inputs do not repeatedly restart or flood diagnostics");
             await File.WriteAllBytesAsync(configPath, originalConfig, token);

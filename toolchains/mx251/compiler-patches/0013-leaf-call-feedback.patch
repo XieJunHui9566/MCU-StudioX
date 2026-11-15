@@ -1,0 +1,180 @@
+--- a/src/mcs251/main.c
++++ b/src/mcs251/main.c
+@@ -115,6 +115,8 @@
+ static int nativeIntegerEnabled;
+ int mcs251WideEnabled;
+ int mcs251WideOrdinaryEnabled;
++char *mcs251LeafEffectsFile;
++extern void mcs251LoadLeafEffects(void);
+ 
+ bool mcs251NativeFloatSemantics (void) { return nativeRuntimeEnabled != 0; }
+ 
+@@ -134,6 +136,7 @@
+     { 0, "--mcs251-native-int-runtime", &nativeIntegerEnabled, "Use reentrant ABI4 long multiply/divide/modulo; requires libnativeint" },
+     { 0, "--mcs251-wide-backend", &mcs251WideEnabled, "Experimental whole-function wide-register integer backend; ABI4 with legacy fallback" },
+     { 0, "--mcs251-wide-ordinary", &mcs251WideOrdinaryEnabled, "Experimental reentrant ABI2 functions; implies wide backend, preserves ordinary ABI" },
++    { 0, "--mcs251-leaf-effects", &mcs251LeafEffectsFile, "<file> experimental trusted leaf-write contract; use qualified two-pass builder", CLAT_STRING },
+     { 0, NULL }
+   };
+ 
+@@ -302,6 +305,7 @@
+ {
+   validateExtendedStack ();
+   validateInterruptVectorCount ();
++  mcs251LoadLeafEffects ();
+   if (mcs251WideOrdinaryEnabled) mcs251WideEnabled = 1;
+   if (mcs251WideEnabled) nativeAbiEnabled = 1;
+   if (options.sdcccall >= 3)
+--- a/src/mcs251/wide.c
++++ b/src/mcs251/wide.c
+@@ -10,6 +10,7 @@
+ #include <stdarg.h>
+ 
+ extern struct dbuf_s *codeOutBuf;
++#include "wide_leaf_effects.c.inc"
+ #ifdef MX251_WIDE_AUDIT
+ #include "wide_audit.h"
+ #else
+@@ -40,6 +41,7 @@
+   wide_operand stackOperands[WA_MAX-1];
+   unsigned char stackWidths[WA_MAX-1];
+   bool ordinaryCall;
++  uint32_t callSaveOmit;
+   signed char multiplyDigits[32];
+   int multiplyTop;
+   int result, label, target, succ[2], width;
+@@ -64,6 +66,7 @@
+   int nv, nn, no, frame, serial, received, stackDepth, foldedCasts, reusedParameterLoads;
+   unsigned emitWeight, emitCost, emitInstructions;
+   bool body, sampledQualified, formalAddress, ordinaryEntry, allocationInvalid;
++  bool applyCallEffects,callEffectsInvalid;
+   struct dbuf_s *diagnostics, *candidateOutput;
+   struct dbuf_s output;
+ } wide_function;
+@@ -1119,7 +1122,28 @@
+       for(int i=0;i<trial->nv;++i)if(trial->values[i].reg<0) {count=4;break;}
+     }
+     if(allocated) {
++      wide_function *reemit=NULL;
++      if(wideLeafEffects) {reemit=Safe_alloc(sizeof *reemit);memcpy(reemit,trial,sizeof *reemit);}
+       trial->emitWeight=1;dbuf_init(&trial->output,1024);wide_emit(trial);
++      if(reemit) {
++        bool useful=false;
++        for(int i=0;i<trial->nn;++i) {reemit->nodes[i].callSaveOmit=trial->nodes[i].callSaveOmit;useful|=trial->nodes[i].callSaveOmit!=0;}
++        if(useful) {
++          /* 从相同分配结果重新发射，所有 SPX 位移依据新的 stackDepth 计算。
++           * 第二遍只要实际参数/结果影响触及省略值，就丢弃整个候选。 */
++          reemit->applyCallEffects=true;reemit->emitWeight=1;dbuf_init(&reemit->output,1024);wide_emit(reemit);
++          wide_byte_cost oldCost=wide_function_bytes(dbuf_get_buf(&trial->output),dbuf_get_length(&trial->output));
++          wide_byte_cost newCost=wide_function_bytes(dbuf_get_buf(&reemit->output),dbuf_get_length(&reemit->output));
++          bool cheaper=!oldCost.unknown && !newCost.unknown && newCost.bytes<=oldCost.bytes && reemit->emitCost<=trial->emitCost;
++          if(!reemit->callEffectsInvalid && cheaper) {
++            dbuf_destroy(&trial->output);Safe_free(trial);trial=reemit;reemit=NULL;
++          } else {
++            dbuf_printf(f->diagnostics,"; wide call-save candidate rejected: function=%s effect-conflict=%u cost=%u\n",currFunc->name,reemit->callEffectsInvalid,!cheaper);
++            dbuf_destroy(&reemit->output);
++          }
++        }
++        Safe_free(reemit);
++      }
+       c[strategy].length=dbuf_get_length(&trial->output);
+       c[strategy].text=Safe_alloc(c[strategy].length);
+       memcpy(c[strategy].text,dbuf_get_buf(&trial->output),c[strategy].length);
+--- a/src/mcs251/wide_emit.c.inc
++++ b/src/mcs251/wide_emit.c.inc
+@@ -805,14 +805,19 @@
+          (n->result<0 && !ret->width && IS_VOID(currFunc->type->next));
+   }
+   int saved[WV_MAX],count=0;
+-  uint32_t liveBytes=0;
++  uint32_t liveBytes=0,omitted=0,calleeWrites=UINT32_MAX;
++  unsigned omittedGroups=0,omittedBytes=0;
++  bool knownLeaf=wide_leaf_writes(n->callee,&calleeWrites);
+   wassert(!f->stackDepth);
+   if(!tail)for(int i=0;i<f->nv;++i) {
+     wide_value *v=&f->values[i];
+     if(i!=n->result && wb_has(n->out,i) && v->reg>=0) {
++      uint32_t group=mcs251RegisterBytes(v->reg,v->width);liveBytes|=group;
++      if(f->applyCallEffects && knownLeaf && (n->callSaveOmit&group)==group) {
++        omitted|=group;++omittedGroups;omittedBytes+=v->width;continue;
++      }
+       we(f,"\tpush\t%s%d\n",v->width==1?"r":wp(v->width),v->reg);
+       saved[count++]=i;f->stackDepth+=v->width;
+-      liveBytes|=mcs251RegisterBytes(v->reg,v->width);
+     }
+   }
+   size_t setupStart=dbuf_get_length(&f->output);
+@@ -872,6 +877,19 @@
+   const char *body=dbuf_get_buf(&f->output);
+   mx251_effects setup=mx251TextEffects(body+setupStart,setupEnd-setupStart);
+   mx251_effects finish=mx251TextEffects(body+finishStart,finishEnd-finishStart);
++  if(!f->applyCallEffects && knownLeaf && !setup.unknown && !finish.unknown) {
++    uint32_t writes=calleeWrites|setup.writes|finish.writes;
++    for(int j=0;j<count;++j) {
++      wide_value *v=&f->values[saved[j]];uint32_t group=mcs251RegisterBytes(v->reg,v->width);
++      if(!(writes&group))n->callSaveOmit|=group;
++    }
++  }
++  if(omitted) {
++    bool valid=knownLeaf && !setup.unknown && !finish.unknown && !(omitted&(calleeWrites|setup.writes|finish.writes));
++    if(!valid)f->callEffectsInvalid=true;
++    dbuf_printf(&f->output,"; mx251-call-save caller=%s site=%d callee=%s omitted=%08lx groups=%u bytes=%u verified=%u\n",
++      currFunc->rname,index,n->callee->rname,(unsigned long)omitted,omittedGroups,omittedBytes,valid);
++  }
+   dbuf_printf(&f->output,"; mx251-call-effects schema=1 caller=%s site=%d callee=%s abi=%u live=%08lx setup=%08lx finish=%08lx complete=%u saved=",
+      currFunc->rname,index,n->callee->rname,(unsigned)FUNC_SDCCCALL(n->callee->type),
+      (unsigned long)liveBytes,(unsigned long)setup.writes,(unsigned long)finish.writes,!setup.unknown && !finish.unknown);
+--- /dev/null
++++ b/src/mcs251/wide_leaf_effects.c.inc
+@@ -0,0 +1,51 @@
++/* SPDX-License-Identifier: GPL-2.0-or-later
++ * 实验性构建反馈：来源/输入/对象一致性由两遍构建驱动验证。
++ * 裸命令行参数是显式编译契约，不能把用户给的掩码当成已验证事实。 */
++extern char *mcs251LeafEffectsFile;
++typedef struct wide_leaf_effect {
++  char name[SDCC_NAME_MAX+1];unsigned abi;uint32_t writes;
++  struct wide_leaf_effect *next;
++} wide_leaf_effect;
++static wide_leaf_effect *wideLeafEffects;
++static int wide_effect_line(FILE *file,char *line,size_t capacity) {
++  size_t n=0;int ch;
++  while((ch=fgetc(file))!=EOF && ch!='\n') {
++    if(ch==0 || ch>127 || n+1>=capacity)return -1;
++    line[n++]=(char)ch;
++  }
++  if(ferror(file))return -1;
++  if(ch==EOF && !n)return 0;
++  if(n && line[n-1]=='\r')--n;
++  line[n]=0;return 1;
++}
++void mcs251LoadLeafEffects(void) {
++  if(!mcs251LeafEffectsFile)return;
++  FILE *file=fopen(mcs251LeafEffectsFile,"rb");char line[SDCC_NAME_MAX+64];unsigned count=0;
++  if(!file)goto invalid;
++  if(wide_effect_line(file,line,sizeof line)!=1 || strcmp(line,"MX251-LEAF-EFFECTS-1"))goto invalid;
++  int status;
++  while((status=wide_effect_line(file,line,sizeof line))==1) {
++    char *name=strtok(line," \t"),*abi=strtok(NULL," \t"),*mask=strtok(NULL," \t"),*extra=strtok(NULL," \t");
++    if(!name || !abi || !mask || extra || strlen(name)>SDCC_NAME_MAX || strlen(mask)!=8 ||
++       (strcmp(abi,"2") && strcmp(abi,"4")) || ++count>4096)goto invalid;
++    if(!isalpha((unsigned char)*name) && *name!='_' && *name!='$' && *name!='.')goto invalid;
++    for(char *p=name;*p;++p)if(!isalnum((unsigned char)*p) && *p!='_' && *p!='$' && *p!='.')goto invalid;
++    for(char *p=mask;*p;++p)if(!isxdigit((unsigned char)*p))goto invalid;
++    for(wide_leaf_effect *p=wideLeafEffects;p;p=p->next)if(!strcmp(p->name,name))goto invalid;
++    wide_leaf_effect *entry=Safe_alloc(sizeof *entry);strcpy(entry->name,name);
++    entry->abi=(unsigned)(*abi-'0');entry->writes=(uint32_t)strtoul(mask,NULL,16);
++    entry->next=wideLeafEffects;wideLeafEffects=entry;
++  }
++  if(status<0)goto invalid;
++  fclose(file);return;
++invalid:
++  if(file)fclose(file);
++  werror(E_BAD_INT_ARGUMENT,"--mcs251-leaf-effects: invalid feedback contract");exit(EXIT_FAILURE);
++}
++static bool wide_leaf_writes(symbol *callee,uint32_t *writes) {
++  /* 同名 static 函数不能借用其它翻译单元的导出定义。 */
++  if(!callee || IS_STATIC(callee->etype))return false;
++  for(wide_leaf_effect *p=wideLeafEffects;p;p=p->next)
++    if(p->abi==FUNC_SDCCCALL(callee->type) && !strcmp(p->name,callee->rname)) {*writes=p->writes;return true;}
++  return false;
++}

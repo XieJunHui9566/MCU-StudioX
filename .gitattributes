@@ -16,6 +16,11 @@
 src/StudioX.Engine/Resources/Ag32/Peripherals/* -text -whitespace
 # 目标启动文件保留上游许可证及已核对的汇编字节布局。
 toolchains/mx251/targets/*/startup.asm -text -whitespace
+# 编译器补丁、冻结验收输入和成本负例依赖原始内容哈希，提交与检出须保持字节不变。
+toolchains/mx251/compiler-patches/** -text -whitespace
+toolchains/mx251/validation/** -text -whitespace
+toolchains/mx251/research/** -text -whitespace
+toolchains/mx251/docs/ARCHITECTURE-AUDIT.txt -text -whitespace
 # 这些文件的多行字面量包含生成内容；提交和检出也不能改变字面量的换行值。
 src/StudioX.Cli/Program.cs -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 src/StudioX.Engine/CMakeGenerator.cs -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol

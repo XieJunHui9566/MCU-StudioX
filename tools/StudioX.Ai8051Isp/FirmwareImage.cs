@@ -26,7 +26,10 @@ public sealed record FirmwareImage(byte[] Code, string Sha256, uint BaseAddress)
             {
                 record = Convert.FromHexString(line[1..]);
             }
-            catch (FormatException e) { throw new InvalidDataException("Invalid Intel HEX encoding.", e); }
+            catch (FormatException e)
+            {
+                throw new InvalidDataException("Invalid Intel HEX encoding.", e);
+            }
             if (record.Length < 5 || record.Length != record[0] + 5 || (record.Sum(x => x) & 255) != 0)
             {
                 throw new InvalidDataException("Intel HEX size/checksum mismatch.");

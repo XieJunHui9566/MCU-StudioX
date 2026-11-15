@@ -176,7 +176,10 @@ public sealed class ComponentService(Func<bool> busy, BuildService? builds = nul
             var entries = (previous?.Components ?? []).Where(c => c.Manifest.Id != installed.Manifest.Id).Append(installed).OrderBy(c => c.Manifest.Id).ToArray();
             await ApplyAsync(root, framework, target, entries, previous, token);
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
 
     public async Task RollbackAsync(string project, CancellationToken token = default)
@@ -200,7 +203,10 @@ public sealed class ComponentService(Func<bool> busy, BuildService? builds = nul
                 History = previous.History[..^1]
             }, token, false);
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
 
     private static async Task ApplyAsync(string root, string framework, string target, InstalledComponent[] entries, ComponentLock? previous, CancellationToken token, bool remember = true)
@@ -330,7 +336,10 @@ public sealed class ComponentService(Func<bool> busy, BuildService? builds = nul
                         File.Delete(path);
                     }
                 }
-                catch (Exception recovery) { errors.Add(recovery); }
+                catch (Exception recovery)
+                {
+                    errors.Add(recovery);
+                }
             }
             throw new AggregateException("组件事务失败，原始诊断和回退结果：", errors);
         }
@@ -426,6 +435,12 @@ public sealed class ComponentService(Func<bool> busy, BuildService? builds = nul
             await File.WriteAllBytesAsync(temp, bytes, token);
             File.Move(temp, path, true);
         }
-        finally { if (File.Exists(temp)) { File.Delete(temp); } }
+        finally
+        {
+            if (File.Exists(temp))
+            {
+                File.Delete(temp);
+            }
+        }
     }
 }

@@ -97,7 +97,9 @@ try
     })));
     using var truncatedChat = new AiChatClient(_ => "offline-test-key", truncatedHttp);
     await ExpectCodeAsync("AI_RESPONSE_FORMAT", () => truncatedChat.CompleteStreamingAsync(deepSeek,
-        new AiChatRequest([new AiChatMessage("user", "检查截断")]), _ => { }));
+        new AiChatRequest([new AiChatMessage("user", "检查截断")]), _ =>
+        {
+        }));
     Check(true, "truncated SSE is rejected instead of saving a partial assistant answer");
 
     var toolReplay = new AiChatRequest([
@@ -135,7 +137,7 @@ try
         }));
     Check(true, "oversized inline page images are rejected before an API call");
     await ExpectCodeAsync("AI_REQUEST_SIZE", () => chat.CompleteAsync(deepSeek,
-        new AiChatRequest(Enumerable.Range(0, 128)
+        new AiChatRequest(Enumerable.Range(0, 512)
             .Select(_ => new AiChatMessage("user", "x")).ToArray(),
             Images: [new AiRequestImage("image/png", pageBytes, "额外页面")])));
     Check(true, "ephemeral image message counts against the API message limit");
@@ -317,7 +319,10 @@ static async Task ExpectCodeAsync<T>(string code, Func<Task<T>> run)
     {
         _ = await run();
     }
-    catch (StudioXException error) when (error.Code == code) { return; }
+    catch (StudioXException error) when (error.Code == code)
+    {
+        return;
+    }
     throw new Exception($"Expected StudioXException {code}");
 }
 

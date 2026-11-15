@@ -35,11 +35,17 @@ public partial class MainWindow
         }
         async Task Settle()
         {
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ContextIdle);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.ContextIdle);
             await debugNavigationTask;
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ContextIdle);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.ContextIdle);
             await debugDisassemblyTask;
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ContextIdle);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.ContextIdle);
         }
         async Task WaitStopped()
         {

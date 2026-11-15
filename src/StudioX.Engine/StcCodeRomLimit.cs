@@ -91,7 +91,10 @@ public sealed record StcCodeRomLimit(int PhysicalBytes, int MaximumBytes)
             {
                 record = Convert.FromHexString(line[1..]);
             }
-            catch (FormatException) { throw new StudioXException("BUILD_ARTIFACT", "SDCC Intel HEX 记录不是十六进制。"); }
+            catch (FormatException)
+            {
+                throw new StudioXException("BUILD_ARTIFACT", "SDCC Intel HEX 记录不是十六进制。");
+            }
             if (record.Length != record[0] + 5 || record.Sum(value => (int)value) % 256 != 0)
             {
                 throw new StudioXException("BUILD_ARTIFACT", "SDCC Intel HEX 长度或校验和无效。");

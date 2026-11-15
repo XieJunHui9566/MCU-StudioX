@@ -33,7 +33,10 @@ public partial class BuildAssemblyView : UserControl
             Files.ItemsSource = catalog.Files;
             Files.SelectedItem = catalog.Files.FirstOrDefault(file => file.SourcePath == source) ?? catalog.Files.FirstOrDefault();
         }
-        finally { settingFiles = false; }
+        finally
+        {
+            settingFiles = false;
+        }
     }
     public void SetMessage(string text)
     {
@@ -42,7 +45,10 @@ public partial class BuildAssemblyView : UserControl
         {
             Files.ItemsSource = null;
         }
-        finally { settingFiles = false; }
+        finally
+        {
+            settingFiles = false;
+        }
         document = null;
         AssemblyEditor.Text = "";
         Hint.Text = text;

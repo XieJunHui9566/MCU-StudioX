@@ -71,7 +71,10 @@ public sealed class SerialPlotService(DeviceHub hub, string dataDirectory,
             var token = lifetime.Token;
             consumer = Task.Run(() => ConsumeAsync(source, frames, transport as SerialTransport, token));
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
 
     public async Task DisconnectAsync()
@@ -81,7 +84,10 @@ public sealed class SerialPlotService(DeviceHub hub, string dataDirectory,
         {
             await DisconnectCoreAsync();
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
     private async Task DisconnectCoreAsync()
     {
@@ -161,7 +167,9 @@ public sealed class SerialPlotService(DeviceHub hub, string dataDirectory,
                 version++;
             }
         }
-        catch (OperationCanceledException) when (token.IsCancellationRequested) { }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+        }
         catch (Exception ex)
         {
             lock (sync)
@@ -250,6 +258,9 @@ public sealed class SerialPlotService(DeviceHub hub, string dataDirectory,
             disposed = true;
             await DisconnectCoreAsync();
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
 }

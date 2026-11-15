@@ -11,7 +11,10 @@ if (args is not [var mode, var packDirectory, var runtimeDirectory, var outputDi
     return 2;
 }
 var output = Path.GetFullPath(outputDirectory);
-if (Directory.Exists(output)) { throw new IOException("Use a new validation output directory."); }
+if (Directory.Exists(output))
+{
+    throw new IOException("Use a new validation output directory.");
+}
 Directory.CreateDirectory(output);
 var versions = new Dictionary<string, string>
 {
@@ -42,7 +45,10 @@ var packs = (await repository.ListCatalogAsync()).Where(pack => pack.Manifest.De
 Check(packs.Length == 24, "24 exact SDK/target packs pass full import validation");
 Check(PackCatalogPolicy.SelectCurrentVersions(packs).Count == 24, "different SDK requirements coexist in the visible catalog");
 var selection = new EspressifProjectVersionService(repository, catalog);
-if (mode != "inspect" && !versions.ContainsKey(mode)) { throw new ArgumentException("Select an exact supported SDK version."); }
+if (mode != "inspect" && !versions.ContainsKey(mode))
+{
+    throw new ArgumentException("Select an exact supported SDK version.");
+}
 var buildService = new BuildService(catalog);
 if (mode == "inspect")
 {

@@ -25,7 +25,11 @@ public partial class MainWindow
 
     private void InitializeOutline()
     {
-        outlineTimer.Tick += (_, _) => { outlineTimer.Stop(); outlineTask = RefreshOutlineAsync(); };
+        outlineTimer.Tick += (_, _) =>
+        {
+            outlineTimer.Stop();
+            outlineTask = RefreshOutlineAsync();
+        };
         SourceEditor.IsVisibleChanged += (_, _) => QueueOutlineRefresh(clear: true);
         EditorSurface.SizeChanged += (_, _) =>
         {
@@ -122,7 +126,9 @@ public partial class MainWindow
             RenderOutline();
             OutlineTree.IsEnabled = true;
         }
-        catch (OperationCanceledException) when (cancellation.IsCancellationRequested) { }
+        catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
+        {
+        }
         catch (Exception ex)
         {
             if (Current())
@@ -328,7 +334,9 @@ public partial class MainWindow
                 item.Items.Add(new TreeViewItem { Header = "没有参数或局部变量", IsEnabled = false });
             }
         }
-        catch (OperationCanceledException) when (cancellation.IsCancellationRequested) { }
+        catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
+        {
+        }
         catch (Exception ex)
         {
             if (!closing && !cancellation.IsCancellationRequested && revision == outlineRevision)
@@ -339,7 +347,11 @@ public partial class MainWindow
                 item.Expanded += OutlineFunction_Expanded;
             }
         }
-        finally { outlineDetailRequests.Remove(cancellation); cancellation.Dispose(); }
+        finally
+        {
+            outlineDetailRequests.Remove(cancellation);
+            cancellation.Dispose();
+        }
     }
 
     private void ToggleOutline_Click(object sender, RoutedEventArgs e)

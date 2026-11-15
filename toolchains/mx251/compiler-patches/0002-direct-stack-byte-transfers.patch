@@ -1,0 +1,25 @@
+--- a/src/mcs251/wide_emit.c.inc
++++ b/src/mcs251/wide_emit.c.inc
+@@ -237,6 +237,22 @@
+   we(f,"; wide memory %s width=%d volatile-bytes=%d\n; wide stack direct object=%d offset=%d\n",
+      store?"store":"load",n->width,n->byteAccess,n->addressObject,n->addressOffset);
+   if(n->byteAccess || n->width==1) {
++    /* 栈地址只依赖 SPX；值位于可逐字节访问的低组寄存器时，无须先
++     * 复制到 DR20 再拆字。保留地址升序及原字节事务数，包括 volatile。
++     * 指令直接连接低组寄存器和 SPX 相对地址；A/B 重叠仍保守回退。高组、
++     * 常量、spill 和三字节指针继续使用已有实现。 */
++    int value=store?n->right.value:n->result;
++    int reg=value>=0?f->values[value].reg:-1;
++    if(reg>=0 && reg+n->width<=16 &&
++       !(wide_mask(reg,n->width)&wide_mask(10,2))) {
++      we(f,"; wide stack byte direct reg=%d width=%d\n",reg,n->width);
++      for(int k=0;k<n->width;++k) {
++        char address[32];wa(address,base+k);
++        if(store)we(f,"\tmov\t%s,r%d\n",address,reg+k);
++        else we(f,"\tmov\tr%d,%s\n",reg+k,address);
++      }
++      return;
++    }
+     if(store)wload(f,n->right,20,n->width==1?2:n->width);
+     for(int k=0;k<n->width;++k) {
+       char address[32];wa(address,base+k);

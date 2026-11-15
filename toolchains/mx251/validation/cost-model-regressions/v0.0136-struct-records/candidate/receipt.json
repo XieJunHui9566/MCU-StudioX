@@ -1,0 +1,797 @@
+{
+  "status": "complete",
+  "schema": 4,
+  "target": "AI8051U-34K64-32",
+  "model": "small",
+  "optimization": "speed",
+  "runtime": "native-int",
+  "projectSnapshotSha256": "537ae31da9ac5026e060c9aee36e2b945d8e04e1aab3aad797974b405630f22e",
+  "profileLockSha256": "f070e25e433ff926223c9adfaa8c626b77d79124e8ea6ff81b9627361ed69758",
+  "compilerSha256": "01a1957a5338e4b87d03548b674cf76d2581f9d72eb4a0f43d49d2893bed4147",
+  "interruptVectorCount": 0,
+  "firmwareSha256": "c1612d95dd182b9ebb3f8c896280d98781eb4d947b98e263f23e9236438d573a",
+  "codeBytes": 5585,
+  "stackBase": 1024,
+  "stackBytes": 1024,
+  "inputs": {
+    "sum_bytes.c": {
+      "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-v0.0136\\matrix-OFF\\ai-fixed-mcu\\project\\sum_bytes.c",
+      "sha256": "372e5dac4180b1ef0d9ba3c16058cfd9679cb5b92173839e2c083a44a78652a6"
+    },
+    "workloads.h": {
+      "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-v0.0136\\matrix-OFF\\ai-fixed-mcu\\project\\workloads.h",
+      "sha256": "b3d81c286d358737e4034a418924b6e272cee063ade6862022cdbe08164b03b0"
+    },
+    "frame_parser.c": {
+      "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-v0.0136\\matrix-OFF\\ai-fixed-mcu\\project\\frame_parser.c",
+      "sha256": "f5b8d8f7417a267cc58ba425fe151ec1870b003e77a64d916f167183695e9ce7"
+    },
+    "identity.c": {
+      "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-v0.0136\\matrix-OFF\\ai-fixed-mcu\\project\\identity.c",
+      "sha256": "3c1c39c05e9c8436f6936179b668d2294ebaa8de91d4afb24d2375897df17a13"
+    },
+    "call_chain.c": {
+      "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-v0.0136\\matrix-OFF\\ai-fixed-mcu\\project\\call_chain.c",
+      "sha256": "1e01dbadfeafea60304e1dd53f1d90e94abaaf9d83aa8574e6c7b73f2ef02c68"
+    },
+    "main.c": {
+      "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-v0.0136\\matrix-OFF\\ai-fixed-mcu\\project\\main.c",
+      "sha256": "8f465cc4eb6e83722da9e688f8540994784cbde762cf321190e4e58e1b0bd2ee"
+    },
+    "copy_xor.c": {
+      "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-v0.0136\\matrix-OFF\\ai-fixed-mcu\\project\\copy_xor.c",
+      "sha256": "22578ef5600ecb8fb471ef8681b5340726f65c67625db74b2550ef58f8e89c1e"
+    },
+    "struct_records.c": {
+      "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-v0.0136\\matrix-OFF\\ai-fixed-mcu\\project\\struct_records.c",
+      "sha256": "3affa1bffe2595eaa6bfc199dbd48ead9870673e03e3f4074c34429235c440bb"
+    },
+    "ring_buffer.c": {
+      "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-v0.0136\\matrix-OFF\\ai-fixed-mcu\\project\\ring_buffer.c",
+      "sha256": "1c7bd1b8939a093cd1a27104840d6172f999058a2b969482ef8cb7be550b0886"
+    },
+    "crc16.c": {
+      "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-v0.0136\\matrix-OFF\\ai-fixed-mcu\\project\\crc16.c",
+      "sha256": "1a2801f05d8d4acbf0f59cd23386b3f2f9bf95e75fd3106b867f34df6c6a966c"
+    },
+    "mix4.c": {
+      "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-v0.0136\\matrix-OFF\\ai-fixed-mcu\\project\\mix4.c",
+      "sha256": "3939afbebebb6b6eeec6dd031e370b17e1a5f49887b374f8f9215a41be6e9004"
+    },
+    "state_machine.c": {
+      "path": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-v0.0136\\matrix-OFF\\ai-fixed-mcu\\project\\state_machine.c",
+      "sha256": "cca804d77ca88565dacebbfdb771789c5e57aa9bb694a5d05a53d6c1c6233243"
+    }
+  },
+  "hardwareExecuted": false,
+  "targetContract": {
+    "id": "AI8051U-34K64-32",
+    "revision": 2,
+    "registrySha256": "fcb37b8b9b87f1d76ac7e62ba09e9096d4de343ae6f9c87de59e73c6fc3030ec",
+    "startupSha256": "b13e2b892cd04dcb9059af6e6e475de4c8a32dfd9764ecd88dceecc46afb7cdb",
+    "interruptVectors": {
+      "count": 0,
+      "unused": "compiler-default"
+    },
+    "qualifiedMemory": {
+      "codeBase": 16711680,
+      "codeBytes": 65536,
+      "xramBase": 65536,
+      "xramBytes": 28672,
+      "iramBytes": 256,
+      "stackBase": 1024,
+      "stackBytes": 1024,
+      "stackLimit": 4096
+    }
+  },
+  "binary": {
+    "file": "firmware.bin",
+    "sha256": "d2df2819d90704609f4d49d847ecb24581cd3faffed81b5ad48cfde864990460",
+    "baseAddress": 16711680,
+    "length": 5585,
+    "gapFill": 255
+  },
+  "buildIdentity": {
+    "compilerPath": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-v0.0136\\profiles\\AI8051U-34K64-32\\compiler\\sdcc.exe",
+    "compilerSha256": "01a1957a5338e4b87d03548b674cf76d2581f9d72eb4a0f43d49d2893bed4147",
+    "toolchainRoot": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-v0.0110\\clean-tools",
+    "profileRoot": "E:\\STVAPP\\MCU-StdioX\\.artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-v0.0136\\profiles\\AI8051U-34K64-32",
+    "toolchainLock": [
+      {
+        "path": "bin/as2gbmap",
+        "sha256": "722fc6255721999279d0e3edd3b393ced8ba1f3b5e18ce82ad245be58f60c734"
+      },
+      {
+        "path": "bin/c++filt.exe",
+        "sha256": "665c1dc1432f0e8c3ced395ea6e4a8fdbdc5890610d7704da5dfbde49615ee5f"
+      },
+      {
+        "path": "bin/dlltool.exe",
+        "sha256": "c639634058187013a38fed70cdb56447a4afe81415e458667e2a5c133410a005"
+      },
+      {
+        "path": "bin/dllwrap.exe",
+        "sha256": "2147408ae1073c011b8ab47ebf7bd96d11102d86a75c03e493ed75ad5f1cf663"
+      },
+      {
+        "path": "bin/libasprintf-0.dll",
+        "sha256": "4573b08f5ed8518ea86b4e7ce1b86eb42d1b2a68a46bb35d758d66f38bd42436"
+      },
+      {
+        "path": "bin/libcharset-1.dll",
+        "sha256": "c14064d1654c1f360eb09e18631cd5f7dabf5c6447f6457c32b60a46cd576fef"
+      },
+      {
+        "path": "bin/libiconv-2.dll",
+        "sha256": "b37d1b4acab5310c4e4f6e2a961d146454ff740d943724a68fa3cebc85deb7cd"
+      },
+      {
+        "path": "bin/libintl-8.dll",
+        "sha256": "77184a77e8e751999816c311ae144fae3fe1957992dff525c13267bd845982d4"
+      },
+      {
+        "path": "bin/libzstd.dll",
+        "sha256": "a25427164f8775046eb8ce488d7d08842c3b33224c5817d4c0c3628b5b588129"
+      },
+      {
+        "path": "bin/makebin.exe",
+        "sha256": "6ebecbc56b94da73bd0bc4f8f29063945271d61f1618652a71dc015ec96ab5b4"
+      },
+      {
+        "path": "bin/packihx.exe",
+        "sha256": "03b26a3da5ee6c021b174a31ff73cac0916bca731da35688617e20147c308be9"
+      },
+      {
+        "path": "bin/sdar.exe",
+        "sha256": "88ffdfb7ce3de41297d09c7399e195f80643732fe9eece07bece529809876c09"
+      },
+      {
+        "path": "bin/sdas251.exe",
+        "sha256": "27f3c2891cb527121d99400f8c31a5a140f4ea0ed333442449f362bee72c157c"
+      },
+      {
+        "path": "bin/sdas8051.exe",
+        "sha256": "5bd8646035e3065dec0657761c90ab057c5c65f6d9f22bbf62eb261d7a9ed4d7"
+      },
+      {
+        "path": "bin/sdcc.exe",
+        "sha256": "8d175a1915898f31af2e433fdbbb9c8734b5707d0ae24fa2bec4d58108bcf3cd"
+      },
+      {
+        "path": "bin/sdcpp.exe",
+        "sha256": "b96b7147bca77ca9f76563eb901bd91040598086aec1e686753b501e1412bef2"
+      },
+      {
+        "path": "bin/sdld.exe",
+        "sha256": "a82c8424bad71b069a7a1a398ec86f8cc65510e7f263c837d4f9dcbe7689f892"
+      },
+      {
+        "path": "bin/sdnm.exe",
+        "sha256": "338e78b4580067045c65d97888d6a8e6aa85544f57206ea59c618b334c409848"
+      },
+      {
+        "path": "bin/sdobjcopy.exe",
+        "sha256": "de1104a9efb179aaa8e506cb8f9f135cd3029f1eee0fe7a4fe0415bf00f64296"
+      },
+      {
+        "path": "bin/sdranlib.exe",
+        "sha256": "b7a0a090b2501677de3c32cb16b3d99e11cb8590c140b96468a91075798366ae"
+      },
+      {
+        "path": "bin/windmc.exe",
+        "sha256": "9252a6d2576b71d10d12e3b5ddcf9d5ad8e0a7d7106bd42bc102bd70e12a2d0f"
+      },
+      {
+        "path": "bin/windres.exe",
+        "sha256": "1fe315f350d30dd199012df928883fb3378196c37d0ee7026cf36d3a069e840c"
+      },
+      {
+        "path": "bin/zlib1.dll",
+        "sha256": "1dc85208162ee57fe97e892bb5160fe9588903992995f90adc3a3a358dac6fc6"
+      },
+      {
+        "path": "include/asm/default/features.h",
+        "sha256": "01d008f81ca1aca272c89b078ed55b7645773c0eb066761af830b1ff4336d753"
+      },
+      {
+        "path": "include/asm/ds390/features.h",
+        "sha256": "21172ff6f1ef0877f52a932a3ebf62324b21e6dd77a180edfe2b49cda5fde00b"
+      },
+      {
+        "path": "include/asm/f8/features.h",
+        "sha256": "bd6518471711125af13aca6f8856415b8e6c5bdda82cbb8e08566f6674aaa43e"
+      },
+      {
+        "path": "include/asm/mcs251/features.h",
+        "sha256": "7819553415a9902be977cf2f1db40654286e473484dc11d43cbb465d71ad6822"
+      },
+      {
+        "path": "include/asm/mcs51/features.h",
+        "sha256": "2f226bec709e810d3e33927f9816857f1acbe0024c203e7a2ab00753ebdb49f1"
+      },
+      {
+        "path": "include/asm/pic14/features.h",
+        "sha256": "d64ea8741a15f6ec65345e2551ca13a4625495e53778bc7be644d7a20d856abf"
+      },
+      {
+        "path": "include/asm/pic16/features.h",
+        "sha256": "cf8d61b9f9d6e2a99281e395059007157b4146f73ecfee82d69be570209c5aed"
+      },
+      {
+        "path": "include/asm/rab/features.h",
+        "sha256": "54f24c10349a9887c99de664fc4cf7c6d91b36879bd24c13a49387f9a9e7849f"
+      },
+      {
+        "path": "include/asm/sm83/features.h",
+        "sha256": "5a66aa7f954b8cb66c7d3f9136fb1e7d5debd637877f06ec9a458f479de5706f"
+      },
+      {
+        "path": "include/asm/stm8/features.h",
+        "sha256": "38c19d8c29c92b4bf14504dd148132ad39f157b0c672b7f3a200d5b35b5b5281"
+      },
+      {
+        "path": "include/asm/tlcs90/features.h",
+        "sha256": "5a5fecb4e64e649e0a814218ac48d19ce9eaeb33a91111e79948893e22273712"
+      },
+      {
+        "path": "include/asm/z80/features.h",
+        "sha256": "55d37a217fe5eb04dcd4362a9b3faae74879b5392ba7a239fea616fb8c656b76"
+      },
+      {
+        "path": "include/assert.h",
+        "sha256": "25f5f8e8e6c31a9f28ef0cbb9cf975e4f87c6df31e7f42d8e8cd88fcd6b76d86"
+      },
+      {
+        "path": "include/ctf-api.h",
+        "sha256": "a787a338d71776923d40777bd1adb73b970231a49ea53f4072d6a623f0e66b33"
+      },
+      {
+        "path": "include/ctf.h",
+        "sha256": "a2bbca23513693ed97e1be3c13b59666498b6c24a153d4327a51a97cae14adec"
+      },
+      {
+        "path": "include/ctype.h",
+        "sha256": "fa0de6a54668191f71b116de9f6b14f43c96a538a07af3c8cbc6c70b3d7dc955"
+      },
+      {
+        "path": "include/dis-asm.h",
+        "sha256": "5ef203fa566766dd578ae45474a74f78d7ba8fa810342a44e5c4b4ac313bcb5e"
+      },
+      {
+        "path": "include/ds80c390.h",
+        "sha256": "9a31ea502684832fe126f1e79fa265e80f783e6b8c71d2b5ac0f14ce1f8fa014"
+      },
+      {
+        "path": "include/errno.h",
+        "sha256": "c80fdf5065b54c11497f180084771d786db280bc0fbcbf71f122012a53325009"
+      },
+      {
+        "path": "include/float.h",
+        "sha256": "26f8a2850efe309f353f391c55cce879e6ef793faf7ad9f58370e502d1729494"
+      },
+      {
+        "path": "include/gcc_attr.h",
+        "sha256": "3e328592781cf31cffc32ca93d7716d0e30c0cafed63eb3718023c4c8c9f8c53"
+      },
+      {
+        "path": "include/inttypes.h",
+        "sha256": "6a158ca1b8542950f09d7a1c8718d837a9ea742f29f4115c7f201f9aa10b8f5a"
+      },
+      {
+        "path": "include/iso646.h",
+        "sha256": "99342f327a91e52835e075ff633703edabe5a4fc61923c50f3704517b924cec9"
+      },
+      {
+        "path": "include/limits.h",
+        "sha256": "0782197253203c41097d3c66e40dbdcc5ecec516b773e499eed51da8155df4a9"
+      },
+      {
+        "path": "include/math.h",
+        "sha256": "92076d013f92fb9286a398d29d4d82bbae0b4871f3500725a94ccf2c6f9b37b4"
+      },
+      {
+        "path": "include/mcs51/8051.h",
+        "sha256": "5353257fc6dabaa6b0ea45e10a262c951b2f848ecb8149061b6ca7d566168bf1"
+      },
+      {
+        "path": "include/mcs51/8052.h",
+        "sha256": "014b44ba976417e6349be3057d15f85d801a033574aa5f9bf565d2b44dae1c84"
+      },
+      {
+        "path": "include/mcs51/ADuC84x.h",
+        "sha256": "6ff12f424707728022980ec34fd310f3cd8e33be17c7e48b119514a122a190e4"
+      },
+      {
+        "path": "include/mcs51/AT89C513xA.h",
+        "sha256": "3bc5b9b940bd3db4edc327b67c7b440ddcf8c41559633f7a806bab54a163ef03"
+      },
+      {
+        "path": "include/mcs51/at89c51ed2.h",
+        "sha256": "33832f6301ca9a9f4baf17a3d4b4dc82e870c7a33dacd01c05d7877327e64016"
+      },
+      {
+        "path": "include/mcs51/at89c51id2.h",
+        "sha256": "93bf8944758bef363e4560c6de1b5c75d0d43fa5ac89f061309a290b5cd8c225"
+      },
+      {
+        "path": "include/mcs51/at89c51snd1c.h",
+        "sha256": "182a6aead11c39e7e7b47daa510f81775bbbd40193063e770d58aca66e313fd3"
+      },
+      {
+        "path": "include/mcs51/at89c55.h",
+        "sha256": "a95c7fadd35272de3186059dd9f67ffeb1a093d8c1de856e92e0bd479734192c"
+      },
+      {
+        "path": "include/mcs51/at89s53.h",
+        "sha256": "934e7b065ff3e2d755bb2ea445453df8a035b40960ee148a3066ecec6b6c51c7"
+      },
+      {
+        "path": "include/mcs51/at89S8252.h",
+        "sha256": "4f4068d9989ec0f78724198d6e96e82ce8c7b0e0a87de8126e44b108f520adb7"
+      },
+      {
+        "path": "include/mcs51/at89s8253.h",
+        "sha256": "3083dccaeebb6a58d868d3d7c43a58814b06f20c59792157df66c84c11e5758a"
+      },
+      {
+        "path": "include/mcs51/at89Sx051.h",
+        "sha256": "bdfdf48cc4dda9463286e0fc2be1330380c913fc83221836e859bef48ee2c5b4"
+      },
+      {
+        "path": "include/mcs51/at89x051.h",
+        "sha256": "bdf2217d4083e9ac147b563c669fbad6b939ab9ff6d263945c1f6ef54d6cb4d9"
+      },
+      {
+        "path": "include/mcs51/at89x51.h",
+        "sha256": "7859d4a50140686724b38e90c116927725759fce76e94bb697f4f849d6d723d7"
+      },
+      {
+        "path": "include/mcs51/at89x52.h",
+        "sha256": "9bfca299e712ed82a4ac7f86e9978ba56da4da07ff27198c91931227276b11bf"
+      },
+      {
+        "path": "include/mcs51/ax8052.h",
+        "sha256": "5538fa80d0c9482501f410733b507374e9559b325c5558022b3a017c49499c41"
+      },
+      {
+        "path": "include/mcs51/ax8052f131.h",
+        "sha256": "792d1af07c6c43b1123d32a1d1a4b390e41b11cc309ae83ae163efc5c4148177"
+      },
+      {
+        "path": "include/mcs51/ax8052f142.h",
+        "sha256": "00e3d557406c73da8d7f5b068b15647d3c94349bbaeadb7b64aa6e26dcf5983c"
+      },
+      {
+        "path": "include/mcs51/ax8052f143.h",
+        "sha256": "86b5d36ba2be35a82eb2f7b2a38d385fba4c05e22d2803ea09b469b2b3d80142"
+      },
+      {
+        "path": "include/mcs51/ax8052f151.h",
+        "sha256": "133ed52ce40ecbc269c0f3f6d6ba216958d4edae9f707d6d9a29313aebadea0f"
+      },
+      {
+        "path": "include/mcs51/C8051F000.h",
+        "sha256": "0864d51dcf2a2110c1416f38b35186e556de11f1f289edd53316133515fec658"
+      },
+      {
+        "path": "include/mcs51/C8051F018.h",
+        "sha256": "c74e39d004a009582ba2776b0662539c24792568491618ec9183f580520f50e3"
+      },
+      {
+        "path": "include/mcs51/C8051F020.h",
+        "sha256": "aeecf638bd885c657685ff5f8256c2c45de362adbffa16b3a3c6c9427f7f02bf"
+      },
+      {
+        "path": "include/mcs51/C8051F040.h",
+        "sha256": "2ceaea7592a6a9abf5cdda641318f722cd5a7fd743d925d0b3787408a7df034b"
+      },
+      {
+        "path": "include/mcs51/C8051F060.h",
+        "sha256": "7f762508da6ba9cb38123f698f07a890a41cf7df24e83a43d2f738ad14b3d1fe"
+      },
+      {
+        "path": "include/mcs51/C8051F120.h",
+        "sha256": "dd1448c5b706b8253afa73777290e9610d220bcd1f5a80ab220b242267ac446f"
+      },
+      {
+        "path": "include/mcs51/C8051F200.h",
+        "sha256": "59134ef0230e8968f6a6cce545387eab019422af16d4f88671f151cc6ddb3e5a"
+      },
+      {
+        "path": "include/mcs51/C8051F300.h",
+        "sha256": "20d192d5187bb98da9f0b8f74fe0b7532e4019476c63d1e7baf2d08134e59272"
+      },
+      {
+        "path": "include/mcs51/C8051F310.h",
+        "sha256": "3e4a4509a4c9a63e974888dc6a10f2de7e0495383df63cce62b288bd04f9cc96"
+      },
+      {
+        "path": "include/mcs51/C8051F320.h",
+        "sha256": "1c238a26c295883d7d347569771fa9230914b5f6bd0f63f03dc00a0ec2992b6a"
+      },
+      {
+        "path": "include/mcs51/C8051F326.h",
+        "sha256": "f268f02d2d553e4f42fe0547cf152237e6047c7fd560738468d08ac096ac02ae"
+      },
+      {
+        "path": "include/mcs51/C8051F330.h",
+        "sha256": "cd2273a0b0ec524eb82d1939317f819791211fb49124cd51d4c74ff254a89bd6"
+      },
+      {
+        "path": "include/mcs51/C8051F336.h",
+        "sha256": "6296f2565e0caaf6a5aa7c9b01503fdce52f1691286d51f78de51b23272f8365"
+      },
+      {
+        "path": "include/mcs51/C8051F340.h",
+        "sha256": "d49b5bd462a51657e7c4ebb21c16f6dcda3ae4ba8d90c269a1645b1a54193c76"
+      },
+      {
+        "path": "include/mcs51/C8051F350.h",
+        "sha256": "7ec12192b784cd7dbdbdc0e334d78bdf3b155191aaae87f4fda4ef4ccdb6075c"
+      },
+      {
+        "path": "include/mcs51/C8051F360.h",
+        "sha256": "25abe079af1549291cb4c0e3b333a07a2be80d500b0bb100f6d91c090f090d4f"
+      },
+      {
+        "path": "include/mcs51/C8051F410.h",
+        "sha256": "62f59baf45a5df4ae86dfbae8bdc4c368b61cb922d793f4ef1708a9253f15255"
+      },
+      {
+        "path": "include/mcs51/C8051F520.h",
+        "sha256": "08858751d22779fccf1da34c8bcf685c8a0abf94b1aaaaa357d2efa7a652341f"
+      },
+      {
+        "path": "include/mcs51/C8051F920.h",
+        "sha256": "f44f68d2acdd2c4a8884a2291e7d2982f4bc6211bf26f2c6c244a586456c2a51"
+      },
+      {
+        "path": "include/mcs51/C8051T600.h",
+        "sha256": "534e64bfd25b6c2893cc26455be065817acb37e6e85b26ea00e282dc05700263"
+      },
+      {
+        "path": "include/mcs51/C8051T610.h",
+        "sha256": "eaebbc28c5042b825d4ce24d2a2d8124bcde32ad87d45231c1f19322b9edd035"
+      },
+      {
+        "path": "include/mcs51/C8051T630.h",
+        "sha256": "e7e89ca6731a8a4c8bf3e4644dbd4d9a91c6664e11b5b2786106333546538d6c"
+      },
+      {
+        "path": "include/mcs51/cc1110.h",
+        "sha256": "9b966a766e77e6ee4ebfb6e78323a3da9ecbefdf78c279bc11a8a90e39d40cd3"
+      },
+      {
+        "path": "include/mcs51/cc2430.h",
+        "sha256": "2872a7cb6dc8df88ddbf3f27e0d6cf298c7555c6c5f699073573cc6f33f8ba59"
+      },
+      {
+        "path": "include/mcs51/cc2510fx.h",
+        "sha256": "b2164e07dc9929d45cc4258ffc7b1c465421eb38d3c5b06b8ad99cdecabe6990"
+      },
+      {
+        "path": "include/mcs51/cc2530.h",
+        "sha256": "0efcecef70037d12091acf26b00e721ff1ba87a107e5a9671631cd845bf47778"
+      },
+      {
+        "path": "include/mcs51/compiler.h",
+        "sha256": "57bbe757855cae9a49dfde9642c4c203105e455017fd428fedeb5ed608d4828c"
+      },
+      {
+        "path": "include/mcs51/EFM8BB1.h",
+        "sha256": "6ca53cdabd808f870b66ae18febf0315aef15944b7c0e6b05a96ab2572c05107"
+      },
+      {
+        "path": "include/mcs51/lint.h",
+        "sha256": "9908a52a1b6d69754bbcee3248dbf1c0a12cca6ca9ac6a7357ee6a6f6ca2bed5"
+      },
+      {
+        "path": "include/mcs51/mcs51reg.h",
+        "sha256": "5401b3cb13f3e83317488b74c785168ca5dc6003cd43e5221430930c00bd8675"
+      },
+      {
+        "path": "include/mcs51/msc1210.h",
+        "sha256": "51c44d4541156b41430951be5d43904652b0a11dc34a4bb560127242094ab211"
+      },
+      {
+        "path": "include/mcs51/msm8xc154s.h",
+        "sha256": "788b84c1d10bfe0712fbbb29aa880d38688679ab43c6e985c245e81f5734d953"
+      },
+      {
+        "path": "include/mcs51/P89c51RD2.h",
+        "sha256": "d3de789cf9af9c0bc3cd223c620d79374bdb3e4d71bb3a3b3d3c2aa80ac5ddb0"
+      },
+      {
+        "path": "include/mcs51/p89c66x.h",
+        "sha256": "2ad3b905f8b7c5a5d334c6811fa7ed5d74079cdbae9d54323c3def7744cd093d"
+      },
+      {
+        "path": "include/mcs51/P89LPC901.h",
+        "sha256": "e8c7f8fb186b49ab2cfecb84843afaa66016755fa9a9577cad92e27cf272b9ed"
+      },
+      {
+        "path": "include/mcs51/P89LPC922.h",
+        "sha256": "cc0ac44b2fef21104ebef219afa4a4c6e5fc3c68b358f3b7100c446066ada778"
+      },
+      {
+        "path": "include/mcs51/P89LPC925.h",
+        "sha256": "2a11b3a5bc985278d902bcb236f4ec7e086068853926fdb220659f4a7af8024f"
+      },
+      {
+        "path": "include/mcs51/P89LPC932.h",
+        "sha256": "20b5ffbe7c5260054b72246398966d0f51a47eee9bbc433169183a3cc9850f33"
+      },
+      {
+        "path": "include/mcs51/p89lpc9321.h",
+        "sha256": "4e283f50ee1bb429b493a25623c4241268b004502cfba39c6dfcd6612a3aae91"
+      },
+      {
+        "path": "include/mcs51/p89lpc9331.h",
+        "sha256": "d2b73bee2dccc995540100d86e00e352608761d86453d3870e7442ae1be5d319"
+      },
+      {
+        "path": "include/mcs51/p89lpc933_4.h",
+        "sha256": "b070faea9f402ec4c895a6da778f0bbcaf5bf9400030db36a1ce0f9333e90c48"
+      },
+      {
+        "path": "include/mcs51/p89lpc9351.h",
+        "sha256": "f9902151875aaf3fd9f222af2d217e34df07f2a8ebb6ae169a771f97547a976a"
+      },
+      {
+        "path": "include/mcs51/p89lpc935_6.h",
+        "sha256": "907a4d4a576819ec5461d101cd78ccc49a6d1c74f718e686ffabb1c461561406"
+      },
+      {
+        "path": "include/mcs51/p89lpc938.h",
+        "sha256": "90f8bf56eb0e93c34960e32db68aaf9cfc4aa46c2dccdaae5f3b959896da68b0"
+      },
+      {
+        "path": "include/mcs51/p89v51rd2.h",
+        "sha256": "930149177def242314a6858f0ef59f9156b4ffdf9bfe2ab351a828816157f6a9"
+      },
+      {
+        "path": "include/mcs51/p89v66x.h",
+        "sha256": "692aefcb0ce2e246a12a13b8b3d5c58944e65d9638bb2d1b57fda5043fe841bb"
+      },
+      {
+        "path": "include/mcs51/reg51.h",
+        "sha256": "6f327dd9175b170f113597152f24d51b77160bc295cec560b5cbc056bd70d30d"
+      },
+      {
+        "path": "include/mcs51/reg764.h",
+        "sha256": "ffd8f52f1006c264a4c168947a2d63bda254b50d673d03e3c07c7e8aac74d3ad"
+      },
+      {
+        "path": "include/mcs51/regc515c.h",
+        "sha256": "54c1739647837ac2200af32a1e55cd4ce229993c278bc004ac04eaa7525207fa"
+      },
+      {
+        "path": "include/mcs51/sab80515.h",
+        "sha256": "63130df82b147f47739621c4eb4612958e718f77c26877e2c1d2b302de0d8fd5"
+      },
+      {
+        "path": "include/mcs51/ser.h",
+        "sha256": "94c55290bed039d57ced18a14edc917329a184325a9e9bab3c9d0bca9de15fe4"
+      },
+      {
+        "path": "include/mcs51/ser_ir.h",
+        "sha256": "54a14fc98a236f6ca004d99839bc8301b0e4c7831acb487c90c39a51b4fb8f14"
+      },
+      {
+        "path": "include/mcs51/serial.h",
+        "sha256": "358cce5ea00b4681deae7f2dda38352bab8f3f4d6a738cb2684d4b6b139b7963"
+      },
+      {
+        "path": "include/mcs51/serial_IO.h",
+        "sha256": "ecb4ecc3b1697c96551563df368f11b298bbe58c67be2fd7922afd7f3a388d86"
+      },
+      {
+        "path": "include/mcs51/SST89x5xRDx.h",
+        "sha256": "d7ba6a7bbbd397295c30d312cf3e7370aa3c1ce2a705a0072c18dc3a9c5c2dca"
+      },
+      {
+        "path": "include/mcs51/stc12.h",
+        "sha256": "c0c037e6d9778d3bd98996f2d40d430fdf4842f0d626eb4d8ea6d22c7decdc3c"
+      },
+      {
+        "path": "include/mcs51/stc89.h",
+        "sha256": "3a93a130841e86a844a055066d74c6d2984a3a45294347d8656d83db3813de5d"
+      },
+      {
+        "path": "include/mcs51/uPSD32xx.h",
+        "sha256": "e1eeb791dd7e3ecfeeaf7aac439df7cc3bac019087c8f224d6c5d859bc96ea56"
+      },
+      {
+        "path": "include/mcs51/uPSD33xx.h",
+        "sha256": "b1ab40a161543e69af679039a75ad23e155e075a837deb29b41a2fe9656366a3"
+      },
+      {
+        "path": "include/mcs51/w7100.h",
+        "sha256": "d0dbe9f2cb44f6a509131032f9390616433d4b0805b132df233d34220c3d9e8a"
+      },
+      {
+        "path": "include/mcs51/XC866.h",
+        "sha256": "270782cd7e279a119c7365acbc6618a19eae1341d56830f813d36d283daa2c5f"
+      },
+      {
+        "path": "include/sdcc-lib.h",
+        "sha256": "f0700a162f6d4ebe5841b61150b80a5dc4a98109943a48b6a2b31d8b45b6411a"
+      },
+      {
+        "path": "include/setjmp.h",
+        "sha256": "03f482deaa4365b2eaa2ba6c7399d6f9e73dd0602176d5646290f92b7be25fc2"
+      },
+      {
+        "path": "include/sframe-api.h",
+        "sha256": "8d035f3bc60204d15642fd3909669ddddbc9c156f306da9a8a6042e71342aea1"
+      },
+      {
+        "path": "include/sframe.h",
+        "sha256": "5d37d074fb2c9d866d2d1a076e575806448d0470094abb0b1b9d79614b9847a3"
+      },
+      {
+        "path": "include/signal.h",
+        "sha256": "30362c66464f87cc02a2e13186c7e36b5e5df2fb23f597613348bffe8da07aae"
+      },
+      {
+        "path": "include/stdalign.h",
+        "sha256": "741f12e56e4572d2b3f44e5fd4c629137104e92ca83130e38af85f0f5ccac970"
+      },
+      {
+        "path": "include/stdarg.h",
+        "sha256": "6c2e441de37ecd4cff9f92502c148b2165c3a8c48c643199c20b4097de039001"
+      },
+      {
+        "path": "include/stdatomic.h",
+        "sha256": "7a974d7558987e790490d3d32162c8c5ead45e5cfaaab7c63cf8f345ca20acfe"
+      },
+      {
+        "path": "include/stdbit.h",
+        "sha256": "b1e4d551aafe8a5240f7839c93bb1b79aea54f0dd4b90b6efe32c96135f7a534"
+      },
+      {
+        "path": "include/stdbool.h",
+        "sha256": "169e75df1eb7a2ef8d5141cd1224766b8ebabc49e9a72400c31d3202d9a065e4"
+      },
+      {
+        "path": "include/stdckdint.h",
+        "sha256": "8086f7aeda1d2681a8b4cb05e0f72dff5e7b0145e740248da21efbf29230f8b9"
+      },
+      {
+        "path": "include/stdcountof.h",
+        "sha256": "21d98b931053aedc95eaef71f6e03fabd66375e45fdf46d23987fa29ba036de5"
+      },
+      {
+        "path": "include/stddef.h",
+        "sha256": "5ef86cd924d140f80152f0e5463c605e43855b0d23e5692ccda93469470d4a9d"
+      },
+      {
+        "path": "include/stdint.h",
+        "sha256": "7275e563d168934bb86333bd3e4a072946da43480c3f711c19e1ea2f1169a435"
+      },
+      {
+        "path": "include/stdio.h",
+        "sha256": "e82468b575afbb0171fc95d6babf775ace846bdb9e60164ff7956fbbf5d639fb"
+      },
+      {
+        "path": "include/stdlib.h",
+        "sha256": "cbca1ed07496355fd6af50f16e73e0121980eeafe61efe8d1292d20371db7736"
+      },
+      {
+        "path": "include/stdnoreturn.h",
+        "sha256": "819e1a1222a93505de61b31c6970209b8e9086829dc79959292f4fc337c2505e"
+      },
+      {
+        "path": "include/string.h",
+        "sha256": "3ec32249502dbb3b66108311ef6687049368cb4392f80eec9a1501d825d4717e"
+      },
+      {
+        "path": "include/time.h",
+        "sha256": "57d781651f7ed381ef1909f0d91cba84e709dc9d340cd7fabaafbaa546ce9e60"
+      },
+      {
+        "path": "include/tinibios.h",
+        "sha256": "2058ee6dc332ce4c28ca0ce3f96920aac432c18c07aa0177aef6c44d9e0cd210"
+      },
+      {
+        "path": "include/uchar.h",
+        "sha256": "776d7052d997ceb79f98388ac464f4076a39fd292c065f269081983c3e43dd75"
+      },
+      {
+        "path": "include/wchar.h",
+        "sha256": "f017c536f11e77f77bb12f767560ec8485a80370075e5fa7a5c865a6d39be261"
+      },
+      {
+        "path": "lib/mcs251-small-stack-auto/libfloat.lib",
+        "sha256": "38eff60184b1dd1ae761f73712bc01ce95b6e3a139f9240eedc1274815f86c25"
+      },
+      {
+        "path": "lib/mcs251-small-stack-auto/libint.lib",
+        "sha256": "416d38a0250b946c0391f3714d1a4b1579d074b31f471fa9c211b9ccaa425531"
+      },
+      {
+        "path": "lib/mcs251-small-stack-auto/liblong.lib",
+        "sha256": "174a0ceb8045d8e8cda8c9eda8a06bfe3165103fcbe4225e37773f5fe1c343e6"
+      },
+      {
+        "path": "lib/mcs251-small-stack-auto/liblonglong.lib",
+        "sha256": "b5fa1e30fc65d2d57ef56cf4e06790168c1b6f4a70cc5f10dfe26999800a83d8"
+      },
+      {
+        "path": "lib/mcs251-small-stack-auto/libsdcc.lib",
+        "sha256": "6da881753937f2bfcd7801929825c6c6fea2c6e9c030144bcdecef05fcb2d8e5"
+      },
+      {
+        "path": "lib/mcs251-small-stack-auto/mcs251.lib",
+        "sha256": "6f46d3cbf9a10279a7ad8f4bf48ea957a9f1a227f6e6e9311db7086df5fd7ee3"
+      },
+      {
+        "path": "lib/mcs251-large-stack-auto/libfloat.lib",
+        "sha256": "ded18d51f487b8d2cbd7201f6d9a623a9952e1ff80af9b8a6c3804c0859a81a5"
+      },
+      {
+        "path": "lib/mcs251-large-stack-auto/libint.lib",
+        "sha256": "d16816782c301344408acbc7610a31d16fcb0657d61a6633dc995ed0f6e3dd6b"
+      },
+      {
+        "path": "lib/mcs251-large-stack-auto/liblong.lib",
+        "sha256": "089a84e9b31666f84c4310ea19b12dff10395ea2a6fc37fe1f2bfa8cb033c63d"
+      },
+      {
+        "path": "lib/mcs251-large-stack-auto/liblonglong.lib",
+        "sha256": "07a7f8e68d17ae3b8b28ace1395a1fb9f786ef5978ca50238b10f00241dbfd39"
+      },
+      {
+        "path": "lib/mcs251-large-stack-auto/libsdcc.lib",
+        "sha256": "1265fabb5ff43de8ad5464ec70aec2e5a0407cffecc018a518868d6146c29bb8"
+      },
+      {
+        "path": "lib/mcs251-large-stack-auto/mcs251.lib",
+        "sha256": "6f46d3cbf9a10279a7ad8f4bf48ea957a9f1a227f6e6e9311db7086df5fd7ee3"
+      },
+      {
+        "path": "libexec/sdcc/x86_64-w64-mingw32/12.1.0/cc1.exe",
+        "sha256": "b9f1bc469999605629dc8d5d04cfde98aaa34b5b0a7a8ba681266f661d7ab55e"
+      }
+    ],
+    "profileLock": [
+      {
+        "path": "startup.asm",
+        "sha256": "b13e2b892cd04dcb9059af6e6e475de4c8a32dfd9764ecd88dceecc46afb7cdb"
+      },
+      {
+        "path": "compiler/sdcc.exe",
+        "sha256": "01a1957a5338e4b87d03548b674cf76d2581f9d72eb4a0f43d49d2893bed4147"
+      },
+      {
+        "path": "runtime/libnativeint.lib",
+        "sha256": "519926a556d1c26f56ecdc90f4e101d7519ff49b6080cb31a70a56af018b0254"
+      },
+      {
+        "path": "runtime/libnativefloat.lib",
+        "sha256": "dce6b5208663d230172cd59cd3abebca56d88b78abd03129ce5fd33352442c68"
+      },
+      {
+        "path": "runtime/libai8051umdu32.lib",
+        "sha256": "b4a9e8d470154e5b3db5eb0d2f2271e915ef474d8069ddfeef506ec0e3f830e6"
+      }
+    ],
+    "buildScriptSha256": "81f3b6c76309b85886ebfd73accc0b52a5dabbe3aa5e7198f70d8d5fc88f4114",
+    "targetProfileScriptSha256": "368dea33e630301e43517606f4aa9e61404bf6916ab796bf52216d6272b18309",
+    "targetContractSha256": "fcb37b8b9b87f1d76ac7e62ba09e9096d4de343ae6f9c87de59e73c6fc3030ec",
+    "cmakeInputSha256": "a7ad771f0360c7e9e64563037af1ae1770e87605782fdabb2794d6b74a94984b",
+    "abi": "ordinary"
+  },
+  "callEffects": {
+    "schema": 1,
+    "mode": "audit-only",
+    "sha256": "292b9835a7e15e150e8c06e65db26ea0039688d6f3430b18132bd0e0053c5125",
+    "scriptSha256": "eed1159e4a05b8f962dc0e0f3b5d2ea41f1e201428b76004e14c5e941022cc32"
+  },
+  "leafCallFeedback": {
+    "enabled": false,
+    "finalValidated": false,
+    "recordSha256": null,
+    "scriptSha256": "5c99cef4e84fb1f41fee6757d9770e4c96db5cc0d79bd7f8a1d471184fb1da24"
+  }
+}

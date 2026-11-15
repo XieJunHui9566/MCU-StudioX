@@ -120,7 +120,10 @@ internal static class MemoryModelChecks
                     await builder.SaveSettingsAsync(root, settings);
                     Check(await builder.LoadSettingsAsync(root) == settings, label + " 保存后完整往返读取");
                     Check(!File.Exists(Path.Combine(root, ".build", "studiox-build-receipt.json")), label + " 修改模型撤销旧构建凭据");
-                    await RejectAsync(async () => { await viewer.ListAsync(root); }, label + " 未重编译前拒绝旧汇编");
+                    await RejectAsync(async () =>
+                    {
+                        await viewer.ListAsync(root);
+                    }, label + " 未重编译前拒绝旧汇编");
                     var row = await BuildAsync(root, id, "bare", label, Effective(model), true);
                     Check(row.SourceStamp != previousStamp, label + " 构建凭据记录本轮设置");
                     if (index is > 0 and < 4)

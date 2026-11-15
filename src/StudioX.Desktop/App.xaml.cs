@@ -22,6 +22,7 @@ public partial class App : System.Windows.Application
         var productivityPreview = e.Args is ["--preview-ide-next", _, _] or ["--preview-ide-next-recovery", _, _];
         var smoke = e.Args is ["--smoke", _];
         var helpPreview = e.Args is ["--preview-help", _];
+        var gitLayoutPreview = e.Args is ["--preview-git-layout", _, _, _];
         var firstProjectPreview = e.Args is ["--preview-first-project", _, _];
         var projectToolsPreview = e.Args is ["--preview-project-tools", _, _, _];
         var idfVersionsPreview = e.Args is ["--preview-idf-versions", _, _, _, _];
@@ -31,7 +32,6 @@ public partial class App : System.Windows.Application
         var mx251DownloadPreview = e.Args is ["--preview-mx251-download", _, _, _];
         var mx251MemoryPreview = e.Args is ["--preview-mx251-memory", _, _, _];
         var mx251SettingsPreview = e.Args is ["--preview-mx251-settings", _, _];
-        var stcTimingPreview = e.Args is ["--preview-stc-timing", _, _];
         var peripheralDevelopmentPreview = e.Args is ["--preview-peripheral-development", _, _, _];
         var projectHealthPreview = e.Args is ["--preview-project-health", _, _];
         var toolManagementPreview = e.Args is ["--preview-tool-management", _, _] or ["--preview-tool-management", _, _, _];
@@ -51,6 +51,9 @@ public partial class App : System.Windows.Application
         var windowLayoutPreview = e.Args is ["--preview-window-layout", _];
         var editorPreview = e.Args is ["--preview-editor", _, _];
         var completionPreview = e.Args is ["--preview-completion", _, _];
+        var cCompletionPreview = e.Args is ["--preview-c-completion", _, _, _];
+        var editorUsabilityPreview = e.Args is ["--preview-editor-usability", _];
+        var findPerformancePreview = e.Args is ["--preview-find-performance", _];
         var cmakePreview = e.Args is ["--preview-cmake", _, _];
         var pythonPreview = e.Args is ["--preview-python", _];
         var microPythonPreview = e.Args is ["--preview-micropython", _, _, _];
@@ -90,6 +93,7 @@ public partial class App : System.Windows.Application
         var stcUsbPreview = e.Args is ["--preview-stc-usb", _];
         var mx251TransportPreview = e.Args is ["--preview-mx251-transports", _];
         var stcDownloadSettingsPreview = e.Args is ["--preview-stc-download-settings", _];
+        var stcPortNavigationPreview = e.Args is ["--preview-stc-port-navigation", _];
         var mon51Fixture = mon51Preview ? new StudioX.Application.StcDebugging.Mon51OfflineTransport() : null;
         var rtosPreview = e.Args is ["--preview-rtos", _, _];
         var packCatalogPreview = e.Args is ["--preview-pack-catalog", _, _, _];
@@ -102,18 +106,17 @@ public partial class App : System.Windows.Application
         var stm32Preview = e.Args is ["--preview-stm32", _, _] or ["--preview-stm32", _, _, _];
         var rp2350Preview = e.Args is ["--preview-rp2350", _, _];
         var rp2040Preview = e.Args is ["--preview-rp2040", _, _];
-        var lvglPreview = e.Args is ["--preview-lvgl-ui", _, _];
-        var lvglSetupPreview = e.Args is ["--preview-lvgl-setup", _, _, _, _];
         var zephyrDevicetreePreview = e.Args is ["--preview-zephyr-devicetree", _, _];
         var zephyrTemplatesPreview = e.Args is ["--preview-zephyr-templates", _, _, _, _];
-        var anyPreview = productivityPreview || workspaceEditingPreview || microPythonPreview || pythonPreview || hdlWorkflowPreview || hdlPreview || ag32MappingPreview || pluginsPreview || preview || windowLayoutPreview || editorPreview || completionPreview || cmakePreview || documentsPreview || vePreview || navigationPreview || explorerPreview || buildPreview || buildMemoryPreview || editingPreview || bracketsPreview || stm32Preview || rp2350Preview || rp2040Preview || projectPreview || cubeMxPreview || importPerformancePreview || downloadPreview || espressifPreview || espressifModulePreview || debugPreview || rtosPreview || packCatalogPreview || breakpointsPreview || lvglPreview || lvglSetupPreview || zephyrDevicetreePreview;
-        anyPreview |= agentWorkspacePreview || diagnosticsPreview || openOcdPlotPreview || pluginLabsPreview || helpPreview || firstProjectPreview || projectHealthPreview || toolManagementPreview || largeProjectPreview || projectOpenPerformancePreview;
+        var anyPreview = productivityPreview || workspaceEditingPreview || microPythonPreview || pythonPreview || hdlWorkflowPreview || hdlPreview || ag32MappingPreview || pluginsPreview || preview || windowLayoutPreview || editorPreview || completionPreview || cmakePreview || documentsPreview || vePreview || navigationPreview || explorerPreview || buildPreview || buildMemoryPreview || editingPreview || bracketsPreview || stm32Preview || rp2350Preview || rp2040Preview || projectPreview || cubeMxPreview || importPerformancePreview || downloadPreview || espressifPreview || espressifModulePreview || debugPreview || rtosPreview || packCatalogPreview || breakpointsPreview || zephyrDevicetreePreview;
+        anyPreview |= cCompletionPreview || agentWorkspacePreview || diagnosticsPreview || openOcdPlotPreview || pluginLabsPreview || helpPreview || firstProjectPreview || projectHealthPreview || toolManagementPreview || largeProjectPreview || projectOpenPerformancePreview;
         anyPreview |= agentReviewPreview;
+        anyPreview |= stcPortNavigationPreview;
         anyPreview |= debugPluginsPreview || productWorkflowsPreview || projectToolsPreview;
         anyPreview |= faultPeripheralsPreview;
         anyPreview |= codeTemplatesPreview;
         anyPreview |= mcuConfigurationPreview;
-        anyPreview |= mx251DownloadPreview || stcTimingPreview || mx251SettingsPreview || mx251MemoryPreview;
+        anyPreview |= mx251DownloadPreview || mx251SettingsPreview || mx251MemoryPreview;
         anyPreview |= peripheralDevelopmentPreview;
         anyPreview |= developmentComponentsPreview;
         anyPreview |= idfVersionsPreview;
@@ -135,9 +138,13 @@ public partial class App : System.Windows.Application
         anyPreview |= assemblyPreview;
         anyPreview |= zephyrTemplatesPreview;
         anyPreview |= mcuFavoritesPreview;
+        anyPreview |= editorUsabilityPreview;
+        anyPreview |= findPerformancePreview;
+        anyPreview |= gitLayoutPreview;
         var data = showMcuConfiguration ? Path.GetFullPath(e.Args[3]) : (acceptanceWorkbench || showAgentWorkspace || showProductivity || showDebugDemo || showBreakpointsDemo) && e.Args.Length >= 3 ? Path.GetFullPath(e.Args[2]) : smoke || anyPreview ? Path.Combine(Path.GetFullPath(e.Args[1]), "user-data") :
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MCUStudioX");
         var services = new WorkbenchService(acceptanceWorkbench ? Path.GetFullPath(e.Args[1])
+            : cCompletionPreview ? Path.GetFullPath(e.Args[2])
             : assemblyPreview ? Path.GetFullPath(e.Args[2])
             : mx251DownloadPreview || mx251MemoryPreview ? Path.GetFullPath(e.Args[3])
             : zephyrTemplatesPreview ? Path.GetFullPath(e.Args[2])
@@ -174,13 +181,29 @@ public partial class App : System.Windows.Application
             Directory.CreateDirectory(directory);
             try
             {
-                if (mcuFavoritesPreview)
+                if (cCompletionPreview)
+                {
+                    await window.RenderCCompletionPreviewAsync(directory, Path.GetFullPath(e.Args[3]));
+                }
+                else if (findPerformancePreview)
+                {
+                    await window.RenderFindPerformancePreviewAsync(directory);
+                }
+                else if (stcPortNavigationPreview)
+                {
+                    await window.RenderStcPortNavigationPreviewAsync(directory);
+                }
+                else if (mcuFavoritesPreview)
                 {
                     await window.RenderMcuFavoritesPreviewAsync(directory);
                 }
                 else if (uiStylePreview)
                 {
                     await window.RenderUiStylePreviewAsync(directory);
+                }
+                else if (gitLayoutPreview)
+                {
+                    await window.RenderGitLayoutPreviewAsync(directory, Path.GetFullPath(e.Args[2]), Path.GetFullPath(e.Args[3]));
                 }
                 else if (assemblyPreview)
                 {
@@ -266,10 +289,6 @@ public partial class App : System.Windows.Application
                 {
                     await window.RenderMx251SettingsPreviewAsync(directory, Path.GetFullPath(e.Args[2]));
                 }
-                else if (stcTimingPreview)
-                {
-                    await window.RenderStcTimingPreviewAsync(directory, Path.GetFullPath(e.Args[2]));
-                }
                 else if (faultPeripheralsPreview)
                 {
                     await window.RenderFaultPeripheralsPreviewAsync(directory, Path.GetFullPath(e.Args[2]));
@@ -317,6 +336,10 @@ public partial class App : System.Windows.Application
                 else if (projectHealthPreview)
                 {
                     await window.RenderProjectHealthPreviewAsync(directory, Path.GetFullPath(e.Args[2]));
+                }
+                else if (editorUsabilityPreview)
+                {
+                    await window.RenderEditorUsabilityPreviewAsync(directory);
                 }
                 else if (helpPreview)
                 {
@@ -389,14 +412,6 @@ public partial class App : System.Windows.Application
                 else if (windowLayoutPreview)
                 {
                     await window.RenderWindowLayoutPreviewAsync(directory);
-                }
-                else if (lvglSetupPreview)
-                {
-                    await window.RenderLvglSetupPreviewAsync(directory, Path.GetFullPath(e.Args[2]), Path.GetFullPath(e.Args[3]), Path.GetFullPath(e.Args[4]));
-                }
-                else if (lvglPreview)
-                {
-                    await window.RenderLvglPreviewAsync(directory, Path.GetFullPath(e.Args[2]));
                 }
                 else if (buildMemoryPreview)
                 {
@@ -507,8 +522,15 @@ public partial class App : System.Windows.Application
                     await window.RenderPreviewAsync(directory);
                 }
             }
-            catch (Exception ex) { await File.WriteAllTextAsync(Path.Combine(directory, "error.txt"), ex.ToString()); Environment.ExitCode = 1; }
-            finally { window.Close(); }
+            catch (Exception ex)
+            {
+                await File.WriteAllTextAsync(Path.Combine(directory, "error.txt"), ex.ToString());
+                Environment.ExitCode = 1;
+            }
+            finally
+            {
+                window.Close();
+            }
             return;
         }
         if (!smoke)
@@ -588,11 +610,6 @@ public partial class App : System.Windows.Application
                 await window.OpenFromCommandLineAsync(mappingProject);
                 await window.ShowAg32PinMappingPageAsync();
             }
-            else if (e.Args is ["--open", var lvglProject, "--lvgl-preview"])
-            {
-                await window.OpenFromCommandLineAsync(lvglProject);
-                await window.ShowLvglPreviewAsync(start: true);
-            }
             else if (acceptanceWorkbench && e.Args.Length == 4)
             {
                 await window.OpenFromCommandLineAsync(e.Args[3]);
@@ -630,7 +647,14 @@ public partial class App : System.Windows.Application
             }
             await File.WriteAllTextAsync(Path.Combine(output, "result.txt"), "Window initialized; two subscribers received simulation frames; dark/light rendered.\n");
         }
-        catch (Exception ex) { await File.WriteAllTextAsync(Path.Combine(Path.GetFullPath(e.Args[1]), "error.txt"), ex.ToString()); Environment.ExitCode = 1; }
-        finally { window.Close(); }
+        catch (Exception ex)
+        {
+            await File.WriteAllTextAsync(Path.Combine(Path.GetFullPath(e.Args[1]), "error.txt"), ex.ToString());
+            Environment.ExitCode = 1;
+        }
+        finally
+        {
+            window.Close();
+        }
     }
 }

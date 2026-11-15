@@ -19,7 +19,11 @@ public partial class MainWindow
         SourceEditor.TextArea.TextView.BackgroundRenderers.Add(diagnosticRenderer);
         inactiveCode = new(SourceEditor);
         mirrorInactiveCode = new(mirrorEditor);
-        Closed += (_, _) => { inactiveCode.Dispose(); mirrorInactiveCode.Dispose(); };
+        Closed += (_, _) =>
+        {
+            inactiveCode.Dispose();
+            mirrorInactiveCode.Dispose();
+        };
     }
     private void ClearBuildDiagnostics()
     {

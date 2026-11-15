@@ -67,7 +67,10 @@ public partial class MainWindow
                 await services.PluginProjectNavigation.PrepareAsync(invalid);
                 throw new InvalidOperationException("无效入口未拒绝。");
             }
-            catch (StudioXException) { check(true, "拒绝错误版本、相对目录或日志越界"); }
+            catch (StudioXException)
+            {
+                check(true, "拒绝错误版本、相对目录或日志越界");
+            }
         }
         await services.PluginManager.SetEnabledAsync(pluginId, true);
         await ReloadPluginSessionsAsync(CancellationToken.None);

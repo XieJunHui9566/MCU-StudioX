@@ -48,7 +48,11 @@ internal static class ProgrammerPanelChecks
             {
                 action();
             }
-            catch (StudioXException) { check(true, description); return; }
+            catch (StudioXException)
+            {
+                check(true, description);
+                return;
+            }
             throw new InvalidOperationException("Expected rejection: " + description);
         }
         JsonElement Json(object data) => JsonSerializer.SerializeToElement(data, JsonStore.Options);

@@ -12,7 +12,12 @@ using StudioX.Application.OpenOcdPlot;
 public partial class OpenOcdPlotView : UserControl
 {
     private static readonly Brush[] LightPalette = new[] { "#0073AD", "#B45C00", "#007A46", "#8543BE", "#C33258", "#807000", "#007B80", "#425BB8" }
-        .Select(value => { var brush = (Brush)new BrushConverter().ConvertFromString(value)!; brush.Freeze(); return brush; }).ToArray();
+        .Select(value =>
+        {
+            var brush = (Brush)new BrushConverter().ConvertFromString(value)!;
+            brush.Freeze();
+            return brush;
+        }).ToArray();
     private OpenOcdPlotService? service;
     private readonly DispatcherTimer refresh = new() { Interval = TimeSpan.FromMilliseconds(150) };
     private Task operation = Task.CompletedTask;
@@ -26,9 +31,17 @@ public partial class OpenOcdPlotView : UserControl
         TypePicker.SelectedItem = PlotScalar.Auto;
         TypePicker.ToolTip = "Auto 按 ELF 类型识别；自定义类型别名可手动选择";
         refresh.Tick += (_, _) => RefreshView();
-        Loaded += (_, _) => { refresh.Start(); RefreshView(); };
+        Loaded += (_, _) =>
+        {
+            refresh.Start();
+            RefreshView();
+        };
         Unloaded += (_, _) => refresh.Stop();
-        Chart.ViewChanged += () => { FollowCheck.IsChecked = Chart.Follow; AutoYCheck.IsChecked = Chart.AutoY; };
+        Chart.ViewChanged += () =>
+        {
+            FollowCheck.IsChecked = Chart.Follow;
+            AutoYCheck.IsChecked = Chart.AutoY;
+        };
     }
 
     public void Attach(OpenOcdPlotService value)
@@ -49,8 +62,16 @@ public partial class OpenOcdPlotView : UserControl
         {
             await action();
         }
-        catch (Exception ex) { Notice.Text = ex.Message; Notice.ToolTip = ex.ToString(); }
-        finally { busy = false; RefreshView(); }
+        catch (Exception ex)
+        {
+            Notice.Text = ex.Message;
+            Notice.ToolTip = ex.ToString();
+        }
+        finally
+        {
+            busy = false;
+            RefreshView();
+        }
     }
     private void Add_Click(object sender, RoutedEventArgs e) => operation = RunAsync(async () =>
     {
@@ -58,9 +79,23 @@ public partial class OpenOcdPlotView : UserControl
         ExpressionInput.Clear();
         Chart.ResetView();
     });
-    private void Remove_Click(object sender, RoutedEventArgs e) => operation = RunAsync(() => { service!.Remove(ChannelsGrid.SelectedIndex); return Task.CompletedTask; });
-    private void ClearChannels_Click(object sender, RoutedEventArgs e) => operation = RunAsync(() => { service!.Clear(true); Chart.ResetView(); return Task.CompletedTask; });
-    private void ClearData_Click(object sender, RoutedEventArgs e) => operation = RunAsync(() => { service!.Clear(false); Chart.ResetView(); return Task.CompletedTask; });
+    private void Remove_Click(object sender, RoutedEventArgs e) => operation = RunAsync(() =>
+    {
+        service!.Remove(ChannelsGrid.SelectedIndex);
+        return Task.CompletedTask;
+    });
+    private void ClearChannels_Click(object sender, RoutedEventArgs e) => operation = RunAsync(() =>
+    {
+        service!.Clear(true);
+        Chart.ResetView();
+        return Task.CompletedTask;
+    });
+    private void ClearData_Click(object sender, RoutedEventArgs e) => operation = RunAsync(() =>
+    {
+        service!.Clear(false);
+        Chart.ResetView();
+        return Task.CompletedTask;
+    });
     private void Start_Click(object sender, RoutedEventArgs e) => operation = RunAsync(async () =>
     {
         if (!int.TryParse(IntervalInput.Text, out var interval))

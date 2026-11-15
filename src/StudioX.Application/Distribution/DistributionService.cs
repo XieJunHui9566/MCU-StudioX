@@ -107,7 +107,10 @@ public sealed partial class DistributionService : IDisposable
             {
                 decoded = Convert.FromBase64String(Encoding.ASCII.GetString(signature).Trim());
             }
-            catch (FormatException error) { throw new StudioXException("CATALOG_SIGNATURE", "目录签名格式无效。", error); }
+            catch (FormatException error)
+            {
+                throw new StudioXException("CATALOG_SIGNATURE", "目录签名格式无效。", error);
+            }
             if (!rsa.VerifyData(bytes, decoded, HashAlgorithmName.SHA256, RSASignaturePadding.Pss))
             {
                 throw new StudioXException("CATALOG_SIGNATURE", "目录签名与受信任发布者公钥不匹配。");

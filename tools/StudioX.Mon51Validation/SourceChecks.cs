@@ -26,7 +26,10 @@ internal static class SourceChecks
                 await action();
                 throw new InvalidOperationException("Accepted: " + name);
             }
-            catch (StudioXException ex) when (ex.Code == code) { checks.Add(name); }
+            catch (StudioXException ex) when (ex.Code == code)
+            {
+                checks.Add(name);
+            }
         }
         var project = Path.Combine(root, "source-project");
         Directory.CreateDirectory(Path.Combine(project, ".studiox"));

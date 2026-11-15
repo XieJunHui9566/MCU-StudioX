@@ -31,7 +31,10 @@ public sealed partial class ProjectHealthService(ToolsetCatalog catalog, BuildSe
             checks.Add(new("HEALTH_PROJECT", "工程身份与格式", HealthState.Passed,
                 $"{project.Name} · {project.Kind} · {project.DeviceId}\n器件包：{project.PackId} / {project.PackVersion}\n模板：{project.TemplateId}", "project-open"));
         }
-        catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+            throw;
+        }
         catch (Exception error)
         {
             checks.Add(Failure("HEALTH_PROJECT", "工程清单无法读取或不一致", "project-open", HealthAction.None, error));
@@ -301,8 +304,14 @@ public sealed partial class ProjectHealthService(ToolsetCatalog catalog, BuildSe
             {
                 checks.Add(new(code, title, HealthState.Passed, await run(), help, action, ToolsetId: id, ToolsetVersion: version));
             }
-            catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }
-            catch (Exception error) { checks.Add(Failure(code, title, help, action, error, id, version)); }
+            catch (OperationCanceledException) when (token.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception error)
+            {
+                checks.Add(Failure(code, title, help, action, error, id, version));
+            }
         }
     }
 

@@ -49,7 +49,7 @@ internal static class EspressifProjectScaffold
             "set(EXTRA_COMPONENT_DIRS \"${CMAKE_CURRENT_LIST_DIR}/src\")\n" +
             $"set(COMPONENTS {components})\n" +
             "include($ENV{IDF_PATH}/tools/cmake/project.cmake)\n" +
-            $"project({plan.Project.Name})\n";
+            $"project({ProjectName.BuildIdentifier(plan.Project.Name)})\n";
         if (settings.Framework == "esp8266-rtos-sdk")
         {
             // SDK v3.4 的组件 CMake 强制符号少了 _var；在工程链接参数中引用真实实现，保留厂商源码。

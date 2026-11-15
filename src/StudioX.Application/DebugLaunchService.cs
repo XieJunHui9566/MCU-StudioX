@@ -77,7 +77,10 @@ public sealed class DebugLaunchService(DebugSessionService debugger, OpenOcdServ
             Changed?.Invoke();
             throw;
         }
-        finally { Interlocked.Exchange(ref connecting, 0); }
+        finally
+        {
+            Interlocked.Exchange(ref connecting, 0);
+        }
     }
 
     private void Set(DebugStartupProgress value)

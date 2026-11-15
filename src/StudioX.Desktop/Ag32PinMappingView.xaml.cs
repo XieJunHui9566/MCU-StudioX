@@ -19,8 +19,8 @@ public partial class Ag32PinMappingView : UserControl
     public void SetState(bool enabled, bool customLogic, bool busy, string details, bool missingSource = false)
     {
         DescriptionText.Text = customLogic
-            ? "顶部编译会联合构建 MCU 固件和自定义 FPGA 位流；点击下载后写入两段镜像并分别校验。可配置 Verilog 源文件与 SDC，并运行 RTL testbench 查看波形。Supra 需配置本机有效许可。"
-            : "C 代码操作内部 GPIO；编辑 .ve 绑定封装引脚。点击顶部“编译”同时生成固件与映射镜像，点击顶部“下载”直接写入两份镜像并校验。基础映射无需 Quartus，Supra 需要有效厂商许可；许可只保存到本机用户目录。";
+            ? "联合构建 MCU 固件与 FPGA 位流；需配置 Supra 许可。"
+            : "编译与下载包含固件和引脚映射；需配置 Supra 许可。";
         StatusText.Text = details;
         EnableButton.Visibility = (!enabled || missingSource) && !customLogic ? Visibility.Visible : Visibility.Collapsed;
         EnableButton.Content = enabled && missingSource ? "恢复 .ve 模板" : "启用基础映射";

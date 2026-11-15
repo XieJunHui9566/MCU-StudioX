@@ -1,6 +1,7 @@
 namespace StudioX.Desktop;
 
 using System.Windows.Threading;
+using StudioX.Application.Serial;
 using StudioX.Application.StcDebugging;
 using StudioX.Engine;
 using StudioX.Foundation;
@@ -54,6 +55,10 @@ public partial class MainWindow
             await ShowMon51PortSettingsAsync();
             return;
         }
+        if (!await RequireStcSerialPortAsync(root, settings.Port, SerialTerminalService.ListPortsAsync, token))
+        {
+            return;
+        }
         await SaveAllSourcesAsync(root, token);
         await PersistBreakpointLinesAsync();
         ApplyBuildSettings(await services.StcBuilds.PrepareDebugAsync(root, token));
@@ -87,7 +92,9 @@ public partial class MainWindow
             return preparation;
         }, progress, token, (prepared, cancel) => RunStcDownloadWithOutputAsync(prepared,
             (output, downloadToken) => services.Mon51Setup.ExecuteAsync(prepared, output, downloadToken), cancel));
-        await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Background);
+        await Dispatcher.InvokeAsync(() =>
+        {
+        }, DispatcherPriority.Background);
         RefreshDebugUi();
         if (result == Mon51LaunchResult.PortRequired)
         {
@@ -101,9 +108,7 @@ public partial class MainWindow
 
     private async Task ShowMon51PortSettingsAsync()
     {
-        await ShowStcDownloadSettingsAsync(RequireProject(), CancellationToken.None);
-        StcPortPicker.BringIntoView();
-        StcPortPicker.Focus();
-        StcIspStatus.Text = Status.Text = "请选择并保存下载串口；串口仿真复用此串口和传输波特率，然后再次点击调试。";
+        await ShowStcDownloadIssueAsync(RequireProject(),
+            "请选择并保存下载串口；串口仿真复用此串口和传输波特率，然后再次点击调试。", true, CancellationToken.None);
     }
 }

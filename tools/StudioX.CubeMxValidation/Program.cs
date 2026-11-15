@@ -3,10 +3,19 @@ using StudioX.Application;
 using StudioX.Engine;
 using StudioX.Foundation;
 
-if (args is ["--boundaries", var checkRuntime, var checkDirectory]) { return await BoundaryChecks.RunAsync(checkRuntime, checkDirectory); }
-if (args is not [var runtime, var source, var destination, var preset]) { return 2; }
+if (args is ["--boundaries", var checkRuntime, var checkDirectory])
+{
+    return await BoundaryChecks.RunAsync(checkRuntime, checkDirectory);
+}
+if (args is not [var runtime, var source, var destination, var preset])
+{
+    return 2;
+}
 var root = Path.GetFullPath(destination);
-if (Directory.Exists(root)) { throw new InvalidOperationException("Use a new validation directory."); }
+if (Directory.Exists(root))
+{
+    throw new InvalidOperationException("Use a new validation directory.");
+}
 var fixture = Path.Combine(root, "project with spaces");
 var hashes = new Dictionary<string, string>();
 void Copy(string directory)
@@ -38,19 +47,33 @@ await using var workbench = new WorkbenchService(runtime, Path.Combine(root, "us
 var inspection = await workbench.CubeMx.InspectAsync(fixture);
 Console.WriteLine($"Detected {inspection.Name} / {inspection.Device}: {string.Join(", ", inspection.ConfigurePresets)}");
 var project = await workbench.CubeMx.ImportAsync(fixture, preset);
-if ((await ProjectService.ReadAsync(fixture)) != project) { throw new InvalidOperationException("Import/reopen metadata differs."); }
+if ((await ProjectService.ReadAsync(fixture)) != project)
+{
+    throw new InvalidOperationException("Import/reopen metadata differs.");
+}
 var metadata = await File.ReadAllTextAsync(Path.Combine(fixture, ".studiox/project.json"));
 try
 {
     await workbench.CubeMx.ImportAsync(fixture, preset);
     throw new InvalidOperationException("Duplicate import overwrote metadata.");
 }
-catch (IOException) { }
-if (metadata != await File.ReadAllTextAsync(Path.Combine(fixture, ".studiox/project.json"))) { throw new InvalidOperationException("Metadata changed."); }
-if (await workbench.Downloads.ConfigurationAsync(fixture) is not { OpenOcd.Probes.Count: 3 }) { throw new InvalidOperationException("STM32 download profiles missing."); }
+catch (IOException)
+{
+}
+if (metadata != await File.ReadAllTextAsync(Path.Combine(fixture, ".studiox/project.json")))
+{
+    throw new InvalidOperationException("Metadata changed.");
+}
+if (await workbench.Downloads.ConfigurationAsync(fixture) is not { OpenOcd.Probes.Count: 3 })
+{
+    throw new InvalidOperationException("STM32 download profiles missing.");
+}
 var result = await workbench.Builds.BuildAsync(fixture, new InlineProgress(Console.WriteLine));
 await File.WriteAllTextAsync(Path.Combine(root, "build.log"), result.Log);
-if (!result.Success) { throw new InvalidOperationException(result.Log); }
+if (!result.Success)
+{
+    throw new InvalidOperationException(result.Log);
+}
 if (!result.Artifacts.Any(path => path.EndsWith(inspection.Name + ".elf", StringComparison.Ordinal)) || result.Artifacts.Any(path => !File.Exists(path)))
 {
     throw new InvalidOperationException("Original firmware target not reported.");
@@ -67,7 +90,10 @@ if (hover is null || locations.Count == 0 || !locations.Any(location => location
 }
 var completeText = text + "\nvoid studiox_completion_check(void) { HAL_GPIO_Wri }\n";
 var completion = await workbench.Intelligence.CompleteAsync("Core/Src/main.c", completeText, completeText.IndexOf("HAL_GPIO_Wri", StringComparison.Ordinal) + "HAL_GPIO_Wri".Length);
-if (!completion.Any(item => item.Label.Contains("HAL_GPIO_WritePin", StringComparison.Ordinal))) { throw new InvalidOperationException("HAL completion failed."); }
+if (!completion.Any(item => item.Label.Contains("HAL_GPIO_WritePin", StringComparison.Ordinal)))
+{
+    throw new InvalidOperationException("HAL completion failed.");
+}
 foreach (var (path, hash) in hashes)
 {
     if (Convert.ToHexString(SHA256.HashData(await File.ReadAllBytesAsync(Path.Combine(fixture, path)))) != hash)
@@ -77,7 +103,10 @@ foreach (var (path, hash) in hashes)
 }
 var second = await workbench.Builds.BuildAsync(fixture, new InlineProgress(Console.WriteLine));
 await File.WriteAllTextAsync(Path.Combine(root, "incremental.log"), second.Log);
-if (!second.Success) { throw new InvalidOperationException(second.Log); }
+if (!second.Success)
+{
+    throw new InvalidOperationException(second.Log);
+}
 if (second.Log.Contains("compiler identification", StringComparison.Ordinal))
 {
     throw new InvalidOperationException("Repeated configure did not reuse the compiler cache.");

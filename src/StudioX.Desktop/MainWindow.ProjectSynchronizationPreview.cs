@@ -99,7 +99,10 @@ public partial class MainWindow
             await SaveEditorAsync(project, main, CancellationToken.None);
             throw new InvalidOperationException("External disk content overwritten.");
         }
-        catch (StudioXException error) when (error.Code == "EDITOR_FILE_CHANGED") { Check(true, "saving a conflicting buffer refuses disk overwrite"); }
+        catch (StudioXException error) when (error.Code == "EDITOR_FILE_CHANGED")
+        {
+            Check(true, "saving a conflicting buffer refuses disk overwrite");
+        }
         Check(await FindProjectNodeAsync(".build") is null, "fresh tree has no generated output directory");
         Directory.CreateDirectory(Path.Combine(project, ".build/compiler/latest"));
         await File.WriteAllTextAsync(Path.Combine(project, ".build/compiler/latest/firmware.hex"), "offline output fixture\n");
@@ -164,7 +167,10 @@ public partial class MainWindow
             await SaveEditorAsync(project, added, CancellationToken.None);
             throw new InvalidOperationException("Reappeared file overwritten.");
         }
-        catch (IOException) { Check(true, "deleted-file recovery cannot overwrite a file that reappears"); }
+        catch (IOException)
+        {
+            Check(true, "deleted-file recovery cannot overwrite a file that reappears");
+        }
         await Wait(() => !added.Source.IsMissing && added.DiskConflict is not null);
         Check(added.Buffer.Text == addedText && await File.ReadAllTextAsync(Path.Combine(project, "src/新增.c")) == "int other_owner;\n",
             "different reappeared file preserves both the recovery draft and its new disk contents");

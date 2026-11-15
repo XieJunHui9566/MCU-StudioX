@@ -24,7 +24,9 @@ public partial class MainWindow
         async Task DrainAsync()
         {
             // 含最后一行的进程回调先于最终结论呈现，异常退出也保留不带换行的尾部。
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Background);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.Background);
             if (lines.Flush() is { } tail)
             {
                 ToolLine(tail);
@@ -33,8 +35,18 @@ public partial class MainWindow
         try
         {
             var report = await operation(
-                new Progress<string>(text => { Status.Text = text; ReportBuildActivity(text); }),
-                new Progress<string>(text => { foreach (var line in lines.Append(text)) { ToolLine(line); } }));
+                new Progress<string>(text =>
+                {
+                    Status.Text = text;
+                    ReportBuildActivity(text);
+                }),
+                new Progress<string>(text =>
+                {
+                    foreach (var line in lines.Append(text))
+                    {
+                        ToolLine(line);
+                    }
+                }));
             await DrainAsync();
             var message = summary(report);
             Log(message);

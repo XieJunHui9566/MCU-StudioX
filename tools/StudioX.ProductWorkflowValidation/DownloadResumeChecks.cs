@@ -22,7 +22,10 @@ internal static class DownloadResumeChecks
                 await interrupted.DownloadAsync(listing, item);
                 check(false, "interrupted transfer");
             }
-            catch (IOException) { check(interrupted.DownloadState(item).SavedBytes == 131072, "network interruption preserves exact downloaded bytes"); }
+            catch (IOException)
+            {
+                check(interrupted.DownloadState(item).SavedBytes == 131072, "network interruption preserves exact downloaded bytes");
+            }
         }
         var handler = new Handler(bytes);
         using (var resumed = new DistributionService(folder, handler))
@@ -43,7 +46,9 @@ internal static class DownloadResumeChecks
                 {
                     await interrupted.DownloadAsync(listing, item);
                 }
-                catch (IOException) { }
+                catch (IOException)
+                {
+                }
             }
             var next = new Handler(bytes) { Mode = mode };
             using var service = new DistributionService(data, next);
@@ -69,10 +74,19 @@ internal static class DownloadResumeChecks
             using var cancel = new CancellationTokenSource();
             try
             {
-                await service.DownloadAsync(listing, item, new CallbackProgress(text => { if (text.StartsWith("下载 ", StringComparison.Ordinal)) { cancel.Cancel(); } }), cancel.Token);
+                await service.DownloadAsync(listing, item, new CallbackProgress(text =>
+                {
+                    if (text.StartsWith("下载 ", StringComparison.Ordinal))
+                    {
+                        cancel.Cancel();
+                    }
+                }), cancel.Token);
                 check(false, "cancel transfer");
             }
-            catch (OperationCanceledException) { check(service.DownloadState(item).SavedBytes == 1024 * 1024, "explicit cancel retains completed writes"); }
+            catch (OperationCanceledException)
+            {
+                check(service.DownloadState(item).SavedBytes == 1024 * 1024, "explicit cancel retains completed writes");
+            }
             var required = service.SpacePlan(item, root).Sum(p => p.RequiredBytes);
             check(required == DistributionService.RequiredFreeBytes(item) - 1024 * 1024, "space preview accounts for bytes already stored while retaining install staging allowance");
             await service.DownloadAsync(listing, item);
@@ -83,9 +97,18 @@ internal static class DownloadResumeChecks
             using var cancel = new CancellationTokenSource();
             try
             {
-                await service.DownloadAsync(listing, item, new CallbackProgress(t => { if (t.Contains("正在校验 SHA-256", StringComparison.Ordinal)) { cancel.Cancel(); } }), cancel.Token);
+                await service.DownloadAsync(listing, item, new CallbackProgress(t =>
+                {
+                    if (t.Contains("正在校验 SHA-256", StringComparison.Ordinal))
+                    {
+                        cancel.Cancel();
+                    }
+                }), cancel.Token);
             }
-            catch (OperationCanceledException) { check(service.DownloadState(item).SavedBytes == bytes.Length && !service.DownloadState(item).Complete, "cancellation before hash does not publish unverified cache"); }
+            catch (OperationCanceledException)
+            {
+                check(service.DownloadState(item).SavedBytes == bytes.Length && !service.DownloadState(item).Complete, "cancellation before hash does not publish unverified cache");
+            }
             await service.DownloadAsync(listing, item);
             check(service.DownloadState(item).Complete, "fully stored partial is reverified without an out-of-range request");
         }
@@ -124,7 +147,10 @@ internal static class DownloadResumeChecks
             await action();
             check(false, label);
         }
-        catch (StudioXException error) { check(error.Code == code, label); }
+        catch (StudioXException error)
+        {
+            check(error.Code == code, label);
+        }
     }
     private sealed class CallbackProgress(Action<string> report) : IProgress<string>
     {

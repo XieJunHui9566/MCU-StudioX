@@ -44,7 +44,12 @@ public partial class BreakpointWindow : Window
             ErrorLabel.Text = "";
             return true;
         }
-        catch (ArgumentException ex) { Options = null; ErrorLabel.Text = ex.Message; return false; }
+        catch (ArgumentException ex)
+        {
+            Options = null;
+            ErrorLabel.Text = ex.Message;
+            return false;
+        }
     }
     private void Accept_Click(object sender, RoutedEventArgs e)
     {

@@ -62,7 +62,9 @@ public partial class MainWindow
         using (var cancellation = new CancellationTokenSource())
         {
             var pending = RequestAiMcpApprovalAsync(new(fixture, "test_hardware_gate_only", "只测试卡片，不连接设备", StudioXMcpPermission.HardwareConnect), aiProjectGeneration, cancellation.Token);
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ContextIdle);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.ContextIdle);
             Check(!pending.IsCompleted && AiTranscriptItems.Children.Count == count + 1, "project authorization still asks for hardware access");
             cancellation.Cancel();
             Check(!await pending && AiTranscriptItems.Children.Count == count, "cancel removes pending approval and denies operation");
@@ -78,14 +80,18 @@ public partial class MainWindow
         {
             ApplyTheme(theme);
             UpdateLayout();
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.Render);
             Render(this, Path.Combine(directory, "agent-changes-" + theme.Id + ".png"));
         }
         ApplyTheme(ThemeService.Dark);
         Width = 1100;
         Height = 760;
         UpdateLayout();
-        await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+        await Dispatcher.InvokeAsync(() =>
+        {
+        }, DispatcherPriority.Render);
         Render(this, Path.Combine(directory, "agent-compact.png"));
         Check(AgentAccessPicker.IsVisible && AgentAccessPicker.ActualWidth > 100 && agentChangesView!.ActualWidth > 350 && agentChangesView.RowDefinitions[2].ActualHeight > 100, "mode picker and stacked review fit compact window");
         await File.WriteAllTextAsync(Path.Combine(directory, "result.txt"), "PASS " + checks.Count + "\n" + string.Join('\n', checks));

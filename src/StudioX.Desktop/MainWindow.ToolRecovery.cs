@@ -83,12 +83,28 @@ public partial class MainWindow
                 running = false;
                 window.Close();
             }
-            catch (Exception error) { detail.Text = FailureDiagnostic(error); Log(detail.Text); }
-            finally { running = false; actions.IsEnabled = selected.CanRecover; restorePrevious.IsEnabled = true; list.IsEnabled = true; }
+            catch (Exception error)
+            {
+                detail.Text = FailureDiagnostic(error);
+                Log(detail.Text);
+            }
+            finally
+            {
+                running = false;
+                actions.IsEnabled = selected.CanRecover;
+                restorePrevious.IsEnabled = true;
+                list.IsEnabled = true;
+            }
         }
         actions.Click += async (_, _) => await RecoverSelectedAsync(false);
         restorePrevious.Click += async (_, _) => await RecoverSelectedAsync(true);
-        window.Closing += (_, args) => { if (running) { args.Cancel = true; } };
+        window.Closing += (_, args) =>
+        {
+            if (running)
+            {
+                args.Cancel = true;
+            }
+        };
         list.SelectedIndex = 0;
         window.ShowDialog();
         await RefreshToolManagementAsync(token);

@@ -9,7 +9,6 @@ public partial class ToolManagementView : UserControl
     public ToolManagementView()
     {
         InitializeComponent();
-        SizeChanged += (_, _) => DescriptionText.Visibility = ActualHeight < 500 ? Visibility.Collapsed : Visibility.Visible;
     }
     public ToolManagementReport? Report
     {

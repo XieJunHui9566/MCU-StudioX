@@ -31,7 +31,11 @@ internal partial class ProgrammerCalculatorView
         }
         if (!previewTimerAttached)
         {
-            previewTimer.Tick += (_, _) => { previewTimer.Stop(); _ = SendAsync("preview"); };
+            previewTimer.Tick += (_, _) =>
+            {
+                previewTimer.Stop();
+                _ = SendAsync("preview");
+            };
             previewTimerAttached = true;
         }
         previewTimer.Stop();
@@ -87,7 +91,12 @@ internal partial class ProgrammerCalculatorView
             }
             return input.Completion.Task;
         }
-        catch (Exception error) { diagnostic(error.ToString()); StatusText.Text = error.Message; return Task.CompletedTask; }
+        catch (Exception error)
+        {
+            diagnostic(error.ToString());
+            StatusText.Text = error.Message;
+            return Task.CompletedTask;
+        }
     }
 
     private async Task PumpAsync()
@@ -136,8 +145,16 @@ internal partial class ProgrammerCalculatorView
                     }
                     consumedRevision = input.Revision;
                 }
-                catch (Exception error) { lastSucceeded = false; diagnostic(error.ToString()); StatusText.Text = error is OperationCanceledException ? "计算器响应超时或会话已结束，可继续编辑。" : error.Message; }
-                finally { input.Completion.TrySetResult(); }
+                catch (Exception error)
+                {
+                    lastSucceeded = false;
+                    diagnostic(error.ToString());
+                    StatusText.Text = error is OperationCanceledException ? "计算器响应超时或会话已结束，可继续编辑。" : error.Message;
+                }
+                finally
+                {
+                    input.Completion.TrySetResult();
+                }
             }
         }
         finally

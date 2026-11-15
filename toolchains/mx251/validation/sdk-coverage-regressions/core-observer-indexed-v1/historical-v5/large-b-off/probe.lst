@@ -1,0 +1,165 @@
+                                      1 ;--------------------------------------------------------
+                                      2 ; File Created by SDCC : free open source ISO C Compiler
+                                      3 ; Version 4.6.0 #0 (MINGW64)
+                                      4 ;--------------------------------------------------------
+                                      5 	.module probe
+                                      6 	
+                                      7 	.optsdcc -mmcs251 --model-large
+                                      8 ;--------------------------------------------------------
+                                      9 ; Public variables in this module
+                                     10 ;--------------------------------------------------------
+                                     11 	.globl ___m251r4_f
+                                     12 	.globl _observer
+                                     13 	.globl _io
+                                     14 ;--------------------------------------------------------
+                                     15 ; special function registers
+                                     16 ;--------------------------------------------------------
+                                     17 	.area RSEG    (ABS,DATA)
+      000000                         18 	.org 0x0000
+                           0000B1    19 _io	=	0x00b1
+                           0000F0    20 _observer	=	0x00f0
+                                     21 ;--------------------------------------------------------
+                                     22 ; special function bits
+                                     23 ;--------------------------------------------------------
+                                     24 	.area RSEG    (ABS,DATA)
+      000000                         25 	.org 0x0000
+                                     26 ;--------------------------------------------------------
+                                     27 ; overlayable register banks
+                                     28 ;--------------------------------------------------------
+                                     29 	.area REG_BANK_0	(REL,OVR,DATA)
+      000000                         30 	.ds 8
+                                     31 ;--------------------------------------------------------
+                                     32 ; internal ram data
+                                     33 ;--------------------------------------------------------
+                                     34 	.area DSEG    (DATA)
+                                     35 ;--------------------------------------------------------
+                                     36 ; overlayable items in internal ram
+                                     37 ;--------------------------------------------------------
+                                     38 ;--------------------------------------------------------
+                                     39 ; indirectly addressable internal ram data
+                                     40 ;--------------------------------------------------------
+                                     41 	.area ISEG    (DATA)
+                                     42 ;--------------------------------------------------------
+                                     43 ; absolute internal ram data
+                                     44 ;--------------------------------------------------------
+                                     45 	.area IABS    (ABS,DATA)
+                                     46 	.area IABS    (ABS,DATA)
+                                     47 ;--------------------------------------------------------
+                                     48 ; bit data
+                                     49 ;--------------------------------------------------------
+                                     50 	.area BSEG    (BIT)
+                                     51 ;--------------------------------------------------------
+                                     52 ; paged external ram data
+                                     53 ;--------------------------------------------------------
+                                     54 	.area PSEG    (PAG,XDATA)
+                                     55 ;--------------------------------------------------------
+                                     56 ; uninitialized external ram data
+                                     57 ;--------------------------------------------------------
+                                     58 	.area XSEG    (XDATA)
+                                     59 ;--------------------------------------------------------
+                                     60 ; absolute external ram data
+                                     61 ;--------------------------------------------------------
+                                     62 	.area XABS    (ABS,XDATA)
+                                     63 ;--------------------------------------------------------
+                                     64 ; initialized external ram data
+                                     65 ;--------------------------------------------------------
+                                     66 	.area XISEG   (XDATA)
+                                     67 	.area HOME    (CODE)
+                                     68 	.area GSINIT0 (CODE)
+                                     69 	.area GSINIT1 (CODE)
+                                     70 	.area GSINIT2 (CODE)
+                                     71 	.area GSINIT3 (CODE)
+                                     72 	.area GSINIT4 (CODE)
+                                     73 	.area GSINIT5 (CODE)
+                                     74 	.area GSINIT  (CODE)
+                                     75 	.area GSFINAL (CODE)
+                                     76 	.area CSEG    (CODE)
+                                     77 ;--------------------------------------------------------
+                                     78 ; global & static initialisations
+                                     79 ;--------------------------------------------------------
+                                     80 	.area HOME    (CODE)
+                                     81 	.area GSINIT  (CODE)
+                                     82 	.area GSFINAL (CODE)
+                                     83 	.area GSINIT  (CODE)
+                                     84 ;--------------------------------------------------------
+                                     85 ; Home
+                                     86 ;--------------------------------------------------------
+                                     87 	.area HOME    (CODE)
+                                     88 	.area HOME    (CODE)
+                                     89 ;--------------------------------------------------------
+                                     90 ; code
+                                     91 ;--------------------------------------------------------
+                                     92 	.area CSEG    (CODE)
+                                     93 ; wide capacity function=f value-limit=128 node-limit=512 storage-values=512 storage-nodes=2048
+                                     94 ; wide imported function=f values=13 nodes=21 objects=0 frame=0
+                                     95 ; wide loop-cost kind=native-indexed-field function=f decision=1 legacy-fallback=0
+                                     96 ; wide indexed-field flags-known=1 emitted-sites=1
+                                     97 ; wide native-indexed-field choice function=f sites=1 selected=1 original-result=1 trial-result=1 old-bytes=66 new-bytes=57 old-unknown=0 new-unknown=0 old-weighted=24 new-weighted=21 old-frame=0 new-frame=0 old-spills=0 new-spills=0
+                                     98 ; wide pointer-copy indexed-old ; wide candidate-cost function=f id=0 heuristic=24 spills=0 base=1 original=1
+                                     99 ; wide pointer-copy indexed-old ; wide candidate function=f id=0 success=1 instructions=24 bytes=66 unknown=0 frame=0 text-fnv=f6768331 instruction-winner=0 selected=0
+                                    100 ; wide pointer-copy indexed-old ; wide allocation selected=0 candidates=1 heuristic=24 instructions=24 frame=0
+                                    101 ; wide pointer-copy indexed-old ; wide cost objective=weighted-instructions known-bytes=66 unknown=0 group-known=1
+                                    102 ; wide candidate-cost function=f id=0 heuristic=21 spills=0 base=1 original=1
+                                    103 ; wide candidate function=f id=0 success=1 instructions=21 bytes=57 unknown=0 frame=0 text-fnv=370634cb instruction-winner=0 selected=0
+                                    104 ; wide allocation selected=0 candidates=1 heuristic=21 instructions=21 frame=0
+                                    105 ; wide cost objective=weighted-instructions known-bytes=57 unknown=0 group-known=1
+                                    106 
+                                    107 ; mcs251 wide-mir accepted: f; values=13 nodes=21 frame=0 folded-casts=0
+      000000                        108 ___m251r4_f:
+                                    109 ; wide v0 iTemp1 width=4 reg=12 slot=-1 edges=0000000000000000:00000000000000fe
+                                    110 ; wide v1 iTemp3 width=4 reg=4 slot=-1 edges=0000000000000000:000000000000001d
+                                    111 ; wide v2 iTemp4 width=2 reg=24 slot=-1 edges=0000000000000000:0000000000000003
+                                    112 ; wide v3 iTemp5 width=1 reg=9 slot=-1 edges=0000000000000000:0000000000000003
+                                    113 ; wide v4 io width=1 reg=9 slot=-1 edges=0000000000000000:0000000000000003
+                                    114 ; wide v5 iTemp8 width=2 reg=6 slot=-1 edges=0000000000000000:0000000000000001
+                                    115 ; wide v6 iTemp9 width=1 reg=9 slot=-1 edges=0000000000000000:0000000000000001
+                                    116 ; wide v7 io width=1 reg=9 slot=-1 edges=0000000000000000:0000000000000001
+                                    117 ; wide v8 iTemp11 width=4 reg=4 slot=-1 edges=0000000000000000:0000000000000000
+                                    118 ; wide v9 iTemp12 width=1 reg=9 slot=-1 edges=0000000000000000:0000000000000000
+                                    119 ; wide v10 iTemp13 width=1 reg=9 slot=-1 edges=0000000000000000:0000000000000000
+                                    120 ; wide v11 io width=1 reg=9 slot=-1 edges=0000000000000000:0000000000000000
+                                    121 ; wide v12 observer width=1 reg=7 slot=-1 edges=0000000000000000:0000000000000000
+      000000                        122 __wm____m251r4_f_2:
+      000000 5E 64 00 FF      [12]  123 	anl	wr12,#0x00ff
+      000004 7F 13            [12]  124 	mov	dr4,dr12
+      000006 0B 1E            [12]  125 	inc	dr4,#4
+      000008 5E 24 00 FF      [12]  126 	anl	wr4,#0x00ff
+                                    127 ; wide memory load width=2 volatile-bytes=0
+      00000C 0B 1A C0         [12]  128 	mov	wr24,@dr4
+                                    129 ; wide getbyte offset=1 width=2
+                                    130 ; wide getbyte path=upper reg=24 index=0
+      00000F 7D 5C            [12]  131 	mov	wr10,wr24
+      000011 7E 91 F0         [12]  132 	mov	r9,b
+                                    133 ; wide byte copy
+                                    134 ; wide symbol store _io width=1 volatile=1
+      000014 7A 91 B1         [12]  135 	mov	(_io+0),r9
+                                    136 ; wide memory load width=2 volatile-bytes=0
+      000017 0B 1A A0         [12]  137 	mov	wr20,@dr4
+      00001A 7D 3A            [12]  138 	mov	wr6,wr20
+      00001C 7C 97            [12]  139 	mov	r9,r7
+                                    140 ; wide byte copy
+                                    141 ; wide symbol store _io width=1 volatile=1
+      00001E 7A 91 B1         [12]  142 	mov	(_io+0),r9
+                                    143 ; wide native-indexed-field flags=15 key=16 ordinal=2 extent=7 offset=6 base=12
+      000021 29 93 00 06      [12]  144 	mov	r9,@dr12+6
+                                    145 ; wide byte compare signed=0
+      000025 BE 90 07         [24]  146 	cmp	r9,#0x07
+      000028 68 05            [12]  147 	je	__wm____m251r4_f_1000000
+                                    148 ; wide byte boolean
+      00002A 7E 90 00         [12]  149 	mov	r9,#0
+      00002D 80 03            [24]  150 	sjmp	__wm____m251r4_f_1000001
+      00002F                        151 __wm____m251r4_f_1000000:
+      00002F 7E 90 01         [12]  152 	mov	r9,#1
+      000032                        153 __wm____m251r4_f_1000001:
+                                    154 ; wide byte copy
+                                    155 ; wide symbol store _io width=1 volatile=1
+      000032 7A 91 B1         [12]  156 	mov	(_io+0),r9
+                                    157 ; wide symbol load _observer width=1 volatile=1
+      000035 7E 71 F0         [12]  158 	mov	r7,(_observer+0)
+      000038 AA               [24]  159 	eret
+      000039                        160 __wm____m251r4_f_1:
+                                    161 ; mx251-effects schema=1 function=___m251r4_f abi=4 complete=0 reads=ffffffff writes=ffffffff specialReads=ffffffff specialWrites=ffffffff flagsReads=ffffffff flagsWrites=ffffffff memory=3 instructions=21 unknown=7 calls=0
+                                    162 	.area CSEG    (CODE)
+                                    163 	.area CONST   (CODE)
+                                    164 	.area XINIT   (CODE)
+                                    165 	.area CABS    (ABS,CODE)

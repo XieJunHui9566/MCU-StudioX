@@ -28,7 +28,10 @@ internal static class AiWorkspaceChangePolicy
             return call.Name == "git_branch" ? action.GetString() is "switch" or "merge"
                 : action.GetString() == "pull";
         }
-        catch (JsonException) { return false; }
+        catch (JsonException)
+        {
+            return false;
+        }
     }
 
 }

@@ -7,7 +7,9 @@ using StudioX.Foundation;
 public sealed partial class PeripheralDevelopmentService
 {
     private readonly IReadOnlyList<IPeripheralDevelopmentProvider> providers;
-    public PeripheralDevelopmentService(ToolsetCatalog tools) : this([new EspIdfPeripheralProvider(tools)]) { }
+    public PeripheralDevelopmentService(ToolsetCatalog tools) : this([new EspIdfPeripheralProvider(tools)])
+    {
+    }
     public PeripheralDevelopmentService(IReadOnlyList<IPeripheralDevelopmentProvider> providers) => this.providers = providers.ToArray();
 
     public Task<PeripheralDevelopmentContext> ReadAsync(string directory, CancellationToken token = default) => Task.Run(async () =>

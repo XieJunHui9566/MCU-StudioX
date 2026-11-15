@@ -30,14 +30,27 @@ else
     return 2;
 }
 var root = Path.GetFullPath(output);
-if (Directory.Exists(root)) { throw new InvalidOperationException("Use a new output directory."); }
+if (Directory.Exists(root))
+{
+    throw new InvalidOperationException("Use a new output directory.");
+}
 Directory.CreateDirectory(root);
 var catalog = new ToolsetCatalog(Path.Combine(runtime, "toolsets"));
 var downloads = new OpenOcdService(catalog);
 var builds = new BuildService(catalog);
 var passed = new List<string>();
-void Pass(string text) { passed.Add(text); Console.WriteLine("PASS " + text); }
-void Check(bool value, string text) { if (!value) { throw new InvalidOperationException(text); } }
+void Pass(string text)
+{
+    passed.Add(text);
+    Console.WriteLine("PASS " + text);
+}
+void Check(bool value, string text)
+{
+    if (!value)
+    {
+        throw new InvalidOperationException(text);
+    }
+}
 async Task Reject(Func<Task> action, string code)
 {
     try
@@ -45,7 +58,10 @@ async Task Reject(Func<Task> action, string code)
         await action();
         throw new InvalidOperationException("Expected rejection: " + code);
     }
-    catch (StudioXException ex) when (ex.Code == code) { Pass("reject " + code); }
+    catch (StudioXException ex) when (ex.Code == code)
+    {
+        Pass("reject " + code);
+    }
 }
 
 if (nativeF407Only)
@@ -115,7 +131,10 @@ async Task BuildAndPrepare(string project, bool cube)
             await File.AppendAllTextAsync(sourceFile, "\n/* stale build preview check */\n");
             await Reject(() => downloads.PreviewAsync(project, config.Options), "DOWNLOAD_BUILD");
         }
-        finally { await File.WriteAllTextAsync(sourceFile, originalSource); }
+        finally
+        {
+            await File.WriteAllTextAsync(sourceFile, originalSource);
+        }
     }
     await Reject(() => downloads.DownloadApprovedAsync(project, config.Options,
         config.Device.Id, new string('0', 64)), "DOWNLOAD_APPROVAL_CHANGED");
@@ -217,7 +236,11 @@ async Task ImageBoundaries(string project)
         await File.WriteAllTextAsync(receiptPath, multi.ToJsonString(JsonStore.Options));
         await Reject(() => downloads.PrepareAsync(project, config.Options), "DOWNLOAD_TARGET");
     }
-    finally { await File.WriteAllBytesAsync(plan.SourceImage, original); await File.WriteAllTextAsync(receiptPath, receiptText); }
+    finally
+    {
+        await File.WriteAllBytesAsync(plan.SourceImage, original);
+        await File.WriteAllTextAsync(receiptPath, receiptText);
+    }
     var manifestPath = Path.Combine(project, ".studiox/project.json");
     var manifest = await ProjectService.ReadAsync(project);
     await JsonStore.WriteAsync(manifestPath, manifest with
@@ -240,7 +263,10 @@ async Task ImageBoundaries(string project)
         Check(!(await builds.BuildAsync(project)).Success, "Broken build succeeded");
         await Reject(() => downloads.PrepareAsync(project, config.Options), "DOWNLOAD_BUILD");
     }
-    finally { await File.WriteAllTextAsync(main, source); }
+    finally
+    {
+        await File.WriteAllTextAsync(main, source);
+    }
     using (var cancelled = new CancellationTokenSource())
     {
         try
@@ -248,7 +274,9 @@ async Task ImageBoundaries(string project)
             await builds.BuildAsync(project, new InlineProgress(_ => cancelled.Cancel()), cancelled.Token);
             throw new InvalidOperationException("Cancelled build succeeded");
         }
-        catch (OperationCanceledException) { }
+        catch (OperationCanceledException)
+        {
+        }
         await Reject(() => downloads.PrepareAsync(project, config.Options), "DOWNLOAD_BUILD");
     }
     Check((await builds.BuildAsync(project)).Success, "Recovery build failed");

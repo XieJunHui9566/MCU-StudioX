@@ -66,8 +66,12 @@ internal static class ProcessChecks
                             throw new InvalidOperationException("Expected timeout or original observer exception.");
                         }
                     }
-                    catch (Exception error) when (mode.StartsWith("observer", StringComparison.Ordinal) && ReferenceEquals(error, expected)) { }
-                    catch (OperationCanceledException) when (mode == "cancel" && cancellation.IsCancellationRequested) { }
+                    catch (Exception error) when (mode.StartsWith("observer", StringComparison.Ordinal) && ReferenceEquals(error, expected))
+                    {
+                    }
+                    catch (OperationCanceledException) when (mode == "cancel" && cancellation.IsCancellationRequested)
+                    {
+                    }
                     if (ids.Any(IsRunning))
                     {
                         throw new InvalidOperationException("Tool failure left its owned process tree running: " + mode);
@@ -89,15 +93,23 @@ internal static class ProcessChecks
                                 await process.WaitForExitAsync();
                             }
                         }
-                        catch (ArgumentException) { }
-                        catch (InvalidOperationException) { }
+                        catch (ArgumentException)
+                        {
+                        }
+                        catch (InvalidOperationException)
+                        {
+                        }
                     }
                     try
                     {
                         await run;
                     }
-                    catch (Exception error) when (ReferenceEquals(error, expected)) { }
-                    catch (OperationCanceledException) when (cancellation.IsCancellationRequested) { }
+                    catch (Exception error) when (ReferenceEquals(error, expected))
+                    {
+                    }
+                    catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
+                    {
+                    }
                 }
             }
         }
@@ -110,7 +122,10 @@ internal static class ProcessChecks
             using var process = Process.GetProcessById(id);
             return !process.HasExited;
         }
-        catch (ArgumentException) { return false; }
+        catch (ArgumentException)
+        {
+            return false;
+        }
     }
 
     private sealed class InlineProgress(Action<string> report) : IProgress<string>

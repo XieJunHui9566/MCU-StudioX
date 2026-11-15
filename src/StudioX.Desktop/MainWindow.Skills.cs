@@ -149,7 +149,10 @@ public partial class MainWindow
         {
             ProjectSkillsEnabledToggle.IsChecked = enabled;
         }
-        finally { skillsToggleUpdating = false; }
+        finally
+        {
+            skillsToggleUpdating = false;
+        }
     }
 
     private sealed record SkillDisplayRow(string Name, string Description, string ScopeLabel)

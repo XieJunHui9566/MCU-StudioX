@@ -1,0 +1,49 @@
+{
+  "schema": 1,
+  "id": "v0.0136-struct-records",
+  "function": "struct_records",
+  "requiredDecision": "reject",
+  "description": "Correct results and lower static size/spills, but slower hot path; no averaging with other functions.",
+  "parent": "MX251 V0.0135",
+  "candidate": "MX251 V0.0136",
+  "qualification": "known-failing historical cost model",
+  "static": {
+    "parent": {
+      "bytes": 442,
+      "MOV": 77,
+      "wordSpillAccess": 20,
+      "spills": 3,
+      "frame": 40,
+      "weighted": 668
+    },
+    "candidate": {
+      "bytes": 408,
+      "MOV": 68,
+      "wordSpillAccess": 12,
+      "spills": 2,
+      "frame": 36,
+      "weighted": 639
+    }
+  },
+  "measurement": {
+    "device": "AI8051U-34K64",
+    "ircHz": 39943200,
+    "timerSystemClocksPerTick": 12,
+    "repeats": 8,
+    "count": 64,
+    "parentTicks": [
+      2963,
+      2963,
+      2964
+    ],
+    "candidateTicks": [
+      3030,
+      3030,
+      3030
+    ],
+    "correctnessCasesPerImage": 1152,
+    "flashReadback": false
+  },
+  "requirement": "Rescore BOTH frozen alternatives using current production model. Missing candidate, disabled pass, unknown/stale costs or replacement alternatives do not pass.",
+  "limitation": "Not a universal cycle model or proof of STC32G timings. Path counts use static CFG plus unchanged C loop bounds, not hardware trace."
+}

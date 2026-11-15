@@ -80,7 +80,9 @@ public partial class MainWindow
         {
             ApplyTheme(theme);
             UpdateLayout();
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.Render);
             Render(this, Path.Combine(directory, "mcu-favorites-" + theme.Id + ".png"));
         }
         var unavailable = new McuFavorite("test.not-installed", "MISSING-MCU", "MISSING-MCU", "未安装的测试器件包", "Test");

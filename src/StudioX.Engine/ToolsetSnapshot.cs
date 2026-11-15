@@ -50,6 +50,10 @@ internal sealed class ToolsetSnapshot
     public bool Matches(ToolsetSnapshot other) => entries.Count == other.entries.Count &&
         entries.All(pair => other.entries.TryGetValue(pair.Key, out var entry) && entry == pair.Value);
 
+    internal IReadOnlyDictionary<string, VerifiedToolFile> VerifiedFiles(IReadOnlyDictionary<string, string> hashes) =>
+        hashes.ToDictionary(pair => pair.Key, pair => new VerifiedToolFile(pair.Value, entries[pair.Key].Length,
+            entries[pair.Key].LastWriteUtcTicks, entries[pair.Key].CreationUtcTicks), StringComparer.OrdinalIgnoreCase);
+
     public string? FirstDifference(ToolsetSnapshot other)
     {
         foreach (var (path, entry) in entries)

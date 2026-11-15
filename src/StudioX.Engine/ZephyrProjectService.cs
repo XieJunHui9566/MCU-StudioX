@@ -45,7 +45,7 @@ public sealed class ZephyrProjectService(Func<string, CancellationToken, Task>? 
     public async Task<ProjectManifest> CreateFromPackAsync(InstalledPack selected, string deviceId,
         string name, string destination, CancellationToken token = default)
     {
-        PackValidator.Token(name);
+        ProjectName.Validate(name);
         var pack = await PackRepository.VerifyAsync(selected, token);
         var device = pack.Manifest.Devices.SingleOrDefault(d => d.Id == deviceId)
             ?? throw new StudioXException("PROJECT_DEVICE", "请选择明确的芯片型号。");
@@ -158,7 +158,7 @@ public sealed class ZephyrProjectService(Func<string, CancellationToken, Task>? 
     public async Task<ProjectManifest> CreateAsync(InstalledZephyrPack selected, string boardId, string templateId,
         string name, string destination, CancellationToken cancellationToken = default)
     {
-        PackValidator.Token(name);
+        ProjectName.Validate(name);
         var target = Path.GetFullPath(destination);
         if (Directory.Exists(target) || File.Exists(target))
         {
@@ -209,6 +209,12 @@ public sealed class ZephyrProjectService(Func<string, CancellationToken, Task>? 
             Directory.Move(staging, target);
             return project;
         }
-        finally { if (Directory.Exists(staging)) { Directory.Delete(staging, recursive: true); } }
+        finally
+        {
+            if (Directory.Exists(staging))
+            {
+                Directory.Delete(staging, recursive: true);
+            }
+        }
     }
 }

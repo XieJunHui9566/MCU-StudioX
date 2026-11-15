@@ -67,9 +67,18 @@ public sealed partial class ThemeArtworkService(string dataDirectory)
             {
                 File.Move(temporary, target, false);
             }
-            catch (IOException) when (File.Exists(target)) { _ = Read(artwork); }
+            catch (IOException) when (File.Exists(target))
+            {
+                _ = Read(artwork);
+            }
         }
-        finally { if (File.Exists(temporary)) { File.Delete(temporary); } }
+        finally
+        {
+            if (File.Exists(temporary))
+            {
+                File.Delete(temporary);
+            }
+        }
     }
 
     public static async Task<byte[]> ReadVerifiedAsync(string path, string hash, CancellationToken token)

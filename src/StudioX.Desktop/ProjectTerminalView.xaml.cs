@@ -26,7 +26,11 @@ public partial class ProjectTerminalView : UserControl
         timer.Tick += (_, _) => Refresh();
         Loaded += (_, _) => timer.Start();
         Unloaded += (_, _) => timer.Stop();
-        OutputEditor.PreviewTextInput += async (_, e) => { e.Handled = true; await SendRawAsync(e.Text); };
+        OutputEditor.PreviewTextInput += async (_, e) =>
+        {
+            e.Handled = true;
+            await SendRawAsync(e.Text);
+        };
         OutputEditor.PreviewKeyDown += Output_KeyDown;
         DataObject.AddPastingHandler(CommandInput, (_, e) =>
         {
@@ -62,7 +66,7 @@ public partial class ProjectTerminalView : UserControl
         StartButton.IsEnabled = directory is not null;
         InterruptButton.IsEnabled = false;
         CommandInput.IsEnabled = SecretInput.IsEnabled = directory is not null;
-        TerminalStatus.Text = directory is null ? "请先创建或打开工程。" : "点击启动，或通过“工具 → 工程终端”进入。";
+        TerminalStatus.Text = directory is null ? "请先创建或打开工程。" : "终端未启动";
     }
     public async Task EnsureStartedAsync()
     {
@@ -90,8 +94,14 @@ public partial class ProjectTerminalView : UserControl
             Refresh();
             CommandInput.Focus();
         }
-        catch (Exception ex) { Error(ex); }
-        finally { busy = false; }
+        catch (Exception ex)
+        {
+            Error(ex);
+        }
+        finally
+        {
+            busy = false;
+        }
     }
     private async void Start_Click(object sender, RoutedEventArgs e) => await EnsureStartedAsync();
     private async void Stop_Click(object sender, RoutedEventArgs e)
@@ -106,8 +116,14 @@ public partial class ProjectTerminalView : UserControl
             await service.StopAsync();
             Refresh();
         }
-        catch (Exception ex) { Error(ex); }
-        finally { busy = false; }
+        catch (Exception ex)
+        {
+            Error(ex);
+        }
+        finally
+        {
+            busy = false;
+        }
     }
     private async void Interrupt_Click(object sender, RoutedEventArgs e) => await SendRawAsync("\x03");
     private void Clear_Click(object sender, RoutedEventArgs e)
@@ -239,7 +255,10 @@ public partial class ProjectTerminalView : UserControl
             error = null;
             FollowCheck.IsChecked = true;
         }
-        catch (Exception ex) { Error(ex); }
+        catch (Exception ex)
+        {
+            Error(ex);
+        }
     }
     private static string SingleLine(string text) => text.Replace("\r\n", " ").Replace('\n', ' ').Replace('\r', ' ');
     private void Refresh()
@@ -257,7 +276,7 @@ public partial class ProjectTerminalView : UserControl
             var display = snapshot.Screen.Display;
             StartButton.IsEnabled = !snapshot.Running && !busy;
             InterruptButton.IsEnabled = snapshot.Running;
-            TerminalStatus.Text = error ?? snapshot.Status + " · Enter 输入 · Ctrl+C 中断 · 上下键历史";
+            TerminalStatus.Text = error ?? snapshot.Status;
             if (display.Version == version)
             {
                 return;
@@ -283,7 +302,10 @@ public partial class ProjectTerminalView : UserControl
                 OutputEditor.Select(selectionStart, Math.Min(selectionLength, OutputEditor.Document.TextLength - selectionStart));
             }
         }
-        catch (Exception ex) { Error(ex); }
+        catch (Exception ex)
+        {
+            Error(ex);
+        }
     }
     public bool HandleMouseWheel(DependencyObject? target, int delta, bool control)
     {

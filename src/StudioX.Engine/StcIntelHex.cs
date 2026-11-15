@@ -38,7 +38,10 @@ internal static class StcIntelHex
             {
                 record = Convert.FromHexString(line.AsSpan(1));
             }
-            catch (FormatException) { throw Invalid($"Intel HEX 第 {lineNumber} 行含非十六进制字符。"); }
+            catch (FormatException)
+            {
+                throw Invalid($"Intel HEX 第 {lineNumber} 行含非十六进制字符。");
+            }
             var length = record[0];
             if (record.Length != length + 5 || (record.Sum(value => value) & 0xff) != 0)
             {

@@ -45,6 +45,10 @@ try
     }
     # Windows 启动器的 jdkloc 含开发机绝对路径；只调用显式的私有 Java，不保留该路径。
     Remove-Item -LiteralPath (Join-Path $payload 'mplab_platform/mplab_ipe/jdkloc') -Force
+    # 外部 IPE 曾启动时可能留下日志与锁；它们不是官方运行组件，不进入发行索引。
+    Get-ChildItem -LiteralPath (Join-Path $payload 'mplab_platform/mplab_ipe') -File |
+        Where-Object Name -Match '^MPLABXLog\.xml(?:\.\d+)?(?:\.lck)?$' |
+        ForEach-Object { Remove-Item -LiteralPath $_.FullName -Force }
     [ordered]@{version  ='6.20';
         source          ='https://ww1.microchip.com/downloads/aemDocuments/documents/DEV/ProductDocuments/SoftwareTools/MPLABX-v6.20-windows-installer.exe';
         installerSha256 =$installerHash;

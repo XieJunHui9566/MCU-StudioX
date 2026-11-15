@@ -44,7 +44,10 @@ internal static class DistributionChecks
             await service.ReadAsync(local);
             check(false, "local archive escape");
         }
-        catch (StudioXException) { check(true, "local catalog archive cannot escape catalog directory"); }
+        catch (StudioXException)
+        {
+            check(true, "local catalog archive cannot escape catalog directory");
+        }
         handler.Catalog = JsonSerializer.SerializeToUtf8Bytes(new DistributionCatalog(1, "Fixture", [entry, entry]), JsonStore.Options);
         await Reject(() => service.ReadAsync("https://example.test/catalog.json"), "CATALOG_ENTRY", "duplicate catalog identity rejected", check);
         handler.Status = HttpStatusCode.Redirect;
@@ -53,7 +56,10 @@ internal static class DistributionChecks
             await service.ReadAsync("https://example.test/catalog.json");
             check(false, "redirect");
         }
-        catch (HttpRequestException) { check(true, "redirect response not treated as a valid catalog"); }
+        catch (HttpRequestException)
+        {
+            check(true, "redirect response not treated as a valid catalog");
+        }
     }
     private static async Task Reject(Func<Task> action, string code, string message, Action<bool, string> check)
     {
@@ -62,7 +68,10 @@ internal static class DistributionChecks
             await action();
             check(false, message);
         }
-        catch (StudioXException error) { check(error.Code == code, message); }
+        catch (StudioXException error)
+        {
+            check(error.Code == code, message);
+        }
     }
     private sealed class Handler(byte[] catalog, byte[] archive) : HttpMessageHandler
     {

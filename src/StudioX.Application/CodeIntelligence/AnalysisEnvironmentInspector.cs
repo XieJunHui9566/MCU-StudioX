@@ -189,7 +189,10 @@ public static class AnalysisEnvironmentInspector
                 Add("LANGUAGE_DATABASE_EMPTY", "编译数据库没有 C/C++ 源文件", "请核对工程 CMake 的源文件声明并重新配置。", database);
             }
         }
-        catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+            throw;
+        }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or JsonException or ArgumentException or InvalidOperationException or KeyNotFoundException or StudioXException)
         {
             Add(error is StudioXException studio && studio.Code == "LANGUAGE_ESPRESSIF_RESPONSE" ? studio.Code : "LANGUAGE_DATABASE_INVALID",

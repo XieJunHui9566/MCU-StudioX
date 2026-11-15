@@ -133,7 +133,10 @@ internal static class ProtocolChecks
                     await client.DecodeAsync([1], "RX", now, false);
                 }
             }
-            catch (IOException) { rejected = true; }
+            catch (IOException)
+            {
+                rejected = true;
+            }
             Check(rejected, label);
         }
     }

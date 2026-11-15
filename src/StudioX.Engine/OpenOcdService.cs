@@ -254,7 +254,11 @@ public sealed partial class OpenOcdService(ToolsetCatalog catalog)
                                 prepared.ImageByteCount, prepared.LogPath, result.OutputTruncated);
                         }
                     }
-                    catch (StudioXException ex) { capture.Report("\n" + ex + "\n"); success = false; }
+                    catch (StudioXException ex)
+                    {
+                        capture.Report("\n" + ex + "\n");
+                        success = false;
+                    }
                 }
                 var failureReason = success ? null : OpenOcdDownloadDiagnostics.FailureSummary(result.StandardOutput + "\n" + result.StandardError);
                 if (failureReason is not null)
@@ -266,11 +270,25 @@ public sealed partial class OpenOcdService(ToolsetCatalog catalog)
                     FailureReason = failureReason
                 };
             }
-            catch (OperationCanceledException) { capture.Report("\n下载已停止，未确认写入完成；请重新下载。\n"); throw; }
-            catch (Exception ex) { capture.Report("\n" + ex + "\n"); throw; }
-            finally { await File.WriteAllTextAsync(prepared.LogPath, capture.Text, CancellationToken.None); }
+            catch (OperationCanceledException)
+            {
+                capture.Report("\n下载已停止，未确认写入完成；请重新下载。\n");
+                throw;
+            }
+            catch (Exception ex)
+            {
+                capture.Report("\n" + ex + "\n");
+                throw;
+            }
+            finally
+            {
+                await File.WriteAllTextAsync(prepared.LogPath, capture.Text, CancellationToken.None);
+            }
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
 
     public static string[] CreateArguments(string projectDirectory, DownloadConfiguration configuration, DownloadOptions options, ResolvedToolset tools, string image, string format = "bin")

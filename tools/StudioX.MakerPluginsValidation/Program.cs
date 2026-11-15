@@ -6,16 +6,42 @@ using StudioX.Extensions.Abstractions;
 using StudioX.LabPlugins;
 using StudioX.MakerPlugins;
 
-if (args is not [var archives, var runtime, var gcc, var output]) { throw new ArgumentException("Usage: <archives> <runtime> <existing-gcc> <new-output>"); }
+if (args is not [var archives, var runtime, var gcc, var output])
+{
+    throw new ArgumentException("Usage: <archives> <runtime> <existing-gcc> <new-output>");
+}
 output = Path.GetFullPath(output);
-if (Directory.Exists(output)) { throw new ArgumentException("Use a new validation directory."); }
+if (Directory.Exists(output))
+{
+    throw new ArgumentException("Use a new validation directory.");
+}
 Directory.CreateDirectory(output);
 var checks = new List<string>();
 JsonElement Json(object v) => JsonSerializer.SerializeToElement(v);
 JsonElement Data(LabPlugin plugin, object v) => Json(plugin.Calculate(Json(v)).Data);
-void Check(bool good, string name) { if (!good) { throw new InvalidOperationException(name); } checks.Add(name); Console.WriteLine("PASS " + name); }
+void Check(bool good, string name)
+{
+    if (!good)
+    {
+        throw new InvalidOperationException(name);
+    }
+    checks.Add(name);
+    Console.WriteLine("PASS " + name);
+}
 void Near(double a, double b, double tolerance, string name) => Check(Math.Abs(a - b) <= tolerance, name + $" ({a:G9} ~ {b:G9})");
-void Invalid(Action action, string name) { try { action(); } catch (ArgumentException) { Check(true, name); return; } throw new InvalidOperationException("Expected rejection: " + name); }
+void Invalid(Action action, string name)
+{
+    try
+    {
+        action();
+    }
+    catch (ArgumentException)
+    {
+        Check(true, name);
+        return;
+    }
+    throw new InvalidOperationException("Expected rejection: " + name);
+}
 var rgb = new RgbStudioPlugin();
 var melody = new MelodyStudioPlugin();
 var debounce = new DebounceStudioPlugin();
@@ -37,7 +63,10 @@ Check(notes[2].GetProperty("Hz").GetInt32() == 0 && notes[2].GetProperty("OnMs")
 Check(notes[3].GetProperty("Hz").GetInt32() == notes[4].GetProperty("Hz").GetInt32(), "enharmonic sharp and flat");
 tune = Data(melody, new { preset = "custom", score = string.Join(" ", Enumerable.Repeat("C4:0.333", 48)), bpm = 137 });
 Near(tune.GetProperty("totalMs").GetInt32(), Math.Round(48 * 0.333 * 60000 / 137, MidpointRounding.AwayFromZero), 0, "cumulative duration avoids rounding drift");
-foreach (var bad in new[] { "C:1", "R4:1", "H4:1", "A4:0", "A4:9", "R#:1", "" }) { Invalid(() => Data(melody, new { preset = "custom", score = bad }), "reject melody token " + bad); }
+foreach (var bad in new[] { "C:1", "R4:1", "H4:1", "A4:0", "A4:9", "R#:1", "" })
+{
+    Invalid(() => Data(melody, new { preset = "custom", score = bad }), "reject melody token " + bad);
+}
 var db = Data(debounce, new { });
 Check(db.GetProperty("events").EnumerateArray().Select(x => x.GetProperty("TimeMs").GetInt32()).SequenceEqual(new[] { 40, 126 }), "stable debounce press/release latency");
 db = Data(debounce, new { algorithm = "integrator" });
@@ -45,7 +74,10 @@ Check(db.GetProperty("events").EnumerateArray().Select(x => x.GetProperty("TimeM
 Check(Data(debounce, new { trace = "0:0 10:1 11:0", activeLow = false }).GetProperty("events").GetArrayLength() == 0, "short button pulse rejected");
 Check(Data(debounce, new { trace = "0:1", activeLow = false }).GetProperty("events").GetArrayLength() == 0, "initial held key emits no synthetic event");
 Check(Data(debounce, new { sampleMs = 3, debounceMs = 20 }).GetProperty("quantizedMs").GetInt32() == 21, "debounce threshold rounds upwards");
-foreach (var bad in new[] { "1:0", "0:1 10:0 9:1", "0:1 10:2", "0:1 9999:0" }) { Invalid(() => Data(debounce, new { trace = bad }), "reject malformed trace " + bad); }
+foreach (var bad in new[] { "1:0", "0:1 10:0 9:1", "0:1 10:2", "0:1 9999:0" })
+{
+    Invalid(() => Data(debounce, new { trace = bad }), "reject malformed trace " + bad);
+}
 
 var simple = new PidSettings(Kp: 1, Ki: 0, Kd: 0, Minimum: -10, Maximum: 10, Tau: 1, SampleMs: 20, Seconds: 2);
 var pr = PidSimulation.Run(simple);
@@ -71,7 +103,11 @@ var limits = new PidSettings(Kp: 0, Ki: 1, Kd: 0, SampleMs: 100, Minimum: -10, M
 var clamp = new PidController(limits);
 var free = new PidController(limits with { AntiWindup = false });
 PidTerms ct = new(0, 0, 0, 0, false), ft = ct;
-for (var i = 0; i < 30; i++) { ct = clamp.Step(1, 0); ft = free.Step(1, 0); }
+for (var i = 0; i < 30; i++)
+{
+    ct = clamp.Step(1, 0);
+    ft = free.Step(1, 0);
+}
 Check(ct.I <= 1.00001 && ft.I > 2.99, "conditional integration prevents deep windup");
 Check(clamp.Step(-1, 0).I < ct.I, "reverse error unwinds integral");
 var noiseSettings = new PidSettings(Kd: 0.2, Noise: 0.05, FilterMs: 0);

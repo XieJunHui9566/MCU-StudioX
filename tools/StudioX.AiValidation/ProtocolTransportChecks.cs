@@ -124,7 +124,9 @@ internal static class ProtocolTransportChecks
             return Task.FromResult(new HttpResponseMessage(HttpStatusCode.NotImplemented));
         }));
         using var officialChat = new AiChatClient(_ => "offline-test-key", officialHttp);
-        await ExpectCodeAsync("AI_HTTP", () => officialChat.CompleteStreamingAsync(Settings, Request, _ => { }));
+        await ExpectCodeAsync("AI_HTTP", () => officialChat.CompleteStreamingAsync(Settings, Request, _ =>
+        {
+        }));
         check(officialRequests == 1, "official endpoint HTTP errors retain diagnostics without an implicit retry");
     }
 
@@ -142,7 +144,9 @@ internal static class ProtocolTransportChecks
         var wasCancelled = false;
         try
         {
-            await chat.CompleteStreamingAsync(Settings, Request, _ => { }, cancelled.Token);
+            await chat.CompleteStreamingAsync(Settings, Request, _ =>
+            {
+            }, cancelled.Token);
         }
         catch (OperationCanceledException)
         {
@@ -156,7 +160,9 @@ internal static class ProtocolTransportChecks
         var invalidUtf8 = Encoding.UTF8.GetBytes("data: ").Concat(new byte[] { 0xc3, 0x28, 10, 10 }).ToArray();
         using var http = new HttpClient(new Handler((_, _) => Task.FromResult(Sse(invalidUtf8))));
         using var chat = new AiChatClient(_ => "offline-test-key", http);
-        await ExpectCodeAsync("AI_RESPONSE_FORMAT", () => chat.CompleteStreamingAsync(Settings, Request, _ => { }));
+        await ExpectCodeAsync("AI_RESPONSE_FORMAT", () => chat.CompleteStreamingAsync(Settings, Request, _ =>
+        {
+        }));
         check(true, "invalid UTF-8 SSE is rejected before an assistant response can be persisted");
     }
 

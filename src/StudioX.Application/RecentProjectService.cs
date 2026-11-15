@@ -21,7 +21,10 @@ public sealed partial class RecentProjectService(string dataDirectory, string? r
                 .Concat(existing.Where(project => !SameDirectory(project.Directory, full))).Take(12).ToArray();
             await JsonStore.WriteAsync(path, updated, token);
         }
-        finally { mutationGate.Release(); }
+        finally
+        {
+            mutationGate.Release();
+        }
     }
 
     public async Task<bool> RemoveAsync(string directory, CancellationToken token = default)
@@ -39,7 +42,10 @@ public sealed partial class RecentProjectService(string dataDirectory, string? r
             await JsonStore.WriteAsync(path, updated, token);
             return true;
         }
-        finally { mutationGate.Release(); }
+        finally
+        {
+            mutationGate.Release();
+        }
     }
 
     // true 表示路径确认为本地固定磁盘上的失效工程；记录可能已被并发清理。
@@ -61,7 +67,10 @@ public sealed partial class RecentProjectService(string dataDirectory, string? r
             }
             return true;
         }
-        finally { mutationGate.Release(); }
+        finally
+        {
+            mutationGate.Release();
+        }
     }
 
     public async Task<IReadOnlyList<RecentProject>> PruneMissingLocalAsync(CancellationToken token = default)
@@ -95,7 +104,10 @@ public sealed partial class RecentProjectService(string dataDirectory, string? r
             await JsonStore.WriteAsync(path, updated, token);
             return updated;
         }
-        finally { mutationGate.Release(); }
+        finally
+        {
+            mutationGate.Release();
+        }
     }
 
     private static bool SameDirectory(string left, string right) =>
@@ -121,21 +133,51 @@ public sealed partial class RecentProjectService(string dataDirectory, string? r
                 return false;
             }
         }
-        catch (IOException) { return false; }
-        catch (UnauthorizedAccessException) { return false; }
-        catch (ArgumentException) { return false; }
-        catch (NotSupportedException) { return false; }
+        catch (IOException)
+        {
+            return false;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return false;
+        }
+        catch (ArgumentException)
+        {
+            return false;
+        }
+        catch (NotSupportedException)
+        {
+            return false;
+        }
 
         try
         {
             var attributes = File.GetAttributes(Path.Combine(directory, ".studiox", "project.json"));
             return (attributes & FileAttributes.Directory) != 0;
         }
-        catch (FileNotFoundException) { return true; }
-        catch (DirectoryNotFoundException) { return true; }
-        catch (IOException) { return false; }
-        catch (UnauthorizedAccessException) { return false; }
-        catch (ArgumentException) { return false; }
-        catch (NotSupportedException) { return false; }
+        catch (FileNotFoundException)
+        {
+            return true;
+        }
+        catch (DirectoryNotFoundException)
+        {
+            return true;
+        }
+        catch (IOException)
+        {
+            return false;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return false;
+        }
+        catch (ArgumentException)
+        {
+            return false;
+        }
+        catch (NotSupportedException)
+        {
+            return false;
+        }
     }
 }

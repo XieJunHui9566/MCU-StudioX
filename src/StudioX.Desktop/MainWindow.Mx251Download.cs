@@ -88,7 +88,7 @@ public partial class MainWindow
         Mx251ConnectionHelp.Text = mode switch
         {
             Mx251DownloadMode.NativeUsb => "连接 AI8051U 芯片 USB，进入硬件 ISP 模式后自动发现，无需 COM 或固定 USB 插口。",
-            Mx251DownloadMode.Serial => "连接芯片 UART 下载接口，选择对应 COM；由应用服务独占串口。",
+            Mx251DownloadMode.Serial => "连接 UART 下载接口并选择串口",
             _ => "连接底板 USB1 的 AI8H2K12G 下载桥，可自动进入下载并校准 IRC。"
         };
     }
@@ -148,16 +148,10 @@ public partial class MainWindow
         var draft = loadedMx251Isp is null ? await services.Mx251Downloads.LoadSettingsAsync(root, token) : ReadMx251IspSettings();
         if (draft.DownloadMode != Mx251DownloadMode.UsbBridge)
         {
-            if (draft.DownloadMode == Mx251DownloadMode.Serial && string.IsNullOrWhiteSpace(draft.SerialPort))
+            if (draft.DownloadMode == Mx251DownloadMode.Serial &&
+                !await RequireStcSerialPortAsync(root, draft.SerialPort, () => services.Mx251Downloads.ListSerialPortsAsync(token), token))
             {
-                var ports = await services.Mx251Downloads.ListSerialPortsAsync(token);
-                if (ports.Length == 1)
-                {
-                    draft = draft with
-                    {
-                        SerialPort = ports[0]
-                    };
-                }
+                return false;
             }
             draft.Validate(requireDevice: true);
             await SaveMx251ClockAndDeviceAsync(root, draft, token);
@@ -268,7 +262,9 @@ public partial class MainWindow
                     Log(line);
                 }
             }), token);
-            await Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Background);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, System.Windows.Threading.DispatcherPriority.Background);
             Status.Text = report.Summary;
             Log(report.Summary);
             FinishBuildOutput(report.Summary, report.Success);

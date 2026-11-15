@@ -59,7 +59,9 @@ public partial class MainWindow
                 {
                     await prior;
                 }
-                catch { /* 前一次失败已显示，后一次选择仍可重试保存。 */ }
+                catch
+                { /* 前一次失败已显示，后一次选择仍可重试保存。 */
+                }
                 await AgentAccess.SaveAsync(project, mode);
             }
             agentAccessSaveTask = SaveChoiceAsync();
@@ -103,8 +105,16 @@ public partial class MainWindow
                 return new AgentEditorSnapshot(activeEditor?.Source.RelativePath, activeEditor?.CaretOffset ?? 0,
                 activeEditor?.SelectionStart ?? 0, activeEditor?.SelectionLength ?? 0, CaptureWorkspaceBuffers());
             }).Task,
-            (plan, token) => Dispatcher.InvokeAsync(() => { Current(token); ShowAgentChanges(plan); }).Task,
-            (plan, token) => Dispatcher.InvokeAsync<IReadOnlyList<WorkspaceFileChange>>(() => { Current(token); return agentChangesView!.Selected(plan); }).Task,
+            (plan, token) => Dispatcher.InvokeAsync(() =>
+            {
+                Current(token);
+                ShowAgentChanges(plan);
+            }).Task,
+            (plan, token) => Dispatcher.InvokeAsync<IReadOnlyList<WorkspaceFileChange>>(() =>
+            {
+                Current(token);
+                return agentChangesView!.Selected(plan);
+            }).Task,
             (changes, token) => Dispatcher.InvokeAsync(async () =>
             {
                 Current(token);
@@ -172,7 +182,13 @@ public partial class MainWindow
                 QueueEditorCheckpoint();
             }).Task.Unwrap());
         var session = new AgentEditorSession(services, project, access, authorizer);
-        session.Changed += () => Dispatcher.BeginInvoke(() => { if (agentEditorSession == session && IsCurrentAiEditorProject(project, generation)) { agentChangesView?.Refresh(session); } });
+        session.Changed += () => Dispatcher.BeginInvoke(() =>
+        {
+            if (agentEditorSession == session && IsCurrentAiEditorProject(project, generation))
+            {
+                agentChangesView?.Refresh(session);
+            }
+        });
         return session;
     }
     private void ShowAgentChanges(AgentEditPlan? plan = null)
@@ -187,9 +203,27 @@ public partial class MainWindow
             agentChangesView = new AgentChangesView
             {
                 CanAct = () => aiCancellation is null,
-                ApplyRequested = id => RunAsync(async token => { if (agentEditorSession is { } session) { await session.ApplyAsync(id, token, userSelectedApply: true); } }),
-                UndoRequested = id => RunAsync(async token => { if (agentEditorSession is { } session) { await session.UndoAsync(id, token); } }),
-                UndoTaskRequested = id => RunAsync(async token => { if (agentEditorSession is { } session) { await session.UndoTaskAsync(id, token); } })
+                ApplyRequested = id => RunAsync(async token =>
+                {
+                    if (agentEditorSession is { } session)
+                    {
+                        await session.ApplyAsync(id, token, userSelectedApply: true);
+                    }
+                }),
+                UndoRequested = id => RunAsync(async token =>
+                {
+                    if (agentEditorSession is { } session)
+                    {
+                        await session.UndoAsync(id, token);
+                    }
+                }),
+                UndoTaskRequested = id => RunAsync(async token =>
+                {
+                    if (agentEditorSession is { } session)
+                    {
+                        await session.UndoTaskAsync(id, token);
+                    }
+                })
             };
             agentChangesView.BindTypography(SourceEditor);
             agentChangesView.HighlightingFailed += ReportHighlightingFailure;

@@ -15,11 +15,17 @@ if (args is ["--gpio-electrical", var gpioTools, var gpioOutput, var gpioPack])
     return;
 }
 
-if (args.Length is < 3 or > 4) { throw new ArgumentException("Usage: <toolset root> <new validation output directory> <AG32 mcupack> [private license directory]"); }
+if (args.Length is < 3 or > 4)
+{
+    throw new ArgumentException("Usage: <toolset root> <new validation output directory> <AG32 mcupack> [private license directory]");
+}
 var toolsets = Path.GetFullPath(args[0]);
 var output = Path.GetFullPath(args[1]);
 var archive = Path.GetFullPath(args[2]);
-if (Directory.Exists(output)) { throw new IOException("Validation output must be new."); }
+if (Directory.Exists(output))
+{
+    throw new IOException("Validation output must be new.");
+}
 Directory.CreateDirectory(output);
 var root = Path.Combine(output, "中文工程 with spaces");
 // 使用真实格式 1 器件包生成夹具，确保容量、厂商和工具锁定也接受与产品相同的身份检查。
@@ -31,7 +37,15 @@ var licenseSource = new Ag32PinMappingBuildService(catalog, args.Length > 3 ? ar
 var service = new Ag32PinMappingBuildService(catalog, Path.Combine(licenseSource.LicenseDirectory, "validation", Guid.NewGuid().ToString("N")));
 await service.ImportLicenseAsync(Path.Combine(licenseSource.LicenseDirectory, "license.txt"));
 var checks = new List<string>();
-void Check(bool value, string name) { if (!value) { throw new InvalidOperationException(name); } checks.Add(name); Console.WriteLine("PASS " + name); }
+void Check(bool value, string name)
+{
+    if (!value)
+    {
+        throw new InvalidOperationException(name);
+    }
+    checks.Add(name);
+    Console.WriteLine("PASS " + name);
+}
 async Task Reject(Func<Task> action, string code, string name)
 {
     try
@@ -39,7 +53,10 @@ async Task Reject(Func<Task> action, string code, string name)
         await action();
         throw new InvalidOperationException("Expected rejection: " + name);
     }
-    catch (StudioXException ex) when (ex.Code == code) { Check(true, name); }
+    catch (StudioXException ex) when (ex.Code == code)
+    {
+        Check(true, name);
+    }
 }
 Check(service.LicenseConfigured, "Private vendor license configured; credentials never printed");
 await File.WriteAllTextAsync(source, "# no active mapping\n");
@@ -167,10 +184,19 @@ using (var cancel = new CancellationTokenSource())
 {
     try
     {
-        await service.BuildAsync(root, new ImmediateProgress(message => { if (message.Contains("独立映射镜像", StringComparison.Ordinal)) { cancel.Cancel(); } }), cancel.Token);
+        await service.BuildAsync(root, new ImmediateProgress(message =>
+        {
+            if (message.Contains("独立映射镜像", StringComparison.Ordinal))
+            {
+                cancel.Cancel();
+            }
+        }), cancel.Token);
         throw new InvalidOperationException("Expected cancellation");
     }
-    catch (OperationCanceledException) { Check(true, "Cancellation before Supra invalidates receipt and removes private staging"); }
+    catch (OperationCanceledException)
+    {
+        Check(true, "Cancellation before Supra invalidates receipt and removes private staging");
+    }
 }
 Check(!File.Exists(secondImage.Path), "Cancelled build leaves no downloadable image");
 Check(!Directory.Exists(Path.Combine(service.LicenseDirectory, "runs")) || !Directory.EnumerateFileSystemEntries(Path.Combine(service.LicenseDirectory, "runs")).Any(), "Private license staging cleaned after success, failure and cancellation");
@@ -195,7 +221,10 @@ await Reject(async () => await service.BuildAsync(root), "AG32_MAPPING_CUSTOM_LO
 Check(!File.Exists(secondImage.Path), "Custom logic rejection invalidates basic image");
 await JsonStore.WriteAsync(Path.Combine(output, "results.json"), new { hardwareConnected = false, realVendorCompile = true, checks = checks.ToArray(), firstImage.Sha256, pin2Sha256 = secondImage.Sha256 });
 File.Delete(Path.Combine(service.LicenseDirectory, "license.txt"));
-if (Directory.Exists(Path.Combine(service.LicenseDirectory, "runs"))) { Directory.Delete(Path.Combine(service.LicenseDirectory, "runs")); }
+if (Directory.Exists(Path.Combine(service.LicenseDirectory, "runs")))
+{
+    Directory.Delete(Path.Combine(service.LicenseDirectory, "runs"));
+}
 Directory.Delete(service.LicenseDirectory);
 Console.WriteLine($"All {checks.Count} checks passed.");
 

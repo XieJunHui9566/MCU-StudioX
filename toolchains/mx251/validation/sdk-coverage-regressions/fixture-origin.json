@@ -1,0 +1,58 @@
+[
+  {
+    "source": ".artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\gc-tests\\Test-FunctionGc.ps1",
+    "sourceSha256": "74335282b8ebbc340f975f2cc2a1712e9a95f041fa6b3d167a510374d0dedfc0",
+    "destination": "Test-FunctionGc.ps1",
+    "sha256": "346ef519f8cb09c819519e39db17d56a8c9eaf5bc4be826a02b589d3f410a2a5",
+    "change": "Explicit engine parameter for loading/pin; same test bodies. Imports expectations preserve undefined external/forced-link declarations; earlier broad-rule fixtures retained in round archive.",
+    "currentAcceptanceFixture": true
+  },
+  {
+    "source": ".artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\gc-tests\\Test-FunctionGcBitOperands.ps1",
+    "sourceSha256": "d8086c582f155c700c32bc62f4f612a44c4e0db28f4995295a0cb61a21ade065",
+    "destination": "Test-FunctionGcBitOperands.ps1",
+    "sha256": "d4ec00cda26a1a1e1aa3baed0bb265bcb5edd62d8d5154674fa052c7b0230b9b",
+    "change": "Explicit engine parameter for loading/pin; same test bodies. Imports expectations preserve undefined external/forced-link declarations; earlier broad-rule fixtures retained in round archive.",
+    "currentAcceptanceFixture": true
+  },
+  {
+    "source": ".artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\gc-tests\\Test-FunctionGcBoundaries.ps1",
+    "sourceSha256": "78622be16a0e179ca4a659def71c432dacfa91513187548c61b99f8c380edee0",
+    "destination": "Test-FunctionGcBoundaries.ps1",
+    "sha256": "06c5c7444c43da02d0a372ed617005bb6e13c7082039b7881eb8110b0cdcdfc3",
+    "change": "Explicit engine parameter for loading/pin; same test bodies. Imports expectations preserve undefined external/forced-link declarations; earlier broad-rule fixtures retained in round archive.",
+    "currentAcceptanceFixture": true
+  },
+  {
+    "source": ".artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\gc-tests\\Test-FunctionGcImplicitRoots.ps1",
+    "sourceSha256": "3db60576b126720f75223f67506091b697a91628f966a7d64e0549432cb545ac",
+    "destination": "Test-FunctionGcImplicitRoots.ps1",
+    "sha256": "0466455905b5a86e96c54b936ff822af403e393d51395e20e4d1a83585c9a47d",
+    "change": "Explicit engine parameter for loading/pin; same test bodies. Imports expectations preserve undefined external/forced-link declarations; earlier broad-rule fixtures retained in round archive.",
+    "currentAcceptanceFixture": true
+  },
+  {
+    "source": ".artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\gc-tests\\Test-FunctionGcImports.ps1",
+    "sourceSha256": "d2f4ef8b4c893e95cdbf2ad8c98ddc631bd85e2a0652cde7f5591d28af03944c",
+    "destination": "Test-FunctionGcImports.ps1",
+    "sha256": "a91d78ba173a415380e692344702290e3b34df760ef7a44d6ad238f62268441a",
+    "change": "Explicit engine parameter for loading/pin; same test bodies. Imports expectations preserve undefined external/forced-link declarations; earlier broad-rule fixtures retained in round archive.",
+    "currentAcceptanceFixture": true
+  },
+  {
+    "source": ".artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\gc-tests\\Test-FunctionGcImports.rejected-broad-rule.ps1",
+    "sourceSha256": "2e44f12d6ef4c53f4931bcdb6d39bec963873f87ea832e186ca8a1ead64f07f9",
+    "destination": "history/Test-FunctionGcImports.rejected-broad-rule.ps1",
+    "sha256": "36f920f6f3f0f9e8b3d43a8c88b99b33cf9a123f59beae852576ada5527e6a24",
+    "change": "Explicit engine parameter for loading/pin; same test bodies. Imports expectations preserve undefined external/forced-link declarations; earlier broad-rule fixtures retained in round archive.",
+    "currentAcceptanceFixture": false
+  },
+  {
+    "source": ".artifacts\\ai8051u-sdcc251-20261023\\compiler-optimization\\mx251-sdk-coverage-20261031\\gc-tests\\Test-FunctionGcSymbolCase.ps1",
+    "sourceSha256": "50531fb777cb2852470c6b6e6c65ce8fc3b595af5a1a468f28218c6c1a2076ab",
+    "destination": "Test-FunctionGcSymbolCase.ps1",
+    "sha256": "5c946d80746eb7d41c3b4ca693e0784859c046cc86cb06a3e80009369988df4a",
+    "change": "Explicit engine parameter for loading/pin; same test bodies. Imports expectations preserve undefined external/forced-link declarations; earlier broad-rule fixtures retained in round archive.",
+    "currentAcceptanceFixture": true
+  }
+]

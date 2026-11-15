@@ -42,7 +42,11 @@ public partial class MainWindow
                 InsertCodeTemplate(selected.Template, target);
             }
         }
-        catch (Exception ex) { Status.Text = "代码模板：" + ex.Message; Log(ex.ToString()); }
+        catch (Exception ex)
+        {
+            Status.Text = "代码模板：" + ex.Message;
+            Log(ex.ToString());
+        }
     }
 
     private async Task SaveCodeSelectionAsync()
@@ -77,7 +81,11 @@ public partial class MainWindow
                 Status.Text = "已保存代码模板：" + editor.Saved!.Name;
             }
         }
-        catch (Exception ex) { Status.Text = "保存代码模板：" + ex.Message; Log(ex.ToString()); }
+        catch (Exception ex)
+        {
+            Status.Text = "保存代码模板：" + ex.Message;
+            Log(ex.ToString());
+        }
     }
 
     private bool TemplateTargetCurrent(TemplateInsertionTarget target) => !closing && CanEditSource && projectDirectory == target.Project &&
@@ -117,7 +125,11 @@ public partial class MainWindow
                 Status.Text = "已插入代码模板：" + template.Name + " · Ctrl+Z 可撤销";
             }
         }
-        catch (Exception ex) { Status.Text = "插入代码模板：" + ex.Message; Log(ex.ToString()); }
+        catch (Exception ex)
+        {
+            Status.Text = "插入代码模板：" + ex.Message;
+            Log(ex.ToString());
+        }
     }
 
     private bool ApplyCodeTemplate(TemplateInsertionTarget target, CodeTemplateExpansion expansion)

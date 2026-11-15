@@ -1,0 +1,66 @@
+--- a/src/mcs251/gen.c
++++ b/src/mcs251/gen.c
+@@ -1605,9 +1605,12 @@
+   dtype = operandType (IC_LEFT (ic));
+   if (IS_FUNCPTR (dtype))
+     dtype = dtype->next;
+-  if (mcs251NativeAbi (dtype))
+-    {
+-      werror (E_MCS251_NATIVE_ABI, "indirect native calls are not yet supported; use a legacy ABI wrapper");
++  const bool nativeCall = mcs251NativeAbi (dtype);
++  if (!mcs251ValidateNativeAbi (dtype))
++    return;
++  if (nativeCall && FUNC_SDCCCALL (dtype) != 4)
++    {
++      werror (E_MCS251_NATIVE_ABI, "indirect native calls require ABI4; ABI3 still requires a legacy wrapper");
+       return;
+     }
+   etype = getSpec (dtype);
+@@ -1658,9 +1661,36 @@
+         {
+           wassertl (!bigreturn, "Unimplemented struct / union return in call via function pointer");
+           /* Load the target before SEND overwrites parameter registers. */
++          if (nativeCall)
++            {
++              /* 取目标地址可能借用 A/B/DPTR，SEND 前必须保留未传出的源值。 */
++              emitpush ("acc");
++              emitpush ("b");
++              emitpush ("dpl");
++              emitpush ("dph");
++              emitpush ("dpxl");
++            }
+           mcs251LoadCallTarget (IC_LEFT (ic), ic);
++          if (nativeCall)
++            {
++              emitpop ("dpxl");
++              emitpop ("dph");
++              emitpop ("dpl");
++              emitpop ("b");
++              emitpop ("acc");
++              /* 已恢复的 DPTR 不应沿用取目标地址时产生的缓存描述。 */
++              _G.dptrCache.valid = false;
++              /* 参数访存也可借用 DR28；栈偏移随临时保存同步计算。 */
++              emitcode ("push", "dr28");
++              _G.stack.pushed += 4;
++            }
+           genSend (reverseSet (_G.sendSet));
+           _G.sendSet = NULL;
++          if (nativeCall)
++            {
++              emitcode ("pop", "dr28");
++              _G.stack.pushed -= 4;
++            }
+ 
+           if (swapBanks)
+             emitcode ("mov", "psw,#0x%02x", ((FUNC_REGBANK (dtype)) << 3) & 0xff);
+@@ -1688,6 +1718,10 @@
+           emitcode (call, "@dr28");
+         }
+     }
++
++  /* 原生回调与直接调用一样会破坏 DPTR，SEND 建立的缓存不能跨调用。 */
++  if (nativeCall)
++    _G.dptrCache.valid = false;
+ 
+   if (noreturn)
+     return;

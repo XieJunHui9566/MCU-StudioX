@@ -213,9 +213,24 @@ public partial class MainWindow
                 }
                 ShowSymbolHover(result, point);
             }
-            catch (OperationCanceledException) when (cancellation.IsCancellationRequested) { }
-            catch (Exception ex) { if (!cancellation.IsCancellationRequested) { await RecordAnalysisFailureAsync("悬停信息", ex); } }
-            finally { if (hoverCancellation == cancellation) { hoverCancellation = null; } cancellation.Dispose(); }
+            catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
+            {
+            }
+            catch (Exception ex)
+            {
+                if (!cancellation.IsCancellationRequested)
+                {
+                    await RecordAnalysisFailureAsync("悬停信息", ex);
+                }
+            }
+            finally
+            {
+                if (hoverCancellation == cancellation)
+                {
+                    hoverCancellation = null;
+                }
+                cancellation.Dispose();
+            }
         }
     }
     private void ShowSymbolHover(CodeHover hover, Point point)
@@ -304,9 +319,25 @@ public partial class MainWindow
                     choices.IsOpen = true;
                 }
             }
-            catch (OperationCanceledException) when (cancellation.IsCancellationRequested) { }
-            catch (Exception ex) { if (!cancellation.IsCancellationRequested) { Status.Text = "代码跳转：" + ex.Message; await RecordAnalysisFailureAsync("代码跳转", ex); } }
-            finally { if (navigationCancellation == cancellation) { navigationCancellation = null; } cancellation.Dispose(); }
+            catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
+            {
+            }
+            catch (Exception ex)
+            {
+                if (!cancellation.IsCancellationRequested)
+                {
+                    Status.Text = "代码跳转：" + ex.Message;
+                    await RecordAnalysisFailureAsync("代码跳转", ex);
+                }
+            }
+            finally
+            {
+                if (navigationCancellation == cancellation)
+                {
+                    navigationCancellation = null;
+                }
+                cancellation.Dispose();
+            }
         }
     }
 

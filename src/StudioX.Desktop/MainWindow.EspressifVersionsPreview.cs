@@ -76,7 +76,10 @@ public partial class MainWindow
             await Layout();
             Render(this, Path.Combine(output, "component-management-disabled.png"));
         }
-        finally { await services.Toolsets.SetEnabledAsync("espressif.idf", "6.1.0", true); }
+        finally
+        {
+            await services.Toolsets.SetEnabledAsync("espressif.idf", "6.1.0", true);
+        }
         await RefreshToolManagementAsync(CancellationToken.None);
         toolManagementView!.VersionsGrid.SelectedItem = toolManagementView.Report!.Versions.Single(item => item.Id == "espressif.idf" && item.Version == "6.1.0");
         Check(toolManagementView.ToggleButton.IsEnabled && Equals(toolManagementView.ToggleButton.Content, "禁用此版本") && toolManagementView.DebugCheckButton.IsEnabled,
@@ -94,7 +97,9 @@ public partial class MainWindow
         async Task Layout()
         {
             UpdateLayout();
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ContextIdle);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.ContextIdle);
             UpdateLayout();
         }
     }

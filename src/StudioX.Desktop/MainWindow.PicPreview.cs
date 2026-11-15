@@ -25,7 +25,9 @@ public partial class MainWindow
         }
         async Task Save(string name)
         {
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.ApplicationIdle);
             UpdateLayout();
             var bitmap = new RenderTargetBitmap((int)ActualWidth, (int)ActualHeight, 96, 96, PixelFormats.Pbgra32);
             bitmap.Render(this);
@@ -90,7 +92,9 @@ public partial class MainWindow
             DebugTools.ShowDisassembly();
             DebugTools.ReadDisassemblyAt("0x0");
             await Task.Delay(500);
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.ApplicationIdle);
             Check(DebugTools.DisassemblyInstructionCount > 0 && DebugTools.CanReadDisassembly, "PIC program-word disassembly reaches the actual UI");
             foreach (var theme in new[] { ThemeService.Dark, ThemeService.Light })
             {
@@ -98,7 +102,10 @@ public partial class MainWindow
                 await Save(theme.Id + "-pic-debug.png");
             }
         }
-        finally { await services.Debugger.StopAsync(); }
+        finally
+        {
+            await services.Debugger.StopAsync();
+        }
         await JsonStore.WriteAsync(Path.Combine(directory, "result.json"), new
         {
             passed = true,
@@ -108,7 +115,9 @@ public partial class MainWindow
 
         async Task SaveDialogAsync(Window window, string name)
         {
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.ApplicationIdle);
             window.UpdateLayout();
             var bitmap = new RenderTargetBitmap((int)window.ActualWidth, (int)window.ActualHeight, 96, 96, PixelFormats.Pbgra32);
             bitmap.Render(window);

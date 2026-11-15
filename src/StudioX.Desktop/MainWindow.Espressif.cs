@@ -59,7 +59,9 @@ public partial class MainWindow
         var report = await services.EspressifDownloads.DownloadApprovedAsync(root, settings,
             preview.Configuration.Device.Id, preview.Layout.LayoutSha256,
             new Progress<string>(text => Log(text.TrimEnd('\r', '\n'))), token);
-        await Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Background);
+        await Dispatcher.InvokeAsync(() =>
+        {
+        }, System.Windows.Threading.DispatcherPriority.Background);
         Log("下载日志：" + report.LogPath);
         Log(report.Summary);
         Status.Text = report.Summary;

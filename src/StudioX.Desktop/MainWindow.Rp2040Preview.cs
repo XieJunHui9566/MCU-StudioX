@@ -24,7 +24,9 @@ public partial class MainWindow
         {
             ApplyTheme(theme);
             UpdateLayout();
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.Render);
             Render(this, Path.Combine(directory, "rp2040-templates-" + theme.Id + ".png"));
         }
         ApplyTheme(ThemeService.Dark);
@@ -37,7 +39,9 @@ public partial class MainWindow
             throw new InvalidOperationException("RP2040 编译/编辑未就绪，或错误开放未验收的硬件入口。");
         }
         UpdateLayout();
-        await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+        await Dispatcher.InvokeAsync(() =>
+        {
+        }, DispatcherPriority.Render);
         Render(this, Path.Combine(directory, "rp2040-c-editor.png"));
         await File.WriteAllTextAsync(Path.Combine(directory, "result.txt"),
             "PASS: Raspberry Pi logo, 3 C templates, dark/light themes, project creation, build/editor enabled, hardware download/debug disabled. No hardware access.\n");

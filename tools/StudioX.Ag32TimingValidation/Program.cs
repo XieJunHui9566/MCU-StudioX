@@ -8,9 +8,15 @@ if (args is [var toolsets, "--recheck-evidence", var matrix, var recheckOutput])
     await EvidenceChecks.RunAsync(toolsets, matrix, recheckOutput);
     return;
 }
-if (args.Length != 3) { throw new ArgumentException("toolsets pack-directory new-output"); }
+if (args.Length != 3)
+{
+    throw new ArgumentException("toolsets pack-directory new-output");
+}
 var output = Path.GetFullPath(args[2]);
-if (Directory.Exists(output)) { throw new IOException("Use a new validation output directory."); }
+if (Directory.Exists(output))
+{
+    throw new IOException("Use a new validation output directory.");
+}
 Directory.CreateDirectory(output);
 var catalog = new ToolsetCatalog(Path.GetFullPath(args[0]));
 var packs = new PackRepository(Path.Combine(output, "packs"));

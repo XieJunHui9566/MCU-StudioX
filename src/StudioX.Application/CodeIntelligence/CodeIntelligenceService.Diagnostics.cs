@@ -288,6 +288,9 @@ public sealed partial class CodeIntelligenceService
             }
             throw;
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
 }

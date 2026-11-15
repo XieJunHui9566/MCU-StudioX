@@ -91,8 +91,14 @@ public sealed partial class ProjectToolPreparationService(ToolsetCatalog catalog
                         state = ProjectToolState.Installed;
                         diagnostic = "清单身份和入口存在；尚未完整校验 SDK 文件。构建前仍执行完整内容校验。";
                     }
-                    catch (OperationCanceledException) { throw; }
-                    catch (Exception error) { diagnostic = error.ToString(); }
+                    catch (OperationCanceledException)
+                    {
+                        throw;
+                    }
+                    catch (Exception error)
+                    {
+                        diagnostic = error.ToString();
+                    }
                 }
                 if (state == ProjectToolState.Installed && !catalog.IsEnabled(need.Id, need.Version))
                 {

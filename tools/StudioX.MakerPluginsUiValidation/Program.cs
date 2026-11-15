@@ -149,7 +149,9 @@ internal static class Program
             Elements(content).OfType<Button>().Single(b => Convert.ToString(b.Content)!.StartsWith(prefix, StringComparison.Ordinal)).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             while (!pending.IsCompleted)
             {
-                Dispatcher.CurrentDispatcher.Invoke(() => { }, DispatcherPriority.Background);
+                Dispatcher.CurrentDispatcher.Invoke(() =>
+                {
+                }, DispatcherPriority.Background);
             }
             pending.GetAwaiter().GetResult();
             Layout(content, 1100, 1800);

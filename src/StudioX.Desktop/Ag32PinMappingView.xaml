@@ -61,7 +61,7 @@
             Margin="0,12,0,16" />
           <TextBlock
             x:Name="LicenseHelp"
-            Text="安装官方 AgRV SDK / Supra 后，选择 tool-agrv_logic/license/license.txt 导入。本机未取得或许可无效时，请向厂商申请适用于当前电脑的许可。文件已配置只表示存在，实际编译才检查其有效性。"
+            Text="Supra 需要本机有效许可，可从官方 SDK 导入 license.txt。"
             Foreground="{DynamicResource Muted}"
             TextWrapping="Wrap"
             Margin="0,0,0,8" />

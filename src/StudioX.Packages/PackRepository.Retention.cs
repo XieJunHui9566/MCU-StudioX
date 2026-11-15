@@ -67,12 +67,21 @@ public sealed partial class PackRepository
                         failures.Add(new(old.Manifest.Id, old.Manifest.Version, "旧版已移出目录，但残留清理失败：" + retired + "：" + ex.Message));
                     }
                 }
-                catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }
-                catch (Exception ex) { failures.Add(new(old.Manifest.Id, old.Manifest.Version, ex.Message)); }
+                catch (OperationCanceledException) when (token.IsCancellationRequested)
+                {
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    failures.Add(new(old.Manifest.Id, old.Manifest.Version, ex.Message));
+                }
             }
             return new PackPruneResult(removed, failures);
         }
-        finally { importGate.Release(); }
+        finally
+        {
+            importGate.Release();
+        }
     }, token);
 
     private void RejectLinkedPackRoot()

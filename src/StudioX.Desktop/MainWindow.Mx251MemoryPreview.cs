@@ -42,13 +42,17 @@ public partial class MainWindow
         {
             ApplyTheme(theme);
             UpdateLayout();
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.Render);
             Render(BuildMemory, Path.Combine(output, "mx251-memory-" + theme.Id + ".png"));
         }
         Render(this, Path.Combine(output, "build-tree-first-build.png"));
         await ShowBuildHistoryAsync();
         UpdateLayout();
-        await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+        await Dispatcher.InvokeAsync(() =>
+        {
+        }, DispatcherPriority.Render);
         Render(buildHistoryView!, Path.Combine(output, "mx251-history.png"));
         await CloseProjectAsync(default);
         Check(BuildMemory.RegionCount == 0, "closing clears memory panel");
@@ -62,7 +66,9 @@ public partial class MainWindow
             await BuildWithSummaryAsync(project, cancelled.Token);
             throw new InvalidOperationException("Pre-cancelled build was not cancelled.");
         }
-        catch (OperationCanceledException) when (cancelled.IsCancellationRequested) { }
+        catch (OperationCanceledException) when (cancelled.IsCancellationRequested)
+        {
+        }
         Check(await FindProjectNodeAsync(".build/cancelled-preview.log") is not null,
             "cancelled build still reconciles generated directories without using the cancelled build token");
         await JsonStore.WriteAsync(Path.Combine(output, "result.json"), new

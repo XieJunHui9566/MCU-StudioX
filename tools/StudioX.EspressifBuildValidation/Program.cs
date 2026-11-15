@@ -15,9 +15,18 @@ Directory.CreateDirectory(output);
 var memoryOnly = args.Length == 4 && args[3].StartsWith("memory:", StringComparison.Ordinal);
 var selected = args.Length == 4 ? (memoryOnly ? args[3][7..] : args[3]).Split(',') : ["esp32c3", "esp32s3", "esp32", "esp32p4", "esp32c5", "esp32c6"];
 var catalog = new ToolsetCatalog(Path.Combine(runtime, "toolsets"));
-if (memoryOnly) { return await EspressifMemoryChecks.RunAsync(catalog, projects, output, selected); }
-if (args.Length == 4 && args[3] == "native-tools") { return await EspressifNativeToolChecks.RunAsync(catalog, projects, output); }
-if (args.Length == 4 && args[3] == "boundaries") { return await EspressifBuildBoundaryChecks.RunAsync(catalog, projects, output); }
+if (memoryOnly)
+{
+    return await EspressifMemoryChecks.RunAsync(catalog, projects, output, selected);
+}
+if (args.Length == 4 && args[3] == "native-tools")
+{
+    return await EspressifNativeToolChecks.RunAsync(catalog, projects, output);
+}
+if (args.Length == 4 && args[3] == "boundaries")
+{
+    return await EspressifBuildBoundaryChecks.RunAsync(catalog, projects, output);
+}
 var builds = new BuildService(catalog);
 var results = new List<object>();
 var count = 0;

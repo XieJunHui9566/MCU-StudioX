@@ -39,7 +39,9 @@ public partial class MainWindow
                 System.Windows.Application.Current.Resources["WorkbenchFontSize"] = theme == custom ? 18d : 13d;
                 UpdateLayout();
                 StcPortPicker.BringIntoView();
-                await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+                await Dispatcher.InvokeAsync(() =>
+                {
+                }, DispatcherPriority.Render);
                 if (StcIspPanel.Visibility != Visibility.Visible || !StcDownloadTab.IsSelected ||
                     StcPortPicker.ActualWidth < 100 || StcBaudPicker.ActualHeight < 30)
                 {

@@ -1,0 +1,9763 @@
+{
+  "names": [
+    "identity",
+    "sum_bytes",
+    "copy_xor",
+    "ring_buffer",
+    "state_machine",
+    "frame_parser",
+    "struct_records",
+    "crc16",
+    "call_chain"
+  ],
+  "cases": [
+    {
+      "seed": 0,
+      "count": 0
+    },
+    {
+      "seed": 0,
+      "count": 1
+    },
+    {
+      "seed": 0,
+      "count": 2
+    },
+    {
+      "seed": 0,
+      "count": 3
+    },
+    {
+      "seed": 0,
+      "count": 4
+    },
+    {
+      "seed": 0,
+      "count": 5
+    },
+    {
+      "seed": 0,
+      "count": 6
+    },
+    {
+      "seed": 0,
+      "count": 7
+    },
+    {
+      "seed": 0,
+      "count": 8
+    },
+    {
+      "seed": 0,
+      "count": 11
+    },
+    {
+      "seed": 0,
+      "count": 12
+    },
+    {
+      "seed": 0,
+      "count": 15
+    },
+    {
+      "seed": 0,
+      "count": 16
+    },
+    {
+      "seed": 0,
+      "count": 31
+    },
+    {
+      "seed": 0,
+      "count": 63
+    },
+    {
+      "seed": 0,
+      "count": 64
+    },
+    {
+      "seed": 1,
+      "count": 0
+    },
+    {
+      "seed": 1,
+      "count": 1
+    },
+    {
+      "seed": 1,
+      "count": 2
+    },
+    {
+      "seed": 1,
+      "count": 3
+    },
+    {
+      "seed": 1,
+      "count": 4
+    },
+    {
+      "seed": 1,
+      "count": 5
+    },
+    {
+      "seed": 1,
+      "count": 6
+    },
+    {
+      "seed": 1,
+      "count": 7
+    },
+    {
+      "seed": 1,
+      "count": 8
+    },
+    {
+      "seed": 1,
+      "count": 11
+    },
+    {
+      "seed": 1,
+      "count": 12
+    },
+    {
+      "seed": 1,
+      "count": 15
+    },
+    {
+      "seed": 1,
+      "count": 16
+    },
+    {
+      "seed": 1,
+      "count": 31
+    },
+    {
+      "seed": 1,
+      "count": 63
+    },
+    {
+      "seed": 1,
+      "count": 64
+    },
+    {
+      "seed": 3254343796,
+      "count": 63
+    },
+    {
+      "seed": 417068524,
+      "count": 16
+    },
+    {
+      "seed": 1437431912,
+      "count": 1
+    },
+    {
+      "seed": 2025747354,
+      "count": 2
+    },
+    {
+      "seed": 4271783786,
+      "count": 255
+    },
+    {
+      "seed": 4194105751,
+      "count": 16
+    },
+    {
+      "seed": 1113717052,
+      "count": 65
+    },
+    {
+      "seed": 1243469188,
+      "count": 3
+    },
+    {
+      "seed": 4071723458,
+      "count": 255
+    },
+    {
+      "seed": 4172824665,
+      "count": 8
+    },
+    {
+      "seed": 1752272266,
+      "count": 63
+    },
+    {
+      "seed": 2572805257,
+      "count": 16
+    },
+    {
+      "seed": 3815532312,
+      "count": 15
+    },
+    {
+      "seed": 1323970769,
+      "count": 7
+    },
+    {
+      "seed": 2003397189,
+      "count": 7
+    },
+    {
+      "seed": 23424991,
+      "count": 6
+    },
+    {
+      "seed": 966858693,
+      "count": 15
+    },
+    {
+      "seed": 1918597652,
+      "count": 8
+    },
+    {
+      "seed": 3674544330,
+      "count": 31
+    },
+    {
+      "seed": 2955777129,
+      "count": 7
+    },
+    {
+      "seed": 3845835327,
+      "count": 15
+    },
+    {
+      "seed": 2390646361,
+      "count": 7
+    },
+    {
+      "seed": 3236623687,
+      "count": 63
+    },
+    {
+      "seed": 641122701,
+      "count": 3
+    },
+    {
+      "seed": 1656173720,
+      "count": 6
+    },
+    {
+      "seed": 1857597200,
+      "count": 12
+    },
+    {
+      "seed": 1136961855,
+      "count": 31
+    },
+    {
+      "seed": 4034963471,
+      "count": 16
+    },
+    {
+      "seed": 1881595846,
+      "count": 2
+    },
+    {
+      "seed": 2225181730,
+      "count": 4
+    },
+    {
+      "seed": 3465020804,
+      "count": 8
+    },
+    {
+      "seed": 2721883254,
+      "count": 63
+    },
+    {
+      "seed": 1403267370,
+      "count": 16
+    },
+    {
+      "seed": 3190193654,
+      "count": 6
+    },
+    {
+      "seed": 468009886,
+      "count": 11
+    },
+    {
+      "seed": 3807878238,
+      "count": 1
+    },
+    {
+      "seed": 3339114567,
+      "count": 65
+    },
+    {
+      "seed": 2527592031,
+      "count": 15
+    },
+    {
+      "seed": 543140624,
+      "count": 7
+    },
+    {
+      "seed": 634783110,
+      "count": 63
+    },
+    {
+      "seed": 3000175717,
+      "count": 16
+    },
+    {
+      "seed": 3622210792,
+      "count": 255
+    },
+    {
+      "seed": 3289966312,
+      "count": 15
+    },
+    {
+      "seed": 979371275,
+      "count": 64
+    },
+    {
+      "seed": 2736112866,
+      "count": 7
+    },
+    {
+      "seed": 2068823387,
+      "count": 15
+    },
+    {
+      "seed": 3534343958,
+      "count": 8
+    },
+    {
+      "seed": 3981985170,
+      "count": 65
+    },
+    {
+      "seed": 2992746267,
+      "count": 2
+    },
+    {
+      "seed": 1564315935,
+      "count": 31
+    },
+    {
+      "seed": 1001719531,
+      "count": 4294967295
+    },
+    {
+      "seed": 2972559115,
+      "count": 3
+    },
+    {
+      "seed": 3587290210,
+      "count": 15
+    },
+    {
+      "seed": 2242539646,
+      "count": 63
+    },
+    {
+      "seed": 308886566,
+      "count": 0
+    },
+    {
+      "seed": 1840785204,
+      "count": 8
+    },
+    {
+      "seed": 124633818,
+      "count": 3
+    },
+    {
+      "seed": 1771196514,
+      "count": 4
+    },
+    {
+      "seed": 3524473222,
+      "count": 2
+    },
+    {
+      "seed": 844461940,
+      "count": 16
+    },
+    {
+      "seed": 60060431,
+      "count": 8
+    },
+    {
+      "seed": 4120801276,
+      "count": 0
+    },
+    {
+      "seed": 710084781,
+      "count": 15
+    },
+    {
+      "seed": 899396731,
+      "count": 2
+    },
+    {
+      "seed": 838208016,
+      "count": 16
+    },
+    {
+      "seed": 2382086466,
+      "count": 64
+    },
+    {
+      "seed": 2212080810,
+      "count": 4294967295
+    },
+    {
+      "seed": 4128416201,
+      "count": 16
+    },
+    {
+      "seed": 2707981584,
+      "count": 31
+    },
+    {
+      "seed": 3544872494,
+      "count": 255
+    },
+    {
+      "seed": 1216266876,
+      "count": 7
+    },
+    {
+      "seed": 276963717,
+      "count": 4294967295
+    },
+    {
+      "seed": 2469888895,
+      "count": 4
+    },
+    {
+      "seed": 2202097396,
+      "count": 6
+    },
+    {
+      "seed": 1599675967,
+      "count": 2
+    },
+    {
+      "seed": 50054691,
+      "count": 7
+    },
+    {
+      "seed": 1755477511,
+      "count": 5
+    },
+    {
+      "seed": 1522257310,
+      "count": 15
+    },
+    {
+      "seed": 1935486594,
+      "count": 65
+    },
+    {
+      "seed": 3590034890,
+      "count": 6
+    },
+    {
+      "seed": 3788849340,
+      "count": 1
+    },
+    {
+      "seed": 2788901533,
+      "count": 1
+    },
+    {
+      "seed": 4220098641,
+      "count": 2
+    },
+    {
+      "seed": 3824100045,
+      "count": 64
+    },
+    {
+      "seed": 1731337516,
+      "count": 3
+    },
+    {
+      "seed": 1799370297,
+      "count": 16
+    },
+    {
+      "seed": 1730100668,
+      "count": 3
+    },
+    {
+      "seed": 2871593610,
+      "count": 5
+    },
+    {
+      "seed": 2982191321,
+      "count": 15
+    },
+    {
+      "seed": 293557725,
+      "count": 65
+    },
+    {
+      "seed": 1717357178,
+      "count": 4
+    },
+    {
+      "seed": 1874914793,
+      "count": 2
+    },
+    {
+      "seed": 1261741266,
+      "count": 255
+    },
+    {
+      "seed": 477975261,
+      "count": 11
+    },
+    {
+      "seed": 2680315512,
+      "count": 0
+    },
+    {
+      "seed": 3888402449,
+      "count": 4
+    }
+  ],
+  "expected": [
+    {
+      "index": 0,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 0,
+      "count": 0,
+      "expected": 0
+    },
+    {
+      "index": 0,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 0,
+      "count": 0,
+      "expected": 0
+    },
+    {
+      "index": 0,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 0,
+      "count": 0,
+      "expected": 0
+    },
+    {
+      "index": 0,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 0,
+      "count": 0,
+      "expected": 0
+    },
+    {
+      "index": 0,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 0,
+      "count": 0,
+      "expected": 0
+    },
+    {
+      "index": 0,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 0,
+      "count": 0,
+      "expected": 0
+    },
+    {
+      "index": 0,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 0,
+      "count": 0,
+      "expected": 0
+    },
+    {
+      "index": 0,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 0,
+      "count": 0,
+      "expected": 0
+    },
+    {
+      "index": 0,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 0,
+      "count": 0,
+      "expected": 0
+    },
+    {
+      "index": 1,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 0,
+      "count": 1,
+      "expected": 0
+    },
+    {
+      "index": 1,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 0,
+      "count": 1,
+      "expected": 165
+    },
+    {
+      "index": 1,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 0,
+      "count": 1,
+      "expected": 165
+    },
+    {
+      "index": 1,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 0,
+      "count": 1,
+      "expected": 165
+    },
+    {
+      "index": 1,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 0,
+      "count": 1,
+      "expected": 33554433
+    },
+    {
+      "index": 1,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 0,
+      "count": 1,
+      "expected": 256
+    },
+    {
+      "index": 1,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 0,
+      "count": 1,
+      "expected": 42664
+    },
+    {
+      "index": 1,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 0,
+      "count": 1,
+      "expected": 58703
+    },
+    {
+      "index": 1,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 0,
+      "count": 1,
+      "expected": 165
+    },
+    {
+      "index": 2,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 0,
+      "count": 2,
+      "expected": 0
+    },
+    {
+      "index": 2,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 0,
+      "count": 2,
+      "expected": 168
+    },
+    {
+      "index": 2,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 0,
+      "count": 2,
+      "expected": 168
+    },
+    {
+      "index": 2,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 0,
+      "count": 2,
+      "expected": 5126
+    },
+    {
+      "index": 2,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 0,
+      "count": 2,
+      "expected": 50331666
+    },
+    {
+      "index": 2,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 0,
+      "count": 2,
+      "expected": 515
+    },
+    {
+      "index": 2,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 0,
+      "count": 2,
+      "expected": 41645
+    },
+    {
+      "index": 2,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 0,
+      "count": 2,
+      "expected": 53992
+    },
+    {
+      "index": 2,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 0,
+      "count": 2,
+      "expected": 1324
+    },
+    {
+      "index": 3,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 0,
+      "count": 3,
+      "expected": 0
+    },
+    {
+      "index": 3,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 0,
+      "count": 3,
+      "expected": 185
+    },
+    {
+      "index": 3,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 0,
+      "count": 3,
+      "expected": 185
+    },
+    {
+      "index": 3,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 0,
+      "count": 3,
+      "expected": 169175
+    },
+    {
+      "index": 3,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 0,
+      "count": 3,
+      "expected": 67108901
+    },
+    {
+      "index": 3,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 0,
+      "count": 3,
+      "expected": 531
+    },
+    {
+      "index": 3,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 0,
+      "count": 3,
+      "expected": 46271
+    },
+    {
+      "index": 3,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 0,
+      "count": 3,
+      "expected": 303
+    },
+    {
+      "index": 3,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 0,
+      "count": 3,
+      "expected": 10611
+    },
+    {
+      "index": 4,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 0,
+      "count": 4,
+      "expected": 0
+    },
+    {
+      "index": 4,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 0,
+      "count": 4,
+      "expected": 219
+    },
+    {
+      "index": 4,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 0,
+      "count": 4,
+      "expected": 219
+    },
+    {
+      "index": 4,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 0,
+      "count": 4,
+      "expected": 5246485
+    },
+    {
+      "index": 4,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 0,
+      "count": 4,
+      "expected": 100672037
+    },
+    {
+      "index": 4,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 0,
+      "count": 4,
+      "expected": 698
+    },
+    {
+      "index": 4,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 0,
+      "count": 4,
+      "expected": 37275
+    },
+    {
+      "index": 4,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 0,
+      "count": 4,
+      "expected": 15105
+    },
+    {
+      "index": 4,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 0,
+      "count": 4,
+      "expected": 84925
+    },
+    {
+      "index": 5,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 0,
+      "count": 5,
+      "expected": 0
+    },
+    {
+      "index": 5,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 0,
+      "count": 5,
+      "expected": 270
+    },
+    {
+      "index": 5,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 0,
+      "count": 5,
+      "expected": 270
+    },
+    {
+      "index": 5,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 0,
+      "count": 5,
+      "expected": 173132934
+    },
+    {
+      "index": 5,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 0,
+      "count": 5,
+      "expected": 9825
+    },
+    {
+      "index": 5,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 0,
+      "count": 5,
+      "expected": 1616
+    },
+    {
+      "index": 5,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 0,
+      "count": 5,
+      "expected": 60883
+    },
+    {
+      "index": 5,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 0,
+      "count": 5,
+      "expected": 32776
+    },
+    {
+      "index": 5,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 0,
+      "count": 5,
+      "expected": 679455
+    },
+    {
+      "index": 6,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 0,
+      "count": 6,
+      "expected": 0
+    },
+    {
+      "index": 6,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 0,
+      "count": 6,
+      "expected": 273
+    },
+    {
+      "index": 6,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 0,
+      "count": 6,
+      "expected": 273
+    },
+    {
+      "index": 6,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 0,
+      "count": 6,
+      "expected": 1080581189
+    },
+    {
+      "index": 6,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 0,
+      "count": 6,
+      "expected": 67118692
+    },
+    {
+      "index": 6,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 0,
+      "count": 6,
+      "expected": 66896
+    },
+    {
+      "index": 6,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 0,
+      "count": 6,
+      "expected": 57815
+    },
+    {
+      "index": 6,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 0,
+      "count": 6,
+      "expected": 43499
+    },
+    {
+      "index": 6,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 0,
+      "count": 6,
+      "expected": 5435648
+    },
+    {
+      "index": 7,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 0,
+      "count": 7,
+      "expected": 0
+    },
+    {
+      "index": 7,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 0,
+      "count": 7,
+      "expected": 438
+    },
+    {
+      "index": 7,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 0,
+      "count": 7,
+      "expected": 438
+    },
+    {
+      "index": 7,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 0,
+      "count": 7,
+      "expected": 1298388032
+    },
+    {
+      "index": 7,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 0,
+      "count": 7,
+      "expected": 83919716
+    },
+    {
+      "index": 7,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 0,
+      "count": 7,
+      "expected": 66640
+    },
+    {
+      "index": 7,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 0,
+      "count": 7,
+      "expected": 20225
+    },
+    {
+      "index": 7,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 0,
+      "count": 7,
+      "expected": 10892
+    },
+    {
+      "index": 7,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 0,
+      "count": 7,
+      "expected": 43485355
+    },
+    {
+      "index": 8,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 0,
+      "count": 8,
+      "expected": 0
+    },
+    {
+      "index": 8,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 0,
+      "count": 8,
+      "expected": 438
+    },
+    {
+      "index": 8,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 0,
+      "count": 8,
+      "expected": 438
+    },
+    {
+      "index": 8,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 0,
+      "count": 8,
+      "expected": 3776535616
+    },
+    {
+      "index": 8,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 0,
+      "count": 8,
+      "expected": 117548713
+    },
+    {
+      "index": 8,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 0,
+      "count": 8,
+      "expected": 16844112
+    },
+    {
+      "index": 8,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 0,
+      "count": 8,
+      "expected": 19974
+    },
+    {
+      "index": 8,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 0,
+      "count": 8,
+      "expected": 2344
+    },
+    {
+      "index": 8,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 0,
+      "count": 8,
+      "expected": 347882847
+    },
+    {
+      "index": 9,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 0,
+      "count": 11,
+      "expected": 0
+    },
+    {
+      "index": 9,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 0,
+      "count": 11,
+      "expected": 694
+    },
+    {
+      "index": 9,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 0,
+      "count": 11,
+      "expected": 694
+    },
+    {
+      "index": 9,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 0,
+      "count": 11,
+      "expected": 157368478
+    },
+    {
+      "index": 9,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 0,
+      "count": 11,
+      "expected": 320968441
+    },
+    {
+      "index": 9,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 0,
+      "count": 11,
+      "expected": 16854154
+    },
+    {
+      "index": 9,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 0,
+      "count": 11,
+      "expected": 47785
+    },
+    {
+      "index": 9,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 0,
+      "count": 11,
+      "expected": 36668
+    },
+    {
+      "index": 9,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 0,
+      "count": 11,
+      "expected": 2022369821
+    },
+    {
+      "index": 10,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 0,
+      "count": 12,
+      "expected": 0
+    },
+    {
+      "index": 10,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 0,
+      "count": 12,
+      "expected": 694
+    },
+    {
+      "index": 10,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 0,
+      "count": 12,
+      "expected": 694
+    },
+    {
+      "index": 10,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 0,
+      "count": 12,
+      "expected": 625562462
+    },
+    {
+      "index": 10,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 0,
+      "count": 12,
+      "expected": 608382450
+    },
+    {
+      "index": 10,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 0,
+      "count": 12,
+      "expected": 33632138
+    },
+    {
+      "index": 10,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 0,
+      "count": 12,
+      "expected": 46510
+    },
+    {
+      "index": 10,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 0,
+      "count": 12,
+      "expected": 23655
+    },
+    {
+      "index": 10,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 0,
+      "count": 12,
+      "expected": 3294056694
+    },
+    {
+      "index": 11,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 0,
+      "count": 15,
+      "expected": 0
+    },
+    {
+      "index": 11,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 0,
+      "count": 15,
+      "expected": 1132
+    },
+    {
+      "index": 11,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 0,
+      "count": 15,
+      "expected": 1132
+    },
+    {
+      "index": 11,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 0,
+      "count": 15,
+      "expected": 8541270
+    },
+    {
+      "index": 11,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 0,
+      "count": 15,
+      "expected": 642486797
+    },
+    {
+      "index": 11,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 0,
+      "count": 15,
+      "expected": 33632138
+    },
+    {
+      "index": 11,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 0,
+      "count": 15,
+      "expected": 244423
+    },
+    {
+      "index": 11,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 0,
+      "count": 15,
+      "expected": 43277
+    },
+    {
+      "index": 11,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 0,
+      "count": 15,
+      "expected": 2929862851
+    },
+    {
+      "index": 12,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 0,
+      "count": 16,
+      "expected": 0
+    },
+    {
+      "index": 12,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 0,
+      "count": 16,
+      "expected": 1182
+    },
+    {
+      "index": 12,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 0,
+      "count": 16,
+      "expected": 1182
+    },
+    {
+      "index": 12,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 0,
+      "count": 16,
+      "expected": 281599652
+    },
+    {
+      "index": 12,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 0,
+      "count": 16,
+      "expected": 659264030
+    },
+    {
+      "index": 12,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 0,
+      "count": 16,
+      "expected": 33632138
+    },
+    {
+      "index": 12,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 0,
+      "count": 16,
+      "expected": 248248
+    },
+    {
+      "index": 12,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 0,
+      "count": 16,
+      "expected": 16338
+    },
+    {
+      "index": 12,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 0,
+      "count": 16,
+      "expected": 1964066398
+    },
+    {
+      "index": 13,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 0,
+      "count": 31,
+      "expected": 0
+    },
+    {
+      "index": 13,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 0,
+      "count": 31,
+      "expected": 3108
+    },
+    {
+      "index": 13,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 0,
+      "count": 31,
+      "expected": 3108
+    },
+    {
+      "index": 13,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 0,
+      "count": 31,
+      "expected": 1660089778
+    },
+    {
+      "index": 13,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 0,
+      "count": 31,
+      "expected": 1164578911
+    },
+    {
+      "index": 13,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 0,
+      "count": 31,
+      "expected": 33632138
+    },
+    {
+      "index": 13,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 0,
+      "count": 31,
+      "expected": 466439
+    },
+    {
+      "index": 13,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 0,
+      "count": 31,
+      "expected": 47869
+    },
+    {
+      "index": 13,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 0,
+      "count": 31,
+      "expected": 1229947341
+    },
+    {
+      "index": 14,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 0,
+      "count": 63,
+      "expected": 0
+    },
+    {
+      "index": 14,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 0,
+      "count": 63,
+      "expected": 7188
+    },
+    {
+      "index": 14,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 0,
+      "count": 63,
+      "expected": 7188
+    },
+    {
+      "index": 14,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 0,
+      "count": 63,
+      "expected": 388988802
+    },
+    {
+      "index": 14,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 0,
+      "count": 63,
+      "expected": 3044956388
+    },
+    {
+      "index": 14,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 0,
+      "count": 63,
+      "expected": 33632138
+    },
+    {
+      "index": 14,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 0,
+      "count": 63,
+      "expected": 1469463
+    },
+    {
+      "index": 14,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 0,
+      "count": 63,
+      "expected": 2584
+    },
+    {
+      "index": 14,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 0,
+      "count": 63,
+      "expected": 3441044167
+    },
+    {
+      "index": 15,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 0,
+      "count": 64,
+      "expected": 0
+    },
+    {
+      "index": 15,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 0,
+      "count": 64,
+      "expected": 7246
+    },
+    {
+      "index": 15,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 0,
+      "count": 64,
+      "expected": 7246
+    },
+    {
+      "index": 15,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 0,
+      "count": 64,
+      "expected": 338657154
+    },
+    {
+      "index": 15,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 0,
+      "count": 64,
+      "expected": 3028179189
+    },
+    {
+      "index": 15,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 0,
+      "count": 64,
+      "expected": 33632138
+    },
+    {
+      "index": 15,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 0,
+      "count": 64,
+      "expected": 1264568
+    },
+    {
+      "index": 15,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 0,
+      "count": 64,
+      "expected": 11859
+    },
+    {
+      "index": 15,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 0,
+      "count": 64,
+      "expected": 1758549687
+    },
+    {
+      "index": 16,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 1,
+      "count": 0,
+      "expected": 1
+    },
+    {
+      "index": 16,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 1,
+      "count": 0,
+      "expected": 1
+    },
+    {
+      "index": 16,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 1,
+      "count": 0,
+      "expected": 1
+    },
+    {
+      "index": 16,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 1,
+      "count": 0,
+      "expected": 1
+    },
+    {
+      "index": 16,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 1,
+      "count": 0,
+      "expected": 16777217
+    },
+    {
+      "index": 16,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 1,
+      "count": 0,
+      "expected": 1
+    },
+    {
+      "index": 16,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 1,
+      "count": 0,
+      "expected": 1025
+    },
+    {
+      "index": 16,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 1,
+      "count": 0,
+      "expected": 1
+    },
+    {
+      "index": 16,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 1,
+      "count": 0,
+      "expected": 1
+    },
+    {
+      "index": 17,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 1,
+      "count": 1,
+      "expected": 1
+    },
+    {
+      "index": 17,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 1,
+      "count": 1,
+      "expected": 166
+    },
+    {
+      "index": 17,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 1,
+      "count": 1,
+      "expected": 165
+    },
+    {
+      "index": 17,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 1,
+      "count": 1,
+      "expected": 132
+    },
+    {
+      "index": 17,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 1,
+      "count": 1,
+      "expected": 304099393
+    },
+    {
+      "index": 17,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 1,
+      "count": 1,
+      "expected": 257
+    },
+    {
+      "index": 17,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 1,
+      "count": 1,
+      "expected": 41637
+    },
+    {
+      "index": 17,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 1,
+      "count": 1,
+      "expected": 58447
+    },
+    {
+      "index": 17,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 1,
+      "count": 1,
+      "expected": 172
+    },
+    {
+      "index": 18,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 1,
+      "count": 2,
+      "expected": 1
+    },
+    {
+      "index": 18,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 1,
+      "count": 2,
+      "expected": 169
+    },
+    {
+      "index": 18,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 1,
+      "count": 2,
+      "expected": 167
+    },
+    {
+      "index": 18,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 1,
+      "count": 2,
+      "expected": 4103
+    },
+    {
+      "index": 18,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 1,
+      "count": 2,
+      "expected": 320876626
+    },
+    {
+      "index": 18,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 1,
+      "count": 2,
+      "expected": 514
+    },
+    {
+      "index": 18,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 1,
+      "count": 2,
+      "expected": 42660
+    },
+    {
+      "index": 18,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 1,
+      "count": 2,
+      "expected": 49865
+    },
+    {
+      "index": 18,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 1,
+      "count": 2,
+      "expected": 1379
+    },
+    {
+      "index": 19,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 1,
+      "count": 3,
+      "expected": 1
+    },
+    {
+      "index": 19,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 1,
+      "count": 3,
+      "expected": 186
+    },
+    {
+      "index": 19,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 1,
+      "count": 3,
+      "expected": 183
+    },
+    {
+      "index": 19,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 1,
+      "count": 3,
+      "expected": 135414
+    },
+    {
+      "index": 19,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 1,
+      "count": 3,
+      "expected": 608198821
+    },
+    {
+      "index": 19,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 1,
+      "count": 3,
+      "expected": 538
+    },
+    {
+      "index": 19,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 1,
+      "count": 3,
+      "expected": 45234
+    },
+    {
+      "index": 19,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 1,
+      "count": 3,
+      "expected": 12830
+    },
+    {
+      "index": 19,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 1,
+      "count": 3,
+      "expected": 11050
+    },
+    {
+      "index": 20,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 1,
+      "count": 4,
+      "expected": 1
+    },
+    {
+      "index": 20,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 1,
+      "count": 4,
+      "expected": 220
+    },
+    {
+      "index": 20,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 1,
+      "count": 4,
+      "expected": 218
+    },
+    {
+      "index": 20,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 1,
+      "count": 4,
+      "expected": 4197908
+    },
+    {
+      "index": 20,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 1,
+      "count": 4,
+      "expected": 641745573
+    },
+    {
+      "index": 20,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 1,
+      "count": 4,
+      "expected": 763
+    },
+    {
+      "index": 20,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 1,
+      "count": 4,
+      "expected": 37786
+    },
+    {
+      "index": 20,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 1,
+      "count": 4,
+      "expected": 3121
+    },
+    {
+      "index": 20,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 1,
+      "count": 4,
+      "expected": 88438
+    },
+    {
+      "index": 21,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 1,
+      "count": 5,
+      "expected": 1
+    },
+    {
+      "index": 21,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 1,
+      "count": 5,
+      "expected": 271
+    },
+    {
+      "index": 21,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 1,
+      "count": 5,
+      "expected": 268
+    },
+    {
+      "index": 21,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 1,
+      "count": 5,
+      "expected": 138529959
+    },
+    {
+      "index": 21,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 1,
+      "count": 5,
+      "expected": 608717553
+    },
+    {
+      "index": 21,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 1,
+      "count": 5,
+      "expected": 1049
+    },
+    {
+      "index": 21,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 1,
+      "count": 5,
+      "expected": 61404
+    },
+    {
+      "index": 21,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 1,
+      "count": 5,
+      "expected": 63164
+    },
+    {
+      "index": 21,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 1,
+      "count": 5,
+      "expected": 707558
+    },
+    {
+      "index": 22,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 1,
+      "count": 6,
+      "expected": 1
+    },
+    {
+      "index": 22,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 1,
+      "count": 6,
+      "expected": 274
+    },
+    {
+      "index": 22,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 1,
+      "count": 6,
+      "expected": 270
+    },
+    {
+      "index": 22,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 1,
+      "count": 6,
+      "expected": 7886916
+    },
+    {
+      "index": 22,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 1,
+      "count": 6,
+      "expected": 541608692
+    },
+    {
+      "index": 22,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 1,
+      "count": 6,
+      "expected": 67353
+    },
+    {
+      "index": 22,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 1,
+      "count": 6,
+      "expected": 58322
+    },
+    {
+      "index": 22,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 1,
+      "count": 6,
+      "expected": 954
+    },
+    {
+      "index": 22,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 1,
+      "count": 6,
+      "expected": 5660471
+    },
+    {
+      "index": 23,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 1,
+      "count": 7,
+      "expected": 1
+    },
+    {
+      "index": 23,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 1,
+      "count": 7,
+      "expected": 439
+    },
+    {
+      "index": 23,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 1,
+      "count": 7,
+      "expected": 434
+    },
+    {
+      "index": 23,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 1,
+      "count": 7,
+      "expected": 259215457
+    },
+    {
+      "index": 23,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 1,
+      "count": 7,
+      "expected": 558428148
+    },
+    {
+      "index": 23,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 1,
+      "count": 7,
+      "expected": 67097
+    },
+    {
+      "index": 23,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 1,
+      "count": 7,
+      "expected": 19714
+    },
+    {
+      "index": 23,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 1,
+      "count": 7,
+      "expected": 28460
+    },
+    {
+      "index": 23,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 1,
+      "count": 7,
+      "expected": 45283938
+    },
+    {
+      "index": 24,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 1,
+      "count": 8,
+      "expected": 1
+    },
+    {
+      "index": 24,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 1,
+      "count": 8,
+      "expected": 439
+    },
+    {
+      "index": 24,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 1,
+      "count": 8,
+      "expected": 435
+    },
+    {
+      "index": 24,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 1,
+      "count": 8,
+      "expected": 3776535617
+    },
+    {
+      "index": 24,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 1,
+      "count": 8,
+      "expected": 592057145
+    },
+    {
+      "index": 24,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 1,
+      "count": 8,
+      "expected": 16844569
+    },
+    {
+      "index": 24,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 1,
+      "count": 8,
+      "expected": 16923
+    },
+    {
+      "index": 24,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 1,
+      "count": 8,
+      "expected": 45385
+    },
+    {
+      "index": 24,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 1,
+      "count": 8,
+      "expected": 362271512
+    },
+    {
+      "index": 25,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 1,
+      "count": 11,
+      "expected": 1
+    },
+    {
+      "index": 25,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 1,
+      "count": 11,
+      "expected": 695
+    },
+    {
+      "index": 25,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 1,
+      "count": 11,
+      "expected": 690
+    },
+    {
+      "index": 25,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 1,
+      "count": 11,
+      "expected": 157402303
+    },
+    {
+      "index": 25,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 1,
+      "count": 11,
+      "expected": 929702793
+    },
+    {
+      "index": 25,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 1,
+      "count": 11,
+      "expected": 16858251
+    },
+    {
+      "index": 25,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 1,
+      "count": 11,
+      "expected": 48826
+    },
+    {
+      "index": 25,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 1,
+      "count": 11,
+      "expected": 57465
+    },
+    {
+      "index": 25,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 1,
+      "count": 11,
+      "expected": 799431640
+    },
+    {
+      "index": 26,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 1,
+      "count": 12,
+      "expected": 1
+    },
+    {
+      "index": 26,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 1,
+      "count": 12,
+      "expected": 695
+    },
+    {
+      "index": 26,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 1,
+      "count": 12,
+      "expected": 691
+    },
+    {
+      "index": 26,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 1,
+      "count": 12,
+      "expected": 626611039
+    },
+    {
+      "index": 26,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 1,
+      "count": 12,
+      "expected": 1825851154
+    },
+    {
+      "index": 26,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 1,
+      "count": 12,
+      "expected": 33636235
+    },
+    {
+      "index": 26,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 1,
+      "count": 12,
+      "expected": 49103
+    },
+    {
+      "index": 26,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 1,
+      "count": 12,
+      "expected": 33838
+    },
+    {
+      "index": 26,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 1,
+      "count": 12,
+      "expected": 2100485837
+    },
+    {
+      "index": 27,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 1,
+      "count": 15,
+      "expected": 1
+    },
+    {
+      "index": 27,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 1,
+      "count": 15,
+      "expected": 1136
+    },
+    {
+      "index": 27,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 1,
+      "count": 15,
+      "expected": 1133
+    },
+    {
+      "index": 27,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 1,
+      "count": 15,
+      "expected": 1116919194
+    },
+    {
+      "index": 27,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 1,
+      "count": 15,
+      "expected": 2062857298
+    },
+    {
+      "index": 27,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 1,
+      "count": 15,
+      "expected": 33636235
+    },
+    {
+      "index": 27,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 1,
+      "count": 15,
+      "expected": 245359
+    },
+    {
+      "index": 27,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 1,
+      "count": 15,
+      "expected": 50433
+    },
+    {
+      "index": 27,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 1,
+      "count": 15,
+      "expected": 1706939975
+    },
+    {
+      "index": 28,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 1,
+      "count": 16,
+      "expected": 1
+    },
+    {
+      "index": 28,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 1,
+      "count": 16,
+      "expected": 1187
+    },
+    {
+      "index": 28,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 1,
+      "count": 16,
+      "expected": 1183
+    },
+    {
+      "index": 28,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 1,
+      "count": 16,
+      "expected": 281569001
+    },
+    {
+      "index": 28,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 1,
+      "count": 16,
+      "expected": 2079634531
+    },
+    {
+      "index": 28,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 1,
+      "count": 16,
+      "expected": 33636235
+    },
+    {
+      "index": 28,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 1,
+      "count": 16,
+      "expected": 248369
+    },
+    {
+      "index": 28,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 1,
+      "count": 16,
+      "expected": 36569
+    },
+    {
+      "index": 28,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 1,
+      "count": 16,
+      "expected": 770617980
+    },
+    {
+      "index": 29,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 1,
+      "count": 31,
+      "expected": 1
+    },
+    {
+      "index": 29,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 1,
+      "count": 31,
+      "expected": 3128
+    },
+    {
+      "index": 29,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 1,
+      "count": 31,
+      "expected": 3125
+    },
+    {
+      "index": 29,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 1,
+      "count": 31,
+      "expected": 2799755547
+    },
+    {
+      "index": 29,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 1,
+      "count": 31,
+      "expected": 2593872005
+    },
+    {
+      "index": 29,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 1,
+      "count": 31,
+      "expected": 33636235
+    },
+    {
+      "index": 29,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 1,
+      "count": 31,
+      "expected": 470651
+    },
+    {
+      "index": 29,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 1,
+      "count": 31,
+      "expected": 53217
+    },
+    {
+      "index": 29,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 1,
+      "count": 31,
+      "expected": 148134427
+    },
+    {
+      "index": 30,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 1,
+      "count": 63,
+      "expected": 1
+    },
+    {
+      "index": 30,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 1,
+      "count": 63,
+      "expected": 7240
+    },
+    {
+      "index": 30,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 1,
+      "count": 63,
+      "expected": 7237
+    },
+    {
+      "index": 30,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 1,
+      "count": 63,
+      "expected": 3544017707
+    },
+    {
+      "index": 30,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 1,
+      "count": 63,
+      "expected": 3887886299
+    },
+    {
+      "index": 30,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 1,
+      "count": 63,
+      "expected": 50413451
+    },
+    {
+      "index": 30,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 1,
+      "count": 63,
+      "expected": 1527035
+    },
+    {
+      "index": 30,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 1,
+      "count": 63,
+      "expected": 64792
+    },
+    {
+      "index": 30,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 1,
+      "count": 63,
+      "expected": 3218224712
+    },
+    {
+      "index": 31,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 1,
+      "count": 64,
+      "expected": 1
+    },
+    {
+      "index": 31,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 1,
+      "count": 64,
+      "expected": 7299
+    },
+    {
+      "index": 31,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 1,
+      "count": 64,
+      "expected": 7295
+    },
+    {
+      "index": 31,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 1,
+      "count": 64,
+      "expected": 3493686059
+    },
+    {
+      "index": 31,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 1,
+      "count": 64,
+      "expected": 3871109100
+    },
+    {
+      "index": 31,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 1,
+      "count": 64,
+      "expected": 50413451
+    },
+    {
+      "index": 31,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 1,
+      "count": 64,
+      "expected": 552713
+    },
+    {
+      "index": 31,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 1,
+      "count": 64,
+      "expected": 41354
+    },
+    {
+      "index": 31,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 1,
+      "count": 64,
+      "expected": 4270961342
+    },
+    {
+      "index": 32,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 3254343796,
+      "count": 63,
+      "expected": 3254343796
+    },
+    {
+      "index": 32,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 3254343796,
+      "count": 63,
+      "expected": 3254351012
+    },
+    {
+      "index": 32,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 3254343796,
+      "count": 63,
+      "expected": 3254351920
+    },
+    {
+      "index": 32,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 3254343796,
+      "count": 63,
+      "expected": 3013160206
+    },
+    {
+      "index": 32,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 3254343796,
+      "count": 63,
+      "expected": 4199431600
+    },
+    {
+      "index": 32,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 3254343796,
+      "count": 63,
+      "expected": 1451177982
+    },
+    {
+      "index": 32,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 3254343796,
+      "count": 63,
+      "expected": 372535511
+    },
+    {
+      "index": 32,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 3254343796,
+      "count": 63,
+      "expected": 45746
+    },
+    {
+      "index": 32,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 3254343796,
+      "count": 63,
+      "expected": 726647266
+    },
+    {
+      "index": 33,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 417068524,
+      "count": 16,
+      "expected": 417068524
+    },
+    {
+      "index": 33,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 417068524,
+      "count": 16,
+      "expected": 417069882
+    },
+    {
+      "index": 33,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 417068524,
+      "count": 16,
+      "expected": 417071186
+    },
+    {
+      "index": 33,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 417068524,
+      "count": 16,
+      "expected": 136599752
+    },
+    {
+      "index": 33,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 417068524,
+      "count": 16,
+      "expected": 12851771
+    },
+    {
+      "index": 33,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 417068524,
+      "count": 16,
+      "expected": 2776898150
+    },
+    {
+      "index": 33,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 417068524,
+      "count": 16,
+      "expected": 416973076
+    },
+    {
+      "index": 33,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 417068524,
+      "count": 16,
+      "expected": 40181
+    },
+    {
+      "index": 33,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 417068524,
+      "count": 16,
+      "expected": 2396259608
+    },
+    {
+      "index": 34,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 1437431912,
+      "count": 1,
+      "expected": 1437431912
+    },
+    {
+      "index": 34,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 1437431912,
+      "count": 1,
+      "expected": 1437432077
+    },
+    {
+      "index": 34,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 1437431912,
+      "count": 1,
+      "expected": 1437432117
+    },
+    {
+      "index": 34,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 1437431912,
+      "count": 1,
+      "expected": 3758257613
+    },
+    {
+      "index": 34,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 1437431912,
+      "count": 1,
+      "expected": 1470986345
+    },
+    {
+      "index": 34,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 1437431912,
+      "count": 1,
+      "expected": 1437432168
+    },
+    {
+      "index": 34,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 1437431912,
+      "count": 1,
+      "expected": 2824536096
+    },
+    {
+      "index": 34,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 1437431912,
+      "count": 1,
+      "expected": 29392
+    },
+    {
+      "index": 34,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 1437431912,
+      "count": 1,
+      "expected": 51985423
+    },
+    {
+      "index": 35,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 2025747354,
+      "count": 2,
+      "expected": 2025747354
+    },
+    {
+      "index": 35,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 2025747354,
+      "count": 2,
+      "expected": 2025747522
+    },
+    {
+      "index": 35,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 2025747354,
+      "count": 2,
+      "expected": 2025747570
+    },
+    {
+      "index": 35,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 2025747354,
+      "count": 2,
+      "expected": 2171604892
+    },
+    {
+      "index": 35,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 2025747354,
+      "count": 2,
+      "expected": 4118603605
+    },
+    {
+      "index": 35,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 2025747354,
+      "count": 2,
+      "expected": 2025746841
+    },
+    {
+      "index": 35,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 2025747354,
+      "count": 2,
+      "expected": 2025753471
+    },
+    {
+      "index": 35,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 2025747354,
+      "count": 2,
+      "expected": 44305
+    },
+    {
+      "index": 35,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 2025747354,
+      "count": 2,
+      "expected": 1850668075
+    },
+    {
+      "index": 36,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 4271783786,
+      "count": 255,
+      "expected": 4271783786
+    },
+    {
+      "index": 36,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 4271783786,
+      "count": 255,
+      "expected": 4271790912
+    },
+    {
+      "index": 36,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 4271783786,
+      "count": 255,
+      "expected": 4271791624
+    },
+    {
+      "index": 36,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 4271783786,
+      "count": 255,
+      "expected": 1328487704
+    },
+    {
+      "index": 36,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 4271783786,
+      "count": 255,
+      "expected": 3717073488
+    },
+    {
+      "index": 36,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 4271783786,
+      "count": 255,
+      "expected": 527020256
+    },
+    {
+      "index": 36,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 4271783786,
+      "count": 255,
+      "expected": 3327572298
+    },
+    {
+      "index": 36,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 4271783786,
+      "count": 255,
+      "expected": 7619
+    },
+    {
+      "index": 36,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 4271783786,
+      "count": 255,
+      "expected": 1707324932
+    },
+    {
+      "index": 37,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 4194105751,
+      "count": 16,
+      "expected": 4194105751
+    },
+    {
+      "index": 37,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 4194105751,
+      "count": 16,
+      "expected": 4194107025
+    },
+    {
+      "index": 37,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 4194105751,
+      "count": 16,
+      "expected": 4194107917
+    },
+    {
+      "index": 37,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 4194105751,
+      "count": 16,
+      "expected": 3917064483
+    },
+    {
+      "index": 37,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 4194105751,
+      "count": 16,
+      "expected": 2784366395
+    },
+    {
+      "index": 37,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 4194105751,
+      "count": 16,
+      "expected": 879011357
+    },
+    {
+      "index": 37,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 4194105751,
+      "count": 16,
+      "expected": 4194139335
+    },
+    {
+      "index": 37,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 4194105751,
+      "count": 16,
+      "expected": 49793
+    },
+    {
+      "index": 37,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 4194105751,
+      "count": 16,
+      "expected": 1485552755
+    },
+    {
+      "index": 38,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 1113717052,
+      "count": 65,
+      "expected": 1113717052
+    },
+    {
+      "index": 38,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 1113717052,
+      "count": 65,
+      "expected": 1113724346
+    },
+    {
+      "index": 38,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 1113717052,
+      "count": 65,
+      "expected": 1113724546
+    },
+    {
+      "index": 38,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 1113717052,
+      "count": 65,
+      "expected": 1803466086
+    },
+    {
+      "index": 38,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 1113717052,
+      "count": 65,
+      "expected": 3929932139
+    },
+    {
+      "index": 38,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 1113717052,
+      "count": 65,
+      "expected": 1609766582
+    },
+    {
+      "index": 38,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 1113717052,
+      "count": 65,
+      "expected": 1116162292
+    },
+    {
+      "index": 38,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 1113717052,
+      "count": 65,
+      "expected": 15329
+    },
+    {
+      "index": 38,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 1113717052,
+      "count": 65,
+      "expected": 680785652
+    },
+    {
+      "index": 39,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 1243469188,
+      "count": 3,
+      "expected": 1243469188
+    },
+    {
+      "index": 39,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 1243469188,
+      "count": 3,
+      "expected": 1243469373
+    },
+    {
+      "index": 39,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 1243469188,
+      "count": 3,
+      "expected": 1243469505
+    },
+    {
+      "index": 39,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 1243469188,
+      "count": 3,
+      "expected": 2486297043
+    },
+    {
+      "index": 39,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 1243469188,
+      "count": 3,
+      "expected": 1260295112
+    },
+    {
+      "index": 39,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 1243469188,
+      "count": 3,
+      "expected": 452164535
+    },
+    {
+      "index": 39,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 1243469188,
+      "count": 3,
+      "expected": 2516529211
+    },
+    {
+      "index": 39,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 1243469188,
+      "count": 3,
+      "expected": 22551
+    },
+    {
+      "index": 39,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 1243469188,
+      "count": 3,
+      "expected": 1579995832
+    },
+    {
+      "index": 40,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 4071723458,
+      "count": 255,
+      "expected": 4071723458
+    },
+    {
+      "index": 40,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 4071723458,
+      "count": 255,
+      "expected": 4071731064
+    },
+    {
+      "index": 40,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 4071723458,
+      "count": 255,
+      "expected": 4071731968
+    },
+    {
+      "index": 40,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 4071723458,
+      "count": 255,
+      "expected": 3023789728
+    },
+    {
+      "index": 40,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 4071723458,
+      "count": 255,
+      "expected": 196485590
+    },
+    {
+      "index": 40,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 4071723458,
+      "count": 255,
+      "expected": 3920404040
+    },
+    {
+      "index": 40,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 4071723458,
+      "count": 255,
+      "expected": 4057121522
+    },
+    {
+      "index": 40,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 4071723458,
+      "count": 255,
+      "expected": 43834
+    },
+    {
+      "index": 40,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 4071723458,
+      "count": 255,
+      "expected": 1619790567
+    },
+    {
+      "index": 41,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 4172824665,
+      "count": 8,
+      "expected": 4172824665
+    },
+    {
+      "index": 41,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 4172824665,
+      "count": 8,
+      "expected": 4172825103
+    },
+    {
+      "index": 41,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 4172824665,
+      "count": 8,
+      "expected": 4172825739
+    },
+    {
+      "index": 41,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 4172824665,
+      "count": 8,
+      "expected": 429988889
+    },
+    {
+      "index": 41,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 4172824665,
+      "count": 8,
+      "expected": 3424100967
+    },
+    {
+      "index": 41,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 4172824665,
+      "count": 8,
+      "expected": 1659626369
+    },
+    {
+      "index": 41,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 4172824665,
+      "count": 8,
+      "expected": 4172809603
+    },
+    {
+      "index": 41,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 4172824665,
+      "count": 8,
+      "expected": 16035
+    },
+    {
+      "index": 41,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 4172824665,
+      "count": 8,
+      "expected": 2082196016
+    },
+    {
+      "index": 42,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 1752272266,
+      "count": 63,
+      "expected": 1752272266
+    },
+    {
+      "index": 42,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 1752272266,
+      "count": 63,
+      "expected": 1752279324
+    },
+    {
+      "index": 42,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 1752272266,
+      "count": 63,
+      "expected": 1752280538
+    },
+    {
+      "index": 42,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 1752272266,
+      "count": 63,
+      "expected": 3456777144
+    },
+    {
+      "index": 42,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 1752272266,
+      "count": 63,
+      "expected": 1760812185
+    },
+    {
+      "index": 42,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 1752272266,
+      "count": 63,
+      "expected": 1923613184
+    },
+    {
+      "index": 42,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 1752272266,
+      "count": 63,
+      "expected": 1843236027
+    },
+    {
+      "index": 42,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 1752272266,
+      "count": 63,
+      "expected": 11392
+    },
+    {
+      "index": 42,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 1752272266,
+      "count": 63,
+      "expected": 3268556048
+    },
+    {
+      "index": 43,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 2572805257,
+      "count": 16,
+      "expected": 2572805257
+    },
+    {
+      "index": 43,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 2572805257,
+      "count": 16,
+      "expected": 2572806475
+    },
+    {
+      "index": 43,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 2572805257,
+      "count": 16,
+      "expected": 2572807319
+    },
+    {
+      "index": 43,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 2572805257,
+      "count": 16,
+      "expected": 2312487009
+    },
+    {
+      "index": 43,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 2572805257,
+      "count": 16,
+      "expected": 305995271
+    },
+    {
+      "index": 43,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 2572805257,
+      "count": 16,
+      "expected": 84957955
+    },
+    {
+      "index": 43,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 2572805257,
+      "count": 16,
+      "expected": 2572689545
+    },
+    {
+      "index": 43,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 2572805257,
+      "count": 16,
+      "expected": 47024
+    },
+    {
+      "index": 43,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 2572805257,
+      "count": 16,
+      "expected": 3650697117
+    },
+    {
+      "index": 44,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 3815532312,
+      "count": 15,
+      "expected": 3815532312
+    },
+    {
+      "index": 44,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 3815532312,
+      "count": 15,
+      "expected": 3815533516
+    },
+    {
+      "index": 44,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 3815532312,
+      "count": 15,
+      "expected": 3815533668
+    },
+    {
+      "index": 44,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 3815532312,
+      "count": 15,
+      "expected": 1307759462
+    },
+    {
+      "index": 44,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 3815532312,
+      "count": 15,
+      "expected": 2378253236
+    },
+    {
+      "index": 44,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 3815532312,
+      "count": 15,
+      "expected": 656197778
+    },
+    {
+      "index": 44,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 3815532312,
+      "count": 15,
+      "expected": 3481837831
+    },
+    {
+      "index": 44,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 3815532312,
+      "count": 15,
+      "expected": 36457
+    },
+    {
+      "index": 44,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 3815532312,
+      "count": 15,
+      "expected": 2631685590
+    },
+    {
+      "index": 45,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 1323970769,
+      "count": 7,
+      "expected": 1323970769
+    },
+    {
+      "index": 45,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 1323970769,
+      "count": 7,
+      "expected": 1323971207
+    },
+    {
+      "index": 45,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 1323970769,
+      "count": 7,
+      "expected": 1323972082
+    },
+    {
+      "index": 45,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 1323970769,
+      "count": 7,
+      "expected": 2171878065
+    },
+    {
+      "index": 45,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 1323970769,
+      "count": 7,
+      "expected": 2938503728
+    },
+    {
+      "index": 45,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 1323970769,
+      "count": 7,
+      "expected": 1465328713
+    },
+    {
+      "index": 45,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 1323970769,
+      "count": 7,
+      "expected": 3946198610
+    },
+    {
+      "index": 45,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 1323970769,
+      "count": 7,
+      "expected": 37397
+    },
+    {
+      "index": 45,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 1323970769,
+      "count": 7,
+      "expected": 3969565304
+    },
+    {
+      "index": 46,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 2003397189,
+      "count": 7,
+      "expected": 2003397189
+    },
+    {
+      "index": 46,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 2003397189,
+      "count": 7,
+      "expected": 2003397627
+    },
+    {
+      "index": 46,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 2003397189,
+      "count": 7,
+      "expected": 2003398082
+    },
+    {
+      "index": 46,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 2003397189,
+      "count": 7,
+      "expected": 2851889829
+    },
+    {
+      "index": 46,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 2003397189,
+      "count": 7,
+      "expected": 3482679474
+    },
+    {
+      "index": 46,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 2003397189,
+      "count": 7,
+      "expected": 3299682173
+    },
+    {
+      "index": 46,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 2003397189,
+      "count": 7,
+      "expected": 1180370070
+    },
+    {
+      "index": 46,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 2003397189,
+      "count": 7,
+      "expected": 17353
+    },
+    {
+      "index": 46,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 2003397189,
+      "count": 7,
+      "expected": 534355084
+    },
+    {
+      "index": 47,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 23424991,
+      "count": 6,
+      "expected": 23424991
+    },
+    {
+      "index": 47,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 23424991,
+      "count": 6,
+      "expected": 23425264
+    },
+    {
+      "index": 47,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 23424991,
+      "count": 6,
+      "expected": 23426248
+    },
+    {
+      "index": 47,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 23424991,
+      "count": 6,
+      "expected": 3913437082
+    },
+    {
+      "index": 47,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 23424991,
+      "count": 6,
+      "expected": 596282457
+    },
+    {
+      "index": 47,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 23424991,
+      "count": 6,
+      "expected": 2580241847
+    },
+    {
+      "index": 47,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 23424991,
+      "count": 6,
+      "expected": 23357156
+    },
+    {
+      "index": 47,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 23424991,
+      "count": 6,
+      "expected": 25067
+    },
+    {
+      "index": 47,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 23424991,
+      "count": 6,
+      "expected": 4278412738
+    },
+    {
+      "index": 48,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 966858693,
+      "count": 15,
+      "expected": 966858693
+    },
+    {
+      "index": 48,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 966858693,
+      "count": 15,
+      "expected": 966859904
+    },
+    {
+      "index": 48,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 966858693,
+      "count": 15,
+      "expected": 966861009
+    },
+    {
+      "index": 48,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 966858693,
+      "count": 15,
+      "expected": 3035443842
+    },
+    {
+      "index": 48,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 966858693,
+      "count": 15,
+      "expected": 2489908042
+    },
+    {
+      "index": 48,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 966858693,
+      "count": 15,
+      "expected": 719087695
+    },
+    {
+      "index": 48,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 966858693,
+      "count": 15,
+      "expected": 1856729343
+    },
+    {
+      "index": 48,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 966858693,
+      "count": 15,
+      "expected": 30956
+    },
+    {
+      "index": 48,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 966858693,
+      "count": 15,
+      "expected": 2034840742
+    },
+    {
+      "index": 49,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 1918597652,
+      "count": 8,
+      "expected": 1918597652
+    },
+    {
+      "index": 49,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 1918597652,
+      "count": 8,
+      "expected": 1918598090
+    },
+    {
+      "index": 49,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 1918597652,
+      "count": 8,
+      "expected": 1918598170
+    },
+    {
+      "index": 49,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 1918597652,
+      "count": 8,
+      "expected": 2470585940
+    },
+    {
+      "index": 49,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 1918597652,
+      "count": 8,
+      "expected": 3288065174
+    },
+    {
+      "index": 49,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 1918597652,
+      "count": 8,
+      "expected": 3249210084
+    },
+    {
+      "index": 49,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 1918597652,
+      "count": 8,
+      "expected": 1918581082
+    },
+    {
+      "index": 49,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 1918597652,
+      "count": 8,
+      "expected": 57061
+    },
+    {
+      "index": 49,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 1918597652,
+      "count": 8,
+      "expected": 445865602
+    },
+    {
+      "index": 50,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 3674544330,
+      "count": 31,
+      "expected": 3674544330
+    },
+    {
+      "index": 50,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 3674544330,
+      "count": 31,
+      "expected": 3674547436
+    },
+    {
+      "index": 50,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 3674544330,
+      "count": 31,
+      "expected": 3674548970
+    },
+    {
+      "index": 50,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 3674544330,
+      "count": 31,
+      "expected": 3833391320
+    },
+    {
+      "index": 50,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 3674544330,
+      "count": 31,
+      "expected": 209356688
+    },
+    {
+      "index": 50,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 3674544330,
+      "count": 31,
+      "expected": 2290652992
+    },
+    {
+      "index": 50,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 3674544330,
+      "count": 31,
+      "expected": 1552713435
+    },
+    {
+      "index": 50,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 3674544330,
+      "count": 31,
+      "expected": 10504
+    },
+    {
+      "index": 50,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 3674544330,
+      "count": 31,
+      "expected": 484779442
+    },
+    {
+      "index": 51,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 2955777129,
+      "count": 7,
+      "expected": 2955777129
+    },
+    {
+      "index": 51,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 2955777129,
+      "count": 7,
+      "expected": 2955777567
+    },
+    {
+      "index": 51,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 2955777129,
+      "count": 7,
+      "expected": 2955778034
+    },
+    {
+      "index": 51,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 2955777129,
+      "count": 7,
+      "expected": 1342826761
+    },
+    {
+      "index": 51,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 2955777129,
+      "count": 7,
+      "expected": 1293460030
+    },
+    {
+      "index": 51,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 2955777129,
+      "count": 7,
+      "expected": 1628306225
+    },
+    {
+      "index": 51,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 2955777129,
+      "count": 7,
+      "expected": 294757082
+    },
+    {
+      "index": 51,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 2955777129,
+      "count": 7,
+      "expected": 24626
+    },
+    {
+      "index": 51,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 2955777129,
+      "count": 7,
+      "expected": 470394006
+    },
+    {
+      "index": 52,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 3845835327,
+      "count": 15,
+      "expected": 3845835327
+    },
+    {
+      "index": 52,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 3845835327,
+      "count": 15,
+      "expected": 3845836136
+    },
+    {
+      "index": 52,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 3845835327,
+      "count": 15,
+      "expected": 3845836487
+    },
+    {
+      "index": 52,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 3845835327,
+      "count": 15,
+      "expected": 3508908522
+    },
+    {
+      "index": 52,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 3845835327,
+      "count": 15,
+      "expected": 3417289655
+    },
+    {
+      "index": 52,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 3845835327,
+      "count": 15,
+      "expected": 1268258229
+    },
+    {
+      "index": 52,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 3845835327,
+      "count": 15,
+      "expected": 2614547599
+    },
+    {
+      "index": 52,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 3845835327,
+      "count": 15,
+      "expected": 32760
+    },
+    {
+      "index": 52,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 3845835327,
+      "count": 15,
+      "expected": 4173487287
+    },
+    {
+      "index": 53,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 2390646361,
+      "count": 7,
+      "expected": 2390646361
+    },
+    {
+      "index": 53,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 2390646361,
+      "count": 7,
+      "expected": 2390646799
+    },
+    {
+      "index": 53,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 2390646361,
+      "count": 7,
+      "expected": 2390647346
+    },
+    {
+      "index": 53,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 2390646361,
+      "count": 7,
+      "expected": 3440616761
+    },
+    {
+      "index": 53,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 2390646361,
+      "count": 7,
+      "expected": 1043055778
+    },
+    {
+      "index": 53,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 2390646361,
+      "count": 7,
+      "expected": 2661715073
+    },
+    {
+      "index": 53,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 2390646361,
+      "count": 7,
+      "expected": 2842862090
+    },
+    {
+      "index": 53,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 2390646361,
+      "count": 7,
+      "expected": 51941
+    },
+    {
+      "index": 53,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 2390646361,
+      "count": 7,
+      "expected": 4210582179
+    },
+    {
+      "index": 54,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 3236623687,
+      "count": 63,
+      "expected": 3236623687
+    },
+    {
+      "index": 54,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 3236623687,
+      "count": 63,
+      "expected": 3236630656
+    },
+    {
+      "index": 54,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 3236623687,
+      "count": 63,
+      "expected": 3236631383
+    },
+    {
+      "index": 54,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 3236623687,
+      "count": 63,
+      "expected": 690506365
+    },
+    {
+      "index": 54,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 3236623687,
+      "count": 63,
+      "expected": 3061907252
+    },
+    {
+      "index": 54,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 3236623687,
+      "count": 63,
+      "expected": 1824500429
+    },
+    {
+      "index": 54,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 3236623687,
+      "count": 63,
+      "expected": 864871123
+    },
+    {
+      "index": 54,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 3236623687,
+      "count": 63,
+      "expected": 27809
+    },
+    {
+      "index": 54,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 3236623687,
+      "count": 63,
+      "expected": 3851614951
+    },
+    {
+      "index": 55,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 641122701,
+      "count": 3,
+      "expected": 641122701
+    },
+    {
+      "index": 55,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 641122701,
+      "count": 3,
+      "expected": 641122886
+    },
+    {
+      "index": 55,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 641122701,
+      "count": 3,
+      "expected": 641123039
+    },
+    {
+      "index": 55,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 641122701,
+      "count": 3,
+      "expected": 1529663738
+    },
+    {
+      "index": 55,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 641122701,
+      "count": 3,
+      "expected": 873976975
+    },
+    {
+      "index": 55,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 641122701,
+      "count": 3,
+      "expected": 394317814
+    },
+    {
+      "index": 55,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 641122701,
+      "count": 3,
+      "expected": 1306645022
+    },
+    {
+      "index": 55,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 641122701,
+      "count": 3,
+      "expected": 32044
+    },
+    {
+      "index": 55,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 641122701,
+      "count": 3,
+      "expected": 1394618989
+    },
+    {
+      "index": 56,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 1656173720,
+      "count": 6,
+      "expected": 1656173720
+    },
+    {
+      "index": 56,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 1656173720,
+      "count": 6,
+      "expected": 1656173993
+    },
+    {
+      "index": 56,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 1656173720,
+      "count": 6,
+      "expected": 1656174585
+    },
+    {
+      "index": 56,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 1656173720,
+      "count": 6,
+      "expected": 3079473373
+    },
+    {
+      "index": 56,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 1656173720,
+      "count": 6,
+      "expected": 3653468738
+    },
+    {
+      "index": 56,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 1656173720,
+      "count": 6,
+      "expected": 3031139080
+    },
+    {
+      "index": 56,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 1656173720,
+      "count": 6,
+      "expected": 1656220031
+    },
+    {
+      "index": 56,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 1656173720,
+      "count": 6,
+      "expected": 42081
+    },
+    {
+      "index": 56,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 1656173720,
+      "count": 6,
+      "expected": 1953567325
+    },
+    {
+      "index": 57,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 1857597200,
+      "count": 12,
+      "expected": 1857597200
+    },
+    {
+      "index": 57,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 1857597200,
+      "count": 12,
+      "expected": 1857597894
+    },
+    {
+      "index": 57,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 1857597200,
+      "count": 12,
+      "expected": 1857597990
+    },
+    {
+      "index": 57,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 1857597200,
+      "count": 12,
+      "expected": 3136420942
+    },
+    {
+      "index": 57,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 1857597200,
+      "count": 12,
+      "expected": 2843890890
+    },
+    {
+      "index": 57,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 1857597200,
+      "count": 12,
+      "expected": 3863511194
+    },
+    {
+      "index": 57,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 1857597200,
+      "count": 12,
+      "expected": 1857583966
+    },
+    {
+      "index": 57,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 1857597200,
+      "count": 12,
+      "expected": 57016
+    },
+    {
+      "index": 57,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 1857597200,
+      "count": 12,
+      "expected": 3048678798
+    },
+    {
+      "index": 58,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 1136961855,
+      "count": 31,
+      "expected": 1136961855
+    },
+    {
+      "index": 58,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 1136961855,
+      "count": 31,
+      "expected": 1136964624
+    },
+    {
+      "index": 58,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 1136961855,
+      "count": 31,
+      "expected": 1136964879
+    },
+    {
+      "index": 58,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 1136961855,
+      "count": 31,
+      "expected": 4238387557
+    },
+    {
+      "index": 58,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 1136961855,
+      "count": 31,
+      "expected": 4265784922
+    },
+    {
+      "index": 58,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 1136961855,
+      "count": 31,
+      "expected": 190215861
+    },
+    {
+      "index": 58,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 1136961855,
+      "count": 31,
+      "expected": 1705953843
+    },
+    {
+      "index": 58,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 1136961855,
+      "count": 31,
+      "expected": 23385
+    },
+    {
+      "index": 58,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 1136961855,
+      "count": 31,
+      "expected": 45192945
+    },
+    {
+      "index": 59,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 4034963471,
+      "count": 16,
+      "expected": 4034963471
+    },
+    {
+      "index": 59,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 4034963471,
+      "count": 16,
+      "expected": 4034964713
+    },
+    {
+      "index": 59,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 4034963471,
+      "count": 16,
+      "expected": 4034964837
+    },
+    {
+      "index": 59,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 4034963471,
+      "count": 16,
+      "expected": 3762421387
+    },
+    {
+      "index": 59,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 4034963471,
+      "count": 16,
+      "expected": 2226923327
+    },
+    {
+      "index": 59,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 4034963471,
+      "count": 16,
+      "expected": 4160845701
+    },
+    {
+      "index": 59,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 4034963471,
+      "count": 16,
+      "expected": 4035130847
+    },
+    {
+      "index": 59,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 4034963471,
+      "count": 16,
+      "expected": 46462
+    },
+    {
+      "index": 59,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 4034963471,
+      "count": 16,
+      "expected": 1711992287
+    },
+    {
+      "index": 60,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 1881595846,
+      "count": 2,
+      "expected": 1881595846
+    },
+    {
+      "index": 60,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 1881595846,
+      "count": 2,
+      "expected": 1881596014
+    },
+    {
+      "index": 60,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 1881595846,
+      "count": 2,
+      "expected": 1881596142
+    },
+    {
+      "index": 60,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 1881595846,
+      "count": 2,
+      "expected": 3948532672
+    },
+    {
+      "index": 60,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 1881595846,
+      "count": 2,
+      "expected": 2049049665
+    },
+    {
+      "index": 60,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 1881595846,
+      "count": 2,
+      "expected": 1881595333
+    },
+    {
+      "index": 60,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 1881595846,
+      "count": 2,
+      "expected": 1881550947
+    },
+    {
+      "index": 60,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 1881595846,
+      "count": 2,
+      "expected": 28283
+    },
+    {
+      "index": 60,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 1881595846,
+      "count": 2,
+      "expected": 4212509821
+    },
+    {
+      "index": 61,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 2225181730,
+      "count": 4,
+      "expected": 2225181730
+    },
+    {
+      "index": 61,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 2225181730,
+      "count": 4,
+      "expected": 2225181949
+    },
+    {
+      "index": 61,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 2225181730,
+      "count": 4,
+      "expected": 2225181949
+    },
+    {
+      "index": 61,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 2225181730,
+      "count": 4,
+      "expected": 3335625271
+    },
+    {
+      "index": 61,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 2225181730,
+      "count": 4,
+      "expected": 239361194
+    },
+    {
+      "index": 61,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 2225181730,
+      "count": 4,
+      "expected": 2898566680
+    },
+    {
+      "index": 61,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 2225181730,
+      "count": 4,
+      "expected": 2225145165
+    },
+    {
+      "index": 61,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 2225181730,
+      "count": 4,
+      "expected": 57289
+    },
+    {
+      "index": 61,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 2225181730,
+      "count": 4,
+      "expected": 780039579
+    },
+    {
+      "index": 62,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 3465020804,
+      "count": 8,
+      "expected": 3465020804
+    },
+    {
+      "index": 62,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 3465020804,
+      "count": 8,
+      "expected": 3465021242
+    },
+    {
+      "index": 62,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 3465020804,
+      "count": 8,
+      "expected": 3465021770
+    },
+    {
+      "index": 62,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 3465020804,
+      "count": 8,
+      "expected": 798054852
+    },
+    {
+      "index": 62,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 3465020804,
+      "count": 8,
+      "expected": 3126093174
+    },
+    {
+      "index": 62,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 3465020804,
+      "count": 8,
+      "expected": 163792372
+    },
+    {
+      "index": 62,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 3465020804,
+      "count": 8,
+      "expected": 3465037258
+    },
+    {
+      "index": 62,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 3465020804,
+      "count": 8,
+      "expected": 11177
+    },
+    {
+      "index": 62,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 3465020804,
+      "count": 8,
+      "expected": 3070693028
+    },
+    {
+      "index": 63,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 2721883254,
+      "count": 63,
+      "expected": 2721883254
+    },
+    {
+      "index": 63,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 2721883254,
+      "count": 63,
+      "expected": 2721890316
+    },
+    {
+      "index": 63,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 2721883254,
+      "count": 63,
+      "expected": 2721891326
+    },
+    {
+      "index": 63,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 2721883254,
+      "count": 63,
+      "expected": 2278213932
+    },
+    {
+      "index": 63,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 2721883254,
+      "count": 63,
+      "expected": 1687678025
+    },
+    {
+      "index": 63,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 2721883254,
+      "count": 63,
+      "expected": 1786440700
+    },
+    {
+      "index": 63,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 2721883254,
+      "count": 63,
+      "expected": 20998451
+    },
+    {
+      "index": 63,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 2721883254,
+      "count": 63,
+      "expected": 39574
+    },
+    {
+      "index": 63,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 2721883254,
+      "count": 63,
+      "expected": 2777143542
+    },
+    {
+      "index": 64,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 1403267370,
+      "count": 16,
+      "expected": 1403267370
+    },
+    {
+      "index": 64,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 1403267370,
+      "count": 16,
+      "expected": 1403268464
+    },
+    {
+      "index": 64,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 1403267370,
+      "count": 16,
+      "expected": 1403268616
+    },
+    {
+      "index": 64,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 1403267370,
+      "count": 16,
+      "expected": 1131976066
+    },
+    {
+      "index": 64,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 1403267370,
+      "count": 16,
+      "expected": 3651558600
+    },
+    {
+      "index": 64,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 1403267370,
+      "count": 16,
+      "expected": 322414240
+    },
+    {
+      "index": 64,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 1403267370,
+      "count": 16,
+      "expected": 1403455970
+    },
+    {
+      "index": 64,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 1403267370,
+      "count": 16,
+      "expected": 37951
+    },
+    {
+      "index": 64,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 1403267370,
+      "count": 16,
+      "expected": 1820943360
+    },
+    {
+      "index": 65,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 3190193654,
+      "count": 6,
+      "expected": 3190193654
+    },
+    {
+      "index": 65,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 3190193654,
+      "count": 6,
+      "expected": 3190193927
+    },
+    {
+      "index": 65,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 3190193654,
+      "count": 6,
+      "expected": 3190194867
+    },
+    {
+      "index": 65,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 3190193654,
+      "count": 6,
+      "expected": 953809331
+    },
+    {
+      "index": 65,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 3190193654,
+      "count": 6,
+      "expected": 3150182093
+    },
+    {
+      "index": 65,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 3190193654,
+      "count": 6,
+      "expected": 2322597526
+    },
+    {
+      "index": 65,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 3190193654,
+      "count": 6,
+      "expected": 3190384041
+    },
+    {
+      "index": 65,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 3190193654,
+      "count": 6,
+      "expected": 20711
+    },
+    {
+      "index": 65,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 3190193654,
+      "count": 6,
+      "expected": 609838907
+    },
+    {
+      "index": 66,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 468009886,
+      "count": 11,
+      "expected": 468009886
+    },
+    {
+      "index": 66,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 468009886,
+      "count": 11,
+      "expected": 468010580
+    },
+    {
+      "index": 66,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 468009886,
+      "count": 11,
+      "expected": 468011394
+    },
+    {
+      "index": 66,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 468009886,
+      "count": 11,
+      "expected": 1525483712
+    },
+    {
+      "index": 66,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 468009886,
+      "count": 11,
+      "expected": 276306761
+    },
+    {
+      "index": 66,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 468009886,
+      "count": 11,
+      "expected": 1323142932
+    },
+    {
+      "index": 66,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 468009886,
+      "count": 11,
+      "expected": 2874393479
+    },
+    {
+      "index": 66,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 468009886,
+      "count": 11,
+      "expected": 64069
+    },
+    {
+      "index": 66,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 468009886,
+      "count": 11,
+      "expected": 3157487463
+    },
+    {
+      "index": 67,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 3807878238,
+      "count": 1,
+      "expected": 3807878238
+    },
+    {
+      "index": 67,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 3807878238,
+      "count": 1,
+      "expected": 3807878403
+    },
+    {
+      "index": 67,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 3807878238,
+      "count": 1,
+      "expected": 3807878489
+    },
+    {
+      "index": 67,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 3807878238,
+      "count": 1,
+      "expected": 3154384699
+    },
+    {
+      "index": 67,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 3807878238,
+      "count": 1,
+      "expected": 4272517077
+    },
+    {
+      "index": 67,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 3807878238,
+      "count": 1,
+      "expected": 3807878494
+    },
+    {
+      "index": 67,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 3807878238,
+      "count": 1,
+      "expected": 3353923578
+    },
+    {
+      "index": 67,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 3807878238,
+      "count": 1,
+      "expected": 63866
+    },
+    {
+      "index": 67,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 3807878238,
+      "count": 1,
+      "expected": 4206133234
+    },
+    {
+      "index": 68,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 3339114567,
+      "count": 65,
+      "expected": 3339114567
+    },
+    {
+      "index": 68,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 3339114567,
+      "count": 65,
+      "expected": 3339121665
+    },
+    {
+      "index": 68,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 3339114567,
+      "count": 65,
+      "expected": 3339122461
+    },
+    {
+      "index": 68,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 3339114567,
+      "count": 65,
+      "expected": 1299212157
+    },
+    {
+      "index": 68,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 3339114567,
+      "count": 65,
+      "expected": 3622777696
+    },
+    {
+      "index": 68,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 3339114567,
+      "count": 65,
+      "expected": 2843969485
+    },
+    {
+      "index": 68,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 3339114567,
+      "count": 65,
+      "expected": 3339132895
+    },
+    {
+      "index": 68,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 3339114567,
+      "count": 65,
+      "expected": 57782
+    },
+    {
+      "index": 68,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 3339114567,
+      "count": 65,
+      "expected": 884686171
+    },
+    {
+      "index": 69,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 2527592031,
+      "count": 15,
+      "expected": 2527592031
+    },
+    {
+      "index": 69,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 2527592031,
+      "count": 15,
+      "expected": 2527592936
+    },
+    {
+      "index": 69,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 2527592031,
+      "count": 15,
+      "expected": 2527593767
+    },
+    {
+      "index": 69,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 2527592031,
+      "count": 15,
+      "expected": 3120498154
+    },
+    {
+      "index": 69,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 2527592031,
+      "count": 15,
+      "expected": 1008081927
+    },
+    {
+      "index": 69,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 2527592031,
+      "count": 15,
+      "expected": 3947045333
+    },
+    {
+      "index": 69,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 2527592031,
+      "count": 15,
+      "expected": 1256531919
+    },
+    {
+      "index": 69,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 2527592031,
+      "count": 15,
+      "expected": 10282
+    },
+    {
+      "index": 69,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 2527592031,
+      "count": 15,
+      "expected": 1264524066
+    },
+    {
+      "index": 70,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 543140624,
+      "count": 7,
+      "expected": 543140624
+    },
+    {
+      "index": 70,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 543140624,
+      "count": 7,
+      "expected": 543141062
+    },
+    {
+      "index": 70,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 543140624,
+      "count": 7,
+      "expected": 543141110
+    },
+    {
+      "index": 70,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 543140624,
+      "count": 7,
+      "expected": 1559059792
+    },
+    {
+      "index": 70,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 543140624,
+      "count": 7,
+      "expected": 1302872016
+    },
+    {
+      "index": 70,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 543140624,
+      "count": 7,
+      "expected": 2317292480
+    },
+    {
+      "index": 70,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 543140624,
+      "count": 7,
+      "expected": 3810448785
+    },
+    {
+      "index": 70,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 543140624,
+      "count": 7,
+      "expected": 48680
+    },
+    {
+      "index": 70,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 543140624,
+      "count": 7,
+      "expected": 3685812270
+    },
+    {
+      "index": 71,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 634783110,
+      "count": 63,
+      "expected": 634783110
+    },
+    {
+      "index": 71,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 634783110,
+      "count": 63,
+      "expected": 634790220
+    },
+    {
+      "index": 71,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 634783110,
+      "count": 63,
+      "expected": 634791150
+    },
+    {
+      "index": 71,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 634783110,
+      "count": 63,
+      "expected": 4291143196
+    },
+    {
+      "index": 71,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 634783110,
+      "count": 63,
+      "expected": 1720069225
+    },
+    {
+      "index": 71,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 634783110,
+      "count": 63,
+      "expected": 1200572940
+    },
+    {
+      "index": 71,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 634783110,
+      "count": 63,
+      "expected": 562647155
+    },
+    {
+      "index": 71,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 634783110,
+      "count": 63,
+      "expected": 27736
+    },
+    {
+      "index": 71,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 634783110,
+      "count": 63,
+      "expected": 1601460191
+    },
+    {
+      "index": 72,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 3000175717,
+      "count": 16,
+      "expected": 3000175717
+    },
+    {
+      "index": 72,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 3000175717,
+      "count": 16,
+      "expected": 3000176791
+    },
+    {
+      "index": 72,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 3000175717,
+      "count": 16,
+      "expected": 3000177507
+    },
+    {
+      "index": 72,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 3000175717,
+      "count": 16,
+      "expected": 2724755733
+    },
+    {
+      "index": 72,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 3000175717,
+      "count": 16,
+      "expected": 3098545883
+    },
+    {
+      "index": 72,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 3000175717,
+      "count": 16,
+      "expected": 2148824047
+    },
+    {
+      "index": 72,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 3000175717,
+      "count": 16,
+      "expected": 3000204517
+    },
+    {
+      "index": 72,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 3000175717,
+      "count": 16,
+      "expected": 42044
+    },
+    {
+      "index": 72,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 3000175717,
+      "count": 16,
+      "expected": 577380347
+    },
+    {
+      "index": 73,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 3622210792,
+      "count": 255,
+      "expected": 3622210792
+    },
+    {
+      "index": 73,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 3622210792,
+      "count": 255,
+      "expected": 3622218326
+    },
+    {
+      "index": 73,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 3622210792,
+      "count": 255,
+      "expected": 3622219462
+    },
+    {
+      "index": 73,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 3622210792,
+      "count": 255,
+      "expected": 1031522010
+    },
+    {
+      "index": 73,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 3622210792,
+      "count": 255,
+      "expected": 2963246337
+    },
+    {
+      "index": 73,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 3622210792,
+      "count": 255,
+      "expected": 3156812642
+    },
+    {
+      "index": 73,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 3622210792,
+      "count": 255,
+      "expected": 3615171664
+    },
+    {
+      "index": 73,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 3622210792,
+      "count": 255,
+      "expected": 19566
+    },
+    {
+      "index": 73,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 3622210792,
+      "count": 255,
+      "expected": 1565298113
+    },
+    {
+      "index": 74,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 3289966312,
+      "count": 15,
+      "expected": 3289966312
+    },
+    {
+      "index": 74,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 3289966312,
+      "count": 15,
+      "expected": 3289967628
+    },
+    {
+      "index": 74,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 3289966312,
+      "count": 15,
+      "expected": 3289968692
+    },
+    {
+      "index": 74,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 3289966312,
+      "count": 15,
+      "expected": 3924322822
+    },
+    {
+      "index": 74,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 3289966312,
+      "count": 15,
+      "expected": 309838223
+    },
+    {
+      "index": 74,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 3289966312,
+      "count": 15,
+      "expected": 1215777122
+    },
+    {
+      "index": 74,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 3289966312,
+      "count": 15,
+      "expected": 2814773703
+    },
+    {
+      "index": 74,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 3289966312,
+      "count": 15,
+      "expected": 17822
+    },
+    {
+      "index": 74,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 3289966312,
+      "count": 15,
+      "expected": 1854730153
+    },
+    {
+      "index": 75,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 979371275,
+      "count": 64,
+      "expected": 979371275
+    },
+    {
+      "index": 75,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 979371275,
+      "count": 64,
+      "expected": 979378837
+    },
+    {
+      "index": 75,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 979371275,
+      "count": 64,
+      "expected": 979378889
+    },
+    {
+      "index": 75,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 979371275,
+      "count": 64,
+      "expected": 2368706201
+    },
+    {
+      "index": 75,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 979371275,
+      "count": 64,
+      "expected": 2505361307
+    },
+    {
+      "index": 75,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 979371275,
+      "count": 64,
+      "expected": 942774913
+    },
+    {
+      "index": 75,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 979371275,
+      "count": 64,
+      "expected": 983495187
+    },
+    {
+      "index": 75,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 979371275,
+      "count": 64,
+      "expected": 31161
+    },
+    {
+      "index": 75,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 979371275,
+      "count": 64,
+      "expected": 1209733023
+    },
+    {
+      "index": 76,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 2736112866,
+      "count": 7,
+      "expected": 2736112866
+    },
+    {
+      "index": 76,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 2736112866,
+      "count": 7,
+      "expected": 2736113304
+    },
+    {
+      "index": 76,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 2736112866,
+      "count": 7,
+      "expected": 2736114102
+    },
+    {
+      "index": 76,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 2736112866,
+      "count": 7,
+      "expected": 864814306
+    },
+    {
+      "index": 76,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 2736112866,
+      "count": 7,
+      "expected": 1426885752
+    },
+    {
+      "index": 76,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 2736112866,
+      "count": 7,
+      "expected": 1430395682
+    },
+    {
+      "index": 76,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 2736112866,
+      "count": 7,
+      "expected": 1761164771
+    },
+    {
+      "index": 76,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 2736112866,
+      "count": 7,
+      "expected": 40231
+    },
+    {
+      "index": 76,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 2736112866,
+      "count": 7,
+      "expected": 2565980412
+    },
+    {
+      "index": 77,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 2068823387,
+      "count": 15,
+      "expected": 2068823387
+    },
+    {
+      "index": 77,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 2068823387,
+      "count": 15,
+      "expected": 2068824280
+    },
+    {
+      "index": 77,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 2068823387,
+      "count": 15,
+      "expected": 2068825043
+    },
+    {
+      "index": 77,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 2068823387,
+      "count": 15,
+      "expected": 1372702418
+    },
+    {
+      "index": 77,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 2068823387,
+      "count": 15,
+      "expected": 3149920393
+    },
+    {
+      "index": 77,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 2068823387,
+      "count": 15,
+      "expected": 2191205073
+    },
+    {
+      "index": 77,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 2068823387,
+      "count": 15,
+      "expected": 365864543
+    },
+    {
+      "index": 77,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 2068823387,
+      "count": 15,
+      "expected": 8231
+    },
+    {
+      "index": 77,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 2068823387,
+      "count": 15,
+      "expected": 3764794039
+    },
+    {
+      "index": 78,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 3534343958,
+      "count": 8,
+      "expected": 3534343958
+    },
+    {
+      "index": 78,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 3534343958,
+      "count": 8,
+      "expected": 3534344396
+    },
+    {
+      "index": 78,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 3534343958,
+      "count": 8,
+      "expected": 3534344476
+    },
+    {
+      "index": 78,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 3534343958,
+      "count": 8,
+      "expected": 867210070
+    },
+    {
+      "index": 78,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 3534343958,
+      "count": 8,
+      "expected": 3049027348
+    },
+    {
+      "index": 78,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 3534343958,
+      "count": 8,
+      "expected": 3205192566
+    },
+    {
+      "index": 78,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 3534343958,
+      "count": 8,
+      "expected": 3534326412
+    },
+    {
+      "index": 78,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 3534343958,
+      "count": 8,
+      "expected": 19941
+    },
+    {
+      "index": 78,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 3534343958,
+      "count": 8,
+      "expected": 872843053
+    },
+    {
+      "index": 79,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 3981985170,
+      "count": 65,
+      "expected": 3981985170
+    },
+    {
+      "index": 79,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 3981985170,
+      "count": 65,
+      "expected": 3981992584
+    },
+    {
+      "index": 79,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 3981985170,
+      "count": 65,
+      "expected": 3981993200
+    },
+    {
+      "index": 79,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 3981985170,
+      "count": 65,
+      "expected": 2175815888
+    },
+    {
+      "index": 79,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 3981985170,
+      "count": 65,
+      "expected": 1687925432
+    },
+    {
+      "index": 79,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 3981985170,
+      "count": 65,
+      "expected": 1778403864
+    },
+    {
+      "index": 79,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 3981985170,
+      "count": 65,
+      "expected": 3966587074
+    },
+    {
+      "index": 79,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 3981985170,
+      "count": 65,
+      "expected": 40211
+    },
+    {
+      "index": 79,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 3981985170,
+      "count": 65,
+      "expected": 721619601
+    },
+    {
+      "index": 80,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 2992746267,
+      "count": 2,
+      "expected": 2992746267
+    },
+    {
+      "index": 80,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 2992746267,
+      "count": 2,
+      "expected": 2992746435
+    },
+    {
+      "index": 80,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 2992746267,
+      "count": 2,
+      "expected": 2992746481
+    },
+    {
+      "index": 80,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 2992746267,
+      "count": 2,
+      "expected": 886953757
+    },
+    {
+      "index": 80,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 2992746267,
+      "count": 2,
+      "expected": 1673747767
+    },
+    {
+      "index": 80,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 2992746267,
+      "count": 2,
+      "expected": 2992745752
+    },
+    {
+      "index": 80,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 2992746267,
+      "count": 2,
+      "expected": 2992704974
+    },
+    {
+      "index": 80,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 2992746267,
+      "count": 2,
+      "expected": 31986
+    },
+    {
+      "index": 80,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 2992746267,
+      "count": 2,
+      "expected": 3722114035
+    },
+    {
+      "index": 81,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 1564315935,
+      "count": 31,
+      "expected": 1564315935
+    },
+    {
+      "index": 81,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 1564315935,
+      "count": 31,
+      "expected": 1564318864
+    },
+    {
+      "index": 81,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 1564315935,
+      "count": 31,
+      "expected": 1564319087
+    },
+    {
+      "index": 81,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 1564315935,
+      "count": 31,
+      "expected": 2358777093
+    },
+    {
+      "index": 81,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 1564315935,
+      "count": 31,
+      "expected": 873753976
+    },
+    {
+      "index": 81,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 1564315935,
+      "count": 31,
+      "expected": 2251116181
+    },
+    {
+      "index": 81,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 1564315935,
+      "count": 31,
+      "expected": 4241147891
+    },
+    {
+      "index": 81,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 1564315935,
+      "count": 31,
+      "expected": 30408
+    },
+    {
+      "index": 81,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 1564315935,
+      "count": 31,
+      "expected": 3417115584
+    },
+    {
+      "index": 82,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 1001719531,
+      "count": 4294967295,
+      "expected": 1001719531
+    },
+    {
+      "index": 82,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 1001719531,
+      "count": 4294967295,
+      "expected": 1001726965
+    },
+    {
+      "index": 82,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 1001719531,
+      "count": 4294967295,
+      "expected": 1001728297
+    },
+    {
+      "index": 82,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 1001719531,
+      "count": 4294967295,
+      "expected": 1660158265
+    },
+    {
+      "index": 82,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 1001719531,
+      "count": 4294967295,
+      "expected": 2320031121
+    },
+    {
+      "index": 82,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 1001719531,
+      "count": 4294967295,
+      "expected": 1775933793
+    },
+    {
+      "index": 82,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 1001719531,
+      "count": 4294967295,
+      "expected": 974873587
+    },
+    {
+      "index": 82,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 1001719531,
+      "count": 4294967295,
+      "expected": 10181
+    },
+    {
+      "index": 82,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 1001719531,
+      "count": 4294967295,
+      "expected": 3492655619
+    },
+    {
+      "index": 83,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 2972559115,
+      "count": 3,
+      "expected": 2972559115
+    },
+    {
+      "index": 83,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 2972559115,
+      "count": 3,
+      "expected": 2972559300
+    },
+    {
+      "index": 83,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 2972559115,
+      "count": 3,
+      "expected": 2972559323
+    },
+    {
+      "index": 83,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 2972559115,
+      "count": 3,
+      "expected": 4051861180
+    },
+    {
+      "index": 83,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 2972559115,
+      "count": 3,
+      "expected": 1666927894
+    },
+    {
+      "index": 83,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 2972559115,
+      "count": 3,
+      "expected": 943758656
+    },
+    {
+      "index": 83,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 2972559115,
+      "count": 3,
+      "expected": 1677425048
+    },
+    {
+      "index": 83,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 2972559115,
+      "count": 3,
+      "expected": 58841
+    },
+    {
+      "index": 83,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 2972559115,
+      "count": 3,
+      "expected": 3780305456
+    },
+    {
+      "index": 84,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 3587290210,
+      "count": 15,
+      "expected": 3587290210
+    },
+    {
+      "index": 84,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 3587290210,
+      "count": 15,
+      "expected": 3587291124
+    },
+    {
+      "index": 84,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 3587290210,
+      "count": 15,
+      "expected": 3587291738
+    },
+    {
+      "index": 84,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 3587290210,
+      "count": 15,
+      "expected": 4054215070
+    },
+    {
+      "index": 84,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 3587290210,
+      "count": 15,
+      "expected": 1946886980
+    },
+    {
+      "index": 84,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 3587290210,
+      "count": 15,
+      "expected": 3432430568
+    },
+    {
+      "index": 84,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 3587290210,
+      "count": 15,
+      "expected": 658517851
+    },
+    {
+      "index": 84,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 3587290210,
+      "count": 15,
+      "expected": 38277
+    },
+    {
+      "index": 84,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 3587290210,
+      "count": 15,
+      "expected": 2465632642
+    },
+    {
+      "index": 85,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 2242539646,
+      "count": 63,
+      "expected": 2242539646
+    },
+    {
+      "index": 85,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 2242539646,
+      "count": 63,
+      "expected": 2242546860
+    },
+    {
+      "index": 85,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 2242539646,
+      "count": 63,
+      "expected": 2242547606
+    },
+    {
+      "index": 85,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 2242539646,
+      "count": 63,
+      "expected": 2649666596
+    },
+    {
+      "index": 85,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 2242539646,
+      "count": 63,
+      "expected": 1522329716
+    },
+    {
+      "index": 85,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 2242539646,
+      "count": 63,
+      "expected": 564969460
+    },
+    {
+      "index": 85,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 2242539646,
+      "count": 63,
+      "expected": 3584792371
+    },
+    {
+      "index": 85,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 2242539646,
+      "count": 63,
+      "expected": 65484
+    },
+    {
+      "index": 85,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 2242539646,
+      "count": 63,
+      "expected": 2715823735
+    },
+    {
+      "index": 86,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 308886566,
+      "count": 0,
+      "expected": 308886566
+    },
+    {
+      "index": 86,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 308886566,
+      "count": 0,
+      "expected": 308886566
+    },
+    {
+      "index": 86,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 308886566,
+      "count": 0,
+      "expected": 308886566
+    },
+    {
+      "index": 86,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 308886566,
+      "count": 0,
+      "expected": 308886566
+    },
+    {
+      "index": 86,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 308886566,
+      "count": 0,
+      "expected": 342440998
+    },
+    {
+      "index": 86,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 308886566,
+      "count": 0,
+      "expected": 308886566
+    },
+    {
+      "index": 86,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 308886566,
+      "count": 0,
+      "expected": 308886574
+    },
+    {
+      "index": 86,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 308886566,
+      "count": 0,
+      "expected": 15398
+    },
+    {
+      "index": 86,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 308886566,
+      "count": 0,
+      "expected": 308886566
+    },
+    {
+      "index": 87,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 1840785204,
+      "count": 8,
+      "expected": 1840785204
+    },
+    {
+      "index": 87,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 1840785204,
+      "count": 8,
+      "expected": 1840785642
+    },
+    {
+      "index": 87,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 1840785204,
+      "count": 8,
+      "expected": 1840785722
+    },
+    {
+      "index": 87,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 1840785204,
+      "count": 8,
+      "expected": 2359393140
+    },
+    {
+      "index": 87,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 1840785204,
+      "count": 8,
+      "expected": 4231312086
+    },
+    {
+      "index": 87,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 1840785204,
+      "count": 8,
+      "expected": 524271300
+    },
+    {
+      "index": 87,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 1840785204,
+      "count": 8,
+      "expected": 1840885626
+    },
+    {
+      "index": 87,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 1840785204,
+      "count": 8,
+      "expected": 11539
+    },
+    {
+      "index": 87,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 1840785204,
+      "count": 8,
+      "expected": 323988401
+    },
+    {
+      "index": 88,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 124633818,
+      "count": 3,
+      "expected": 124633818
+    },
+    {
+      "index": 88,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 124633818,
+      "count": 3,
+      "expected": 124634003
+    },
+    {
+      "index": 88,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 124633818,
+      "count": 3,
+      "expected": 124634365
+    },
+    {
+      "index": 88,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 124633818,
+      "count": 3,
+      "expected": 3165742413
+    },
+    {
+      "index": 88,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 124633818,
+      "count": 3,
+      "expected": 198939861
+    },
+    {
+      "index": 88,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 124633818,
+      "count": 3,
+      "expected": 1006884377
+    },
+    {
+      "index": 88,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 124633818,
+      "count": 3,
+      "expected": 12814649
+    },
+    {
+      "index": 88,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 124633818,
+      "count": 3,
+      "expected": 45908
+    },
+    {
+      "index": 88,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 124633818,
+      "count": 3,
+      "expected": 4191300973
+    },
+    {
+      "index": 89,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 1771196514,
+      "count": 4,
+      "expected": 1771196514
+    },
+    {
+      "index": 89,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 1771196514,
+      "count": 4,
+      "expected": 1771196733
+    },
+    {
+      "index": 89,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 1771196514,
+      "count": 4,
+      "expected": 1771196989
+    },
+    {
+      "index": 89,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 1771196514,
+      "count": 4,
+      "expected": 1877106295
+    },
+    {
+      "index": 89,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 1771196514,
+      "count": 4,
+      "expected": 3559249194
+    },
+    {
+      "index": 89,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 1771196514,
+      "count": 4,
+      "expected": 218516056
+    },
+    {
+      "index": 89,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 1771196514,
+      "count": 4,
+      "expected": 1771234189
+    },
+    {
+      "index": 89,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 1771196514,
+      "count": 4,
+      "expected": 47921
+    },
+    {
+      "index": 89,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 1771196514,
+      "count": 4,
+      "expected": 1684054444
+    },
+    {
+      "index": 90,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 3524473222,
+      "count": 2,
+      "expected": 3524473222
+    },
+    {
+      "index": 90,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 3524473222,
+      "count": 2,
+      "expected": 3524473390
+    },
+    {
+      "index": 90,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 3524473222,
+      "count": 2,
+      "expected": 3524473390
+    },
+    {
+      "index": 90,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 3524473222,
+      "count": 2,
+      "expected": 2664775040
+    },
+    {
+      "index": 90,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 3524473222,
+      "count": 2,
+      "expected": 3427882937
+    },
+    {
+      "index": 90,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 3524473222,
+      "count": 2,
+      "expected": 3524473733
+    },
+    {
+      "index": 90,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 3524473222,
+      "count": 2,
+      "expected": 3525087523
+    },
+    {
+      "index": 90,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 3524473222,
+      "count": 2,
+      "expected": 5378
+    },
+    {
+      "index": 90,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 3524473222,
+      "count": 2,
+      "expected": 3883474001
+    },
+    {
+      "index": 91,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 844461940,
+      "count": 16,
+      "expected": 844461940
+    },
+    {
+      "index": 91,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 844461940,
+      "count": 16,
+      "expected": 844463074
+    },
+    {
+      "index": 91,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 844461940,
+      "count": 16,
+      "expected": 844464026
+    },
+    {
+      "index": 91,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 844461940,
+      "count": 16,
+      "expected": 585533056
+    },
+    {
+      "index": 91,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 844461940,
+      "count": 16,
+      "expected": 3215939479
+    },
+    {
+      "index": 91,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 844461940,
+      "count": 16,
+      "expected": 1730353406
+    },
+    {
+      "index": 91,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 844461940,
+      "count": 16,
+      "expected": 844397580
+    },
+    {
+      "index": 91,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 844461940,
+      "count": 16,
+      "expected": 40884
+    },
+    {
+      "index": 91,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 844461940,
+      "count": 16,
+      "expected": 1675977536
+    },
+    {
+      "index": 92,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 60060431,
+      "count": 8,
+      "expected": 60060431
+    },
+    {
+      "index": 92,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 60060431,
+      "count": 8,
+      "expected": 60060869
+    },
+    {
+      "index": 92,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 60060431,
+      "count": 8,
+      "expected": 60060945
+    },
+    {
+      "index": 92,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 60060431,
+      "count": 8,
+      "expected": 3800903503
+    },
+    {
+      "index": 92,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 60060431,
+      "count": 8,
+      "expected": 826836490
+    },
+    {
+      "index": 92,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 60060431,
+      "count": 8,
+      "expected": 3553375207
+    },
+    {
+      "index": 92,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 60060431,
+      "count": 8,
+      "expected": 60091401
+    },
+    {
+      "index": 92,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 60060431,
+      "count": 8,
+      "expected": 64440
+    },
+    {
+      "index": 92,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 60060431,
+      "count": 8,
+      "expected": 4285951028
+    },
+    {
+      "index": 93,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 4120801276,
+      "count": 0,
+      "expected": 4120801276
+    },
+    {
+      "index": 93,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 4120801276,
+      "count": 0,
+      "expected": 4120801276
+    },
+    {
+      "index": 93,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 4120801276,
+      "count": 0,
+      "expected": 4120801276
+    },
+    {
+      "index": 93,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 4120801276,
+      "count": 0,
+      "expected": 4120801276
+    },
+    {
+      "index": 93,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 4120801276,
+      "count": 0,
+      "expected": 4053692412
+    },
+    {
+      "index": 93,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 4120801276,
+      "count": 0,
+      "expected": 4120801276
+    },
+    {
+      "index": 93,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 4120801276,
+      "count": 0,
+      "expected": 4120799740
+    },
+    {
+      "index": 93,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 4120801276,
+      "count": 0,
+      "expected": 28668
+    },
+    {
+      "index": 93,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 4120801276,
+      "count": 0,
+      "expected": 4120801276
+    },
+    {
+      "index": 94,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 710084781,
+      "count": 15,
+      "expected": 710084781
+    },
+    {
+      "index": 94,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 710084781,
+      "count": 15,
+      "expected": 710085920
+    },
+    {
+      "index": 94,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 710084781,
+      "count": 15,
+      "expected": 710086681
+    },
+    {
+      "index": 94,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 710084781,
+      "count": 15,
+      "expected": 941016914
+    },
+    {
+      "index": 94,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 710084781,
+      "count": 15,
+      "expected": 3685766890
+    },
+    {
+      "index": 94,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 710084781,
+      "count": 15,
+      "expected": 416872231
+    },
+    {
+      "index": 94,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 710084781,
+      "count": 15,
+      "expected": 3720934383
+    },
+    {
+      "index": 94,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 710084781,
+      "count": 15,
+      "expected": 23725
+    },
+    {
+      "index": 94,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 710084781,
+      "count": 15,
+      "expected": 2785931575
+    },
+    {
+      "index": 95,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 899396731,
+      "count": 2,
+      "expected": 899396731
+    },
+    {
+      "index": 95,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 899396731,
+      "count": 2,
+      "expected": 899396899
+    },
+    {
+      "index": 95,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 899396731,
+      "count": 2,
+      "expected": 899397073
+    },
+    {
+      "index": 95,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 899396731,
+      "count": 2,
+      "expected": 1531595901
+    },
+    {
+      "index": 95,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 899396731,
+      "count": 2,
+      "expected": 1815571447
+    },
+    {
+      "index": 95,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 899396731,
+      "count": 2,
+      "expected": 899397240
+    },
+    {
+      "index": 95,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 899396731,
+      "count": 2,
+      "expected": 899355886
+    },
+    {
+      "index": 95,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 899396731,
+      "count": 2,
+      "expected": 53213
+    },
+    {
+      "index": 95,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 899396731,
+      "count": 2,
+      "expected": 1231452728
+    },
+    {
+      "index": 96,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 838208016,
+      "count": 16,
+      "expected": 838208016
+    },
+    {
+      "index": 96,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 838208016,
+      "count": 16,
+      "expected": 838209262
+    },
+    {
+      "index": 96,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 838208016,
+      "count": 16,
+      "expected": 838209326
+    },
+    {
+      "index": 96,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 838208016,
+      "count": 16,
+      "expected": 557241556
+    },
+    {
+      "index": 96,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 838208016,
+      "count": 16,
+      "expected": 3817364277
+    },
+    {
+      "index": 96,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 838208016,
+      "count": 16,
+      "expected": 1398154650
+    },
+    {
+      "index": 96,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 838208016,
+      "count": 16,
+      "expected": 838319592
+    },
+    {
+      "index": 96,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 838208016,
+      "count": 16,
+      "expected": 1428
+    },
+    {
+      "index": 96,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 838208016,
+      "count": 16,
+      "expected": 792302011
+    },
+    {
+      "index": 97,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 2382086466,
+      "count": 64,
+      "expected": 2382086466
+    },
+    {
+      "index": 97,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 2382086466,
+      "count": 64,
+      "expected": 2382093560
+    },
+    {
+      "index": 97,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 2382086466,
+      "count": 64,
+      "expected": 2382094208
+    },
+    {
+      "index": 97,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 2382086466,
+      "count": 64,
+      "expected": 3929218592
+    },
+    {
+      "index": 97,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 2382086466,
+      "count": 64,
+      "expected": 1924552440
+    },
+    {
+      "index": 97,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 2382086466,
+      "count": 64,
+      "expected": 871288520
+    },
+    {
+      "index": 97,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 2382086466,
+      "count": 64,
+      "expected": 2392295794
+    },
+    {
+      "index": 97,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 2382086466,
+      "count": 64,
+      "expected": 25572
+    },
+    {
+      "index": 97,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 2382086466,
+      "count": 64,
+      "expected": 789283775
+    },
+    {
+      "index": 98,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 2212080810,
+      "count": 4294967295,
+      "expected": 2212080810
+    },
+    {
+      "index": 98,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 2212080810,
+      "count": 4294967295,
+      "expected": 2212088192
+    },
+    {
+      "index": 98,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 2212080810,
+      "count": 4294967295,
+      "expected": 2212089032
+    },
+    {
+      "index": 98,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 2212080810,
+      "count": 4294967295,
+      "expected": 405116504
+    },
+    {
+      "index": 98,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 2212080810,
+      "count": 4294967295,
+      "expected": 2331288034
+    },
+    {
+      "index": 98,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 2212080810,
+      "count": 4294967295,
+      "expected": 437396256
+    },
+    {
+      "index": 98,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 2212080810,
+      "count": 4294967295,
+      "expected": 2210068362
+    },
+    {
+      "index": 98,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 2212080810,
+      "count": 4294967295,
+      "expected": 40867
+    },
+    {
+      "index": 98,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 2212080810,
+      "count": 4294967295,
+      "expected": 553578319
+    },
+    {
+      "index": 99,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 4128416201,
+      "count": 16,
+      "expected": 4128416201
+    },
+    {
+      "index": 99,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 4128416201,
+      "count": 16,
+      "expected": 4128417675
+    },
+    {
+      "index": 99,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 4128416201,
+      "count": 16,
+      "expected": 4128418647
+    },
+    {
+      "index": 99,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 4128416201,
+      "count": 16,
+      "expected": 3875444001
+    },
+    {
+      "index": 99,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 4128416201,
+      "count": 16,
+      "expected": 2561971495
+    },
+    {
+      "index": 99,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 4128416201,
+      "count": 16,
+      "expected": 3725532739
+    },
+    {
+      "index": 99,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 4128416201,
+      "count": 16,
+      "expected": 4128453705
+    },
+    {
+      "index": 99,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 4128416201,
+      "count": 16,
+      "expected": 59708
+    },
+    {
+      "index": 99,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 4128416201,
+      "count": 16,
+      "expected": 898317760
+    },
+    {
+      "index": 100,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 2707981584,
+      "count": 31,
+      "expected": 2707981584
+    },
+    {
+      "index": 100,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 2707981584,
+      "count": 31,
+      "expected": 2707984740
+    },
+    {
+      "index": 100,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 2707981584,
+      "count": 31,
+      "expected": 2707984820
+    },
+    {
+      "index": 100,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 2707981584,
+      "count": 31,
+      "expected": 2056238626
+    },
+    {
+      "index": 100,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 2707981584,
+      "count": 31,
+      "expected": 2020256897
+    },
+    {
+      "index": 100,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 2707981584,
+      "count": 31,
+      "expected": 725133978
+    },
+    {
+      "index": 100,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 2707981584,
+      "count": 31,
+      "expected": 2112575079
+    },
+    {
+      "index": 100,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 2707981584,
+      "count": 31,
+      "expected": 3571
+    },
+    {
+      "index": 100,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 2707981584,
+      "count": 31,
+      "expected": 1386469810
+    },
+    {
+      "index": 101,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 3544872494,
+      "count": 255,
+      "expected": 3544872494
+    },
+    {
+      "index": 101,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 3544872494,
+      "count": 255,
+      "expected": 3544879828
+    },
+    {
+      "index": 101,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 3544872494,
+      "count": 255,
+      "expected": 3544879980
+    },
+    {
+      "index": 101,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 3544872494,
+      "count": 255,
+      "expected": 2937383028
+    },
+    {
+      "index": 101,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 3544872494,
+      "count": 255,
+      "expected": 1143577708
+    },
+    {
+      "index": 101,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 3544872494,
+      "count": 255,
+      "expected": 1982445988
+    },
+    {
+      "index": 101,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 3544872494,
+      "count": 255,
+      "expected": 3542516718
+    },
+    {
+      "index": 101,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 3544872494,
+      "count": 255,
+      "expected": 55886
+    },
+    {
+      "index": 101,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 3544872494,
+      "count": 255,
+      "expected": 4065924709
+    },
+    {
+      "index": 102,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 1216266876,
+      "count": 7,
+      "expected": 1216266876
+    },
+    {
+      "index": 102,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 1216266876,
+      "count": 7,
+      "expected": 1216267314
+    },
+    {
+      "index": 102,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 1216266876,
+      "count": 7,
+      "expected": 1216267846
+    },
+    {
+      "index": 102,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 1216266876,
+      "count": 7,
+      "expected": 1328720316
+    },
+    {
+      "index": 102,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 1216266876,
+      "count": 7,
+      "expected": 3049246753
+    },
+    {
+      "index": 102,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 1216266876,
+      "count": 7,
+      "expected": 3921523404
+    },
+    {
+      "index": 102,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 1216266876,
+      "count": 7,
+      "expected": 4219329653
+    },
+    {
+      "index": 102,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 1216266876,
+      "count": 7,
+      "expected": 29189
+    },
+    {
+      "index": 102,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 1216266876,
+      "count": 7,
+      "expected": 1375697143
+    },
+    {
+      "index": 103,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 276963717,
+      "count": 4294967295,
+      "expected": 276963717
+    },
+    {
+      "index": 103,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 276963717,
+      "count": 4294967295,
+      "expected": 276970967
+    },
+    {
+      "index": 103,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 276963717,
+      "count": 4294967295,
+      "expected": 276971747
+    },
+    {
+      "index": 103,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 276963717,
+      "count": 4294967295,
+      "expected": 2641473495
+    },
+    {
+      "index": 103,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 276963717,
+      "count": 4294967295,
+      "expected": 3611182136
+    },
+    {
+      "index": 103,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 276963717,
+      "count": 4294967295,
+      "expected": 832265743
+    },
+    {
+      "index": 103,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 276963717,
+      "count": 4294967295,
+      "expected": 1846939661
+    },
+    {
+      "index": 103,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 276963717,
+      "count": 4294967295,
+      "expected": 63165
+    },
+    {
+      "index": 103,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 276963717,
+      "count": 4294967295,
+      "expected": 1592556467
+    },
+    {
+      "index": 104,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 2469888895,
+      "count": 4,
+      "expected": 2469888895
+    },
+    {
+      "index": 104,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 2469888895,
+      "count": 4,
+      "expected": 2469889114
+    },
+    {
+      "index": 104,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 2469888895,
+      "count": 4,
+      "expected": 2469889440
+    },
+    {
+      "index": 104,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 2469888895,
+      "count": 4,
+      "expected": 2761395562
+    },
+    {
+      "index": 104,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 2469888895,
+      "count": 4,
+      "expected": 36660892
+    },
+    {
+      "index": 104,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 2469888895,
+      "count": 4,
+      "expected": 1591172613
+    },
+    {
+      "index": 104,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 2469888895,
+      "count": 4,
+      "expected": 2469862880
+    },
+    {
+      "index": 104,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 2469888895,
+      "count": 4,
+      "expected": 35292
+    },
+    {
+      "index": 104,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 2469888895,
+      "count": 4,
+      "expected": 3792972443
+    },
+    {
+      "index": 105,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 2202097396,
+      "count": 6,
+      "expected": 2202097396
+    },
+    {
+      "index": 105,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 2202097396,
+      "count": 6,
+      "expected": 2202097669
+    },
+    {
+      "index": 105,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 2202097396,
+      "count": 6,
+      "expected": 2202098613
+    },
+    {
+      "index": 105,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 2202097396,
+      "count": 6,
+      "expected": 2838682289
+    },
+    {
+      "index": 105,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 2202097396,
+      "count": 6,
+      "expected": 583421713
+    },
+    {
+      "index": 105,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 2202097396,
+      "count": 6,
+      "expected": 3417485572
+    },
+    {
+      "index": 105,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 2202097396,
+      "count": 6,
+      "expected": 2202053979
+    },
+    {
+      "index": 105,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 2202097396,
+      "count": 6,
+      "expected": 58062
+    },
+    {
+      "index": 105,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 2202097396,
+      "count": 6,
+      "expected": 213506393
+    },
+    {
+      "index": 106,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 1599675967,
+      "count": 2,
+      "expected": 1599675967
+    },
+    {
+      "index": 106,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 1599675967,
+      "count": 2,
+      "expected": 1599676135
+    },
+    {
+      "index": 106,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 1599675967,
+      "count": 2,
+      "expected": 1599676181
+    },
+    {
+      "index": 106,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 1599675967,
+      "count": 2,
+      "expected": 992081465
+    },
+    {
+      "index": 106,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 1599675967,
+      "count": 2,
+      "expected": 1299787390
+    },
+    {
+      "index": 106,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 1599675967,
+      "count": 2,
+      "expected": 1599675452
+    },
+    {
+      "index": 106,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 1599675967,
+      "count": 2,
+      "expected": 1599619090
+    },
+    {
+      "index": 106,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 1599675967,
+      "count": 2,
+      "expected": 13608
+    },
+    {
+      "index": 106,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 1599675967,
+      "count": 2,
+      "expected": 812229343
+    },
+    {
+      "index": 107,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 50054691,
+      "count": 7,
+      "expected": 50054691
+    },
+    {
+      "index": 107,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 50054691,
+      "count": 7,
+      "expected": 50055129
+    },
+    {
+      "index": 107,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 50054691,
+      "count": 7,
+      "expected": 50055090
+    },
+    {
+      "index": 107,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 50054691,
+      "count": 7,
+      "expected": 4175026691
+    },
+    {
+      "index": 107,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 50054691,
+      "count": 7,
+      "expected": 783276845
+    },
+    {
+      "index": 107,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 50054691,
+      "count": 7,
+      "expected": 1549352363
+    },
+    {
+      "index": 107,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 50054691,
+      "count": 7,
+      "expected": 150098996
+    },
+    {
+      "index": 107,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 50054691,
+      "count": 7,
+      "expected": 1620
+    },
+    {
+      "index": 107,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 50054691,
+      "count": 7,
+      "expected": 1329836496
+    },
+    {
+      "index": 108,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 1755477511,
+      "count": 5,
+      "expected": 1755477511
+    },
+    {
+      "index": 108,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 1755477511,
+      "count": 5,
+      "expected": 1755477781
+    },
+    {
+      "index": 108,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 1755477511,
+      "count": 5,
+      "expected": 1755477788
+    },
+    {
+      "index": 108,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 1755477511,
+      "count": 5,
+      "expected": 416119393
+    },
+    {
+      "index": 108,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 1755477511,
+      "count": 5,
+      "expected": 4127506348
+    },
+    {
+      "index": 108,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 1755477511,
+      "count": 5,
+      "expected": 1103122351
+    },
+    {
+      "index": 108,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 1755477511,
+      "count": 5,
+      "expected": 437814818
+    },
+    {
+      "index": 108,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 1755477511,
+      "count": 5,
+      "expected": 294
+    },
+    {
+      "index": 108,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 1755477511,
+      "count": 5,
+      "expected": 2108527354
+    },
+    {
+      "index": 109,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 1522257310,
+      "count": 15,
+      "expected": 1522257310
+    },
+    {
+      "index": 109,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 1522257310,
+      "count": 15,
+      "expected": 1522258404
+    },
+    {
+      "index": 109,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 1522257310,
+      "count": 15,
+      "expected": 1522259310
+    },
+    {
+      "index": 109,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 1522257310,
+      "count": 15,
+      "expected": 1633408558
+    },
+    {
+      "index": 109,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 1522257310,
+      "count": 15,
+      "expected": 2157738202
+    },
+    {
+      "index": 109,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 1522257310,
+      "count": 15,
+      "expected": 3831693844
+    },
+    {
+      "index": 109,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 1522257310,
+      "count": 15,
+      "expected": 546661747
+    },
+    {
+      "index": 109,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 1522257310,
+      "count": 15,
+      "expected": 57088
+    },
+    {
+      "index": 109,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 1522257310,
+      "count": 15,
+      "expected": 2943509845
+    },
+    {
+      "index": 110,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 1935486594,
+      "count": 65,
+      "expected": 1935486594
+    },
+    {
+      "index": 110,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 1935486594,
+      "count": 65,
+      "expected": 1935493944
+    },
+    {
+      "index": 110,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 1935486594,
+      "count": 65,
+      "expected": 1935494720
+    },
+    {
+      "index": 110,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 1935486594,
+      "count": 65,
+      "expected": 2066413920
+    },
+    {
+      "index": 110,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 1935486594,
+      "count": 65,
+      "expected": 1666576030
+    },
+    {
+      "index": 110,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 1935486594,
+      "count": 65,
+      "expected": 2746491144
+    },
+    {
+      "index": 110,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 1935486594,
+      "count": 65,
+      "expected": 1885576370
+    },
+    {
+      "index": 110,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 1935486594,
+      "count": 65,
+      "expected": 29511
+    },
+    {
+      "index": 110,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 1935486594,
+      "count": 65,
+      "expected": 343529461
+    },
+    {
+      "index": 111,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 3590034890,
+      "count": 6,
+      "expected": 3590034890
+    },
+    {
+      "index": 111,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 3590034890,
+      "count": 6,
+      "expected": 3590035163
+    },
+    {
+      "index": 111,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 3590034890,
+      "count": 6,
+      "expected": 3590036103
+    },
+    {
+      "index": 111,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 3590034890,
+      "count": 6,
+      "expected": 2808406415
+    },
+    {
+      "index": 111,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 3590034890,
+      "count": 6,
+      "expected": 3117968823
+    },
+    {
+      "index": 111,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 3590034890,
+      "count": 6,
+      "expected": 4092123210
+    },
+    {
+      "index": 111,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 3590034890,
+      "count": 6,
+      "expected": 3589835501
+    },
+    {
+      "index": 111,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 3590034890,
+      "count": 6,
+      "expected": 20824
+    },
+    {
+      "index": 111,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 3590034890,
+      "count": 6,
+      "expected": 3609779298
+    },
+    {
+      "index": 112,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 3788849340,
+      "count": 1,
+      "expected": 3788849340
+    },
+    {
+      "index": 112,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 3788849340,
+      "count": 1,
+      "expected": 3788849505
+    },
+    {
+      "index": 112,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 3788849340,
+      "count": 1,
+      "expected": 3788849365
+    },
+    {
+      "index": 112,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 3788849340,
+      "count": 1,
+      "expected": 3682424729
+    },
+    {
+      "index": 112,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 3788849340,
+      "count": 1,
+      "expected": 3839223228
+    },
+    {
+      "index": 112,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 3788849340,
+      "count": 1,
+      "expected": 3788849596
+    },
+    {
+      "index": 112,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 3788849340,
+      "count": 1,
+      "expected": 3224149860
+    },
+    {
+      "index": 112,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 3788849340,
+      "count": 1,
+      "expected": 4491
+    },
+    {
+      "index": 112,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 3788849340,
+      "count": 1,
+      "expected": 4034872832
+    },
+    {
+      "index": 113,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 2788901533,
+      "count": 1,
+      "expected": 2788901533
+    },
+    {
+      "index": 113,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 2788901533,
+      "count": 1,
+      "expected": 2788901698
+    },
+    {
+      "index": 113,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 2788901533,
+      "count": 1,
+      "expected": 2788901589
+    },
+    {
+      "index": 113,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 2788901533,
+      "count": 1,
+      "expected": 1632833944
+    },
+    {
+      "index": 113,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 2788901533,
+      "count": 1,
+      "expected": 2705090018
+    },
+    {
+      "index": 113,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 2788901533,
+      "count": 1,
+      "expected": 2788901789
+    },
+    {
+      "index": 113,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 2788901533,
+      "count": 1,
+      "expected": 1291627393
+    },
+    {
+      "index": 113,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 2788901533,
+      "count": 1,
+      "expected": 4297
+    },
+    {
+      "index": 113,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 2788901533,
+      "count": 1,
+      "expected": 3625277221
+    },
+    {
+      "index": 114,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 4220098641,
+      "count": 2,
+      "expected": 4220098641
+    },
+    {
+      "index": 114,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 4220098641,
+      "count": 2,
+      "expected": 4220098809
+    },
+    {
+      "index": 114,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 4220098641,
+      "count": 2,
+      "expected": 4220098967
+    },
+    {
+      "index": 114,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 4220098641,
+      "count": 2,
+      "expected": 3723020375
+    },
+    {
+      "index": 114,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 4220098641,
+      "count": 2,
+      "expected": 3903432738
+    },
+    {
+      "index": 114,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 4220098641,
+      "count": 2,
+      "expected": 4220099154
+    },
+    {
+      "index": 114,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 4220098641,
+      "count": 2,
+      "expected": 4220436788
+    },
+    {
+      "index": 114,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 4220098641,
+      "count": 2,
+      "expected": 2430
+    },
+    {
+      "index": 114,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 4220098641,
+      "count": 2,
+      "expected": 3124524145
+    },
+    {
+      "index": 115,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 3824100045,
+      "count": 64,
+      "expected": 3824100045
+    },
+    {
+      "index": 115,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 3824100045,
+      "count": 64,
+      "expected": 3824107455
+    },
+    {
+      "index": 115,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 3824100045,
+      "count": 64,
+      "expected": 3824108859
+    },
+    {
+      "index": 115,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 3824100045,
+      "count": 64,
+      "expected": 2358366063
+    },
+    {
+      "index": 115,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 3824100045,
+      "count": 64,
+      "expected": 50489286
+    },
+    {
+      "index": 115,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 3824100045,
+      "count": 64,
+      "expected": 331537735
+    },
+    {
+      "index": 115,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 3824100045,
+      "count": 64,
+      "expected": 3797812853
+    },
+    {
+      "index": 115,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 3824100045,
+      "count": 64,
+      "expected": 57497
+    },
+    {
+      "index": 115,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 3824100045,
+      "count": 64,
+      "expected": 1554735007
+    },
+    {
+      "index": 116,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 1731337516,
+      "count": 3,
+      "expected": 1731337516
+    },
+    {
+      "index": 116,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 1731337516,
+      "count": 3,
+      "expected": 1731337701
+    },
+    {
+      "index": 116,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 1731337516,
+      "count": 3,
+      "expected": 1731337761
+    },
+    {
+      "index": 116,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 1731337516,
+      "count": 3,
+      "expected": 1200725115
+    },
+    {
+      "index": 116,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 1731337516,
+      "count": 3,
+      "expected": 1714674544
+    },
+    {
+      "index": 116,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 1731337516,
+      "count": 3,
+      "expected": 1587738207
+    },
+    {
+      "index": 116,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 1731337516,
+      "count": 3,
+      "expected": 3472660355
+    },
+    {
+      "index": 116,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 1731337516,
+      "count": 3,
+      "expected": 17302
+    },
+    {
+      "index": 116,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 1731337516,
+      "count": 3,
+      "expected": 3515138538
+    },
+    {
+      "index": 117,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 1799370297,
+      "count": 16,
+      "expected": 1799370297
+    },
+    {
+      "index": 117,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 1799370297,
+      "count": 16,
+      "expected": 1799371451
+    },
+    {
+      "index": 117,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 1799370297,
+      "count": 16,
+      "expected": 1799371655
+    },
+    {
+      "index": 117,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 1799370297,
+      "count": 16,
+      "expected": 2073534001
+    },
+    {
+      "index": 117,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 1799370297,
+      "count": 16,
+      "expected": 3813919855
+    },
+    {
+      "index": 117,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 1799370297,
+      "count": 16,
+      "expected": 1780648371
+    },
+    {
+      "index": 117,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 1799370297,
+      "count": 16,
+      "expected": 1799572025
+    },
+    {
+      "index": 117,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 1799370297,
+      "count": 16,
+      "expected": 42563
+    },
+    {
+      "index": 117,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 1799370297,
+      "count": 16,
+      "expected": 937507024
+    },
+    {
+      "index": 118,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 1730100668,
+      "count": 3,
+      "expected": 1730100668
+    },
+    {
+      "index": 118,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 1730100668,
+      "count": 3,
+      "expected": 1730100853
+    },
+    {
+      "index": 118,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 1730100668,
+      "count": 3,
+      "expected": 1730101057
+    },
+    {
+      "index": 118,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 1730100668,
+      "count": 3,
+      "expected": 1725099755
+    },
+    {
+      "index": 118,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 1730100668,
+      "count": 3,
+      "expected": 1713421312
+    },
+    {
+      "index": 118,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 1730100668,
+      "count": 3,
+      "expected": 1608962639
+    },
+    {
+      "index": 118,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 1730100668,
+      "count": 3,
+      "expected": 3460266099
+    },
+    {
+      "index": 118,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 1730100668,
+      "count": 3,
+      "expected": 56763
+    },
+    {
+      "index": 118,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 1730100668,
+      "count": 3,
+      "expected": 2791566042
+    },
+    {
+      "index": 119,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 2871593610,
+      "count": 5,
+      "expected": 2871593610
+    },
+    {
+      "index": 119,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 2871593610,
+      "count": 5,
+      "expected": 2871593880
+    },
+    {
+      "index": 119,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 2871593610,
+      "count": 5,
+      "expected": 2871594302
+    },
+    {
+      "index": 119,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 2871593610,
+      "count": 5,
+      "expected": 2029623116
+    },
+    {
+      "index": 119,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 2871593610,
+      "count": 5,
+      "expected": 1465067383
+    },
+    {
+      "index": 119,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 2871593610,
+      "count": 5,
+      "expected": 1781984778
+    },
+    {
+      "index": 119,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 2871593610,
+      "count": 5,
+      "expected": 1373261205
+    },
+    {
+      "index": 119,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 2871593610,
+      "count": 5,
+      "expected": 29493
+    },
+    {
+      "index": 119,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 2871593610,
+      "count": 5,
+      "expected": 917593314
+    },
+    {
+      "index": 120,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 2982191321,
+      "count": 15,
+      "expected": 2982191321
+    },
+    {
+      "index": 120,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 2982191321,
+      "count": 15,
+      "expected": 2982192592
+    },
+    {
+      "index": 120,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 2982191321,
+      "count": 15,
+      "expected": 2982193749
+    },
+    {
+      "index": 120,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 2982191321,
+      "count": 15,
+      "expected": 606628826
+    },
+    {
+      "index": 120,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 2982191321,
+      "count": 15,
+      "expected": 2769656046
+    },
+    {
+      "index": 120,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 2982191321,
+      "count": 15,
+      "expected": 3117162323
+    },
+    {
+      "index": 120,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 2982191321,
+      "count": 15,
+      "expected": 600429311
+    },
+    {
+      "index": 120,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 2982191321,
+      "count": 15,
+      "expected": 22876
+    },
+    {
+      "index": 120,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 2982191321,
+      "count": 15,
+      "expected": 2213965422
+    },
+    {
+      "index": 121,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 293557725,
+      "count": 65,
+      "expected": 293557725
+    },
+    {
+      "index": 121,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 293557725,
+      "count": 65,
+      "expected": 293565199
+    },
+    {
+      "index": 121,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 293557725,
+      "count": 65,
+      "expected": 293566443
+    },
+    {
+      "index": 121,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 293557725,
+      "count": 65,
+      "expected": 3370090207
+    },
+    {
+      "index": 121,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 293557725,
+      "count": 65,
+      "expected": 3427701902
+    },
+    {
+      "index": 121,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 293557725,
+      "count": 65,
+      "expected": 3877874263
+    },
+    {
+      "index": 121,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 293557725,
+      "count": 65,
+      "expected": 278797797
+    },
+    {
+      "index": 121,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 293557725,
+      "count": 65,
+      "expected": 1967
+    },
+    {
+      "index": 121,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 293557725,
+      "count": 65,
+      "expected": 709968235
+    },
+    {
+      "index": 122,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 1717357178,
+      "count": 4,
+      "expected": 1717357178
+    },
+    {
+      "index": 122,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 1717357178,
+      "count": 4,
+      "expected": 1717357397
+    },
+    {
+      "index": 122,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 1717357178,
+      "count": 4,
+      "expected": 1717357717
+    },
+    {
+      "index": 122,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 1717357178,
+      "count": 4,
+      "expected": 3249325167
+    },
+    {
+      "index": 122,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 1717357178,
+      "count": 4,
+      "expected": 3418007386
+    },
+    {
+      "index": 122,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 1717357178,
+      "count": 4,
+      "expected": 4050540096
+    },
+    {
+      "index": 122,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 1717357178,
+      "count": 4,
+      "expected": 1717273861
+    },
+    {
+      "index": 122,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 1717357178,
+      "count": 4,
+      "expected": 65479
+    },
+    {
+      "index": 122,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 1717357178,
+      "count": 4,
+      "expected": 3065192786
+    },
+    {
+      "index": 123,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 1874914793,
+      "count": 2,
+      "expected": 1874914793
+    },
+    {
+      "index": 123,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 1874914793,
+      "count": 2,
+      "expected": 1874914961
+    },
+    {
+      "index": 123,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 1874914793,
+      "count": 2,
+      "expected": 1874915103
+    },
+    {
+      "index": 123,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 1874914793,
+      "count": 2,
+      "expected": 1819762159
+    },
+    {
+      "index": 123,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 1874914793,
+      "count": 2,
+      "expected": 2095111610
+    },
+    {
+      "index": 123,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 1874914793,
+      "count": 2,
+      "expected": 1874915306
+    },
+    {
+      "index": 123,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 1874914793,
+      "count": 2,
+      "expected": 1874857292
+    },
+    {
+      "index": 123,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 1874914793,
+      "count": 2,
+      "expected": 55297
+    },
+    {
+      "index": 123,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 1874914793,
+      "count": 2,
+      "expected": 3724792490
+    },
+    {
+      "index": 124,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 1261741266,
+      "count": 255,
+      "expected": 1261741266
+    },
+    {
+      "index": 124,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 1261741266,
+      "count": 255,
+      "expected": 1261748680
+    },
+    {
+      "index": 124,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 1261741266,
+      "count": 255,
+      "expected": 1261749936
+    },
+    {
+      "index": 124,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 1261741266,
+      "count": 255,
+      "expected": 2283514128
+    },
+    {
+      "index": 124,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 1261741266,
+      "count": 255,
+      "expected": 3556611222
+    },
+    {
+      "index": 124,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 1261741266,
+      "count": 255,
+      "expected": 58239832
+    },
+    {
+      "index": 124,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 1261741266,
+      "count": 255,
+      "expected": 1143844354
+    },
+    {
+      "index": 124,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 1261741266,
+      "count": 255,
+      "expected": 13744
+    },
+    {
+      "index": 124,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 1261741266,
+      "count": 255,
+      "expected": 3033457425
+    },
+    {
+      "index": 125,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 477975261,
+      "count": 11,
+      "expected": 477975261
+    },
+    {
+      "index": 125,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 477975261,
+      "count": 11,
+      "expected": 477975955
+    },
+    {
+      "index": 125,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 477975261,
+      "count": 11,
+      "expected": 477977338
+    },
+    {
+      "index": 125,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 477975261,
+      "count": 11,
+      "expected": 3331571171
+    },
+    {
+      "index": 125,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 477975261,
+      "count": 11,
+      "expected": 356089706
+    },
+    {
+      "index": 125,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 477975261,
+      "count": 11,
+      "expected": 3360796247
+    },
+    {
+      "index": 125,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 477975261,
+      "count": 11,
+      "expected": 2315984158
+    },
+    {
+      "index": 125,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 477975261,
+      "count": 11,
+      "expected": 46308
+    },
+    {
+      "index": 125,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 477975261,
+      "count": 11,
+      "expected": 186786785
+    },
+    {
+      "index": 126,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 2680315512,
+      "count": 0,
+      "expected": 2680315512
+    },
+    {
+      "index": 126,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 2680315512,
+      "count": 0,
+      "expected": 2680315512
+    },
+    {
+      "index": 126,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 2680315512,
+      "count": 0,
+      "expected": 2680315512
+    },
+    {
+      "index": 126,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 2680315512,
+      "count": 0,
+      "expected": 2680315512
+    },
+    {
+      "index": 126,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 2680315512,
+      "count": 0,
+      "expected": 2680315512
+    },
+    {
+      "index": 126,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 2680315512,
+      "count": 0,
+      "expected": 2680315512
+    },
+    {
+      "index": 126,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 2680315512,
+      "count": 0,
+      "expected": 2680315512
+    },
+    {
+      "index": 126,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 2680315512,
+      "count": 0,
+      "expected": 24184
+    },
+    {
+      "index": 126,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 2680315512,
+      "count": 0,
+      "expected": 2680315512
+    },
+    {
+      "index": 127,
+      "kernel": 0,
+      "name": "identity",
+      "seed": 3888402449,
+      "count": 4,
+      "expected": 3888402449
+    },
+    {
+      "index": 127,
+      "kernel": 1,
+      "name": "sum_bytes",
+      "seed": 3888402449,
+      "count": 4,
+      "expected": 3888402668
+    },
+    {
+      "index": 127,
+      "kernel": 2,
+      "name": "copy_xor",
+      "seed": 3888402449,
+      "count": 4,
+      "expected": 3888402698
+    },
+    {
+      "index": 127,
+      "kernel": 3,
+      "name": "ring_buffer",
+      "seed": 3888402449,
+      "count": 4,
+      "expected": 3867434500
+    },
+    {
+      "index": 127,
+      "kernel": 4,
+      "name": "state_machine",
+      "seed": 3888402449,
+      "count": 4,
+      "expected": 3922256581
+    },
+    {
+      "index": 127,
+      "kernel": 5,
+      "name": "frame_parser",
+      "seed": 3888402449,
+      "count": 4,
+      "expected": 382752491
+    },
+    {
+      "index": 127,
+      "kernel": 6,
+      "name": "struct_records",
+      "seed": 3888402449,
+      "count": 4,
+      "expected": 3888432010
+    },
+    {
+      "index": 127,
+      "kernel": 7,
+      "name": "crc16",
+      "seed": 3888402449,
+      "count": 4,
+      "expected": 14953
+    },
+    {
+      "index": 127,
+      "kernel": 8,
+      "name": "call_chain",
+      "seed": 3888402449,
+      "count": 4,
+      "expected": 3835517770
+    }
+  ],
+  "timing": {
+    "seed": 305419896,
+    "count": 64,
+    "expected": [
+      305419896,
+      305427238,
+      305428342,
+      2530463242,
+      819329978,
+      1414724082,
+      325120320,
+      30054,
+      2138022898
+    ],
+    "repeats": 8,
+    "samples": 3
+  },
+  "policy": "Independent Python integer model with explicit uint16/uint32 wrapping; ring uses deque rather than pointer indexing. Cases include clamp/empty/full/malformed/overflow paths."
+}

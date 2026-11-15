@@ -23,7 +23,7 @@ public sealed class PicDownloadWindow : Window
         SetResourceReference(BackgroundProperty, "Surface");
         SetResourceReference(ForegroundProperty, "Text");
         var panel = new StackPanel { Margin = new(24) };
-        panel.Children.Add(new TextBlock { Text = "PIC16F877A · ICSP\n目标板使用独立电源；连接 MCLR/VPP、VDD 检测、GND、PGD/RB7、PGC/RB6。\n请核对接口方向和目标供电。下载组件由 MCU StudioX 管理，无需打开其他软件。", TextWrapping = TextWrapping.Wrap });
+        panel.Children.Add(new TextBlock { Text = "PIC16F877A · ICSP\n目标板使用独立电源；连接 MCLR/VPP、VDD 检测、GND、PGD/RB7、PGC/RB6。\n请核对接口方向和目标供电。", TextWrapping = TextWrapping.Wrap });
         var row = new DockPanel { Margin = new(0, 18, 0, 0) };
         var button = new Button { Content = "刷新烧录器", Margin = new(12, 0, 0, 0) };
         DockPanel.SetDock(button, Dock.Right);
@@ -46,8 +46,14 @@ public sealed class PicDownloadWindow : Window
             {
                 Restore(await refresh(), selected);
             }
-            catch (Exception failure) { status.Text = failure.ToString(); }
-            finally { button.IsEnabled = true; }
+            catch (Exception failure)
+            {
+                status.Text = failure.ToString();
+            }
+            finally
+            {
+                button.IsEnabled = true;
+            }
         };
         panel.Children.Add(release);
         panel.Children.Add(status);

@@ -89,8 +89,14 @@ public sealed partial class DistributionService
             {
                 previous = await JsonStore.ReadAsync<ResumeIdentity>(metadata, token);
             }
-            catch (JsonException) { progress?.Report("续传记录损坏，将重新下载。"); }
-            catch (StudioXException error) when (error.Code == "JSON_EMPTY") { progress?.Report("续传记录为空，将重新下载。"); }
+            catch (JsonException)
+            {
+                progress?.Report("续传记录损坏，将重新下载。");
+            }
+            catch (StudioXException error) when (error.Code == "JSON_EMPTY")
+            {
+                progress?.Report("续传记录为空，将重新下载。");
+            }
         }
         if (previous?.Source != sourcePath || previous.Bytes != entry.DownloadBytes)
         {
@@ -233,7 +239,10 @@ public sealed partial class DistributionService
             progress?.Report("已取消；下载进度保留，可稍后继续。");
             throw;
         }
-        finally { response?.Dispose(); }
+        finally
+        {
+            response?.Dispose();
+        }
     }
 
     private static FileStream AcquireDownload(string path)
@@ -242,7 +251,10 @@ public sealed partial class DistributionService
         {
             return new(path, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
         }
-        catch (IOException error) { throw new StudioXException("DOWNLOAD_BUSY", "此归档正在由另一个下载操作使用，请等待完成后重试。", error); }
+        catch (IOException error)
+        {
+            throw new StudioXException("DOWNLOAD_BUSY", "此归档正在由另一个下载操作使用，请等待完成后重试。", error);
+        }
     }
 
     private async Task<HttpResponseMessage> SendArchiveAsync(Uri uri, long offset, string? etag, CancellationToken token)

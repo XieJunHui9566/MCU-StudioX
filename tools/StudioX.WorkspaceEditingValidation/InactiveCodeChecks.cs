@@ -119,7 +119,9 @@ internal static class InactiveCodeChecks
                 Decode(invalid);
                 throw new InvalidOperationException("Malformed inactive token accepted.");
             }
-            catch (JsonException) { }
+            catch (JsonException)
+            {
+            }
         }
         check(true, "malformed, out-of-bounds, negative, unknown and overlapping token ranges are rejected without guessing");
         // UI 验证使用已启用 RTOS 的原始磁盘文本；未保存的检查只存在于前述语言会话。

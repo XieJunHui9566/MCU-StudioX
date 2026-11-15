@@ -10,12 +10,32 @@ public partial class MainWindow
 
     private void InitializeEditingActions()
     {
-        CommandBindings.Add(new CommandBinding(SourceCommands.Undo, (_, _) => { SourceEditor.Undo(); SourceEditor.Focus(); },
-            (_, e) => { e.CanExecute = CanEditSource && SourceEditor.CanUndo; e.Handled = true; }));
-        CommandBindings.Add(new CommandBinding(SourceCommands.Redo, (_, _) => { SourceEditor.Redo(); SourceEditor.Focus(); },
-            (_, e) => { e.CanExecute = CanEditSource && SourceEditor.CanRedo; e.Handled = true; }));
+        CommandBindings.Add(new CommandBinding(SourceCommands.Undo, (_, _) =>
+        {
+            SourceEditor.Undo();
+            SourceEditor.Focus();
+        },
+            (_, e) =>
+            {
+                e.CanExecute = CanEditSource && SourceEditor.CanUndo;
+                e.Handled = true;
+            }));
+        CommandBindings.Add(new CommandBinding(SourceCommands.Redo, (_, _) =>
+        {
+            SourceEditor.Redo();
+            SourceEditor.Focus();
+        },
+            (_, e) =>
+            {
+                e.CanExecute = CanEditSource && SourceEditor.CanRedo;
+                e.Handled = true;
+            }));
         CommandBindings.Add(new CommandBinding(SourceCommands.ToggleComment, (_, _) => ToggleSourceComment(),
-            (_, e) => { e.CanExecute = CanEditSource && CommentPrefix is not null; e.Handled = true; }));
+            (_, e) =>
+            {
+                e.CanExecute = CanEditSource && CommentPrefix is not null;
+                e.Handled = true;
+            }));
     }
 
     private void ToggleSourceComment()

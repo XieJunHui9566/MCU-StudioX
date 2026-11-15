@@ -15,11 +15,13 @@ internal sealed class CodeCompletionData : ICompletionData
     private readonly TextAnchor end;
     private readonly CodeSuggestion suggestion;
     private readonly Action<bool> inserted;
-    public CodeCompletionData(TextDocument document, CodeSuggestion suggestion, int startOffset, int endOffset, int priority, Action<bool> inserted)
+    private readonly Action<Exception> failed;
+    public CodeCompletionData(TextDocument document, CodeSuggestion suggestion, int startOffset, int endOffset, int priority, Action<bool> inserted, Action<Exception> failed)
     {
         this.document = document;
         this.suggestion = suggestion;
         this.inserted = inserted;
+        this.failed = failed;
         start = document.CreateAnchor(startOffset);
         start.MovementType = AnchorMovementType.BeforeInsertion;
         end = document.CreateAnchor(endOffset);
@@ -68,6 +70,28 @@ internal sealed class CodeCompletionData : ICompletionData
         {
             next++;
         }
+        if (suggestion.Snippet is { } snippet)
+        {
+            if (function && next < document.TextLength && document.GetCharAt(next) == '(' && text.IndexOf('(') is var parentheses && parentheses >= 0)
+            {
+                // 词中补全已有调用时只替换名称，保留用户填写的参数。
+                text = text[..parentheses];
+            }
+            else
+            {
+                try
+                {
+                    CompletionSnippetSession.Insert(textArea, snippet, offset, finish - offset, suggestion.Kind == 15);
+                }
+                catch (InvalidDataException ex)
+                {
+                    failed(ex);
+                    return;
+                }
+                inserted(false);
+                return;
+            }
+        }
         var addParentheses = function && !text.Contains('(') && (next == document.TextLength || document.GetCharAt(next) != '(');
         if (addParentheses)
         {
@@ -90,6 +114,7 @@ internal sealed class CodeCompletionData : ICompletionData
             6 => ("v", "#83B7EB"),
             7 or 8 or 13 or 22 or 25 => ("T", "#6FB7B2"),
             14 => ("k", "#CF8E6D"),
+            15 => ("{}", "#CF8E6D"),
             21 => ("#", "#C59DD8"),
             17 or 19 => ("h", "#8FBC8F"),
             _ => ("·", "#9DA0A8")

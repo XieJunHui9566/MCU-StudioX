@@ -182,7 +182,11 @@ internal static class OfflineChecks
             }
             passed = true;
         }
-        catch (Exception error) { diagnostic = error.ToString(); throw; }
+        catch (Exception error)
+        {
+            diagnostic = error.ToString();
+            throw;
+        }
         finally
         {
             foreach (var (key, value) in previous)

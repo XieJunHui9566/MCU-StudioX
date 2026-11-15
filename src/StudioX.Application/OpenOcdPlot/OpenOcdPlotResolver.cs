@@ -67,7 +67,10 @@ public static class OpenOcdPlotResolver
             {
                 return (variable.String("type"), variable.String("numchild", "0"));
             }
-            finally { await adapter.SendAsync("-var-delete " + id, CancellationToken.None); }
+            finally
+            {
+                await adapter.SendAsync("-var-delete " + id, CancellationToken.None);
+            }
         }
     }
 }

@@ -71,7 +71,6 @@ def c_sources() -> list[Path]:
     # examples/packs 只包含本仓库维护的模板；厂商 SDK 与生成验收工程不在此列表中。
     paths = list((REPOSITORY / "examples/packs").rglob("*.c"))
     paths += list((REPOSITORY / "examples/packs").rglob("*.h"))
-    paths += list((REPOSITORY / "src/StudioX.Engine/Resources/Lvgl").glob("*.c"))
     paths += list((REPOSITORY / "examples/components").rglob("*.h"))
     for directory in ("StudioX.Ag32SystemValidation", "StudioX.Ag32PeripheralValidation"):
         paths += list((REPOSITORY / "tools" / directory / "native").glob("*.c"))

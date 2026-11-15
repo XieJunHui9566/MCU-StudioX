@@ -104,7 +104,11 @@ public partial class PluginManagerView : UserControl
         {
             await action(row.Entry.Id);
         }
-        catch (Exception error) { Log(error.ToString()); OperationStatus.Text = "插件入口打开失败：" + error.Message; }
+        catch (Exception error)
+        {
+            Log(error.ToString());
+            OperationStatus.Text = "插件入口打开失败：" + error.Message;
+        }
     }
 
     private async void Import_Click(object sender, RoutedEventArgs e)

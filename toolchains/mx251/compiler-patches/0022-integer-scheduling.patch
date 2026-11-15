@@ -1,0 +1,243 @@
+--- a/src/mcs251/wide.c
++++ b/src/mcs251/wide.c
+@@ -1021,6 +1021,107 @@
+   }
+ }
+ 
++/* 只调度已经取得的无符号整数值，不复制表达式或移动内存取样。
++ * 一次定义、一个使用节点且不跨控制流，保证计算仍恰好执行一次；
++ * CALL 后重新计算值不能据此重新读取其来源对象或省略调用保存。 */
++static bool
++wide_sink_integer_node(wide_function *f,wide_node *n)
++{
++  if((n->op!='+' && n->op!='-' && n->op!='^' && n->op!='|' && n->op!=BITWISEAND) ||
++     n->result<0 || n->result>=f->nv || n->floating || n->sign ||
++     (n->width!=1 && n->width!=2 && n->width!=4) ||
++     n->left.width!=n->width || n->right.width!=n->width ||
++     n->left.floating || n->right.floating || n->left.sign || n->right.sign ||
++     n->left.codePointer || n->right.codePointer || n->addressIndex.value>=0 ||
++     n->args || n->stackArgs || n->addressOp || n->byteAccess || n->codeAccess || n->pointerAccess)return false;
++  wide_value *result=&f->values[n->result];
++  if(result->width!=n->width || result->pointer || result->codePointer ||
++     result->floating || result->sign || result->symbolSnapshot || result->pin>=0)return false;
++  int inputs[2]={n->left.value,n->right.value};
++  for(int k=0;k<2;++k)if(inputs[k]>=0) {
++    if(inputs[k]>=f->nv || inputs[k]==n->result)return false;
++    wide_value *value=&f->values[inputs[k]];
++    if(value->width!=n->width || value->pointer || value->codePointer || value->floating || value->sign)return false;
++  }
++  for(int v=0;v<f->nv;++v)
++    if(wb_has(n->def,v)!=(v==n->result) ||
++       wb_has(n->use,v)!=(v==inputs[0] || v==inputs[1]))return false;
++  return true;
++}
++
++static bool
++wide_sink_block_barrier(wide_node *n)
++{
++  return n->op==FUNCTION || n->op==ENDFUNCTION || n->op==LABEL ||
++    n->op==RECEIVE || n->op==RETURN || n->op==IFX || n->op==GOTO || n->op==JUMPTABLE;
++}
++
++static bool
++wide_sink_fallthrough(wide_node *n,int index)
++{
++  return n->op!=RETURN && n->op!=ENDFUNCTION && n->op!=GOTO && n->op!=JUMPTABLE && n->succ[0]==index+1;
++}
++
++/* 移动的是节点身份；顺序边必须按新位置重新连接，显式跳转则按身份
++ * 映射。只映射旧直落边会跳过被移动的计算，甚至构造错误的循环。 */
++static void
++wide_sink_move_before(wide_function *f,int from,int before)
++{
++  int mapped[WN_MAX],original[WN_MAX];
++  for(int i=0;i<f->nn;++i)mapped[i]=i;
++  mapped[from]=before-1;
++  for(int i=from+1;i<before;++i)mapped[i]=i-1;
++  for(int i=0;i<f->nn;++i)original[mapped[i]]=i;
++  wide_node moving=f->nodes[from];
++  memmove(&f->nodes[from],&f->nodes[from+1],(before-from-1)*sizeof f->nodes[0]);
++  f->nodes[before-1]=moving;
++  for(int i=0;i<f->nn;++i) {
++    wide_node *n=&f->nodes[i];bool fall=wide_sink_fallthrough(n,original[i]);
++    for(int k=0;k<2;++k)if(n->succ[k]>=0)
++      n->succ[k]=(k==0 && fall)?i+1:mapped[n->succ[k]];
++  }
++  for(int i=0;i<f->nj;++i)f->jumpSuccessors[i]=mapped[f->jumpSuccessors[i]];
++}
++
++static unsigned
++wide_sink_integer_expressions(wide_function *f)
++{
++  unsigned moved=0;
++  /* 每个值最多考察一次，顺序固定；不通过复制节点增加代码或扩大搜索。 */
++  for(int value=0;value<f->nv;++value) {
++    int definition=-1,use=-1,definitions=0,uses=0;
++    for(int i=0;i<f->nn;++i) {
++      if(wb_has(f->nodes[i].def,value)) {definition=i;++definitions;}
++      if(wb_has(f->nodes[i].use,value)) {use=i;++uses;}
++    }
++    if(definitions!=1 || uses!=1 || use<=definition+1 ||
++       !wide_sink_integer_node(f,&f->nodes[definition]))continue;
++    wide_node *node=&f->nodes[definition];
++    int inputs[2]={node->left.value,node->right.value};unsigned calls=0;bool valid=true;
++    for(int i=definition;i<use && valid;++i) {
++      wide_node *between=&f->nodes[i];
++      if(wide_sink_block_barrier(between) || between->succ[0]!=i+1 ||
++         between->succ[1]>=0 || between->jumpCount) {valid=false;break;}
++      if(i==definition)continue;
++      if(wb_has(between->def,inputs[0]) || wb_has(between->def,inputs[1])) {valid=false;break;}
++      calls+=between->op==CALL;
++    }
++    if(!valid || !calls)continue;
++    /* 正常导入的显式边落在 LABEL；这里仍独立检查全部入边，不能把
++     * 单一后继误当作单一入口。跳表重复边和回边同样不能越过。 */
++    for(int i=0;i<f->nn && valid;++i)for(int k=0;k<2;++k) {
++      int to=f->nodes[i].succ[k];
++      if(to>=definition && to<=use && !(k==0 && wide_sink_fallthrough(&f->nodes[i],i)))valid=false;
++    }
++    for(int i=0;i<f->nj;++i)if(f->jumpSuccessors[i]>=definition && f->jumpSuccessors[i]<=use)valid=false;
++    if(!valid)continue;
++    wide_sink_move_before(f,definition,use);++moved;
++    dbuf_printf(f->diagnostics,"; wide integer-sink moved value=%d from=%d before=%d calls=%u\n",value,definition,use,calls);
++  }
++  if(moved)wide_reset_allocation(f);
++  return moved;
++}
++
+ /* 只合并入口直线前缀中的同地址空间数据指针副本。入口 RECEIVE 的
+  * 规范化位模式保持不变；不合并指向的内存，不移动任何读取或写入。 */
+ static unsigned
+@@ -1460,38 +1561,43 @@
+   }
+ }
+ 
++/* 各 MIR 变换共享完整函数的候选比较；不叠加局部收益猜测。
++ * 内部错误一直向上传播，未知编码或任一成本退步时保留完整旧候选。 */
+ static mcs251_wide_result
+-wide_choose_pointer_copy(wide_function *f,wide_selection_cost *cost)
++wide_choose_transform(wide_function *f,wide_selection_cost *cost,
++  unsigned (*transform)(wide_function *),
++  mcs251_wide_result (*choose)(wide_function *,wide_selection_cost *),
++  const char *kind,const char *countName,bool requireSpill,
++  const char *originalKind,const char *trialKind)
+ {
+   wide_function *trial=Safe_alloc(sizeof *trial);memcpy(trial,f,sizeof *trial);
+   struct dbuf_s originalCode,originalDiagnostics,trialCode,trialDiagnostics;
+   dbuf_init(&originalCode,1024);dbuf_init(&originalDiagnostics,256);
+   dbuf_init(&trialCode,1024);dbuf_init(&trialDiagnostics,256);
+   trial->candidateOutput=&trialCode;trial->diagnostics=&trialDiagnostics;
+-  unsigned copies=wide_entry_pointer_copies(trial);
++  unsigned changes=transform(trial);
+   mcs251_wide_result result;
+-  if(!copies)result=wide_choose_allocation(f,cost);
++  if(!changes)result=choose(f,cost);
+   else {
+     struct dbuf_s *code=f->candidateOutput,*diagnostics=f->diagnostics;
+     wide_selection_cost oldCost={0},newCost={0};bool selected=false;
+     f->candidateOutput=&originalCode;f->diagnostics=&originalDiagnostics;
+-    result=wide_choose_allocation(f,&oldCost);
++    result=choose(f,&oldCost);
+     f->candidateOutput=code;f->diagnostics=diagnostics;
+-    mcs251_wide_result originalResult=result;
+-    mcs251_wide_result trialResult=MCS251_WIDE_FALLBACK;
+-    if(result==MCS251_WIDE_ACCEPTED && oldCost.spills) {
+-      wide_liveness(trial);trialResult=wide_choose_allocation(trial,&newCost);
++    mcs251_wide_result originalResult=result,trialResult=MCS251_WIDE_FALLBACK;
++    if(result==MCS251_WIDE_ACCEPTED && (!requireSpill || oldCost.spills)) {
++      wide_liveness(trial);trialResult=choose(trial,&newCost);
+       if(trialResult==MCS251_WIDE_ERROR)result=MCS251_WIDE_ERROR;
+       else selected=trialResult==MCS251_WIDE_ACCEPTED && !oldCost.unknown && !newCost.unknown &&
+         newCost.bytes<=oldCost.bytes && newCost.heuristic<=oldCost.heuristic && newCost.frame<=oldCost.frame &&
+         (newCost.bytes<oldCost.bytes || newCost.heuristic<oldCost.heuristic || newCost.frame<oldCost.frame);
+     }
+-    dbuf_printf(diagnostics,"; wide pointer-copy choice function=%s copies=%u selected=%u original-result=%d trial-result=%d old-bytes=%u new-bytes=%u old-unknown=%u new-unknown=%u old-weighted=%u new-weighted=%u old-frame=%d new-frame=%d old-spills=%u new-spills=%u\n",
+-      currFunc->name,copies,selected,originalResult,trialResult,oldCost.bytes,newCost.bytes,oldCost.unknown,newCost.unknown,
++    dbuf_printf(diagnostics,"; wide %s choice function=%s %s=%u selected=%u original-result=%d trial-result=%d old-bytes=%u new-bytes=%u old-unknown=%u new-unknown=%u old-weighted=%u new-weighted=%u old-frame=%d new-frame=%d old-spills=%u new-spills=%u\n",
++      kind,currFunc->name,countName,changes,selected,originalResult,trialResult,oldCost.bytes,newCost.bytes,oldCost.unknown,newCost.unknown,
+       oldCost.heuristic,newCost.heuristic,oldCost.frame,newCost.frame,oldCost.spills,newCost.spills);
+     struct dbuf_s *chosenCode=selected?&trialCode:&originalCode;
+     struct dbuf_s *chosenDiagnostics=selected?&trialDiagnostics:&originalDiagnostics;
+-    wide_pointer_copy_audit(diagnostics,selected?"original":"trial",selected?&originalDiagnostics:&trialDiagnostics);
++    wide_pointer_copy_audit(diagnostics,selected?originalKind:trialKind,selected?&originalDiagnostics:&trialDiagnostics);
+     dbuf_append(diagnostics,dbuf_get_buf(chosenDiagnostics),dbuf_get_length(chosenDiagnostics));
+     if(result==MCS251_WIDE_ACCEPTED)dbuf_append(code,dbuf_get_buf(chosenCode),dbuf_get_length(chosenCode));
+     if(cost && result==MCS251_WIDE_ACCEPTED)*cost=selected?newCost:oldCost;
+@@ -1501,46 +1607,29 @@
+   return result;
+ }
+ 
+-/* 完整 V0.0122 选择器作为基线。固定栈地址候选只在实际发射后同时
+- * 不增编码字节、加权指令和栈帧时采用；内部错误不能伪装成回退。 */
+ static mcs251_wide_result
+-wide_choose_stack_addresses(wide_function *f)
+-{
+-  wide_function *trial=Safe_alloc(sizeof *trial);memcpy(trial,f,sizeof *trial);
+-  struct dbuf_s originalCode,originalDiagnostics,trialCode,trialDiagnostics;
+-  dbuf_init(&originalCode,1024);dbuf_init(&originalDiagnostics,256);
+-  dbuf_init(&trialCode,1024);dbuf_init(&trialDiagnostics,256);
+-  trial->candidateOutput=&trialCode;trial->diagnostics=&trialDiagnostics;
+-  unsigned accesses=wide_fixed_stack_addresses(trial);
+-  mcs251_wide_result result;
+-  if(!accesses)result=wide_choose_pointer_copy(f,NULL);
+-  else {
+-    struct dbuf_s *code=f->candidateOutput,*diagnostics=f->diagnostics;
+-    wide_selection_cost oldCost={0},newCost={0};bool selected=false;
+-    f->candidateOutput=&originalCode;f->diagnostics=&originalDiagnostics;
+-    result=wide_choose_pointer_copy(f,&oldCost);
+-    f->candidateOutput=code;f->diagnostics=diagnostics;
+-    mcs251_wide_result originalResult=result,trialResult=MCS251_WIDE_FALLBACK;
+-    if(result==MCS251_WIDE_ACCEPTED) {
+-      wide_liveness(trial);trialResult=wide_choose_pointer_copy(trial,&newCost);
+-      if(trialResult==MCS251_WIDE_ERROR)result=MCS251_WIDE_ERROR;
+-      else selected=trialResult==MCS251_WIDE_ACCEPTED && !oldCost.unknown && !newCost.unknown &&
+-        newCost.bytes<=oldCost.bytes && newCost.heuristic<=oldCost.heuristic && newCost.frame<=oldCost.frame &&
+-        (newCost.bytes<oldCost.bytes || newCost.heuristic<oldCost.heuristic || newCost.frame<oldCost.frame);
+-    }
+-    dbuf_printf(diagnostics,"; wide stack-address choice function=%s accesses=%u selected=%u original-result=%d trial-result=%d old-bytes=%u new-bytes=%u old-unknown=%u new-unknown=%u old-weighted=%u new-weighted=%u old-frame=%d new-frame=%d old-spills=%u new-spills=%u\n",
+-      currFunc->name,accesses,selected,originalResult,trialResult,oldCost.bytes,newCost.bytes,oldCost.unknown,newCost.unknown,
+-      oldCost.heuristic,newCost.heuristic,oldCost.frame,newCost.frame,oldCost.spills,newCost.spills);
+-    struct dbuf_s *chosenCode=selected?&trialCode:&originalCode;
+-    struct dbuf_s *chosenDiagnostics=selected?&trialDiagnostics:&originalDiagnostics;
+-    /* 复用逐行前缀容器；新增外层前缀明确区分旧候选和获选候选。 */
+-    wide_pointer_copy_audit(diagnostics,selected?"stack-original":"stack-trial",selected?&originalDiagnostics:&trialDiagnostics);
+-    dbuf_append(diagnostics,dbuf_get_buf(chosenDiagnostics),dbuf_get_length(chosenDiagnostics));
+-    if(result==MCS251_WIDE_ACCEPTED)dbuf_append(code,dbuf_get_buf(chosenCode),dbuf_get_length(chosenCode));
+-  }
+-  dbuf_destroy(&originalCode);dbuf_destroy(&originalDiagnostics);
+-  dbuf_destroy(&trialCode);dbuf_destroy(&trialDiagnostics);Safe_free(trial);
+-  return result;
++wide_choose_pointer_copy(wide_function *f,wide_selection_cost *cost)
++{
++  return wide_choose_transform(f,cost,wide_entry_pointer_copies,wide_choose_allocation,
++    "pointer-copy","copies",true,"original","trial");
++}
++
++/* 旧选择器的顺序和门槛不变：固定栈地址包住指针副本，后者仍只在
++ * 旧分配候选存在 spill 时准入；向外提供完整候选成本供调度比较。 */
++static mcs251_wide_result
++wide_choose_stack_addresses(wide_function *f,wide_selection_cost *cost)
++{
++  return wide_choose_transform(f,cost,wide_fixed_stack_addresses,wide_choose_pointer_copy,
++    "stack-address","accesses",false,"stack-original","stack-trial");
++}
++
++/* 新调度只与完整旧选择器的输出比较，不能提前消掉 spill 而使原有
++ * 指针副本候选失去准入资格，再错误地把局部胜出当作整体不退步。 */
++static mcs251_wide_result
++wide_choose_integer_sinking(wide_function *f,wide_selection_cost *cost)
++{
++  return wide_choose_transform(f,cost,wide_sink_integer_expressions,wide_choose_stack_addresses,
++    "integer-sink","moves",true,"sink-original","sink-trial");
+ }
+ 
+ static bool
+@@ -1618,7 +1707,7 @@
+     wide_fold_extensions(f);
+     wide_liveness(f);
+     if(WA_FAIL("after-transform"))goto fallback;
+-    result=wide_choose_stack_addresses(f);
++    result=wide_choose_integer_sinking(f,NULL);
+     if(result==MCS251_WIDE_ACCEPTED && WA_FAIL("after-emit")) {
+       dbuf_append_str(output,"\n_mx251_discarded_test_marker:\n\t.db 0xa5\n");
+       result=MCS251_WIDE_FALLBACK;

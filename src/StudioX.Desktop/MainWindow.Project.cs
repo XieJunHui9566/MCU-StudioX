@@ -37,7 +37,6 @@ public partial class MainWindow
         lastFailure = "";
         healthDirectory = directory;
         projectHealthView?.Invalidate();
-        LvglPreview.SetProject(directory);
         ClearHdlSchematic();
         ResetAiForProjectChange();
         RefreshSkillsForProjectChange();
@@ -73,7 +72,9 @@ public partial class MainWindow
             ShowDocument(WelcomeTab);
         }
         // 首次挂入编辑器会触发布局与语法渲染，先处理输入和这一帧，再展开工程树，避免累计成一次长停顿。
-        await Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Background);
+        await Dispatcher.InvokeAsync(() =>
+        {
+        }, System.Windows.Threading.DispatcherPriority.Background);
         await PopulateProjectTreeAsync(project.Name, token: token);
         if (project.Kind == ProjectKind.MicroPython)
         {
@@ -140,8 +141,15 @@ public partial class MainWindow
                 : "已打开 " + project.Name + " · " + services.Intelligence.StatusDescription;
             QueueOutlineRefresh(clear: true);
         }
-        catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }
-        catch (Exception ex) { await RecordAnalysisFailureAsync("打开工程的代码索引", ex); Status.Text = "工程已打开；代码提示不可用：" + ex.Message; }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            await RecordAnalysisFailureAsync("打开工程的代码索引", ex);
+            Status.Text = "工程已打开；代码提示不可用：" + ex.Message;
+        }
     }
 
     private async void CloseProject_Click(object sender, RoutedEventArgs e) => await RunAsync(async token =>
@@ -176,7 +184,6 @@ public partial class MainWindow
             ClearEditorDocuments();
             projectDirectory = null;
             ResetFirstProjectEvidence();
-            LvglPreview.SetProject(null);
             ClearHdlSchematic();
             ResetAiForProjectChange();
             RefreshSkillsForProjectChange();
@@ -211,7 +218,10 @@ public partial class MainWindow
             Status.Text = "已关闭工程。";
             return true;
         }
-        finally { WorkspaceTabs.IsEnabled = wasEnabled; }
+        finally
+        {
+            WorkspaceTabs.IsEnabled = wasEnabled;
+        }
     }
 
     private async Task BeginNewProjectAsync(CancellationToken token, Func<SourceDocument, MessageBoxResult>? decide = null)

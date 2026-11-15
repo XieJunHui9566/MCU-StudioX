@@ -32,7 +32,10 @@ public sealed class PluginClient(string hostExecutable)
         {
             decoded = JsonSerializer.Deserialize<DecoderResponse>(response.StandardOutput, JsonStore.Options) ?? throw new JsonException("Empty response.");
         }
-        catch (JsonException ex) { throw new StudioXException("PLUGIN_PROTOCOL", "插件响应不是有效协议数据。" + response.StandardError, ex); }
+        catch (JsonException ex)
+        {
+            throw new StudioXException("PLUGIN_PROTOCOL", "插件响应不是有效协议数据。" + response.StandardError, ex);
+        }
         if (decoded.ProtocolVersion != 1 || decoded.RequestId != request.RequestId)
         {
             throw new StudioXException("PLUGIN_PROTOCOL", "插件响应版本或请求 ID 不匹配。");

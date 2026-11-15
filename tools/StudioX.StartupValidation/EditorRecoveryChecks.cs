@@ -51,7 +51,9 @@ internal static class EditorRecoveryChecks
                 await store.ArchiveUnavailableRecoveryAsync(cancelled.Token);
                 throw new InvalidOperationException("Cancelled archive accepted.");
             }
-            catch (OperationCanceledException) { }
+            catch (OperationCanceledException)
+            {
+            }
             Check(Directory.GetFiles(Path.Combine(archivedData, "editor-sessions"), "state.json", SearchOption.AllDirectories)
                 .Any(path => File.ReadAllText(path).Contains("retained draft", StringComparison.Ordinal)),
                 "cancelled archive cannot discard the pending original draft");

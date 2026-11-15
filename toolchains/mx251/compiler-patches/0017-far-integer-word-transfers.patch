@@ -1,0 +1,92 @@
+--- a/src/mcs251/gen.c
++++ b/src/mcs251/gen.c
+@@ -9821,6 +9821,67 @@
+     }
+ }
+ 
++/* 已物化的远数据地址与完整整数寄存器组之间按字传递。
++   CODE、易失/原子、聚合、分散布局及后增仍用原字节路径。先验证整个
++   布局，再发射指令；保留原循环结束时的 DPX、A 和最后一次 INC 标志，
++   不能仅因它们通常是临时寄存器就悄悄改变后置状态。 */
++static bool
++mcs251MoveFarPointerWords (iCode *ic, operand *pointer, operand *value, bool store)
++{
++  sym_link *ptype = operandType (pointer);
++  operand *originalPointer = store ? IC_RESULT (ic) : IC_LEFT (ic);
++  sym_link *originalType = operandType (originalPointer);
++  sym_link *vtype = operandType (value);
++  const asmop *registers = AOP (value);
++  const char *words[2];
++  int size = getSize (vtype), physical;
++
++  if (!IS_PTR (ptype) || DCL_TYPE (ptype) != FPOINTER || getSize (ptype) != 3 ||
++      !IS_PTR (originalType) || DCL_TYPE (originalType) != FPOINTER || getSize (originalType) != 3 ||
++      !IS_INT (vtype) || !IS_INT (ptype->next) ||
++      !IS_INT (originalType->next) ||
++      (size != 2 && size != 4) || getSize (ptype->next) != size ||
++      getSize (originalType->next) != size ||
++      isOperandVolatileOrAtomic (pointer, TRUE) ||
++      isOperandVolatileOrAtomic (originalPointer, TRUE) ||
++      isOperandVolatileOrAtomic (value, TRUE) ||
++      isVolatile (ptype->next) || isAtomic (ptype->next) ||
++      isVolatile (originalType->next) || isAtomic (originalType->next) ||
++      registers->type != AOP_REG || registers->size != size ||
++      registers->aop_is_volatile || registers->aop_is_aggregate)
++    return FALSE;
++
++  for (physical = 0; physical < size; physical += 2)
++    {
++      words[physical / 2] = mcs251WordForNativePair (registers, size - physical - 2);
++      /* R0..R7 有低地址 RAM 银行映射，不能假设任意 far 地址不别名它们。
++         本候选仅用未映射的原生组，同时排除与 A/B 重叠的 WR10。 */
++      if (!words[physical / 2] ||
++          (strcmp (words[physical / 2], "wr8") &&
++           strcmp (words[physical / 2], "wr12") &&
++           strcmp (words[physical / 2], "wr14")) ||
++          (physical && !strcmp (words[0], words[physical / 2])))
++        return FALSE;
++    }
++
++  emitcode (";", "mcs251 far integer word %s %d bytes", store ? "store" : "load", size);
++  _G.dptrCache.valid = false;
++  for (physical = 0; physical < size; physical += 2)
++    {
++      if (physical)
++        emitcode ("inc", "dpx,#2");
++      if (store)
++        emitcode ("mov", "@dpx,%s", words[physical / 2]);
++      else
++        emitcode ("mov", "%s,@dpx", words[physical / 2]);
++    }
++  /* 字访问自身不移动 DPX。原路径停在最后一个字节，并把该字节留在 A。 */
++  incrementFarPointer ();
++  MOVA (opGet (value, 0, FALSE, FALSE));
++  emitcode (";", "mcs251 end far integer word access");
++  return TRUE;
++}
++
+ static void
+ genFarPointerGet (operand * left, operand * result, iCode * ic, iCode * pi, iCode * ifx)
+ {
+@@ -9851,6 +9912,10 @@
+   /* if bit then unpack */
+   if (IS_BITFIELD (retype))
+     ifxCond = genUnpackBits (result, farPointerRegister (), FPOINTER, ifx);
++  else if (!pi && !ifx && mcs251MoveFarPointerWords (ic, left, result, FALSE))
++    {
++      /* 完整事务和原循环后置状态均已生成。 */
++    }
+   else
+     {
+       size = AOP_SIZE (result);
+@@ -10799,6 +10864,10 @@
+   if (IS_BITVAR (operandType (result)->next))
+     genPackBits (operandType (result)->next, right,
+                  farPointerRegister (), FPOINTER);
++  else if (!pi && mcs251MoveFarPointerWords (ic, result, right, TRUE))
++    {
++      /* 完整事务和原循环后置状态均已生成。 */
++    }
+   else
+     {
+       size = AOP_SIZE (right);

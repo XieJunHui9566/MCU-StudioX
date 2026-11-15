@@ -77,7 +77,13 @@ public sealed partial class ToolEnvironmentService(ToolsetCatalog catalog)
             token.ThrowIfCancellationRequested();
             File.Move(temporary, output, overwrite: false);
         }
-        finally { if (File.Exists(temporary)) { File.Delete(temporary); } }
+        finally
+        {
+            if (File.Exists(temporary))
+            {
+                File.Delete(temporary);
+            }
+        }
     }
 
     public Task<string> RepairAsync(ToolEnvironmentEntry entry, string archive, IProgress<string>? progress, CancellationToken token = default)
@@ -180,7 +186,10 @@ public sealed partial class ToolEnvironmentService(ToolsetCatalog catalog)
                         Directory.Move(backup, target);
                     }
                 }
-                catch (Exception rollback) { failures.Add(rollback); }
+                catch (Exception rollback)
+                {
+                    failures.Add(rollback);
+                }
                 transaction = transaction with
                 {
                     State = failures.Count == 1 ? "rolled-back" : "prepared",
@@ -190,7 +199,10 @@ public sealed partial class ToolEnvironmentService(ToolsetCatalog catalog)
                 {
                     await ToolRepairTransactions.WriteAsync(catalog.RootDirectory, transaction);
                 }
-                catch (Exception journal) { failures.Add(journal); }
+                catch (Exception journal)
+                {
+                    failures.Add(journal);
+                }
                 if (failures.Count > 1)
                 {
                     throw new AggregateException("组件发布失败；回退或事务记录也失败，保留恢复文件。", failures);
@@ -239,7 +251,10 @@ public sealed partial class ToolEnvironmentService(ToolsetCatalog catalog)
             {
                 throw new AggregateException("组件操作和暂存清理均失败，保留两项原始诊断。", operationFailure, cleanup);
             }
-            finally { gate.Release(); }
+            finally
+            {
+                gate.Release();
+            }
         }
     }
 }

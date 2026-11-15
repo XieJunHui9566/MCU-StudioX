@@ -1,0 +1,169 @@
+--- a/src/mcs251/wide.c
++++ b/src/mcs251/wide.c
+@@ -1,3 +1,4 @@
++#include "register_facts.h"
+ /* SPDX-License-Identifier: GPL-2.0-or-later
+  * 251 原生宽度后端：整数运算、浮点值传递及寄存器 ABI 的直接调用。
+  * 宽值、寄存器重叠、控制流与溢出槽在发射前统一决定。 */
+@@ -1014,7 +1015,7 @@
+   }
+ }
+ 
+-static uint32_t wide_mask (int reg,int width) {return ((UINT32_C(1)<<width)-1)<<reg;}
++static uint32_t wide_mask (int reg,int width) {return mcs251RegisterBytes((unsigned)reg,(unsigned)width);}
+ static bool
+ wide_available (wide_function *f,int value,int reg)
+ {
+@@ -1119,7 +1120,21 @@
+     unsigned cost=optimize.codeSize?(allKnown?c[i].size.bytes:c[i].instructions):c[i].heuristic;
+     if(selected<0 || cost<bestCost || (cost==bestCost && c[i].frame<c[selected].frame)) {selected=i;bestCost=cost;}
+   }
++  /* 观察现有候选，不改变准入或选择策略。完整发射文本作指纹，方便识别重复方案。 */
+   if(selected>=0) {
++    int instructionWinner=-1;unsigned instructionBest=0;
++    for(int i=0;i<count;++i)if(c[i].text) {
++      if(instructionWinner<0 || c[i].instructions<instructionBest ||
++         (c[i].instructions==instructionBest && c[i].frame<c[instructionWinner].frame)) {
++        instructionWinner=i;instructionBest=c[i].instructions;
++      }
++    }
++    for(int i=0;i<count;++i) {
++      uint32_t fingerprint=UINT32_C(2166136261);
++      for(size_t j=0;j<c[i].length;++j)fingerprint=(fingerprint^(unsigned char)c[i].text[j])*UINT32_C(16777619);
++      dbuf_printf(codeOutBuf,"; wide candidate function=%s id=%d success=%d instructions=%u bytes=%u unknown=%u frame=%d text-fnv=%08lx instruction-winner=%d selected=%d\n",
++        currFunc->name,i,c[i].text!=NULL,c[i].instructions,c[i].size.bytes,c[i].size.unknown,c[i].frame,(unsigned long)fingerprint,instructionWinner,selected);
++    }
+     dbuf_printf(codeOutBuf,"; wide allocation selected=%d candidates=%d heuristic=%u instructions=%u frame=%d\n",selected,count,c[selected].heuristic,c[selected].instructions,c[selected].frame);
+     dbuf_printf(codeOutBuf,"; wide cost objective=%s known-bytes=%u unknown=%u group-known=%d\n",optimize.codeSize?(allKnown?"encoded-bytes":"instruction-fallback"):"weighted-instructions",c[selected].size.bytes,c[selected].size.unknown,allKnown);
+     dbuf_append(codeOutBuf,c[selected].text,c[selected].length);
+@@ -1154,8 +1169,9 @@
+ mcs251TryWideFunction (ebbIndex *ebbi)
+ {
+   bool accepted=false;wide_function *f;
+-  if(!mcs251WideEnabled || !currFunc)return false;
+-  if(!wide_is_function_body(ebbi))return false;
++  if(!currFunc)return false;
++  if(!mcs251WideEnabled) {dbuf_printf(codeOutBuf,"; wide admission function=%s skip=disabled\n",currFunc->name);return false;}
++  if(!wide_is_function_body(ebbi)) {dbuf_printf(codeOutBuf,"; wide admission function=%s skip=non-function-initializer\n",currFunc->name);return false;}
+   bool ordinary=FUNC_SDCCCALL(currFunc->type)==2;
+   if((FUNC_SDCCCALL(currFunc->type)!=4 && !ordinary) ||
+      (ordinary && (!mcs251WideOrdinaryEnabled || currFunc->cdef ||
+@@ -1165,12 +1181,12 @@
+      IFFUNC_ISCRITICAL(currFunc->type) || IFFUNC_CALLEESAVES(currFunc->type) ||
+      IFFUNC_ISBANKEDCALL(currFunc->type) || FUNC_REGBANK(currFunc->type) ||
+      IFFUNC_HASVARARGS(currFunc->type) ||
+-     (!wide_type(currFunc->type->next) && !IS_VOID(currFunc->type->next))) return false;
++     (!wide_type(currFunc->type->next) && !IS_VOID(currFunc->type->next))) {dbuf_printf(codeOutBuf,"; wide admission function=%s skip=entry-contract\n",currFunc->name);return false;}
+   /* 宽发射成功会绕过旧 genFunction 的 ABI 校验；CODE 形参须在入口
+    * 显式回退，让原校验给出诊断，不能因局部值支持而扩大公开 ABI。 */
+   for(value *arg=FUNC_ARGS(currFunc->type);arg;arg=arg->next)
+-    if(wide_code_pointer(arg->type) || (ordinary && !wide_type(arg->type)))return false;
+-  if(!wide_stack_signature(currFunc->type))return false;
++    if(wide_code_pointer(arg->type) || (ordinary && !wide_type(arg->type))) {dbuf_printf(codeOutBuf,"; wide admission function=%s skip=parameter-type\n",currFunc->name);return false;}
++  if(!wide_stack_signature(currFunc->type)) {dbuf_printf(codeOutBuf,"; wide admission function=%s skip=stack-signature\n",currFunc->name);return false;}
+   f=Safe_alloc(sizeof *f);memset(f,0,sizeof *f);f->ordinaryEntry=ordinary;
+   if(wide_import(f,ebbi)) {
+     bool importedStackObjects=f->no!=0;
+--- a/src/mcs251/transfer_values.h
++++ b/src/mcs251/transfer_values.h
+@@ -3,6 +3,7 @@
+ #define MCS251_TRANSFER_VALUES_H
+ #include <ctype.h>
+ #include <string.h>
++#include "register_facts.h"
+ 
+ typedef struct { unsigned char value[24]; } mcs251_transfer_values;
+ typedef struct { unsigned first, width; } mcs251_transfer_register;
+@@ -37,8 +38,8 @@
+       if (++digits > 2) return 0;
+       n = 10 * n + (*p++ - '0');
+     }
+-  if (!digits || n % width || n + width > 24 || (width == 1 && (n < 8 || n > 15)) ||
+-      (n <= 11 && n + width > 10)) return 0;
++  if (!digits || !mcs251RegisterEncodable (n, width) || n + width > 24 ||
++      (width == 1 && n < 8) || (mcs251RegisterBytes (n, width) & MCS251_AB_BYTES)) return 0;
+   reg->first = n; reg->width = width; *text = p;
+   return 1;
+ }
+@@ -52,7 +53,9 @@
+   if (*text++ != ',') return 0;
+   if (!mcs251TransferRegister (&text, source)) return 0;
+   mcs251TransferSpace (&text);
+-  return dest->width == source->width && (!*text || *text == ';');
++  mcs251_register_effects effects;
++  return dest->width == source->width && (!*text || *text == ';') &&
++         mcs251RegisterMoveEffects (dest->first, source->first, dest->width, &effects);
+ }
+ 
+ static int
+--- a/src/mcs251/call_save_plan.h
++++ b/src/mcs251/call_save_plan.h
+@@ -1,6 +1,7 @@
+ /* MCS251 private caller-save layout planning. GPL-2.0-or-later. */
+ #ifndef MCS251_CALL_SAVE_PLAN_H
+ #define MCS251_CALL_SAVE_PLAN_H
++#include "register_facts.h"
+ 
+ typedef struct { unsigned first, width; } mcs251_call_save_step;
+ typedef struct
+@@ -16,14 +17,14 @@
+ mcs251BuildCallSavePlan (unsigned mask, mcs251_call_save_plan *plan)
+ {
+   plan->count = plan->bytes = plan->wide = 0;
+-  if (mask & ~0xf3ffu) return 0;
++  if (mask & ~(UINT32_C(0xffff) & ~MCS251_AB_BYTES)) return 0;
+   for (unsigned bank = 0; bank < 2; ++bank)
+     for (int top = bank ? 15 : 7; top >= (bank ? 8 : 0); )
+       {
+         unsigned width = 1;
+         if (!(mask & (1u << top))) { --top; continue; }
+-        if (top % 4 == 3 && (mask & (15u << (top - 3))) == (15u << (top - 3))) width = 4;
+-        else if (top % 2 == 1 && (mask & (3u << (top - 1))) == (3u << (top - 1))) width = 2;
++        if (top % 4 == 3 && (mask & mcs251RegisterBytes (top - 3, 4)) == mcs251RegisterBytes (top - 3, 4)) width = 4;
++        else if (top % 2 == 1 && (mask & mcs251RegisterBytes (top - 1, 2)) == mcs251RegisterBytes (top - 1, 2)) width = 2;
+         plan->steps[plan->count].first = top - width + 1;
+         plan->steps[plan->count++].width = width;
+         plan->bytes += width;
+--- /dev/null
++++ b/src/mcs251/register_facts.h
+@@ -0,0 +1,40 @@
++/* Shared MCS251 register facts. GPL-2.0-or-later. */
++#ifndef MCS251_REGISTER_FACTS_H
++#define MCS251_REGISTER_FACTS_H
++#include <stdint.h>
++
++enum { MCS251_BYTE_B = 10, MCS251_BYTE_A = 11 };
++#define MCS251_AB_BYTES ((UINT32_C(1) << MCS251_BYTE_A) | (UINT32_C(1) << MCS251_BYTE_B))
++
++/* 只描述通用物理字节区，不包括 DPX/SPX/SFR。物理切片存在不等于有字节编码。
++ * 消费者仍负责寄存器组、暂存保留和 ABI 等准入限制；无效切片返回零。 */
++static inline uint32_t
++mcs251RegisterBytes (unsigned first, unsigned width)
++{
++  if ((width != 1 && width != 2 && width != 4) || first >= 32 ||
++      first % width || width > 32 - first) return 0;
++  return ((UINT32_C(1) << width) - 1) << first;
++}
++
++static inline int
++mcs251RegisterEncodable (unsigned first, unsigned width)
++{
++  return mcs251RegisterBytes (first, width) != 0 && (width != 1 || first < 16);
++}
++
++typedef struct { uint32_t reads, writes; unsigned flags, memory; } mcs251_register_effects;
++
++/* 当前只描述同宽 GPR MOV。其它指令副作用为未知，不能从空掩码推导安全。
++ * A/R11 与 B/R10 使用同一物理字节编号；银行与 SFR 名称解析属于消费者。 */
++static inline int
++mcs251RegisterMoveEffects (unsigned dest, unsigned source, unsigned width,
++                          mcs251_register_effects *effects)
++{
++  if (!mcs251RegisterEncodable (dest, width) ||
++      !mcs251RegisterEncodable (source, width)) return 0;
++  effects->reads = mcs251RegisterBytes (source, width);
++  effects->writes = mcs251RegisterBytes (dest, width);
++  effects->flags = effects->memory = 0;
++  return 1;
++}
++#endif

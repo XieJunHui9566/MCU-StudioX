@@ -111,7 +111,13 @@ internal sealed class AiSkillsWindow : Window
             Refresh(imported.Name);
             details.Text = $"已导入 {imported.Name}，可直接使用。";
         }
-        catch (Exception ex) { details.Text = ex.Message; }
-        finally { importFile.IsEnabled = importFolder.IsEnabled = true; }
+        catch (Exception ex)
+        {
+            details.Text = ex.Message;
+        }
+        finally
+        {
+            importFile.IsEnabled = importFolder.IsEnabled = true;
+        }
     }
 }

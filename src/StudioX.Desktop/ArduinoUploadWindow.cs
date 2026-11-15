@@ -45,8 +45,14 @@ public sealed class ArduinoUploadWindow : Window
                 await RefreshPortsAsync();
                 error.Text = "";
             }
-            catch (Exception failure) { error.Text = failure.ToString(); }
-            finally { refresh.IsEnabled = true; }
+            catch (Exception failure)
+            {
+                error.Text = failure.ToString();
+            }
+            finally
+            {
+                refresh.IsEnabled = true;
+            }
         };
         inputs.Children.Add(refresh);
         port.SetResourceReference(BackgroundProperty, "Panel");
@@ -65,7 +71,10 @@ public sealed class ArduinoUploadWindow : Window
                 _ = ArduinoBuildService.ValidatePort(Port);
                 DialogResult = true;
             }
-            catch (Exception failure) { error.Text = failure.Message; }
+            catch (Exception failure)
+            {
+                error.Text = failure.Message;
+            }
         };
         actions.Children.Add(upload);
         panel.Children.Add(actions);

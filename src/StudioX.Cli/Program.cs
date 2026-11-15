@@ -11,7 +11,11 @@ using StudioX.Packages;
 
 Console.OutputEncoding = new UTF8Encoding(false);
 using var cancel = new CancellationTokenSource();
-Console.CancelKeyPress += (_, e) => { e.Cancel = true; cancel.Cancel(); };
+Console.CancelKeyPress += (_, e) =>
+{
+    e.Cancel = true;
+    cancel.Cancel();
+};
 try
 {
     switch (args)
@@ -132,8 +136,16 @@ try
     }
     return 0;
 }
-catch (OperationCanceledException) { Console.Error.WriteLine("CANCELLED"); return 130; }
-catch (Exception ex) { Console.Error.WriteLine(ex is StudioXException studio ? $"{studio.Code}: {studio.Message}" + (studio.InnerException is null ? "" : Environment.NewLine + studio.InnerException) : ex.ToString()); return 1; }
+catch (OperationCanceledException)
+{
+    Console.Error.WriteLine("CANCELLED");
+    return 130;
+}
+catch (Exception ex)
+{
+    Console.Error.WriteLine(ex is StudioXException studio ? $"{studio.Code}: {studio.Message}" + (studio.InnerException is null ? "" : Environment.NewLine + studio.InnerException) : ex.ToString());
+    return 1;
+}
 static void Print<T>(T value) => Console.WriteLine(JsonSerializer.Serialize(value, JsonStore.Options));
 static async Task RunMcpAsync(string project, string? runtimeArgument, string? dataArgument, CancellationToken token)
 {

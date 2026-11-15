@@ -40,6 +40,9 @@ internal static class BuildChecks
             });
             check(false, "incompatible compare");
         }
-        catch (StudioXException error) { check(error.Code == "BUILD_COMPARE_TARGET", "cross-device build comparison rejected"); }
+        catch (StudioXException error)
+        {
+            check(error.Code == "BUILD_COMPARE_TARGET", "cross-device build comparison rejected");
+        }
     }
 }

@@ -33,7 +33,10 @@ internal static class DebuggerPipeChecks
             var detail = await check();
             return new(name, true, watch.ElapsedMilliseconds, detail);
         }
-        catch (Exception error) { return new(name, false, watch.ElapsedMilliseconds, error.ToString()); }
+        catch (Exception error)
+        {
+            return new(name, false, watch.ElapsedMilliseconds, error.ToString());
+        }
     }
 
     private static async Task<string> MdbDeadlineAsync(string output, string mode, bool cancel)
@@ -122,7 +125,10 @@ internal static class DebuggerPipeChecks
                 }
             }
         }
-        finally { await fixture.StopAsync(close, command); }
+        finally
+        {
+            await fixture.StopAsync(close, command);
+        }
         return "shutdown completed, own process exited, concurrent commands released";
     }
 
@@ -196,7 +202,10 @@ internal static class DebuggerPipeChecks
             await operation;
             return null;
         }
-        catch (Exception error) { return error; }
+        catch (Exception error)
+        {
+            return error;
+        }
     }
 
     /// <summary>直接注入本工具创建的管道，绕过生产构造函数中的 SDK 和探针获取，执行生产通信与关闭方法。</summary>

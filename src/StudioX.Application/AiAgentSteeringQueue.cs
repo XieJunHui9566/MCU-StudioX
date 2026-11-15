@@ -65,7 +65,9 @@ public sealed class AiAgentSteeringQueue
                 {
                     callback();
                 }
-                catch (Exception) { }
+                catch (Exception)
+                {
+                }
             }
         }
         return true;
@@ -99,7 +101,9 @@ public sealed class AiAgentSteeringQueue
             {
                 callback(message);
             }
-            catch (Exception) { }
+            catch (Exception)
+            {
+            }
         }
     }
 

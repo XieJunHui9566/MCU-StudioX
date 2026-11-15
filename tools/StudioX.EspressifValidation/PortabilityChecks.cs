@@ -212,7 +212,10 @@ internal static class PortabilityChecks
                         await language.StartAsync(root, token);
                         throw new InvalidOperationException("Expected stale configuration rejection.");
                     }
-                    catch (StudioXException error) when (error.Code == "LANGUAGE_CACHE_PROJECT") { Check(true, "moved ESP analysis refuses the old absolute database paths"); }
+                    catch (StudioXException error) when (error.Code == "LANGUAGE_CACHE_PROJECT")
+                    {
+                        Check(true, "moved ESP analysis refuses the old absolute database paths");
+                    }
                 }
                 var plan = await movedHealth.PreviewCacheRepairAsync(root, token);
                 Check(plan.Entries.Count > 0, name + " repair has a reviewable generated-cache plan");

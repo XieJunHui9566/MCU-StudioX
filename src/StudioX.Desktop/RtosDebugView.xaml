@@ -149,7 +149,7 @@
               TextWrapping="Wrap"
               FontSize="11" />
             <TextBlock
-              Text="栈余量是填充值扫描结果；— 表示缺少符号、栈边界或填充证据。"
+              Text="栈余量为扫描值；— 表示未知。"
               TextWrapping="Wrap"
               Foreground="{DynamicResource Muted}"
               FontSize="11"
@@ -201,7 +201,7 @@
               </ItemsControl.ItemTemplate>
             </ItemsControl>
             <TextBlock
-              Text="统计来自 FreeRTOS 分配器；不包含 libc malloc、静态对象和任务的独立静态栈。"
+              Text="仅统计 FreeRTOS 动态堆"
               TextWrapping="Wrap"
               Foreground="{DynamicResource Muted}"
               FontSize="11"
@@ -304,7 +304,7 @@
               TextWrapping="Wrap"
               FontSize="11" />
             <TextBlock
-              Text="显示队列注册表和手动观察的句柄；未注册的对象不会自动枚举。"
+              Text="仅显示已注册或手动添加的对象"
               TextWrapping="Wrap"
               Foreground="{DynamicResource Muted}"
               FontSize="11"

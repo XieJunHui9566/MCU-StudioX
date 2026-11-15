@@ -9,12 +9,27 @@ if (args is ["--diagnostics", var diagnosticsOutput, var diagnosticsRuntime, var
     await PeripheralDiagnosticChecks.RunAsync(Path.GetFullPath(diagnosticsOutput), Path.GetFullPath(diagnosticsRuntime), Path.GetFullPath(nativeProjects));
     return 0;
 }
-if (args.Length is not (1 or 3)) { Console.Error.WriteLine("Usage: <output> [<runtime> <pack-inputs>]"); return 2; }
+if (args.Length is not (1 or 3))
+{
+    Console.Error.WriteLine("Usage: <output> [<runtime> <pack-inputs>]");
+    return 2;
+}
 var output = Path.GetFullPath(args[0]);
-if (Directory.Exists(output) || File.Exists(output)) { throw new IOException("Use a new validation output directory."); }
+if (Directory.Exists(output) || File.Exists(output))
+{
+    throw new IOException("Use a new validation output directory.");
+}
 Directory.CreateDirectory(output);
 var checks = new List<string>();
-void Check(bool condition, string label) { if (!condition) { throw new InvalidOperationException(label); } checks.Add(label); Console.WriteLine("PASS " + label); }
+void Check(bool condition, string label)
+{
+    if (!condition)
+    {
+        throw new InvalidOperationException(label);
+    }
+    checks.Add(label);
+    Console.WriteLine("PASS " + label);
+}
 async Task Reject(Func<Task> operation, string code, string label)
 {
     try
@@ -22,7 +37,10 @@ async Task Reject(Func<Task> operation, string code, string label)
         await operation();
         throw new InvalidOperationException("Expected rejection: " + label);
     }
-    catch (StudioXException ex) when (ex.Code == code) { Check(true, label); }
+    catch (StudioXException ex) when (ex.Code == code)
+    {
+        Check(true, label);
+    }
 }
 var fixture = Path.Combine(output, "fixtures");
 var projectRoot = Path.Combine(fixture, "project");
@@ -34,7 +52,12 @@ var project = new ProjectManifest(1, "fixture", "test.esp", "1.0.0", "hash", "ES
 var device = new DeviceDefinition(project.DeviceId, "fixture", "riscv32", 0, 1, 0, 1, project.ToolsetId, project.ToolsetVersion, project.CompilerId,
     [], [], [], [], "link.ld", [], [], [new ProjectTemplate("hello_world", "Hello", "templates/hello", "main.c")], Espressif: new(settings.Framework, settings.Target, settings.SdkVersion));
 var pack = new PackManifest(1, project.PackId, project.PackVersion, "fixture", "Espressif", [device]);
-async Task Write(string root, string relative, string value) { var path = PathBoundary.Resolve(root, relative); Directory.CreateDirectory(Path.GetDirectoryName(path)!); await File.WriteAllTextAsync(path, value); }
+async Task Write(string root, string relative, string value)
+{
+    var path = PathBoundary.Resolve(root, relative);
+    Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+    await File.WriteAllTextAsync(path, value);
+}
 await JsonStore.WriteAsync(Path.Combine(projectRoot, ".studiox", "project.json"), project);
 await JsonStore.WriteAsync(Path.Combine(projectRoot, "device", "manifest.json"), pack);
 var metadata = new ToolsetManifest(1, project.ToolsetId, project.ToolsetVersion, "win-x64", project.CompilerId, [], [], ResourceDirectories: new() { ["idf"] = "sdk" }, Purpose: "esp-idf");
@@ -45,7 +68,11 @@ const string caps = "#define SOC_GPIO_PIN_COUNT 22\n#define SOC_UART_NUM (2)\n#d
 await Write(sdk, capsPath, caps);
 var components = new Dictionary<string, string> { ["esp_driver_gpio"] = "driver/gpio.h", ["esp_driver_uart"] = "driver/uart.h", ["esp_driver_i2c"] = "driver/i2c_master.h", ["esp_driver_spi"] = "driver/spi_master.h", ["esp_adc"] = "esp_adc/adc_oneshot.h", ["esp_driver_ledc"] = "driver/ledc.h", ["esp_timer"] = "esp_timer.h", ["esp_driver_rmt"] = "driver/rmt_tx.h", ["esp_common"] = "esp_err.h", ["log"] = "esp_log.h" };
 const string apiDeclarations = "void gpio_config(void); void uart_driver_install(void); void i2c_new_master_bus(void); void spi_bus_add_device(void); void adc_oneshot_new_unit(void); void ledc_timer_config(void); void esp_timer_create(void); void rmt_new_tx_channel(void);\n";
-foreach (var component in components) { await Write(sdk, $"components/{component.Key}/include/{component.Value}", apiDeclarations); await Write(sdk, $"components/{component.Key}/CMakeLists.txt", "# fixture\n"); }
+foreach (var component in components)
+{
+    await Write(sdk, $"components/{component.Key}/include/{component.Value}", apiDeclarations);
+    await Write(sdk, $"components/{component.Key}/CMakeLists.txt", "# fixture\n");
+}
 await Write(sdk, "components/esp_driver_spi/include/driver/spi_common.h", "void spi_bus_initialize(void);\n");
 var catalog = new ToolsetCatalog(toolsRoot, Path.Combine(fixture, "user-data"));
 var service = new PeripheralDevelopmentService(catalog);
@@ -113,7 +140,15 @@ await JsonStore.WriteAsync(Path.Combine(projectRoot, ".studiox", "project.json")
 await Reject(() => service.ReadAsync(projectRoot), "PERIPHERAL_FRAMEWORK", "generic project does not receive guessed ESP APIs");
 await JsonStore.WriteAsync(Path.Combine(projectRoot, ".studiox", "project.json"), project);
 var canceled = new CancellationToken(true);
-try { await service.ReadAsync(projectRoot, canceled); throw new Exception("Expected cancellation"); } catch (OperationCanceledException) { Check(true, "canceled catalog read stops"); }
+try
+{
+    await service.ReadAsync(projectRoot, canceled);
+    throw new Exception("Expected cancellation");
+}
+catch (OperationCanceledException)
+{
+    Check(true, "canceled catalog read stops");
+}
 var newerToolRoot = Path.Combine(toolsRoot, "espressif.idf", "6.1.0");
 var newerSdk = Path.Combine(newerToolRoot, "sdk");
 foreach (var source in Directory.GetFiles(sdk, "*", SearchOption.AllDirectories))

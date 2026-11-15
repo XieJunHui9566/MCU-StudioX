@@ -1,0 +1,109 @@
+--- a/src/mcs251/wide.c
++++ b/src/mcs251/wide.c
+@@ -1035,7 +1035,38 @@
+ }
+ 
+ static bool
+-wide_allocate (wide_function *f, int strategy)
++wide_has_leaf_call (wide_function *f)
++{
++  for(int i=0;i<f->nn;++i) {
++    uint32_t writes;
++    if(f->nodes[i].op==CALL && wide_leaf_writes(f->nodes[i].callee,&writes))return true;
++  }
++  return false;
++}
++
++static unsigned
++wide_call_register_cost (wide_function *f,int value,int reg)
++{
++  unsigned cost=0;uint32_t mask=wide_mask(reg,f->values[value].width);
++  for(int i=0;i<f->nn;++i) {
++    wide_node *n=&f->nodes[i];uint32_t writes;
++    if(n->op!=CALL || n->result==value || !wb_has(n->out,value) ||
++       !wide_leaf_writes(n->callee,&writes))continue;
++    /* 这里只引导寄存器选择，不据此删除保存。参数和结果的真实写集合仍由
++     * 发射器重新核验；包括 A/R11、B/R10 及并行实参复制的保留暂存区。 */
++    writes|=MCS251_AB_BYTES|wide_mask(16,4)|wide_mask(20,4);
++    if(!n->ordinaryCall) {
++      if(n->args)writes|=wide_mask(8-n->left.width,n->left.width);
++      if(n->args>1)writes|=wide_mask(16-n->right.width,n->right.width);
++      if(n->result>=0)writes|=wide_mask(n->width==1?6:8-n->width,n->width);
++    }
++    if(mask&writes)cost+=1+4*n->origin->depth;
++  }
++  return cost;
++}
++
++static bool
++wide_allocate (wide_function *f, int strategy, bool callAware)
+ {
+   static const int dwords[]={4,12,24,28,0};
+   static const int words[]={6,14,24,26,28,30,2,0,4,12,8};
+@@ -1060,8 +1091,20 @@
+     if(best<0) break;
+     wide_value *v=&f->values[best];const int *choices=v->width==4?dwords:v->width==2?words:bytes;
+     int count=v->width==4?5:v->width==2?11:14;
+-    if(v->preference>=0 && wide_available(f,best,v->preference)) v->reg=v->preference;
+-    for(int j=0;j<count && v->reg<0;++j) if(wide_available(f,best,choices[j])) v->reg=choices[j];
++    if(callAware) {
++      unsigned bestCost=0;
++      /* 原返回偏好作为同成本时的首选。只在已绑定的叶调用上比较完整
++       * 物理切片，不拆宽值、不改冲突图和 ABI 固定参数寄存器。 */
++      for(int j=-1;j<count;++j) {
++        int reg=j<0?v->preference:choices[j];
++        if(reg<0 || !wide_available(f,best,reg))continue;
++        unsigned cost=wide_call_register_cost(f,best,reg);
++        if(v->reg<0 || cost<bestCost) {v->reg=reg;bestCost=cost;}
++      }
++    } else {
++      if(v->preference>=0 && wide_available(f,best,v->preference)) v->reg=v->preference;
++      for(int j=0;j<count && v->reg<0;++j) if(wide_available(f,best,choices[j])) v->reg=choices[j];
++    }
+     if(v->reg<0) {v->slot=f->frame;f->frame+=v->width;}
+   }
+   if(strategy) {
+@@ -1107,19 +1150,20 @@
+ static mcs251_wide_result
+ wide_choose_allocation(wide_function *f)
+ {
+-  struct candidate {char *text;size_t length;unsigned heuristic,instructions;int frame;wide_byte_cost size;} c[4]={{0}};
++  struct candidate {char *text;size_t length;unsigned heuristic,instructions;int frame;wide_byte_cost size;} c[8]={{0}};
+   int selected=-1;bool allKnown=true,invalid=false;unsigned bestCost=0;
+   /* 不扩大候选准入范围。size在所有成功候选均可定长时比较最终编码字节；
+    * 任一候选含未知形式，则整组保留原指令数策略，不能奖励未知成本。
+    * speed仍为循环深度加权启发式，不声称等于芯片周期。 */
+-  int count=1;
++  bool callAware=wide_has_leaf_call(f);
++  int baseCount=1,count=callAware?2:1;
+   for(int strategy=0;strategy<count;++strategy) {
+     wide_function *trial=Safe_alloc(sizeof *trial);memcpy(trial,f,sizeof *trial);
+-    bool allocated=wide_allocate(trial,strategy);
++    bool allocated=wide_allocate(trial,strategy%baseCount,strategy>=baseCount);
+     if(trial->allocationInvalid) {invalid=true;Safe_free(trial);break;}
+     if(allocated && WA_FAIL("after-allocate"))allocated=false;
+     if(!strategy && f->no) {
+-      for(int i=0;i<trial->nv;++i)if(trial->values[i].reg<0) {count=4;break;}
++      for(int i=0;i<trial->nv;++i)if(trial->values[i].reg<0) {baseCount=4;count=callAware?8:4;break;}
+     }
+     if(allocated) {
+       wide_function *reemit=NULL;
+@@ -1149,12 +1193,17 @@
+       memcpy(c[strategy].text,dbuf_get_buf(&trial->output),c[strategy].length);
+       c[strategy].heuristic=trial->emitCost;c[strategy].instructions=trial->emitInstructions;c[strategy].frame=trial->frame;
+       c[strategy].size=wide_function_bytes(c[strategy].text,c[strategy].length);
+-      if(c[strategy].size.unknown)allKnown=false;
++      if(strategy<baseCount && c[strategy].size.unknown)allKnown=false;
+       dbuf_destroy(&trial->output);
+     }
+     Safe_free(trial);
+   }
+   for(int i=0;!invalid && i<count;++i)if(c[i].text) {
++    /* 先按原策略选出基线。新方案必须同时不增加确定编码字节、加权
++     * 指令代价及栈帧；未知成本不准入。静态代价不能代替实板周期。 */
++    if(i>=baseCount && (selected<0 || c[i].size.unknown || c[selected].size.unknown ||
++       c[i].size.bytes>c[selected].size.bytes || c[i].heuristic>c[selected].heuristic ||
++       c[i].frame>c[selected].frame))continue;
+     unsigned cost=optimize.codeSize?(allKnown?c[i].size.bytes:c[i].instructions):c[i].heuristic;
+     if(selected<0 || cost<bestCost || (cost==bestCost && c[i].frame<c[selected].frame)) {selected=i;bestCost=cost;}
+   }

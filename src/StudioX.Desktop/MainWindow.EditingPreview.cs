@@ -92,7 +92,9 @@ public partial class MainWindow
         SourceEditor.ScrollToLine(main.Buffer.LineCount - 1);
         SourceEditor.Select(main.Buffer.GetLineByNumber(main.Buffer.LineCount - 1).Offset, 0);
         UpdateLayout();
-        await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+        await Dispatcher.InvokeAsync(() =>
+        {
+        }, DispatcherPriority.Render);
         Render(this, Path.Combine(directory, "compiler-error.png"));
         await OpenSourceAsync("src/diagnostic_fixture.h", CancellationToken.None);
         Check(diagnosticRenderer!.Markers.Any(m => m.Diagnostic.Message.Contains("STUDIOX_EXPECTED_HEADER_ERROR", StringComparison.Ordinal)), "未打开的头文件错误 / 切换标签");

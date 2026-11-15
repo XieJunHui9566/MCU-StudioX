@@ -30,7 +30,10 @@ internal static class AssemblyChecks
                 await action();
                 throw new InvalidOperationException("Expected rejection: " + message);
             }
-            catch (StudioXException error) when (error.Code == "BUILD_ASSEMBLY") { Check(true, message); }
+            catch (StudioXException error) when (error.Code == "BUILD_ASSEMBLY")
+            {
+                Check(true, message);
+            }
         }
         var tools = new ToolsetCatalog(Path.Combine(runtime, "toolsets"));
         var builder = new BuildService(tools);
@@ -41,7 +44,10 @@ internal static class AssemblyChecks
         await new ProjectService().CreateAsync(pack, device.Id, device.Templates[0].Id, "AssemblyView", root);
         var entryPath = Path.Combine(root, "src/main.c");
         await File.WriteAllTextAsync(entryPath, (await File.ReadAllTextAsync(entryPath)).Replace("for (;;)", "while (1)", StringComparison.Ordinal));
-        await Reject(async () => { await viewer.ListAsync(root); }, "unbuilt project cannot display old or guessed assembly");
+        await Reject(async () =>
+        {
+            await viewer.ListAsync(root);
+        }, "unbuilt project cannot display old or guessed assembly");
         foreach (var folder in new[] { "one", "two" })
         {
             Directory.CreateDirectory(Path.Combine(root, "src", folder));
@@ -56,19 +62,37 @@ internal static class AssemblyChecks
         var path = Path.Combine(root, selected.RelativePath);
         var original = await File.ReadAllBytesAsync(path);
         await File.AppendAllTextAsync(path, "changed");
-        await Reject(async () => { await viewer.ReadAsync(root, catalog, selected); }, "modified assembly is rejected against its build hash");
+        await Reject(async () =>
+        {
+            await viewer.ReadAsync(root, catalog, selected);
+        }, "modified assembly is rejected against its build hash");
         await File.WriteAllBytesAsync(path, original);
-        await Reject(async () => { await viewer.ReadAsync(root, catalog, selected with { RelativePath = "../outside.asm" }); }, "unlisted and escaping artifact is rejected");
+        await Reject(async () =>
+        {
+            await viewer.ReadAsync(root, catalog, selected with
+            {
+                RelativePath = "../outside.asm"
+            });
+        }, "unlisted and escaping artifact is rejected");
         var source = Path.Combine(root, "src/main.c");
         var text = await File.ReadAllTextAsync(source);
         await File.AppendAllTextAsync(source, "\n/* changed source */\n");
-        await Reject(async () => { await viewer.ListAsync(root); }, "changed source cannot masquerade as corresponding assembly");
+        await Reject(async () =>
+        {
+            await viewer.ListAsync(root);
+        }, "changed source cannot masquerade as corresponding assembly");
         await File.WriteAllTextAsync(source, "#error expected failure\n");
         Check(!(await builder.BuildAsync(root)).Success, "actual compile failure revokes successful assembly receipt");
-        await Reject(async () => { await viewer.ListAsync(root); }, "failed build leaves no current assembly catalog");
+        await Reject(async () =>
+        {
+            await viewer.ListAsync(root);
+        }, "failed build leaves no current assembly catalog");
         await File.WriteAllTextAsync(source, text + "\nvolatile unsigned char assembly_test_value;\n");
         Check((await builder.BuildAsync(root)).Success, "8-bit rebuild recovers assembly after failure");
-        await Reject(async () => { await viewer.ReadAsync(root, catalog, selected); }, "previous build selection cannot read a newer build silently");
+        await Reject(async () =>
+        {
+            await viewer.ReadAsync(root, catalog, selected);
+        }, "previous build selection cannot read a newer build silently");
         await Verify(viewer, root, "8051-rebuilt");
 
         using var fixture = JsonDocument.Parse(await File.ReadAllTextAsync(Path.Combine(sdkFixture, "fixture.json")));

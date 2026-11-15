@@ -69,7 +69,7 @@ public sealed class DistributionCenterView : UserControl
         });
         var top = new StackPanel();
         top.Children.Add(new TextBlock { Text = "软件与组件分发", FontSize = 22 });
-        top.Children.Add(new TextBlock { Text = "点击“已验证组件库”直接读取带签名的公开目录。支持自定义 HTTPS 和离线目录；打开页面不联网。工具并存安装，升级预览对照工程的精确需求。", TextWrapping = TextWrapping.Wrap, Margin = new(0, 8, 0, 8) });
+        top.Children.Add(new TextBlock { Text = "选择组件来源", TextWrapping = TextWrapping.Wrap, Margin = new(0, 8, 0, 8) });
         top.Children.Add(source);
         var filters = new WrapPanel();
         filters.Children.Add(new TextBlock { Text = "搜索", Margin = new(0, 5, 8, 0) });
@@ -83,7 +83,13 @@ public sealed class DistributionCenterView : UserControl
         foreach (var (title, action) in new[] { ("已验证组件库", "trusted"), ("读取目录", "load"), ("选择离线目录", "browse"), ("自定义目录公钥", "key"), ("取消自定义公钥", "clear-key"), ("工程所需工具", "required"), ("下载并预览升级", "preview-tool"), ("下载并预览安装", "install"), ("创建升级验证副本…", "migration"), ("导入本地组件", "component"), ("回退插件", "plugin-rollback"), ("回退组件", "component-rollback"), ("查看工程组件", "components") })
         {
             var button = new Button { Content = title, Margin = new(0, 0, 8, 8), Padding = new(10, 5, 10, 5) };
-            button.Click += async (_, _) => { if (Requested is { } run) { await run(action); } };
+            button.Click += async (_, _) =>
+            {
+                if (Requested is { } run)
+                {
+                    await run(action);
+                }
+            };
             (action is "trusted" or "preview-tool" or "install" or "migration" ? primary : actions).Children.Add(button);
             buttons.Add(action, button);
         }
@@ -106,7 +112,14 @@ public sealed class DistributionCenterView : UserControl
         Content = body;
         search.TextChanged += (_, _) => Filter();
         kind.SelectionChanged += (_, _) => Filter();
-        entries.SelectionChanged += (_, _) => { UpdateActions(); if (Selected is { } entry) { SelectionChanged?.Invoke(entry); } };
+        entries.SelectionChanged += (_, _) =>
+        {
+            UpdateActions();
+            if (Selected is { } entry)
+            {
+                SelectionChanged?.Invoke(entry);
+            }
+        };
         source.TextChanged += (_, _) => SetListing(null);
         Source = TrustedDevelopmentCatalog.Source;
         UpdateActions();

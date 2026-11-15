@@ -17,7 +17,11 @@ public partial class MainWindow
     {
         async Task Layout()
         {
-            await Dispatcher.InvokeAsync(() => { FlushPluginPanels(); UpdateLayout(); }, DispatcherPriority.ContextIdle);
+            await Dispatcher.InvokeAsync(() =>
+            {
+                FlushPluginPanels();
+                UpdateLayout();
+            }, DispatcherPriority.ContextIdle);
             await Task.Delay(100);
         }
         async Task Wait(Func<bool> condition)

@@ -61,7 +61,7 @@
               Click="TimingReport_Click"
               IsEnabled="False" />
             <TextBlock
-              Text="正余量表示满足本次片内时序约束；未包含外部器件采样时序，也不代表实板验收。"
+              Text="片内时序结果，不含外部器件采样时序。"
               TextWrapping="Wrap"
               Foreground="{DynamicResource Muted}"
               Margin="0,6,0,0" />
@@ -89,7 +89,7 @@
             Unchecked="Analog_Changed"
             Margin="0,0,0,12" />
           <TextBlock
-            Text="启用后随顶部编译、下载生成配套逻辑镜像。模拟引脚固定，下面选择需要预留的通道，不能与数字功能同时占用。"
+            Text="模拟引脚固定，不能与数字功能共用。"
             TextWrapping="Wrap"
             Margin="0,0,0,12" />
           <TextBlock
@@ -130,7 +130,7 @@
               TextWrapping="Wrap" />
           </ScrollViewer>
           <TextBlock
-            Text="主程序仅需包含 StudioX_System.h。可调用 StudioX_ADC_Read / StudioX_DAC_Write，也保留原厂 ADC_*、DAC_*、CMP_* 与 DMA 接口。DAC 输出在代码使能后开始；勾选配置本身不会输出电压。ADC2 与 DAC1 共用一个 DMA 请求，不能同时用于 DMA。"
+            Text="DAC 需在代码中使能；ADC2 与 DAC1 不能同时使用 DMA。"
             TextWrapping="Wrap"
             Foreground="{DynamicResource Muted}" />
         </StackPanel>
@@ -191,7 +191,7 @@
               TextWrapping="Wrap"
               Margin="0,8,0,10" />
             <TextBlock
-              Text="左键点击封装引脚，从菜单选择功能或清除分配。菜单内可搜索 GPIO、UART、SPI 等功能。"
+              Text="点击引脚分配功能"
               Foreground="{DynamicResource Muted}"
               TextWrapping="Wrap"
               Margin="0,0,0,18" />
@@ -272,7 +272,7 @@
               </StackPanel>
             </WrapPanel>
             <TextBlock
-              Text="保存同步生成 StudioX_System.h / .c；方向由系统代码初始化，上下拉与输出类型随映射镜像下载后生效。"
+              Text="保存生成初始化代码；引脚配置下载后生效。"
               TextWrapping="Wrap"
               Foreground="{DynamicResource Muted}"
               Margin="0,0,0,8" />
@@ -369,7 +369,7 @@
         <StackPanel
           Margin="16">
           <TextBlock
-            Text="单位为 MHz。留空表示保留厂商的未显式配置状态；实际频率、PLL 与时序由锁定的转换器校验。配置必须与板上晶振及 C 固件一致。"
+            Text="单位 MHz；留空沿用默认。频率需与板上晶振和固件一致。"
             TextWrapping="Wrap"
             Foreground="{DynamicResource Muted}"
             Margin="0,0,0,16" />
@@ -417,7 +417,7 @@
             Foreground="{DynamicResource Muted}"
             Margin="0,0,0,14" />
           <TextBlock
-            Text="保存时生成厂商 VEX 引脚约束数据与 SDC 输入时钟约束。顶部编译会生成最终 ASF、映射镜像，并核对实际 PLL 和时钟连接。"
+            Text="保存约束后重新编译"
             TextWrapping="Wrap"
             Foreground="{DynamicResource Muted}" />
         </StackPanel>
@@ -427,7 +427,7 @@
         <StackPanel
           Margin="16">
           <TextBlock
-            Text="先保存并生成约束，再查看实际厂商输出。图形配置写入原 .ve，已有注释与未修改的配置由服务保留。"
+            Text="保存后可查看生成的约束"
             TextWrapping="Wrap"
             Foreground="{DynamicResource Muted}"
             Margin="0,0,0,12" />

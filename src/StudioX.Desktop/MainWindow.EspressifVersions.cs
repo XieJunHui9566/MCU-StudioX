@@ -51,7 +51,10 @@ public partial class MainWindow
                 // 器件包是用户明确选择的输入；初始选择保持该包，不自动换到最新 SDK。
                 IdfVersionPicker.SelectedItem = choices.FirstOrDefault(choice => choice.Pack?.Manifest.Version == pack.Manifest.Version);
             }
-            finally { applyingIdfSelection = false; }
+            finally
+            {
+                applyingIdfSelection = false;
+            }
             UpdateIdfSelectionStatus();
         }
         catch (Exception error)
@@ -65,7 +68,13 @@ public partial class MainWindow
             CreateProjectButton.IsEnabled = false;
             Log(FailureDiagnostic(error));
         }
-        finally { if (revision == idfSelectionRevision) { IdfVersionPicker.IsEnabled = true; } }
+        finally
+        {
+            if (revision == idfSelectionRevision)
+            {
+                IdfVersionPicker.IsEnabled = true;
+            }
+        }
     }
     private void IdfVersionPicker_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
@@ -83,7 +92,10 @@ public partial class MainWindow
                 TemplatePicker.SelectedItem = TemplatePicker.Items.Cast<ProjectTemplate>().Single(item => item.Id == choice.TemplateId);
                 UpdateSelectedComponents();
             }
-            finally { applyingIdfSelection = false; }
+            finally
+            {
+                applyingIdfSelection = false;
+            }
         }
         UpdateIdfSelectionStatus();
     }

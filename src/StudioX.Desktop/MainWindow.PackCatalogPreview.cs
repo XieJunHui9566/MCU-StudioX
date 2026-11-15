@@ -92,7 +92,9 @@ public partial class MainWindow
                 TemplatePicker.SelectedItem = device.Templates.Single(template => template.Id == "freertos-mcu");
                 Ag32LogicModePanel.BringIntoView();
                 UpdateLayout();
-                await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+                await Dispatcher.InvokeAsync(() =>
+                {
+                }, DispatcherPriority.Render);
                 Render(this, Path.Combine(directory, mode ? "freertos-with-logic.png" : "freertos-mcu.png"));
             }
         }
@@ -100,7 +102,9 @@ public partial class MainWindow
         {
             ApplyTheme(theme);
             UpdateLayout();
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.Render);
             Render(this, Path.Combine(directory, "pack-catalog-" + theme.Id + ".png"));
         }
         await File.WriteAllTextAsync(Path.Combine(directory, "result.txt"),

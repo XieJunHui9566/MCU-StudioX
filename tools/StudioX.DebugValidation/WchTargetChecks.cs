@@ -121,7 +121,10 @@ internal static class WchTargetChecks
                 {
                     OpenOcdDebugPlanner.Create(project, invalid, prepared.Tools, prepared.Elf);
                 }
-                catch (StudioXException ex) when (ex.Code == code) { return; }
+                catch (StudioXException ex) when (ex.Code == code)
+                {
+                    return;
+                }
                 throw new InvalidOperationException("Expected " + code);
             }
         }
@@ -154,7 +157,15 @@ internal static class WchTargetChecks
     }
     private sealed class WchRegisterTransport : IGdbMiTransport
     {
-        public event Action<string>? RecordReceived { add { } remove { } }
+        public event Action<string>? RecordReceived
+        {
+            add
+            {
+            }
+            remove
+            {
+            }
+        }
         public Task<string> ExecuteAsync(string command, CancellationToken token = default)
         {
             var at = command.IndexOf('-');

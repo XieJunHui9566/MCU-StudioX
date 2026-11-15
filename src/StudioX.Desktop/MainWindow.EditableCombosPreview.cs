@@ -33,13 +33,17 @@ public partial class MainWindow
             StcIspPanel.IsEnabled = true;
             StcPortPicker.ApplyTemplate();
             UpdateLayout();
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.Render);
             var editor = StcPortPicker.Template.FindName("PART_EditableTextBox", StcPortPicker) as TextBox
                 ?? throw new InvalidOperationException("STC port template has no editable text part.");
             Check(editor.Visibility == Visibility.Visible && editor.Text == "COM14",
                 theme.Id + ": saved COM14 is displayed in editable STC port");
             StcPortPicker.SelectedItem = "COM4";
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.DataBind);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.DataBind);
             Check(StcPortPicker.Text == "COM4" && editor.Text == "COM4",
                 theme.Id + ": selecting listed port displays selected text");
             editor.Text = "COM27";
@@ -58,7 +62,9 @@ public partial class MainWindow
                 theme.Id + ": ordinary baud selector retains selection presentation");
             StcPortPicker.BringIntoView();
             UpdateLayout();
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.Render);
             Check(editor.IsVisible && editor.ActualWidth > 0, theme.Id + ": port text is visible on the real WPF page");
             Render(this, Path.Combine(directory, "stc-port-" + theme.Id + ".png"));
         }

@@ -21,10 +21,14 @@ public partial class MainWindow
         }
         async Task Settle()
         {
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ContextIdle);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.ContextIdle);
             await debugNavigationTask;
             await debugRtosTask;
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ContextIdle);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.ContextIdle);
             await debugRtosTask;
         }
         var exampleRoot = Path.Combine(services.DataDirectory, "debug-examples");
@@ -85,12 +89,16 @@ public partial class MainWindow
         {
             ApplyTheme(theme);
             UpdateLayout();
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.Render);
             for (var page = 0; page < 4; page++)
             {
                 view.ShowPage(page);
                 UpdateLayout();
-                await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ContextIdle);
+                await Dispatcher.InvokeAsync(() =>
+                {
+                }, DispatcherPriority.ContextIdle);
                 UpdateLayout();
                 if (page == 2)
                 {

@@ -63,7 +63,14 @@ public static class IspSession
                 {
                     await bridge.Run(CancellationToken.None);
                 }
-                catch (Exception cleanup) { progress(new { stage = "recovery-failed", message = cleanup.ToString() }); }
+                catch (Exception cleanup)
+                {
+                    progress(new
+                    {
+                        stage = "recovery-failed",
+                        message = cleanup.ToString()
+                    });
+                }
             }
             throw;
         }

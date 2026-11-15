@@ -26,7 +26,9 @@ public partial class MainWindow
         }
         async Task Settle()
         {
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ContextIdle);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.ContextIdle);
             UpdateLayout();
         }
         async Task Wait(Func<bool> condition)
@@ -117,7 +119,10 @@ public partial class MainWindow
             await UndoSourceRegistrationAsync(CancellationToken.None);
             throw new InvalidOperationException("Expected stale undo.");
         }
-        catch (StudioXException error) when (error.Code == "SOURCE_REGISTRATION_STALE") { Check(editor.Buffer.Text == later, "grouped undo never overwrites later edits"); }
+        catch (StudioXException error) when (error.Code == "SOURCE_REGISTRATION_STALE")
+        {
+            Check(editor.Buffer.Text == later, "grouped undo never overwrites later edits");
+        }
         editor.Buffer.UndoStack.Undo();
         await UndoSourceRegistrationAsync(CancellationToken.None);
         editor.Buffer.Insert(editor.Buffer.TextLength, "# stale preview\r\n");
@@ -127,7 +132,10 @@ public partial class MainWindow
             await ApplySourceRegistrationAsync(plan, CancellationToken.None);
             throw new InvalidOperationException("Expected stale apply.");
         }
-        catch (StudioXException error) when (error.Code == "WORKSPACE_EDIT_STALE") { Check(editor.Buffer.Text == later, "apply refuses a changed buffer without partial changes"); }
+        catch (StudioXException error) when (error.Code == "WORKSPACE_EDIT_STALE")
+        {
+            Check(editor.Buffer.Text == later, "apply refuses a changed buffer without partial changes");
+        }
         editor.Buffer.UndoStack.Undo();
         SourceEditor.IsReadOnly = true;
         try
@@ -135,7 +143,10 @@ public partial class MainWindow
             await ApplySourceRegistrationAsync(plan, CancellationToken.None);
             throw new InvalidOperationException("Expected read-only refusal.");
         }
-        catch (StudioXException error) when (error.Code == "SOURCE_REGISTRATION_STALE") { Check(editor.Buffer.Text == unsaved, "active read-only editor cannot accept registration"); }
+        catch (StudioXException error) when (error.Code == "SOURCE_REGISTRATION_STALE")
+        {
+            Check(editor.Buffer.Text == unsaved, "active read-only editor cannot accept registration");
+        }
         SourceEditor.IsReadOnly = false;
         EventHandler fail = (_, _) => throw new InvalidOperationException("injected source registration editor event failure");
         editor.Buffer.TextChanged += fail;
@@ -148,7 +159,10 @@ public partial class MainWindow
         {
             Check(editor.Buffer.Text == unsaved && error.ToString().Contains("injected source registration editor event failure", StringComparison.Ordinal), "edit event failure restores buffer and retains original diagnostics");
         }
-        finally { editor.Buffer.TextChanged -= fail; }
+        finally
+        {
+            editor.Buffer.TextChanged -= fail;
+        }
         await ApplySourceRegistrationAsync(plan, CancellationToken.None);
         await SaveEditorAsync(project, editor, CancellationToken.None);
         Check(!editor.IsDirty && await File.ReadAllTextAsync(Path.Combine(project, "CMakeLists.txt")) == plan.Change.After, "explicit save persists registered compile configuration");
@@ -176,7 +190,10 @@ public partial class MainWindow
             await ApplySourceRegistrationAsync(plan, CancellationToken.None);
             throw new InvalidOperationException("Expected project switch rejection.");
         }
-        catch (StudioXException error) when (error.Code == "SOURCE_REGISTRATION_STALE") { Check(sourceRegistrationMoves.Count == 0 && sourceRegistrationUndo is null && activeEditor!.Buffer.Text.Contains("return 0", StringComparison.Ordinal), "project switch retires rename evidence and rejects old plans"); }
+        catch (StudioXException error) when (error.Code == "SOURCE_REGISTRATION_STALE")
+        {
+            Check(sourceRegistrationMoves.Count == 0 && sourceRegistrationUndo is null && activeEditor!.Buffer.Text.Contains("return 0", StringComparison.Ordinal), "project switch retires rename evidence and rejects old plans");
+        }
         await CloseProjectAsync(CancellationToken.None, _ => MessageBoxResult.No);
         await JsonStore.WriteAsync(Path.Combine(output, "result.json"), new
         {

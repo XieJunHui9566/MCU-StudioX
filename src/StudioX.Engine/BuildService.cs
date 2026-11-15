@@ -81,7 +81,10 @@ public sealed partial class BuildService(ToolsetCatalog catalog, string? ag32Map
                 }
             }
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
     public Task<BuildReport> BuildAsync(string projectDirectory, IProgress<string>? progress = null, CancellationToken cancellationToken = default, IProgress<string>? output = null)
         => Task.Run(() => ExecuteAsync(projectDirectory, false, progress, cancellationToken, output), cancellationToken);
@@ -113,7 +116,10 @@ public sealed partial class BuildService(ToolsetCatalog catalog, string? ag32Map
             }
             return await backend.ExecuteAsync(new(root, project, configureOnly, progress, output, cancellationToken, picDebugger));
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
     private sealed record BuildCacheIdentity(string ProjectDirectory, string ToolsetDirectory, string Fingerprint,
         CubeMxProjectSettings? CubeMx = null, int ConfigurationVersion = 0, ProjectBuildSettings? BuildSettings = null,

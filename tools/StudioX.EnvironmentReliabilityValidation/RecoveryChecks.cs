@@ -67,7 +67,10 @@ internal static class RecoveryChecks
                 await action();
                 throw new InvalidOperationException("Expected " + code);
             }
-            catch (StudioXException error) when (error.Code == code) { Check(true, text); }
+            catch (StudioXException error) when (error.Code == code)
+            {
+                Check(true, text);
+            }
         }
         var source = Path.Combine(output, "source");
         var relative = "test.recovery/1.0.0";
@@ -138,7 +141,10 @@ internal static class RecoveryChecks
                         await service.RecoverAsync(preview, token: canceled.Token);
                         throw new InvalidOperationException("Cancellation ignored");
                     }
-                    catch (OperationCanceledException) { Check((await service.InspectRecoveryAsync()).Items.Count == 1, "canceled recovery preserves pending evidence"); }
+                    catch (OperationCanceledException)
+                    {
+                        Check((await service.InspectRecoveryAsync()).Items.Count == 1, "canceled recovery preserves pending evidence");
+                    }
                 }
                 await service.RecoverAsync(preview);
                 Check((await service.InspectRecoveryAsync()).Items.Count == 0 &&
@@ -232,7 +238,16 @@ internal static class RecoveryChecks
             Check((await File.ReadAllBytesAsync(result)).SequenceEqual(payload), "same-size corrupted complete cache is reverified and repaired");
             passed = true;
         }
-        finally { await JsonStore.WriteAsync(Path.Combine(output, "result.json"), new { passed, checks, hardware = false, downloadedSdk = false }); }
+        finally
+        {
+            await JsonStore.WriteAsync(Path.Combine(output, "result.json"), new
+            {
+                passed,
+                checks,
+                hardware = false,
+                downloadedSdk = false
+            });
+        }
     }
     private static async Task KillAtReadyAsync(string[] arguments)
     {
@@ -282,8 +297,14 @@ internal static class RecoveryChecks
                         using var released = new FileStream(leasePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
                         break;
                     }
-                    catch (FileNotFoundException) { break; }
-                    catch (IOException) when (attempt < 49) { await Task.Delay(40); }
+                    catch (FileNotFoundException)
+                    {
+                        break;
+                    }
+                    catch (IOException) when (attempt < 49)
+                    {
+                        await Task.Delay(40);
+                    }
                 }
             }
         }

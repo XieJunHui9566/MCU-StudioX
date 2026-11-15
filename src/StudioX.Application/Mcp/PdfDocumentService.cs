@@ -136,9 +136,18 @@ public static class PdfDocumentService
                 dimension = Math.Max(320, (int)(dimension * 0.75));
             }
         }
-        catch (StudioXException) { throw; }
-        catch (OperationCanceledException) { throw; }
-        catch (OutOfMemoryException) { throw; }
+        catch (StudioXException)
+        {
+            throw;
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (OutOfMemoryException)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             throw new StudioXException("MCP_PDF_RENDER", "PDF 页面无法渲染；文件可能损坏或加密。", ex);
@@ -180,8 +189,14 @@ public static class PdfDocumentService
             token.ThrowIfCancellationRequested();
             return bytes;
         }
-        catch (StudioXException) { throw; }
-        catch (OperationCanceledException) { throw; }
+        catch (StudioXException)
+        {
+            throw;
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
         catch (IOException ex)
         {
             throw new StudioXException("MCP_PDF_FILE", "PDF 文件无法读取或已被占用。", ex);
@@ -206,9 +221,18 @@ public static class PdfDocumentService
             token.ThrowIfCancellationRequested();
             return document;
         }
-        catch (StudioXException) { throw; }
-        catch (OperationCanceledException) { throw; }
-        catch (OutOfMemoryException) { throw; }
+        catch (StudioXException)
+        {
+            throw;
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (OutOfMemoryException)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             throw new StudioXException("MCP_PDF_FORMAT", "PDF 文件无法解析；文件可能损坏或加密。", ex);
@@ -228,9 +252,18 @@ public static class PdfDocumentService
             }
             return text;
         }
-        catch (StudioXException) { throw; }
-        catch (OperationCanceledException) { throw; }
-        catch (OutOfMemoryException) { throw; }
+        catch (StudioXException)
+        {
+            throw;
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (OutOfMemoryException)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             throw new StudioXException("MCP_PDF_TEXT", "PDF 页面文字无法提取；可能需要查看渲染图像。", ex);

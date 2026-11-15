@@ -66,7 +66,7 @@ public sealed record ZephyrProjectSettings(int FormatVersion, string BoardId, st
             {
                 throw new StudioXException("PROJECT_ZEPHYR_SETTINGS", "Zephyr MCU 模板的器件、板级目标或锁定框架身份无效。");
             }
-            PackValidator.Token(project.Name);
+            ProjectName.Validate(project.Name);
             PackValidator.Token(project.PackId);
             PackValidator.Version(project.PackVersion);
             return;
@@ -84,7 +84,7 @@ public sealed record ZephyrProjectSettings(int FormatVersion, string BoardId, st
         {
             throw new StudioXException("PROJECT_ZEPHYR_SETTINGS", "Zephyr 实验工程的板级目标或包记录无效。");
         }
-        PackValidator.Token(project.Name);
+        ProjectName.Validate(project.Name);
         PackValidator.Token(project.PackId);
         PackValidator.Version(project.PackVersion);
         PackValidator.Token(project.DeviceId);

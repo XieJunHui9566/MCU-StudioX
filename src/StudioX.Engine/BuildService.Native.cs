@@ -52,7 +52,7 @@ public sealed partial class BuildService
             ? hz : null;
         if (project.Espressif is not null)
         {
-            return await new EspressifBuildBackend().ExecuteAsync(root, project, tools, settings, configureOnly,
+            return await new EspressifBuildBackend(userDataDirectory).ExecuteAsync(root, project, tools, settings, configureOnly,
                 progress, output, cancellationToken);
         }
         var build = Path.Combine(root, ".build");

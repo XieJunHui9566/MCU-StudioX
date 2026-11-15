@@ -65,7 +65,10 @@ public sealed class PicDebugMemoryMap
             {
                 record = Convert.FromHexString(line.AsSpan(1));
             }
-            catch (FormatException ex) { throw new StudioXException("PIC_DEBUG_HEX", "HEX 包含非十六进制字符。", ex); }
+            catch (FormatException ex)
+            {
+                throw new StudioXException("PIC_DEBUG_HEX", "HEX 包含非十六进制字符。", ex);
+            }
             if (record.Length != record[0] + 5 || record.Sum(b => b) % 256 != 0)
             {
                 throw Invalid("HEX 校验和或长度无效。");

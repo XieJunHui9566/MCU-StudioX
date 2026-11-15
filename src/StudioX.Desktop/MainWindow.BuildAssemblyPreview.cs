@@ -65,7 +65,9 @@ public partial class MainWindow
                 foreach (var size in new[] { 13d, 18d })
                 {
                     System.Windows.Application.Current.Resources["WorkbenchFontSize"] = size;
-                    await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);
+                    await Dispatcher.InvokeAsync(() =>
+                    {
+                    }, DispatcherPriority.ApplicationIdle);
                     await Task.Delay(50);
                     Check(buildAssembly.ActualWidth > 150 && buildAssembly.Editor.ActualHeight > 200 && buildAssembly.Editor.IsReadOnly,
                         name + size + " assembly layout remains readable and read-only");

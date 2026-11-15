@@ -227,7 +227,10 @@ internal static class DevelopmentComponentChecks
             action();
             check(false, label);
         }
-        catch (StudioXException error) { check(error.Code == code, label); }
+        catch (StudioXException error)
+        {
+            check(error.Code == code, label);
+        }
     }
     private static async Task RejectAsync(Func<Task> action, string code, string label, Action<bool, string> check)
     {
@@ -236,7 +239,10 @@ internal static class DevelopmentComponentChecks
             await action();
             check(false, label);
         }
-        catch (StudioXException error) { check(error.Code == code, label); }
+        catch (StudioXException error)
+        {
+            check(error.Code == code, label);
+        }
     }
     private sealed class ImmediateProgress(Action<string> report) : IProgress<string>
     {

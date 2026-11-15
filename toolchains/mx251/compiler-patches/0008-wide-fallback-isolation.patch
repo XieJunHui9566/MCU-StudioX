@@ -1,0 +1,389 @@
+--- a/src/mcs251/wide.c
++++ b/src/mcs251/wide.c
+@@ -9,6 +9,11 @@
+ #include <stdarg.h>
+ 
+ extern struct dbuf_s *codeOutBuf;
++#ifdef MX251_WIDE_AUDIT
++#include "wide_audit.h"
++#else
++#define WA_FAIL(stage) 0
++#endif
+ enum { WV_MAX = 128, WN_MAX = 512, WO_MAX = 32, WA_MAX = 8, WJ_MAX = 2048, WB_WORDS = WV_MAX / 64, WM_LOAD=0x10000, WM_STORE, WM_ADDRESS, WM_UMULW, WM_NOP, WM_PARAM_LOAD, WM_PARAM_STORE, WM_PARAM_ADDRESS, WM_OBJECT_LOAD, WM_OBJECT_STORE, WM_SYMBOL_LOAD, WM_SYMBOL_STORE, WM_BIT_LOAD, WM_BIT_STORE, WM_BIT_CAST };
+ typedef struct { uint64_t w[WB_WORDS]; } wide_bits;
+ typedef struct {
+@@ -57,7 +62,8 @@
+   int jumpLabels[WJ_MAX], jumpSuccessors[WJ_MAX], nj;
+   int nv, nn, no, frame, serial, received, stackDepth, foldedCasts, reusedParameterLoads;
+   unsigned emitWeight, emitCost, emitInstructions;
+-  bool body, sampledQualified, formalAddress, ordinaryEntry;
++  bool body, sampledQualified, formalAddress, ordinaryEntry, allocationInvalid;
++  struct dbuf_s *diagnostics, *candidateOutput;
+   struct dbuf_s output;
+ } wide_function;
+ 
+@@ -461,7 +467,6 @@
+         pending[0]=pending[1]=NULL;pendingMask=pushedCount=0;f->body=true;break;
+       }
+       case JUMPTABLE: {
+-        symbol *label;
+         int count=elementsInSet(IC_JTLABELS(ic));
+         /* 前端先做原宽度的上下界比较和最小值归一化，随后索引为 0..255。
+          * 不删除这些检查；超出边池容量时整函数回退，不截断表项。 */
+@@ -469,8 +474,9 @@
+            !wide_use(f,n,IC_JTCOND(ic),&n->left) || n->left.floating ||
+            wide_pointer(operandType(IC_JTCOND(ic))))return false;
+         n->jumpStart=f->nj;n->jumpCount=count;
+-        for(label=setFirstItem(IC_JTLABELS(ic));label;label=setNextItem(IC_JTLABELS(ic)))
+-          f->jumpLabels[f->nj++]=label->key;
++        /* 只读遍历；setFirst/NextItem 会改动共享集合的 curr 游标。 */
++        for(const set *entry=IC_JTLABELS(ic);entry;entry=entry->next)
++          f->jumpLabels[f->nj++]=((const symbol *)entry->item)->key;
+         if(f->nj!=n->jumpStart+count)return false;
+         f->body=true;break;
+       }
+@@ -695,7 +701,7 @@
+       ++f->values[input.value].reads;f->values[input.value].weight+=1+4*n->origin->depth;
+     }
+     removed[object]=true;++count;
+-    dbuf_printf(codeOutBuf,"; wide immutable parameter home removed: %s physical=%d reads=%d\n",s->name,f->objects[object].size,reads);
++    dbuf_printf(f->diagnostics,"; wide immutable parameter home removed: %s physical=%d reads=%d\n",s->name,f->objects[object].size,reads);
+   }
+   if(!count)return;
+   int objects=0,frame=0;
+@@ -1073,14 +1079,19 @@
+       v->slot=slot;if(slot+v->width>f->frame)f->frame=slot+v->width;
+     }
+   }
+-  /* 内部一致性验证覆盖所有重叠宽度；不把伪 R16..R31 暴露给字节发射。 */
+-  for(int i=0;i<f->nv;++i) if(f->values[i].reg>=0 && !wide_available(f,i,f->values[i].reg)) return false;
++  /* 分配完成后的自洽性失败是编译器错误，不能假装为语言边界而回退。
++   * 在掩码比较之前校验编码范围，避免无效切片的零掩码隐去冲突。 */
++  if(WA_FAIL("internal-conflict") && f->nv)f->values[0].reg=33;
++  for(int i=0;i<f->nv;++i) if(f->values[i].reg>=0 &&
++    (!mcs251RegisterEncodable(f->values[i].reg,f->values[i].width) ||
++     !wide_available(f,i,f->values[i].reg))) {f->allocationInvalid=true;return false;}
+   for(int i=0;i<f->nv;++i)if(f->values[i].reg<0) {
+     wide_value *a=&f->values[i];
+-    for(int j=0;j<f->no;++j)if(a->slot<f->objects[j].slot+f->objects[j].size && f->objects[j].slot<a->slot+a->width)return false;
++    if(a->slot<0) {f->allocationInvalid=true;return false;}
++    for(int j=0;j<f->no;++j)if(a->slot<f->objects[j].slot+f->objects[j].size && f->objects[j].slot<a->slot+a->width) {f->allocationInvalid=true;return false;}
+     for(int j=0;j<i;++j) {
+       wide_value *b=&f->values[j];
+-      if(b->reg<0 && wb_has(a->edges,j) && a->slot<b->slot+b->width && b->slot<a->slot+a->width)return false;
++      if(b->reg<0 && wb_has(a->edges,j) && a->slot<b->slot+b->width && b->slot<a->slot+a->width) {f->allocationInvalid=true;return false;}
+     }
+   }
+   return f->frame<=512;
+@@ -1089,11 +1100,11 @@
+ #include "wide_emit.c.inc"
+ #include "wide_cost.h"
+ 
+-static bool
++static mcs251_wide_result
+ wide_choose_allocation(wide_function *f)
+ {
+   struct candidate {char *text;size_t length;unsigned heuristic,instructions;int frame;wide_byte_cost size;} c[4]={{0}};
+-  int selected=-1;bool allKnown=true;unsigned bestCost=0;
++  int selected=-1;bool allKnown=true,invalid=false;unsigned bestCost=0;
+   /* 不扩大候选准入范围。size在所有成功候选均可定长时比较最终编码字节；
+    * 任一候选含未知形式，则整组保留原指令数策略，不能奖励未知成本。
+    * speed仍为循环深度加权启发式，不声称等于芯片周期。 */
+@@ -1101,6 +1112,8 @@
+   for(int strategy=0;strategy<count;++strategy) {
+     wide_function *trial=Safe_alloc(sizeof *trial);memcpy(trial,f,sizeof *trial);
+     bool allocated=wide_allocate(trial,strategy);
++    if(trial->allocationInvalid) {invalid=true;Safe_free(trial);break;}
++    if(allocated && WA_FAIL("after-allocate"))allocated=false;
+     if(!strategy && f->no) {
+       for(int i=0;i<trial->nv;++i)if(trial->values[i].reg<0) {count=4;break;}
+     }
+@@ -1116,7 +1129,7 @@
+     }
+     Safe_free(trial);
+   }
+-  for(int i=0;i<count;++i)if(c[i].text) {
++  for(int i=0;!invalid && i<count;++i)if(c[i].text) {
+     unsigned cost=optimize.codeSize?(allKnown?c[i].size.bytes:c[i].instructions):c[i].heuristic;
+     if(selected<0 || cost<bestCost || (cost==bestCost && c[i].frame<c[selected].frame)) {selected=i;bestCost=cost;}
+   }
+@@ -1132,15 +1145,15 @@
+     for(int i=0;i<count;++i) {
+       uint32_t fingerprint=UINT32_C(2166136261);
+       for(size_t j=0;j<c[i].length;++j)fingerprint=(fingerprint^(unsigned char)c[i].text[j])*UINT32_C(16777619);
+-      dbuf_printf(codeOutBuf,"; wide candidate function=%s id=%d success=%d instructions=%u bytes=%u unknown=%u frame=%d text-fnv=%08lx instruction-winner=%d selected=%d\n",
++      dbuf_printf(f->diagnostics,"; wide candidate function=%s id=%d success=%d instructions=%u bytes=%u unknown=%u frame=%d text-fnv=%08lx instruction-winner=%d selected=%d\n",
+         currFunc->name,i,c[i].text!=NULL,c[i].instructions,c[i].size.bytes,c[i].size.unknown,c[i].frame,(unsigned long)fingerprint,instructionWinner,selected);
+     }
+-    dbuf_printf(codeOutBuf,"; wide allocation selected=%d candidates=%d heuristic=%u instructions=%u frame=%d\n",selected,count,c[selected].heuristic,c[selected].instructions,c[selected].frame);
+-    dbuf_printf(codeOutBuf,"; wide cost objective=%s known-bytes=%u unknown=%u group-known=%d\n",optimize.codeSize?(allKnown?"encoded-bytes":"instruction-fallback"):"weighted-instructions",c[selected].size.bytes,c[selected].size.unknown,allKnown);
+-    dbuf_append(codeOutBuf,c[selected].text,c[selected].length);
++    dbuf_printf(f->diagnostics,"; wide allocation selected=%d candidates=%d heuristic=%u instructions=%u frame=%d\n",selected,count,c[selected].heuristic,c[selected].instructions,c[selected].frame);
++    dbuf_printf(f->diagnostics,"; wide cost objective=%s known-bytes=%u unknown=%u group-known=%d\n",optimize.codeSize?(allKnown?"encoded-bytes":"instruction-fallback"):"weighted-instructions",c[selected].size.bytes,c[selected].size.unknown,allKnown);
++    dbuf_append(f->candidateOutput,c[selected].text,c[selected].length);
+   }
+   for(int i=0;i<count;++i)Safe_free(c[i].text);
+-  return selected>=0;
++  return invalid?MCS251_WIDE_ERROR:selected>=0?MCS251_WIDE_ACCEPTED:MCS251_WIDE_FALLBACK;
+ }
+ 
+ static bool
+@@ -1165,13 +1178,13 @@
+   return entries == 1 && ends == 1;
+ }
+ 
+-bool
+-mcs251TryWideFunction (ebbIndex *ebbi)
+-{
+-  bool accepted=false;wide_function *f;
+-  if(!currFunc)return false;
+-  if(!mcs251WideEnabled) {dbuf_printf(codeOutBuf,"; wide admission function=%s skip=disabled\n",currFunc->name);return false;}
+-  if(!wide_is_function_body(ebbi)) {dbuf_printf(codeOutBuf,"; wide admission function=%s skip=non-function-initializer\n",currFunc->name);return false;}
++static mcs251_wide_result
++wide_try_function (ebbIndex *ebbi, struct dbuf_s *output, struct dbuf_s *diagnostics)
++{
++  mcs251_wide_result result=MCS251_WIDE_FALLBACK;wide_function *f;
++  if(!currFunc)return MCS251_WIDE_FALLBACK;
++  if(!mcs251WideEnabled) {dbuf_printf(diagnostics,"; wide admission function=%s skip=disabled\n",currFunc->name);return MCS251_WIDE_FALLBACK;}
++  if(!wide_is_function_body(ebbi)) {dbuf_printf(diagnostics,"; wide admission function=%s skip=non-function-initializer\n",currFunc->name);return MCS251_WIDE_FALLBACK;}
+   bool ordinary=FUNC_SDCCCALL(currFunc->type)==2;
+   if((FUNC_SDCCCALL(currFunc->type)!=4 && !ordinary) ||
+      (ordinary && (!mcs251WideOrdinaryEnabled || currFunc->cdef ||
+@@ -1181,14 +1194,15 @@
+      IFFUNC_ISCRITICAL(currFunc->type) || IFFUNC_CALLEESAVES(currFunc->type) ||
+      IFFUNC_ISBANKEDCALL(currFunc->type) || FUNC_REGBANK(currFunc->type) ||
+      IFFUNC_HASVARARGS(currFunc->type) ||
+-     (!wide_type(currFunc->type->next) && !IS_VOID(currFunc->type->next))) {dbuf_printf(codeOutBuf,"; wide admission function=%s skip=entry-contract\n",currFunc->name);return false;}
++     (!wide_type(currFunc->type->next) && !IS_VOID(currFunc->type->next))) {dbuf_printf(diagnostics,"; wide admission function=%s skip=entry-contract\n",currFunc->name);return MCS251_WIDE_FALLBACK;}
+   /* 宽发射成功会绕过旧 genFunction 的 ABI 校验；CODE 形参须在入口
+    * 显式回退，让原校验给出诊断，不能因局部值支持而扩大公开 ABI。 */
+   for(value *arg=FUNC_ARGS(currFunc->type);arg;arg=arg->next)
+-    if(wide_code_pointer(arg->type) || (ordinary && !wide_type(arg->type))) {dbuf_printf(codeOutBuf,"; wide admission function=%s skip=parameter-type\n",currFunc->name);return false;}
+-  if(!wide_stack_signature(currFunc->type)) {dbuf_printf(codeOutBuf,"; wide admission function=%s skip=stack-signature\n",currFunc->name);return false;}
+-  f=Safe_alloc(sizeof *f);memset(f,0,sizeof *f);f->ordinaryEntry=ordinary;
++    if(wide_code_pointer(arg->type) || (ordinary && !wide_type(arg->type))) {dbuf_printf(diagnostics,"; wide admission function=%s skip=parameter-type\n",currFunc->name);return MCS251_WIDE_FALLBACK;}
++  if(!wide_stack_signature(currFunc->type)) {dbuf_printf(diagnostics,"; wide admission function=%s skip=stack-signature\n",currFunc->name);return MCS251_WIDE_FALLBACK;}
++  f=Safe_alloc(sizeof *f);memset(f,0,sizeof *f);f->ordinaryEntry=ordinary;f->diagnostics=diagnostics;f->candidateOutput=output;
+   if(wide_import(f,ebbi)) {
++    if(WA_FAIL("after-import"))goto fallback;
+     bool importedStackObjects=f->no!=0;
+     wide_immutable_parameter_homes(f);
+     wide_strength_reduce(f);
+@@ -1206,24 +1220,56 @@
+     }
+     if(f->sampledQualified && importedStackObjects && floatMemory && call) {
+       if(!f->ordinaryEntry || !directFloatMemory) {
+-        dbuf_printf(codeOutBuf,"; wide migration deferred: stack float memory with call\n");
++        dbuf_printf(diagnostics,"; wide migration deferred: stack float memory with call\n");
+         goto fallback;
+       }
+-      dbuf_printf(codeOutBuf,"; wide stack float call migration: all float accesses direct\n");
++      dbuf_printf(diagnostics,"; wide stack float call migration: all float accesses direct\n");
+     }
+     wide_stack_indexed_bases(f);
+     wide_fold_indexed_addresses(f);
+     wide_reuse_parameter_loads(f);
+     wide_fold_extensions(f);
+     wide_liveness(f);
+-    accepted=wide_choose_allocation(f);
++    if(WA_FAIL("after-transform"))goto fallback;
++    result=wide_choose_allocation(f);
++    if(result==MCS251_WIDE_ACCEPTED && WA_FAIL("after-emit")) {
++      dbuf_append_str(output,"\n_mx251_discarded_test_marker:\n\t.db 0xa5\n");
++      result=MCS251_WIDE_FALLBACK;
++    }
+   }
+ fallback:
+-  if(!accepted) {
+-    dbuf_printf(codeOutBuf,"; mcs251 wide-mir fallback: %s\n",currFunc->name);
++  if(result==MCS251_WIDE_FALLBACK) {
++    dbuf_printf(diagnostics,"; mcs251 wide-mir fallback: %s\n",currFunc->name);
+     /* 保留拒绝位置，便于区分语义边界和容量限制；不改变回退机器码。 */
+-    if(f->nn)dbuf_printf(codeOutBuf,"; wide rejection: node=%d icode=%d opcode=%u values=%d objects=%d frame=%d\n",
++    if(f->nn)dbuf_printf(diagnostics,"; wide rejection: node=%d icode=%d opcode=%u values=%d objects=%d frame=%d\n",
+                         f->nn,f->nodes[f->nn-1].origin->key,f->nodes[f->nn-1].origin->op,f->nv,f->no,f->frame);
+   }
+-  Safe_free(f);return accepted;
+-}
++  Safe_free(f);return result;
++}
++
++
++mcs251_wide_result
++mcs251TryWideFunction (ebbIndex *ebbi)
++{
++  struct dbuf_s output, diagnostics;
++  mcs251_wide_result result;
++  dbuf_init(&output,1024);dbuf_init(&diagnostics,256);
++#ifdef MX251_WIDE_AUDIT
++  wa_snapshot *before=wa_begin(ebbi);
++#endif
++  result=wide_try_function(ebbi,&output,&diagnostics);
++#ifdef MX251_WIDE_AUDIT
++  if(WA_FAIL("mutate-input") && ebbi->count && ebbi->bbOrder[0]->sch)
++    ebbi->bbOrder[0]->sch->key^=1;
++  if(!wa_end(before,result))result=MCS251_WIDE_ERROR;
++#endif
++  /* 诊断不是候选代码：拒绝时保留原因，丢弃全部标签、指令和栈操作。
++   * 内部错误明确失败，旧后端不能把不一致状态重新解释成可用代码。 */
++  if(dbuf_get_length(&diagnostics))dbuf_append(codeOutBuf,dbuf_get_buf(&diagnostics),dbuf_get_length(&diagnostics));
++  if(result==MCS251_WIDE_ACCEPTED && dbuf_get_length(&output))
++    dbuf_append(codeOutBuf,dbuf_get_buf(&output),dbuf_get_length(&output));
++  dbuf_destroy(&output);dbuf_destroy(&diagnostics);
++  if(result==MCS251_WIDE_ERROR)
++    werror(E_INTERNAL_ERROR,__FILE__,__LINE__,"mcs251 wide invariant failed; legacy fallback prohibited");
++  return result;
++}
+--- a/src/mcs251/wide.h
++++ b/src/mcs251/wide.h
+@@ -4,6 +4,8 @@
+ #include "SDCCBBlock.h"
+ extern int mcs251WideEnabled;
+ extern int mcs251WideOrdinaryEnabled;
+-/* 完整分析成功后才提交输出；失败不改 iCode、符号或旧分配器状态。 */
+-bool mcs251TryWideFunction (ebbIndex *);
++/* 不支持/容量限制允许旧路径接管；内部错误已报告，禁止继续发射旧路径。
++ * 代码与诊断分别暂存，只有完整成功才提交候选机器代码。 */
++typedef enum { MCS251_WIDE_FALLBACK, MCS251_WIDE_ACCEPTED, MCS251_WIDE_ERROR } mcs251_wide_result;
++mcs251_wide_result mcs251TryWideFunction (ebbIndex *);
+ #endif
+--- a/src/mcs251/ralloc.c
++++ b/src/mcs251/ralloc.c
+@@ -3611,7 +3611,17 @@
+           if (!mcs251ValidateNativeAbi (ftype)) valid = false;
+         }
+   if (!valid) return;
+-  if (mcs251TryWideFunction (ebbi)) return;
++#ifdef MX251_WIDE_AUDIT
++  unsigned char auditGlobal[sizeof _G],auditRegisters[sizeof mcs251_regs];
++  memcpy(auditGlobal,&_G,sizeof _G);memcpy(auditRegisters,mcs251_regs,sizeof mcs251_regs);
++#endif
++  mcs251_wide_result wideResult=mcs251TryWideFunction(ebbi);
++#ifdef MX251_WIDE_AUDIT
++  if(memcmp(auditGlobal,&_G,sizeof _G) || memcmp(auditRegisters,mcs251_regs,sizeof mcs251_regs)) {
++    werror(E_INTERNAL_ERROR,__FILE__,__LINE__,"wide changed legacy allocator state");return;
++  }
++#endif
++  if(wideResult!=MCS251_WIDE_FALLBACK)return;
+   eBBlock **ebbs = ebbi->bbOrder;
+   int count = ebbi->count;
+   iCode *ic;
+--- /dev/null
++++ b/src/mcs251/wide_audit.h
+@@ -0,0 +1,116 @@
++/* SPDX-License-Identifier: GPL-2.0-or-later
++ * 仅审计构建启用：保存后端入口的可变输入，不修改输入以迁就比较。
++ * 不遍历任意 AST/全局堆；覆盖范围由此处和独立测试记录明确列出。 */
++typedef struct wa_record {
++  const void *address;
++  size_t size;
++  unsigned char *bytes;
++  const char *kind;
++  struct wa_record *next;
++} wa_record;
++typedef struct { wa_record *records; unsigned count; } wa_snapshot;
++
++static bool wa_record_bytes(wa_snapshot *s,const void *p,size_t n,const char *kind)
++{
++  if(!p || !n)return false;
++  for(wa_record *r=s->records;r;r=r->next)if(r->address==p && r->size==n)return false;
++  wa_record *r=Safe_alloc(sizeof *r);r->address=p;r->size=n;r->kind=kind;
++  r->bytes=Safe_alloc(n);memcpy(r->bytes,p,n);r->next=s->records;s->records=r;++s->count;
++  return true;
++}
++#define WA_OBJECT(s,p,kind) wa_record_bytes(s,p,sizeof *(p),kind)
++static void wa_bits(wa_snapshot *s,bitVect *v)
++{
++  if(WA_OBJECT(s,v,"bit-vector"))wa_record_bytes(s,v->vect,(size_t)v->allocSize*sizeof *v->vect,"bit-data");
++}
++static void wa_set(wa_snapshot *s,set *v)
++{
++  for(;v;v=v->next)if(!WA_OBJECT(s,v,"set-node"))break;
++}
++static void wa_type(wa_snapshot*,sym_link*);
++static void wa_symbol(wa_snapshot*,symbol*);
++static void wa_value(wa_snapshot *s,value *v)
++{
++  if(!WA_OBJECT(s,v,"value"))return;
++  wa_type(s,v->type);wa_type(s,v->etype);wa_symbol(s,v->sym);wa_value(s,v->next);
++}
++static void wa_type(wa_snapshot *s,sym_link *t)
++{
++  if(!WA_OBJECT(s,t,"type"))return;
++  if(IS_FUNC(t))wa_value(s,FUNC_ARGS(t));
++  wa_type(s,t->next);
++}
++static void wa_symbol(wa_snapshot *s,symbol *v)
++{
++  if(!WA_OBJECT(s,v,"symbol"))return;
++  wa_type(s,v->type);wa_type(s,v->etype);
++  wa_bits(s,v->defs);wa_bits(s,v->uses);wa_bits(s,v->regsUsed);
++}
++static void wa_operand(wa_snapshot *s,operand *o)
++{
++  if(!WA_OBJECT(s,o,"operand"))return;
++  wa_bits(s,o->usesDefs);
++  switch(o->type) {
++    case SYMBOL:wa_symbol(s,o->svt.symOperand);break;
++    case VALUE:wa_value(s,o->svt.valOperand);break;
++    case TYPE:wa_type(s,o->svt.typeOperand);break;
++  }
++}
++static wa_snapshot *wa_begin(ebbIndex *ebbi)
++{
++  /* 对照：集合允许携带已有迭代游标。先建立入口状态，再开始快照。 */
++  const char *stage=getenv("MX251_WIDE_AUDIT_STAGE");
++  if(stage && !strcmp(stage,"seed-jump-cursor"))
++    for(int b=0;b<ebbi->count;++b)
++      for(iCode *ic=ebbi->bbOrder[b]->sch;ic;ic=ic==ebbi->bbOrder[b]->ech?NULL:ic->next)
++        if(ic->op==JUMPTABLE && IC_JTLABELS(ic))IC_JTLABELS(ic)->curr=IC_JTLABELS(ic);
++  wa_snapshot *s=Safe_alloc(sizeof *s);s->records=NULL;s->count=0;
++  WA_OBJECT(s,ebbi,"ebb-index");
++  wa_record_bytes(s,ebbi->bbOrder,ebbi->count*sizeof *ebbi->bbOrder,"bb-order");
++  wa_record_bytes(s,ebbi->dfOrder,ebbi->count*sizeof *ebbi->dfOrder,"df-order");
++  WA_OBJECT(s,&options,"options");WA_OBJECT(s,&optimize,"optimize");
++  WA_OBJECT(s,&iCodeKey,"icode-key");WA_OBJECT(s,&operandKey,"operand-key");
++  WA_OBJECT(s,codeOutBuf,"output-buffer");
++  wa_record_bytes(s,dbuf_get_buf(codeOutBuf),dbuf_get_length(codeOutBuf),"output-data");
++  wa_symbol(s,currFunc);
++  for(int b=0;b<ebbi->count;++b) {
++    eBBlock *bb=ebbi->bbOrder[b];WA_OBJECT(s,bb,"basic-block");wa_symbol(s,bb->entryLabel);
++    wa_set(s,bb->succList);wa_set(s,bb->predList);wa_set(s,bb->inExprs);
++    wa_set(s,bb->outExprs);wa_set(s,bb->killedExprs);wa_set(s,bb->addrOf);
++    bitVect *bits[]={bb->succVect,bb->domVect,bb->inDefs,bb->outDefs,bb->defSet,bb->ldefs,
++      bb->usesDefs,bb->ptrsSet,bb->inPtrsSet,bb->ndompset,bb->linds};
++    for(unsigned k=0;k<sizeof bits/sizeof *bits;++k)wa_bits(s,bits[k]);
++    for(iCode *ic=bb->sch;ic;ic=ic==bb->ech?NULL:ic->next) {
++      WA_OBJECT(s,ic,"icode");wa_operand(s,ic->left);wa_operand(s,ic->right);wa_operand(s,ic->result);
++      wa_symbol(s,ic->label);wa_set(s,ic->movedFrom);
++      wa_bits(s,ic->rlive);wa_bits(s,ic->uses);wa_bits(s,ic->rUsed);wa_bits(s,ic->rMask);wa_bits(s,ic->rSurv);
++      if(ic->op==IFX) {wa_symbol(s,IC_TRUE(ic));wa_symbol(s,IC_FALSE(ic));}
++      if(ic->op==JUMPTABLE) {
++        wa_set(s,IC_JTLABELS(ic));
++        for(set *v=IC_JTLABELS(ic);v;v=v->next)wa_symbol(s,v->item);
++      }
++    }
++  }
++  return s;
++}
++static bool wa_end(wa_snapshot *s,mcs251_wide_result result)
++{
++  unsigned mismatches=0;
++  for(wa_record *r=s->records,*next;r;r=next) {
++    next=r->next;
++    if(memcmp(r->bytes,r->address,r->size)) {
++      ++mismatches;fprintf(stderr,"MX251-AUDIT changed=%s function=%s\n",r->kind,currFunc?currFunc->name:"initializer");
++    }
++    Safe_free(r->bytes);Safe_free(r);
++  }
++  fprintf(stderr,"MX251-AUDIT result=%d records=%u mismatches=%u function=%s\n",result,s->count,mismatches,currFunc?currFunc->name:"initializer");
++  Safe_free(s);return !mismatches;
++}
++static bool wa_fail(const char *stage)
++{
++  const char *requested=getenv("MX251_WIDE_AUDIT_STAGE");
++  if(!requested || strcmp(requested,stage))return false;
++  const char *fn=getenv("MX251_WIDE_AUDIT_FUNCTION");
++  return !fn || (currFunc && !strcmp(fn,currFunc->name));
++}
++#define WA_FAIL(stage) wa_fail(stage)

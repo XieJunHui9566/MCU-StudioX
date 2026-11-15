@@ -186,7 +186,7 @@
                   ToolTip="0：电脑接收时间；大于 0：按每组固定周期计算，需与固件实际采样周期一致。" />
               </StackPanel>
               <TextBlock
-                Text="每组 1–16 个数值，首组确定通道数。&#xA;支持负数、小数、科学计数；修改参数后重新连接。"
+                Text="每组 1–16 个数值；修改参数后重新连接。"
                 VerticalAlignment="Center"
                 Foreground="{DynamicResource Muted}"
                 FontSize="11"
@@ -294,7 +294,7 @@
       <StackPanel
         Grid.Row="5">
         <TextBlock
-          Text="Ctrl＋滚轮：图内 / 时间轴缩放时间，左侧数值轴缩放值域（Ctrl＋Shift 也可） · 拖动平移 · 双击复位"
+          Text="Ctrl+滚轮缩放 · 拖动平移 · 双击复位"
           Foreground="{DynamicResource Muted}"
           FontSize="11"
           TextWrapping="Wrap" />
@@ -307,7 +307,7 @@
           TextTrimming="CharacterEllipsis" />
         <TextBlock
           x:Name="Notice"
-          Text="默认：4095,1024\n；接收数字文本，不解析 ANSI 控制码。"
+          Text="等待采集"
           Foreground="{DynamicResource Muted}"
           FontSize="11"
           Margin="0,4,0,0"

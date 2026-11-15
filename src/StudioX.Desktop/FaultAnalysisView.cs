@@ -28,7 +28,13 @@ public sealed class FaultAnalysisView : UserControl
         foreach (var (title, action) in new[] { ("分析日志", "analyze"), ("读取暂停现场", "read"), ("使用工程 ELF 定位", "locate"), ("转储 + 工程 ELF", "dump"), ("转储 + 归档 ELF", "archive-dump"), ("导入报告", "import"), ("导出报告", "export") })
         {
             var button = new Button { Content = title, Margin = new(0, 0, 8, 8), Padding = new(10, 5, 10, 5) };
-            button.Click += async (_, _) => { if (Requested is { } run) { await run(action); } };
+            button.Click += async (_, _) =>
+            {
+                if (Requested is { } run)
+                {
+                    await run(action);
+                }
+            };
             buttons.Children.Add(button);
         }
         top.Children.Add(buttons);

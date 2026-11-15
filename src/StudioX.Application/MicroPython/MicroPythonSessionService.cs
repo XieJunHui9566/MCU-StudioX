@@ -70,7 +70,10 @@ public sealed class MicroPythonSessionService(DeviceHub hub, Func<SerialSettings
             await CloseCoreAsync().ConfigureAwait(false);
             throw;
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
 
     public Task<MicroPythonResult> ExecuteAsync(string code, CancellationToken token = default) =>
@@ -234,7 +237,10 @@ public sealed class MicroPythonSessionService(DeviceHub hub, Func<SerialSettings
             await CloseCoreAsync().ConfigureAwait(false);
             throw;
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
 
     public async Task DisconnectAsync()
@@ -248,7 +254,10 @@ public sealed class MicroPythonSessionService(DeviceHub hub, Func<SerialSettings
         {
             await CloseCoreAsync().ConfigureAwait(false);
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
 
     private async Task CloseCoreAsync()
@@ -262,7 +271,10 @@ public sealed class MicroPythonSessionService(DeviceHub hub, Func<SerialSettings
             {
                 await closingSession.SendAsync(new byte[] { 3, 3, 2 }, timeout.Token).ConfigureAwait(false);
             }
-            catch (Exception ex) { Diagnostic?.Invoke(ex.ToString()); }
+            catch (Exception ex)
+            {
+                Diagnostic?.Invoke(ex.ToString());
+            }
             await closingSession.DisposeAsync().ConfigureAwait(false);
         }
         subscription?.Dispose();

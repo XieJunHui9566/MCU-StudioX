@@ -5,9 +5,15 @@ using StudioX.Engine;
 using StudioX.Foundation;
 using StudioX.Packages;
 
-if (args is not [var toolsRoot, var packRoot, var outputRoot, var hostGcc]) { throw new ArgumentException("tools packs new-output native-gcc"); }
+if (args is not [var toolsRoot, var packRoot, var outputRoot, var hostGcc])
+{
+    throw new ArgumentException("tools packs new-output native-gcc");
+}
 var output = Path.GetFullPath(outputRoot);
-if (Directory.Exists(output)) { throw new IOException("Output must be new."); }
+if (Directory.Exists(output))
+{
+    throw new IOException("Output must be new.");
+}
 Directory.CreateDirectory(output);
 var checks = new List<string>();
 void Check(bool value, string text)
@@ -114,13 +120,19 @@ foreach (var archive in Directory.GetFiles(Path.GetFullPath(packRoot), "*.mcupac
         await planner.ApplyAsync(root, finalSnapshot, [new("GPIO4_4", 2, "OUTPUT", "LED1")], new(8, 200, 100));
     }
 }
-if (nativeHeader is null || nativeSource is null) { throw new InvalidOperationException("No verified devices"); }
+if (nativeHeader is null || nativeSource is null)
+{
+    throw new InvalidOperationException("No verified devices");
+}
 var native = Path.Combine(output, "native");
 Directory.CreateDirectory(native);
 File.Copy(nativeHeader, Path.Combine(native, "StudioX_System.h"));
 File.Copy(nativeSource, Path.Combine(native, "StudioX_System.c"));
 File.Copy(Path.Combine(Path.GetDirectoryName(nativeHeader)!, "StudioX_Board.h"), Path.Combine(native, "StudioX_Board.h"));
-foreach (var file in Directory.GetFiles(Path.Combine(AppContext.BaseDirectory, "native"))) { File.Copy(file, Path.Combine(native, Path.GetFileName(file))); }
+foreach (var file in Directory.GetFiles(Path.Combine(AppContext.BaseDirectory, "native")))
+{
+    File.Copy(file, Path.Combine(native, Path.GetFileName(file)));
+}
 var compiled = await runner.RunAsync(new(Path.GetFullPath(hostGcc), ["-std=gnu17", "-O2", "-I.", "StudioX_System.c", "clock_checks.c", "-o", "clock_checks.exe"], native, TimeSpan.FromSeconds(30)));
 await File.WriteAllTextAsync(Path.Combine(native, "compile.log"), compiled.StandardOutput + compiled.StandardError);
 Check(compiled.Success, "native clock/register fixture compiles generated source");

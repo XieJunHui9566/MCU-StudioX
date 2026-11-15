@@ -36,7 +36,9 @@ public partial class MainWindow
             popup.CompletionList.ListBox.SelectedItem = item;
             UpdateLayout();
             popup.UpdateLayout();
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.Render);
             Render(popup, Path.Combine(directory, name + ".png"));
             var before = SourceEditor.Text;
             popup.CompletionList.HandleKey(new KeyEventArgs(Keyboard.PrimaryDevice, PresentationSource.FromVisual(SourceEditor), 0, Key.Tab) { RoutedEvent = Keyboard.KeyDownEvent });
@@ -61,7 +63,9 @@ public partial class MainWindow
             await assistTask;
             Check(signatureWindow is not null, "自定义函数参数弹窗");
             signatureWindow!.UpdateLayout();
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.Render);
             Render(signatureWindow, Path.Combine(directory, "parameters-dark.png"));
             CloseCodeAssistance();
             SetSource("");
@@ -101,11 +105,15 @@ public partial class MainWindow
             SetSource("# Python 3 · 离线编辑支持\n@staticmethod\n" + declaration + "message = f\"采样值: {scale_sample(21)}\"\nprint(message)\n");
             Check(EditorLanguage.Text.StartsWith("Python", StringComparison.Ordinal), "状态栏识别 Python");
             UpdateLayout();
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.Render);
             Render(SourceEditor, Path.Combine(directory, "editor-dark.png"));
             ApplyTheme(ThemeService.Light);
             UpdateLayout();
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.Render);
             Render(SourceEditor, Path.Combine(directory, "editor-light.png"));
             await Complete("pri", "print", "builtin-light");
             await File.WriteAllLinesAsync(Path.Combine(directory, "result.txt"), results);

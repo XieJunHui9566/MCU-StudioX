@@ -96,7 +96,11 @@ internal partial class ProgrammerCalculatorView : UserControl
             }
         };
         Update(value);
-        Loaded += (_, _) => { Expression.Focus(); Expression.SelectAll(); };
+        Loaded += (_, _) =>
+        {
+            Expression.Focus();
+            Expression.SelectAll();
+        };
         Unloaded += (_, _) => previewTimer.Stop();
     }
 
@@ -309,7 +313,11 @@ internal partial class ProgrammerCalculatorView : UserControl
             Clipboard.SetText(text);
             StatusText.Text = "已复制";
         }
-        catch (Exception error) { diagnostic(error.ToString()); StatusText.Text = "复制失败：" + error.Message; }
+        catch (Exception error)
+        {
+            diagnostic(error.ToString());
+            StatusText.Text = "复制失败：" + error.Message;
+        }
     }
     internal void RefreshPalette()
     {

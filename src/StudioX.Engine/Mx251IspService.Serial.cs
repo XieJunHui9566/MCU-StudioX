@@ -56,7 +56,15 @@ public sealed partial class Mx251IspService
             await JsonStore.WriteAsync(Path.Combine(Path.GetDirectoryName(prepared.ImagePath)!, "result.json"), report, CancellationToken.None);
             return report;
         }
-        catch (Exception error) { Event(new { stage = "session-failed", error = error.ToString() }); throw; }
+        catch (Exception error)
+        {
+            Event(new
+            {
+                stage = "session-failed",
+                error = error.ToString()
+            });
+            throw;
+        }
     }
 }
 

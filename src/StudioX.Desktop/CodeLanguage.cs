@@ -45,9 +45,12 @@ internal static class CodeLanguage
             ["Comment"] = dark ? "#7D8C79" : "#62735D",
             ["Keyword"] = dark ? "#CF8E6D" : "#9E4B16",
             ["Type"] = dark ? "#6FB7B2" : "#087A80",
+            ["TypeDefinition"] = dark ? "#60D6B3" : "#00705B",
+            ["Member"] = dark ? "#E4ACCE" : "#A13C72",
             ["Function"] = dark ? "#E2BF83" : "#795E26",
             ["Variable"] = dark ? "#A9C7E8" : "#235C91",
             ["Macro"] = dark ? "#C59DD8" : "#8551A3",
+            ["Preprocessor"] = dark ? "#7AA2F7" : "#245EC2",
             ["String"] = dark ? "#8FBC8F" : "#477D38",
             ["Number"] = dark ? "#6FB3CE" : "#176BA0",
             ["Punctuation"] = dark ? "#BCBEC4" : "#44474E"
@@ -103,7 +106,7 @@ internal static class CodeLanguage
         {
             rules.Add(Span("Comment", @"/\*", @"\*/", true), Span("Comment", "//", "$"),
                 Span("String", "\"", "\"", escapes: true));
-            rules.Add(Rule("Macro", @"^\s*\#[ \t]*[A-Za-z_]\w*"),
+            rules.Add(Rule("Preprocessor", @"^[ \t]*\#[ \t]*[A-Za-z_]\w*"),
                 Rule("Keyword", @"/(?:dts-v1|plugin|delete-node|delete-property|omit-if-no-ref|memreserve)/"),
                 Rule("Type", @"&[A-Za-z_][\w-]*"),
                 Rule("Function", @"\b[A-Za-z_][\w-]*(?=\s*:)"),
@@ -139,10 +142,17 @@ internal static class CodeLanguage
             }
             if (language is "C" or "C++")
             {
-                rules.Add(Rule("Macro", @"^\s*\#[ \t]*[A-Za-z_]\w*"));
+                rules.Add(Rule("Preprocessor", @"^[ \t]*\#[ \t]*[A-Za-z_]\w*"),
+                    Rule("Macro", @"(?<=^[ \t]*\#[ \t]*define[ \t]+)[A-Za-z_]\w*"),
+                    Rule("TypeDefinition", @"(?<=\b(?:struct|union|enum|class)[ \t]+)[A-Za-z_]\w*"));
                 Keywords("Keyword", "auto break case const constexpr continue default do else enum extern for goto if inline register restrict return sizeof static struct switch typedef union volatile while alignas alignof bool catch class delete explicit export false friend mutable namespace new noexcept nullptr operator private protected public reinterpret_cast static_assert static_cast template this throw true try typename using virtual");
                 Keywords("Type", "void char double float int long short signed unsigned _Bool _Complex");
-                rules.Add(Rule("Type", @"\b[A-Za-z_]\w*_t\b"));
+                Keywords("Keyword", "__code __data __idata __xdata __pdata __interrupt __using __at __reentrant __critical __naked __banked __nonbanked __far");
+                Keywords("Type", "__bit __sfr __sfr16 __sbit");
+                rules.Add(Rule("Type", @"\b[A-Za-z_]\w*(?:_t|TypeDef)\b"),
+                    Rule("Member", @"(?<=\.|->)[ \t]*[A-Za-z_]\w*(?!\w|[ \t]*\()"),
+                    Rule("Macro", @"\b[A-Z_][A-Z_0-9]*\b"),
+                    Rule("Function", @"\b[A-Za-z_]\w*(?=\s*\()"));
             }
             if (language == "Linker")
             {
@@ -161,7 +171,7 @@ internal static class CodeLanguage
                 rules.Add(Rule("Type", @"\b(?:x[0-9]+|[ast][0-9]+|zero|ra|sp|gp|tp)\b"), Rule("Keyword", @"\.[A-Za-z_]\w*"));
             }
             rules.Add(Rule("Number", @"\b(?:0[xX][\da-fA-F]+|0[bB][01]+|[0-9]+(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?)[uUlLfF]*\b"));
-            rules.Add(Rule("Function", @"\b[A-Za-z_]\w*(?=\s*\()"), Rule("Macro", @"\b[A-Z_][A-Z_0-9]*\b"), Rule("Variable", @"\b[A-Za-z_]\w*\b"));
+            rules.Add(Rule("Macro", @"\b[A-Z_][A-Z_0-9]*\b"), Rule("Function", @"\b[A-Za-z_]\w*(?=\s*\()"), Rule("Variable", @"\b[A-Za-z_]\w*\b"));
             rules.Add(Rule("Punctuation", @"[{}\[\]();,.+*/%=!&|<>?:~-]"));
         }
         using var reader = definition.CreateReader();

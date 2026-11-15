@@ -1,0 +1,13 @@
+{
+  "schema": 2,
+  "target": "STC32G12K128",
+  "model": "small",
+  "optimization": "speed",
+  "backend": "ordinary-wide",
+  "explicitAbi": true,
+  "standard": "sdcc11",
+  "runtime": "standard",
+  "defines": [
+    "CALL_MODEL=0"
+  ]
+}

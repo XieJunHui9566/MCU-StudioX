@@ -10,12 +10,12 @@ internal static class EspressifMemoryAnalyzer
         EspressifProjectSettings sdk, CancellationToken token)
     {
         var environment = await EspressifBuildEnvironment.CreateAsync(root, tools, sdk, token);
-        var nativeMap = EspressifNativePath.For(map);
+        var nativeMap = EspressifNativePath.ForProject(map);
         var arguments = sdk.Framework == "esp-idf"
             ? new[] { "-m", "esp_idf_size.ng", "--format", "json2", nativeMap }
             : new[] { PathBoundary.Resolve(environment["IDF_PATH"], "tools/idf_size.py"), "--json", nativeMap };
         var result = await new ProcessRunner().RunAsync(new(EspressifNativePath.For(tools.Tool("python")), arguments,
-            EspressifNativePath.For(root), TimeSpan.FromMinutes(2), environment,
+            EspressifNativePath.ForProject(root), TimeSpan.FromMinutes(2), environment,
             RemoveEnvironment: ToolsetEnvironment.AmbientVariables), token);
         // 厂商警告与 JSON 一并保留，即使解析失败也能检查原始工具输出。
         await File.WriteAllTextAsync(PathBoundary.Resolve(root, ".build/studiox-idf-size.log"),

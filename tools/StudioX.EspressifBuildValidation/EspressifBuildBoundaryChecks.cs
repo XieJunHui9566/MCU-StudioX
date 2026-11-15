@@ -62,7 +62,10 @@ internal static class EspressifBuildBoundaryChecks
             await competing;
             throw new InvalidOperationException("Expected concurrent build rejection");
         }
-        catch (StudioXException exception) when (exception.Code == "BUILD_BUSY") { Check(true, "Concurrent native operation rejected by build ownership gate"); }
+        catch (StudioXException exception) when (exception.Code == "BUILD_BUSY")
+        {
+            Check(true, "Concurrent native operation rejected by build ownership gate");
+        }
         await builds.SaveSettingsAsync(root, new());
         var resource = PathBoundary.Resolve(root, componentDirectory + "/stamp-resource.bin");
         await File.WriteAllBytesAsync(resource, [1, 2, 3, 4]);
@@ -82,7 +85,10 @@ internal static class EspressifBuildBoundaryChecks
             await flash.PreviewAsync(root, new(Port: "COM999"));
             throw new InvalidOperationException("Expected embedded asset modification rejection");
         }
-        catch (StudioXException exception) when (exception.Code == "ESP_FLASH_BUILD") { Check(true, "Changing only an embedded .bin resource invalidates the receipt without opening hardware"); }
+        catch (StudioXException exception) when (exception.Code == "ESP_FLASH_BUILD")
+        {
+            Check(true, "Changing only an embedded .bin resource invalidates the receipt without opening hardware");
+        }
         var external = Path.Combine(output, "external-include");
         Directory.CreateDirectory(external);
         await File.AppendAllTextAsync(componentCMake,

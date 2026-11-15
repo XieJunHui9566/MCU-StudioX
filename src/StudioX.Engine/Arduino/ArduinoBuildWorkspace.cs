@@ -7,27 +7,50 @@ internal sealed class ArduinoBuildWorkspace : IDisposable
 {
     private readonly string destination;
     private readonly string? staging;
+    private readonly string? artifactDestination;
+    public string? NativeArtifactsDirectory
+    {
+        get;
+    }
 
     public string NativeDirectory
     {
         get;
     }
 
-    public ArduinoBuildWorkspace(string data, string build, bool esp)
+    public ArduinoBuildWorkspace(string data, string build, bool esp, string? artifacts = null)
     {
         destination = build;
+        artifactDestination = artifacts;
         Directory.CreateDirectory(build);
-        if (!esp)
+        if (!esp && build.All(c => c < 127))
         {
             NativeDirectory = build;
+            NativeArtifactsDirectory = artifacts;
             return;
         }
         staging = PathBoundary.Resolve(data, "arduino/build-stage/" + Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(staging);
-        NativeDirectory = EspressifNativePath.For(staging);
+        Directory.CreateDirectory(Path.Combine(staging, "build"));
+        NativeDirectory = EspressifNativePath.For(Path.Combine(staging, "build"));
+        if (artifacts is not null)
+        {
+            Directory.CreateDirectory(Path.Combine(staging, "output"));
+            NativeArtifactsDirectory = EspressifNativePath.For(Path.Combine(staging, "output"));
+        }
     }
 
-    public Task PublishAsync(CancellationToken token) => staging is null ? Task.CompletedTask : ArduinoRuntime.CopyAsync(staging, destination, token);
+    public async Task PublishAsync(CancellationToken token)
+    {
+        if (staging is null)
+        {
+            return;
+        }
+        await ArduinoRuntime.CopyAsync(NativeDirectory, destination, token);
+        if (artifactDestination is not null)
+        {
+            await ArduinoRuntime.CopyAsync(NativeArtifactsDirectory!, artifactDestination, token);
+        }
+    }
 
     public void Dispose()
     {

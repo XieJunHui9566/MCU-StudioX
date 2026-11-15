@@ -15,9 +15,20 @@ public sealed partial class Mon51DebugSession
             await ReadSnapshotAsync(token);
             SetState(DebugState.Stopped, $"{space} 0x{address:X4} 已写入 {bytes.Length} 字节并回读核对");
         }
-        catch (StudioXException ex) when (ex.Code is "MON51_RANGE" or "MON51_WRITE_RANGE") { throw; }
-        catch (Exception ex) { SetState(DebugState.Faulted, "内存修改未完整确认：" + ex.Message); Output?.Invoke(ex.ToString()); throw; }
-        finally { gate.Release(); }
+        catch (StudioXException ex) when (ex.Code is "MON51_RANGE" or "MON51_WRITE_RANGE")
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            SetState(DebugState.Faulted, "内存修改未完整确认：" + ex.Message);
+            Output?.Invoke(ex.ToString());
+            throw;
+        }
+        finally
+        {
+            gate.Release();
+        }
     }
 
     public async Task SetRegisterAsync(string name, uint value, CancellationToken token = default)
@@ -84,9 +95,20 @@ public sealed partial class Mon51DebugSession
             }
             SetState(DebugState.Stopped, $"{normalized} 已修改并核对 · PC=0x{Pc:X4}");
         }
-        catch (StudioXException ex) when (ex.Code == "MON51_REGISTER") { throw; }
-        catch (Exception ex) { SetState(DebugState.Faulted, "寄存器修改未完整确认：" + ex.Message); Output?.Invoke(ex.ToString()); throw; }
-        finally { gate.Release(); }
+        catch (StudioXException ex) when (ex.Code == "MON51_REGISTER")
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            SetState(DebugState.Faulted, "寄存器修改未完整确认：" + ex.Message);
+            Output?.Invoke(ex.ToString());
+            throw;
+        }
+        finally
+        {
+            gate.Release();
+        }
     }
 
     public async Task SetVariableAsync(string expression, long value, CancellationToken token = default)
@@ -118,8 +140,19 @@ public sealed partial class Mon51DebugSession
             await ReadSnapshotAsync(token);
             SetState(DebugState.Stopped, expression + " 已修改并回读核对");
         }
-        catch (StudioXException ex) when (ex.Code is "MON51_VARIABLE" or "MON51_EXPRESSION" or "MON51_SOURCE_CHANGED" or "MON51_WRITE_RANGE" or "MON51_RANGE") { throw; }
-        catch (Exception ex) { SetState(DebugState.Faulted, "变量修改未完整确认：" + ex.Message); Output?.Invoke(ex.ToString()); throw; }
-        finally { gate.Release(); }
+        catch (StudioXException ex) when (ex.Code is "MON51_VARIABLE" or "MON51_EXPRESSION" or "MON51_SOURCE_CHANGED" or "MON51_WRITE_RANGE" or "MON51_RANGE")
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            SetState(DebugState.Faulted, "变量修改未完整确认：" + ex.Message);
+            Output?.Invoke(ex.ToString());
+            throw;
+        }
+        finally
+        {
+            gate.Release();
+        }
     }
 }

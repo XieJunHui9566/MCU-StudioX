@@ -161,7 +161,10 @@ public sealed partial class Ag32NativeBuildService(ToolsetCatalog catalog, strin
                     licensing.RemovePrivateRuntime(privateRuntime);
                 }
             }
-            finally { gate.Release(); }
+            finally
+            {
+                gate.Release();
+            }
         }
 
         async Task RunAsync(string executable, string[] arguments, string phase, Dictionary<string, string> environment)

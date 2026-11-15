@@ -63,7 +63,10 @@ public sealed class AnalysisLogWindow : Window
                 service.RecordAnalysisLog("查看语言分析日志：" + error);
                 LogText.Text = "日志读取失败，原始异常：\n" + error;
             }
-            finally { refresh.IsEnabled = true; }
+            finally
+            {
+                refresh.IsEnabled = true;
+            }
         };
         var copy = new Button { Content = "复制日志路径", MinWidth = 105, Margin = new Thickness(8, 0, 0, 0) };
         copy.Click += (_, _) => Clipboard.SetText(service.AnalysisLogPath);

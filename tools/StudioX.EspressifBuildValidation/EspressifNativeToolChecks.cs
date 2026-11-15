@@ -108,7 +108,10 @@ internal static class EspressifNativeToolChecks
             Console.WriteLine("PASS " + checks.Count + " native path and build checks.");
             return 0;
         }
-        finally { Environment.SetEnvironmentVariable("XTENSA_GNU_CONFIG", previous); }
+        finally
+        {
+            Environment.SetEnvironmentVariable("XTENSA_GNU_CONFIG", previous);
+        }
 
         static string Hash(string path) => Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(path)));
         void Check(bool passed, string message)

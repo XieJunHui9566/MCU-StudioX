@@ -76,7 +76,10 @@ public sealed class GitHubPackSyncService : IDisposable
             }
             return new(commit, upToDate, updates);
         }
-        finally { syncGate.Release(); }
+        finally
+        {
+            syncGate.Release();
+        }
     }
 
     public async Task<RemotePackSyncResult> SyncAsync(IProgress<RemotePackSyncProgress>? progress = null,
@@ -130,7 +133,10 @@ public sealed class GitHubPackSyncService : IDisposable
                     processed++;
                     progress?.Report(new(latest.Length, processed, entry.Path, "已导入", imported, skipped, failures.Count));
                 }
-                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                {
+                    throw;
+                }
                 catch (OperationCanceledException)
                 {
                     failures.Add(new(entry.Path, "下载或导入超时。"));
@@ -153,7 +159,10 @@ public sealed class GitHubPackSyncService : IDisposable
             }
             return new(commit, imported, skipped, failures);
         }
-        finally { syncGate.Release(); }
+        finally
+        {
+            syncGate.Release();
+        }
     }
 
     private async Task<RemotePackIndexEntry[]> GetPublishedEntriesAsync(string commit, CancellationToken token)
@@ -204,7 +213,10 @@ public sealed class GitHubPackSyncService : IDisposable
         {
             index = JsonSerializer.Deserialize<RemotePackIndex>(bytes, JsonStore.Options);
         }
-        catch (JsonException ex) { throw new StudioXException("PACK_REMOTE_INDEX", "GitHub 器件包目录不是有效 JSON：" + ex.Message); }
+        catch (JsonException ex)
+        {
+            throw new StudioXException("PACK_REMOTE_INDEX", "GitHub 器件包目录不是有效 JSON：" + ex.Message);
+        }
         if (index is not { FormatVersion: 1, Packs: { Count: > 0 and <= 4096 } })
         {
             throw new StudioXException("PACK_REMOTE_INDEX", "GitHub 器件包目录格式或包数量无效。");

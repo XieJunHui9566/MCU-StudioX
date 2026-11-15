@@ -102,7 +102,10 @@ public partial class MainWindow
             dialog.ShowDialog();
             await RefreshAiConfigurationAsync();
         }
-        catch (Exception ex) { Status.Text = "打开 AI 接口设置失败：" + ex.Message; }
+        catch (Exception ex)
+        {
+            Status.Text = "打开 AI 接口设置失败：" + ex.Message;
+        }
     }
 
     private void AiClose_Click(object sender, RoutedEventArgs e) => HideAiSidebar();
@@ -331,7 +334,7 @@ public partial class MainWindow
         AiPromptInput.Clear();
         var pendingBubble = AppendAiTranscript("你", prompt);
         StartAiActivity();
-        AiStatus.Text = "AI 正在处理；当前阶段与工具调用会显示在对话中。";
+        AiStatus.Text = "正在处理…";
         try
         {
             var mcpSession = await GetAiMcpSessionAsync(project, generation, cancellation.Token);
@@ -489,7 +492,7 @@ public partial class MainWindow
         }
         AiPromptInput.Clear();
         UpdateAiSteeringBanner();
-        AiStatus.Text = "已排队：当前模型响应和已开始的工具调用结束后会应用调整方向。";
+        AiStatus.Text = "已排队，当前调用结束后应用。";
     }
 
     private void AiSteeringRemove_Click(object sender, RoutedEventArgs e)
@@ -887,7 +890,7 @@ public partial class MainWindow
         AiCancelButton.Visibility = Visibility.Collapsed;
         RefreshAiConversationPicker();
         AiStatus.Text = projectDirectory is null
-            ? "打开工程后可以提问。工程文本会发送到所配置的 API 服务。"
+            ? "请先打开工程"
             : "正在读取当前工程的 AI 对话历史…";
         if (projectDirectory is { } project)
         {

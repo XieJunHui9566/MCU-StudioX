@@ -93,7 +93,10 @@ internal sealed class CustomServerMcpTools(McpSessionContext context) : StudioXM
             identities.Add(id, identity);
             return client;
         }
-        finally { clientGate.Release(); }
+        finally
+        {
+            clientGate.Release();
+        }
     }
 
     public async ValueTask DisposeAsync()
@@ -108,7 +111,10 @@ internal sealed class CustomServerMcpTools(McpSessionContext context) : StudioXM
                 {
                     await client.DisposeAsync().ConfigureAwait(false);
                 }
-                catch (Exception ex) { failures.Add(ex); }
+                catch (Exception ex)
+                {
+                    failures.Add(ex);
+                }
             }
             clients.Clear();
             identities.Clear();
@@ -117,6 +123,9 @@ internal sealed class CustomServerMcpTools(McpSessionContext context) : StudioXM
                 throw new AggregateException("自定义 MCP 清理失败。", failures);
             }
         }
-        finally { clientGate.Release(); }
+        finally
+        {
+            clientGate.Release();
+        }
     }
 }

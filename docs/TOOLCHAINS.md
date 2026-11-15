@@ -14,13 +14,11 @@ CH32V203 的 11 个型号使用现有 `wch.riscv/1.0.0`，独立包制作、CCT6
 | riscv.xpack / 1.0.0 | xpack-riscv-gcc-15.2.0 | xPack RISC-V GCC 15.2.0，xPack OpenOCD 0.12.0-7 |
 | wch.riscv / 1.0.0 | wch-gcc-12.2.0-v1.4 | MounRiver 沁恒 GCC 12.2.0 v1.4，WCH OpenOCD 0.11.0+dev（2026-08-25） |
 | stc.sdcc / 1.0.0 | sdcc-4.5.0-15242 | SDCC 4.5.0 MCS-51，CMake 4.4.0，Ninja 1.10.2；不含下载或调试工具 |
-| pc.mingw / 1.0.0 | mingw-gcc-13.1.0 | Windows x64 原生 GCC / G++ 13.1.0、binutils、MinGW-w64 11；供 LVGL PC 预览使用 |
 | espressif.idf / 5.5.4 | esp-idf | ESP-IDF 5.5.4，Espressif GCC esp-14.2.0_20260121，Python 3.11.2，CMake 3.30.2，Ninja 1.12.1 |
 | espressif.esp8266-rtos / 3.4.0 | esp8266-rtos | ESP8266 RTOS SDK v3.4，Xtensa LX106 GCC 8.4.0-esp-2020r3，Python 3.8.10；独立于 ESP-IDF |
 
 前四套 GCC 开发环境组件包含 CMake 4.4.0、Ninja 1.10.2 及匹配的 GDB、binutils、运行库、标准库、头文件、OpenOCD 脚本。STC 开发环境组件包含 SDCC、CMake、Ninja 及 SDCC 的 MCS-51 标准头文件和库，不包含 OpenOCD。AG32 使用厂商专用版本，不能直接替换为通用 RISC-V GCC/OpenOCD。
 
-`pc.mingw` 明确标记 `purpose: windows-native`，不能用来生成 MCU 固件。PC 预览默认使用此内置开发环境组件，无需用户安装 MinGW 或选择开发者机器路径。它复用已有 CMake/Ninja，保留 C/C++、LTO、Win32 头文件/导入库、启动文件和所需 DLL；剔除 GDB/Python、Fortran、文档、翻译与重复驱动入口。PC 工具和 MCU 工具分别解析和校验。
 
 AG32 可选的 Verilog 逻辑模式另需用户安装 **Quartus II Full 与 AGM Supra**，用于 Verilog 转换和逻辑镜像生成；它们不包含在上述 `agm.agrv` MCU 开发环境组件中。StudioX 目前提供工具位置与工程检查、构建和下载指引，实际综合及逻辑下载按厂商流程执行，见 [AG32 逻辑模式](AG32_LOGIC_MODE.md)。
 
@@ -79,13 +77,7 @@ STC 8 位资源也单独追加，不覆盖已有开发环境组件：
 
 输出为 `artifacts/tool-runtime/toolsets/stc.sdcc/1.0.0`。脚本先核对 SDCC 4.5.0 #15242、CMake 4.4.0、Ninja 1.10.2 及所需程序，再复制 SDCC 的 `bin/doc/include/lib` 和原始许可证，复用 `arm.gnu/1.0.0` 中的 CMake/Ninja，最后生成来源记录和逐文件 SHA-256 清单。SDCC 的 `non-free` 目录是与 STC 无关的 Microchip PIC 资料，不进入此开发环境组件。既有输出目录不会被覆盖。该开发环境组件仅用于构建，不提供 STC 下载或调试。
 
-Windows PC 工具单独准备：
-
-```powershell
-.\tools\Prepare-PcToolRuntime.ps1 -MinGWDirectory '<本机 MinGW GCC 13.1.0 根目录>'
-```
-
-固定输出 `artifacts/tool-runtime/toolsets/pc.mingw/1.0.0`。脚本先检查 GCC 版本、`x86_64-w64-mingw32` 目标、原始构建记录、每个保留 PE 的 DLL 依赖闭包；再以仅包含准备目录和 Windows 系统目录的 PATH 编译并运行 C17/C++17 + LTO 探针，验证标准库、异常和文件路径功能。编译器、头文件、库的宿主环境覆盖变量均清除。清单包含全目录 SHA-256 和原始来源指纹；重复执行只校验并复用同一内容，不覆盖不同内容的既有版本，不创建时间戳历史目录。发行脚本要求此包存在并由 Desktop 的现有 Content 规则复制到 `runtime/toolsets`，因此便携版和安装包都包含 PC 编译能力。许可与来源见 [PC 开发环境组件说明](../licenses/PC-Toolchain-NOTICE.md)。
+LVGL PC 预览已移除，新构建和分发不再要求或携带 `pc.mingw`。已有本地工具和许可证保留；`Prepare-PcToolRuntime.ps1` 仅用于历史开发证据复现。
 
 CH32V307 独立包：`python tools/New-Ch32V307Pack.py --sdk '<CH32V307/NoneOS>' --output artifacts/packs/CH32V307-0.1.1`。
 脚本先校验本地官方 ZIP 的固定哈希，再生成格式 1 包；输出目录必须不存在。发布时放到 `device-packs/WCH/`。

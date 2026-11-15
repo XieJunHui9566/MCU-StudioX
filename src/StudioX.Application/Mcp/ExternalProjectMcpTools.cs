@@ -101,7 +101,10 @@ internal sealed class ExternalProjectMcpTools(McpSessionContext context) : Studi
             RetireExternalBrowseCursor(browse);
             throw;
         }
-        finally { browse.Gate.Release(); }
+        finally
+        {
+            browse.Gate.Release();
+        }
     }
 
     [McpServerTool(Name = "external_project_find_files")]
@@ -204,7 +207,10 @@ internal sealed class ExternalProjectMcpTools(McpSessionContext context) : Studi
             RetireExternalBrowseCursor(browse);
             throw;
         }
-        finally { browse.Gate.Release(); }
+        finally
+        {
+            browse.Gate.Release();
+        }
     }
 
     [McpServerTool(Name = "external_project_read_file")]
@@ -408,7 +414,9 @@ internal sealed class ExternalProjectMcpTools(McpSessionContext context) : Studi
                     browse.PendingLines = new ExternalPendingLines(relative,
                         document.Text.Replace("\r\n", "\n", StringComparison.Ordinal).Split('\n'));
                 }
-                catch (StudioXException ex) when (ex.Code is "EDITOR_ENCODING" or "EDITOR_BINARY") { }
+                catch (StudioXException ex) when (ex.Code is "EDITOR_ENCODING" or "EDITOR_BINARY")
+                {
+                }
             }
             var skippedDepth = browse.SkippedDepth;
             var nextCursor = FinishExternalBrowsePage(browse);
@@ -430,7 +438,10 @@ internal sealed class ExternalProjectMcpTools(McpSessionContext context) : Studi
             RetireExternalBrowseCursor(browse);
             throw;
         }
-        finally { browse.Gate.Release(); }
+        finally
+        {
+            browse.Gate.Release();
+        }
     }
 
     private sealed class ExternalBrowseFrame(string relative, int depth, IEnumerator<FileSystemInfo> entries)
@@ -550,7 +561,10 @@ internal sealed class ExternalProjectMcpTools(McpSessionContext context) : Studi
                     removed.Dispose();
                 }
             }
-            finally { browse.Gate.Release(); }
+            finally
+            {
+                browse.Gate.Release();
+            }
         }
     }
 
@@ -644,7 +658,10 @@ internal sealed class ExternalProjectMcpTools(McpSessionContext context) : Studi
                     removed.Dispose();
                 }
             }
-            finally { browse.Gate.Release(); }
+            finally
+            {
+                browse.Gate.Release();
+            }
         }
     }
 

@@ -1,0 +1,7 @@
+cmake_minimum_required(VERSION 3.25)
+project(MX251_AI8051U_CALLBACK_APPLICATION NONE)
+include("${MX251_PROJECT_MODULE}")
+add_library(app INTERFACE)
+target_sources(app INTERFACE main.c uart_transport.c targets.c edges.c indirect.h ai8051u_test.h vectors.h mixed/callers.c mixed/callees.c mixed/wide-ordinary-calls.h native/callers.c native/callees.c native/wide-ordinary-calls.h)
+set_source_files_properties(main.c uart_transport.c PROPERTIES MX251_BACKEND legacy)
+mx251_firmware(app)

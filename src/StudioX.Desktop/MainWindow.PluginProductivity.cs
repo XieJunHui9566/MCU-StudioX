@@ -67,9 +67,17 @@ public partial class MainWindow
                 await workspace.PublishWorkspaceEventAsync(json.GetProperty("kind").GetString()!, payload, pluginWorkspaceCancellation?.Token ?? default);
             }
         }
-        catch (OperationCanceledException) { }
-        catch (Exception ex) { PluginManager.Log(ex.ToString()); }
-        finally { publishingDocumentEvents = false; }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (Exception ex)
+        {
+            PluginManager.Log(ex.ToString());
+        }
+        finally
+        {
+            publishingDocumentEvents = false;
+        }
     }
     private async Task ShowPluginSettingsAsync(string? pluginId = null)
     {

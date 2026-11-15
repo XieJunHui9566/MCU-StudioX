@@ -58,12 +58,18 @@ public sealed partial class ToolManagementService
                             Directory.Delete(parent, recursive: true);
                         }
                     }
-                    catch (Exception restoreFailure) { throw new AggregateException("移动后记录失败，回退也失败；工具仍在可恢复目录：" + destination, failure, restoreFailure); }
+                    catch (Exception restoreFailure)
+                    {
+                        throw new AggregateException("移动后记录失败，回退也失败；工具仍在可恢复目录：" + destination, failure, restoreFailure);
+                    }
                     throw;
                 }
                 return parent;
             }
-            finally { gate.Release(); }
+            finally
+            {
+                gate.Release();
+            }
         }, token);
 
     public Task RestoreAsync(ManagedToolVersion selected, CancellationToken token = default) => Task.Run(async () =>
@@ -114,11 +120,17 @@ public sealed partial class ToolManagementService
                 {
                     Directory.Move(target, source);
                 }
-                catch (Exception restoreFailure) { throw new AggregateException("恢复记录写入失败，回退也失败。", failure, restoreFailure); }
+                catch (Exception restoreFailure)
+                {
+                    throw new AggregateException("恢复记录写入失败，回退也失败。", failure, restoreFailure);
+                }
                 throw;
             }
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }, token);
 
     public Task PurgeAsync(ManagedToolVersion selected, string? currentProject, CancellationToken token = default)
@@ -206,7 +218,10 @@ public sealed partial class ToolManagementService
             File.Delete(recordPath);
             Directory.Delete(parent);
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }, token);
     private static void RequireReviewedDependencies(ManagedToolVersion selected, ManagedToolVersion fresh)
     {

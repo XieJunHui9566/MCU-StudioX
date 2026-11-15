@@ -123,7 +123,11 @@ public partial class MainWindow
                 HdlSchematic.MarkStale();
             }
         }
-        catch (Exception error) { Log("电路图快照检查失败：" + error); HdlSchematic.MarkStale(); }
+        catch (Exception error)
+        {
+            Log("电路图快照检查失败：" + error);
+            HdlSchematic.MarkStale();
+        }
     }
 
     private async Task NavigateHdlSourceAsync(string source, CancellationToken token)

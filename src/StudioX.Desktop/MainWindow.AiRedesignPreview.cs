@@ -35,7 +35,9 @@ public partial class MainWindow
         {
             ApplyTheme(theme);
             UpdateLayout();
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.Render);
             Render(this, Path.Combine(directory, "ai-redesign-" + theme.Id + ".png"));
             var settings = CreateAiSettingsWindow(new AiSettings());
             settings.ShowActivated = false;
@@ -44,12 +46,16 @@ public partial class MainWindow
             settings.Left = -20000;
             settings.Show();
             settings.UpdateLayout();
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.ApplicationIdle);
             Check(settings.McpPanel.IsEnabled, "production settings entry supplies the MCP service");
             Render(settings, Path.Combine(directory, "ai-settings-" + theme.Id + ".png"));
             settings.McpSettingsTab.IsSelected = true;
             settings.UpdateLayout();
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.Render);
             Render(settings, Path.Combine(directory, "ai-settings-mcp-" + theme.Id + ".png"));
             settings.Close();
         }
@@ -64,7 +70,9 @@ public partial class MainWindow
         };
         skills.Show();
         skills.UpdateLayout();
-        await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+        await Dispatcher.InvokeAsync(() =>
+        {
+        }, DispatcherPriority.Render);
         Render(skills, Path.Combine(directory, "ai-skills.dark.png"));
         skills.Close();
         var mcp = new AiMcpServerWindow(services.AiMcp)
@@ -77,7 +85,9 @@ public partial class MainWindow
         };
         mcp.Show();
         mcp.UpdateLayout();
-        await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+        await Dispatcher.InvokeAsync(() =>
+        {
+        }, DispatcherPriority.Render);
         Render(mcp, Path.Combine(directory, "ai-mcp.dark.png"));
         mcp.Close();
         await File.WriteAllLinesAsync(Path.Combine(directory, "ai-redesign-checks.txt"), checks.Select(name => "PASS " + name));

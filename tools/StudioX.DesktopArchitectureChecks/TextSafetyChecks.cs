@@ -13,7 +13,11 @@ internal static class TextSafetyChecks
             {
                 await operation();
             }
-            catch (StudioXException error) when (error.Code == code) { check(true, label); return; }
+            catch (StudioXException error) when (error.Code == code)
+            {
+                check(true, label);
+                return;
+            }
             throw new InvalidOperationException(label);
         }
         var root = Path.Combine(Path.GetTempPath(), "studiox-text-safety-" + Guid.NewGuid().ToString("N"));
@@ -49,7 +53,10 @@ internal static class TextSafetyChecks
                     EditorTextSafety.Validate("valid", stop.Token);
                     throw new InvalidOperationException("Cancellation ignored.");
                 }
-                catch (OperationCanceledException) { check(true, "正文检查响应取消"); }
+                catch (OperationCanceledException)
+                {
+                    check(true, "正文检查响应取消");
+                }
             }
             var snapshot = new EditorWorkspaceSnapshot(1, root, "main.unknown",
                 [new("main.unknown", complex, original, source.DiskHash, 65001, false, false, 0, 0, 0, 0, 0)], DateTimeOffset.UtcNow);
@@ -74,6 +81,9 @@ internal static class TextSafetyChecks
             EditorTextSafety.Validate("中文 a\u0301 👩‍👩‍👧‍👦\r\n" + new string('x', EditorTextSafety.MaximumLineLength));
             check(true, "普通组合字符、emoji 和单行长度边界仍可编辑");
         }
-        finally { Directory.Delete(root, true); }
+        finally
+        {
+            Directory.Delete(root, true);
+        }
     }
 }

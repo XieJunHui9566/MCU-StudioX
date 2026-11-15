@@ -26,10 +26,14 @@ public partial class MainWindow
         }
         async Task Settle()
         {
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ContextIdle);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.ContextIdle);
             RefreshDebugUi();
             UpdateLayout();
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ContextIdle);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.ContextIdle);
         }
         var root = Path.Combine(directory, "project");
         Directory.CreateDirectory(Path.Combine(root, ".studiox"));
@@ -170,7 +174,12 @@ public partial class MainWindow
             bitmap.CopyPixels(pixels, width * 4, 0);
             return pixels[(y * width + 12) * 4 + 3] > 128;
         }
-        finally { margin.ExecutionLine = execution; margin.SelectedLine = selected; margin.Refresh(); }
+        finally
+        {
+            margin.ExecutionLine = execution;
+            margin.SelectedLine = selected;
+            margin.Refresh();
+        }
     }
 
     public async Task CaptureMon51EntryAsync(string directory)
@@ -179,7 +188,9 @@ public partial class MainWindow
         {
             return;
         }
-        await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ContextIdle);
+        await Dispatcher.InvokeAsync(() =>
+        {
+        }, DispatcherPriority.ContextIdle);
         RefreshDebugUi();
         UpdateLayout();
         Directory.CreateDirectory(directory);

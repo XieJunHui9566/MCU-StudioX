@@ -27,7 +27,10 @@ internal static class SpecialBreakpointChecks
             {
                 await action();
             }
-            catch (Exception ex) when (ex is ArgumentException or StudioXException) { return; }
+            catch (Exception ex) when (ex is ArgumentException or StudioXException)
+            {
+                return;
+            }
             throw new InvalidOperationException("Expected invalid breakpoint options to be rejected.");
         }
         var file = F407DebugExample.RelativeFile;
@@ -54,13 +57,21 @@ internal static class SpecialBreakpointChecks
         Check(DebugExpression.Parse("0xff ^ 0x0f").Evaluate(Lookup) == 240 && DebugExpression.Parse("!0 + -2").Evaluate(Lookup) == -1, "Bitwise/unary");
         foreach (var expression in new[] { "app_counter=3", "++app_counter", "function()", "x;quit", "app_counter--", "*ptr", "app_counter &&", "1(2)" })
         {
-            await Reject(() => { DebugExpression.Parse(expression); return Task.CompletedTask; });
+            await Reject(() =>
+            {
+                DebugExpression.Parse(expression);
+                return Task.CompletedTask;
+            });
         }
         var template = DebugLogTemplate.Parse("{{计数}}={app_counter}, next={app_counter+1}");
         Check(template.Count(x => x.Expression) == 2 && template[0].Text == "{计数}=", "Template escaped braces");
         foreach (var invalid in new[] { "{", "value={}", "x={call()}", "x={a=4}", "bad}\n" })
         {
-            await Reject(() => { DebugLogTemplate.Parse(invalid); return Task.CompletedTask; });
+            await Reject(() =>
+            {
+                DebugLogTemplate.Parse(invalid);
+                return Task.CompletedTask;
+            });
         }
         pass("Read-only expressions: precedence, bitwise/logical operators, short circuit, side-effect rejection, log brace validation");
 
@@ -200,6 +211,10 @@ internal static class SpecialBreakpointChecks
             Check(session.Breakpoints.Single().LogMessage == "running={app_counter}" && session.Breakpoints.Single().HitCount == 0, "Rule persistence/runtime count separation");
             pass("Pause wins over log auto-continue; rules persist and runtime counters reset across sessions");
         }
-        finally { session.BreakpointLog -= OnLog; await session.StopAsync(); }
+        finally
+        {
+            session.BreakpointLog -= OnLog;
+            await session.StopAsync();
+        }
     }
 }

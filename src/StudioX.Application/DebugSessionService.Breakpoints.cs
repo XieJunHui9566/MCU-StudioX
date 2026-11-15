@@ -123,7 +123,10 @@ public sealed partial class DebugSessionService
             await SaveAsync(token);
             Changed?.Invoke();
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
     public async Task RunToCursorAsync(string file, int line, CancellationToken token = default)
     {
@@ -165,7 +168,10 @@ public sealed partial class DebugSessionService
                 throw;
             }
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
     private async Task RemoveCursorBreakpointsAsync()
     {

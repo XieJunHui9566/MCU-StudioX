@@ -14,6 +14,12 @@ internal static class Program
     [STAThread]
     private static void Main(string[] args)
     {
+        if (args is ["--ui-style"])
+        {
+            UiStyleChecks.Run(Check);
+            Console.WriteLine($"PASS {checks} shared UI style checks.");
+            return;
+        }
         if (args is ["--unknown-file-child", var root, var path, var expected])
         {
             Environment.ExitCode = UnknownFileChecks.RunChild(root, path, expected);
@@ -58,7 +64,9 @@ internal static class Program
         var changes = 0;
         session.Changed = (_, _) => changes++;
         session.Buffer.TextChanged += session.Changed;
-        var synchronizer = new EditorDocumentSynchronizer(_ => true, () => captures++, _ => { }, _ => restores++);
+        var synchronizer = new EditorDocumentSynchronizer(_ => true, () => captures++, _ =>
+        {
+        }, _ => restores++);
         var disk = source with
         {
             Text = "new",
@@ -91,7 +99,9 @@ internal static class Program
         var items = new StackPanel();
         var transcript = new ScrollViewer { Content = items };
         var completed = 0;
-        var activity = new AiActivityPresenter(items, transcript, () => { }, _ => completed++);
+        var activity = new AiActivityPresenter(items, transcript, () =>
+        {
+        }, _ => completed++);
         activity.Start();
         var firstProgress = activity.Progress!;
         firstProgress.Report(new(AiAgentProgressKind.ReasoningDelta, 1, Text: "received"));
@@ -135,7 +145,13 @@ internal static class Program
         var transcript = new ScrollViewer { Content = items };
         var current = true;
         var approvals = new AiApprovalPresenter(owner, items, transcript, () => Task.CompletedTask,
-            (_, _) => current, () => false, _ => { }, _ => { }, () => { });
+            (_, _) => current, () => false, _ =>
+            {
+            }, _ =>
+                    {
+                    }, () =>
+                {
+                });
         var request = new StudioXMcpApprovalRequest("project", "project_edit_file", "write file", StudioXMcpPermission.FileWrite);
         var allowTask = approvals.RequestAsync(request, 1, CancellationToken.None);
         Check(items.Children.Count == 1, "待授权时显示核对卡");

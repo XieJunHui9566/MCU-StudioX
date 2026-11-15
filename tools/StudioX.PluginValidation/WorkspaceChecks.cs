@@ -69,7 +69,14 @@ internal static class WorkspaceChecks
             "editor paging preserves Unicode surrogate pair at 16000-character boundary");
         checks.Check(firstPage.GetProperty("contentHash").GetString() != edited.GetProperty("contentHash").GetString(),
             "unsaved buffer changes produce new contentHash independently of diskHash");
-        await checks.RejectAsync(async () => { _ = await broker.CallAsync(pluginId, "editor_read", JsonSerializer.SerializeToElement(new { path = "src/main.c", offset = 16000 })); },
+        await checks.RejectAsync(async () =>
+        {
+            _ = await broker.CallAsync(pluginId, "editor_read", JsonSerializer.SerializeToElement(new
+            {
+                path = "src/main.c",
+                offset = 16000
+            }));
+        },
             "editor paging offset inside surrogate pair rejected", "PLUGIN_EDITOR_OFFSET");
         _ = await broker.CallAsync(pluginId, "editor_open", JsonSerializer.SerializeToElement(new
         {
@@ -78,9 +85,20 @@ internal static class WorkspaceChecks
             column = 7
         }));
         checks.Check(editor.LastLocation == ("src/main.c", 3, 7), "editor_open routes validated line and column to desktop abstraction");
-        await checks.RejectAsync(async () => { _ = await broker.CallAsync(pluginId, "editor_read", JsonSerializer.SerializeToElement(new { path = "../secret.c" })); },
+        await checks.RejectAsync(async () =>
+        {
+            _ = await broker.CallAsync(pluginId, "editor_read", JsonSerializer.SerializeToElement(new
+            {
+                path = "../secret.c"
+            }));
+        },
             "editor path escape rejected", "PLUGIN_EDITOR_PATH", "PATH_UNSAFE");
-        await checks.RejectAsync(async () => { _ = await broker.CallAsync(pluginId, "plugin_recursive", JsonSerializer.SerializeToElement(new { })); },
+        await checks.RejectAsync(async () =>
+        {
+            _ = await broker.CallAsync(pluginId, "plugin_recursive", JsonSerializer.SerializeToElement(new
+            {
+            }));
+        },
             "broker rejects recursive plugin tools", "PLUGIN_HOST_TOOL");
 
         var disk = await services.Files.ReadAsync(project, "src/main.c");
@@ -90,11 +108,17 @@ internal static class WorkspaceChecks
             originalSha256 = disk.DiskHash,
             content = "int changed;\n"
         });
-        await checks.RejectAsync(async () => { _ = await broker.CallAsync(pluginId, "project_edit_file", writeArguments); },
+        await checks.RejectAsync(async () =>
+        {
+            _ = await broker.CallAsync(pluginId, "project_edit_file", writeArguments);
+        },
             "plugin host writes expose stable MCP_APPROVAL_DENIED", "MCP_APPROVAL_DENIED");
         checks.Check(await File.ReadAllTextAsync(mainPath) == diskText, "approval refusal preserves source");
         dirty = true;
-        await checks.RejectAsync(async () => { _ = await broker.CallAsync(pluginId, "project_edit_file", writeArguments); },
+        await checks.RejectAsync(async () =>
+        {
+            _ = await broker.CallAsync(pluginId, "project_edit_file", writeArguments);
+        },
             "dirty editor exposes stable MCP_UNSAVED_FILES before approval", "MCP_UNSAVED_FILES");
         checks.Check(await File.ReadAllTextAsync(mainPath) == diskText, "dirty editor refusal preserves source");
         dirty = false;
@@ -110,7 +134,12 @@ internal static class WorkspaceChecks
             using var disabled = JsonDocument.Parse(await mcp.CallToolAsync(tool.Name, "{}"));
             checks.Check(disabled.RootElement.GetRawText().Contains("PLUGIN_INACTIVE", StringComparison.Ordinal),
                 "disable revokes frozen Agent tool execution immediately");
-            await checks.RejectAsync(async () => { _ = await workspace.InvokeAsync(pluginId, "command", "refresh", JsonSerializer.SerializeToElement(new { })); },
+            await checks.RejectAsync(async () =>
+            {
+                _ = await workspace.InvokeAsync(pluginId, "command", "refresh", JsonSerializer.SerializeToElement(new
+                {
+                }));
+            },
                 "disable stops every existing workspace session", "PLUGIN_INACTIVE");
         }
         await services.PluginManager.SetEnabledAsync(pluginId, true);

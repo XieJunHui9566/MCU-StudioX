@@ -4,13 +4,23 @@ using StudioX.Engine;
 using StudioX.Foundation;
 using StudioX.Packages;
 
-if (args.Length != 2) { throw new ArgumentException("Usage: StartupValidation <user-data-directory> <new-output-directory>"); }
+if (args.Length != 2)
+{
+    throw new ArgumentException("Usage: StartupValidation <user-data-directory> <new-output-directory>");
+}
 var data = Path.GetFullPath(args[0]);
 var output = Path.GetFullPath(args[1]);
-if (Directory.Exists(output)) { throw new ArgumentException("Output must be a new directory."); }
+if (Directory.Exists(output))
+{
+    throw new ArgumentException("Output must be a new directory.");
+}
 Directory.CreateDirectory(output);
 var results = new List<string>();
-void Pass(string text) { results.Add(text); Console.WriteLine(text); }
+void Pass(string text)
+{
+    results.Add(text);
+    Console.WriteLine(text);
+}
 
 // 真实用户目录只读：分别测量记录读取与选择器目录，不访问历史工程或修改器件包。
 var clock = Stopwatch.StartNew();
@@ -57,7 +67,9 @@ async Task RejectCreate(string name)
         await projects.CreateAsync(selection, device.Id, "bare", "test_project", destination);
         throw new InvalidOperationException("Damaged pack accepted: " + name);
     }
-    catch (StudioXException ex) when (ex.Code == "PACK_HASH") { }
+    catch (StudioXException ex) when (ex.Code == "PACK_HASH")
+    {
+    }
     if (Directory.Exists(destination) || Directory.EnumerateDirectories(output, ".studiox-create-*").Any())
     {
         throw new InvalidOperationException("Failed verification left project files behind.");
@@ -89,7 +101,10 @@ try
     await repository.ListCatalogAsync();
     throw new InvalidOperationException("Changed manifest accepted.");
 }
-catch (StudioXException ex) when (ex.Code == "PACK_HASH") { Pass("PASS: changed catalog manifest rejected"); }
+catch (StudioXException ex) when (ex.Code == "PACK_HASH")
+{
+    Pass("PASS: changed catalog manifest rejected");
+}
 await File.WriteAllBytesAsync(manifestPath, originalManifest);
 try
 {
@@ -99,7 +114,10 @@ try
     });
     throw new InvalidOperationException("Stale selection accepted.");
 }
-catch (StudioXException ex) when (ex.Code == "PACK_CHANGED") { Pass("PASS: stale selection rejected"); }
+catch (StudioXException ex) when (ex.Code == "PACK_CHANGED")
+{
+    Pass("PASS: stale selection rejected");
+}
 using var cancelled = new CancellationTokenSource();
 cancelled.Cancel();
 try
@@ -107,13 +125,19 @@ try
     await repository.ListCatalogAsync(cancelled.Token);
     throw new InvalidOperationException("Cancellation ignored.");
 }
-catch (OperationCanceledException) { Pass("PASS: catalog cancellation"); }
+catch (OperationCanceledException)
+{
+    Pass("PASS: catalog cancellation");
+}
 try
 {
     await PackRepository.VerifyAsync(selection, cancelled.Token);
     throw new InvalidOperationException("Cancellation ignored.");
 }
-catch (OperationCanceledException) { Pass("PASS: verification cancellation"); }
+catch (OperationCanceledException)
+{
+    Pass("PASS: verification cancellation");
+}
 
 // 首次读取只访问记录文件；随后在后台清理确认已删除的本地工程。
 var isolatedHistory = new RecentProjectService(Path.Combine(output, "user-data"));
@@ -122,7 +146,10 @@ var unknownNetworkProject = @"\\studiox-unavailable\share\missing-project";
 await isolatedHistory.RememberAsync("valid", validProject);
 await isolatedHistory.RememberAsync("missing", missingProject);
 await isolatedHistory.RememberAsync("network", unknownNetworkProject);
-if ((await isolatedHistory.LoadAsync()).Count != 3) { throw new InvalidOperationException("Recent list probed projects during the initial read."); }
+if ((await isolatedHistory.LoadAsync()).Count != 3)
+{
+    throw new InvalidOperationException("Recent list probed projects during the initial read.");
+}
 Pass("PASS: initial recent read is independent of project availability");
 var pruned = await isolatedHistory.PruneMissingLocalAsync();
 if (pruned.Count != 2 || !pruned.Any(project => project.Name == "valid") || !pruned.Any(project => project.Name == "network") ||

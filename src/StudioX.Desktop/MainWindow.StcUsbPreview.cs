@@ -56,9 +56,13 @@ public partial class MainWindow
                 Check(!TrySelectedStcIspSettings(out _, out var error) && error.Contains("24 MHz", StringComparison.Ordinal), theme.Id + ": unsupported USB frequency explained inline");
                 StcClockFrequencyBox.Text = "24";
                 FocusStcSettings();
-                await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ContextIdle);
+                await Dispatcher.InvokeAsync(() =>
+                {
+                }, DispatcherPriority.ContextIdle);
                 StcIspPanel.BringIntoView();
-                await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ContextIdle);
+                await Dispatcher.InvokeAsync(() =>
+                {
+                }, DispatcherPriority.ContextIdle);
                 UpdateLayout();
                 Check(StcUsbHelp.IsVisible && StcDownloadModePicker.IsVisible, theme.Id + ": actual settings rendered");
                 Render(this, Path.Combine(directory, "usb-" + theme.Id + ".png"));

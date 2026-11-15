@@ -43,7 +43,10 @@ public sealed partial class CodeIntelligenceService
             var response = await connection!.RequestAsync(start is null ? "textDocument/formatting" : "textDocument/rangeFormatting", request, token).ConfigureAwait(false);
             return response.ValueKind == JsonValueKind.Array ? PlanEdits(buffer, response) : [];
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
 
     public async Task<IReadOnlyList<CodeActionPlan>> QuickFixesAsync(WorkspaceBufferSnapshot buffer, int offset,
@@ -125,7 +128,10 @@ public sealed partial class CodeIntelligenceService
             }
             return result;
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
 
     private static object LspPosition(CodePosition position) => new { line = position.Line, character = position.Character };
@@ -197,6 +203,9 @@ public sealed partial class CodeIntelligenceService
             }
             return result;
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
 }

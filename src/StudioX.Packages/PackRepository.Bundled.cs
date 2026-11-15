@@ -27,8 +27,14 @@ public sealed partial class PackRepository
         {
             entries = await JsonStore.ReadAsync<BundledPackIndexEntry[]>(indexPath, cancellationToken);
         }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
-        catch (Exception ex) { return new(0, 0, [new("index.json", ex.Message)]); }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            return new(0, 0, [new("index.json", ex.Message)]);
+        }
 
         var installed = (await ListCatalogAsync(cancellationToken)).ToList();
         var known = installed.Select(pack => (pack.Manifest.Id, pack.Manifest.Version)).ToHashSet();
@@ -61,8 +67,14 @@ public sealed partial class PackRepository
                 _ = PathBoundary.Resolve(bundledRoot, entry.File);
                 validEntries.Add(entry);
             }
-            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
-            catch (Exception ex) { failures.Add(new(name, ex.Message)); }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                failures.Add(new(name, ex.Message));
+            }
         }
 
         // 索引顺序不是版本顺序；先安装新版才能判断旧版是否还提供独有器件或模板。
@@ -117,7 +129,10 @@ public sealed partial class PackRepository
                             await VerifyAsync(candidate, cancellationToken);
                             verifiedRoots.Add(candidate.RootDirectory);
                         }
-                        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
+                        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                        {
+                            throw;
+                        }
                         catch (Exception ex)
                         {
                             // 损坏的新包不能阻止可用旧包恢复；保留原始错误，且每轮只报告一次。
@@ -140,8 +155,14 @@ public sealed partial class PackRepository
                 verifiedRoots.Add(pack.RootDirectory);
                 imported++;
             }
-            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
-            catch (Exception ex) { failures.Add(new(entry.File!, ex.Message)); }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                failures.Add(new(entry.File!, ex.Message));
+            }
         }
         return new(imported, skipped, failures);
     }

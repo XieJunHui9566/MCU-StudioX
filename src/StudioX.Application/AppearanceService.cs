@@ -86,7 +86,13 @@ public sealed class AppearanceService(string dataDirectory)
             }
             File.Move(temporary, target, overwrite: false);
         }
-        finally { if (File.Exists(temporary)) { File.Delete(temporary); } }
+        finally
+        {
+            if (File.Exists(temporary))
+            {
+                File.Delete(temporary);
+            }
+        }
         return asset;
     }
 }

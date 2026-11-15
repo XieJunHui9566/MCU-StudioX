@@ -134,14 +134,24 @@ internal static class F407Acceptance
                     await peripherals.WriteAsync(stale);
                     throw new InvalidOperationException("Expected stale write rejection");
                 }
-                catch (StudioXException e) when (e.Code == "DEBUG_STATE") { Check(true, "resume rejects stale prepared peripheral write before mutation"); }
+                catch (StudioXException e) when (e.Code == "DEBUG_STATE")
+                {
+                    Check(true, "resume rejects stale prepared peripheral write before mutation");
+                }
                 await JsonStore.WriteAsync(Path.Combine(root, "stepped.json"), debug.Snapshot);
             }
-            finally { await debug.StopAsync(); }
+            finally
+            {
+                await debug.StopAsync();
+            }
             await File.WriteAllTextAsync(Path.Combine(root, "debug-log-path.txt"), prep.LogPath);
             completed = true;
         }
-        catch (Exception e) { await File.WriteAllTextAsync(Path.Combine(root, "error.txt"), e.ToString()); throw; }
+        catch (Exception e)
+        {
+            await File.WriteAllTextAsync(Path.Combine(root, "error.txt"), e.ToString());
+            throw;
+        }
         finally
         {
             if (mutationStarted)

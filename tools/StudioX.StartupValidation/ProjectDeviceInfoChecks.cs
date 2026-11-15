@@ -49,6 +49,9 @@ internal static class ProjectDeviceInfoChecks
             Check(cube.TemplateName == "STM32CubeMX 生成工程" && cube.PackName == "未使用 .mcupack" && cube.Notice == "");
             pass("PASS: project device/template details use exact local metadata, never modify it; missing/malformed/version-mismatched metadata and CubeMX imports display accurately");
         }
-        finally { await File.WriteAllBytesAsync(path, original); }
+        finally
+        {
+            await File.WriteAllBytesAsync(path, original);
+        }
     }
 }

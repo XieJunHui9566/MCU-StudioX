@@ -9,8 +9,14 @@ using System.Text.RegularExpressions;
 // 离线真实编译矩阵：只解析 OpenOCD 配置，绝不 init/连接硬件。
 // args: toolsets-root output-directory pack [device1,device2,...]
 Console.OutputEncoding = Encoding.UTF8;
-if (args is ["--language", var runtime, var projects]) { return await LanguageChecks.RunAsync(runtime, projects); }
-if (args is ["--keil-language", var keilRuntime, var keilProjects]) { return await LanguageChecks.KeilAsync(keilRuntime, keilProjects); }
+if (args is ["--language", var runtime, var projects])
+{
+    return await LanguageChecks.RunAsync(runtime, projects);
+}
+if (args is ["--keil-language", var keilRuntime, var keilProjects])
+{
+    return await LanguageChecks.KeilAsync(keilRuntime, keilProjects);
+}
 var root = Path.GetFullPath(args[1]);
 Directory.CreateDirectory(root);
 var pack = await new PackRepository(Path.Combine(root, "repository")).ImportAsync(Path.GetFullPath(args[2]));
@@ -21,7 +27,10 @@ var requested = args.Length > 3 ? args[3].Split(',').ToHashSet(StringComparer.Or
 // 每种启动文件、SPL 宏、系统频率组合选择最小 Flash/RAM 器件，覆盖最严格的内存上限。
 var selected = pack.Manifest.Devices.GroupBy(d => string.Join('|', d.Sources) + string.Join('|', d.Templates.SelectMany(t => t.Build!.Defines)))
     .Select(g => g.OrderBy(d => d.FlashBytes).ThenBy(d => d.RamBytes).First()).ToArray();
-if (requested is not null) { selected = pack.Manifest.Devices.Where(d => requested.Contains(d.Id)).ToArray(); }
+if (requested is not null)
+{
+    selected = pack.Manifest.Devices.Where(d => requested.Contains(d.Id)).ToArray();
+}
 var results = new List<object>();
 var failures = 0;
 foreach (var device in selected)
@@ -130,4 +139,10 @@ return failures == 0 ? 0 : 1;
 
 async Task<ProcessResult> Run(string role, string[] arguments, string cwd) => await runner.RunAsync(new(tools.Tool(role), arguments, cwd,
     TimeSpan.FromMinutes(3), environment, RemoveEnvironment: ToolsetEnvironment.AmbientVariables));
-static void Check(bool value, string message) { if (!value) { throw new InvalidOperationException(message); } }
+static void Check(bool value, string message)
+{
+    if (!value)
+    {
+        throw new InvalidOperationException(message);
+    }
+}

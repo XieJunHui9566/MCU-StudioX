@@ -92,8 +92,6 @@
   <Folder
     Name="/workflow-validation/">
     <Project
-      Path="tools/StudioX.StcTimingValidation/StudioX.StcTimingValidation.csproj" />
-    <Project
       Path="tools/StudioX.Mon51Validation/StudioX.Mon51Validation.csproj" />
     <Project
       Path="tools/StudioX.SourceRegistrationValidation/StudioX.SourceRegistrationValidation.csproj" />

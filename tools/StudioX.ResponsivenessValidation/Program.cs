@@ -7,6 +7,11 @@ internal static class Program
     [STAThread]
     private static int Main(string[] args)
     {
+        if (args.FirstOrDefault(value => value.StartsWith("--compile-commands-dir=", StringComparison.Ordinal)) is { } cache)
+        {
+            LanguagePipeChecks.Child(cache["--compile-commands-dir=".Length..]);
+            return 0;
+        }
         if (args is ["--child", var mode])
         {
             RunChild(mode);
@@ -14,9 +19,10 @@ internal static class Program
         }
         var output = Path.GetFullPath(args.FirstOrDefault() ?? ".artifacts/responsiveness-validation");
         Directory.CreateDirectory(output);
-        var results = new List<CheckResult> { OutputChecks.Run() };
+        var results = new List<CheckResult> { OutputChecks.Run(), SourceAuditChecks.Positions(), SourceAuditChecks.SearchCancellation() };
         SynchronizationContext.SetSynchronizationContext(null);
         results.AddRange(DebuggerPipeChecks.RunAsync(output).GetAwaiter().GetResult());
+        results.AddRange(LanguagePipeChecks.RunAsync(output).GetAwaiter().GetResult());
         File.WriteAllText(Path.Combine(output, "result.json"), JsonSerializer.Serialize(new
         {
             hardware = false,

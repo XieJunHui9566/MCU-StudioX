@@ -37,11 +37,11 @@
           Foreground="{DynamicResource Muted}"
           TextWrapping="Wrap" />
         <TextBlock
-          Text="① 启动实机调试  →  ② 暂停时添加全局变量  →  ③ 开始采集，再点击调试工具栏的运行"
+          Text="暂停调试后添加变量，再开始采集。"
           TextWrapping="Wrap"
           Margin="0,5,0,0" />
         <TextBlock
-          Text="通过调试探针读取 SRAM，无需串口或固件输出。运行中读取需芯片/探针支持；时间为主机读回时间，多通道按顺序读取。"
+          Text="主机读取时间；运行中采集需芯片与探针支持。"
           Foreground="{DynamicResource Muted}"
           TextWrapping="Wrap" />
       </StackPanel>
@@ -202,7 +202,7 @@
           MaxHeight="70"
           ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}" />
         <TextBlock
-          Text="滚轮平移 · Ctrl+滚轮缩放时间 · Ctrl+Shift+滚轮缩放数值 · 拖动平移 · 双击恢复。停止采集不会暂停程序。"
+          Text="Ctrl+滚轮缩放 · 拖动平移 · 双击复位；停止采集不暂停程序。"
           Foreground="{DynamicResource Muted}"
           TextWrapping="Wrap" />
       </StackPanel>

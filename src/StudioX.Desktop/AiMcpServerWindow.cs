@@ -109,7 +109,10 @@ internal sealed class AiMcpServerWindow : Window
                 Server = Read();
                 DialogResult = true;
             }
-            catch (Exception ex) { status.Text = ex.Message; }
+            catch (Exception ex)
+            {
+                status.Text = ex.Message;
+            }
         };
         test.Click += async (_, _) =>
         {
@@ -126,9 +129,24 @@ internal sealed class AiMcpServerWindow : Window
                     status.Text = $"连接成功，共 {tools.Count} 个工具。";
                 }
             }
-            catch (Exception ex) { if (!lifetime.IsCancellationRequested) { status.Text = $"连接失败（{ex.GetType().Name}）；请检查地址、凭据、服务状态。"; } }
-            finally { if (!lifetime.IsCancellationRequested) { test.IsEnabled = save.IsEnabled = true; } }
+            catch (Exception ex)
+            {
+                if (!lifetime.IsCancellationRequested)
+                {
+                    status.Text = $"连接失败（{ex.GetType().Name}）；请检查地址、凭据、服务状态。";
+                }
+            }
+            finally
+            {
+                if (!lifetime.IsCancellationRequested)
+                {
+                    test.IsEnabled = save.IsEnabled = true;
+                }
+            }
         };
-        Closed += (_, _) => { lifetime.Cancel(); };
+        Closed += (_, _) =>
+        {
+            lifetime.Cancel();
+        };
     }
 }

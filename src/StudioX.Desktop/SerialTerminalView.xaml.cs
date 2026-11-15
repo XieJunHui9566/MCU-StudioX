@@ -57,9 +57,23 @@ public partial class SerialTerminalView : UserControl
             }
         };
         refresh.Tick += async (_, _) => await PaintAsync();
-        repeat.Tick += async (_, _) => { if (!sending) { await SendAsync(); } };
+        repeat.Tick += async (_, _) =>
+        {
+            if (!sending)
+            {
+                await SendAsync();
+            }
+        };
         Loaded += async (_, _) => await InitializeAsync();
-        IsVisibleChanged += async (_, _) => { if (IsVisible) { await InitializeAsync(); renderedVersion = -1; await PaintAsync(); } };
+        IsVisibleChanged += async (_, _) =>
+        {
+            if (IsVisible)
+            {
+                await InitializeAsync();
+                renderedVersion = -1;
+                await PaintAsync();
+            }
+        };
     }
     // 原生滚轮按鼠标所在区域处理，发送框保持焦点时也能滚动接收区；WPF 事件作为后备入口。
     internal bool HandleReceiveMouseWheel(DependencyObject? hit, int delta, bool control)
@@ -149,7 +163,10 @@ public partial class SerialTerminalView : UserControl
             UpdateHistory();
             await RefreshPortsAsync(c.PortName);
         }
-        catch (Exception ex) { ShowError(ex); }
+        catch (Exception ex)
+        {
+            ShowError(ex);
+        }
         ready = true;
         UpdateFlow();
         await ChangeDisplayAsync();
@@ -175,7 +192,10 @@ public partial class SerialTerminalView : UserControl
         {
             await RefreshPortsAsync();
         }
-        catch (Exception ex) { ShowError(ex); }
+        catch (Exception ex)
+        {
+            ShowError(ex);
+        }
     }
     private async void Connect_Click(object sender, RoutedEventArgs e)
     {
@@ -200,8 +220,16 @@ public partial class SerialTerminalView : UserControl
                 Notice.Text = "已连接，发送按钮可向设备写入数据。";
             }
         }
-        catch (Exception ex) { ShowError(ex); }
-        finally { busy = false; ConnectButton.IsEnabled = true; await PaintAsync(); }
+        catch (Exception ex)
+        {
+            ShowError(ex);
+        }
+        finally
+        {
+            busy = false;
+            ConnectButton.IsEnabled = true;
+            await PaintAsync();
+        }
     }
     private async Task SavePreferencesAsync()
     {
@@ -221,7 +249,10 @@ public partial class SerialTerminalView : UserControl
                 await previous;
                 await service.SavePreferencesAsync(prefs);
             }
-            catch (Exception ex) { ShowError(ex); }
+            catch (Exception ex)
+            {
+                ShowError(ex);
+            }
         }
     }
     private async Task PaintAsync()
@@ -291,8 +322,14 @@ public partial class SerialTerminalView : UserControl
                 Notice.Text = $"显示保留最近 2000 行，已淘汰 {snapshot.TrimmedLines:N0} 行；原始缓存最多 2 MiB。";
             }
         }
-        catch (Exception ex) { ShowError(ex); }
-        finally { painting = false; }
+        catch (Exception ex)
+        {
+            ShowError(ex);
+        }
+        finally
+        {
+            painting = false;
+        }
     }
     private async Task ChangeDisplayAsync()
     {
@@ -315,7 +352,10 @@ public partial class SerialTerminalView : UserControl
                 renderedVersion = -1;
                 await PaintAsync();
             }
-            catch (Exception ex) { ShowError(ex); }
+            catch (Exception ex)
+            {
+                ShowError(ex);
+            }
         }
     }
     private async void Display_Changed(object sender, SelectionChangedEventArgs e) => await ChangeDisplayAsync();
@@ -342,7 +382,10 @@ public partial class SerialTerminalView : UserControl
                 await service.SetOutputsAsync(DtrCheck.IsChecked == true, RtsCheck.IsChecked == true);
             }
         }
-        catch (Exception ex) { ShowError(ex); }
+        catch (Exception ex)
+        {
+            ShowError(ex);
+        }
     }
     private async Task SendAsync()
     {
@@ -369,8 +412,16 @@ public partial class SerialTerminalView : UserControl
                 await SavePreferencesAsync();
             }
         }
-        catch (Exception ex) { StopRepeat(); ShowError(ex); }
-        finally { sending = false; await PaintAsync(); }
+        catch (Exception ex)
+        {
+            StopRepeat();
+            ShowError(ex);
+        }
+        finally
+        {
+            sending = false;
+            await PaintAsync();
+        }
     }
     private async void Send_Click(object sender, RoutedEventArgs e) => await SendAsync();
     private void AnalyzeOffline_Click(object sender, RoutedEventArgs e)
@@ -381,7 +432,10 @@ public partial class SerialTerminalView : UserControl
             ReceiveTabs.SelectedIndex = 1;
             Notice.Text = "已送入离线 RX 解析，未向串口发送。";
         }
-        catch (Exception ex) { ShowError(ex); }
+        catch (Exception ex)
+        {
+            ShowError(ex);
+        }
     }
     private void AppendCrc_Click(object sender, RoutedEventArgs e)
     {
@@ -398,7 +452,10 @@ public partial class SerialTerminalView : UserControl
             EndingPicker.SelectedValue = SerialLineEnding.None;
             Notice.Text = "已补全 CRC 并选择 HEX / 无行尾，尚未发送。";
         }
-        catch (Exception ex) { ShowError(ex); }
+        catch (Exception ex)
+        {
+            ShowError(ex);
+        }
     }
     private async void SendInput_KeyDown(object sender, KeyEventArgs e)
     {
@@ -478,7 +535,10 @@ public partial class SerialTerminalView : UserControl
             await service.ExportAsync(dialog.FileName);
             Notice.Text = "已导出：" + dialog.FileName;
         }
-        catch (Exception ex) { ShowError(ex); }
+        catch (Exception ex)
+        {
+            ShowError(ex);
+        }
     }
     private void ShowError(Exception ex)
     {

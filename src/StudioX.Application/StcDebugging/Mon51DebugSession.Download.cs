@@ -75,6 +75,9 @@ public sealed partial class Mon51DebugSession
             Output?.Invoke(error.ToString());
             throw;
         }
-        finally { gate.Release(); }
+        finally
+        {
+            gate.Release();
+        }
     }
 }

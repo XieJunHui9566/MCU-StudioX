@@ -88,7 +88,10 @@ internal static class UnknownFileChecks
                 });
                 Console.WriteLine($"{(success ? "PASS" : "FAIL")} {test.Path}: {test.Expected}, exit={result.ExitCode}, timeout={result.TimedOut}, {stopwatch.ElapsedMilliseconds} ms");
             }
-            finally { held?.Dispose(); }
+            finally
+            {
+                held?.Dispose();
+            }
         }
         await JsonStore.WriteAsync(Path.Combine(output, "result.json"), new
         {
@@ -120,8 +123,14 @@ internal static class UnknownFileChecks
             {
                 source = Task.Run(() => files.ReadAsync(root, path)).GetAwaiter().GetResult();
             }
-            catch (StudioXException error) { rejected = error.Code; }
-            catch (IOException) { rejected = "IO"; }
+            catch (StudioXException error)
+            {
+                rejected = error.Code;
+            }
+            catch (IOException)
+            {
+                rejected = "IO";
+            }
             if (expected == "text" ? source is null : rejected != expected)
             {
                 throw new InvalidOperationException($"Expected {expected}, actual {rejected ?? "text"}.");
@@ -196,9 +205,16 @@ internal static class UnknownFileChecks
                 }));
                 return 0;
             }
-            finally { window.Close(); }
+            finally
+            {
+                window.Close();
+            }
         }
-        catch (Exception error) { Console.Error.WriteLine(error); return 1; }
+        catch (Exception error)
+        {
+            Console.Error.WriteLine(error);
+            return 1;
+        }
     }
 
     private static void Render(Window window)

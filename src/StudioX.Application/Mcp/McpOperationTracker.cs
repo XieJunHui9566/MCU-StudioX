@@ -207,7 +207,9 @@ internal sealed class McpOperationTracker : IAsyncDisposable
             {
                 cancellation.Cancel();
             }
-            catch (ObjectDisposedException) when (Finished) { /* 正常完成可与取消请求交错。 */ }
+            catch (ObjectDisposedException) when (Finished)
+            { /* 正常完成可与取消请求交错。 */
+            }
         }
 
         internal string Status()

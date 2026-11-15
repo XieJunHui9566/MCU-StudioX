@@ -42,8 +42,8 @@ public partial class MainWindow
         };
         var rt51 = stc && currentProjectManifest?.TemplateId == "rt51";
         SdccMemoryModelPicker.ItemsSource = memoryChoices;
-        SdccMemoryModelHelp.Text = "small：DATA；medium：分页 PDATA，需按板级配置分页 / P2；large：XDATA。Mon51 暂不支持 PDATA 变量观察。改变默认数据区，不改变 MCU 位数，显式存储区声明不变。切换后重新编译。huge 需代码分区（bank）布局，暂不提供。" +
-            (rt51 ? " RT51 的 ABI 要求 large 与自动栈；small / medium 无法保存。" : "");
+        SdccMemoryModelHelp.Text = "medium 需配置分页 / P2；Mon51 不支持 PDATA 观察。" +
+            (rt51 ? " RT51 仅支持 large 与自动栈。" : "");
         Mx251ModelPicker.ItemsSource = new[] { new BuildChoice<string>("small", "small · 小内存模型"), new BuildChoice<string>("large", "large · 大内存模型") };
         BuildDebugInfoPicker.ItemsSource = stc
             ? new[] { new BuildChoice<CompilerDebugInfo>(CompilerDebugInfo.ProjectDefault, "沿用工程默认"), new(CompilerDebugInfo.None, "不生成 CDB"), new(CompilerDebugInfo.Standard, "--debug · 生成源码调试 CDB") }
@@ -66,12 +66,12 @@ public partial class MainWindow
         BuildDebugInfoLabel.Visibility = BuildDebugInfoPicker.Visibility = mx ? Visibility.Collapsed : Visibility.Visible;
         StcCodeRomPanel.Visibility = stc ? Visibility.Visible : Visibility.Collapsed;
         StcMon51Profile.Visibility = stc && StcMon51Targets.Supports(currentProjectManifest?.DeviceId) ? Visibility.Visible : Visibility.Collapsed;
-        BuildSettingsHelp.Text = mx ? "small / large 决定默认数据存储方式，不改变芯片的 32 位工作模式。保存后重新编译整个工程；源码中的显式存储区声明保持不变。" : stc
-            ? "源码调试请选择 --debug，并建议低优化。构建生成 CDB；Mon51 连接会核对源码、构建产物与目标 CODE。优化可能使变量或部分源码行不可用。"
+        BuildSettingsHelp.Text = mx ? "切换内存模型后重新编译" : stc
+            ? "源码调试建议 --debug 与低优化"
             : "源码调试建议 -Og 与 -g3；较高优化可能使变量或源码行无法直接观察。";
         if (stc)
         {
-            BuildSettingsHelp.Text = "编译优化、内存模型与 RAM 大小按工程保存。调试配套、下载与硬件选项请使用工具栏下载按钮旁的设置入口。";
+            BuildSettingsHelp.Text = "下载与调试参数见工具栏「下载设置」";
         }
         ConfigureStcDownloadPage();
     }
@@ -111,7 +111,11 @@ public partial class MainWindow
         {
             stcRamLimits?.Validate(settings);
         }
-        catch (StudioXException ex) { error = ex.Message; return false; }
+        catch (StudioXException ex)
+        {
+            error = ex.Message;
+            return false;
+        }
         var text = StcCodeRomSizeBox.Text.Trim();
         if (text.Length == 0)
         {
@@ -126,7 +130,11 @@ public partial class MainWindow
         {
             stcCodeRomLimit?.Validate(bytes);
         }
-        catch (StudioXException ex) { error = ex.Message; return false; }
+        catch (StudioXException ex)
+        {
+            error = ex.Message;
+            return false;
+        }
         settings = settings with
         {
             CodeRomSizeBytes = bytes
@@ -145,7 +153,11 @@ public partial class MainWindow
             error = "";
             return true;
         }
-        catch (StudioXException ex) { error = ex.Message; return false; }
+        catch (StudioXException ex)
+        {
+            error = ex.Message;
+            return false;
+        }
     }
 
     private static bool TrySelectedRamSize(string text, string label, out int? bytes, out string error, bool allowZero = false)

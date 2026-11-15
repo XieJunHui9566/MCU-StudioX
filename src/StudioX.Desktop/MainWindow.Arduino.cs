@@ -128,7 +128,9 @@ public partial class MainWindow
         var lines = new OutputLineBuffer();
         async Task FlushUploadOutputAsync()
         {
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Background);
+            await Dispatcher.InvokeAsync(() =>
+            {
+            }, DispatcherPriority.Background);
             if (lines.Flush() is { } tail)
             {
                 Log(tail);
@@ -139,7 +141,13 @@ public partial class MainWindow
         try
         {
             var report = await services.Arduino.UploadApprovedAsync(root, dialog.Port, preview.ApprovalId,
-                new Progress<string>(text => { foreach (var line in lines.Append(text)) { Log(line); } }), token);
+                new Progress<string>(text =>
+                {
+                    foreach (var line in lines.Append(text))
+                    {
+                        Log(line);
+                    }
+                }), token);
             await FlushUploadOutputAsync();
             Log("上传日志：" + report.LogPath);
             Status.Text = report.Summary;
