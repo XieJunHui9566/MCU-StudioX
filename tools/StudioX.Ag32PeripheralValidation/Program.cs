@@ -3,6 +3,12 @@ using StudioX.Engine;
 using StudioX.Foundation;
 using StudioX.Packages;
 
+Ag32SetupChecks.Run();
+if (args is ["--setup"])
+{
+    return;
+}
+
 if (args.Length < 3)
 {
     throw new ArgumentException("tools-root pack-root new-output [--route]");
@@ -36,7 +42,29 @@ foreach (var file in Directory.GetFiles(Path.GetFullPath(args[1]), "*.mcupack"))
         var root = Path.Combine(output, device.Id);
         await new ProjectService().CreateAsync(pack, device.Id, "minimal", "peripheral_test", root);
         var snapshot = await planner.ReadAsync(root);
-        var options = new Ag32AnalogSettings(true, 1u, true, true, true);
+        var vhDacPin = device.Id switch
+        {
+            "AG32VH303RCT6" => 20,
+            "AG32VH407VGT6" => 30,
+            _ => 0
+        };
+        var options = new Ag32AnalogSettings(true, 1u, vhDacPin == 0, true, true);
+        if (vhDacPin != 0)
+        {
+            Check(Ag32PeripheralSupport.ReservedPins(device.Id, new(true, 1u << 5, Dac1: true))
+                is [{ Pin: var pin }] && pin == vhDacPin, device.Id + " ADC_IN5 and DAC1 share the documented pad");
+            foreach (var invalid in new[] { new Ag32AnalogSettings(true, 1u << 10), new(true, Dac0: true) })
+            {
+                try
+                {
+                    Ag32PeripheralSupport.ValidateSettings(device.Id, invalid);
+                    throw new InvalidOperationException("Unbonded input/output accepted");
+                }
+                catch (StudioXException ex) when (ex.Code == "AG32_ANALOG_CHANNEL")
+                {
+                }
+            }
+        }
         var configured = await planner.ApplyAsync(root, snapshot, [new("UART0_UARTTXD", 2)], new(8, 100, 50), options);
         Check(configured.Snapshot.Analog == options && (await planner.ReadAsync(root)).Analog == options, device.Id + " analog settings round trip");
         var systemCode = File.ReadAllText(Path.Combine(root, Ag32SystemSupport.SourcePath));

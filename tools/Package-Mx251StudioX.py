@@ -5,7 +5,7 @@ performed separately through StudioX application services.
 """
 
 from pathlib import Path
-from Mx251ProjectTemplate import render as render_cmake
+from Mx251ProjectTemplate import render as render_cmake, platform as render_platform
 import argparse, hashlib, json, shutil, zipfile
 
 
@@ -297,6 +297,7 @@ void main(void)
             )
         cmake = render_cmake(ai)
         write_text(pack / 'CMakeLists.txt', cmake)
+        write_text(pack / 'platform.cmake', render_platform(ai))
         device = dict(
             id=device_id,
             displayName=title + ' / ' + device_id,

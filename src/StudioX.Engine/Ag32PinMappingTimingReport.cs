@@ -9,9 +9,10 @@ using StudioX.Foundation;
 
 /// <summary>保留真实 Supra 时序证据；覆盖率与实际余量分别检查，不能以工具退出码代替。</summary>
 internal sealed record Ag32PinMappingTimingReport(string Sha256, int Covered, int Total,
-    decimal? WorstSetupSlackNs, decimal? WorstHoldSlackNs, string[] Uncovered, Dictionary<string, string> Reports)
+    decimal? WorstSetupSlackNs, decimal? WorstHoldSlackNs, string[] Uncovered, Dictionary<string, string> Reports, bool HyperRamModeled)
 {
-    internal string Summary => $"时序覆盖：{Covered}/{Total} 条连接；片内预算最小建立余量 {Format(WorstSetupSlackNs)}，保持余量 {Format(WorstHoldSlackNs)}。外部器件采样时序未建模。";
+    internal string Summary => $"时序覆盖：{Covered}/{Total} 条连接；最小建立余量 {Format(WorstSetupSlackNs)}，保持余量 {Format(WorstHoldSlackNs)}。" +
+        (HyperRamModeled ? "包含封装内 HyperRAM 的 DDR 输入与输出时序约束。" : "外部器件采样时序未建模。");
 
     internal string? SetupPath => CriticalPath("setup_summary", "Setup");
     internal string? HoldPath => CriticalPath("hold_summary", "Hold");
@@ -75,9 +76,9 @@ internal sealed record Ag32PinMappingTimingReport(string Sha256, int Covered, in
         {
             throw Error("已生成片内布线预算，但 Supra 没有返回对应的建立时序结果。");
         }
-        if (sdc.Contains("# AGM analog_ip:", StringComparison.Ordinal) && (setup is null || hold is null))
+        if ((sdc.Contains("# AGM analog_ip:", StringComparison.Ordinal) || sdc.Contains("# AGM HyperRAM", StringComparison.Ordinal)) && (setup is null || hold is null))
         {
-            throw Error("模拟 IP 缺少可分析的建立或保持时序结果。");
+            throw Error("外设 IP 缺少可分析的建立或保持时序结果。");
         }
         if (requirePassing && covered != total)
         {
@@ -87,7 +88,7 @@ internal sealed record Ag32PinMappingTimingReport(string Sha256, int Covered, in
         {
             throw Error($"Supra 时序预算未满足：建立余量 {Format(setup)}，保持余量 {Format(hold)}；请调整频率或映射后重新编译。原始报告位于 {build}。");
         }
-        return new(Convert.ToHexString(hash.GetHashAndReset()), covered, total, setup, hold, uncovered, reports);
+        return new(Convert.ToHexString(hash.GetHashAndReset()), covered, total, setup, hold, uncovered, reports, sdc.Contains("# AGM HyperRAM", StringComparison.Ordinal));
 
         decimal? Slack(string report, string kind)
         {
@@ -110,8 +111,8 @@ internal sealed record Ag32PinMappingTimingReport(string Sha256, int Covered, in
         }
         await JsonStore.WriteAsync(PathBoundary.Resolve(build, "studiox-timing.json"), new
         {
-            Policy = "basic-mapping-one-bus-system-cycle-v1",
-            ExternalDeviceTimingModeled = false,
+            Policy = HyperRamModeled ? "basic-mapping-with-hyperram-ddr-v1" : "basic-mapping-one-bus-system-cycle-v1",
+            ExternalDeviceTimingModeled = HyperRamModeled,
             Covered,
             Total,
             WorstSetupSlackNs,

@@ -232,7 +232,7 @@ public partial class MainWindow
         if (manifest.ToolsetId == "arm.gnu")
         {
             var pack = await services.Packs.ImportAsync(Path.Combine(Directory.GetParent(services.RuntimeDirectory)!.FullName,
-                "device-packs/AGM/studiox.preview.ag32vf303-0.1.5.mcupack"));
+                "device-packs/AGM/studiox.preview.ag32vf303-0.1.6.mcupack"));
             var logic = Path.Combine(directory, "logic-fixture");
             await services.Projects.CreateAsync(pack, "AG32VF303CCT6", "freertos-mcu", "output_logic", logic, enableAg32Logic: true);
             await File.WriteAllTextAsync(Path.Combine(logic, "logic/user_logic.v"), "module output_logic(input wire data, output wire value); assign value=data; endmodule\n");

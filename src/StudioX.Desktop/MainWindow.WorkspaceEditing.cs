@@ -32,7 +32,7 @@ public partial class MainWindow
         });
         CommandBindings.Add(new(SourceCommands.WorkspaceFind, (_, _) => ShowWorkspaceSearch(false), (_, e) => e.CanExecute = projectDirectory is not null && !closing));
         CommandBindings.Add(new(SourceCommands.WorkspaceReplace, (_, _) => ShowWorkspaceSearch(true), (_, e) => e.CanExecute = projectDirectory is not null && !closing));
-        CommandBindings.Add(new(SourceCommands.RenameSymbol, (_, _) => QueueRenameSymbol(), (_, e) => e.CanExecute = CanEditSource && !IsPythonDocument && NavigationReady && CanNavigateCode));
+        CommandBindings.Add(new(SourceCommands.RenameSymbol, (_, _) => QueueRenameSymbol(), (_, e) => e.CanExecute = CanEditSource && !IsPythonDocument && !IsVerilogDocument && NavigationReady && CanNavigateCode));
     }
 
     private void ShowWorkspaceSearch(bool replace)
@@ -131,7 +131,7 @@ public partial class MainWindow
 
     private void QueueRenameSymbol(int? at = null)
     {
-        if (!CanNavigateCode || !NavigationReady || IsPythonDocument || activeDocument!.IsReadOnly || services.Debugger.IsActive)
+        if (!CanNavigateCode || !NavigationReady || IsPythonDocument || IsVerilogDocument || activeDocument!.IsReadOnly || services.Debugger.IsActive)
         {
             return;
         }

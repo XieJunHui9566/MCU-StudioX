@@ -3,6 +3,7 @@ namespace StudioX.Engine;
 using System.Collections.Concurrent;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
+using StudioX.Engine.Hdl;
 using StudioX.Foundation;
 using StudioX.Packages;
 
@@ -10,29 +11,55 @@ using StudioX.Packages;
 public sealed class Ag32PinPlanService(ToolsetCatalog tools)
 {
     private static readonly ConcurrentDictionary<string, SemaphoreSlim> Gates = new(StringComparer.OrdinalIgnoreCase);
-    private static readonly HashSet<string> PreviewFiles = ["pins.ve", "pins.hx", "pins.vx", "pins.vex", "studiox-clocks.sdc", "studiox-gpio.asf", "converter.log", "analog_ip.vx", "analog_ip.asf"];
+    private static readonly HashSet<string> PreviewFiles = ["pins.ve", "pins.hx", "pins.vx", "pins.vex", "studiox-clocks.sdc", "studiox-gpio.asf", "converter.log", "hram_ip.vx", "hram_ip.asf", "analog_ip.vx", "analog_ip.asf"];
 
     public Task<Ag32PinPlanSnapshot> ReadAsync(string projectDirectory, CancellationToken cancellationToken = default)
         => Task.Run(async () => (await ReadContextAsync(Path.GetFullPath(projectDirectory), cancellationToken)).Snapshot, cancellationToken);
 
     public Task<Ag32PinPlanResult> ApplyAsync(string projectDirectory, string expectedSourceSha256,
         IReadOnlyList<Ag32PinAssignment> assignments, Ag32PinClockSettings clocks, CancellationToken cancellationToken = default)
-        => Task.Run(() => ApplyCoreAsync(Path.GetFullPath(projectDirectory), expectedSourceSha256, null, assignments.ToArray(), clocks, null, cancellationToken), cancellationToken);
+        => Task.Run(() => ApplyCoreAsync(Path.GetFullPath(projectDirectory), expectedSourceSha256, null, assignments.ToArray(), clocks, null, null, cancellationToken), cancellationToken);
 
     /// <summary>界面草稿与审批绑定完整目标身份，VE 内容相同也不能跨型号提交。</summary>
     public Task<Ag32PinPlanResult> ApplyAsync(string projectDirectory, Ag32PinPlanSnapshot expectedSnapshot,
         IReadOnlyList<Ag32PinAssignment> assignments, Ag32PinClockSettings clocks, CancellationToken cancellationToken = default)
         => Task.Run(() => ApplyCoreAsync(Path.GetFullPath(projectDirectory), expectedSnapshot.SourceSha256,
-            expectedSnapshot, assignments.ToArray(), clocks, null, cancellationToken), cancellationToken);
+            expectedSnapshot, assignments.ToArray(), clocks, null, null, cancellationToken), cancellationToken);
 
     public Task<Ag32PinPlanResult> ApplyAsync(string projectDirectory, Ag32PinPlanSnapshot expectedSnapshot,
         IReadOnlyList<Ag32PinAssignment> assignments, Ag32PinClockSettings clocks, Ag32AnalogSettings analog,
         CancellationToken cancellationToken = default)
         => Task.Run(() => ApplyCoreAsync(Path.GetFullPath(projectDirectory), expectedSnapshot.SourceSha256,
-            expectedSnapshot, assignments.ToArray(), clocks, analog, cancellationToken), cancellationToken);
+            expectedSnapshot, assignments.ToArray(), clocks, analog, null, cancellationToken), cancellationToken);
+
+    public Task<Ag32PinPlanResult> ApplyAsync(string projectDirectory, Ag32PinPlanSnapshot expectedSnapshot,
+        IReadOnlyList<Ag32PinAssignment> assignments, Ag32PinClockSettings clocks, Ag32AnalogSettings analog,
+        IReadOnlyList<Ag32UartSettings> uarts, CancellationToken cancellationToken)
+        => Task.Run(() => ApplyCoreAsync(Path.GetFullPath(projectDirectory), expectedSnapshot.SourceSha256,
+            expectedSnapshot, assignments.ToArray(), clocks, analog, uarts.ToArray(), cancellationToken), cancellationToken);
+
+    public Task<Ag32PinPlanResult> ApplyAsync(string projectDirectory, Ag32PinPlanSnapshot expectedSnapshot,
+        IReadOnlyList<Ag32PinAssignment> assignments, Ag32PinClockSettings clocks, Ag32AnalogSettings analog,
+        IReadOnlyList<Ag32UartSettings> uarts, IReadOnlyList<Ag32BusSettings> buses, CancellationToken cancellationToken)
+        => Task.Run(() => ApplyCoreAsync(Path.GetFullPath(projectDirectory), expectedSnapshot.SourceSha256,
+            expectedSnapshot, assignments.ToArray(), clocks, analog, uarts.ToArray(), cancellationToken, buses.ToArray()), cancellationToken);
+
+    public Task<Ag32PinPlanResult> ApplyAsync(string projectDirectory, Ag32PinPlanSnapshot expectedSnapshot,
+        IReadOnlyList<Ag32PinAssignment> assignments, Ag32PinClockSettings clocks, Ag32AnalogSettings analog,
+        IReadOnlyList<Ag32UartSettings> uarts, IReadOnlyList<Ag32BusSettings> buses,
+        IReadOnlyList<Ag32TimerSettings> timers, CancellationToken cancellationToken)
+        => Task.Run(() => ApplyCoreAsync(Path.GetFullPath(projectDirectory), expectedSnapshot.SourceSha256,
+            expectedSnapshot, assignments.ToArray(), clocks, analog, uarts.ToArray(), cancellationToken, buses.ToArray(), timers.ToArray()), cancellationToken);
+
+    public Task<Ag32PinPlanResult> ApplyAsync(string root, Ag32PinPlanSnapshot snapshot,
+        IReadOnlyList<Ag32PinAssignment> pins, Ag32PinClockSettings clocks, Ag32AnalogSettings analog,
+        IReadOnlyList<Ag32UartSettings> uarts, IReadOnlyList<Ag32BusSettings> buses, IReadOnlyList<Ag32TimerSettings> timers,
+        Ag32SystemPeripherals peripherals, CancellationToken token)
+        => Task.Run(() => ApplyCoreAsync(Path.GetFullPath(root), snapshot.SourceSha256, snapshot, pins.ToArray(), clocks,
+            analog, uarts.ToArray(), token, buses.ToArray(), timers.ToArray(), peripherals), token);
 
     private async Task<Ag32PinPlanResult> ApplyCoreAsync(string root, string expectedHash, Ag32PinPlanSnapshot? expectedSnapshot,
-        IReadOnlyList<Ag32PinAssignment> assignments, Ag32PinClockSettings clocks, Ag32AnalogSettings? analog, CancellationToken token)
+        IReadOnlyList<Ag32PinAssignment> assignments, Ag32PinClockSettings clocks, Ag32AnalogSettings? analog, Ag32UartSettings[]? uarts, CancellationToken token, Ag32BusSettings[]? buses = null, Ag32TimerSettings[]? timers = null, Ag32SystemPeripherals? peripherals = null)
     {
         if (expectedHash is null || !Regex.IsMatch(expectedHash, @"\A[0-9A-Fa-f]{64}\z", RegexOptions.CultureInvariant))
         {
@@ -46,9 +73,10 @@ public sealed class Ag32PinPlanService(ToolsetCatalog tools)
             var context = await ReadContextAsync(root, token);
             var snapshot = context.Snapshot;
             if (expectedSnapshot is not null && (snapshot.DeviceId != expectedSnapshot.DeviceId ||
-                snapshot.TargetDevice != expectedSnapshot.TargetDevice || snapshot.SourcePath != expectedSnapshot.SourcePath))
+                snapshot.TargetDevice != expectedSnapshot.TargetDevice || snapshot.SourcePath != expectedSnapshot.SourcePath ||
+                snapshot.VerilogSignature != expectedSnapshot.VerilogSignature))
             {
-                throw new StudioXException("AG32_PIN_PLAN_STALE", "工程型号、封装目标或 VE 路径已经改变，请重新加载图形规划。");
+                throw new StudioXException("AG32_PIN_PLAN_STALE", "工程型号、封装目标或 Verilog 源码已经改变，请重新加载图形规划。");
             }
             RequireHash(snapshot.SourceSha256, expectedHash);
             if (!snapshot.CanEdit)
@@ -58,7 +86,19 @@ public sealed class Ag32PinPlanService(ToolsetCatalog tools)
             context.Catalog.Validate(assignments, clocks);
             ValidateDeviceClock(Ag32DeviceCatalog.Require(snapshot.DeviceId), clocks);
             var source = Ag32PeripheralSupport.WithSettings(context.Document.Render(assignments, clocks), analog);
+            source = Ag32UartInitialization.Write(source, uarts);
+            source = Ag32BusInitialization.Write(source, buses);
+            source = Ag32TimerInitialization.Write(source, timers);
+            if (peripherals is not null)
+            {
+                source = peripherals.Write(source);
+            }
             Ag32PeripheralSupport.Validate(snapshot.DeviceId, source, assignments);
+            if (context.Logic is not null)
+            {
+                RequireCompatibleLogic(source);
+                source = Ag32CustomPinPorts.Manage(source);
+            }
             var candidate = new Ag32PinPlanDocument(source);
             if (!candidate.CanEdit)
             {
@@ -70,8 +110,10 @@ public sealed class Ag32PinPlanService(ToolsetCatalog tools)
             staging = PathBoundary.Resolve(root, relative);
             Directory.CreateDirectory(staging);
             // 转换器不接受 BOM；仅去掉验证副本的 BOM，保存源仍使用原始编码格式。
-            await File.WriteAllBytesAsync(PathBoundary.Resolve(staging, "pins.ve"), source is [0xef, 0xbb, 0xbf, ..] ? source[3..] : source, token);
-            var macroArguments = await Ag32PeripheralSupport.PrepareLogicAsync(staging, source, token);
+            var aliases = context.Logic?.Aliases(assignments) ?? [];
+            var converterSource = Ag32CustomPinPorts.ConverterSource(source, aliases);
+            await File.WriteAllBytesAsync(PathBoundary.Resolve(staging, "pins.ve"), converterSource, token);
+            var macroArguments = context.Logic is null ? await Ag32PeripheralSupport.PrepareLogicAsync(staging, source, token) : ["-s", "-m", "user_logic.v"];
             var converter = await new ProcessRunner().RunAsync(new(context.Tools.Tool("python"),
                 ["-I", "-B", "-X", "utf8", context.Tools.Tool("converter"), "-d", snapshot.TargetDevice,
                     .. macroArguments, "-c", "pins.hx", "pins.ve", "pins.vx", "-x", "pins.vex"], staging,
@@ -83,9 +125,18 @@ public sealed class Ag32PinPlanService(ToolsetCatalog tools)
             {
                 throw new StudioXException("AG32_PIN_PLAN_CONVERTER", "厂商转换未通过，VE 保持不变：\n" + diagnostics);
             }
+            await Ag32LocalInterruptRouting.ApplyAsync(staging, source, token);
+            if (context.Logic is not null)
+            {
+                await context.Logic.ReconnectAsync(PathBoundary.Resolve(staging, "pins.vx"),
+                    PathBoundary.Resolve(staging, "user_logic.v"), aliases, token);
+                // 预览 VE 与工程文件一致，VEX 和包裹模块保留真实转换结果。
+                await File.WriteAllBytesAsync(PathBoundary.Resolve(staging, "pins.ve"), source, token);
+                File.Delete(PathBoundary.Resolve(staging, "user_logic.v"));
+            }
             VerifyVex(await File.ReadAllTextAsync(PathBoundary.Resolve(staging, "pins.vex"), token), assignments);
             await Ag32GpioElectrical.CreateAsync(staging, source, token);
-            await Ag32PinMappingClockVerification.CreateSdcAsync(staging, token, basicMapping: true);
+            await Ag32PinMappingClockVerification.CreateSdcAsync(staging, token, basicMapping: context.Logic is null);
             // 复用工具锁的身份验证，防止验证期间被替换的转换器生成可接受的预览。
             var afterTools = await tools.ResolveAsync(context.Settings.ToolsetId, context.Settings.ToolsetVersion, context.Settings.CompilerId, token);
             if (afterTools.Fingerprint != context.Tools.Fingerprint)
@@ -100,21 +151,43 @@ public sealed class Ag32PinPlanService(ToolsetCatalog tools)
             {
                 throw new StudioXException("AG32_PIN_PLAN_STALE", "工程目标在保存期间发生变化，请重新加载图形规划。");
             }
+            if (currentProject.Logic != context.ProjectLogic)
+
+            {
+                throw new StudioXException("AG32_PIN_PLAN_STALE", "工程逻辑模式在保存期间已经改变。");
+            }
+            if (context.Logic is not null)
+            {
+                var check = await Ag32CustomPinPorts.ReadAsync(tools, afterTools, root, await new Ag32NativeBuildService(tools).ReadSettingsAsync(root, token), token);
+                if (check.Signature != context.Logic.Signature)
+
+                {
+                    throw new StudioXException("AG32_PIN_PLAN_STALE", "Verilog 源码在保存期间已经改变，请重新读取端口。");
+                }
+            }
             var previousSource = await ReadSourceAsync(path, token);
             RequireHash(Hash(previousSource), expectedHash);
             var generated = Ag32SystemSupport.Render(source, await File.ReadAllTextAsync(PathBoundary.Resolve(staging, "pins.hx"), token), snapshot.Functions);
-            await Ag32SystemSupport.WriteAsync(root, generated, snapshot.SourcePath, previousSource, source, token);
+            var (updatedFiles, movedFiles) = await Ag32SystemSupport.WriteAsync(root, generated, snapshot.SourcePath, previousSource, source, token);
             var resultSnapshot = snapshot with
             {
                 SourceSha256 = Hash(source),
                 Assignments = candidate.Assignments,
                 Clocks = candidate.Clocks,
                 Analog = Ag32PeripheralSupport.Read(source),
+                Uarts = Ag32UartInitialization.Read(source),
+                Buses = Ag32BusInitialization.Read(source),
+                Timers = Ag32TimerInitialization.Read(source),
+                SystemPeripherals = Ag32SystemPeripherals.Read(source),
                 Diagnostics = [],
                 CanEdit = true
             };
             var result = new Ag32PinPlanResult(resultSnapshot, staging, relative + "/pins.ve", relative + "/pins.vex",
-                relative + "/studiox-clocks.sdc", diagnostics);
+                relative + "/studiox-clocks.sdc", diagnostics)
+            {
+                UpdatedFiles = updatedFiles,
+                MovedFiles = movedFiles
+            };
             var cleanupDiagnostics = TrimPreviews(constraintsRoot, staging);
             if (cleanupDiagnostics.Length != 0)
             {
@@ -156,7 +229,20 @@ public sealed class Ag32PinPlanService(ToolsetCatalog tools)
             throw new StudioXException("AG32_PIN_PLAN_TOOL", "引脚规划工具与工程锁定内容不同。");
         }
         var catalog = await Ag32PinPlanCatalog.ReadAsync(resolved, settings.TargetDevice, profile.PinCount, root, token);
-        var document = new Ag32PinPlanDocument(bytes);
+        var document = new Ag32PinPlanDocument(bytes, project.Logic is not null);
+        Ag32CustomPinPorts? logic = null;
+        if (project.Logic is not null)
+        {
+            try
+            {
+                logic = await Ag32CustomPinPorts.ReadAsync(tools, resolved, root, await new Ag32NativeBuildService(tools).ReadSettingsAsync(root, token), token);
+                catalog = catalog.WithVerilog(logic.Ports);
+            }
+            catch (Exception ex) when (ex is StudioXException or IOException or System.Text.Json.JsonException)
+            {
+                document.Diagnostics.Add(ex.Message);
+            }
+        }
         string? clockDiagnostic = null;
         try
         {
@@ -170,23 +256,70 @@ public sealed class Ag32PinPlanService(ToolsetCatalog tools)
         }
         catch (StudioXException ex)
         {
-            document.Diagnostics.Add(ex.Message + " 原文保留，图形规划只读。");
+            if (project.Logic is not null)
+
+            {
+                clockDiagnostic = ex.Message;
+            }
+            else
+
+            {
+                document.Diagnostics.Add(ex.Message + " 原文保留，图形规划只读。");
+            }
+        }
+        Ag32SystemPeripherals peripherals = new();
+        try
+        {
+            peripherals = Ag32SystemPeripherals.Read(bytes);
+        }
+        catch (StudioXException ex)
+        {
+            document.Diagnostics.Add(ex.Message);
+        }
+        Ag32BusSettings[] buses = [];
+        try
+        {
+            buses = Ag32BusInitialization.Read(bytes);
+        }
+        catch (StudioXException ex)
+        {
+            document.Diagnostics.Add(ex.Message + " 请检查 VE 中的外设配置。");
+        }
+        Ag32TimerSettings[] timers = [];
+        try
+        {
+            timers = Ag32TimerInitialization.Read(bytes);
+        }
+        catch (StudioXException ex)
+        {
+            document.Diagnostics.Add(ex.Message + " 请检查 VE 中的定时器配置。");
         }
         var snapshot = new Ag32PinPlanSnapshot(project.DeviceId, settings.TargetDevice, settings.PinMapFile, Hash(bytes),
             catalog.Pins, catalog.Functions, document.Assignments, document.Clocks,
             clockDiagnostic is null ? document.Diagnostics.ToArray() : [.. document.Diagnostics, clockDiagnostic], document.CanEdit,
-            Ag32PeripheralSupport.Read(bytes));
-        return new(snapshot, document, catalog, resolved, settings);
+            Ag32PeripheralSupport.Read(bytes), Ag32UartInitialization.Read(bytes))
+        {
+            Buses = buses,
+            Timers = timers,
+            SystemPeripherals = peripherals
+        };
+        snapshot = snapshot with
+        {
+            VerilogSourcePath = project.Logic?.VerilogFile,
+            VerilogSignature = logic?.Signature,
+            VerilogPorts = logic?.Ports ?? []
+        };
+        return new(snapshot, document, catalog, resolved, settings, project.Logic, logic);
     }
 
     private static async Task<(Ag32PinMappingProjectSettings Settings, Ag32DeviceProfile Profile)> RequireSettingsAsync(
         string root, ProjectManifest project, CancellationToken token)
     {
         var profile = Ag32DeviceCatalog.Find(project.DeviceId);
-        if (project.Kind != ProjectKind.Pack || profile is null || !profile.CanMap || project.Logic is not null ||
+        if (project.Kind != ProjectKind.Pack || profile is null || !profile.CanMap ||
             project.PinMapping is not { } settings || settings.TargetDevice != profile.TargetDevice)
         {
-            throw new StudioXException("AG32_PIN_PLAN_DEVICE", "此图形规划需要已核实 AG32 器件封装、并启用基础映射的工程。");
+            throw new StudioXException("AG32_PIN_PLAN_DEVICE", "此图形规划需要已核实 AG32 器件封装、并启用引脚映射的工程。");
         }
         var pack = await JsonStore.ReadAsync<PackManifest>(PathBoundary.Resolve(root, "device/manifest.json"), token);
         var device = pack.Devices.SingleOrDefault(item => item.Id == project.DeviceId);
@@ -290,5 +423,19 @@ public sealed class Ag32PinPlanService(ToolsetCatalog tools)
     }
 
     private sealed record Context(Ag32PinPlanSnapshot Snapshot, Ag32PinPlanDocument Document,
-        Ag32PinPlanCatalog Catalog, ResolvedToolset Tools, Ag32PinMappingProjectSettings Settings);
+        Ag32PinPlanCatalog Catalog, ResolvedToolset Tools, Ag32PinMappingProjectSettings Settings, Ag32LogicProjectSettings? ProjectLogic, Ag32CustomPinPorts? Logic);
+
+    internal static void RequireCompatibleLogic(byte[] source)
+    {
+        if (CustomLogicConflict(Ag32PeripheralSupport.Read(source), Ag32Setup.Read(source)) is { } message)
+
+        {
+            throw new StudioXException("AG32_VERILOG_IP", message);
+        }
+    }
+
+    public static string? CustomLogicConflict(Ag32AnalogSettings analog, Ag32Setup setup) =>
+        analog.Enabled || setup.Units.ContainsKey("HyperRAM") || setup.Value("RTC", "Clock").StartsWith("LOCAL", StringComparison.Ordinal)
+            ? "ADC/DAC/比较器、HyperRAM 和 RTC LOCAL 使用独立厂商 IP 入口。要保存自定义 Verilog 映射，请关闭相应图形宏。"
+            : null;
 }

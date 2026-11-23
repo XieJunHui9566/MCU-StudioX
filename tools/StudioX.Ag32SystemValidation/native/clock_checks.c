@@ -1,4 +1,5 @@
 #include "StudioX_System.h"
+#include "GPIO.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -48,9 +49,10 @@ int main(void)
     check(StudioX_SystemStatus == STUDIOX_SYSTEM_OK && StudioX_SystemClockHz() == 200000000u &&
               StudioX_PeripheralClockHz() == 100000000u,
           "generated clocks drive system and peripheral clocks");
+    SX_GPIO_Init();
     check(LED1.Port == GPIO4 && LED1.Bit == GPIO_BIT4 && LED1.Pin == 2u &&
               test_gpio.Direction == GPIO_BIT4 && test_gpio.Data == 0u,
-          "named GPIO auto initialization and physical pin are distinct");
+          "explicit GPIO initialization sets the named pin direction and initial level");
     unsigned before_reads = reads;
     Delay_us(0);
     Delay_ms(0);

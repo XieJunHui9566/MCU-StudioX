@@ -291,7 +291,11 @@ public partial class MainWindow
         DebugIntoButton.ToolTip = addressDebug && !sourceSteps ? "执行一条 8051 指令 (F11)" : "单步进入 (F11)";
         DebugResetLabel.Text = addressDebug ? "逻辑复位" : "复位";
         DebugResetButton.ToolTip = addressDebug ? "设置监控逻辑复位入口并暂停；不复位外设、不擦写程序" : "复位并暂停目标";
-        DebugStartButton.ToolTip = DebugStartMenu.ToolTip = mon51Unsupported ? Mon51UnavailableMessage
+        var teaching = TeachingSimulatorTarget.Supports(currentProjectManifest);
+        DebugStartLabel.Text = teaching ? "示教平台调试" : "调试";
+        DebugStartMenu.Header = teaching ? "启动 / 结束示教平台调试（需运行示教平台）" : "启动 / 结束调试";
+        DebugStartButton.ToolTip = DebugStartMenu.ToolTip = teaching ? "需要在本电脑运行单片机示教平台；调试 STC89C52RC 软件模型，不连接实物串口 (Ctrl+F5)"
+            : mon51Unsupported ? Mon51UnavailableMessage
             : addressDebug ? "使用下载串口和波特率，先握手；成功后编译并更新用户程序，失败则制作仿真监控；再次点击结束调试" : "启动 / 结束调试";
         ToolTipService.SetShowOnDisabled(DebugStartButton, true);
         ToolTipService.SetShowOnDisabled(DebugStartMenu, true);
@@ -351,7 +355,14 @@ public partial class MainWindow
         }
         if (IsStcSdccProject)
         {
-            await StartMon51DebugAsync(token);
+            if (TeachingSimulatorTarget.Supports(currentProjectManifest))
+            {
+                await StartTeachingDebugAsync(token);
+            }
+            else
+            {
+                await StartMon51DebugAsync(token);
+            }
             return;
         }
         if (IsPicProject)

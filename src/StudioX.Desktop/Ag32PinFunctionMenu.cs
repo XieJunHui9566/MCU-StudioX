@@ -18,7 +18,7 @@ internal sealed class Ag32PinFunctionMenu : ContextMenu
     internal MenuItem ResetItem { get; } = new() { Header = new TextBlock { Text = "清除分配（Reset_State）" } };
 
     internal Ag32PinFunctionMenu(FrameworkElement anchor, Ag32PackagePin pin, Ag32PinFunction[] functions,
-        IReadOnlyList<Ag32PinAssignment> assignments, bool editable, Action<Ag32PinFunction?> choose)
+        IReadOnlyList<Ag32PinAssignment> assignments, bool editable, Action<Ag32PinFunction?> choose, Action? openAnalog = null)
     {
         SetResourceReference(StyleProperty, "CodeContextMenu");
         PlacementTarget = anchor;
@@ -27,9 +27,24 @@ internal sealed class Ag32PinFunctionMenu : ContextMenu
         MaxWidth = 370;
         MaxHeight = 460;
         Items.Add(new MenuItem { Header = new TextBlock { Text = $"PIN {pin.Number}", FontWeight = FontWeights.SemiBold }, IsEnabled = false });
+        if (openAnalog is not null)
+        {
+            var analog = new MenuItem { Header = "查看模拟通道…" };
+            analog.Click += (_, _) =>
+            {
+                if (!dismissed)
+                {
+                    Dismiss();
+                    openAnalog();
+                }
+            };
+            Items.Add(analog);
+        }
         if (!pin.CanAssign || !editable)
         {
-            Items.Add(new MenuItem { Header = pin.CanAssign ? "当前 VE 为只读，请在文本编辑器修改" : "保留引脚 · 不可分配", IsEnabled = false });
+            var message = pin.FixedPin is { } fixedPin ? $"{fixedPin.Name} · {fixedPin.Description} · 固定连接"
+                : pin.CanAssign ? "当前 VE 为只读，请在文本编辑器修改" : "保留引脚 · 不可分配";
+            Items.Add(new MenuItem { Header = message, IsEnabled = false });
             return;
         }
 

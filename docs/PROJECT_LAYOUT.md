@@ -60,3 +60,5 @@ target_compile_definitions(firmware PRIVATE USE_UART=1)
 CMake 编辑提示额外索引这两个固定生成文件中的目标和函数，不执行配置脚本，也不递归展开任意 `include`。旧工程不会在启动或构建时被自动改写。
 
 分层配置迭代检查覆盖两种 AG32 模板的新建工程、根配置编辑、内部只读、生成符号提示、中文和空格路径，以及禁用编译语言的 CMake 配置图夹具。后续内置开发环境组件迭代已补充实际 AG32 编译与授权后的最小固件下载，见 开发环境组件验证记录（本地记录）。
+
+MX251 组件 0.0.181 起也使用以上根目录与 device 分工。根 CMake 用 INTERFACE 目标 app 描述用户输入，由 device/platform.cmake 提供 studiox_configure_firmware(app)，生成 firmware 构建目标；优化内部容量默认值放在工具链。内存模型、优化方式和 C 标准统一由 mx251.json 提供，构建不重写用户 CMake。

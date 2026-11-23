@@ -16,6 +16,9 @@ public sealed partial class DebugSessionService
     public Task StartMon51Async(string port, int baud, string confirmedTarget, CancellationToken token = default)
         => StartMon51CoreAsync(port, baud, confirmedTarget, null, token);
 
+    public Task StartTeachingSimulatorAsync(CancellationToken token = default)
+        => StartMon51CoreAsync("本机示教平台", 0, TeachingSimulatorTarget.DeviceId, null, token, teaching: true);
+
     public async Task<Mon51DownloadPreparation> PrepareMon51DownloadAsync(CancellationToken token = default)
         => (await Mon51DownloadPreparation.ReadAsync(ProjectDirectory ?? throw Error("请先打开 STC 工程。"), token)).Preparation;
 
@@ -27,14 +30,14 @@ public sealed partial class DebugSessionService
         => StartMon51CoreAsync(port, baud, target, null, token, prepare);
 
     private async Task<bool> StartMon51CoreAsync(string port, int baud, string confirmedTarget, Mon51DownloadPreparation? preparation, CancellationToken token,
-        Func<CancellationToken, Task<Mon51DownloadPreparation>>? prepareAfterHandshake = null)
+        Func<CancellationToken, Task<Mon51DownloadPreparation>>? prepareAfterHandshake = null, bool teaching = false)
     {
-        if (!StcMon51Targets.Supports(confirmedTarget))
+        if (!(teaching ? confirmedTarget == TeachingSimulatorTarget.DeviceId : StcMon51Targets.Supports(confirmedTarget)))
         {
             throw new StudioXException("MON51_TARGET", "请选择已适配的准确型号：" + StcMon51Targets.DisplayNames + "。");
         }
-        var settings = new SerialSettings(port, baud);
-        settings.Validate();
+        var settings = teaching ? null : new SerialSettings(port, baud);
+        settings?.Validate();
         await gate.WaitAsync(token);
         try
         {
@@ -65,8 +68,14 @@ public sealed partial class DebugSessionService
                 }
                 downloadArtifact = current.Artifact;
             }
-            var monitor = new Mon51DebugSession(dataDirectory, confirmedTarget) { UserDownloadRequested = preparation is not null || prepareAfterHandshake is not null };
-            var transport = monitorTransportFactory?.Invoke(settings) ?? new SerialTransport(settings);
+            if (teaching)
+            {
+                downloadArtifact = await StcDebugArtifacts.ReadTeachingAsync(ProjectDirectory, token);
+            }
+            var monitor = new Mon51DebugSession(dataDirectory, confirmedTarget) { IsTeachingPlatform = teaching, UserDownloadRequested = teaching || preparation is not null || prepareAfterHandshake is not null };
+            IDeviceTransport transport = teaching
+                ? OperatingSystem.IsWindows() ? new TeachingSimulatorTransport() : throw new PlatformNotSupportedException("示教平台连接需要 Windows。")
+                : monitorTransportFactory?.Invoke(settings!) ?? new SerialTransport(settings!);
             // 连接快照会更新界面状态；先保留工程偏好，避免首次空快照覆盖已保存断点和观察项。
             var savedBreakpoints = breakpoints.ToArray();
             var savedWatches = watches.ToArray();
@@ -170,7 +179,7 @@ public sealed partial class DebugSessionService
     {
         try
         {
-            await monitor.LoadSymbolsAsync(await StcDebugArtifacts.ReadAsync(ProjectDirectory!, token), token);
+            await monitor.LoadSymbolsAsync(await (monitor.IsTeachingPlatform ? StcDebugArtifacts.ReadTeachingAsync(ProjectDirectory!, token) : StcDebugArtifacts.ReadAsync(ProjectDirectory!, token)), token);
         }
         catch (StudioXException error) when (IsMon51SymbolError(error))
         {

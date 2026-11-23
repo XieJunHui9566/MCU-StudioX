@@ -153,6 +153,11 @@ public sealed partial class ComponentMigrationService(PackRepository packs, Buil
                     File.Copy(file, backup, false);
                 }
             }
+            if (fresh.OriginalProject.PinMapping is not null)
+
+            {
+                await Ag32SystemSupport.RestoreModuleOwnershipAsync(fresh.SourceDirectory, fresh.DestinationDirectory, token);
+            }
             progress?.Report("仅编译验证副本，不连接或下载硬件…");
             var report = await builds.BuildAsync(fresh.DestinationDirectory, progress, token, output);
             var result = new ComponentMigrationResult(fresh.SourceDirectory, fresh.DestinationDirectory, report.Success, false, report.Log, report.LogPath);

@@ -45,6 +45,18 @@ public partial class MainWindow
         SdccMemoryModelHelp.Text = "medium 需配置分页 / P2；Mon51 不支持 PDATA 观察。" +
             (rt51 ? " RT51 仅支持 large 与自动栈。" : "");
         Mx251ModelPicker.ItemsSource = new[] { new BuildChoice<string>("small", "small · 小内存模型"), new BuildChoice<string>("large", "large · 大内存模型") };
+        Mx251OptimizationPicker.ItemsSource = new[]
+        {
+            new BuildChoice<string>("size", "体积优先 · 减小程序大小"),
+            new BuildChoice<string>("speed", "速度优先 · 提高运行效率")
+        };
+        Mx251StandardPicker.ItemsSource = new[]
+        {
+            new BuildChoice<string>("sdcc11", "C11 + SDCC 扩展（推荐）"),
+            new("sdcc99", "C99 + SDCC 扩展"), new("sdcc89", "C90 + SDCC 扩展"),
+            new("c89", "C90"), new("c99", "C99"), new("c11", "C11"), new("c17", "C17"),
+            new("default", "编译器默认")
+        };
         BuildDebugInfoPicker.ItemsSource = stc
             ? new[] { new BuildChoice<CompilerDebugInfo>(CompilerDebugInfo.ProjectDefault, "沿用工程默认"), new(CompilerDebugInfo.None, "不生成 CDB"), new(CompilerDebugInfo.Standard, "--debug · 生成源码调试 CDB") }
             : new[] { new BuildChoice<CompilerDebugInfo>(CompilerDebugInfo.ProjectDefault, "沿用工程默认"), new(CompilerDebugInfo.None, "-g0 · 不生成调试信息"), new(CompilerDebugInfo.Standard, "-g2 · 标准调试信息"), new(CompilerDebugInfo.Full, "-g3 · 包含宏信息") };
@@ -66,7 +78,7 @@ public partial class MainWindow
         BuildDebugInfoLabel.Visibility = BuildDebugInfoPicker.Visibility = mx ? Visibility.Collapsed : Visibility.Visible;
         StcCodeRomPanel.Visibility = stc ? Visibility.Visible : Visibility.Collapsed;
         StcMon51Profile.Visibility = stc && StcMon51Targets.Supports(currentProjectManifest?.DeviceId) ? Visibility.Visible : Visibility.Collapsed;
-        BuildSettingsHelp.Text = mx ? "切换内存模型后重新编译" : stc
+        BuildSettingsHelp.Text = mx ? "参数保存在 mx251.json，命令行编译也使用同一份配置。" : stc
             ? "源码调试建议 --debug 与低优化"
             : "源码调试建议 -Og 与 -g3；较高优化可能使变量或源码行无法直接观察。";
         if (stc)
@@ -268,7 +280,7 @@ public partial class MainWindow
         {
             if (!applyingBuildSettings && loadedMx251Settings is not null)
             {
-                BuildSettingsStatus.Text = Mx251ModelPicker.SelectedValue as string == loadedMx251Settings.Model ? "参数与已保存配置一致。" : "参数尚未保存。";
+                BuildSettingsStatus.Text = Mx251SettingsChanged ? "参数尚未保存。" : "参数与已保存配置一致。";
             }
             return;
         }
@@ -350,6 +362,8 @@ public partial class MainWindow
         if (IsMx251Project)
         {
             Mx251ModelPicker.SelectedValue = loadedMx251Settings?.DefaultModel;
+            Mx251OptimizationPicker.SelectedValue = loadedMx251Settings?.DefaultOptimization;
+            Mx251StandardPicker.SelectedValue = loadedMx251Settings?.DefaultStandard;
             return;
         }
         BuildOptimizationPicker.SelectedValue = CompilerOptimization.ProjectDefault;

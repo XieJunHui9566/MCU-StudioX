@@ -23,12 +23,17 @@ public partial class MainWindow
         SetProjectDetailsMode(await ProjectService.ReadAsync(project));
         await ShowProjectDetailsAsync();
         Check(Mx251ModelPanel.Visibility == Visibility.Visible && BuildOptimizationPicker.Visibility == Visibility.Collapsed && BuildDebugInfoPicker.Visibility == Visibility.Collapsed, "MX251 model replaces generic compiler controls");
+        Check(Mx251ModelPanel.Parent == BuildSettingsEditor && Mx251ModelPanel.IsVisible, "compiler controls stay on visible build settings page");
         Check(Mx251ModelPicker.SelectedValue as string == "small", "saved small model selected");
+        Mx251OptimizationPicker.SelectedValue = "size";
+        Mx251StandardPicker.SelectedValue = "c11";
+        Check(SaveBuildSettingsButton.IsEnabled, "optimization and language changes enable save");
         Mx251ModelPicker.SelectedValue = "large";
         Check(SaveBuildSettingsButton.IsEnabled, "model change enables save");
         await SaveMx251SettingsAsync(project, default);
         await ShowProjectDetailsAsync();
         Check(Mx251ModelPicker.SelectedValue as string == "large" && !SaveBuildSettingsButton.IsEnabled, "saved large model survives reopening details");
+        Check(Mx251OptimizationPicker.SelectedValue as string == "size" && Mx251StandardPicker.SelectedValue as string == "c11", "optimization and C standard survive reopening details");
         foreach (var theme in new[] { ThemeService.Dark, ThemeService.Light })
         {
             ApplyTheme(theme);
@@ -53,7 +58,9 @@ public partial class MainWindow
         }
         FindEditor(Mx251Profile.ConfigurationFile)!.Buffer.Text = source.Text;
         ResetBuildSettings_Click(this, new RoutedEventArgs());
-        Check(Mx251ModelPicker.SelectedValue as string == "small", "reset selects creation default");
+        Check(Mx251ModelPicker.SelectedValue as string == "small" &&
+            Mx251OptimizationPicker.SelectedValue as string == loadedMx251Settings!.DefaultOptimization &&
+            Mx251StandardPicker.SelectedValue as string == loadedMx251Settings.DefaultStandard, "reset selects all creation defaults");
         await SaveMx251SettingsAsync(project, default);
         SetProjectDetailsMode(currentProjectManifest! with
         {

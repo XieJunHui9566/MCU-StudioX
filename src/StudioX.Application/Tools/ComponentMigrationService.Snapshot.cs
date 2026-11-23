@@ -97,7 +97,10 @@ public sealed partial class ComponentMigrationService
             {
                 foreach (var relative in await Ag32SystemSupport.CheckMigrationFilesAsync(root, token))
                 {
-                    expected.Add(relative["device/".Length..]);
+                    if (relative.StartsWith("device/", StringComparison.Ordinal))
+                    {
+                        expected.Add(relative["device/".Length..]);
+                    }
                 }
             }
             catch (StudioXException error)
@@ -129,7 +132,7 @@ public sealed partial class ComponentMigrationService
             var file = PathBoundary.Resolve(root, relative);
             var actual = File.Exists(file) ? await File.ReadAllTextAsync(file, token) : null;
             if (actual != content && !(plan.Project.PinMapping is not null && relative == CMakeGenerator.DeviceListPath
-                && actual == Ag32SystemSupport.RenderDeviceForMigration(plan)))
+                && actual is not null && Ag32SystemSupport.MatchesDeviceForMigration(plan, actual)))
             {
                 blockers.Add("器件构建配置与生成基准不同，需要人工审阅：" + relative);
             }

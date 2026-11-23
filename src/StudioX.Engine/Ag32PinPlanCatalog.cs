@@ -53,7 +53,34 @@ internal sealed record Ag32PinPlanCatalog(Ag32PackagePin[] Pins, Ag32PinFunction
         {
             throw new StudioXException("AG32_PIN_PLAN_CATALOG", "厂商功能目录为空。");
         }
-        return new(Enumerable.Range(1, pinCount).Select(pin => new Ag32PackagePin(pin, pins.Contains(pin))).ToArray(), functions.Values.ToArray());
+        var fixedPins = Ag32SupplyPinCatalog.ForTarget(target);
+        if (fixedPins.Keys.Any(pin => pin > pinCount || pins.Contains(pin)))
+
+        {
+            throw new StudioXException("AG32_PIN_PLAN_CATALOG", "封装手册中的固定电气引脚与转换器目录冲突：" + target);
+        }
+        return new(Enumerable.Range(1, pinCount).Select(pin => new Ag32PackagePin(pin, pins.Contains(pin))
+        {
+            FixedPin = fixedPins.GetValueOrDefault(pin),
+            AlternateFunction = target == "AGRV2KQ32" ? pin switch { 2 => "OSC_IN", 3 => "OSC_OUT", _ => null } : null
+        }).ToArray(), functions.Values.ToArray());
+    }
+
+    internal Ag32PinPlanCatalog WithVerilog(Ag32VerilogPort[] ports)
+    {
+        var known = Functions.Select(function => function.Name).ToHashSet(StringComparer.Ordinal);
+        var extras = ports.SelectMany(port => port.Signals.Select(signal =>
+            new Ag32PinFunction(signal, port.Direction, null) { IsVerilog = true })).ToArray();
+        var duplicate = extras.FirstOrDefault(port => known.Contains(port.Name));
+        if (duplicate is not null)
+
+        {
+            throw new StudioXException("AG32_VERILOG_PORTS", $"顶层端口 {duplicate.Name} 与 MCU 厂商功能同名，请修改 Verilog 端口名。");
+        }
+        return this with
+        {
+            Functions = [.. Functions, .. extras]
+        };
     }
 
     internal void Validate(IReadOnlyList<Ag32PinAssignment> assignments, Ag32PinClockSettings clocks)
@@ -67,7 +94,7 @@ internal sealed record Ag32PinPlanCatalog(Ag32PackagePin[] Pins, Ag32PinFunction
         {
             if (assignment is null || assignment.Function is null || !known.TryGetValue(assignment.Function, out var function))
             {
-                throw new StudioXException("AG32_PIN_PLAN_FUNCTION", "映射功能不在锁定的厂商目录中。");
+                throw new StudioXException("AG32_PIN_PLAN_FUNCTION", $"映射功能 {assignment?.Function} 不在 MCU 功能或当前顶层端口列表中。");
             }
             if (!Pins.Any(pin => pin.Number == assignment.PinNumber && pin.CanAssign))
             {

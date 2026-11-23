@@ -12,6 +12,11 @@ using StudioX.Foundation;
 public sealed partial class Mon51DebugSession(string dataDirectory, string confirmedTarget = StcMon51Targets.HighVoltageDevice) : IAsyncDisposable
 {
     public string TargetId => confirmedTarget;
+    public bool IsTeachingPlatform
+    {
+        get; init;
+    }
+    private int CodeLimit => IsTeachingPlatform ? TeachingSimulatorTarget.CodeSize : 0xdc00;
     private readonly SemaphoreSlim gate = new(1, 1);
     private readonly ConcurrentDictionary<ushort, Mon51Breakpoint> points = new();
     private Mon51Client? client;
@@ -59,7 +64,18 @@ public sealed partial class Mon51DebugSession(string dataDirectory, string confi
             Port = transport.Key;
             IsSimulated = transport.IsSimulated;
             projectPath = Path.GetFullPath(project);
-            _ = StcMon51Targets.SetupSha256(TargetId);
+            if (IsTeachingPlatform)
+            {
+                if (TargetId != TeachingSimulatorTarget.DeviceId || transport is not TeachingSimulatorTransport)
+
+                {
+                    throw new StudioXException("TEACHING_TARGET", "示教平台调试必须使用专用本机连接和 STC89C52RC 模型。");
+                }
+            }
+            else
+            {
+                _ = StcMon51Targets.SetupSha256(TargetId);
+            }
             // 恢复记录按连接保存，换工程也不能绕过同一串口上的遗留断点。
             var key = RecoveryKey(TargetId);
             recoveryPath = Path.Combine(dataDirectory, "debug", "mon51-recovery", key + ".json");
@@ -73,7 +89,7 @@ public sealed partial class Mon51DebugSession(string dataDirectory, string confi
                     throw new StudioXException("MON51_RECOVERY", "同一串口存在另一型号的未完成恢复记录；不能更换型号绕过，也不能套用其原字节：" + other);
                 }
             }
-            if (File.Exists(downloadRecoveryPath))
+            if (!IsTeachingPlatform && File.Exists(downloadRecoveryPath))
             {
                 userProgramVerified = false;
                 if (!UserDownloadRequested)
@@ -81,7 +97,7 @@ public sealed partial class Mon51DebugSession(string dataDirectory, string confi
                     throw new StudioXException("MON51_DOWNLOAD_RECOVERY", "上次用户程序下载未完成核对，请明确选择重新下载完整固件，不能普通附加并续跑：" + downloadRecoveryPath);
                 }
             }
-            if (File.Exists(recoveryPath))
+            if (!IsTeachingPlatform && File.Exists(recoveryPath))
             {
                 throw new StudioXException("MON51_RECOVERY", "存在未确认恢复的断点记录，请先检查对应目标和原字节：" + recoveryPath);
             }
@@ -93,7 +109,7 @@ public sealed partial class Mon51DebugSession(string dataDirectory, string confi
                 var parameters = transport is SerialTransport serial
                     ? $"baud={serial.Settings.BaudRate} · dataBits={serial.Settings.DataBits} · parity={serial.Settings.Parity} · stopBits={serial.Settings.StopBits} · flow={serial.Settings.FlowControl} · DTR={serial.Settings.Dtr} · RTS={serial.Settings.Rts}"
                     : transport.IsSimulated ? "protocol fixture" : "parameters unavailable";
-                client = new Mon51Client(session, LogPath, parameters);
+                client = new Mon51Client(session, LogPath, parameters) { IsTeachingPlatform = IsTeachingPlatform };
             }
             catch
             {
@@ -113,13 +129,13 @@ public sealed partial class Mon51DebugSession(string dataDirectory, string confi
             await ReadSnapshotAsync(token);
             // 冷启动上下文的 PC=0 尚未经过监控的用户复位映射；直接 GO 会执行物理监控入口。
             // SetPc(0) 由原厂监控映射至 DBFD 跳板，仅修改执行上下文，不改写 Flash 或外设。
-            if (Pc == 0)
+            if (Pc == 0 && !IsTeachingPlatform)
             {
                 await SetPcCoreAsync(0, token);
                 Output?.Invoke("冷启动用户入口已映射至 CODE 0xDBFD，保持暂停。");
             }
             SetState(DebugState.Stopped, $"Mon51 {Version} 已连接 · PC=0x{Pc:X4} · 地址调试");
-            Output?.Invoke(StcMon51Targets.Evidence(TargetId));
+            Output?.Invoke(IsTeachingPlatform ? "电脑示教平台 · STC89C52RC 软件模拟 · 未连接实物串口" : StcMon51Targets.Evidence(TargetId));
             Output?.Invoke("附加到已有程序；未执行下载。原始通信日志：" + LogPath);
         }
         catch (Exception ex)
@@ -185,7 +201,7 @@ public sealed partial class Mon51DebugSession(string dataDirectory, string confi
                     break;
                 case DebugAction.Reset:
                     await SetPcCoreAsync(0, token);
-                    SetState(DebugState.Stopped, "逻辑复位入口已设置 · PC=0xDBFD · 尚未执行；外设未复位");
+                    SetState(DebugState.Stopped, $"逻辑复位入口已设置 · PC=0x{Pc:X4} · 尚未执行；外设未复位");
                     break;
                 case DebugAction.Continue:
                     await ContinueCoreAsync(token);
@@ -383,7 +399,7 @@ public sealed partial class Mon51DebugSession(string dataDirectory, string confi
         await client!.SetPcAsync(address, token);
         selectedFrame = 0;
         await ReadSnapshotAsync(token);
-        var expected = address == 0 ? 0xdbfd : address;
+        var expected = address == 0 && !IsTeachingPlatform ? 0xdbfd : address;
         if (Pc != expected)
         {
             throw new StudioXException("MON51_PC_VERIFY", $"PC 回读 0x{Pc:X4} 与预期 0x{expected:X4} 不一致。");
@@ -413,13 +429,18 @@ public sealed partial class Mon51DebugSession(string dataDirectory, string confi
         rows.Add(new("寄存器组", ((raw[14] >> 3) & 3).ToString()));
         rows = rows.Select(r => r with { Changed = (comparison ?? Snapshot).Registers.Any(p => p.Name == r.Name && p.Value != r.Value) }).ToList();
         Snapshot = new(rows.ToArray(), [], [], []);
-        InstructionBytes = Pc < 0xdc00 ? Convert.ToHexString(await client.ReadAsync(Mon51MemorySpace.Code, Pc, Math.Min(8, 0xdc00 - Pc), token)) : "PC 位于用户 CODE 区外";
+        InstructionBytes = Pc < CodeLimit ? Convert.ToHexString(await client.ReadAsync(Mon51MemorySpace.Code, Pc, Math.Min(8, CodeLimit - Pc), token)) : "PC 位于用户 CODE 区外";
         rawRegisters = raw;
         await ReadSourceSnapshotAsync(comparison, token);
     }
 
     private async Task SaveRecoveryAsync(CancellationToken token)
     {
+        // 本机模拟端持有原指令和暂存固件，连接断开即回滚。实板才需要跨会话恢复凭据。
+        if (IsTeachingPlatform)
+        {
+            return;
+        }
         var installed = points.Values.Where(p => p.Installed).ToArray();
         if (installed.Length == 0)
         {
@@ -491,6 +512,10 @@ public sealed partial class Mon51DebugSession(string dataDirectory, string confi
         {
             if (client is null)
             {
+                if (IsTeachingPlatform)
+                {
+                    points.Clear();
+                }
                 if (points.Values.Any(p => p.Installed))
                 {
                     throw new StudioXException("MON51_RECOVERY", "串口已关闭，但断点原字节恢复尚未确认：" + recoveryPath);
@@ -508,10 +533,21 @@ public sealed partial class Mon51DebugSession(string dataDirectory, string confi
             using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(20));
             await client.SynchronizeAsync(true, timeout.Token);
             await RestoreAsync(timeout.Token);
-            await client.RunAsync(timeout.Token);
+            if (!IsTeachingPlatform)
+            {
+                await client.RunAsync(timeout.Token);
+            }
             await client.DisposeAsync();
             client = null;
-            SetState(DebugState.Disconnected, "调试已结束 · 原指令已恢复 · 用户程序继续运行 · 串口已释放");
+            SetState(DebugState.Disconnected, IsTeachingPlatform ? "示教平台调试已结束 · 断点已恢复 · 模拟板保持暂停" : "调试已结束 · 原指令已恢复 · 用户程序继续运行 · 串口已释放");
+        }
+        catch (Exception ex) when (IsTeachingPlatform)
+        {
+            // 模拟板在管道断开时负责暂停和还原断点。连接丢失后仍释放 facade，
+            // 不保留实体板恢复锁，以免用户结束后永远无法重新连接。
+            points.Clear();
+            Output?.Invoke("示教平台结束连接的诊断：" + ex);
+            SetState(DebugState.Disconnected, "示教平台连接已断开 · 可以重新连接");
         }
         catch (Exception ex)
         {

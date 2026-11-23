@@ -28,9 +28,19 @@ public partial class Ag32PinPlanningView : UserControl
     public Ag32PinPlanningView()
     {
         InitializeComponent();
+        UartDataBits.ItemsSource = new[] { 5, 6, 7, 8 };
+        UartStopBits.ItemsSource = new[] { 1, 2 };
+        UartPriority.ItemsSource = Enumerable.Range(1, 15).ToArray();
+        PlannerTabs.SelectionChanged += PlannerTabs_Changed;
         AssignmentsGrid.ItemsSource = assignments;
+        System.Windows.Data.CollectionViewSource.GetDefaultView(assignments).Filter = MatchesPinFilter;
         PackageDiagram.PinSelected += Diagram_PinSelected;
-        Unloaded += (_, _) => ClosePinMenu();
+        PackageDiagram.SizeChanged += (_, _) => FitDiagram();
+        Unloaded += (_, _) =>
+        {
+            ClosePinMenu();
+            EndDiagramPan();
+        };
     }
 
     public event EventHandler? SaveRequested;
@@ -54,6 +64,8 @@ public partial class Ag32PinPlanningView : UserControl
         try
         {
             Snapshot = snapshot;
+            ReloadPlanButton.ToolTip = snapshot.VerilogSourcePath is null ? "放弃当前草稿，从 .ve 重新读取配置" :
+                "放弃当前草稿，从磁盘重新读取 pins.ve 和 Verilog 顶层端口";
             Visibility = Visibility.Visible;
             assignments.Clear();
             foreach (var assignment in snapshot.Assignments.OrderBy(item => item.PinNumber))
@@ -64,15 +76,16 @@ public partial class Ag32PinPlanningView : UserControl
             HseClock.Text = ClockText(snapshot.Clocks.HseMhz);
             SysClock.Text = ClockText(snapshot.Clocks.SysMhz);
             BusClock.Text = ClockText(snapshot.Clocks.BusMhz);
-            var analog = snapshot.Analog ?? new();
-            AnalogEnabled.IsChecked = analog.Enabled;
-            AnalogChannels.Text = string.Join(",", Enumerable.Range(0, 16).Where(bit => (analog.AdcChannels & (1u << bit)) != 0));
-            AnalogDac0.IsChecked = analog.Dac0;
-            AnalogDac1.IsChecked = analog.Dac1;
-            AnalogComparator.IsChecked = analog.Comparator;
-            AnalogPinDetails.Text = string.Join("\n", Ag32PinPlanningService.GetAnalogPins(snapshot.DeviceId).Select(pin => $"PIN_{pin.Pin}: {pin.Functions.Replace("IO_", "", StringComparison.Ordinal)}"));
+            LoadAnalog(snapshot);
+            LoadVectorPriorities(snapshot);
+            LoadUarts(snapshot);
+            if (IrqTab.IsSelected)
+            {
+                RefreshInterruptRows();
+            }
             var package = Ag32DeviceCatalog.Require(snapshot.DeviceId).PackageName;
-            PackageText.Text = $"{snapshot.DeviceId} · {snapshot.TargetDevice} · {package} · 厂商可映射脚 {snapshot.Pins.Count(pin => pin.CanAssign)} 个";
+            PackageText.Text = $"{snapshot.DeviceId} · {package}";
+            PackageText.ToolTip = $"{snapshot.TargetDevice} · 厂商可映射脚 {snapshot.Pins.Count(pin => pin.CanAssign)} 个";
             PackageDiagram.SetPackage(snapshot.DeviceId, package);
             HasChanges = false;
             timing = null;
@@ -81,16 +94,15 @@ public partial class Ag32PinPlanningView : UserControl
             ConstraintDetails.Text = "保存后显示实际生成的约束文件；这些预览文件不代表已编译或已烧录。";
             VexButton.IsEnabled = SdcButton.IsEnabled = false;
             PlannerStatus.Text = snapshot.Diagnostics.Length == 0
-                ? "左键点击封装引脚，在菜单中选择功能或清除分配；保存前统一检查引脚、复用资源和时钟。"
+                ? ""
                 : string.Join("\n", snapshot.Diagnostics);
             UpdateDiagram();
             if (diagramPinCount != snapshot.Pins.Length)
             {
-                // 高脚数封装保留号码与引脚之间的可读间距，通过滚动查看，不压缩成紧密小图。
-                var initialZoom = Math.Round(PackageDiagram.Width * 0.9);
-                // 常用小封装初始完整显示四边与编号；高脚数保持可读字号并允许滚动。
-                DiagramZoom.Value = Math.Clamp(snapshot.Pins.Length <= 48 ? Math.Min(initialZoom, 560) : initialZoom,
-                    480, DiagramZoom.Maximum);
+                fitDiagram = true;
+                fitWholePackage = false;
+                FitDiagram();
+                ResetDiagramPosition();
                 diagramPinCount = snapshot.Pins.Length;
             }
             SetBusy(busy);
@@ -110,18 +122,36 @@ public partial class Ag32PinPlanningView : UserControl
             ClosePinMenu();
         }
         var editable = !value && Snapshot?.CanEdit == true;
+        InterruptRows.IsEnabled = editable;
+        VerilogPinPicker.IsEnabled = editable && VerilogBitPicker.SelectedItem is not null;
         HseClock.IsEnabled = SysClock.IsEnabled = BusClock.IsEnabled = editable;
-        AnalogEnabled.IsEnabled = editable;
-        AnalogChannels.IsEnabled = AnalogDac0.IsEnabled = AnalogDac1.IsEnabled = AnalogComparator.IsEnabled = editable && AnalogEnabled.IsChecked == true;
+        SetAnalogEditable(editable);
         PinName.IsEnabled = editable && assignments.Any(item => item.PinNumber == selectedPin);
         PinDirection.IsEnabled = PinName.IsEnabled && assignments.Any(item => item.PinNumber == selectedPin && item.Function.StartsWith("GPIO", StringComparison.Ordinal));
         PinPull.IsEnabled = PinDirection.IsEnabled;
         PinOutputType.IsEnabled = PinDirection.IsEnabled && assignments.FirstOrDefault(item => item.PinNumber == selectedPin)?.Direction != "INPUT";
+        PinExtraFields.IsEnabled = PinDirection.IsEnabled;
         PackageDiagram.IsEnabled = !value;
-        SavePlanButton.IsEnabled = editable && conflicts.Length == 0 && clockError is null;
+        var uartError = UpdateUartPresentation();
+        var busError = UpdateBusPresentation();
+        var timerError = UpdateTimerPresentation();
+        var systemError = UpdateSystemPresentation(editable);
+        if (Snapshot?.VerilogSourcePath is not null)
+
+        {
+            systemError ??= Ag32PinPlanService.CustomLogicConflict(GetAnalog(), setupDraft);
+        }
+        if (conflicts.Length == 0)
+        {
+            var global = systemError ?? timerError ?? busError ?? uartError;
+            ConflictStatus.Text = global ?? "";
+            var shownInline = PinTab.IsSelected && (timerError is not null ? TimerInspector.IsVisible && TimerStatus.Text == timerError : busError is not null ? BusInspector.IsVisible && BusStatus.Text == busError : SelectedPort >= 0);
+            ConflictStatus.Visibility = global is null || (systemError is null && shownInline) ? Visibility.Collapsed : Visibility.Visible;
+        }
+        SavePlanButton.IsEnabled = editable && conflicts.Length == 0 && clockError is null && uartError is null && busError is null && timerError is null && systemError is null;
         ReloadPlanButton.IsEnabled = !value;
         RecommendedClocks.IsEnabled = editable && RecommendedClocks.Items.Count != 0;
-        ApplyRecommendedClockButton.IsEnabled = editable && conflicts.Length == 0 && RecommendedClocks.SelectedItem is Ag32ClockRecommendation;
+        ApplyRecommendedClockButton.IsEnabled = editable && conflicts.Length == 0 && uartError is null && busError is null && timerError is null && systemError is null && RecommendedClocks.SelectedItem is Ag32ClockRecommendation;
         UpdateTimingPresentation();
     }
 
@@ -132,6 +162,9 @@ public partial class Ag32PinPlanningView : UserControl
         selectedPin = null;
         HasChanges = false;
         diagramPinCount = 0;
+        ResetDiagramPosition();
+        UartPort.SelectedItem = PinProperties;
+        PinFilter.Clear();
         assignments.Clear();
         conflicts = [];
         timing = null;
@@ -142,49 +175,10 @@ public partial class Ag32PinPlanningView : UserControl
         Visibility = Visibility.Collapsed;
     }
 
-    public Ag32PinAssignment[] GetAssignments() => assignments.ToArray();
-
-    public Ag32AnalogSettings GetAnalog()
+    public Ag32PinAssignment[] GetAssignments() => assignments.Select(p => p with
     {
-        if (AnalogEnabled.IsChecked != true)
-        {
-            return new();
-        }
-        uint channels = 0;
-        foreach (var part in AnalogChannels.Text.Split([',', '，'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
-        {
-            if (!int.TryParse(part, NumberStyles.None, CultureInfo.InvariantCulture, out var bit) || bit is < 0 or > 15)
-            {
-                throw new StudioXException("AG32_ANALOG_CHANNEL", "ADC 通道请填写 0–15 的数字，用逗号分隔；实际可用通道见下方固定引脚表。");
-            }
-            channels |= 1u << bit;
-        }
-        var settings = new Ag32AnalogSettings(true, channels, AnalogDac0.IsChecked == true, AnalogDac1.IsChecked == true, AnalogComparator.IsChecked == true);
-        if (Snapshot is { } snapshot)
-        {
-            Ag32PinPlanningService.ValidateAnalogSettings(snapshot.DeviceId, settings);
-        }
-        return settings;
-    }
-
-    private void Analog_Changed(object sender, RoutedEventArgs e)
-    {
-        if (loading || AnalogComparator is null)
-        {
-            return;
-        }
-        MarkChanged();
-        UpdateDiagram();
-    }
-    private void AnalogText_Changed(object sender, TextChangedEventArgs e)
-    {
-        if (loading || AnalogComparator is null)
-        {
-            return;
-        }
-        MarkChanged();
-        UpdateDiagram();
-    }
+        InterruptPriority = p.Interrupt == "NONE" ? 1 : VectorPriority(p.Function.Split('_')[0])
+    }).ToArray();
 
     public Ag32PinClockSettings GetClocks() => new(
         ParseClock(HseClock.Text, "HSECLK"),
@@ -194,14 +188,23 @@ public partial class Ag32PinPlanningView : UserControl
     public void ShowResult(Ag32PinPlanResult result)
     {
         SetSnapshot(result.Snapshot);
+        uartResult = result.Snapshot.Uarts is { Length: > 0 } ? "已生成 src/UART.c 和 include/UART.h，main() 调用 SX_UART_Init()。" : "已保存引脚配置。";
+        UpdateUartPresentation();
         vexPath = result.VexPath;
         sdcPath = result.SdcPath;
-        ConstraintDetails.Text = $"VE：{result.Snapshot.SourcePath}\n系统头文件：{Ag32SystemSupport.HeaderPath}\n系统实现：{Ag32SystemSupport.SourcePath}\n引脚约束数据：{result.VexPath}\n时钟约束：{result.SdcPath}\n\n最终 ASF 和映射镜像由顶部编译生成。";
+        var modules = string.Join("\n", result.UpdatedFiles.Where(path => path.StartsWith("src/", StringComparison.Ordinal) ||
+            path.StartsWith("include/", StringComparison.Ordinal)));
+        var sourceDetails = modules.Length == 0 ? "" : "\n更新的工程源码：\n" + modules;
+        ConstraintDetails.Text = $"VE：{result.Snapshot.SourcePath}{sourceDetails}\n系统头文件：{Ag32SystemSupport.HeaderPath}\n系统实现：{Ag32SystemSupport.SourcePath}\n引脚约束数据：{result.VexPath}\n时钟约束：{result.SdcPath}\n\n最终 ASF 和映射镜像由顶部编译生成。";
         VexButton.IsEnabled = SdcButton.IsEnabled = true;
-        PlannerStatus.Text = "已保存名称注释、系统代码和约束；主函数引用 StudioX_System.h 即可使用，顶部编译生成映射镜像。";
+        PlannerStatus.Text = "已保存配置并生成系统代码与约束。";
     }
 
-    public void ShowFailure(string message) => PlannerStatus.Text = message;
+    public void ShowFailure(string message)
+    {
+        uartResult = PlannerStatus.Text = message;
+        UpdateUartPresentation();
+    }
 
     private void Diagram_PinSelected(object? sender, int number)
     {
@@ -211,16 +214,29 @@ public partial class Ag32PinPlanningView : UserControl
         }
         ClosePinMenu();
         selectedPin = number;
+        PackageDiagram.SetSelection(number);
         AssignmentsGrid.SelectedItem = assignments.FirstOrDefault(item => item.PinNumber == number);
+        if (AssignmentsGrid.SelectedItem is Ag32PinAssignment || !Equals(UartPort.SelectedItem, VerilogModule))
+
+        {
+            SelectInspectorForPin((AssignmentsGrid.SelectedItem as Ag32PinAssignment)?.Function);
+        }
         UpdatePinDetails();
         var snapshot = Snapshot;
         var pin = snapshot.Pins.Single(pin => pin.Number == number);
         try
         {
-            var analogPin = Ag32PinPlanningService.GetReservedAnalogPins(snapshot.DeviceId, GetAnalog()).FirstOrDefault(item => item.Pin == number);
+            if (UsbPad(number) is not null && AssignmentsGrid.SelectedItem is null)
+            {
+                UartPort.SelectedItem = UsbPad(number) == "RTC_OUT" ? "RTC" : "USB0";
+                return;
+            }
+            var analog = GetAnalog();
+            var analogPin = Ag32PinPlanningService.GetReservedAnalogPins(snapshot.DeviceId, analog, setupDraft).FirstOrDefault(item => item.Pin == number);
             if (analogPin is not null && !assignments.Any(item => item.PinNumber == number))
             {
-                PinDetails.Text = $"PIN_{number} · {analogPin.Functions} · 模拟外设已预留；在 ADC / DAC 页取消预留后可分配数字功能。";
+                OpenAnalogPin(number);
+                PinDetails.Text = $"PIN_{number} · {analogPin.ActiveFunctions(analog,setupDraft)} · 模拟外设已预留";
                 return;
             }
         }
@@ -231,14 +247,17 @@ public partial class Ag32PinPlanningView : UserControl
         }
         var anchor = PackageDiagram.Children.OfType<Button>().Single(button => Equals(button.Tag, number));
         var menuGeneration = pinMenuGeneration;
-        var menu = new Ag32PinFunctionMenu(anchor, pin, snapshot.Functions, assignments, snapshot.CanEdit,
+        var menuFunctions = snapshot.Functions.Length <= 350 ? snapshot.Functions : snapshot.Functions.Where(function =>
+            !function.IsVerilog || function.Name == VerilogBitPicker.SelectedValue as string ||
+            assignments.Any(item => item.PinNumber == number && item.Function == function.Name)).ToArray();
+        var menu = new Ag32PinFunctionMenu(anchor, pin, menuFunctions, assignments, snapshot.CanEdit,
             function =>
             {
                 if (menuGeneration == pinMenuGeneration)
                 {
                     AssignPin(snapshot, pin, function);
                 }
-            });
+            }, analogPinout.Any(p => p.Pin == number) ? () => OpenAnalogPin(number) : null);
         menu.Closed += (_, _) =>
         {
             if (ReferenceEquals(ActivePinMenu, menu))
@@ -270,22 +289,28 @@ public partial class Ag32PinPlanningView : UserControl
         ClosePinMenu();
         var previous = assignments.Where(item => item.PinNumber == pin.Number).ToArray();
         if (function is null && previous.Length == 0 ||
-            function is not null && previous.Length == 1 && previous[0].Function == function.Name)
+            function is not null && previous.Length == 1 && previous[0].Function == function.Name &&
+            (!function.IsVerilog || previous[0].Direction == function.Direction))
         {
             return;
         }
-        // 替换仅作用于点中的物理脚；其它脚的相同功能保留并由冲突检查标红。
-        foreach (var assignment in previous)
+        // 跨 MCU/Verilog 的占用保留在草稿中，由共用冲突检查提示，不覆盖原配置。
+        var keepOccupant = function is not null && previous.Any(item => item.Function != function.Name &&
+            (snapshot.Functions.FirstOrDefault(key => key.Name == item.Function)?.IsVerilog == true) != function.IsVerilog);
+        foreach (var assignment in previous.Where(item => !keepOccupant || item.Function == function!.Name))
+
         {
             assignments.Remove(assignment);
         }
         if (function is not null)
         {
-            var added = new Ag32PinAssignment(function.Name, pin.Number, Name: previous.FirstOrDefault()?.Name);
+            var name = keepOccupant ? null : previous.FirstOrDefault()?.Name;
+            var added = new Ag32PinAssignment(function.Name, pin.Number, function.IsVerilog ? function.Direction : null, name);
             assignments.Add(added);
             AssignmentsGrid.SelectedItem = added;
         }
         selectedPin = pin.Number;
+        SelectInspectorForPin(function?.Name);
         MarkChanged();
         UpdateDiagram();
     }
@@ -297,26 +322,51 @@ public partial class Ag32PinPlanningView : UserControl
             return;
         }
         conflicts = Ag32PinPlanConflicts.Find(assignments, Snapshot.Functions);
-        Ag32AnalogPin[] analogPins = [];
+        if (Snapshot.VerilogSourcePath is not null)
+        {
+            var functions = Snapshot.Functions.Select(f => f.Name).ToHashSet(StringComparer.Ordinal);
+            conflicts = [.. conflicts, .. assignments.Where(pin => !functions.Contains(pin.Function) ||
+                !Snapshot.Pins.Any(packagePin => packagePin.CanAssign && packagePin.Number == pin.PinNumber))
+                .Select(pin => new Ag32PinPlanConflict("VerilogPin",
+                    $"{pin.Function} → PIN_{pin.PinNumber} 不在当前端口或可分配引脚列表中，请清除或改配。", [pin.PinNumber], [pin.Function]))];
+        }
+        var analogPins = new Dictionary<int, string>();
         try
         {
-            analogPins = Ag32PinPlanningService.GetReservedAnalogPins(Snapshot.DeviceId, GetAnalog());
-            conflicts = [.. conflicts, .. analogPins.Where(pin => assignments.Any(item => item.PinNumber == pin.Pin))
-                .Select(pin => new Ag32PinPlanConflict("analog", $"PIN_{pin.Pin} 的数字分配与 {pin.Functions} 冲突。", [pin.Pin], [pin.Functions]))];
+            var analog = GetAnalog();
+            analogPins = Ag32PinPlanningService.GetReservedAnalogPins(Snapshot.DeviceId, analog, setupDraft)
+                .ToDictionary(pin => pin.Pin, pin => pin.ActiveFunctions(analog, setupDraft));
+            conflicts = [.. conflicts, .. analogPins.Where(pin => assignments.Any(item => item.PinNumber == pin.Key))
+                .Select(pin => new Ag32PinPlanConflict("analog", $"PIN_{pin.Key} 的数字分配与 {pin.Value} 冲突。", [pin.Key], [pin.Value]))];
         }
         catch (StudioXException error)
         {
             conflicts = [.. conflicts, new("analog", error.Message, [], [])];
+        }
+        if (setupDraft.Units.ContainsKey("USB0"))
+        {
+            var dm = Ag32Setup.UsbDmPin(Snapshot.DeviceId);
+            conflicts = [.. conflicts, .. assignments.Where(p => p.PinNumber == dm || p.PinNumber == dm + 1)
+                .Select(p => new Ag32PinPlanConflict("usb", $"PIN_{p.PinNumber} 的 {p.Function} 与 USB 固定数据脚冲突。",
+                    [p.PinNumber], [p.Function]))];
         }
         ConflictStatus.Text = conflicts.Length == 0 ? "" : (Snapshot.CanEdit
             ? "配置冲突，修正后才能保存：\n"
             : "VE 包含分配冲突，请先在文本编辑器修正并重新读取：\n")
             + string.Join("\n", conflicts.Select(conflict => conflict.Message));
         ConflictStatus.Visibility = conflicts.Length == 0 ? Visibility.Collapsed : Visibility.Visible;
+        RefreshUartPins();
+        RefreshBusPins();
+        RefreshTimerPins();
+        RefreshVerilogPins();
         PackageDiagram.SetPins(Snapshot.Pins.Select(pin => new Ag32PackagePinVisual(pin.Number, pin.CanAssign,
-            analogPins.FirstOrDefault(item => item.Pin == pin.Number)?.Functions.Replace("IO_", "", StringComparison.Ordinal) ??
+            UsbPad(pin.Number) ?? analogPins.GetValueOrDefault(pin.Number) ??
             string.Join(", ", assignments.Where(item => item.PinNumber == pin.Number).Select(item => item.Name is { } name ? name + " · " + Ag32PinFunctionLabels.Compact(item.Function) : Ag32PinFunctionLabels.Compact(item.Function))),
-            ConflictForPin(pin.Number))).ToArray(),
+            ConflictForPin(pin.Number))
+        {
+            FixedPin = pin.FixedPin,
+            AlternateFunction = pin.AlternateFunction
+        }).ToArray(),
             selectedPin);
         SetBusy(busy);
         UpdatePinDetails();
@@ -333,7 +383,8 @@ public partial class Ag32PinPlanningView : UserControl
         if (!loading)
         {
             HasChanges = true;
-            PlannerStatus.Text = "图形配置尚未保存。保存并生成约束后，顶部编译才会使用这些更改。";
+            uartResult = null;
+            PlannerStatus.Text = "有未保存的更改。";
             VexButton.IsEnabled = SdcButton.IsEnabled = false;
             RefreshClockPresentation();
         }
@@ -348,20 +399,39 @@ public partial class Ag32PinPlanningView : UserControl
         var wasLoading = loading;
         loading = true;
         var selected = assignments.FirstOrDefault(item => item.PinNumber == selectedPin);
+        PinEditor.Visibility = selected is null ? Visibility.Collapsed : Visibility.Visible;
+        PinLegend.Visibility = selected is null ? Visibility.Visible : Visibility.Collapsed;
+        PinDirection.Visibility = selected?.Function.StartsWith("GPIO", StringComparison.Ordinal) == true ? Visibility.Visible : Visibility.Collapsed;
+        AssignmentsHeading.Text = $"已分配功能（{assignments.Count}）";
+        AssignmentsGrid.Visibility = PinFilterBar.Visibility = assignments.Count == 0 ? Visibility.Collapsed : Visibility.Visible;
         PinName.Text = selected?.Name ?? "";
         PinDirection.SelectedValue = selected?.Direction is "INPUT" or "OUTPUT" ? selected.Direction : "";
         PinPull.SelectedValue = selected?.Pull ?? "NONE";
         PinOutputType.SelectedValue = selected?.OutputType ?? "PUSH_PULL";
+        PinLevel.SelectedIndex = selected?.InitialHigh == true ? 1 : 0;
+        PinSlew.IsChecked = selected?.SlewControl == true;
+        PinInterrupt.SelectedValue = selected?.Interrupt ?? "NONE";
+        PinOutputFields.Visibility = selected?.Direction == "OUTPUT" && PinDirection.Visibility == Visibility.Visible ? Visibility.Visible : Visibility.Collapsed;
+        PinInputFields.Visibility = selected?.Direction == "INPUT" && PinDirection.Visibility == Visibility.Visible ? Visibility.Visible : Visibility.Collapsed;
         PinName.IsEnabled = !busy && Snapshot?.CanEdit == true && selected is not null;
         PinDirection.IsEnabled = PinName.IsEnabled && selected!.Function.StartsWith("GPIO", StringComparison.Ordinal);
         PinPull.IsEnabled = PinDirection.IsEnabled;
         PinOutputType.IsEnabled = PinDirection.IsEnabled && selected?.Direction != "INPUT";
+        PinExtraFields.IsEnabled = PinDirection.IsEnabled;
+        var triggered = selected?.Interrupt is not (null or "NONE");
+        PinInterruptHint.Visibility = triggered ? Visibility.Visible : Visibility.Collapsed;
+        if (triggered)
+        {
+            PinInterruptHint.Text = $"事件计数  StudioX_{selected!.Function}_InterruptCount" +
+                        (selected.Interrupt.EndsWith("LEVEL", StringComparison.Ordinal) ? "。电平解除后，通过 GPIO_EnableInt 重新使能此脚。" : "");
+        }
         loading = wasLoading;
         var pin = Snapshot?.Pins.FirstOrDefault(pin => pin.Number == selectedPin);
         var functions = string.Join(", ", assignments.Where(item => item.PinNumber == pin?.Number).Select(item => Ag32PinFunctionLabels.Display(item.Function)));
-        PinDetails.Text = pin is null ? "左键点击左侧引脚，选择功能。"
+        PinDetails.Text = pin is null ? "点击封装引脚分配功能，或选择 UART 配置串口。"
+            : pin.FixedPin is { } fixedPin ? $"PIN_{pin.Number} · {fixedPin.Name} · {fixedPin.Description} · 固定连接"
             : !pin.CanAssign ? $"PIN_{pin.Number} · 固定 / 不可映射"
-            : $"PIN_{pin.Number} · " + (functions.Length == 0 ? "空闲" : functions);
+            : $"PIN_{pin.Number} · " + (functions.Length == 0 ? pin.AlternateFunction ?? "空闲" : functions);
         PinDetails.ToolTip = selected is null ? null : Ag32PinFunctionLabels.Description(selected.Function);
     }
 
@@ -376,9 +446,32 @@ public partial class Ag32PinPlanningView : UserControl
         UpdatePinDetails();
     }
 
+    private bool MatchesPinFilter(object value)
+    {
+        if (value is not Ag32PinAssignment pin)
+        {
+            return false;
+        }
+        var filter = PinFilter.Text.Trim();
+        return pin.Function.Contains(filter, StringComparison.OrdinalIgnoreCase) ||
+            $"PIN_{pin.PinNumber}".Contains(filter, StringComparison.OrdinalIgnoreCase) ||
+            pin.Name?.Contains(filter, StringComparison.OrdinalIgnoreCase) == true;
+    }
+
+    private void PropertyWorkspace_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        // 列表与属性各自滚动。短窗口给列表留出可点选的行，同时为属性保留编辑空间。
+        var height = e.NewSize.Height;
+        AssignmentsArea.MaxHeight = Math.Min(height * 0.65, Math.Max(145, height * 0.5));
+    }
+
+    private void PinFilter_Changed(object sender, TextChangedEventArgs e) =>
+        System.Windows.Data.CollectionViewSource.GetDefaultView(assignments).Refresh();
+
     private void Clock_Changed(object sender, TextChangedEventArgs e) => MarkChanged();
     private void PinName_Changed(object sender, TextChangedEventArgs e) => ChangePinDetails();
     private void PinDirection_Changed(object sender, SelectionChangedEventArgs e) => ChangePinDetails();
+    private void PinSlew_Changed(object sender, RoutedEventArgs e) => ChangePinDetails();
     private void ChangePinDetails()
     {
         if (loading || busy || Snapshot?.CanEdit != true || assignments.FirstOrDefault(item => item.PinNumber == selectedPin) is not { } old)
@@ -393,7 +486,10 @@ public partial class Ag32PinPlanningView : UserControl
             Name = name.Length == 0 ? null : name,
             Direction = gpio ? string.IsNullOrEmpty(direction) ? null : direction : old.Direction,
             Pull = gpio ? PinPull.SelectedValue as string ?? "NONE" : old.Pull,
-            OutputType = gpio ? direction == "INPUT" ? "PUSH_PULL" : PinOutputType.SelectedValue as string ?? "PUSH_PULL" : old.OutputType
+            OutputType = gpio ? direction == "INPUT" ? "PUSH_PULL" : PinOutputType.SelectedValue as string ?? "PUSH_PULL" : old.OutputType,
+            InitialHigh = gpio && direction == "OUTPUT" && PinLevel.SelectedIndex == 1,
+            SlewControl = gpio && direction == "OUTPUT" && PinSlew.IsChecked == true,
+            Interrupt = gpio && direction == "INPUT" ? PinInterrupt.SelectedValue as string ?? "NONE" : "NONE"
         };
         if (updated == old)
         {

@@ -68,7 +68,8 @@ public partial class MainWindow
         Check(HdlSchematic.Surface.Diagram?.ModuleName == "user_logic", "可返回上层模块");
         var wire = HdlSchematic.Surface.Diagram!.Wires.First(item => item.BitMappings.Length == 8);
         HdlSchematic.Surface.Select(wire);
-        Check(HdlSchematic.Details.Text.Contains("[7]", StringComparison.Ordinal) && !HdlSchematic.SourceButton.IsEnabled, "连线详情保留逐位对应关系");
+        Check(HdlSchematic.Details.Text.Contains("[7]", StringComparison.Ordinal) && HdlSchematic.TraceEndpoints.Items.Count >= 2,
+            "连线详情保留逐位对应关系和可跳转端点");
         Check(HdlSchematic.Surface.LayoutTransform is ScaleTransform { ScaleX: > 0 and <= 1 }, "适应窗口缩放有效");
         HdlSchematic.Defines.Text += " EXTRA=1";
         Check(HdlSchematic.Summary.Text.Contains("上次综合快照", StringComparison.Ordinal), "修改预览配置标记旧图");

@@ -46,7 +46,7 @@
     "analog_ip.h": "529ab29e0671999e854ba6bbc6bb700629e84002b8fbafdb98c3cda4911d2e12",
     "analog_ip.sdc": "e766dddc1d3409189e117b120ec9930b5ea97f8a50ecf017fda4d4678327727b",
     "analog_ip.vx": "71c283b2e86d5cb00ff001de378a9b184168ee8b3330910b635c3d7b6a350f1c",
-    "analog-pins.json": "1a040255e4cb07ca42c12201b57df59f7ba6289b737edaefbc7f128d108ab96c"
+    "analog-pins.json": "c1f03f9fe6c7904f718a584063d70ed17360f211f37cf3c86d19156f719df5d7"
   },
   "sdkHeaders": {
     "agrv2k_pins.h": "1fd988ce219efffcbef895a301b43287fac073876393a3cfdc2d214e2a837dad",
@@ -73,5 +73,6 @@
     "util.h": "4d82be15314b548fd73ca1ddf37a8fb7b2ebf3dc5aa8ab750e724c182c6998e6",
     "watchdog.h": "6074755f74d7ebaf49d9ded49970a15e54124753921e1e0a03c20e18d59baa2b"
   },
-  "pinoutSha256": "90e0be1539bf16f432ff6a6e22f93c4eeb685adf713464ca6b8e33ddcfd23bbc"
+  "pinoutSha256": "90e0be1539bf16f432ff6a6e22f93c4eeb685adf713464ca6b8e33ddcfd23bbc",
+  "vhPinoutSource": "https://www.ag32mcu.com/wp-content/uploads/2025/06/MANUAL_AG32VH_HyperRAM.pdf"
 }

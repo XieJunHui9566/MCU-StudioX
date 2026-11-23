@@ -18,9 +18,14 @@ internal sealed record Ag32PinMappingRouting(string VexSha256, string IoAsfSha25
         var header = await ReadAsync("pins.hx");
         var sdc = await ReadAsync("studiox-clocks.sdc");
         Ag32PeripheralSupport.VerifyLogic(source, netlist.Text, routed.Text);
+        if (Ag32Setup.Read(source).Units.ContainsKey("HyperRAM"))
+
+        {
+            Ag32HyperRam.Verify(vex.Text, io.Text, routed.Text);
+        }
         var expected = Regex.Matches(vex.Text, @"^\s*(\S+)\s+(PIN_[0-9]+)(?:\s|$)", RegexOptions.Multiline | RegexOptions.CultureInvariant)
             .Select(match => (Port: match.Groups[1].Value, Pin: match.Groups[2].Value)).ToArray();
-        if (expected.Length == 0 && !Ag32PeripheralSupport.Read(source).Enabled)
+        if (expected.Length == 0 && !Ag32PeripheralSupport.Read(source).Enabled && !Ag32TimerInitialization.IsInternalOnly(source) && Ag32Setup.Read(source).Units.Count == 0)
         {
             throw new StudioXException("AG32_MAPPING_ROUTING", "转换器没有生成实际 GPIO 到封装引脚的 VEX 约束。");
         }
@@ -57,6 +62,13 @@ internal sealed record Ag32PinMappingRouting(string VexSha256, string IoAsfSha25
             throw new StudioXException("AG32_MAPPING_ROUTING", "布局器生成了未经 VEX 约束的额外封装 GPIO 分配。");
         }
         await Ag32GpioElectrical.VerifyAsync(build, source, vex.Text, routed.Text, token);
+        if (Ag32Setup.Read(source).Value("RTC", "Clock").StartsWith("LOCAL") &&
+            (!Regex.IsMatch(vex.Text, @"(?m)^PIN_HSE_OUT\s+CLKLOCAL_RTC\s*$") ||
+             !Regex.IsMatch(routed.Text, @"\balta_rio\s+CLKLOCAL_RTC_iobuf\s*\([^;]*\.datain\s*\(\s*PIN_HSE_in\s*\)[^;]*\.oe\s*\(\s*vcc\s*\)")))
+
+        {
+            throw new StudioXException("AG32_MAPPING_ROUTING", "布局后的 RTC 专用输入未连接到 HSE。");
+        }
         var clocks = await Ag32PinMappingClockVerification.VerifyAsync(build, token);
         var timing = await Ag32PinMappingTimingReport.ReadAsync(build, token);
         return new(vex.Hash, io.Hash, routed.Hash, netlist.Hash, header.Hash, sdc.Hash, timing,

@@ -48,6 +48,11 @@ public sealed partial class Mon51DebugSession
         var decoded = new Dictionary<ushort, Mcs51Instruction>();
         foreach (var function in parsed.Functions)
         {
+            if (function.Start >= bundle.Code.Length || function.End >= bundle.Code.Length)
+
+            {
+                throw new StudioXException("MON51_CDB", "CDB 函数超出目标程序区。");
+            }
             for (var address = (int)function.Start; address <= function.End;)
             {
                 var size = Mcs51Decoder.Length(bundle.Code[address]);

@@ -12,10 +12,10 @@ import Ag32RtosTemplates
 
 
 PACKS = {
-    "AG32VF303": ("studiox.preview.ag32vf303", "0.1.5"),
-    "AG32VF407": ("agm.ag32vf407", "0.1.3"),
-    "AG32VH303": ("agm.ag32vh303", "0.1.3"),
-    "AG32VH407": ("agm.ag32vh407", "0.1.3"),
+    "AG32VF303": ("studiox.preview.ag32vf303", "0.1.6"),
+    "AG32VF407": ("agm.ag32vf407", "0.1.4"),
+    "AG32VH303": ("agm.ag32vh303", "0.1.4"),
+    "AG32VH407": ("agm.ag32vh407", "0.1.4"),
 }
 FLASH_ORIGIN = 0x80000000
 RAM_ORIGIN = 0x20000000
@@ -187,16 +187,9 @@ def make_device(device: dict, stage: Path, verified_target: bytes) -> dict:
         "templates": [
             {
                 "id": "minimal",
-                "displayName": "最小裸机工程 · 内部时钟",
-                "description": "内存心跳，不假设板级 LED、串口或晶振。"
-                "新工程生成对应封装的 logic/pins.ve；VH 的 PSRAM 需独立 HyperBus 逻辑。",
-                "entryFile": "templates/minimal/main.c",
-            },
-            {
-                "id": "editor-demo",
-                "displayName": "编辑器演示 · 函数与数据结构",
-                "description": "内存中生成数据，可查看注释、函数和数据结构，不依赖板级外设。",
-                "entryFile": "templates/editor-demo/main.c",
+                "displayName": "空白工程",
+                "description": "裸机 main 与空主循环，可在引脚分配页配置外设。",
+                "entryFile": "templates/blank/main.c",
             },
         ]
         + Ag32RtosTemplates.templates(),
@@ -226,13 +219,8 @@ def stage_pack(
     write(stage, "sdk/src/interrupt.c", sources["sdk/src/interrupt.c"])
     write(stage, "svd/AltaRiscv.svd", sources["sdk/src/AltaRiscv.svd"])
     write(stage, "vendor/framework-agrv_sdk.json", sources["sdk/package.json"])
-    write(stage, "templates/minimal/main.c", (recipe / "main.c").read_bytes())
+    write(stage, "templates/blank/main.c", (recipe / "main.c").read_bytes())
     preview = recipe.parent / "agm.ag32vf303-preview"
-    write(
-        stage,
-        "templates/editor-demo/main.c",
-        (preview / "templates/editor-demo/main.c").read_bytes(),
-    )
     write(stage, "README.md", (recipe / "README.md").read_bytes())
     for name, data in rtos_files.items():
         write(stage, "sdk/freertos/" + name, data)

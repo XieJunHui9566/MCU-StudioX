@@ -139,6 +139,7 @@ public sealed class WorkbenchService : IAsyncDisposable
         BuildMemory = new BuildMemoryService(Toolsets);
         BuildHistory = new(DataDirectory, BuildMemory);
         Ag32Logic = new Ag32LogicWorkflowService();
+        Verilog = new VerilogAssistanceService(Toolsets);
         HdlSchematic = new HdlSchematicService(RuntimeDirectory);
         HdlWorkflow = new HdlWorkflowService(Toolsets, Path.Combine(DataDirectory, "licenses", "ag32-pin-mapping"));
         Ag32PinMapping = new Ag32PinMappingBuildService(Toolsets, Path.Combine(DataDirectory, "licenses", "ag32-pin-mapping"));
@@ -230,6 +231,11 @@ public sealed class WorkbenchService : IAsyncDisposable
     {
         get;
     }
+    public VerilogAssistanceService Verilog
+    {
+        get;
+    }
+
     public HdlSchematicService HdlSchematic
     {
         get;

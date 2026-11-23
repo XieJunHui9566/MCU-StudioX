@@ -6,7 +6,24 @@ using System.Windows.Controls;
 /// <summary>展示基础映射状态；不生成工具参数或持有设备。</summary>
 public partial class Ag32PinMappingView : UserControl
 {
-    public Ag32PinMappingView() => InitializeComponent();
+    private bool? plannerVisible;
+    public Ag32PinMappingView()
+    {
+        InitializeComponent();
+        Planner.ProjectToolsButton.Click += (_, _) => ToolsPanel.IsExpanded = !ToolsPanel.IsExpanded;
+        ToolsPanel.Expanded += (_, _) => UpdateToolsLayout();
+        ToolsPanel.Collapsed += (_, _) => UpdateToolsLayout();
+        SizeChanged += (_, _) => UpdateToolsLayout();
+    }
+
+    private void UpdateToolsLayout()
+    {
+        var hasPlanner = plannerVisible == true;
+        Grid.SetRow(ToolsPanel, hasPlanner ? 2 : 1);
+        ToolsPanel.Visibility = hasPlanner && !ToolsPanel.IsExpanded ? Visibility.Collapsed : Visibility.Visible;
+        ToolsScroll.MaxHeight = hasPlanner ? Math.Min(205, ActualHeight * 0.35) : double.PositiveInfinity;
+        Planner.ProjectToolsButton.Content = ToolsPanel.IsExpanded ? "收起状态" : "构建状态";
+    }
 
     public event EventHandler? EnableRequested;
     public event EventHandler? SchematicRequested;
@@ -25,15 +42,20 @@ public partial class Ag32PinMappingView : UserControl
         EnableButton.Visibility = (!enabled || missingSource) && !customLogic ? Visibility.Visible : Visibility.Collapsed;
         EnableButton.Content = enabled && missingSource ? "恢复 .ve 模板" : "启用基础映射";
         EnableButton.IsEnabled = !busy;
-        OpenButton.IsEnabled = (customLogic || enabled && !missingSource) && !busy;
+        OpenButton.IsEnabled = (customLogic || enabled) && !missingSource && !busy;
         SchematicButton.Visibility = customLogic ? Visibility.Visible : Visibility.Collapsed;
         SchematicButton.IsEnabled = !busy;
         WorkflowButton.Visibility = customLogic ? Visibility.Visible : Visibility.Collapsed;
         WorkflowButton.IsEnabled = !busy;
-        LicenseButton.Visibility = Visibility.Visible;
         LicenseButton.IsEnabled = !busy;
-        LicenseHelp.Visibility = DocumentationActions.Visibility = Visibility.Visible;
-        Planner.Visibility = enabled && !missingSource && !customLogic ? Visibility.Visible : Visibility.Collapsed;
+        Planner.Visibility = (enabled || customLogic) && !missingSource ? Visibility.Visible : Visibility.Collapsed;
+        var visible = Planner.Visibility == Visibility.Visible;
+        if (plannerVisible != visible)
+        {
+            plannerVisible = visible;
+            ToolsPanel.IsExpanded = !visible;
+            UpdateToolsLayout();
+        }
         Planner.SetBusy(busy);
     }
 

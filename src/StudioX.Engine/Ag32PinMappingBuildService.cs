@@ -111,6 +111,7 @@ public sealed partial class Ag32PinMappingBuildService(ToolsetCatalog catalog, s
                     ExitCode = 1
                 }, []);
             }
+            await Ag32LocalInterruptRouting.ApplyAsync(build, source, token);
             await Ag32PinMappingClockVerification.CreateSdcAsync(build, token, basicMapping: true);
             await Ag32GpioElectrical.CreateAsync(build, source, token);
             privateRun = await PreparePrivateRuntimeAsync(tools, token);
@@ -122,7 +123,7 @@ public sealed partial class Ag32PinMappingBuildService(ToolsetCatalog catalog, s
                 "-X", "set LOGIC_DESIGN pins", "-X", "set LOGIC_TOPPIN false", "-X", "set LOGIC_DIR .",
                 "-X", "set LOGIC_VX pins.vx", "-X", "set VEX_FILE pins.vex", "-X", "set LOGIC_BIN pins.bin",
                 "-X", "set BOARD_ASF studiox-gpio.asf", "-X", "set BOARD_PRE {}", "-X", "set BOARD_POST {}",
-                "-X", "set IP_ASF " + (macroArguments.Length == 0 ? "{}" : "analog_ip.asf"), "-X", "set IP_PRE {}", "-X", "set IP_POST {}",
+                "-X", "set IP_ASF " + (macroArguments.Length == 0 ? "{}" : Path.ChangeExtension(macroArguments[1], ".asf")), "-X", "set IP_PRE {}", "-X", "set IP_POST {}",
                 "-X", "set DESIGN_ASF {}", "-X", "set DESIGN_PRE {}", "-X", "set DESIGN_POST {}",
                 "-X", "set IP_SDC studiox-clocks.sdc", "-X", "set LOGIC_COMPRESS false",
                 "-F", PathBoundary.Resolve(tools.ResourceDirectory("platform"), "gen_logic.tcl")],

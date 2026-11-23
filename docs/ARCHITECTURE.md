@@ -33,7 +33,9 @@ Linux 迁移入口为 `StudioX.PortableDesktop`。它只调用 `Application.Port
 
 ## 独立原生核心
 
-PIC16F877A 使用独立的 XC8 C 后端，保留 14 位程序字、分银行 RAM 与 EEPROM 元数据，不套用 GCC、CMake 或 OpenOCD。官方编译器和 DFP 作为精确版本私有组件管理，不需要 MPLAB X 编辑界面；当前阶段仅开放 C 编辑、真实编译及 HEX 导出。软件与硬件边界、工具来源和本体改动见 [PIC 支持](PIC.md)。
+PIC 使用独立的 XC8 C 后端，通过 CMake + Ninja 管理源码、包含目录、宏及编译链接，支持 ELF/HEX 导出和源码登记；旧的直接 XC8 工程已停止兼容。器件元数据保留程序字、分银行 RAM 与 EEPROM 的实际语义，不套用 GCC 内存模型或 OpenOCD。官方编译器、DFP 与 CMake/Ninja 作为精确版本组件管理，不需要 MPLAB X 编辑界面。
+
+PIC16F877A 开放 PICkit3 普通下载，源码调试按准确型号的片上资源开放 PICkit3 / MDB 入口。普通下载直接写入与校验；独立调试会话先备份，退出后恢复。IPECMD、调试回读和 MDB 统一复用 `PicJavaRuntime`，将日志、用户状态和临时文件放入独立用户数据目录，保持已索引组件目录完整。软件与硬件边界、工具来源见 [PIC 支持](PIC.md)。
 
 根据用户最新决定，本项目不要求兼容旧体系。所有核心模块使用 C#；不分发 Node，不复用旧 TypeScript 运行时，不迁移 PLC 工程。旧产品仅参考已验证的设计经验和芯片启动/链接参数。
 
@@ -44,6 +46,8 @@ Packages 完整校验新的 ZIP 芯片包，Engine 从明确选择构造纯 Buil
 Arduino 使用独立 `ProjectKind.Arduino`，在统一器件创建页作为起始模板选择；芯片型号、开发板配置和框架分别记录，保留官方 sketch 结构。AVR 与 ESP32 使用各自精确版本的 Arduino 工具组件，库版本与内容锁独立记录。上传前核对源码、依赖及完整镜像集合，Application 统一预约串口。支持范围与实板待验边界见 [Arduino 编程支持](ARDUINO.md)。
 
 Engine 生成分层 CMake：根 `CMakeLists.txt` 交给用户维护，`device/CMakeLists.txt` 与 `device/platform.cmake` 管理固定 SDK、器件参数和产物规则。Application 将带生成器标识的内部配置视为只读，Desktop 显示原因；器件包内容不承担开发环境组件分发。布局和维护约定见 [工程分层](PROJECT_LAYOUT.md)。
+
+工程入口能力由 `Engine.ProjectCapabilities` 提供；内存统计和构建历史还受具体后端的数据支持限制。PIC、Arduino、Zephyr 当前不自动保存构建历史，不能由“支持编译”推定所有分析视图可用。当前边界与实现入口见 [工程健康检查](PROJECT_HEALTH.md)及 [构建统计与历史范围](PRODUCT_WORKFLOWS.md#构建统计与历史范围)。
 
 ## 设备与实用工具
 
@@ -69,13 +73,13 @@ Application/Plugins 管理安装目录、贡献校验和每工程宿主。Plugin
 
 插件在独立进程运行，宿主负责取消、退出和原始诊断；进程隔离不构成 OS 权限沙箱，用户插件仍具有当前用户的文件和网络权限。签名、原生 UI 注入及操作系统沙箱没有开放，不能把哈希或 AssemblyLoadContext 当作安全边界。
 
-主题接受 JSON 语义颜色，WPF 由应用控制的 ResourceDictionary 映射。用户偏好在 LocalAppData，主题不进入工程和构建指纹。工作台采用 CLion 风格的中性深灰布局，支持浅/深主题、配色导入、本地背景图片和静音循环视频。AppearanceService 管理媒体导入与设置，Desktop 负责渲染和播放生命周期；媒体不作为插件代码执行。详见 WORKBENCH_UI.md。停靠布局持久化、主题包市场留待后续。
+主题接受 JSON 语义颜色，WPF 由应用控制的 ResourceDictionary 映射。用户偏好在 LocalAppData，主题不进入工程和构建指纹。工作台采用 CLion 风格的中性深灰布局，支持浅/深主题、配色导入、本地背景图片和静音循环视频。AppearanceService 管理媒体导入与设置，Desktop 负责渲染和播放生命周期；媒体不作为插件代码执行。`Application.Editing.WorkbenchLayoutService` 已持久化窗口大小、最大化状态、侧栏宽度、底部高度、分栏比例及区域显示状态；这不等于任意工具窗口的自由停靠布局。详见 [工作台界面](WORKBENCH_UI.md)，主题包市场仍待后续。
 
 ## 基础架构验收目标
 
 1. 不依赖 VS Code 的桌面程序可发布运行。
 2. 导入按新格式制作的 AG32 `.mcupack`，完整验证，明确选择设备/模板后创建工程；旧格式明确拒绝。
-3. 使用明确配置的内置工具编译工程，得到 ELF/BIN/HEX/MAP；调试不会隐式烧录。
+3. 使用明确配置的内置工具编译工程，生成该后端支持的 ELF/BIN/HEX/MAP。OpenOCD 附加调试不隐式烧录；PIC 调试构建的写入与恢复、Mon51 用户程序加载遵循各自明确的启动流程，不将附加模式的规则套用到所有后端。
 4. 模拟连接只有一个实例，两个观察者收到同序列；慢消费者、取消和重复连接有测试。
 5. 正式插件示例在独立进程处理数据；不兼容 API、错误入口和异常响应被拒绝。
 6. 主题切换及重启恢复有效；无效主题不替换当前主题。

@@ -23,8 +23,9 @@ internal sealed class Ag32PinPlanDocument
     internal List<string> Diagnostics { get; } = [];
     internal bool CanEdit => Diagnostics.Count == 0;
 
-    internal Ag32PinPlanDocument(byte[] bytes)
+    internal Ag32PinPlanDocument(byte[] bytes, bool custom = false)
     {
+        custom |= Hdl.Ag32CustomPinPorts.IsManaged(bytes);
         bom = bytes is [0xef, 0xbb, 0xbf, ..];
         string text;
         try
@@ -48,7 +49,10 @@ internal sealed class Ag32PinPlanDocument
             var original = match.Groups[1].Value;
             var content = original.Split('#', 2)[0].Trim();
             var clock = Regex.Match(content, @"^(HSECLK|SYSCLK|BUSCLK)\s+(\S+)\s*$", RegexOptions.CultureInvariant);
-            var assignment = Regex.Match(content, @"^([A-Z][A-Z0-9_]*)\s+PIN_([0-9]+)(?::(INPUT|OUTPUT|INOUT))?\s*$", RegexOptions.CultureInvariant);
+            var assignmentPattern = custom
+                ? @"^([A-Za-z_][A-Za-z0-9_$]*(?:\[[0-9]+\])?)\s+PIN_([0-9]+)(?:\s*:\s*((?i:INPUT|OUTPUT|INOUT)))?\s*$"
+                : @"^([A-Z][A-Z0-9_]*)\s+PIN_([0-9]+)(?::(INPUT|OUTPUT|INOUT))?\s*$";
+            var assignment = Regex.Match(content, assignmentPattern, RegexOptions.CultureInvariant);
             Ag32PinAssignment? mapping = null;
             string? clockName = null;
             if (clock.Success)
@@ -62,12 +66,11 @@ internal sealed class Ag32PinPlanDocument
             }
             else if (assignment.Success && int.TryParse(assignment.Groups[2].Value, out var pin))
             {
-                var electrical = Ag32GpioElectrical.ReadOptions(original);
-                mapping = new(assignment.Groups[1].Value, pin,
-                    assignment.Groups[3].Success ? assignment.Groups[3].Value : null,
-                    ReadName(original), electrical.Pull, electrical.OutputType);
+                mapping = Ag32GpioElectrical.ReadOptions(original, new(assignment.Groups[1].Value, pin,
+                    assignment.Groups[3].Success ? assignment.Groups[3].Value.ToUpperInvariant() : null,
+                    ReadName(original)));
             }
-            else if (content.Length != 0 && !IsPreservedSetting(content))
+            else if (content.Length != 0 && !IsPreservedSetting(content) && !(custom && IsPreservedLogicLine(content)))
             {
                 Diagnostics.Add($"第 {number} 行：包含自定义或复杂 VE 配置；请在文本编辑器处理，图形规划只读。");
             }
@@ -203,6 +206,11 @@ internal sealed class Ag32PinPlanDocument
         var comment = line.IndexOf('#');
         return comment < 0 ? line.TrimEnd() + " #" + name : line.Insert(comment, "#" + name + " ");
     }
+
+    private static bool IsPreservedLogicLine(string content) =>
+        Regex.IsMatch(content, @"^(?:ASSIGN|@)\s+\S") ||
+        // MCU 到逻辑的内部线和常量没有物理脚，由原生转换器保留。
+        Regex.IsMatch(content, @"^[A-Za-z_][A-Za-z0-9_$]*(?:\[[0-9]+\])?\s+(?!PIN_[0-9]+\b)(?:[A-Za-z_][A-Za-z0-9_$]*(?:\[[0-9]+\])?|1'b[01])(?:\s*:\s*[A-Za-z]+)?\s*$");
 
     private static bool IsPreservedSetting(string content)
     {

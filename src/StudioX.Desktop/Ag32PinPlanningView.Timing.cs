@@ -96,7 +96,17 @@ public partial class Ag32PinPlanningView
         }
         DisplayedTimingState = state;
         var brush = state == Ag32TimingState.Failed ? "DiagnosticError" : state == Ag32TimingState.Passed ? "DiagnosticSuccess" : "DiagnosticWarning";
+        TimingScopeText.Text = Snapshot?.SystemPeripherals.Setup.Units.ContainsKey(HyperRamModule) == true
+            ? "已保存的配置包含封装内 HyperRAM 的 DDR 输入与输出约束。"
+            : "片内时序结果，不含外部器件采样时序。";
         TimingStateText.Text = text;
+        TimingTab.Header = state switch
+        {
+            Ag32TimingState.Failed => "时钟 / 时序 · 失败",
+            Ag32TimingState.LowMargin => "时钟 / 时序 · 低余量",
+            _ => "时钟 / 时序"
+        };
+        TimingTab.ToolTip = text;
         TimingStateText.SetResourceReference(TextBlock.ForegroundProperty, brush);
         TimingBorder.SetResourceReference(Border.BorderBrushProperty, brush);
         static string Number(decimal? value) => value?.ToString("0.###", CultureInfo.InvariantCulture) ?? "—";

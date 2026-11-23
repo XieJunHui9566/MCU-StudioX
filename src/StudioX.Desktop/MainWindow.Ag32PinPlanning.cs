@@ -1,5 +1,6 @@
 namespace StudioX.Desktop;
 
+using StudioX.Application.CodeIntelligence;
 using StudioX.Engine;
 using StudioX.Foundation;
 
@@ -9,11 +10,55 @@ public partial class MainWindow
 
     private void InitializeAg32PinPlanning()
     {
+        var bottomButton = Ag32PinMapping.Planner.BottomPaneButton;
+        Ag32PinMapping.Planner.CallbackRequested += OpenAg32Callback_Click;
+        bottomButton.Click += ToggleBottom_Click;
+        void UpdateBottomButton() => bottomButton.Content = BottomPanel.Visibility == System.Windows.Visibility.Visible ? "收起底栏" : "展开底栏";
+        BottomPanel.IsVisibleChanged += (_, _) => UpdateBottomButton();
+        UpdateBottomButton();
         Ag32PinMapping.Planner.ReloadRequested += ReloadAg32PinPlan_Click;
         Ag32PinMapping.Planner.SaveRequested += SaveAg32PinPlan_Click;
         Ag32PinMapping.Planner.OpenConstraintRequested += OpenAg32PinConstraint_Click;
         Ag32PinMapping.Planner.RecommendedClockRequested += ApplyAg32RecommendedClock_Click;
     }
+
+    private async void OpenAg32Callback_Click(object? sender, string callback) => await RunAsync(async token =>
+    {
+        var root = RequireProject();
+        if (root != ag32PinPlanProject || currentProjectManifest is not { } manifest ||
+            Ag32SystemSupport.FindMain(root, manifest) is not { } main)
+        {
+            return;
+        }
+        if (Ag32PinMapping.Planner.HasChanges)
+        {
+            await SaveAg32PinPlanAsync(root, token);
+        }
+        var buffers = editorDocuments.Where(e => !Path.IsPathRooted(e.Source.RelativePath))
+            .ToDictionary(e => e.Source.RelativePath, e => e.Buffer.Text, StringComparer.OrdinalIgnoreCase);
+        var location = await services.Ag32PinPlanning.LocateCallbackAsync(root, main, callback, buffers, services.Files, token);
+        if (root != projectDirectory)
+        {
+            return;
+        }
+        await OpenSourceAsync(location.Path, token);
+        if (activeEditor?.Source.RelativePath != location.Path || SourceEditor.Text != location.Text)
+
+        {
+            throw new StudioXException("AG32_CALLBACK_STALE", "定位期间源码已变化，请再次点击编写回调。");
+        }
+        if (location.Append.Length > 0)
+        {
+            if (activeEditor.Source.IsReadOnly)
+            {
+                throw new StudioXException("AG32_CALLBACK", "用户入口文件当前只读。");
+            }
+            SourceEditor.Document.Insert(SourceEditor.Document.TextLength, location.Append);
+        }
+        SourceEditor.CaretOffset = location.Offset;
+        SourceEditor.ScrollToLine(SourceEditor.TextArea.Caret.Line);
+        SourceEditor.Focus();
+    });
 
     private void ClearAg32PinPlan()
     {
@@ -43,7 +88,9 @@ public partial class MainWindow
         }
         if (!discardDraft && ag32PinPlanProject == root && view.Snapshot is { } previous &&
             previous.SourceSha256 == snapshot.SourceSha256 && previous.SourcePath == snapshot.SourcePath &&
-            previous.DeviceId == snapshot.DeviceId && previous.TargetDevice == snapshot.TargetDevice)
+            previous.DeviceId == snapshot.DeviceId && previous.TargetDevice == snapshot.TargetDevice &&
+            previous.VerilogSignature == snapshot.VerilogSignature && previous.CanEdit == snapshot.CanEdit &&
+            previous.Diagnostics.SequenceEqual(snapshot.Diagnostics))
         {
             view.SetTiming(timing, hasUnsavedText);
             return;
@@ -89,26 +136,46 @@ public partial class MainWindow
         {
             throw new StudioXException("AG32_PIN_PLAN_PROJECT", "图形配置不属于当前工程，请重新读取 .ve。");
         }
-        if (FindEditor(snapshot.SourcePath)?.IsDirty == true)
-        {
-            throw new StudioXException("AG32_PIN_PLAN_DIRTY", "VE 编辑器有未保存内容；请先保存编辑器，并重新读取图形配置，避免覆盖文本修改。");
-        }
         try
         {
+            if (FindEditor(snapshot.SourcePath)?.IsDirty == true)
+            {
+                throw new StudioXException("AG32_PIN_PLAN_DIRTY", "VE 编辑器有未保存内容；请先保存编辑器，并重新读取图形配置，避免覆盖文本修改。");
+            }
+            if (snapshot.VerilogSourcePath is not null && editorDocuments.Any(editor =>
+                    editor.IsDirty && VerilogAssistanceService.Supports(editor.Source.RelativePath)))
+
+            {
+                throw new StudioXException("AG32_VERILOG_DRAFT", "Verilog 有未保存修改。请先保存源码并重新读取顶层端口。");
+            }
+            var assignments = view.GetAssignments();
+            var uarts = view.GetUarts();
+            if (currentProjectManifest is { } manifest && Ag32SystemSupport.FindMain(root, manifest) is { } entryPath
+                && FindEditor(entryPath) is { IsDirty: true } entry)
+
+            {
+                await SaveEditorAsync(root, entry, token);
+            }
             var result = await services.Ag32PinPlanning.ApplyAsync(root, snapshot,
-                view.GetAssignments(), view.GetClocks(), view.GetAnalog(), token);
+                assignments, view.GetClocks(), view.GetAnalog(), uarts, view.GetBuses(), view.GetTimers(), view.GetSystemPeripherals(), token);
             if (projectDirectory != root)
             {
                 return;
             }
-            foreach (var relative in new[] { snapshot.SourcePath, Ag32SystemSupport.HeaderPath, Ag32SystemSupport.SourcePath, "device/studiox/StudioX_Board.h", CMakeGenerator.DeviceListPath })
+            foreach (var (from, to) in result.MovedFiles)
+
+            {
+                RemapProjectDocuments(from, to);
+            }
+            foreach (var relative in result.UpdatedFiles)
             {
                 if (FindEditor(relative) is { } editor)
                 {
                     EditorSynchronizer.Apply(editor, await services.Files.ReadAsync(root, relative, token));
                 }
             }
-            await RefreshProjectTreeAsync(token: token);
+            var selected = SelectedProjectEntry?.RelativePath;
+            await RefreshProjectTreeAsync(selected is not null ? result.MovedFiles.GetValueOrDefault(selected, selected) : null, token: token);
             view.ShowResult(result);
             try
             {

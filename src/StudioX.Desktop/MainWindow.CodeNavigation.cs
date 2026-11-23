@@ -24,10 +24,10 @@ public partial class MainWindow
     private readonly List<NavigationPoint> navigationForward = [];
     private sealed record NavigationPoint(string Path, TextAnchor Anchor, CodePosition Position, double Vertical, double Horizontal);
     private bool CanNavigateCode => !closing && projectDirectory is not null && activeDocument is not null && IsActiveSourceTab &&
-        (CodeIntelligenceService.Supports(activeDocument.RelativePath) || IsPythonDocument);
-    private bool NavigationReady => IsPythonDocument || services.Intelligence.IsReady;
+        (CodeIntelligenceService.Supports(activeDocument.RelativePath) || IsPythonDocument || IsVerilogDocument);
+    private bool NavigationReady => IsPythonDocument || IsVerilogDocument || services.Intelligence.IsReady;
 
-    private CodeDocumentSnapshot[] CaptureCodeDocuments() => editorDocuments.Where(session => CodeIntelligenceService.Supports(session.Source.RelativePath) || PythonAssistanceService.Supports(session.Source.RelativePath))
+    private CodeDocumentSnapshot[] CaptureCodeDocuments() => editorDocuments.Where(session => CodeIntelligenceService.Supports(session.Source.RelativePath) || PythonAssistanceService.Supports(session.Source.RelativePath) || VerilogAssistanceService.Supports(session.Source.RelativePath))
         .Select(session => new CodeDocumentSnapshot(session.Source.RelativePath, session.Buffer.Text)).ToArray();
 
     private void InitializeCodeNavigation()
@@ -107,8 +107,8 @@ public partial class MainWindow
                 contextOffset = SourceEditor.CaretOffset;
             }
             definition.IsEnabled = declaration.IsEnabled = CanNavigateCode && NavigationReady && contextOffset is { } offset && IsSymbolContext(offset);
-            references.IsEnabled = definition.IsEnabled;
-            rename.IsEnabled = definition.IsEnabled && !IsPythonDocument && activeDocument?.IsReadOnly == false && !services.Debugger.IsActive;
+            references.IsEnabled = definition.IsEnabled && !IsVerilogDocument;
+            rename.IsEnabled = definition.IsEnabled && !IsPythonDocument && !IsVerilogDocument && activeDocument?.IsReadOnly == false && !services.Debugger.IsActive;
             back.IsEnabled = navigationBack.Count > 0;
             forward.IsEnabled = navigationForward.Count > 0;
         };
@@ -191,7 +191,7 @@ public partial class MainWindow
     private void QueueSymbolHover(int offset, Point point)
     {
         HideSymbolHover();
-        if (!CanNavigateCode || !services.Intelligence.IsReady || !IsSymbolContext(offset))
+        if (!CanNavigateCode || (!IsVerilogDocument && !services.Intelligence.IsReady) || !IsSymbolContext(offset))
         {
             return;
         }
@@ -201,12 +201,16 @@ public partial class MainWindow
         var text = document.Text;
         var path = activeDocument!.RelativePath;
         var documents = CaptureCodeDocuments();
+        var verilog = IsVerilogDocument;
+        var root = projectDirectory!;
         hoverTask = FetchAsync();
         async Task FetchAsync()
         {
             try
             {
-                var result = await services.Intelligence.HoverAsync(path, text, offset, cancellation.Token, documents);
+                var result = verilog
+                    ? await services.Verilog.ResolveSymbolAsync(root, path, text, offset, documents, cancellation.Token)
+                    : await services.Intelligence.HoverAsync(path, text, offset, cancellation.Token, documents);
                 if (cancellation.IsCancellationRequested || SourceEditor.Document != document || document.Text != text || !CanNavigateCode || result is null)
                 {
                     return;
@@ -282,6 +286,7 @@ public partial class MainWindow
         var path = activeDocument!.RelativePath;
         var documents = CaptureCodeDocuments();
         var python = IsPythonDocument;
+        var verilog = IsVerilogDocument;
         var root = projectDirectory!;
         var profile = currentProjectManifest?.MicroPython;
         navigationTask = FetchAsync();
@@ -289,8 +294,9 @@ public partial class MainWindow
         {
             try
             {
-                var locations = python
-                    ? await services.PythonNavigation.FindAsync(root, path, text, offset, false, documents, profile, cancellation.Token)
+                var locations = verilog
+                    ? (await services.Verilog.ResolveSymbolAsync(root, path, text, offset, documents, cancellation.Token))?.Declarations ?? []
+                    : python ? await services.PythonNavigation.FindAsync(root, path, text, offset, false, documents, profile, cancellation.Token)
                     : await services.Intelligence.NavigateAsync(path, text, offset, declaration, cancellation.Token, documents);
                 if (cancellation.IsCancellationRequested || SourceEditor.Document != document || document.Text != text || !CanNavigateCode)
                 {

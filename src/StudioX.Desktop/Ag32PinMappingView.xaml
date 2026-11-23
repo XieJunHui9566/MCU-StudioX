@@ -3,54 +3,72 @@
   xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
   xmlns:local="clr-namespace:StudioX.Desktop">
-  <ScrollViewer
-    VerticalScrollBarVisibility="Auto">
-    <StackPanel
-      Margin="32,28"
-      MaxWidth="1200">
-      <TextBlock
-        Text="AG32 引脚映射"
-        FontSize="23"
-        FontWeight="SemiBold" />
-      <TextBlock
-        x:Name="DescriptionText"
-        TextWrapping="Wrap"
-        Foreground="{DynamicResource Muted}"
-        Margin="0,10,0,16" />
-      <WrapPanel>
-        <Button
-          x:Name="SchematicButton"
-          Content="Verilog 电路图"
-          Click="Schematic_Click"
-          Visibility="Collapsed"
-          Margin="0,0,8,8" />
-        <Button
-          x:Name="WorkflowButton"
-          Content="构建配置与波形仿真"
-          Click="Workflow_Click"
-          Visibility="Collapsed"
-          Margin="0,0,8,8" />
-        <Button
-          x:Name="LicenseButton"
-          Content="配置 Supra 许可"
-          Margin="0,0,8,8"
-          Click="License_Click" />
-        <Button
-          x:Name="EnableButton"
-          Content="启用基础映射"
-          Margin="0,0,8,8"
-          Click="Enable_Click" />
-        <Button
-          x:Name="OpenButton"
-          Content="编辑 .ve"
-          Margin="0,0,8,8"
-          Click="Open_Click" />
-      </WrapPanel>
-      <Expander
-        Header="工具、许可与构建状态"
-        Foreground="{DynamicResource Text}"
-        Margin="0,8,0,8">
-        <StackPanel>
+  <Grid
+    Margin="12,8">
+    <Grid.RowDefinitions>
+      <RowDefinition
+        Height="Auto" />
+      <RowDefinition />
+      <RowDefinition
+        Height="Auto" />
+    </Grid.RowDefinitions>
+    <WrapPanel
+      x:Name="ProjectActions"
+      Grid.Row="0"
+      Margin="0,0,0,4">
+      <Button
+        x:Name="SchematicButton"
+        Content="Verilog 电路图"
+        Click="Schematic_Click"
+        Visibility="Collapsed"
+        Margin="0,0,6,4"
+        Padding="8,3" />
+      <Button
+        x:Name="WorkflowButton"
+        Content="构建配置与波形仿真"
+        Click="Workflow_Click"
+        Visibility="Collapsed"
+        Margin="0,0,6,4"
+        Padding="8,3" />
+      <Button
+        x:Name="OpenButton"
+        Content="编辑 pins.ve"
+        Click="Open_Click"
+        Margin="0,0,6,4"
+        Padding="8,3" />
+      <Button
+        x:Name="LicenseButton"
+        Content="配置 Supra 许可"
+        Click="License_Click"
+        Margin="0,0,6,4"
+        Padding="8,3" />
+      <Button
+        x:Name="EnableButton"
+        Content="启用基础映射"
+        Click="Enable_Click"
+        Margin="0,0,6,4"
+        Padding="8,3" />
+    </WrapPanel>
+    <local:Ag32PinPlanningView
+      x:Name="Planner"
+      Grid.Row="1"
+      Visibility="Collapsed" />
+    <Expander
+      x:Name="ToolsPanel"
+      Grid.Row="2"
+      Header="构建状态与许可说明"
+      Foreground="{DynamicResource Text}"
+      Margin="0,5,0,0">
+      <ScrollViewer
+        x:Name="ToolsScroll"
+        VerticalScrollBarVisibility="Auto">
+        <StackPanel
+          Margin="4,6">
+          <TextBlock
+            x:Name="DescriptionText"
+            TextWrapping="Wrap"
+            Margin="0,0,0,6"
+            Foreground="{DynamicResource Muted}" />
           <TextBox
             x:Name="StatusText"
             IsReadOnly="True"
@@ -58,15 +76,13 @@
             BorderThickness="0"
             Background="Transparent"
             Padding="0"
-            Margin="0,12,0,16" />
+            Margin="0,0,0,8" />
           <TextBlock
-            x:Name="LicenseHelp"
             Text="Supra 需要本机有效许可，可从官方 SDK 导入 license.txt。"
             Foreground="{DynamicResource Muted}"
             TextWrapping="Wrap"
             Margin="0,0,0,8" />
           <WrapPanel
-            x:Name="DocumentationActions"
             Margin="0,0,0,16">
             <Button
               Content="打开 Supra 官方下载"
@@ -78,11 +94,7 @@
               Click="LicenseGuide_Click" />
           </WrapPanel>
         </StackPanel>
-      </Expander>
-      <local:Ag32PinPlanningView
-        x:Name="Planner"
-        Visibility="Collapsed"
-        Margin="0,16,0,0" />
-    </StackPanel>
-  </ScrollViewer>
+      </ScrollViewer>
+    </Expander>
+  </Grid>
 </UserControl>

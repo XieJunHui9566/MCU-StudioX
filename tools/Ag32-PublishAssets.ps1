@@ -35,19 +35,19 @@ function Get-Ag32ReleasePacks([string]$CatalogRoot)
 {
     $expected = @{
         'studiox.preview.ag32vf303' = @{
-            version = '0.1.5'
+            version = '0.1.6'
             devices = @('AG32VF303KCU6', 'AG32VF303CCT6', 'AG32VF303VCT6')
         }
         'agm.ag32vf407'             = @{
-            version = '0.1.3'
+            version = '0.1.4'
             devices = @('AG32VF407RGT6', 'AG32VF407VGT6')
         }
         'agm.ag32vh303'             = @{
-            version = '0.1.3'
+            version = '0.1.4'
             devices = @('AG32VH303RCT6')
         }
         'agm.ag32vh407'             = @{
-            version = '0.1.3'
+            version = '0.1.4'
             devices = @('AG32VH407VGT6')
         }
     }
@@ -133,6 +133,12 @@ function Get-Ag32ReleasePacks([string]$CatalogRoot)
                 if (!$archiveIds.Add($device.id))
                 {
                     throw "AG32 archive contains a duplicate device: $($device.id)"
+                }
+                if ((@($device.templates.id) -join ',') -cne 'minimal,freertos-mcu' -or
+                    $device.templates[0].entryFile -cne 'templates/blank/main.c' -or
+                    !$archive.GetEntry('templates/blank/main.c') -or $archive.GetEntry('templates/editor-demo/main.c'))
+                {
+                    throw "AG32 archive must contain only the blank and FreeRTOS templates: $($device.id)"
                 }
             }
             if ($manifest.formatVersion -ne 1 -or $manifest.vendor -cne 'AGM' -or

@@ -10,7 +10,7 @@ public partial class MainWindow
     private async Task ExerciseAg32TimingControlsAsync(string directory, string fixture, Ag32PinPlanningView view,
         Action<bool, string> check, Func<Task> layout)
     {
-        view.PlannerTabs.SelectedIndex = 2;
+        view.TimingTab.IsSelected = true;
         check(view.ClockGuidanceText.Text.Contains("高于离线推荐范围", StringComparison.Ordinal) && view.RecommendedClocks.Items.Count == 2,
             "启用模拟 IP 后 200/100 显示频率建议，不自动降低频率");
         var assignments = view.GetAssignments();
@@ -30,7 +30,7 @@ public partial class MainWindow
         view.HseClock.Text = "12";
         check(view.RecommendedClocks.Items.Count == 0 && !view.ApplyRecommendedClockButton.IsEnabled, "其它晶振不套用 8 MHz 验证记录");
         await RefreshAg32PinPlanAsync(fixture, CancellationToken.None, discardDraft: true);
-        view.PlannerTabs.SelectedIndex = 2;
+        view.TimingTab.IsSelected = true;
         await layout();
         view.ApplyRecommendedClockButton.BringIntoView();
         await layout();

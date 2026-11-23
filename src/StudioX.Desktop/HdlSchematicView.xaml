@@ -28,7 +28,8 @@
         Margin="0,0,8,0" />
       <Button
         x:Name="BackButton"
-        Content="返回上层"
+        Content="返回"
+        ToolTip="返回上一个模块并恢复缩放、滚动和选择"
         Click="Back_Click"
         IsEnabled="False"
         Margin="0,0,8,0" />
@@ -135,7 +136,7 @@
       </Grid.ColumnDefinitions>
       <ScrollViewer
         x:Name="Viewport"
-        Background="#141B26"
+        Background="{DynamicResource Background}"
         HorizontalScrollBarVisibility="Auto"
         VerticalScrollBarVisibility="Auto"
         PreviewMouseWheel="Viewport_Wheel">
@@ -147,23 +148,81 @@
       <DockPanel
         Grid.Column="1"
         Margin="14,0,0,0">
-        <TextBlock
-          DockPanel.Dock="Top"
-          Text="元件与信号"
-          FontSize="16"
-          Margin="0,0,0,10" />
-        <Button
+        <StackPanel
+          DockPanel.Dock="Top">
+          <Label
+            Content="搜索信号"
+            Foreground="{DynamicResource Text}"
+            Padding="0,0,0,4"
+            Target="{Binding ElementName=SignalSearch}" />
+          <TextBox
+            x:Name="SignalSearch"
+            IsEnabled="False"
+            ToolTip="按名称或位号查找当前模块和子模块中的信号"
+            TextChanged="SignalSearch_Changed"
+            PreviewKeyDown="SignalSearch_KeyDown" />
+          <ListBox
+            x:Name="SignalResults"
+            Visibility="Collapsed"
+            MaxHeight="120"
+            Background="{DynamicResource Surface}"
+            BorderBrush="{DynamicResource Border}"
+            ItemContainerStyle="{StaticResource CodeCompletionItemStyle}"
+            ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+            PreviewMouseLeftButtonUp="SignalResults_Click"
+            PreviewKeyDown="SignalSearch_KeyDown">
+            <ListBox.ItemTemplate>
+              <DataTemplate>
+                <TextBlock
+                  Text="{Binding Label}"
+                  ToolTip="{Binding Label}"
+                  TextTrimming="CharacterEllipsis"
+                  MaxWidth="240" />
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+          <TextBlock
+            x:Name="SignalSearchStatus"
+            Visibility="Collapsed"
+            Foreground="{DynamicResource Muted}"
+            TextWrapping="Wrap"
+            Margin="0,4,0,0" />
+          <StackPanel
+            x:Name="TracePanel"
+            Visibility="Collapsed"
+            Margin="0,8,0,0">
+            <Label
+              Content="驱动端与使用端"
+              Foreground="{DynamicResource Text}"
+              Padding="0,0,0,4"
+              Target="{Binding ElementName=TraceEndpoints}" />
+            <ComboBox
+              x:Name="TraceEndpoints"
+              DisplayMemberPath="Label"
+              SelectionChanged="TraceEndpoint_Changed" />
+          </StackPanel>
+        </StackPanel>
+        <WrapPanel
           DockPanel.Dock="Bottom"
-          x:Name="SourceButton"
-          Content="定位源码"
-          Click="Source_Click"
-          IsEnabled="False"
-          Margin="0,10,0,0" />
+          Margin="0,8,0,0">
+          <Button
+            x:Name="SourceButton"
+            Content="定位源码"
+            Click="Source_Click"
+            IsEnabled="False"
+            Margin="0,0,8,0" />
+          <Button
+            x:Name="EnterModuleButton"
+            Content="进入子模块"
+            Visibility="Collapsed"
+            Click="EnterModule_Click" />
+        </WrapPanel>
         <TextBox
           x:Name="Details"
           IsReadOnly="True"
           TextWrapping="Wrap"
           VerticalScrollBarVisibility="Auto"
+          Margin="0,8,0,0"
           BorderThickness="0"
           Background="Transparent" />
       </DockPanel>

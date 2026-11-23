@@ -146,7 +146,8 @@ public sealed partial class ProjectService(Func<string, CancellationToken, Task>
                 await WriteAg32LogicScaffoldAsync(staging, plan.Project.DeviceId, logic, cancellationToken);
                 if (template.Ag32Sources is { } ag32Sources)
                 {
-                    File.Copy(PathBoundary.Resolve(pack.RootDirectory, ag32Sources.PinMapFile), PathBoundary.Resolve(staging, logic.PinMapFile), overwrite: true);
+                    await WriteAg32LogicPinMapAsync(PathBoundary.Resolve(pack.RootDirectory, ag32Sources.PinMapFile),
+                        PathBoundary.Resolve(staging, logic.PinMapFile), cancellationToken);
                     File.Copy(PathBoundary.Resolve(pack.RootDirectory, ag32Sources.VerilogFile), PathBoundary.Resolve(staging, logic.VerilogFile), overwrite: true);
                     await File.AppendAllTextAsync(Path.Combine(staging, "logic", "README.md"),
                         "\n此模板已提供可综合的内部 GPIO4_0 → FPGA → GPIO4_1 回环，不占用封装脚。可在此基础上编辑 user_logic.v 和 pins.ve；FreeRTOS 运行在 MCU，逻辑电路独立运行。\n", cancellationToken);
@@ -161,28 +162,24 @@ public sealed partial class ProjectService(Func<string, CancellationToken, Task>
                     Path.Combine(staging, ".studiox", "pack-files.sha256.json"));
             }
             await JsonStore.WriteAsync(Path.Combine(staging, ".studiox", "project.json"), plan.Project, cancellationToken);
-            if (plan.Project.PinMapping is { } systemMapping)
+            // 旧包的裸机入口会重设时钟；新包直接使用包内空白入口。
+            if (plan.Project.PinMapping is not null && plan.Project.TemplateId == "minimal" &&
+                template.EntryFile == "templates/minimal/main.c")
             {
-                var ve = await File.ReadAllBytesAsync(PathBoundary.Resolve(staging, systemMapping.PinMapFile), cancellationToken);
-                await Ag32SystemSupport.WriteAsync(staging, Ag32SystemSupport.Render(ve, null, []), systemMapping.PinMapFile, ve, null, cancellationToken);
-                // 只创建新工程入口；已有工程保存配置时不触碰用户 main.c。
-                if (plan.Project.TemplateId == "minimal")
+                await File.WriteAllTextAsync(Path.Combine(staging, "src", "main.c"), """
+                #include "StudioX_System.h"
+
+                volatile uint32_t app_heartbeat = 0;
+
+                int main(void)
                 {
-                    await File.WriteAllTextAsync(Path.Combine(staging, "src", "main.c"), """
-                    #include "StudioX_System.h"
-
-                    volatile uint32_t app_heartbeat = 0;
-
-                    int main(void)
+                    while (1)
                     {
-                        while (1)
-                        {
-                            ++app_heartbeat;
-                            Delay_1ms();
-                        }
+                        ++app_heartbeat;
+                        Delay_1ms();
                     }
-                    """ + "\n", cancellationToken);
                 }
+                """ + "\n", cancellationToken);
             }
             if (plan.Device.Architecture == "mcs251")
             {
@@ -217,6 +214,11 @@ public sealed partial class ProjectService(Func<string, CancellationToken, Task>
                     }
                     await File.WriteAllTextAsync(path, content, cancellationToken);
                 }
+            }
+            if (plan.Project.PinMapping is { } systemMapping)
+            {
+                var ve = await File.ReadAllBytesAsync(PathBoundary.Resolve(staging, systemMapping.PinMapFile), cancellationToken);
+                await Ag32SystemSupport.WriteAsync(staging, Ag32SystemSupport.Render(ve, null, []), systemMapping.PinMapFile, ve, null, cancellationToken);
             }
             await TemplateLoopStyle.PrepareEntryAsync(staging, cancellationToken);
             var gitignore = ".build/\nbuild/\ncmake-build-*/\n.studiox/debug.json\n.studiox/breakpoints.json\n*.user\n";

@@ -869,7 +869,8 @@
                 KeyboardNavigation.TabNavigation="Local">
                 <Grid.RowDefinitions>
                   <RowDefinition
-                    Height="34" />
+                    Height="Auto"
+                    MinHeight="34" />
                   <RowDefinition />
                 </Grid.RowDefinitions>
                 <Border

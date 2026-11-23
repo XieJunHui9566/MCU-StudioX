@@ -16,13 +16,15 @@ public partial class MainWindow
     private Task<SourceDocument> ReadCodeLocationAsync(CodeLocation location, CancellationToken token) =>
         PythonAssistanceService.Supports(location.DocumentPath)
             ? services.PythonNavigation.ReadAsync(RequireProject(), location.DocumentPath, currentProjectManifest?.MicroPython, token)
-            : services.Intelligence.ReadNavigationDocumentAsync(location, token);
+            : VerilogAssistanceService.Supports(location.DocumentPath)
+                ? services.Files.ReadAsync(RequireProject(), location.DocumentPath, token)
+                : services.Intelligence.ReadNavigationDocumentAsync(location, token);
 
     private void QueuePythonReferences(int? at = null)
     {
         CloseCodeAssistance();
         var offset = at ?? SourceEditor.CaretOffset;
-        if (!CanNavigateCode || !NavigationReady || !IsSymbolContext(offset))
+        if (IsVerilogDocument || !CanNavigateCode || !NavigationReady || !IsSymbolContext(offset))
         {
             return;
         }

@@ -27,17 +27,20 @@ public sealed partial class Mon51DebugSession
             }
             // 从擦除前开始阻止失败清理续跑；只有完整回读及复位跳板核对通过才能恢复正常结束行为。
             userProgramVerified = false;
-            await JsonStore.WriteAsync(downloadRecoveryPath!, new
+            if (!IsTeachingPlatform)
             {
-                target = TargetId,
-                project = bundle.ProjectDirectory,
-                imageSha256 = bundle.ImageSha256,
-                symbolsSha256 = bundle.SymbolsSha256,
-                sourceStamp = bundle.SourceStamp,
-                bytes = bytes.Length,
-                startedUtc = DateTimeOffset.UtcNow,
-                message = "用户程序写入未确认完成；禁止普通附加后续跑，须明确重新下载并完整核对"
-            }, token);
+                await JsonStore.WriteAsync(downloadRecoveryPath!, new
+                {
+                    target = TargetId,
+                    project = bundle.ProjectDirectory,
+                    imageSha256 = bundle.ImageSha256,
+                    symbolsSha256 = bundle.SymbolsSha256,
+                    sourceStamp = bundle.SourceStamp,
+                    bytes = bytes.Length,
+                    startedUtc = DateTimeOffset.UtcNow,
+                    message = "用户程序写入未确认完成；禁止普通附加后续跑，须明确重新下载并完整核对"
+                }, token);
+            }
             Output?.Invoke($"Mon51 用户程序下载：{bytes.Length} 字节 · BIN SHA-256 {Convert.ToHexString(SHA256.HashData(bytes))} · 不写芯片配置");
             await client!.EraseUserProgramAsync(token);
             for (var address = 3; address < bytes.Length; address += 40)
@@ -54,20 +57,23 @@ public sealed partial class Mon51DebugSession
                     throw new StudioXException("MON51_VERIFY", $"下载后用户 CODE 0x{address:X4} 回读不一致；目标保持暂停。");
                 }
             }
-            if (!(await client.ReadAsync(Mon51MemorySpace.Code, 0xdbfd, 3, token)).SequenceEqual(bytes[..3]))
+            if (!IsTeachingPlatform && !(await client.ReadAsync(Mon51MemorySpace.Code, 0xdbfd, 3, token)).SequenceEqual(bytes[..3]))
             {
                 throw new StudioXException("MON51_VERIFY", "复位跳板回读不一致；目标保持暂停。");
             }
             await client.SetPcAsync(0, token);
             await ReadSnapshotAsync(token);
-            if (Pc != 0xdbfd)
+            if (Pc != (IsTeachingPlatform ? 0 : 0xdbfd))
             {
                 throw new StudioXException("MON51_VERIFY", "下载后未到达 Mon51 逻辑复位入口；目标保持暂停。");
             }
-            File.Delete(downloadRecoveryPath!);
+            if (!IsTeachingPlatform)
+            {
+                File.Delete(downloadRecoveryPath!);
+            }
             userProgramVerified = true;
-            SetState(DebugState.Stopped, $"已下载并完整核对 {bytes.Length} 字节用户程序 · 逻辑复位入口 0xDBFD · 正在核对源码符号");
-            Output?.Invoke("Mon51 用户程序下载成功：完整代码和复位跳板回读一致；未重新上电，尚未运行。");
+            SetState(DebugState.Stopped, $"已下载并完整核对 {bytes.Length} 字节用户程序 · 逻辑复位入口 0x{Pc:X4} · 正在核对源码符号");
+            Output?.Invoke(IsTeachingPlatform ? "模拟程序已加载并核对，保持暂停；未写入实物芯片。" : "Mon51 用户程序下载成功：完整代码和复位跳板回读一致；未重新上电，尚未运行。");
         }
         catch (Exception error)
         {

@@ -796,6 +796,7 @@
                     Kind="debug"
                     Margin="0,0,6,0" />
                   <TextBlock
+                    x:Name="DebugStartLabel"
                     Text="调试"
                     VerticalAlignment="Center" />
                 </StackPanel>
@@ -1058,8 +1059,8 @@
                   <Button
                     x:Name="Ag32PinMappingRailButton"
                     Style="{StaticResource RailButton}"
-                    ToolTip="AG32 引脚分配"
-                    AutomationProperties.Name="AG32 引脚分配"
+                    ToolTip="AG32 引脚与外设配置"
+                    AutomationProperties.Name="AG32 引脚与外设配置"
                     Visibility="Collapsed"
                     Click="Ag32PinMappingRail_Click">
                     <local:Icon
@@ -2907,6 +2908,26 @@
                                     MinHeight="36"
                                     SelectionChanged="BuildSettings_SelectionChanged"
                                     AutomationProperties.Name="MX251 内存模型" />
+                                  <TextBlock
+                                    Text="优化方式"
+                                    Style="{StaticResource SectionLabel}" />
+                                  <ComboBox
+                                    x:Name="Mx251OptimizationPicker"
+                                    DisplayMemberPath="Label"
+                                    SelectedValuePath="Value"
+                                    MinHeight="36"
+                                    SelectionChanged="BuildSettings_SelectionChanged"
+                                    AutomationProperties.Name="MX251 优化方式" />
+                                  <TextBlock
+                                    Text="C 语言标准"
+                                    Style="{StaticResource SectionLabel}" />
+                                  <ComboBox
+                                    x:Name="Mx251StandardPicker"
+                                    DisplayMemberPath="Label"
+                                    SelectedValuePath="Value"
+                                    MinHeight="36"
+                                    SelectionChanged="BuildSettings_SelectionChanged"
+                                    AutomationProperties.Name="MX251 C 语言标准" />
                                 </StackPanel>
                                 <TextBlock
                                   x:Name="BuildOptimizationLabel"
@@ -3589,6 +3610,16 @@
                   Background="{DynamicResource EditorSurface}">
                   <local:HdlWorkflowView
                     x:Name="HdlWorkflow" />
+                </Border>
+              </TabItem>
+              <TabItem
+                Header="RTL 仿真波形"
+                x:Name="HdlWaveformTab"
+                Visibility="Collapsed">
+                <Border
+                  Background="{DynamicResource EditorSurface}">
+                  <local:HdlWaveformView
+                    x:Name="HdlWaveformPage" />
                 </Border>
               </TabItem>
               <TabItem

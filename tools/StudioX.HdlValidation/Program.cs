@@ -88,6 +88,27 @@ Check(diagram.Wires.Any(wire => wire.BitMappings.Length == 4 && wire.BitMappings
 Check(diagram.Nodes.Any(node => node.Id == "constant:1"), "常量宏形成逻辑高电平");
 Check(diagram.Wires.Any(wire => wire.Points.Length == 6), "时序反馈线没有丢失");
 Check(diagram.Wires.GroupBy(wire => (wire.SourceNode, wire.SourcePort)).Any(group => group.Count() > 1), "信号扇出保留");
+Check(diagram.Junctions.Length != 0 && diagram.Junctions.All(junction => diagram.Wires.Count(wire => wire.Net == junction.Net) > 1),
+    "同一信号的分支有连接点，连接点不属于独立信号");
+Check(diagram.Wires.Any(wire => wire.LabelPosition is not null && wire.BitMappings.Length > 1),
+    "在可读空间显示真实总线名和位宽");
+var subDiagram = service.CreateDiagram(result.Modules.Single(module => !module.IsTop));
+var mux = subDiagram.Nodes.Single(node => node.Type == "$mux");
+var muxArtwork = HdlSchematicGlyph.Create(mux);
+Check(muxArtwork.Labels.Any(label => label.Text == "0") && muxArtwork.Labels.Any(label => label.Text == "1") &&
+    muxArtwork.Labels.Any(label => label.Text == "S"), "MUX 保留真实选择端，并区分选择值 0/1 对应的数据输入");
+var muxCircuit = service.CreateDiagram(new HdlModule("mux_demo",
+    [new("A1", "input", ["n2"]), new("A2", "input", ["n3"]), new("A3", "input", ["n4"]), new("Y1", "output", ["n5"])],
+    [new("mux", "$mux", [new("A", "input", ["n4"]), new("B", "input", ["n3"]),
+        new("S", "input", ["n2"]), new("Y", "output", ["n5"])], new Dictionary<string, string>(), null)],
+    [], null, true, false));
+var dataWire = muxCircuit.Wires.Single(wire => wire.SourceNode == "port:A2" && wire.TargetPort == "B");
+var sourcePin = muxCircuit.Nodes.Single(node => node.Id == dataWire.SourceNode).Outputs.Single().Position;
+var targetPin = muxCircuit.Nodes.Single(node => node.Id == dataWire.TargetNode).Inputs.Single(pin => pin.Name == "B").Position;
+Check(dataWire.Points[0] == sourcePin && dataWire.Points[^1] == targetPin &&
+    dataWire.Points.All(point => point.Y == sourcePin.Y), "居中的 MUX 数据连线水平对齐实际引脚");
+Check(HdlSchematicGlyph.For("dff_bridge") == HdlSchematicGlyph.Shape.Module,
+    "用户自定义模块按层级模块显示");
 Check(top.Cells.All(cell => cell.Source?.Contains("logic/") == true), "网表携带工程相对源码位置");
 await service.ExportSvgAsync(diagram, Path.Combine(output, "schematic.svg"));
 Check(XDocument.Load(Path.Combine(output, "schematic.svg")).Root?.Name.LocalName == "svg", "SVG 是有效独立 XML 文档");

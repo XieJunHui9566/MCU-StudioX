@@ -14,6 +14,28 @@ public sealed class StcBuildWorkflowService(BuildService builds, Func<bool> debu
     public Task<ProjectBuildSettings> PrepareDebugAsync(string directory, CancellationToken token = default)
         => PrepareAsync(directory, true, token);
 
+    public async Task<ProjectBuildSettings> PrepareTeachingDebugAsync(string directory, CancellationToken token = default)
+    {
+        if (debugActive())
+        {
+            throw new StudioXException("STC_BUILD_SESSION", "请先结束当前调试。");
+        }
+        if (!TeachingSimulatorTarget.Supports(await ProjectService.ReadAsync(directory, token)))
+
+        {
+            throw new StudioXException("TEACHING_TARGET", "示教平台调试目前支持 STC89C52RC / SDCC 工程。");
+        }
+        var settings = await builds.LoadSettingsAsync(directory, token);
+        // 模拟器无需在用户 Flash / RAM 中放置监控，保留实际芯片容量与用户内存模型。
+        var selected = settings with
+        {
+            DebugInfo = CompilerDebugInfo.Standard,
+            Mon51Profile = false
+        };
+        await builds.SaveSettingsAsync(directory, selected, token);
+        return selected;
+    }
+
     private async Task<ProjectBuildSettings> PrepareAsync(string directory, bool debugging, CancellationToken token)
     {
         if (debugActive())

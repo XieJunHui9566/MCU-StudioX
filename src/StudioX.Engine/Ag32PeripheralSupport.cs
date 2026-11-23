@@ -13,6 +13,15 @@ public static class Ag32PeripheralSupport
     public const string Marker = "#@StudioX:ANALOG";
     internal const string Prefix = "StudioX.Ag32.Peripherals.";
     internal const string VendorPath = "device/studiox/vendor/";
+    public static bool HyperRamControllerAvailable
+    {
+        get;
+    } =
+        HasResource("hram_ip.vx") && HasResource("hram_ip.sdc");
+
+    private static bool HasResource(string name) =>
+        typeof(Ag32PeripheralSupport).Assembly.GetManifestResourceInfo(Prefix + name) is not null;
+
     internal static byte[] Resource(string name)
     {
         using var stream = typeof(Ag32PeripheralSupport).Assembly.GetManifestResourceStream(Prefix + name)
@@ -41,11 +50,23 @@ public static class Ag32PeripheralSupport
         }
     }
 
+    private static readonly Lazy<Dictionary<string, Ag32AnalogPin[]>> AnalogTables = new(() =>
+        JsonSerializer.Deserialize<Dictionary<string, Ag32AnalogPin[]>>(Resource("analog-pins.json"), JsonStore.Options)!);
+
     public static Ag32AnalogPin[] Pins(string deviceId)
     {
-        var profile = Ag32DeviceCatalog.Require(deviceId);
-        var tables = JsonSerializer.Deserialize<Dictionary<string, Ag32AnalogPin[]>>(Resource("analog-pins.json"), JsonStore.Options)!;
-        return tables[profile.PinCount.ToString(CultureInfo.InvariantCulture)];
+        var target = Ag32DeviceCatalog.Require(deviceId).TargetDevice;
+        // VF 数据来自 AGM 引脚工作簿。VH 使用 AG32VH 系列应用指南第 5、6 页逐脚核对。
+        var key = target switch
+        {
+            "AGRV2KQ32" => "32",
+            "AGRV2KL48" => "48",
+            "AGRV2KL64" => "64",
+            "AGRV2KL100" => "100",
+            "AGRV2KL64H" or "AGRV2KL100H" => target,
+            _ => throw new StudioXException("AG32_ANALOG_CHANNEL", "尚未核实模拟引脚：" + target)
+        };
+        return [.. AnalogTables.Value[key]];
     }
 
     internal static Ag32AnalogSettings Read(byte[] source)
@@ -88,25 +109,31 @@ public static class Ag32PeripheralSupport
         return bom ? [0xef, 0xbb, 0xbf, .. bytes] : bytes;
     }
 
-    public static Ag32AnalogPin[] ReservedPins(string deviceId, Ag32AnalogSettings settings) =>
-        !settings.Enabled ? [] : Pins(deviceId).Where(pin =>
+    public static Ag32AnalogPin[] ReservedPins(string deviceId, Ag32AnalogSettings settings)
+        => ReservedPins(deviceId, settings, null);
+
+    public static Ag32AnalogPin[] ReservedPins(string deviceId, Ag32AnalogSettings settings, Ag32Setup? setup)
+    {
+        if (!settings.Enabled)
         {
-            var channel = Regex.Match(pin.Functions, @"ADC_IN([0-9]+)");
-            return channel.Success && (settings.AdcChannels & (1u << int.Parse(channel.Groups[1].Value, CultureInfo.InvariantCulture))) != 0 ||
-                settings.Dac0 && pin.Functions.Contains("DAC0", StringComparison.Ordinal) ||
-                settings.Dac1 && pin.Functions.Contains("DAC1", StringComparison.Ordinal) ||
-                settings.Comparator && pin.Functions.Contains("CMP_", StringComparison.Ordinal);
-        }).ToArray();
+            return [];
+        }
+        return Pins(deviceId).Where(pin => pin.ActiveFunctions(settings, setup).Length != 0).ToArray();
+    }
 
     internal static void Validate(string deviceId, byte[] source, IReadOnlyList<Ag32PinAssignment> assignments)
     {
         var settings = Read(source);
         ValidateSettings(deviceId, settings);
-        foreach (var pin in ReservedPins(deviceId, settings))
+        var system = Ag32SystemPeripherals.Read(source);
+        system.Setup.Validate(deviceId, assignments, settings, Ag32UartInitialization.Read(source),
+            Ag32BusInitialization.Read(source), Ag32TimerInitialization.Read(source), system, new Ag32PinPlanDocument(source).Clocks);
+        system.Setup.CheckUsbDirective(source);
+        foreach (var pin in ReservedPins(deviceId, settings, system.Setup))
         {
             if (assignments.Any(assignment => assignment.PinNumber == pin.Pin))
             {
-                throw new StudioXException("AG32_ANALOG_PIN", $"PIN_{pin.Pin} 已预留给 {pin.Functions}，请移除此脚的数字功能映射。");
+                throw new StudioXException("AG32_ANALOG_PIN", $"PIN_{pin.Pin} 已预留给 {pin.ActiveFunctions(settings,system.Setup)}，请移除此脚的数字功能映射。");
             }
         }
     }
@@ -117,11 +144,16 @@ public static class Ag32PeripheralSupport
         {
             return;
         }
-        var available = Pins(deviceId).Aggregate(0u, (mask, pin) =>
+        var pins = Pins(deviceId);
+        if (settings.Dac0 && !pins.Any(pin => pin.Supports("DAC0")) ||
+            settings.Dac1 && !pins.Any(pin => pin.Supports("DAC1")) ||
+            settings.Comparator && !pins.Any(pin => pin.ComparatorInput is not null))
+
         {
-            var match = Regex.Match(pin.Functions, @"ADC_IN([0-9]+)");
-            return match.Success ? mask | (1u << int.Parse(match.Groups[1].Value, CultureInfo.InvariantCulture)) : mask;
-        });
+            throw new StudioXException("AG32_ANALOG_CHANNEL", deviceId + " 没有引出所选 DAC 或比较器输入，请取消对应选项。");
+        }
+
+        var available = pins.Aggregate(0u, (mask, pin) => pin.AdcChannel is int ch ? mask | (1u << ch) : mask);
         if ((settings.AdcChannels & ~available) != 0)
         {
             throw new StudioXException("AG32_ANALOG_CHANNEL", deviceId + " 没有引出所选 ADC 通道；请按固定引脚表选择。");
@@ -130,6 +162,16 @@ public static class Ag32PeripheralSupport
 
     internal static async Task<string[]> PrepareLogicAsync(string run, byte[] source, CancellationToken token)
     {
+        if (Ag32Setup.Read(source).Value("RTC", "Clock").StartsWith("LOCAL"))
+
+        {
+            await File.AppendAllTextAsync(Path.Combine(run, "pins.ve"), "\nPIN_HSE_OUT CLKLOCAL_RTC:OUTPUT\n", new UTF8Encoding(false), token);
+        }
+        if (Ag32Setup.Read(source).Units.ContainsKey("HyperRAM"))
+
+        {
+            return await Ag32HyperRam.PrepareAsync(run, source, token);
+        }
         if (!Read(source).Enabled)
         {
             return [];

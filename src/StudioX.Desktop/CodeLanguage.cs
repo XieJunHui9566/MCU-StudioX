@@ -22,7 +22,7 @@ internal static class CodeLanguage
             ".dts" or ".dtsi" or ".overlay" => "Devicetree",
             ".json" => "JSON",
             ".xml" or ".svd" => "XML",
-            ".v" or ".sv" => "Verilog",
+            ".v" or ".vh" or ".sv" or ".svh" => "Verilog",
             ".ve" => "AGM Pin Map",
             ".py" or ".pyw" or ".pyi" => "Python",
             _ => "Text"

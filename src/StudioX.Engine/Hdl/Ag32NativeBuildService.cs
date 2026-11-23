@@ -71,11 +71,37 @@ public sealed partial class Ag32NativeBuildService(ToolsetCatalog catalog, strin
                     File.Copy(original, destination, true);
                 }
             }
-            File.Copy(Path.Combine(source, "logic/pins.ve"), Path.Combine(run, "pins.ve"));
+            var veSource = await File.ReadAllBytesAsync(Path.Combine(source, "logic/pins.ve"), token);
+            var managedVe = Ag32CustomPinPorts.IsManaged(veSource);
+            var logic = await Ag32CustomPinPorts.ReadAsync(catalog, tools, root, settings, token, native, readExternalPins: managedVe);
+            Dictionary<string, string> aliases = [];
+            if (managedVe)
+            {
+                Ag32PinPlanService.RequireCompatibleLogic(veSource);
+                var pins = await Ag32PinPlanCatalog.ReadAsync(tools, project.Logic!.TargetDevice,
+                    Ag32DeviceCatalog.Require(project.DeviceId).PinCount, root, token);
+                var managed = pins.WithVerilog(logic.Ports);
+                var document = new Ag32PinPlanDocument(veSource, custom: true);
+                if (!document.CanEdit)
+
+                {
+                    throw new StudioXException("AG32_VERILOG_PORTS", string.Join("\n", document.Diagnostics));
+                }
+                managed.Validate(document.Assignments, document.Clocks);
+                aliases = logic.Aliases(document.Assignments);
+            }
+            await File.WriteAllBytesAsync(Path.Combine(run, "pins.ve"), Ag32CustomPinPorts.ConverterSource(veSource, aliases), token);
             var environment = ToolsetEnvironment.Create(tools);
             await RunAsync(tools.Tool("python"), ["-I", "-B", tools.Tool("converter"), "-d", project.Logic!.TargetDevice,
-                "-s", "-m", "source/logic/user_logic.v", "-c", "pins.hx", "pins.ve", "pins.v", "-x", "pins.vex"], "VE 接口生成", environment);
+                "-s", "-m", "user_logic.v", "-c", "pins.hx", "pins.ve", "pins.v", "-x", "pins.vex"], "VE 接口生成", environment);
 
+            await logic.ReconnectAsync(Path.Combine(run, "pins.v"), Path.Combine(run, "user_logic.v"), aliases, token);
+            File.Delete(Path.Combine(run, "user_logic.v")); // 仅清理厂商生成的模板，实际源位于 source/logic。
+            if (managedVe)
+            {
+                await Ag32LocalInterruptRouting.ApplyAsync(run, veSource, token, "pins.v");
+                await File.WriteAllBytesAsync(Path.Combine(run, "pins.ve"), veSource, token);
+            }
             var includes = HdlSchematicInputs.PrepareIncludes(source, settings.Inputs, hashes.Keys.Where(key => key != Ag32NativeBuildSettings.RelativePath), token);
             var mapScript = await File.ReadAllTextAsync(Path.Combine(tools.ResourceDirectory("supra"), "etc/af_map.tcl"), token);
             mapScript = mapScript.Replace("__design_name__", "pins").Replace("__top_module__", "pins")
@@ -87,7 +113,6 @@ public sealed partial class Ag32NativeBuildService(ToolsetCatalog catalog, strin
             await RunAsync(native.Tool("mapper"), new[] { "-TQ", "-L", "mapper.log", "-c", "map.tcl", "pins.v" }
                 .Concat(settings.Sources.Select(file => "source/" + file)).ToArray(), "Verilog 原生综合", ToolsetEnvironment.Create(native));
             await Ag32PinMappingClockVerification.CreateSdcAsync(run, token);
-            var veSource = await File.ReadAllBytesAsync(Path.Combine(run, "pins.ve"), token);
             await Ag32GpioElectrical.CreateAsync(run, veSource, token);
             foreach (var file in settings.SdcFiles)
             {

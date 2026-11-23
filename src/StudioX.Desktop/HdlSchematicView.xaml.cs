@@ -4,6 +4,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Threading;
 using StudioX.Application;
 using StudioX.Engine.Hdl;
 
@@ -11,8 +12,13 @@ using StudioX.Engine.Hdl;
 public partial class HdlSchematicView : UserControl
 {
     private HdlSchematicService? service;
-    private readonly Stack<string> history = new();
+    private sealed record ViewState(string Module, object? Selection, TraceEndpoint? Endpoint,
+        double Zoom, double HorizontalOffset, double VerticalOffset);
+
+    private readonly Stack<ViewState> history = new();
+    private readonly Dictionary<string, HdlDiagram> diagrams = new(StringComparer.Ordinal);
     private bool changingModule;
+    private int viewportRequest;
     private double zoom = 1;
     private bool stale;
     public HdlSchematicResult? Result
@@ -67,8 +73,11 @@ public partial class HdlSchematicView : UserControl
         Result = null;
         stale = false;
         history.Clear();
+        diagrams.Clear();
+        viewportRequest++;
         Modules.ItemsSource = null;
         Surface.SetDiagram(null);
+        SetSignalCatalog(null);
         Summary.Text = message;
         ExportButton.IsEnabled = LogButton.IsEnabled = BackButton.IsEnabled = false;
     }
@@ -83,10 +92,12 @@ public partial class HdlSchematicView : UserControl
         Result = result;
         stale = false;
         history.Clear();
+        diagrams.Clear();
         changingModule = true;
         Modules.ItemsSource = result.Modules.Select(module => module.Name).ToArray();
         changingModule = false;
-        Modules.SelectedItem = result.TopModule;
+        SetSignalCatalog(result);
+        ShowModule(result.TopModule);
         ExportButton.IsEnabled = LogButton.IsEnabled = true;
     }
 
@@ -94,6 +105,7 @@ public partial class HdlSchematicView : UserControl
     {
         stale = true;
         Summary.Text = "源码或配置已改变，下图属于上次综合快照；请重新生成。";
+        UpdateSourceButton();
     }
 
     private void ShowModule(string name)
@@ -102,7 +114,14 @@ public partial class HdlSchematicView : UserControl
         {
             return;
         }
-        Surface.SetDiagram(service.CreateDiagram(module));
+        changingModule = true;
+        Modules.SelectedItem = name;
+        changingModule = false;
+        if (!diagrams.TryGetValue(name, out var diagram))
+        {
+            diagrams.Add(name, diagram = service.CreateDiagram(module));
+        }
+        Surface.SetDiagram(diagram);
         Summary.Text = $"{name} · {module.Cells.Length} 个元件 · {module.Ports.Length} 个端口 · RTL 综合结果（未做布局布线或时序分析）";
         if (module.IsBlackBox)
         {
@@ -116,33 +135,46 @@ public partial class HdlSchematicView : UserControl
         {
             MarkStale();
         }
-        Details.Text = "双击子模块进入层级。\n点击元件或连线查看端口、位宽与连接。\nCtrl + 滚轮缩放，滚动条移动视图。";
         BackButton.IsEnabled = history.Count > 0;
-        Dispatcher.InvokeAsync(Fit, System.Windows.Threading.DispatcherPriority.Loaded);
+        ScheduleViewport(Fit);
+    }
+
+    private void NavigateModule(string name)
+    {
+        if (Surface.Diagram is { } diagram)
+        {
+            if (diagram.ModuleName == name)
+            {
+                return;
+            }
+            history.Push(new(diagram.ModuleName, Surface.Selection, TraceEndpoints.SelectedItem as TraceEndpoint,
+                zoom, Viewport.HorizontalOffset, Viewport.VerticalOffset));
+        }
+        ShowModule(name);
+    }
+
+    private void ScheduleViewport(Action action)
+    {
+        var request = ++viewportRequest;
+        Dispatcher.InvokeAsync(() =>
+        {
+            if (request == viewportRequest)
+            {
+                action();
+            }
+        }, DispatcherPriority.Loaded);
     }
 
     internal void ActivateNode(HdlDiagramNode node)
     {
         if (Result?.Modules.Any(module => module.Name == node.Type) == true)
         {
-            history.Push((string)Modules.SelectedItem);
-            Modules.SelectedItem = node.Type;
+            NavigateModule(node.Type);
         }
-        else if (node.Source is { } source)
+        else if (!stale && node.Source is { } source)
         {
             SourceRequested?.Invoke(source);
         }
-    }
-
-    private void SelectionChanged(object? value)
-    {
-        SourceButton.IsEnabled = value is HdlDiagramNode { Source: not null };
-        Details.Text = value switch
-        {
-            HdlDiagramNode node => Describe(node),
-            HdlDiagramWire wire => wire.Label + "\n\n" + wire.SourceNode + " → " + wire.TargetNode + "\n\n" + string.Join("\n", wire.BitMappings),
-            _ => "选择元件或信号线。",
-        };
     }
 
     private string Describe(HdlDiagramNode node)
@@ -187,7 +219,7 @@ public partial class HdlSchematicView : UserControl
     private void Log_Click(object sender, RoutedEventArgs e) => LogRequested?.Invoke(this, EventArgs.Empty);
     private void Source_Click(object sender, RoutedEventArgs e)
     {
-        if (Surface.Selection is HdlDiagramNode { Source: { } source })
+        if (!stale && SelectedSource is { } source)
         {
             SourceRequested?.Invoke(source);
         }
@@ -196,14 +228,23 @@ public partial class HdlSchematicView : UserControl
     {
         if (!changingModule && Modules.SelectedItem is string module)
         {
-            ShowModule(module);
+            NavigateModule(module);
         }
     }
     private void Back_Click(object sender, RoutedEventArgs e)
     {
-        if (history.TryPop(out var module))
+        if (history.TryPop(out var state))
         {
-            Modules.SelectedItem = module;
+            ShowModule(state.Module);
+            Surface.Select(state.Selection);
+            SetTraceEndpoint(state.Endpoint);
+            ScheduleViewport(() =>
+            {
+                SetZoom(state.Zoom);
+                Viewport.UpdateLayout();
+                Viewport.ScrollToHorizontalOffset(state.HorizontalOffset);
+                Viewport.ScrollToVerticalOffset(state.VerticalOffset);
+            });
         }
     }
     private void Fit_Click(object sender, RoutedEventArgs e) => Fit();

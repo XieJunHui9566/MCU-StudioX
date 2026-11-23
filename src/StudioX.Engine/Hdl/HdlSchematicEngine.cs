@@ -34,21 +34,8 @@ public sealed class HdlSchematicEngine(string runtimeDirectory)
         await HdlSchematicInputs.RequireProjectAsync(root, token);
         HdlSchematicInputs.Validate(root, settings);
         progress?.Report("校验 Yosys 综合工具…");
-        var toolRoot = PathBoundary.Resolve(runtimeDirectory, "hdl/yosys");
-        var manifestPath = PathBoundary.Resolve(toolRoot, "runtime.json");
-        if (!File.Exists(manifestPath))
-        {
-            throw new StudioXException("HDL_TOOL_MISSING", "缺少内置 Yosys 电路预览组件，请安装完整的 IDE 运行时。");
-        }
-        using var manifest = JsonDocument.Parse(await File.ReadAllTextAsync(manifestPath, token));
-        var executable = PathBoundary.Resolve(toolRoot, manifest.RootElement.GetProperty("executable").GetString()!);
-        await using (var stream = File.OpenRead(executable))
-        {
-            if (Convert.ToHexString(await SHA256.HashDataAsync(stream, token)) != manifest.RootElement.GetProperty("sha256").GetString())
-            {
-                throw new StudioXException("HDL_TOOL_HASH", "内置 Yosys 的 SHA-256 与运行时清单不一致。");
-            }
-        }
+        var frontend = await ResolveFrontendAsync(token);
+        var executable = frontend.Executable;
         var runDirectory = PathBoundary.Resolve(root, ".build/hdl-schematic/" + Guid.NewGuid().ToString("N"));
         var sourceDirectory = Path.Combine(runDirectory, "source");
         Directory.CreateDirectory(sourceDirectory);
@@ -81,11 +68,13 @@ public sealed class HdlSchematicEngine(string runtimeDirectory)
         {
             Source = RestoreSource(module.Source, includeMap),
             Cells = module.Cells.Select(cell => cell with { Source = RestoreSource(cell.Source, includeMap) }).ToArray(),
+            Ports = module.Ports.Select(port => port with { Source = RestoreSource(port.Source, includeMap) }).ToArray(),
+            Signals = module.Signals.Select(signal => signal with { Source = RestoreSource(signal.Source, includeMap) }).ToArray(),
         }).ToArray();
         var top = modules.SingleOrDefault(module => module.IsTop)
             ?? throw new StudioXException("HDL_TOP", "网表没有唯一顶层模块，请在预览配置中指定模块名。日志：" + log);
         var report = new HdlSchematicResult(root, top.Name, modules, HdlSchematicInputs.Digest(hashes, settings), hashes,
-            netlist, log, manifest.RootElement.GetProperty("version").GetString()!, DateTimeOffset.UtcNow, settings,
+            netlist, log, frontend.Version, DateTimeOffset.UtcNow, settings,
             (await File.ReadAllLinesAsync(log, token)).Where(line => line.StartsWith("Warning:", StringComparison.Ordinal)).ToArray());
         await JsonStore.WriteAsync(Path.Combine(runDirectory, "report.json"), report, token);
         return report;
@@ -94,7 +83,27 @@ public sealed class HdlSchematicEngine(string runtimeDirectory)
     public Task<bool> IsCurrentAsync(HdlSchematicResult result, CancellationToken token = default) =>
         HdlSchematicInputs.IsCurrentAsync(result.ProjectDirectory, result.InputHashes, result.Settings, token);
 
-    private static string Quote(string value) => "\"" + value.Replace("\\", "/").Replace("\"", "\\\"") + "\"";
+    internal async Task<(string Executable, string Version)> ResolveFrontendAsync(CancellationToken token)
+    {
+        var toolRoot = PathBoundary.Resolve(runtimeDirectory, "hdl/yosys");
+        var manifestPath = PathBoundary.Resolve(toolRoot, "runtime.json");
+        if (!File.Exists(manifestPath))
+        {
+            throw new StudioXException("HDL_TOOL_MISSING", "缺少内置 Yosys 电路预览组件，请安装完整的 IDE 运行时。");
+        }
+        using var manifest = JsonDocument.Parse(await File.ReadAllTextAsync(manifestPath, token));
+        var executable = PathBoundary.Resolve(toolRoot, manifest.RootElement.GetProperty("executable").GetString()!);
+        await using (var stream = File.OpenRead(executable))
+        {
+            if (Convert.ToHexString(await SHA256.HashDataAsync(stream, token)) != manifest.RootElement.GetProperty("sha256").GetString())
+            {
+                throw new StudioXException("HDL_TOOL_HASH", "内置 Yosys 的 SHA-256 与运行时清单不一致。");
+            }
+        }
+        return (executable, manifest.RootElement.GetProperty("version").GetString()!);
+    }
+
+    internal static string Quote(string value) => "\"" + value.Replace("\\", "/").Replace("\"", "\\\"") + "\"";
 
     private static string? RestoreSource(string? source, IReadOnlyDictionary<string, string> includes)
     {

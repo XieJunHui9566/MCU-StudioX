@@ -2,48 +2,86 @@ namespace StudioX.Desktop;
 
 using System.Globalization;
 using System.Windows;
+using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using StudioX.Engine.Hdl;
 
-/// <summary>按实际 VCD 时间绘制数字波形，光标显示采样时刻的值。</summary>
+/// <summary>在可见时间窗口内绘制 VCD，时间轴和信号名称不随对应方向的滚动消失。</summary>
 public sealed class HdlWaveformSurface : FrameworkElement
 {
+    private const double RulerHeight = 34;
+    private const double RowHeight = 34;
+    private static readonly Brush PlotBackground = new SolidColorBrush(Color.FromRgb(20, 27, 39));
+    private static readonly Pen GridPen = new(new SolidColorBrush(Color.FromRgb(55, 65, 80)), 1);
+    private static readonly Pen LevelPen = new(Brushes.LightGreen, 1.4);
+    private static readonly Pen UnknownPen = new(Brushes.OrangeRed, 1.4);
+    private static readonly Pen ImpedancePen = new(Brushes.Gold, 1.4);
+    private static readonly Pen CursorPen = new(Brushes.DeepSkyBlue, 1);
+    private static readonly Typeface WaveFont = new("Consolas");
+    private readonly DrawingVisual cursorLayer = new();
+    private readonly Dictionary<(string, Brush, double), DrawingGroup> labelDrawings = new();
+    private double textSize;
+    private double pixelsPerDip;
+
     private HdlWaveform? waveform;
     private HdlWaveSignal[] visible = [];
-    private double zoom = 1;
-    private long cursor;
+    private long? cursor;
     private bool draggingCursor;
     private int draggedSignalRow;
-    private const double LabelWidth = 260;
-    private const double RowHeight = 36;
+    private double verticalOffset;
+    private double viewportHeight;
+    private double PlotFontSize => (double)GetValue(TextElement.FontSizeProperty);
+    private double LabelWidth => Math.Min(ActualWidth * .40, Math.Max(260, PlotFontSize * 26));
+    private double PlotWidth => Math.Max(1, ActualWidth - LabelWidth);
+    internal long StartTick
+    {
+        get; private set;
+    }
+    internal long SpanTicks
+    {
+        get; private set;
+    }
+    internal decimal CursorFraction => cursor is long tick && SpanTicks > 0 && tick >= StartTick && tick <= StartTick + SpanTicks
+        ? (decimal)(tick - StartTick) / SpanTicks : .5m;
     public event Action<string>? CursorChanged;
 
-    public void SetWaveform(HdlWaveform? value)
+    public HdlWaveformSurface() => AddVisualChild(cursorLayer);
+    protected override int VisualChildrenCount => 1;
+    protected override Visual GetVisualChild(int index) => index == 0 ? cursorLayer : throw new ArgumentOutOfRangeException(nameof(index));
+
+    internal void SetWaveform(HdlWaveform? value, string filter)
     {
-        StopCursorDrag();
         waveform = value;
-        zoom = 1;
-        cursor = 0;
-        Filter("");
+        cursor = null;
+        SetTimeWindow(0, value?.EndTick ?? 0);
+        Filter(filter);
     }
-    public void Filter(string text)
+
+    internal void Filter(string text)
     {
         StopCursorDrag();
         visible = waveform?.Signals.Where(signal => signal.Name.Contains(text, StringComparison.OrdinalIgnoreCase)).Take(128).ToArray() ?? [];
-        UpdateSize();
-    }
-    public void Zoom(double factor)
-    {
-        zoom = Math.Clamp(zoom * factor, .25, 16);
-        UpdateSize();
-    }
-    private void UpdateSize()
-    {
-        Width = LabelWidth + 1000 * zoom;
-        Height = Math.Max(200, 50 + visible.Length * RowHeight);
+        MinHeight = RulerHeight + Math.Max(1, visible.Length) * RowHeight;
         InvalidateVisual();
     }
+
+    internal void SetTimeWindow(long start, long span)
+    {
+        StartTick = start;
+        SpanTicks = span;
+        InvalidateVisual();
+    }
+
+    internal void SetVerticalViewport(double offset, double height)
+    {
+        verticalOffset = offset;
+        viewportHeight = height;
+        InvalidateVisual();
+    }
+
+    internal decimal FractionAt(double x) => (decimal)Math.Clamp((x - LabelWidth) / PlotWidth, 0, 1);
+    private double X(long tick) => LabelWidth + (SpanTicks == 0 ? 0 : (double)(tick - StartTick) / SpanTicks * PlotWidth);
 
     protected override void OnMouseDown(MouseButtonEventArgs e)
     {
@@ -53,9 +91,8 @@ public sealed class HdlWaveformSurface : FrameworkElement
         {
             return;
         }
-        draggedSignalRow = (int)Math.Floor((position.Y - 40) / RowHeight);
+        draggedSignalRow = position.Y < verticalOffset + RulerHeight ? -1 : (int)((position.Y - RulerHeight) / RowHeight);
         MoveCursor(position, draggedSignalRow);
-        // 捕获鼠标后，即使拖出波形区域，松开左键也能结束操作，不留下粘住的光标。
         draggingCursor = CaptureMouse();
         Cursor = Cursors.SizeWE;
         e.Handled = true;
@@ -65,19 +102,16 @@ public sealed class HdlWaveformSurface : FrameworkElement
     {
         base.OnMouseMove(e);
         var position = e.GetPosition(this);
-        if (draggingCursor)
+        if (draggingCursor && e.LeftButton == MouseButtonState.Pressed)
         {
-            if (e.LeftButton != MouseButtonState.Pressed)
-            {
-                StopCursorDrag();
-                return;
-            }
             MoveCursor(position, draggedSignalRow);
             e.Handled = true;
-            return;
         }
-        var cursorX = LabelWidth + (waveform?.EndTick > 0 ? (double)cursor / waveform.EndTick * 1000 * zoom : 0);
-        if (waveform is not null && Math.Abs(position.X - cursorX) <= 6)
+        else if (draggingCursor)
+        {
+            StopCursorDrag();
+        }
+        else if (cursor is long tick && position.X >= LabelWidth && Math.Abs(position.X - X(tick)) <= 6)
         {
             Cursor = Cursors.SizeWE;
         }
@@ -90,13 +124,12 @@ public sealed class HdlWaveformSurface : FrameworkElement
     protected override void OnMouseUp(MouseButtonEventArgs e)
     {
         base.OnMouseUp(e);
-        if (!draggingCursor || e.ChangedButton != MouseButton.Left)
+        if (draggingCursor && e.ChangedButton == MouseButton.Left)
         {
-            return;
+            MoveCursor(e.GetPosition(this), draggedSignalRow);
+            StopCursorDrag();
+            e.Handled = true;
         }
-        MoveCursor(e.GetPosition(this), draggedSignalRow);
-        StopCursorDrag();
-        e.Handled = true;
     }
 
     protected override void OnLostMouseCapture(MouseEventArgs e)
@@ -117,113 +150,281 @@ public sealed class HdlWaveformSurface : FrameworkElement
 
     private void StopCursorDrag()
     {
-        draggingCursor = false;
         if (IsMouseCaptured)
         {
             ReleaseMouseCapture();
         }
+        draggingCursor = false;
         ClearValue(CursorProperty);
     }
 
-    private void MoveCursor(Point position, int row)
+    internal void MoveCursor(Point position, int row)
     {
         if (waveform is null)
         {
             return;
         }
-        cursor = (long)(Math.Clamp((position.X - LabelWidth) / (1000 * zoom), 0, 1) * waveform.EndTick);
+        var tick = StartTick + (long)decimal.Round(FractionAt(position.X) * SpanTicks);
+        cursor = tick;
         var sample = row >= 0 && row < visible.Length ? visible[row] : null;
-        CursorChanged?.Invoke($"光标 {cursor * waveform.NanosecondsPerTick:0.###} ns" + (sample is null
-            ? $" · 显示前 {visible.Length} 条匹配信号"
-            : $" · {sample.Name} [{sample.Width}] = {sample.Changes.LastOrDefault(change => change.Tick <= cursor)?.Value ?? "x"}"));
-        InvalidateVisual();
+        CursorChanged?.Invoke("光标 " + FormatTime(tick * waveform.NanosecondsPerTick) + (sample is null
+            ? "" : $" · {sample.Name} [{sample.Width}] = {ValueAt(sample, tick)}"));
+        DrawCursorLayer();
+    }
+
+    // VCD 已按 tick 排序。保留窗口左边界之前的最后一个值，长记录平移时只遍历可见段。
+    private static int LastChangeAt(HdlWaveChange[] changes, long tick)
+    {
+        var low = 0;
+        var high = changes.Length;
+        while (low < high)
+        {
+            var middle = low + (high - low) / 2;
+            if (changes[middle].Tick <= tick)
+            {
+                low = middle + 1;
+            }
+            else
+            {
+                high = middle;
+            }
+        }
+        return low - 1;
+    }
+
+    private static string ValueAt(HdlWaveSignal signal, long tick)
+    {
+        var index = LastChangeAt(signal.Changes, tick);
+        return index < 0 ? "x" : signal.Changes[index].Value;
+    }
+
+    internal static string FormatTime(decimal ns)
+    {
+        var (unit, label) = ns switch
+        {
+            >= 1_000_000_000 => (1_000_000_000m, "s"),
+            >= 1_000_000 => (1_000_000m, "ms"),
+            >= 1_000 => (1_000m, "µs"),
+            >= 1 or 0 => (1m, "ns"),
+            >= .001m => (.001m, "ps"),
+            _ => (.000001m, "fs")
+        };
+        return $"{ns / unit:0.###############} {label}";
     }
 
     protected override void OnRender(DrawingContext context)
     {
-        context.DrawRectangle(new SolidColorBrush(Color.FromRgb(20, 27, 39)), null, new Rect(0, 0, ActualWidth, ActualHeight));
-        if (waveform is null)
+        var bottom = Math.Min(ActualHeight, verticalOffset + viewportHeight);
+        context.DrawRectangle(PlotBackground, null, new Rect(RenderSize));
+        var dpi = VisualTreeHelper.GetDpi(this).PixelsPerDip;
+        if (textSize != PlotFontSize || pixelsPerDip != dpi)
         {
-            Text("运行 testbench 后显示 RTL 波形", 14, 20, Brushes.LightGray);
+            textSize = PlotFontSize;
+            pixelsPerDip = dpi;
+            labelDrawings.Clear();
+        }
+        DrawCursorLayer();
+        if (waveform is null || bottom <= verticalOffset || ActualWidth < 4)
+        {
             return;
         }
-        double X(long tick) => LabelWidth + (waveform.EndTick == 0 ? 0 : (double)tick / waveform.EndTick * 1000 * zoom);
-        var grid = new Pen(new SolidColorBrush(Color.FromRgb(55, 65, 80)), 1);
-        var highLowPen = new Pen(Brushes.LightGreen, 1.4);
-        var unknownPen = new Pen(Brushes.OrangeRed, 1.4);
-        var highImpedancePen = new Pen(Brushes.Gold, 1.4);
-        for (var i = 0; i <= 10; i++)
-        {
-            var tick = waveform.EndTick / 10 * i;
-            Text($"{tick * waveform.NanosecondsPerTick:0.###} ns", X(tick) + 3, 7, Brushes.LightGray);
-            context.DrawLine(grid, new(X(tick), 30), new(X(tick), ActualHeight));
-        }
-        for (var row = 0; row < visible.Length; row++)
+
+        var first = Math.Max(0, (int)(verticalOffset / RowHeight));
+        var last = Math.Min(visible.Length, (int)Math.Ceiling((bottom - RulerHeight) / RowHeight));
+        for (var row = first; row < last; row++)
         {
             var signal = visible[row];
-            var y = 40 + row * RowHeight;
-            var value = signal.Changes.LastOrDefault(change => change.Tick <= cursor)?.Value ?? "x";
-            Text(signal.Name, 8, y, Brushes.WhiteSmoke, LabelWidth - 72);
-            Text(value.Length > 8 ? value[..8] + "…" : value, LabelWidth - 65, y, Brushes.Gold, 60);
-            context.DrawLine(grid, new(0, y + 28), new(ActualWidth, y + 28));
-            for (var i = 0; i < signal.Changes.Length; i++)
+            var y = RulerHeight + row * RowHeight + 4;
+            var valueWidth = Math.Min(65, LabelWidth / 3);
+            DrawText(context, signal.Name, 6, y, Brushes.WhiteSmoke, LabelWidth - valueWidth - 10);
+            context.DrawLine(GridPen, new(0, y + 29), new(ActualWidth, y + 29));
+            DrawSignal(context, signal, y);
+        }
+        if (visible.Length == 0)
+        {
+            DrawText(context, "没有匹配的信号", 8, RulerHeight + 6, Brushes.LightGray, ActualWidth - 16);
+        }
+        // 标尺固定在垂直视口顶部；仅刻度文字按可用宽度避让，网格始终对应所选时基。
+        context.DrawRectangle(PlotBackground, null, new Rect(0, verticalOffset, ActualWidth, RulerHeight));
+        DrawText(context, "信号", 6, verticalOffset + 6, Brushes.LightGray, LabelWidth / 2);
+        DrawText(context, "值", LabelWidth - Math.Min(65, LabelWidth / 3), verticalOffset + 6, Brushes.LightGray, LabelWidth / 3);
+        var end = StartTick + SpanTicks;
+        var endLabel = FormatTime(end * waveform.NanosecondsPerTick);
+        var endWidth = Math.Min(PlotWidth / 2, MakeText(endLabel, Brushes.LightGray).Width + 2);
+        var nextLabelX = LabelWidth;
+        var divisions = (int)Math.Min(10, SpanTicks);
+        for (var i = 0; i <= divisions; i++)
+        {
+            var tick = StartTick + (divisions == 0 ? 0 : (long)((decimal)SpanTicks * i / divisions));
+            var x = X(tick);
+            context.DrawLine(GridPen, new(x, verticalOffset + RulerHeight - 5), new(x, bottom));
+            if (i == divisions && divisions > 0)
             {
-                var change = signal.Changes[i];
-                var end = i + 1 < signal.Changes.Length ? signal.Changes[i + 1].Tick : waveform.EndTick;
-                var x = X(change.Tick);
-                var right = X(end);
-                // 同一像素中的密集跳变聚合成活动竖线，避免为百万事件逐个创建绘图对象。
-                if (right - x < 1 && i + 1 < signal.Changes.Length)
-                {
-                    var column = Math.Floor(x);
-                    var first = i;
-                    while (i + 1 < signal.Changes.Length && Math.Floor(X(signal.Changes[i + 1].Tick)) == column)
-                    {
-                        i++;
-                    }
-                    context.DrawLine(highImpedancePen, new(column, y + 3), new(column, y + 23));
-                    if (i > first)
-                    {
-                        i--;
-                        continue;
-                    }
-                }
-                var unknown = change.Value.Contains('x');
-                var color = unknown ? Brushes.OrangeRed : change.Value.Contains('z') ? Brushes.Gold : Brushes.LightGreen;
-                var pen = unknown ? unknownPen : change.Value.Contains('z') ? highImpedancePen : highLowPen;
-                if (signal.Width == 1 && !unknown && change.Value != "z")
-                {
-                    var level = change.Value == "1" ? y + 3 : y + 23;
-                    context.DrawLine(pen, new(x, level), new(right, level));
-                    if (i > 0)
-                    {
-                        context.DrawLine(pen, new(x, y + 3), new(x, y + 23));
-                    }
-                }
-                else
-                {
-                    context.DrawLine(pen, new(x, y + 3), new(right, y + 3));
-                    context.DrawLine(pen, new(x, y + 23), new(right, y + 23));
-                    context.DrawLine(pen, new(x, y + 3), new(x + Math.Min(4, right - x), y + 23));
-                    if (right - x > 22)
-                    {
-                        Text(change.Value, x + 5, y + 4, color, right - x - 7);
-                    }
-                }
+                DrawText(context, endLabel, ActualWidth - endWidth, verticalOffset + 6, Brushes.LightGray, endWidth);
+                break;
+            }
+            var label = FormatTime(tick * waveform.NanosecondsPerTick);
+            var width = MakeText(label, Brushes.LightGray).Width + 2;
+            if (x >= nextLabelX && x + width + 6 < ActualWidth - endWidth)
+            {
+                DrawText(context, label, x + 2, verticalOffset + 6, Brushes.LightGray, width);
+                nextLabelX = x + width + 8;
             }
         }
-        context.DrawLine(new Pen(Brushes.DeepSkyBlue, 1), new(X(cursor), 30), new(X(cursor), ActualHeight));
+    }
 
-        void Text(string text, double x, double y, Brush brush, double width = 200)
+    private void DrawCursorLayer()
+    {
+        // 独立保留光标和值列；移动光标时不重新提交波形路径、标尺或信号名。
+        using var context = cursorLayer.RenderOpen();
+        var bottom = Math.Min(ActualHeight, verticalOffset + viewportHeight);
+        var top = verticalOffset + RulerHeight;
+        if (waveform is null || bottom <= top || textSize <= 0)
         {
-            var formatted = new FormattedText(text, CultureInfo.CurrentUICulture, FlowDirection.LeftToRight,
-                new Typeface("Consolas"), 12, brush, VisualTreeHelper.GetDpi(this).PixelsPerDip)
-            {
-                MaxTextWidth = Math.Max(1, width),
-                MaxLineCount = 1,
-                Trimming = TextTrimming.CharacterEllipsis
-            };
-            context.DrawText(formatted, new(x, y));
+            return;
         }
+        var first = (int)(verticalOffset / RowHeight);
+        var last = Math.Min(visible.Length, (int)Math.Ceiling((bottom - RulerHeight) / RowHeight));
+        var labelWidth = LabelWidth;
+        var valueWidth = Math.Min(65, labelWidth / 3);
+        context.PushClip(new RectangleGeometry(new Rect(0, top, ActualWidth, bottom - top)));
+        for (var row = first; row < last; row++)
+        {
+            DrawText(context, ValueAt(visible[row], cursor ?? 0), labelWidth - valueWidth,
+                RulerHeight + row * RowHeight + 4, Brushes.Gold, valueWidth - 5);
+        }
+        context.Pop();
+        if (cursor is long selected && selected >= StartTick && selected <= StartTick + SpanTicks)
+        {
+            context.DrawLine(CursorPen, new(X(selected), verticalOffset + RulerHeight - 5), new(X(selected), bottom));
+        }
+    }
+
+    private void DrawSignal(DrawingContext context, HdlWaveSignal signal, double y)
+    {
+        var changes = signal.Changes;
+        var end = StartTick + SpanTicks;
+        var index = LastChangeAt(changes, StartTick);
+        var left = LabelWidth;
+        var width = PlotWidth;
+        var scale = SpanTicks == 0 ? 0 : width / SpanTicks;
+        var levels = new WaveStroke(LevelPen);
+        var unknown = new WaveStroke(UnknownPen);
+        var impedance = new WaveStroke(ImpedancePen);
+        // -1 表示第一次赋值前的未知态。
+        while (index < changes.Length)
+        {
+            var tick = index < 0 ? StartTick : changes[index].Tick;
+            if (tick > end)
+            {
+                break;
+            }
+            var next = index + 1;
+            var rightTick = next < changes.Length ? Math.Min(end, changes[next].Tick) : end;
+            var x = left + (Math.Max(StartTick, tick) - StartTick) * scale;
+            var right = left + (rightTick - StartTick) * scale;
+            if (next < changes.Length && changes[next].Tick <= end && Math.Floor(right) == Math.Floor(x))
+            {
+                // 跳过同像素内的中间事件，最后一个值仍需画到下一次跳变处。
+                var boundary = decimal.Ceiling((decimal)Math.Clamp((Math.Floor(x) + 1 - left) / width, 0, 1) * SpanTicks);
+                var last = LastChangeAt(changes, StartTick + (long)boundary - 1);
+                impedance.Line(new(x, y + 3), new(x, y + 23));
+                index = Math.Max(next, last);
+                continue;
+            }
+            var value = index < 0 ? "x" : changes[index].Value;
+            var stroke = value.Contains('x') ? unknown : value.Contains('z') ? impedance : levels;
+            if (signal.Width == 1 && stroke == levels)
+            {
+                var level = value == "1" ? y + 3 : y + 23;
+                if (index > 0 && tick >= StartTick)
+                {
+                    stroke.Line(new(x, value == "1" ? y + 23 : y + 3), new(x, level));
+                }
+                stroke.Line(new(x, level), new(right, level));
+            }
+            else
+            {
+                stroke.Line(new(x, y + 3), new(right, y + 3));
+                stroke.Line(new(x, y + 23), new(right, y + 23));
+                if (tick >= StartTick)
+                {
+                    stroke.Line(new(x, y + 3), new(x + Math.Min(4, right - x), y + 23));
+                }
+                if (right - x > 22)
+                {
+                    DrawText(context, value, x + 5, y + 4, stroke.Pen.Brush, right - x - 7);
+                }
+            }
+            index++;
+        }
+        levels.Draw(context);
+        unknown.Draw(context);
+        impedance.Draw(context);
+    }
+
+    // 一行按状态最多提交三条几何路径，避免密集跳变为每条线段创建独立的 WPF 绘图对象。
+    private sealed class WaveStroke(Pen pen)
+    {
+        public Pen Pen => pen;
+        private readonly StreamGeometry geometry = new();
+        private StreamGeometryContext? path;
+        private Point previous;
+
+        public void Line(Point from, Point to)
+        {
+            if (path is null || previous != from)
+            {
+                path ??= geometry.Open();
+                path.BeginFigure(from, false, false);
+            }
+            path.LineTo(to, true, false);
+            previous = to;
+        }
+
+        public void Draw(DrawingContext context)
+        {
+            if (path is null)
+            {
+                return;
+            }
+            path.Close();
+            geometry.Freeze();
+            context.DrawGeometry(null, pen, geometry);
+        }
+    }
+
+    private FormattedText MakeText(string text, Brush brush) =>
+        new(text, CultureInfo.CurrentUICulture, FlowDirection.LeftToRight, WaveFont,
+            textSize, brush, pixelsPerDip);
+
+    private void DrawText(DrawingContext context, string text, double x, double y, Brush brush, double width)
+    {
+        if (width < 1)
+        {
+            return;
+        }
+        var key = (text, brush, Math.Floor(width));
+        if (!labelDrawings.TryGetValue(key, out var drawing))
+        {
+            if (labelDrawings.Count >= 1024)
+            {
+                labelDrawings.Clear();
+            }
+            var formatted = MakeText(text, brush);
+            formatted.MaxTextWidth = key.Item3;
+            formatted.MaxLineCount = 1;
+            formatted.Trimming = TextTrimming.CharacterEllipsis;
+            drawing = new DrawingGroup();
+            using (var label = drawing.Open())
+            {
+                label.DrawText(formatted, new Point());
+            }
+            drawing.Freeze();
+            labelDrawings.Add(key, drawing);
+        }
+        context.PushTransform(new TranslateTransform(x, y));
+        context.DrawDrawing(drawing);
+        context.Pop();
     }
 }

@@ -15,6 +15,8 @@ public partial class MainWindow
     private CancellationTokenSource? analysisEnvironmentCancellation;
     private EditorProblemRow[] problemRows = [];
     private bool diagnosticsPausedForDebug;
+    private CodeDiagnosticBatch[] verilogBatches = [];
+    private string verilogDiagnosticStatus = "";
 
     private void UpdateDebugDiagnosticState()
     {
@@ -40,13 +42,16 @@ public partial class MainWindow
         diagnosticDebounce.Tick += (_, _) =>
         {
             diagnosticDebounce.Stop();
-            if (services.Debugger.IsActive || diagnosticsPausedForDebug || projectDirectory is null || !services.Intelligence.IsReady || activeDocument is null || !CodeIntelligenceService.Supports(activeDocument.RelativePath) || closing)
+            if (services.Debugger.IsActive || diagnosticsPausedForDebug || projectDirectory is null || activeDocument is null || closing ||
+                (!IsVerilogDocument && (!services.Intelligence.IsReady || !CodeIntelligenceService.Supports(activeDocument.RelativePath))))
             {
                 return;
             }
             liveDiagnosticCancellation?.Cancel();
             var cancellation = new CancellationTokenSource();
             liveDiagnosticCancellation = cancellation;
+            var root = projectDirectory;
+            var isVerilog = IsVerilogDocument;
             var path = activeDocument.RelativePath;
             var text = SourceEditor.Text;
             var documents = CaptureCodeDocuments();
@@ -55,13 +60,33 @@ public partial class MainWindow
             {
                 try
                 {
-                    await services.Intelligence.SynchronizeDiagnosticsAsync(path, text, documents, cancellation.Token);
+                    if (isVerilog)
+                    {
+                        var result = await services.Verilog.DiagnoseAsync(root, path, text, documents, cancellation.Token);
+                        if (!cancellation.IsCancellationRequested && root == projectDirectory)
+                        {
+                            verilogBatches = result.Batches;
+                            verilogDiagnosticStatus = result.Status;
+                            RefreshDiagnosticMarkers();
+                        }
+                    }
+                    else
+
+                    {
+                        await services.Intelligence.SynchronizeDiagnosticsAsync(path, text, documents, cancellation.Token);
+                    }
                 }
                 catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
                 {
                 }
                 catch (Exception ex)
                 {
+                    if (isVerilog && !cancellation.IsCancellationRequested)
+                    {
+                        verilogBatches = [];
+                        verilogDiagnosticStatus = "Verilog 分析不可用 · 见分析日志";
+                        RefreshDiagnosticMarkers();
+                    }
                     await RecordAnalysisFailureAsync("实时诊断", ex);
                 }
                 finally
@@ -69,6 +94,10 @@ public partial class MainWindow
                     if (liveDiagnosticCancellation == cancellation)
                     {
                         liveDiagnosticCancellation = null;
+                        if (isVerilog && !closing)
+                        {
+                            RefreshDiagnosticMarkers();
+                        }
                     }
                     cancellation.Dispose();
                 }
@@ -139,6 +168,9 @@ public partial class MainWindow
         liveDiagnosticCancellation?.Cancel();
         if (!closing && !changingEditor && !services.Debugger.IsActive && !diagnosticsPausedForDebug)
         {
+            diagnosticDebounce.Interval = TimeSpan.FromMilliseconds(IsVerilogDocument ? 400 : 1500);
+            verilogBatches = [];
+            verilogDiagnosticStatus = "";
             diagnosticDebounce.Start();
             RefreshDiagnosticMarkers();
         }
@@ -148,9 +180,11 @@ public partial class MainWindow
         var rows = new List<EditorProblemRow>();
         var liveFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         // 补全也会同步文档并提前收到 clangd 诊断，显示必须同样等待停笔。
-        foreach (var batch in services.Debugger.IsActive || diagnosticsPausedForDebug || diagnosticDebounce.IsEnabled ? [] : services.Intelligence.GetDiagnostics())
+        foreach (var batch in services.Debugger.IsActive || diagnosticsPausedForDebug || diagnosticDebounce.IsEnabled ? [] : services.Intelligence.GetDiagnostics().Concat(verilogBatches))
         {
-            if (batch.Project != projectDirectory || FindEditor(batch.Path)?.Buffer.Text != batch.Text)
+            var editor = FindEditor(batch.Path);
+            if (batch.Project != projectDirectory ||
+                (editor is null ? !VerilogAssistanceService.Supports(batch.Path) : editor.Buffer.Text != batch.Text))
             {
                 continue;
             }

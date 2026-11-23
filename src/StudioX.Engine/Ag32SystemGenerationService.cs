@@ -32,6 +32,7 @@ internal sealed class Ag32SystemGenerationService(ToolsetCatalog catalog)
         {
             throw new StudioXException("AG32_SYSTEM_CONVERTER", "生成系统代码的厂商转换失败：\n" + result.StandardOutput + result.StandardError);
         }
+        await Ag32LocalInterruptRouting.ApplyAsync(run, source, token);
         var functions = await Ag32PinPlanCatalog.ReadAsync(tools, settings.TargetDevice, profile.PinCount, root, token);
         var header = await File.ReadAllTextAsync(Path.Combine(run, "pins.hx"), token);
         var files = Ag32SystemSupport.Render(source, header, functions.Functions);

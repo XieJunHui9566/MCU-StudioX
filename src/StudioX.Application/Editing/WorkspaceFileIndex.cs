@@ -10,6 +10,7 @@ public sealed class WorkspaceFileIndex
         this.paths = paths;
         knownPaths = new(paths, StringComparer.OrdinalIgnoreCase);
     }
+    internal IReadOnlyList<string> Paths => paths;
     public int Count => paths.Length;
     internal bool Contains(string path) => knownPaths.Contains(path);
     public Task<IReadOnlyList<string>> SearchAsync(string query, CancellationToken token = default)

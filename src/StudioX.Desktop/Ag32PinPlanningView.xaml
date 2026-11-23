@@ -3,462 +3,2183 @@
   xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
   xmlns:local="clr-namespace:StudioX.Desktop">
-  <StackPanel>
-    <TextBlock
-      Text="图形化引脚与时钟配置"
-      FontSize="20"
-      FontWeight="SemiBold"
-      Margin="0,8,0,8" />
-    <TextBlock
-      x:Name="PackageText"
-      Foreground="{DynamicResource Muted}"
-      TextWrapping="Wrap"
-      Margin="0,0,0,12" />
-    <WrapPanel>
-      <Button
-        x:Name="SavePlanButton"
-        Content="保存并生成约束"
-        Style="{DynamicResource PrimaryButton}"
-        Click="Save_Click"
-        Margin="0,0,8,12" />
-      <Button
-        x:Name="ReloadPlanButton"
-        Content="重新读取 .ve"
-        ToolTip="放弃尚未保存的图形配置，重新读取磁盘文件"
-        Click="Reload_Click"
-        Margin="0,0,0,12" />
-    </WrapPanel>
-    <Border
-      x:Name="TimingBorder"
-      BorderThickness="2,0,0,0"
-      Padding="12,6"
-      Margin="0,0,0,12"
-      BorderBrush="{DynamicResource DiagnosticWarning}">
-      <StackPanel>
+  <UserControl.Resources>
+    <local:Ag32PinSummaryConverter
+      x:Key="PinSummary" />
+    <GroupStyle
+      x:Key="PeripheralGroup">
+      <GroupStyle.ContainerStyle>
+        <Style
+          TargetType="GroupItem">
+          <Setter
+            Property="Template">
+            <Setter.Value>
+              <ControlTemplate
+                TargetType="GroupItem">
+                <Expander
+                  Header="{Binding Name.Title}"
+                  IsExpanded="{Binding Name.IsExpanded, Mode=TwoWay}"
+                  AutomationProperties.Name="{Binding Name.Title}"
+                  Foreground="{DynamicResource Text}"
+                  Margin="1,2">
+                  <ItemsPresenter
+                    Margin="10,1,0,1" />
+                </Expander>
+              </ControlTemplate>
+            </Setter.Value>
+          </Setter>
+          <Style.Triggers>
+            <DataTrigger
+              Binding="{Binding Name.Title}"
+              Value="">
+              <Setter
+                Property="Template">
+                <Setter.Value>
+                  <ControlTemplate
+                    TargetType="GroupItem">
+                    <ItemsPresenter />
+                  </ControlTemplate>
+                </Setter.Value>
+              </Setter>
+            </DataTrigger>
+          </Style.Triggers>
+        </Style>
+      </GroupStyle.ContainerStyle>
+    </GroupStyle>
+    <Style
+      x:Key="PlannerSplitter"
+      TargetType="GridSplitter">
+      <Setter
+        Property="HorizontalAlignment"
+        Value="Stretch" />
+      <Setter
+        Property="VerticalAlignment"
+        Value="Stretch" />
+      <Setter
+        Property="ResizeBehavior"
+        Value="PreviousAndNext" />
+      <Setter
+        Property="KeyboardIncrement"
+        Value="8" />
+      <Setter
+        Property="Background"
+        Value="Transparent" />
+      <Setter
+        Property="Template">
+        <Setter.Value>
+          <ControlTemplate
+            TargetType="GridSplitter">
+            <Grid
+              Background="{TemplateBinding Background}">
+              <Border
+                x:Name="Line"
+                Width="2"
+                HorizontalAlignment="Center"
+                Background="{DynamicResource Border}" />
+            </Grid>
+            <ControlTemplate.Triggers>
+              <Trigger
+                Property="ResizeDirection"
+                Value="Rows">
+                <Setter
+                  TargetName="Line"
+                  Property="Width"
+                  Value="Auto" />
+                <Setter
+                  TargetName="Line"
+                  Property="Height"
+                  Value="2" />
+                <Setter
+                  TargetName="Line"
+                  Property="HorizontalAlignment"
+                  Value="Stretch" />
+                <Setter
+                  TargetName="Line"
+                  Property="VerticalAlignment"
+                  Value="Center" />
+              </Trigger>
+              <Trigger
+                Property="IsMouseOver"
+                Value="True">
+                <Setter
+                  TargetName="Line"
+                  Property="Background"
+                  Value="{DynamicResource Accent}" />
+              </Trigger>
+              <Trigger
+                Property="IsKeyboardFocused"
+                Value="True">
+                <Setter
+                  TargetName="Line"
+                  Property="Background"
+                  Value="{DynamicResource Accent}" />
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+  </UserControl.Resources>
+  <DockPanel>
+    <WrapPanel
+      DockPanel.Dock="Top"
+      Margin="0,0,0,2">
+      <StackPanel
+        VerticalAlignment="Center"
+        Margin="0,0,14,3">
         <TextBlock
-          x:Name="TimingStateText"
+          x:Name="PackageText"
           FontWeight="SemiBold"
-          TextWrapping="Wrap"
-          Foreground="{DynamicResource DiagnosticWarning}" />
+          TextWrapping="Wrap" />
         <TextBlock
-          x:Name="TimingSummaryText"
+          x:Name="PlannerStatus"
           TextWrapping="Wrap"
-          Margin="0,5,0,0" />
-        <Expander
-          x:Name="TimingDetails"
-          Header="查看关键路径与原始报告"
-          Foreground="{DynamicResource Text}"
-          Margin="0,6,0,0">
-          <StackPanel>
-            <TextBlock
-              x:Name="TimingPathText"
-              TextWrapping="Wrap"
-              Margin="0,6,0,6" />
-            <Button
-              x:Name="TimingReportButton"
-              Content="打开 Supra 原始时序报告"
-              HorizontalAlignment="Left"
-              Click="TimingReport_Click"
-              IsEnabled="False" />
-            <TextBlock
-              Text="片内时序结果，不含外部器件采样时序。"
-              TextWrapping="Wrap"
-              Foreground="{DynamicResource Muted}"
-              Margin="0,6,0,0" />
-          </StackPanel>
-        </Expander>
+          Foreground="{DynamicResource Muted}">
+          <TextBlock.Style>
+            <Style
+              TargetType="TextBlock">
+              <Style.Triggers>
+                <Trigger
+                  Property="Text"
+                  Value="">
+                  <Setter
+                    Property="Visibility"
+                    Value="Collapsed" />
+                </Trigger>
+              </Style.Triggers>
+            </Style>
+          </TextBlock.Style>
+        </TextBlock>
       </StackPanel>
-    </Border>
-    <TextBlock
-      x:Name="ConflictStatus"
-      Visibility="Collapsed"
-      Foreground="{DynamicResource ErrorColor}"
-      TextWrapping="Wrap"
-      Margin="0,4,0,10" />
+      <WrapPanel
+        VerticalAlignment="Center"
+        Margin="0,0,0,3">
+        <Button
+          x:Name="ProjectToolsButton"
+          Content="构建状态"
+          ToolTip="展开或收起构建状态和 Supra 许可说明"
+          Padding="8,3"
+          Margin="0,0,4,0" />
+        <Button
+          x:Name="BottomPaneButton"
+          Content="收起底栏"
+          ToolTip="收起或展开底部终端和输出面板"
+          Padding="8,3" />
+        <Button
+          x:Name="SavePlanButton"
+          Content="保存并生成"
+          Style="{DynamicResource PrimaryButton}"
+          Click="Save_Click"
+          ToolTip="保存引脚和外设参数，生成系统代码与约束"
+          Margin="4,0"
+          Padding="8,3" />
+        <Button
+          x:Name="ReloadPlanButton"
+          Content="重新读取"
+          Click="Reload_Click"
+          Padding="8,3"
+          ToolTip="放弃当前草稿，从 .ve 重新读取配置" />
+      </WrapPanel>
+    </WrapPanel>
+    <ScrollViewer
+      DockPanel.Dock="Top"
+      MaxHeight="65"
+      VerticalScrollBarVisibility="Auto"
+      Visibility="{Binding Visibility, ElementName=ConflictStatus}">
+      <TextBlock
+        x:Name="ConflictStatus"
+        Visibility="Collapsed"
+        Foreground="{DynamicResource ErrorColor}"
+        TextWrapping="Wrap"
+        Margin="0,2,0,4" />
+    </ScrollViewer>
     <TabControl
       x:Name="PlannerTabs"
-      SelectedIndex="1">
+      SelectedIndex="0">
       <TabItem
-        Header="ADC / DAC / 比较器">
-        <StackPanel
-          Margin="16">
-          <CheckBox
-            x:Name="AnalogEnabled"
-            Content="启用 ADC / DAC / CMP（官方模拟 IP）"
-            Checked="Analog_Changed"
-            Unchecked="Analog_Changed"
-            Margin="0,0,0,12" />
-          <TextBlock
-            Text="模拟引脚固定，不能与数字功能共用。"
-            TextWrapping="Wrap"
-            Margin="0,0,0,12" />
-          <TextBlock
-            Text="ADC 外部通道（逗号分隔，例如 0,1,4；留空仅使用内部通道）" />
-          <TextBox
-            x:Name="AnalogChannels"
-            TextChanged="AnalogText_Changed"
-            Margin="0,6,0,12"
-            MaxWidth="480"
-            HorizontalAlignment="Left"
-            MinWidth="260" />
-          <WrapPanel>
-            <CheckBox
-              x:Name="AnalogDac0"
-              Content="DAC0"
-              Checked="Analog_Changed"
-              Unchecked="Analog_Changed"
-              Margin="0,0,24,12" />
-            <CheckBox
-              x:Name="AnalogDac1"
-              Content="DAC1"
-              Checked="Analog_Changed"
-              Unchecked="Analog_Changed"
-              Margin="0,0,24,12" />
-            <CheckBox
-              x:Name="AnalogComparator"
-              Content="CMP 比较器（预留输入脚）"
-              Checked="Analog_Changed"
-              Unchecked="Analog_Changed"
-              Margin="0,0,0,12" />
-          </WrapPanel>
-          <ScrollViewer
-            MaxHeight="190"
-            VerticalScrollBarVisibility="Auto"
-            Margin="0,0,0,12">
-            <TextBlock
-              x:Name="AnalogPinDetails"
-              TextWrapping="Wrap" />
-          </ScrollViewer>
-          <TextBlock
-            Text="DAC 需在代码中使能；ADC2 与 DAC1 不能同时使用 DMA。"
-            TextWrapping="Wrap"
-            Foreground="{DynamicResource Muted}" />
-        </StackPanel>
-      </TabItem>
-      <TabItem
+        x:Name="PinTab"
         Header="引脚分配">
         <Grid
-          Margin="8,12">
+          x:Name="PinWorkspace"
+          SizeChanged="Workspace_SizeChanged"
+          Margin="0,8,0,0">
+          <Grid.RowDefinitions>
+            <RowDefinition
+              Height="*" />
+            <RowDefinition
+              Height="0" />
+            <RowDefinition
+              Height="0" />
+          </Grid.RowDefinitions>
           <Grid.ColumnDefinitions>
             <ColumnDefinition
-              Width="3*" />
+              x:Name="NavigationColumn"
+              Width="158"
+              MinWidth="114" />
             <ColumnDefinition
-              Width="2*" />
+              x:Name="NavigationHandleColumn"
+              Width="8" />
+            <ColumnDefinition
+              x:Name="PropertiesColumn"
+              Width="0.73*" />
+            <ColumnDefinition
+              Width="8" />
+            <ColumnDefinition
+              x:Name="DiagramColumn"
+              Width="1.27*" />
           </Grid.ColumnDefinitions>
-          <StackPanel>
-            <ScrollViewer
-              Height="580"
-              HorizontalScrollBarVisibility="Auto"
-              VerticalScrollBarVisibility="Auto">
-              <Viewbox
-                Height="{Binding Value, ElementName=DiagramZoom}"
-                Width="{Binding Value, ElementName=DiagramZoom}"
-                Stretch="Uniform">
-                <local:Ag32PackageDiagram
-                  x:Name="PackageDiagram" />
-              </Viewbox>
-            </ScrollViewer>
-            <DockPanel
-              Margin="0,8,12,0">
-              <TextBlock
-                Text="封装图缩放"
-                VerticalAlignment="Center"
-                Margin="0,0,12,0" />
-              <Slider
-                x:Name="DiagramZoom"
-                Minimum="400"
-                Maximum="1200"
-                Value="560"
-                SmallChange="30"
-                LargeChange="120"
-                ToolTip="放大后可滚动查看引脚；左键点击引脚打开功能菜单" />
-            </DockPanel>
+          <DockPanel
+            x:Name="WideNavigation"
+            Margin="0,0,2,0">
             <TextBlock
-              Text="顶视示意图 · 灰色：空闲 · 绿色：已分配 · 红色：冲突 · 蓝色边框：当前选择"
-              Foreground="{DynamicResource Muted}"
-              TextWrapping="Wrap"
-              Margin="0,8,12,0" />
-          </StackPanel>
-          <StackPanel
-            Grid.Column="1"
-            Margin="16,0,0,0">
-            <TextBlock
-              Text="当前引脚"
-              FontWeight="SemiBold" />
-            <TextBlock
-              x:Name="PinDetails"
-              Foreground="{DynamicResource Muted}"
-              TextWrapping="Wrap"
-              Margin="0,8,0,10" />
-            <TextBlock
-              Text="点击引脚分配功能"
-              Foreground="{DynamicResource Muted}"
-              TextWrapping="Wrap"
-              Margin="0,0,0,18" />
-            <TextBlock
-              Text="引脚名称 / GPIO 方向"
-              FontWeight="SemiBold" />
-            <WrapPanel
-              Margin="0,6,0,8">
-              <TextBox
-                x:Name="PinName"
-                Width="125"
-                Margin="0,0,8,6"
-                TextChanged="PinName_Changed"
-                ToolTip="例如 LED1：生成 #LED1 注释及 LED1_Port / LED1_Bit。留空可清除名称。" />
-              <ComboBox
-                x:Name="PinDirection"
-                Width="135"
-                SelectedValuePath="Tag"
-                SelectionChanged="PinDirection_Changed"
-                Margin="0,0,0,6">
-                <ComboBoxItem
-                  Content="不初始化方向"
-                  Tag="" />
-                <ComboBoxItem
-                  Content="输入"
-                  Tag="INPUT" />
-                <ComboBoxItem
-                  Content="输出（初始低）"
-                  Tag="OUTPUT" />
-              </ComboBox>
-            </WrapPanel>
-            <TextBlock
-              Text="GPIO 电气配置"
+              DockPanel.Dock="Top"
+              Text="配置对象"
               FontWeight="SemiBold"
-              Margin="0,0,0,6" />
-            <WrapPanel
-              Margin="0,0,0,8">
-              <StackPanel
-                Width="150"
-                Margin="0,0,8,6">
-                <TextBlock
-                  Text="上下拉"
-                  Foreground="{DynamicResource Muted}"
-                  Margin="0,0,0,4" />
-                <ComboBox
-                  x:Name="PinPull"
-                  SelectedValuePath="Tag"
-                  SelectionChanged="PinDirection_Changed">
-                  <ComboBoxItem
-                    Content="浮空（无上下拉）"
-                    Tag="NONE" />
-                  <ComboBoxItem
-                    Content="上拉"
-                    Tag="UP" />
-                  <ComboBoxItem
-                    Content="下拉"
-                    Tag="DOWN" />
-                </ComboBox>
-              </StackPanel>
-              <StackPanel
-                Width="135"
-                Margin="0,0,0,6">
-                <TextBlock
-                  Text="输出类型"
-                  Foreground="{DynamicResource Muted}"
-                  Margin="0,0,0,4" />
-                <ComboBox
-                  x:Name="PinOutputType"
-                  SelectedValuePath="Tag"
-                  SelectionChanged="PinDirection_Changed">
-                  <ComboBoxItem
-                    Content="推挽"
-                    Tag="PUSH_PULL" />
-                  <ComboBoxItem
-                    Content="开漏"
-                    Tag="OPEN_DRAIN" />
-                </ComboBox>
-              </StackPanel>
-            </WrapPanel>
-            <TextBlock
-              Text="保存生成初始化代码；引脚配置下载后生效。"
-              TextWrapping="Wrap"
-              Foreground="{DynamicResource Muted}"
-              Margin="0,0,0,8" />
-            <TextBlock
-              Text="已分配功能"
-              FontWeight="SemiBold"
-              Margin="0,0,0,8" />
-            <DataGrid
-              x:Name="AssignmentsGrid"
-              AutoGenerateColumns="False"
-              IsReadOnly="True"
-              CanUserAddRows="False"
-              SelectionMode="Single"
-              SelectionChanged="Assignment_Changed"
+              Margin="6,4,0,8" />
+            <ListBox
+              x:Name="PeripheralList"
+              ItemsSource="{Binding ItemsSource, ElementName=UartPort}"
               Background="Transparent"
               Foreground="{DynamicResource Text}"
-              BorderBrush="{DynamicResource Border}"
-              RowBackground="Transparent"
-              AlternatingRowBackground="{DynamicResource Surface}"
-              GridLinesVisibility="None"
-              HeadersVisibility="Column"
-              MinHeight="150"
-              MaxHeight="250"
-              Margin="0,4,0,0">
-              <DataGrid.ColumnHeaderStyle>
-                <Style
-                  TargetType="DataGridColumnHeader">
-                  <Setter
-                    Property="Background"
-                    Value="{DynamicResource Panel}" />
-                  <Setter
-                    Property="Foreground"
-                    Value="{DynamicResource Text}" />
-                  <Setter
-                    Property="Padding"
-                    Value="8,6" />
-                  <Setter
-                    Property="BorderBrush"
-                    Value="{DynamicResource Border}" />
-                  <Setter
-                    Property="BorderThickness"
-                    Value="0,0,0,1" />
-                </Style>
-              </DataGrid.ColumnHeaderStyle>
-              <DataGrid.CellStyle>
-                <Style
-                  TargetType="DataGridCell">
-                  <Setter
-                    Property="Foreground"
-                    Value="{DynamicResource Text}" />
-                  <Setter
-                    Property="Background"
-                    Value="Transparent" />
-                  <Setter
-                    Property="Padding"
-                    Value="8,4" />
-                  <Setter
-                    Property="BorderThickness"
-                    Value="0" />
-                  <Style.Triggers>
-                    <Trigger
-                      Property="IsSelected"
-                      Value="True">
+              BorderThickness="0"
+              ItemContainerStyle="{StaticResource CodeCompletionItemStyle}"
+              SelectedItem="{Binding SelectedItem, ElementName=UartPort, Mode=TwoWay}"
+              AutomationProperties.Name="引脚与外设">
+              <ListBox.Template>
+                <ControlTemplate
+                  TargetType="ListBox">
+                  <Border
+                    Background="{TemplateBinding Background}"
+                    BorderBrush="{TemplateBinding BorderBrush}"
+                    BorderThickness="{TemplateBinding BorderThickness}">
+                    <ScrollViewer
+                      Focusable="False"
+                      VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled"
+                      CanContentScroll="True">
+                      <ItemsPresenter />
+                    </ScrollViewer>
+                  </Border>
+                </ControlTemplate>
+              </ListBox.Template>
+              <ListBox.ItemTemplate>
+                <DataTemplate>
+                  <TextBlock
+                    Padding="5,4"
+                    Text="{Binding}" />
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+              <ListBox.GroupStyle>
+                <StaticResource
+                  ResourceKey="PeripheralGroup" />
+              </ListBox.GroupStyle>
+            </ListBox>
+          </DockPanel>
+          <GridSplitter
+            x:Name="NavigationSplitter"
+            Grid.Column="1"
+            Style="{StaticResource PlannerSplitter}"
+            ResizeDirection="Columns"
+            ToolTip="左右拖动调整配置对象栏宽度"
+            AutomationProperties.Name="配置对象栏宽度" />
+          <DockPanel
+            x:Name="PropertyPane"
+            Grid.Column="2"
+            Margin="5,0,7,0">
+            <Grid
+              x:Name="CompactNavigation"
+              DockPanel.Dock="Top"
+              Margin="0,0,0,6">
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition
+                  Width="Auto" />
+                <ColumnDefinition />
+              </Grid.ColumnDefinitions>
+              <Label
+                Content="配置对象"
+                Target="{Binding ElementName=UartPort}"
+                Foreground="{DynamicResource Text}" />
+              <ComboBox
+                x:Name="UartPort"
+                Grid.Column="1"
+                AutomationProperties.Name="配置对象"
+                SelectionChanged="UartPort_Changed">
+                <ComboBox.GroupStyle>
+                  <StaticResource
+                    ResourceKey="PeripheralGroup" />
+                </ComboBox.GroupStyle>
+              </ComboBox>
+            </Grid>
+            <DockPanel
+              x:Name="PropertyWorkspace"
+              SizeChanged="PropertyWorkspace_SizeChanged">
+              <DockPanel
+                x:Name="AssignmentsArea"
+                DockPanel.Dock="Top"
+                Margin="4,2,5,6"
+                Visibility="{Binding Visibility, ElementName=PinInspector}">
+                <TextBlock
+                  DockPanel.Dock="Top"
+                  x:Name="AssignmentsHeading"
+                  Text="已分配功能"
+                  FontWeight="SemiBold"
+                  Margin="0,0,0,8" />
+                <DockPanel
+                  DockPanel.Dock="Top"
+                  x:Name="PinFilterBar"
+                  Margin="0,0,0,3">
+                  <Label
+                    Content="筛选"
+                    Target="{Binding ElementName=PinFilter}"
+                    VerticalAlignment="Center"
+                    Foreground="{DynamicResource Text}" />
+                  <TextBox
+                    x:Name="PinFilter"
+                    TextChanged="PinFilter_Changed"
+                    AutomationProperties.Name="筛选已分配引脚"
+                    ToolTip="按引脚号、名称或内部功能筛选" />
+                </DockPanel>
+                <DataGrid
+                  x:Name="AssignmentsGrid"
+                  AutoGenerateColumns="False"
+                  IsReadOnly="True"
+                  CanUserAddRows="False"
+                  SelectionMode="Single"
+                  SelectionChanged="Assignment_Changed"
+                  Background="Transparent"
+                  Foreground="{DynamicResource Text}"
+                  BorderBrush="{DynamicResource Border}"
+                  RowBackground="Transparent"
+                  AlternatingRowBackground="{DynamicResource Surface}"
+                  GridLinesVisibility="None"
+                  HeadersVisibility="Column"
+                  MinHeight="0"
+                  MaxHeight="250"
+                  Margin="0,4,0,0">
+                  <DataGrid.ColumnHeaderStyle>
+                    <Style
+                      TargetType="DataGridColumnHeader">
                       <Setter
                         Property="Background"
-                        Value="{DynamicResource Accent}" />
+                        Value="{DynamicResource Panel}" />
                       <Setter
                         Property="Foreground"
-                        Value="{DynamicResource OnAccent}" />
-                    </Trigger>
-                  </Style.Triggers>
-                </Style>
-              </DataGrid.CellStyle>
-              <DataGrid.Columns>
-                <DataGridTextColumn
-                  Header="名称"
-                  Binding="{Binding Name}"
-                  Width="80" />
-                <DataGridTextColumn
-                  Header="内部功能"
-                  Binding="{Binding Function}"
-                  Width="*" />
-                <DataGridTextColumn
-                  Header="封装脚"
-                  Binding="{Binding PinNumber}"
-                  Width="70" />
-              </DataGrid.Columns>
-            </DataGrid>
-          </StackPanel>
+                        Value="{DynamicResource Text}" />
+                      <Setter
+                        Property="Padding"
+                        Value="8,6" />
+                      <Setter
+                        Property="BorderBrush"
+                        Value="{DynamicResource Border}" />
+                      <Setter
+                        Property="BorderThickness"
+                        Value="0,0,0,1" />
+                    </Style>
+                  </DataGrid.ColumnHeaderStyle>
+                  <DataGrid.CellStyle>
+                    <Style
+                      TargetType="DataGridCell">
+                      <Setter
+                        Property="Foreground"
+                        Value="{DynamicResource Text}" />
+                      <Setter
+                        Property="Background"
+                        Value="Transparent" />
+                      <Setter
+                        Property="Padding"
+                        Value="8,4" />
+                      <Setter
+                        Property="BorderThickness"
+                        Value="0" />
+                      <Style.Triggers>
+                        <Trigger
+                          Property="IsSelected"
+                          Value="True">
+                          <Setter
+                            Property="Background"
+                            Value="{DynamicResource Accent}" />
+                          <Setter
+                            Property="Foreground"
+                            Value="{DynamicResource OnAccent}" />
+                        </Trigger>
+                      </Style.Triggers>
+                    </Style>
+                  </DataGrid.CellStyle>
+                  <DataGrid.Columns>
+                    <DataGridTextColumn
+                      Header="名称"
+                      Binding="{Binding Name}"
+                      Width="80" />
+                    <DataGridTemplateColumn
+                      Header="功能 / 配置"
+                      Width="*"
+                      MinWidth="90">
+                      <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                          <StackPanel
+                            Margin="3,1"
+                            ToolTip="{Binding Converter={StaticResource PinSummary}}">
+                            <TextBlock
+                              Text="{Binding Function}"
+                              TextTrimming="CharacterEllipsis" />
+                            <TextBlock
+                              Text="{Binding Converter={StaticResource PinSummary}}"
+                              TextTrimming="CharacterEllipsis" />
+                          </StackPanel>
+                        </DataTemplate>
+                      </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTextColumn
+                      Header="封装脚"
+                      Binding="{Binding PinNumber}"
+                      Width="70" />
+                  </DataGrid.Columns>
+                </DataGrid>
+              </DockPanel>
+              <ScrollViewer
+                x:Name="PropertyScroll"
+                VerticalScrollBarVisibility="Auto"
+                HorizontalScrollBarVisibility="Disabled">
+                <StackPanel
+                  Margin="4,2,5,4">
+                  <StackPanel
+                    x:Name="VerilogInspector"
+                    Visibility="Collapsed">
+                    <TextBlock
+                      Text="Verilog 顶层端口"
+                      FontWeight="SemiBold"
+                      Margin="0,0,0,4" />
+                    <TextBlock
+                      x:Name="VerilogInterfaceStatus"
+                      TextWrapping="Wrap"
+                      Foreground="{DynamicResource Muted}"
+                      Margin="0,0,0,6" />
+                    <Label
+                      Content="端口"
+                      Target="{Binding ElementName=VerilogPortPicker}" />
+                    <ComboBox
+                      x:Name="VerilogPortPicker"
+                      SelectionChanged="VerilogPort_Changed"
+                      DisplayMemberPath="Label" />
+                    <Label
+                      Content="信号 / 总线位"
+                      Target="{Binding ElementName=VerilogBitPicker}"
+                      Margin="0,4,0,0" />
+                    <ListBox
+                      x:Name="VerilogBitPicker"
+                      SelectedValuePath="Signal"
+                      SelectionChanged="VerilogBit_Changed"
+                      MaxHeight="162"
+                      MinHeight="34"
+                      ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                      VirtualizingPanel.IsVirtualizing="True"
+                      ItemContainerStyle="{StaticResource CodeCompletionItemStyle}">
+                      <ListBox.ItemTemplate>
+                        <DataTemplate>
+                          <DockPanel
+                            Margin="6,3">
+                            <TextBlock
+                              DockPanel.Dock="Right"
+                              Text="{Binding Pin}"
+                              Foreground="{DynamicResource Muted}"
+                              Margin="8,0,0,0" />
+                            <TextBlock
+                              Text="{Binding Signal}"
+                              TextTrimming="CharacterEllipsis" />
+                          </DockPanel>
+                        </DataTemplate>
+                      </ListBox.ItemTemplate>
+                    </ListBox>
+                    <Label
+                      Content="封装引脚"
+                      Target="{Binding ElementName=VerilogPinPicker}"
+                      Margin="0,4,0,0" />
+                    <ComboBox
+                      x:Name="VerilogPinPicker"
+                      SelectionChanged="VerilogPin_Changed"
+                      SelectedValuePath="Number"
+                      DisplayMemberPath="Label" />
+                    <TextBlock
+                      x:Name="VerilogPortUsage"
+                      TextWrapping="Wrap"
+                      Foreground="{DynamicResource Muted}"
+                      Margin="0,8,0,0" />
+                  </StackPanel>
+                  <StackPanel
+                    x:Name="PinInspector">
+                    <TextBlock
+                      Text="当前引脚"
+                      FontWeight="SemiBold" />
+                    <TextBlock
+                      x:Name="PinDetails"
+                      Foreground="{DynamicResource Muted}"
+                      TextWrapping="Wrap"
+                      Margin="0,8,0,10" />
+                    <WrapPanel
+                      x:Name="PinLegend"
+                      Margin="0,0,0,10">
+                      <StackPanel
+                        Orientation="Horizontal"
+                        Margin="0,0,12,4">
+                        <Border
+                          Width="10"
+                          Height="10"
+                          Background="{x:Static local:Ag32PackageDiagram.AvailablePadBrush}" />
+                        <TextBlock
+                          Margin="4,0,0,0"
+                          Text="可分配" />
+                      </StackPanel>
+                      <StackPanel
+                        Orientation="Horizontal"
+                        Margin="0,0,12,4">
+                        <Border
+                          Width="10"
+                          Height="10"
+                          Background="{x:Static local:Ag32PackageDiagram.SupplyPadBrush}" />
+                        <TextBlock
+                          Margin="4,0,0,0"
+                          Text="电源 (VCC)" />
+                      </StackPanel>
+                      <StackPanel
+                        Orientation="Horizontal"
+                        Margin="0,0,12,4">
+                        <Border
+                          Width="10"
+                          Height="10"
+                          Background="{x:Static local:Ag32PackageDiagram.GroundPadBrush}" />
+                        <TextBlock
+                          Margin="4,0,0,0"
+                          Text="地 (GND)" />
+                      </StackPanel>
+                      <StackPanel
+                        Orientation="Horizontal"
+                        Margin="0,0,12,4">
+                        <Border
+                          Width="10"
+                          Height="10"
+                          Background="{x:Static local:Ag32PackageDiagram.ReservedPadBrush}" />
+                        <TextBlock
+                          Margin="4,0,0,0"
+                          Text="参考 / 保留" />
+                      </StackPanel>
+                      <StackPanel
+                        Orientation="Horizontal"
+                        Margin="0,0,12,4">
+                        <Border
+                          Width="10"
+                          Height="10"
+                          Background="{DynamicResource RunColor}" />
+                        <TextBlock
+                          Margin="4,0,0,0"
+                          Text="已分配" />
+                      </StackPanel>
+                      <StackPanel
+                        Orientation="Horizontal"
+                        Margin="0,0,0,4">
+                        <Border
+                          Width="10"
+                          Height="10"
+                          Background="{DynamicResource ErrorColor}" />
+                        <TextBlock
+                          Margin="4,0,0,0"
+                          Text="冲突" />
+                      </StackPanel>
+                    </WrapPanel>
+                    <Grid
+                      x:Name="PinEditor"
+                      Margin="0,0,0,8"
+                      Visibility="Collapsed">
+                      <Grid.Resources>
+                        <Style
+                          TargetType="Label">
+                          <Setter
+                            Property="Padding"
+                            Value="0,0,8,0" />
+                          <Setter
+                            Property="VerticalAlignment"
+                            Value="Center" />
+                          <Setter
+                            Property="Foreground"
+                            Value="{DynamicResource Text}" />
+                        </Style>
+                      </Grid.Resources>
+                      <Grid.ColumnDefinitions>
+                        <ColumnDefinition
+                          x:Name="PinLabelColumn"
+                          Width="Auto" />
+                        <ColumnDefinition />
+                      </Grid.ColumnDefinitions>
+                      <Grid.RowDefinitions>
+                        <RowDefinition
+                          Height="Auto" />
+                        <RowDefinition
+                          Height="Auto" />
+                        <RowDefinition
+                          Height="Auto" />
+                        <RowDefinition
+                          Height="Auto" />
+                        <RowDefinition
+                          Height="Auto" />
+                      </Grid.RowDefinitions>
+                      <Label
+                        Content="引脚名称"
+                        Target="{Binding ElementName=PinName}" />
+                      <TextBox
+                        x:Name="PinName"
+                        Grid.Column="1"
+                        Margin="0,0,0,4"
+                        TextChanged="PinName_Changed"
+                        ToolTip="例如 LED1，生成 LED1_Port 和 LED1_Bit。留空可清除名称。" />
+                      <Label
+                        Grid.Row="1"
+                        Content="GPIO 方向"
+                        Target="{Binding ElementName=PinDirection}"
+                        Visibility="{Binding Visibility, ElementName=PinDirection}" />
+                      <ComboBox
+                        x:Name="PinDirection"
+                        Grid.Row="1"
+                        Grid.Column="1"
+                        Margin="0,0,0,4"
+                        SelectedValuePath="Tag"
+                        SelectionChanged="PinDirection_Changed">
+                        <ComboBoxItem
+                          Content="不初始化方向"
+                          Tag="" />
+                        <ComboBoxItem
+                          Content="输入"
+                          Tag="INPUT" />
+                        <ComboBoxItem
+                          Content="输出"
+                          Tag="OUTPUT" />
+                      </ComboBox>
+                      <Label
+                        Grid.Row="2"
+                        Content="上下拉"
+                        Target="{Binding ElementName=PinPull}"
+                        Visibility="{Binding Visibility, ElementName=PinDirection}" />
+                      <ComboBox
+                        x:Name="PinPull"
+                        Grid.Row="2"
+                        Grid.Column="1"
+                        Margin="0,0,0,4"
+                        SelectedValuePath="Tag"
+                        SelectionChanged="PinDirection_Changed"
+                        Visibility="{Binding Visibility, ElementName=PinDirection}">
+                        <ComboBoxItem
+                          Content="浮空（无上下拉）"
+                          Tag="NONE" />
+                        <ComboBoxItem
+                          Content="上拉"
+                          Tag="UP" />
+                        <ComboBoxItem
+                          Content="下拉"
+                          Tag="DOWN" />
+                        <ComboBoxItem
+                          Content="总线保持"
+                          Tag="HOLD" />
+                      </ComboBox>
+                      <Label
+                        Grid.Row="3"
+                        Content="输出类型"
+                        Target="{Binding ElementName=PinOutputType}"
+                        Visibility="{Binding Visibility, ElementName=PinDirection}" />
+                      <ComboBox
+                        x:Name="PinOutputType"
+                        Grid.Row="3"
+                        Grid.Column="1"
+                        Margin="0,0,0,4"
+                        SelectedValuePath="Tag"
+                        SelectionChanged="PinDirection_Changed"
+                        Visibility="{Binding Visibility, ElementName=PinDirection}">
+                        <ComboBoxItem
+                          Content="推挽"
+                          Tag="PUSH_PULL" />
+                        <ComboBoxItem
+                          Content="开漏"
+                          Tag="OPEN_DRAIN" />
+                      </ComboBox>
+                      <StackPanel
+                        x:Name="PinExtraFields"
+                        Grid.Row="4"
+                        Grid.ColumnSpan="2">
+                        <StackPanel
+                          x:Name="PinOutputFields">
+                          <DockPanel
+                            Margin="0,0,0,4"
+                            LastChildFill="True">
+                            <Label
+                              DockPanel.Dock="Left"
+                              Content="启动电平"
+                              Width="{Binding ActualWidth, ElementName=PinLabelColumn}"
+                              VerticalAlignment="Center"
+                              Target="{Binding ElementName=PinLevel}" />
+                            <ComboBox
+                              x:Name="PinLevel"
+                              SelectedValuePath="Tag"
+                              SelectionChanged="PinDirection_Changed">
+                              <ComboBoxItem
+                                Tag="LOW"
+                                Content="低电平" />
+                              <ComboBoxItem
+                                Tag="HIGH"
+                                Content="高电平" />
+                            </ComboBox>
+                          </DockPanel>
+                          <CheckBox
+                            x:Name="PinSlew"
+                            Content="启用输出转换速率控制"
+                            Checked="PinSlew_Changed"
+                            Unchecked="PinSlew_Changed"
+                            ToolTip="设置此引脚的 Supra SLEW_RATE 控制位，编译并下载映射后生效。" />
+                        </StackPanel>
+                        <StackPanel
+                          x:Name="PinInputFields">
+                          <DockPanel
+                            Margin="0,0,0,4"
+                            LastChildFill="True">
+                            <Label
+                              DockPanel.Dock="Left"
+                              Content="输入中断"
+                              Width="{Binding ActualWidth, ElementName=PinLabelColumn}"
+                              VerticalAlignment="Center"
+                              Target="{Binding ElementName=PinInterrupt}" />
+                            <ComboBox
+                              x:Name="PinInterrupt"
+                              SelectedValuePath="Tag"
+                              SelectionChanged="PinDirection_Changed">
+                              <ComboBoxItem
+                                Tag="NONE"
+                                Content="关闭" />
+                              <ComboBoxItem
+                                Tag="RISEEDGE"
+                                Content="上升沿" />
+                              <ComboBoxItem
+                                Tag="FALLEDGE"
+                                Content="下降沿" />
+                              <ComboBoxItem
+                                Tag="BOTHEDGE"
+                                Content="双边沿" />
+                              <ComboBoxItem
+                                Tag="HIGHLEVEL"
+                                Content="高电平" />
+                              <ComboBoxItem
+                                Tag="LOWLEVEL"
+                                Content="低电平" />
+                            </ComboBox>
+                          </DockPanel>
+                          <TextBlock
+                            x:Name="PinInterruptHint"
+                            TextWrapping="Wrap"
+                            Foreground="{DynamicResource Muted}" />
+                          <Button
+                            Content="PLIC 中断设置…"
+                            Click="OpenInterrupts_Click"
+                            HorizontalAlignment="Left"
+                            Margin="0,4" />
+                        </StackPanel>
+                      </StackPanel>
+                    </Grid>
+                  </StackPanel>
+                  <StackPanel
+                    x:Name="AnalogInspector"
+                    Visibility="Collapsed">
+                    <TextBlock
+                      Text="ADC / DAC / 比较器"
+                      FontWeight="SemiBold"
+                      Margin="0,0,0,6" />
+                    <CheckBox
+                      x:Name="AnalogEnabled"
+                      Content="启用模拟 IP"
+                      Checked="Analog_Changed"
+                      Unchecked="Analog_Changed" />
+                    <TextBlock
+                      Text="ADC 外部输入"
+                      FontWeight="SemiBold"
+                      Margin="0,10,0,4" />
+                    <WrapPanel
+                      x:Name="AnalogChannels" />
+                    <TextBlock
+                      Text="仅使用内部通道时，外部输入留空。"
+                      Foreground="{DynamicResource Muted}"
+                      TextWrapping="Wrap" />
+                    <TextBlock
+                      Text="DAC 输出与比较器"
+                      FontWeight="SemiBold"
+                      Margin="0,10,0,4" />
+                    <WrapPanel>
+                      <CheckBox
+                        x:Name="AnalogDac0"
+                        Margin="0,2,12,2"
+                        Checked="Analog_Changed"
+                        Unchecked="Analog_Changed" />
+                      <CheckBox
+                        x:Name="AnalogDac1"
+                        Margin="0,2,12,2"
+                        Checked="Analog_Changed"
+                        Unchecked="Analog_Changed" />
+                    </WrapPanel>
+                    <CheckBox
+                      x:Name="AnalogComparator"
+                      Content="CMP 比较器"
+                      Margin="0,4"
+                      Checked="Analog_Changed"
+                      Unchecked="Analog_Changed" />
+                    <TextBlock
+                      x:Name="AnalogComparatorPins"
+                      Foreground="{DynamicResource Muted}"
+                      TextWrapping="Wrap" />
+                    <TextBlock
+                      Text="DAC 初始值和启动方式可在 DAC0 / DAC1 中设置。ADC2 与 DAC1 共用 DMA 资源。"
+                      Foreground="{DynamicResource Muted}"
+                      TextWrapping="Wrap"
+                      Margin="0,8,0,0" />
+                  </StackPanel>
+                  <StackPanel
+                    x:Name="TimerInspector"
+                    Visibility="Collapsed">
+                    <StackPanel.Resources>
+                      <Style
+                        TargetType="Label">
+                        <Setter
+                          Property="Foreground"
+                          Value="{DynamicResource Text}" />
+                        <Setter
+                          Property="Padding"
+                          Value="2,4" />
+                      </Style>
+                    </StackPanel.Resources>
+                    <TextBlock
+                      x:Name="TimerTitle"
+                      FontWeight="SemiBold"
+                      Margin="0,3,0,6" />
+                    <CheckBox
+                      x:Name="TimerEnabled"
+                      Margin="0,2,0,6"
+                      Content="在 main 中初始化此定时器"
+                      Checked="TimerField_Changed"
+                      Unchecked="TimerField_Changed" />
+                    <StackPanel
+                      x:Name="TimerParameters">
+                      <Button
+                        Content="PLIC 中断设置…"
+                        Click="OpenInterrupts_Click"
+                        HorizontalAlignment="Left"
+                        Margin="0,0,0,6" />
+                      <StackPanel
+                        x:Name="TimerModeRow">
+                        <DockPanel
+                          Margin="0,0,0,4">
+                          <Label
+                            Width="104"
+                            Content="计数模式"
+                            Target="{Binding ElementName=TimerMode}" />
+                          <ComboBox
+                            x:Name="TimerMode"
+                            SelectedValuePath="Tag"
+                            SelectionChanged="TimerField_Changed">
+                            <ComboBoxItem
+                              Tag="INTERNAL"
+                              Content="定时 / PWM / 比较 / 捕获" />
+                            <ComboBoxItem
+                              Tag="X2_TI0"
+                              Content="编码器 ×2 · A 相" />
+                            <ComboBoxItem
+                              Tag="X2_TI1"
+                              Content="编码器 ×2 · B 相" />
+                            <ComboBoxItem
+                              Tag="X4_TI01"
+                              Content="编码器 ×4 · A、B 两相" />
+                          </ComboBox>
+                        </DockPanel>
+                      </StackPanel>
+                      <StackPanel
+                        x:Name="TimerFrequencyRow">
+                        <DockPanel
+                          Margin="0,0,0,4">
+                          <Label
+                            Content="周期频率 (Hz)"
+                            Width="104"
+                            Target="{Binding ElementName=TimerFrequency}" />
+                          <TextBox
+                            x:Name="TimerFrequency"
+                            TextChanged="TimerField_Changed" />
+                        </DockPanel>
+                      </StackPanel>
+                      <StackPanel
+                        x:Name="EncoderRows">
+                        <DockPanel
+                          Margin="0,0,0,4">
+                          <Label
+                            Content="A 相 · CH0"
+                            Width="104"
+                            Target="{Binding ElementName=EncoderA}" />
+                          <ComboBox
+                            x:Name="EncoderA"
+                            SelectedValuePath="Number"
+                            DisplayMemberPath="Label"
+                            SelectionChanged="TimerPin_Changed" />
+                        </DockPanel>
+                        <DockPanel
+                          Margin="0,0,0,4">
+                          <Label
+                            Content="B 相 · CH1"
+                            Width="104"
+                            Target="{Binding ElementName=EncoderB}" />
+                          <ComboBox
+                            x:Name="EncoderB"
+                            SelectedValuePath="Number"
+                            DisplayMemberPath="Label"
+                            SelectionChanged="TimerPin_Changed" />
+                        </DockPanel>
+                        <DockPanel
+                          Margin="0,0,0,4">
+                          <Label
+                            Content="计数上限"
+                            Width="104"
+                            Target="{Binding ElementName=EncoderTop}" />
+                          <TextBox
+                            x:Name="EncoderTop"
+                            TextChanged="TimerField_Changed" />
+                        </DockPanel>
+                        <DockPanel
+                          Margin="0,0,0,4">
+                          <Label
+                            Content="两相输入滤波"
+                            Width="104"
+                            Target="{Binding ElementName=EncoderFilter}" />
+                          <ComboBox
+                            x:Name="EncoderFilter"
+                            SelectionChanged="TimerField_Changed" />
+                        </DockPanel>
+                      </StackPanel>
+                      <StackPanel
+                        x:Name="TimerChannelRows">
+                        <TextBlock
+                          Text="各通道共用周期，可分别设置用途。"
+                          TextWrapping="Wrap"
+                          Margin="0,3,0,6"
+                          Foreground="{DynamicResource Muted}" />
+                        <DockPanel
+                          Margin="0,0,0,4">
+                          <Label
+                            Content="通道"
+                            Width="104"
+                            Target="{Binding ElementName=TimerChannel}" />
+                          <ComboBox
+                            x:Name="TimerChannel"
+                            SelectionChanged="TimerChannel_Changed" />
+                        </DockPanel>
+                        <DockPanel
+                          Margin="0,0,0,4">
+                          <Label
+                            Width="104"
+                            Content="通道用途"
+                            Target="{Binding ElementName=TimerFunction}" />
+                          <ComboBox
+                            x:Name="TimerFunction"
+                            SelectedValuePath="Tag"
+                            SelectionChanged="TimerField_Changed">
+                            <ComboBoxItem
+                              Tag="OFF"
+                              Content="关闭" />
+                            <ComboBoxItem
+                              Tag="PWM"
+                              Content="PWM 输出" />
+                            <ComboBoxItem
+                              Tag="TOGGLE"
+                              Content="比较匹配时翻转" />
+                            <ComboBoxItem
+                              Tag="ACTIVE"
+                              Content="比较匹配时置有效" />
+                            <ComboBoxItem
+                              Tag="INACTIVE"
+                              Content="比较匹配时置无效" />
+                            <ComboBoxItem
+                              Tag="IC"
+                              Content="输入捕获" />
+                          </ComboBox>
+                        </DockPanel>
+                        <StackPanel
+                          x:Name="TimerPinRow">
+                          <DockPanel
+                            Margin="0,0,0,4">
+                            <Label
+                              Content="通道引脚"
+                              Width="104"
+                              Target="{Binding ElementName=TimerPin}" />
+                            <ComboBox
+                              x:Name="TimerPin"
+                              SelectedValuePath="Number"
+                              DisplayMemberPath="Label"
+                              SelectionChanged="TimerPin_Changed" />
+                          </DockPanel>
+                        </StackPanel>
+                        <StackPanel
+                          x:Name="TimerOutputRows">
+                          <StackPanel
+                            x:Name="TimerCompareRow">
+                            <DockPanel
+                              Margin="0,0,0,4">
+                              <Label
+                                Content="CCR 比较值"
+                                Width="104"
+                                Target="{Binding ElementName=TimerCompareTicks}" />
+                              <TextBox
+                                x:Name="TimerCompareTicks"
+                                ToolTip="计数值达到 CCR 时执行所选动作，可填 0 至 ARR。单向重复计数时，每周期翻转一次，输出方波频率为周期频率的一半。"
+                                TextChanged="TimerField_Changed" />
+                            </DockPanel>
+                            <CheckBox
+                              x:Name="TimerCompareIrq"
+                              Content="启用比较匹配中断"
+                              Checked="TimerField_Changed"
+                              Unchecked="TimerField_Changed"
+                              Margin="0,2,0,6" />
+                          </StackPanel>
+                          <DockPanel
+                            x:Name="TimerDutyRow"
+                            Margin="0,0,0,4">
+                            <Label
+                              Content="占空比 (%)"
+                              Width="104"
+                              Target="{Binding ElementName=TimerDuty}" />
+                            <TextBox
+                              x:Name="TimerDuty"
+                              TextChanged="TimerField_Changed" />
+                          </DockPanel>
+                          <CheckBox
+                            x:Name="TimerComplement"
+                            Margin="0,2,0,6"
+                            Content="启用互补输出"
+                            Checked="TimerField_Changed"
+                            Unchecked="TimerField_Changed" />
+                          <StackPanel
+                            x:Name="TimerComplementRow">
+                            <DockPanel
+                              Margin="0,0,0,4">
+                              <Label
+                                Content="互补输出脚"
+                                Width="104"
+                                Target="{Binding ElementName=TimerNPin}" />
+                              <ComboBox
+                                x:Name="TimerNPin"
+                                SelectedValuePath="Number"
+                                DisplayMemberPath="Label"
+                                SelectionChanged="TimerPin_Changed" />
+                            </DockPanel>
+                          </StackPanel>
+                        </StackPanel>
+                        <StackPanel
+                          x:Name="TimerCaptureRows">
+                          <DockPanel
+                            Margin="0,0,0,4">
+                            <Label
+                              Width="104"
+                              Content="捕获边沿"
+                              Target="{Binding ElementName=TimerEdge}" />
+                            <ComboBox
+                              x:Name="TimerEdge"
+                              SelectedValuePath="Tag"
+                              SelectionChanged="TimerField_Changed">
+                              <ComboBoxItem
+                                Tag="RISING"
+                                Content="上升沿" />
+                              <ComboBoxItem
+                                Tag="FALLING"
+                                Content="下降沿" />
+                              <ComboBoxItem
+                                Tag="BOTHEDGE"
+                                Content="双边沿" />
+                            </ComboBox>
+                          </DockPanel>
+                          <DockPanel
+                            Margin="0,0,0,4">
+                            <Label
+                              Content="输入滤波"
+                              Width="104"
+                              Target="{Binding ElementName=TimerFilter}" />
+                            <ComboBox
+                              x:Name="TimerFilter"
+                              SelectionChanged="TimerField_Changed" />
+                          </DockPanel>
+                          <DockPanel
+                            Margin="0,0,0,4">
+                            <Label
+                              Width="104"
+                              Content="捕获分频"
+                              Target="{Binding ElementName=TimerDivider}" />
+                            <ComboBox
+                              x:Name="TimerDivider"
+                              SelectedValuePath="Tag"
+                              SelectionChanged="TimerField_Changed">
+                              <ComboBoxItem
+                                Tag="1"
+                                Content="每个有效边沿" />
+                              <ComboBoxItem
+                                Tag="2"
+                                Content="每 2 个有效边沿" />
+                              <ComboBoxItem
+                                Tag="4"
+                                Content="每 4 个有效边沿" />
+                              <ComboBoxItem
+                                Tag="8"
+                                Content="每 8 个有效边沿" />
+                            </ComboBox>
+                          </DockPanel>
+                          <CheckBox
+                            x:Name="TimerIrq"
+                            Margin="0,2,0,6"
+                            Content="启用捕获中断与回调"
+                            Checked="TimerField_Changed"
+                            Unchecked="TimerField_Changed" />
+                        </StackPanel>
+                        <Expander
+                          x:Name="TimerProtection"
+                          Header="死区与刹车（全定时器）"
+                          Foreground="{DynamicResource Text}"
+                          Margin="0,4">
+                          <StackPanel
+                            Margin="0,6,0,0">
+                            <DockPanel
+                              x:Name="TimerDeadTimeRow"
+                              Margin="0,0,0,4">
+                              <Label
+                                Content="死区 (ns)"
+                                Width="104"
+                                Target="{Binding ElementName=TimerDeadTime}" />
+                              <TextBox
+                                x:Name="TimerDeadTime"
+                                TextChanged="TimerField_Changed" />
+                            </DockPanel>
+                            <DockPanel
+                              Margin="0,0,0,4">
+                              <Label
+                                Width="104"
+                                Content="刹车输入"
+                                Target="{Binding ElementName=TimerBreak}" />
+                              <ComboBox
+                                x:Name="TimerBreak"
+                                SelectedValuePath="Tag"
+                                SelectionChanged="TimerField_Changed">
+                                <ComboBoxItem
+                                  Tag="OFF"
+                                  Content="关闭" />
+                                <ComboBoxItem
+                                  Tag="LOW"
+                                  Content="低电平有效" />
+                                <ComboBoxItem
+                                  Tag="HIGH"
+                                  Content="高电平有效" />
+                              </ComboBox>
+                            </DockPanel>
+                            <StackPanel
+                              x:Name="TimerBreakRow">
+                              <DockPanel
+                                Margin="0,0,0,4">
+                                <Label
+                                  Content="BRK 引脚"
+                                  Width="104"
+                                  Target="{Binding ElementName=TimerBreakPin}" />
+                                <ComboBox
+                                  x:Name="TimerBreakPin"
+                                  SelectedValuePath="Number"
+                                  DisplayMemberPath="Label"
+                                  SelectionChanged="TimerPin_Changed" />
+                              </DockPanel>
+                            </StackPanel>
+                          </StackPanel>
+                        </Expander>
+                      </StackPanel>
+                    </StackPanel>
+                    <TextBlock
+                      x:Name="TimerTiming"
+                      TextWrapping="Wrap"
+                      Foreground="{DynamicResource Muted}"
+                      Margin="0,5,0,4" />
+                    <TextBlock
+                      x:Name="TimerStatus"
+                      TextWrapping="Wrap"
+                      Foreground="{DynamicResource DiagnosticError}"
+                      AutomationProperties.LiveSetting="Polite" />
+                    <Expander
+                      x:Name="TimerCodePanel"
+                      Header="预览初始化代码"
+                      Foreground="{DynamicResource Text}"
+                      Margin="0,4">
+                      <TextBox
+                        x:Name="TimerCode"
+                        IsReadOnly="True"
+                        TextWrapping="Wrap"
+                        Margin="0,5,0,0"
+                        AutomationProperties.Name="定时器初始化代码" />
+                    </Expander>
+                  </StackPanel>
+                  <StackPanel
+                    x:Name="SystemInspector"
+                    Visibility="Collapsed">
+                    <TextBlock
+                      x:Name="SystemTitle"
+                      FontWeight="SemiBold"
+                      Margin="0,3,0,6" />
+                    <Button
+                      Content="PLIC 中断设置…"
+                      Click="OpenInterrupts_Click"
+                      HorizontalAlignment="Left"
+                      Margin="0,0,0,6" />
+                    <StackPanel
+                      x:Name="RtcFields">
+                      <CheckBox
+                        x:Name="RtcEnabled"
+                        Content="在 main 中初始化 RTC"
+                        Checked="SystemField_Changed"
+                        Unchecked="SystemField_Changed"
+                        Margin="0,0,0,6" />
+                      <TextBlock
+                        Text="时钟源　LSE · 32.768 kHz 外部晶振"
+                        TextWrapping="Wrap"
+                        Margin="0,0,0,4" />
+                      <DockPanel
+                        Margin="0,0,0,4">
+                        <Label
+                          Content="预分频装载值"
+                          Width="110"
+                          Foreground="{DynamicResource Text}"
+                          Target="{Binding ElementName=RtcPrescaler}" />
+                        <TextBox
+                          x:Name="RtcPrescaler"
+                          TextChanged="SystemField_Changed" />
+                      </DockPanel>
+                      <TextBlock
+                        x:Name="RtcDetail"
+                        TextWrapping="Wrap"
+                        Foreground="{DynamicResource Muted}" />
+                    </StackPanel>
+                    <StackPanel
+                      x:Name="WdogFields">
+                      <CheckBox
+                        x:Name="WdogEnabled"
+                        Content="在 main 中启动看门狗"
+                        Checked="SystemField_Changed"
+                        Unchecked="SystemField_Changed"
+                        Margin="0,0,0,6" />
+                      <DockPanel
+                        Margin="0,0,0,4">
+                        <Label
+                          Content="复位超时 (ms)"
+                          Width="110"
+                          Foreground="{DynamicResource Text}"
+                          Target="{Binding ElementName=WdogTimeout}" />
+                        <TextBox
+                          x:Name="WdogTimeout"
+                          TextChanged="SystemField_Changed" />
+                      </DockPanel>
+                      <TextBlock
+                        Text="两个计数周期后复位。在业务循环确认关键任务正常后调用 SX_WDOG_Feed()。"
+                        TextWrapping="Wrap"
+                        Foreground="{DynamicResource Muted}" />
+                    </StackPanel>
+                  </StackPanel>
+                  <StackPanel
+                    x:Name="SetupInspector"
+                    Visibility="Collapsed"
+                    Margin="0,8,0,4">
+                    <CheckBox
+                      x:Name="SetupEnabled"
+                      Checked="SetupEnabled_Changed"
+                      Unchecked="SetupEnabled_Changed" />
+                    <TextBlock
+                      x:Name="SetupHint"
+                      Foreground="{DynamicResource Muted}"
+                      TextWrapping="Wrap"
+                      Margin="0,4" />
+                    <StackPanel
+                      x:Name="SetupFields" />
+                  </StackPanel>
+                  <StackPanel
+                    x:Name="BusInspector"
+                    Visibility="Collapsed">
+                    <TextBlock
+                      x:Name="BusTitle"
+                      FontWeight="SemiBold"
+                      Margin="0,3,0,6" />
+                    <CheckBox
+                      x:Name="BusEnabled"
+                      Content="在 main 中初始化此外设"
+                      Margin="0,0,0,8"
+                      Checked="BusField_Changed"
+                      Unchecked="BusField_Changed" />
+                    <StackPanel
+                      x:Name="BusPinRows" />
+                    <StackPanel
+                      x:Name="BusParameters"
+                      Margin="0,6,0,0">
+                      <Button
+                        Content="PLIC 中断设置…"
+                        Click="OpenInterrupts_Click"
+                        HorizontalAlignment="Left"
+                        Margin="0,0,0,6" />
+                      <DockPanel
+                        Margin="0,0,0,4">
+                        <Label
+                          x:Name="BusRateLabel"
+                          Width="92"
+                          Padding="2,4"
+                          Foreground="{DynamicResource Text}"
+                          Target="{Binding ElementName=BusRate}" />
+                        <ComboBox
+                          x:Name="BusRate"
+                          SelectionChanged="BusField_Changed" />
+                      </DockPanel>
+                      <CheckBox
+                        x:Name="SpiBigEndian"
+                        Content="大端字节序"
+                        Margin="0,2,0,4"
+                        Checked="BusField_Changed"
+                        Unchecked="BusField_Changed" />
+                      <StackPanel
+                        x:Name="SpiDmaRows">
+                        <DockPanel
+                          Margin="0,0,0,4">
+                          <Label
+                            Content="发送 DMA"
+                            Width="110"
+                            Foreground="{DynamicResource Text}"
+                            Target="{Binding ElementName=SpiTxDma}" />
+                          <ComboBox
+                            x:Name="SpiTxDma"
+                            DisplayMemberPath="Label"
+                            SelectedValuePath="Code"
+                            SelectionChanged="BusField_Changed" />
+                        </DockPanel>
+                        <DockPanel
+                          Margin="0,0,0,4">
+                          <Label
+                            Content="接收 DMA"
+                            Width="110"
+                            Foreground="{DynamicResource Text}"
+                            Target="{Binding ElementName=SpiRxDma}" />
+                          <ComboBox
+                            x:Name="SpiRxDma"
+                            DisplayMemberPath="Label"
+                            SelectedValuePath="Code"
+                            SelectionChanged="BusField_Changed" />
+                        </DockPanel>
+                        <TextBlock
+                          Text="接收先发送 1～4 字节命令，再读取数据。完成及错误回调见中断页。"
+                          TextWrapping="Wrap"
+                          Foreground="{DynamicResource Muted}" />
+                      </StackPanel>
+                      <StackPanel
+                        x:Name="CanFilterRows">
+                        <DockPanel
+                          Margin="0,0,0,4">
+                          <Label
+                            Content="接收过滤"
+                            Width="110"
+                            Foreground="{DynamicResource Text}"
+                            Target="{Binding ElementName=CanFilterMode}" />
+                          <ComboBox
+                            x:Name="CanFilterMode"
+                            DisplayMemberPath="Label"
+                            SelectedValuePath="Code"
+                            SelectionChanged="BusField_Changed" />
+                        </DockPanel>
+                        <StackPanel
+                          x:Name="CanIdRow">
+                          <DockPanel
+                            Margin="0,0,0,4">
+                            <Label
+                              Content="ID（十六进制）"
+                              Width="110"
+                              Foreground="{DynamicResource Text}"
+                              Target="{Binding ElementName=CanFilterId}" />
+                            <TextBox
+                              x:Name="CanFilterId"
+                              TextChanged="BusField_Changed" />
+                          </DockPanel>
+                        </StackPanel>
+                        <StackPanel
+                          x:Name="CanMaskRow">
+                          <DockPanel
+                            Margin="0,0,0,4">
+                            <Label
+                              Content="比较掩码"
+                              Width="110"
+                              Foreground="{DynamicResource Text}"
+                              Target="{Binding ElementName=CanFilterMask}" />
+                            <TextBox
+                              x:Name="CanFilterMask"
+                              TextChanged="BusField_Changed" />
+                          </DockPanel>
+                          <TextBlock
+                            Text="十六进制；1 表示比较该位，0 表示忽略。"
+                            TextWrapping="Wrap"
+                            Foreground="{DynamicResource Muted}" />
+                        </StackPanel>
+                      </StackPanel>
+                      <DockPanel
+                        x:Name="CanSampleRow"
+                        Margin="0,0,0,4">
+                        <Label
+                          Content="采样点"
+                          Width="92"
+                          Padding="2,4"
+                          Foreground="{DynamicResource Text}"
+                          Target="{Binding ElementName=CanSample}" />
+                        <ComboBox
+                          x:Name="CanSample"
+                          DisplayMemberPath="Label"
+                          SelectedValuePath="Value"
+                          SelectionChanged="BusField_Changed" />
+                      </DockPanel>
+                    </StackPanel>
+                    <TextBlock
+                      x:Name="BusTiming"
+                      TextWrapping="Wrap"
+                      Foreground="{DynamicResource Muted}"
+                      Margin="0,4" />
+                    <TextBlock
+                      x:Name="BusStatus"
+                      TextWrapping="Wrap"
+                      Foreground="{DynamicResource DiagnosticError}"
+                      AutomationProperties.LiveSetting="Polite"
+                      Margin="0,0,0,4" />
+                    <Expander
+                      x:Name="BusCodePanel"
+                      Header="预览初始化代码"
+                      Foreground="{DynamicResource Text}"
+                      Margin="0,4">
+                      <TextBox
+                        x:Name="BusCode"
+                        Margin="0,6,0,0"
+                        IsReadOnly="True"
+                        TextWrapping="Wrap"
+                        AutomationProperties.Name="外设初始化代码" />
+                    </Expander>
+                  </StackPanel>
+                  <StackPanel
+                    x:Name="UartInspector"
+                    Visibility="Collapsed">
+                    <StackPanel.Resources>
+                      <Style
+                        TargetType="Label">
+                        <Setter
+                          Property="Foreground"
+                          Value="{DynamicResource Text}" />
+                        <Setter
+                          Property="Padding"
+                          Value="0,1,0,3" />
+                      </Style>
+                    </StackPanel.Resources>
+                    <TextBlock
+                      x:Name="UartTitle"
+                      FontWeight="SemiBold"
+                      Margin="0,3,0,6" />
+                    <CheckBox
+                      x:Name="UartEnabled"
+                      Content="在 main 中初始化此串口"
+                      Margin="0,0,0,8"
+                      Checked="UartField_Changed"
+                      Unchecked="UartField_Changed" />
+                    <Grid
+                      x:Name="UartFields">
+                      <Grid.ColumnDefinitions>
+                        <ColumnDefinition
+                          Width="Auto" />
+                        <ColumnDefinition />
+                      </Grid.ColumnDefinitions>
+                      <Grid.RowDefinitions>
+                        <RowDefinition
+                          Height="Auto" />
+                        <RowDefinition
+                          Height="Auto" />
+                        <RowDefinition
+                          Height="Auto" />
+                        <RowDefinition
+                          Height="Auto" />
+                      </Grid.RowDefinitions>
+                      <Label
+                        Content="发送 TX"
+                        Target="{Binding ElementName=UartTx}"
+                        VerticalAlignment="Center"
+                        Margin="0,0,8,4" />
+                      <ComboBox
+                        x:Name="UartTx"
+                        Tag="UARTTXD"
+                        Grid.Column="1"
+                        Margin="0,0,0,4"
+                        AutomationProperties.Name="发送引脚 TX"
+                        DisplayMemberPath="Label"
+                        SelectedValuePath="Number"
+                        SelectionChanged="UartPin_Changed" />
+                      <Label
+                        Grid.Row="1"
+                        Content="接收 RX"
+                        Target="{Binding ElementName=UartRx}"
+                        VerticalAlignment="Center"
+                        Margin="0,0,8,4" />
+                      <ComboBox
+                        x:Name="UartRx"
+                        Tag="UARTRXD"
+                        Grid.Row="1"
+                        Grid.Column="1"
+                        Margin="0,0,0,4"
+                        AutomationProperties.Name="接收引脚 RX"
+                        DisplayMemberPath="Label"
+                        SelectedValuePath="Number"
+                        SelectionChanged="UartPin_Changed" />
+                      <Label
+                        Grid.Row="2"
+                        Content="波特率"
+                        Target="{Binding ElementName=UartBaud}"
+                        VerticalAlignment="Center"
+                        Margin="0,0,8,4" />
+                      <TextBox
+                        x:Name="UartBaud"
+                        Grid.Row="2"
+                        Grid.Column="1"
+                        Margin="0,0,0,4"
+                        AutomationProperties.Name="波特率"
+                        ToolTip="每秒比特数（bit/s）"
+                        TextChanged="UartField_Changed" />
+                      <CheckBox
+                        x:Name="UartIrq"
+                        Grid.Row="3"
+                        Grid.ColumnSpan="2"
+                        Content="启用接收中断"
+                        Margin="0,3"
+                        Checked="UartField_Changed"
+                        Unchecked="UartField_Changed" />
+                    </Grid>
+                    <Button
+                      Content="PLIC 中断设置…"
+                      Click="OpenInterrupts_Click"
+                      HorizontalAlignment="Left"
+                      Margin="0,4"
+                      IsEnabled="{Binding IsChecked, ElementName=UartEnabled}" />
+                    <Expander
+                      x:Name="UartFrame"
+                      Header="帧格式"
+                      Margin="0,4"
+                      Foreground="{DynamicResource Text}">
+                      <StackPanel
+                        x:Name="UartFrameFields"
+                        Margin="2,6,2,0">
+                        <DockPanel
+                          Margin="0,0,0,4">
+                          <Label
+                            DockPanel.Dock="Left"
+                            Content="收发方向"
+                            Width="86"
+                            VerticalAlignment="Center"
+                            Target="{Binding ElementName=UartMode}" />
+                          <ComboBox
+                            x:Name="UartMode"
+                            SelectedValuePath="Tag"
+                            SelectionChanged="UartField_Changed">
+                            <ComboBoxItem
+                              Tag="AUTO"
+                              Content="按已分配引脚" />
+                            <ComboBoxItem
+                              Tag="TX_RX"
+                              Content="发送和接收" />
+                            <ComboBoxItem
+                              Tag="TX"
+                              Content="仅发送" />
+                            <ComboBoxItem
+                              Tag="RX"
+                              Content="仅接收" />
+                          </ComboBox>
+                        </DockPanel>
+                        <DockPanel
+                          Margin="0,0,0,4"
+                          LastChildFill="True">
+                          <Label
+                            DockPanel.Dock="Left"
+                            Content="数据位"
+                            Width="86"
+                            VerticalAlignment="Center"
+                            Target="{Binding ElementName=UartDataBits}" />
+                          <ComboBox
+                            x:Name="UartDataBits"
+                            SelectionChanged="UartField_Changed" />
+                        </DockPanel>
+                        <DockPanel
+                          Margin="0,0,0,4"
+                          LastChildFill="True">
+                          <Label
+                            DockPanel.Dock="Left"
+                            Content="校验"
+                            Width="86"
+                            VerticalAlignment="Center"
+                            Target="{Binding ElementName=UartParity}" />
+                          <ComboBox
+                            x:Name="UartParity"
+                            SelectedValuePath="Tag"
+                            SelectionChanged="UartField_Changed">
+                            <ComboBoxItem
+                              Tag="NONE"
+                              Content="无" />
+                            <ComboBoxItem
+                              Tag="ODD"
+                              Content="奇校验" />
+                            <ComboBoxItem
+                              Tag="EVEN"
+                              Content="偶校验" />
+                            <ComboBoxItem
+                              Tag="ONE"
+                              Content="固定为 1" />
+                            <ComboBoxItem
+                              Tag="ZERO"
+                              Content="固定为 0" />
+                          </ComboBox>
+                        </DockPanel>
+                        <DockPanel
+                          Margin="0,0,0,4"
+                          LastChildFill="True">
+                          <Label
+                            DockPanel.Dock="Left"
+                            Content="停止位"
+                            Width="86"
+                            VerticalAlignment="Center"
+                            Target="{Binding ElementName=UartStopBits}" />
+                          <ComboBox
+                            x:Name="UartStopBits"
+                            SelectionChanged="UartField_Changed" />
+                        </DockPanel>
+                      </StackPanel>
+                    </Expander>
+                    <Expander
+                      x:Name="UartAdvanced"
+                      Header="流控、FIFO 与中断优先级"
+                      Margin="0,2"
+                      Foreground="{DynamicResource Text}">
+                      <StackPanel
+                        Margin="2,6,2,0">
+                        <DockPanel
+                          Margin="0,0,0,4"
+                          LastChildFill="True">
+                          <Label
+                            DockPanel.Dock="Left"
+                            Content="硬件流控"
+                            Width="86"
+                            VerticalAlignment="Center"
+                            Target="{Binding ElementName=UartFlow}" />
+                          <ComboBox
+                            x:Name="UartFlow"
+                            SelectedValuePath="Tag"
+                            SelectionChanged="UartField_Changed">
+                            <ComboBoxItem
+                              Tag="NONE"
+                              Content="关闭" />
+                            <ComboBoxItem
+                              Tag="RTS"
+                              Content="RTS" />
+                            <ComboBoxItem
+                              Tag="CTS"
+                              Content="CTS" />
+                            <ComboBoxItem
+                              Tag="RTS_CTS"
+                              Content="RTS + CTS" />
+                          </ComboBox>
+                        </DockPanel>
+                        <DockPanel
+                          x:Name="UartRtsRow"
+                          Margin="0,0,0,4"
+                          LastChildFill="True">
+                          <Label
+                            DockPanel.Dock="Left"
+                            Content="RTS 引脚"
+                            Width="86"
+                            VerticalAlignment="Center"
+                            Target="{Binding ElementName=UartRts}" />
+                          <ComboBox
+                            x:Name="UartRts"
+                            Tag="NUARTRTS"
+                            DisplayMemberPath="Label"
+                            SelectedValuePath="Number"
+                            SelectionChanged="UartPin_Changed" />
+                        </DockPanel>
+                        <DockPanel
+                          x:Name="UartCtsRow"
+                          Margin="0,0,0,4"
+                          LastChildFill="True">
+                          <Label
+                            DockPanel.Dock="Left"
+                            Content="CTS 引脚"
+                            Width="86"
+                            VerticalAlignment="Center"
+                            Target="{Binding ElementName=UartCts}" />
+                          <ComboBox
+                            x:Name="UartCts"
+                            Tag="NUARTCTS"
+                            DisplayMemberPath="Label"
+                            SelectedValuePath="Number"
+                            SelectionChanged="UartPin_Changed" />
+                        </DockPanel>
+                        <CheckBox
+                          x:Name="UartFifo"
+                          Content="使用 16 字节硬件 FIFO"
+                          Margin="0,3,0,7"
+                          Checked="UartField_Changed"
+                          Unchecked="UartField_Changed" />
+                        <DockPanel
+                          Margin="0,0,0,4"
+                          LastChildFill="True">
+                          <Label
+                            DockPanel.Dock="Left"
+                            Content="优先级"
+                            Width="86"
+                            VerticalAlignment="Center"
+                            Target="{Binding ElementName=UartPriority}" />
+                          <ComboBox
+                            x:Name="UartPriority"
+                            SelectionChanged="UartField_Changed" />
+                        </DockPanel>
+                      </StackPanel>
+                    </Expander>
+                    <TextBlock
+                      x:Name="UartHint"
+                      Foreground="{DynamicResource Muted}"
+                      TextWrapping="Wrap"
+                      Margin="0,4,0,4" />
+                    <TextBlock
+                      x:Name="UartStatus"
+                      TextWrapping="Wrap"
+                      Margin="0,4,0,6"
+                      AutomationProperties.LiveSetting="Polite" />
+                    <WrapPanel>
+                      <Button
+                        x:Name="UartPreviewButton"
+                        Content="预览初始化代码"
+                        Click="UartPreview_Click"
+                        Margin="0,0,0,6" />
+                    </WrapPanel>
+                    <TextBox
+                      x:Name="UartPreview"
+                      Visibility="Collapsed"
+                      IsReadOnly="True"
+                      TextWrapping="Wrap"
+                      Margin="0,6,0,0"
+                      AutomationProperties.Name="初始化代码预览" />
+                  </StackPanel>
+                </StackPanel>
+              </ScrollViewer>
+            </DockPanel>
+          </DockPanel>
+          <GridSplitter
+            x:Name="PaneSplitter"
+            Grid.Column="3"
+            Style="{StaticResource PlannerSplitter}"
+            ResizeDirection="Columns"
+            ToolTip="拖动调整参数区和封装图区大小"
+            AutomationProperties.Name="参数区与封装图区分隔线" />
+          <DockPanel
+            x:Name="PackagePane"
+            Grid.Column="4"
+            Margin="8,0,0,0">
+            <DockPanel
+              DockPanel.Dock="Bottom"
+              Margin="0,5,0,0">
+              <Button
+                x:Name="FitPackageButton"
+                DockPanel.Dock="Right"
+                Content="适应窗口"
+                Click="FitPackage_Click"
+                Padding="6,3"
+                ToolTip="将完整封装图居中显示" />
+              <Button
+                x:Name="ZoomInPackageButton"
+                DockPanel.Dock="Right"
+                Content="＋"
+                AutomationProperties.Name="放大封装图"
+                ToolTip="放大封装图（Ctrl + 滚轮可围绕指针缩放）"
+                Click="ZoomIn_Click"
+                Padding="5,2"
+                Margin="4,0" />
+              <Button
+                DockPanel.Dock="Left"
+                Content="－"
+                AutomationProperties.Name="缩小封装图"
+                ToolTip="缩小封装图"
+                Click="ZoomOut_Click"
+                Padding="5,2"
+                Margin="0,0,4,0" />
+              <Slider
+                x:Name="DiagramZoom"
+                Minimum="15"
+                Maximum="400"
+                Value="100"
+                SmallChange="5"
+                LargeChange="25"
+                ToolTip="{Binding Value, RelativeSource={RelativeSource Self}, StringFormat={}{0:F0}%}"
+                AutomationProperties.Name="封装图缩放"
+                ValueChanged="DiagramZoom_Changed"
+                VerticalAlignment="Center" />
+            </DockPanel>
+            <ScrollViewer
+              x:Name="DiagramViewport"
+              HorizontalScrollBarVisibility="Auto"
+              VerticalScrollBarVisibility="Auto"
+              SizeChanged="DiagramViewport_SizeChanged"
+              PreviewMouseWheel="DiagramViewport_Wheel"
+              Background="{DynamicResource EditorSurface}">
+              <Grid
+                x:Name="DiagramSurface"
+                Background="Transparent"
+                Cursor="Hand"
+                ToolTip="按住鼠标左键拖动封装图，单击引脚查看或配置。"
+                PreviewMouseLeftButtonDown="DiagramSurface_PanStart"
+                PreviewMouseMove="DiagramSurface_PanMove"
+                PreviewMouseLeftButtonUp="DiagramSurface_PanEnd"
+                LostMouseCapture="DiagramSurface_PanLost"
+                MouseLeave="DiagramSurface_MouseLeave">
+                <Viewbox
+                  x:Name="DiagramHost"
+                  HorizontalAlignment="Center"
+                  VerticalAlignment="Center"
+                  Stretch="Uniform">
+                  <Viewbox.RenderTransform>
+                    <TranslateTransform
+                      x:Name="DiagramTranslation" />
+                  </Viewbox.RenderTransform>
+                  <local:Ag32PackageDiagram
+                    x:Name="PackageDiagram" />
+                </Viewbox>
+              </Grid>
+            </ScrollViewer>
+          </DockPanel>
         </Grid>
       </TabItem>
       <TabItem
-        Header="时钟 / 时序">
-        <StackPanel
-          Margin="16">
+        x:Name="IrqTab"
+        Header="中断 / PLIC">
+        <DockPanel
+          Margin="10,8"
+          Grid.IsSharedSizeScope="True">
+          <WrapPanel
+            DockPanel.Dock="Top"
+            Margin="0,0,0,6">
+            <Label
+              Content="搜索中断"
+              Target="{Binding ElementName=IrqSearch}"
+              Foreground="{DynamicResource Text}" />
+            <TextBox
+              x:Name="IrqSearch"
+              MinWidth="130"
+              TextChanged="IrqFilter_Changed"
+              Margin="0,0,12,0" />
+            <CheckBox
+              x:Name="IrqEnabledOnly"
+              Content="仅显示已启用向量"
+              VerticalAlignment="Center"
+              Checked="IrqFilter_Changed"
+              Unchecked="IrqFilter_Changed" />
+          </WrapPanel>
           <TextBlock
-            Text="单位 MHz；留空沿用默认。频率需与板上晶振和固件一致。"
-            TextWrapping="Wrap"
+            DockPanel.Dock="Top"
             Foreground="{DynamicResource Muted}"
-            Margin="0,0,0,16" />
-          <TextBlock
-            Text="HSECLK · 外部输入时钟" />
-          <TextBox
-            x:Name="HseClock"
-            TextChanged="Clock_Changed"
-            Margin="0,6,0,12" />
-          <TextBlock
-            Text="SYSCLK · 系统时钟" />
-          <TextBox
-            x:Name="SysClock"
-            TextChanged="Clock_Changed"
-            Margin="0,6,0,12" />
-          <TextBlock
-            Text="BUSCLK · 总线时钟" />
-          <TextBox
-            x:Name="BusClock"
-            TextChanged="Clock_Changed"
-            Margin="0,6,0,12" />
-          <TextBlock
-            x:Name="ClockGuidanceText"
             TextWrapping="Wrap"
-            Foreground="{DynamicResource DiagnosticWarning}"
-            Margin="0,0,0,12" />
+            Margin="0,0,0,8"
+            Text="同一向量共用一个优先级。1 最低，15 最高。" />
+          <Expander
+            x:Name="IrqCodePanel"
+            DockPanel.Dock="Bottom"
+            Header="回调与源码"
+            Margin="0,6,0,0"
+            Foreground="{DynamicResource Text}">
+            <StackPanel>
+              <TextBlock
+                Margin="4,3"
+                TextWrapping="Wrap"
+                Foreground="{DynamicResource Muted}"
+                Text="保存并生成后，可点击事件下方的“编写回调”进入用户代码。" />
+              <TextBox
+                x:Name="IrqCodeSummary"
+                IsReadOnly="True"
+                TextWrapping="Wrap"
+                MaxHeight="125"
+                VerticalScrollBarVisibility="Auto"
+                AutomationProperties.Name="中断入口、回调和文件" />
+            </StackPanel>
+          </Expander>
+          <Grid
+            DockPanel.Dock="Top"
+            Margin="2,0,0,3">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition
+                Width="Auto"
+                SharedSizeGroup="IrqVector" />
+              <ColumnDefinition
+                Width="Auto"
+                SharedSizeGroup="IrqPriority" />
+              <ColumnDefinition />
+            </Grid.ColumnDefinitions>
+            <TextBlock
+              Text="中断向量"
+              Margin="4,2,12,2" />
+            <TextBlock
+              Grid.Column="1"
+              Text="优先级"
+              Margin="2,2,12,2" />
+            <TextBlock
+              Grid.Column="2"
+              Text="触发事件"
+              Margin="4,2" />
+          </Grid>
           <TextBlock
-            Text="模拟 IP 推荐组合（SYS / BUS）"
-            Margin="0,0,0,6" />
-          <ComboBox
-            x:Name="RecommendedClocks"
-            DisplayMemberPath="Name"
-            SelectionChanged="Recommendation_Changed"
-            Margin="0,0,0,8" />
-          <Button
-            x:Name="ApplyRecommendedClockButton"
-            Content="应用推荐时钟并保存"
-            HorizontalAlignment="Left"
-            Click="ApplyRecommendedClock_Click"
-            ToolTip="保留当前 HSE、引脚和模拟设置，保存整份图形草稿并重新生成系统层；仍需点击顶部编译验证实际时序。"
-            Margin="0,0,0,8" />
-          <TextBlock
-            x:Name="RecommendationDetails"
+            DockPanel.Dock="Top"
+            x:Name="IrqEmpty"
             TextWrapping="Wrap"
-            Foreground="{DynamicResource Muted}"
-            Margin="0,0,0,14" />
-          <TextBlock
-            Text="保存约束后重新编译"
-            TextWrapping="Wrap"
+            Margin="4,10"
             Foreground="{DynamicResource Muted}" />
-        </StackPanel>
+          <ScrollViewer
+            VerticalScrollBarVisibility="Auto"
+            HorizontalScrollBarVisibility="Disabled">
+            <ItemsControl
+              x:Name="InterruptRows">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <Border
+                    BorderThickness="0,1,0,0"
+                    BorderBrush="{DynamicResource Border}"
+                    Padding="2,4">
+                    <Grid>
+                      <Grid.ColumnDefinitions>
+                        <ColumnDefinition
+                          Width="Auto"
+                          SharedSizeGroup="IrqVector" />
+                        <ColumnDefinition
+                          Width="Auto"
+                          SharedSizeGroup="IrqPriority" />
+                        <ColumnDefinition />
+                      </Grid.ColumnDefinitions>
+                      <Button
+                        Content="{Binding Vector}"
+                        Click="LocateIrqModule_Click"
+                        VerticalAlignment="Top"
+                        HorizontalAlignment="Left"
+                        ToolTip="{Binding LocationHint}"
+                        Margin="0,0,8,0" />
+                      <ComboBox
+                        Grid.Column="1"
+                        ItemsSource="{Binding Priorities}"
+                        SelectedItem="{Binding Priority, Mode=TwoWay}"
+                        Visibility="{Binding PriorityVisibility}"
+                        IsEnabled="{Binding Enabled}"
+                        MinWidth="58"
+                        Margin="0,0,8,0"
+                        VerticalAlignment="Top"
+                        AutomationProperties.Name="{Binding Vector, StringFormat={}{0} 优先级}" />
+                      <TextBlock
+                        Grid.Column="1"
+                        Text="内核固定"
+                        Visibility="{Binding FixedPriorityVisibility}"
+                        Foreground="{DynamicResource Muted}"
+                        Margin="0,2,6,0" />
+                      <StackPanel
+                        Grid.Column="2">
+                        <ItemsControl
+                          ItemsSource="{Binding Events}">
+                          <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                              <WrapPanel />
+                            </ItemsPanelTemplate>
+                          </ItemsControl.ItemsPanel>
+                          <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                              <StackPanel
+                                Margin="4,1,10,2"
+                                VerticalAlignment="Center">
+                                <CheckBox
+                                  Content="{Binding Label}"
+                                  IsEnabled="{Binding CanToggle}"
+                                  IsChecked="{Binding Enabled, Mode=TwoWay}"
+                                  Visibility="{Binding SwitchVisibility}"
+                                  ToolTip="{Binding Hint}" />
+                                <WrapPanel
+                                  Visibility="{Binding TriggerVisibility}">
+                                  <TextBlock
+                                    Text="{Binding Label}"
+                                    VerticalAlignment="Center"
+                                    Margin="0,0,5,0" />
+                                  <ComboBox
+                                    ItemsSource="{Binding Triggers}"
+                                    DisplayMemberPath="Label"
+                                    SelectedValuePath="Code"
+                                    SelectedValue="{Binding Trigger, Mode=TwoWay}"
+                                    AutomationProperties.Name="{Binding Label}"
+                                    ToolTip="{Binding Hint}" />
+                                </WrapPanel>
+                              </StackPanel>
+                            </DataTemplate>
+                          </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <ItemsControl
+                          ItemsSource="{Binding Hooks}">
+                          <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                              <WrapPanel />
+                            </ItemsPanelTemplate>
+                          </ItemsControl.ItemsPanel>
+                          <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                              <Button
+                                Content="{Binding Label}"
+                                Click="WriteCallback_Click"
+                                ToolTip="{Binding Hint}"
+                                Margin="4,2,4,0" />
+                            </DataTemplate>
+                          </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                      </StackPanel>
+                    </Grid>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </ScrollViewer>
+        </DockPanel>
+      </TabItem>
+      <TabItem
+        x:Name="TimingTab"
+        Header="时钟 / 时序">
+        <ScrollViewer
+          VerticalScrollBarVisibility="Auto">
+          <StackPanel
+            Margin="16">
+            <Border
+              x:Name="TimingBorder"
+              BorderThickness="2,0,0,0"
+              Padding="12,6"
+              Margin="0,0,0,12"
+              BorderBrush="{DynamicResource DiagnosticWarning}">
+              <StackPanel>
+                <TextBlock
+                  x:Name="TimingStateText"
+                  FontWeight="SemiBold"
+                  TextWrapping="Wrap"
+                  Foreground="{DynamicResource DiagnosticWarning}" />
+                <TextBlock
+                  x:Name="TimingSummaryText"
+                  TextWrapping="Wrap"
+                  Margin="0,5,0,0" />
+                <Expander
+                  x:Name="TimingDetails"
+                  Header="查看关键路径与原始报告"
+                  Foreground="{DynamicResource Text}"
+                  Margin="0,6,0,0">
+                  <StackPanel>
+                    <TextBlock
+                      x:Name="TimingPathText"
+                      TextWrapping="Wrap"
+                      Margin="0,6,0,6" />
+                    <Button
+                      x:Name="TimingReportButton"
+                      Content="打开 Supra 原始时序报告"
+                      HorizontalAlignment="Left"
+                      Click="TimingReport_Click"
+                      IsEnabled="False" />
+                    <TextBlock
+                      x:Name="TimingScopeText"
+                      Text="片内时序结果，不含外部器件采样时序。"
+                      TextWrapping="Wrap"
+                      Foreground="{DynamicResource Muted}"
+                      Margin="0,6,0,0" />
+                  </StackPanel>
+                </Expander>
+              </StackPanel>
+            </Border>
+            <TextBlock
+              Text="单位 MHz；留空沿用默认。频率需与板上晶振和固件一致。"
+              TextWrapping="Wrap"
+              Foreground="{DynamicResource Muted}"
+              Margin="0,0,0,16" />
+            <TextBlock
+              Text="HSECLK · 外部输入时钟" />
+            <TextBox
+              x:Name="HseClock"
+              TextChanged="Clock_Changed"
+              Margin="0,6,0,12" />
+            <TextBlock
+              Text="SYSCLK · 系统时钟" />
+            <TextBox
+              x:Name="SysClock"
+              TextChanged="Clock_Changed"
+              Margin="0,6,0,12" />
+            <TextBlock
+              Text="BUSCLK · 总线时钟" />
+            <TextBox
+              x:Name="BusClock"
+              TextChanged="Clock_Changed"
+              Margin="0,6,0,12" />
+            <TextBlock
+              x:Name="ClockGuidanceText"
+              TextWrapping="Wrap"
+              Foreground="{DynamicResource DiagnosticWarning}"
+              Margin="0,0,0,12" />
+            <TextBlock
+              Text="模拟 IP 推荐组合（SYS / BUS）"
+              Margin="0,0,0,6" />
+            <ComboBox
+              x:Name="RecommendedClocks"
+              DisplayMemberPath="Name"
+              SelectionChanged="Recommendation_Changed"
+              Margin="0,0,0,8" />
+            <Button
+              x:Name="ApplyRecommendedClockButton"
+              Content="应用推荐时钟并保存"
+              HorizontalAlignment="Left"
+              Click="ApplyRecommendedClock_Click"
+              ToolTip="保留当前 HSE、引脚和模拟设置，保存整份图形草稿并重新生成系统层；仍需点击顶部编译验证实际时序。"
+              Margin="0,0,0,8" />
+            <TextBlock
+              x:Name="RecommendationDetails"
+              TextWrapping="Wrap"
+              Foreground="{DynamicResource Muted}"
+              Margin="0,0,0,14" />
+            <TextBlock
+              Text="保存约束后重新编译"
+              TextWrapping="Wrap"
+              Foreground="{DynamicResource Muted}" />
+          </StackPanel>
+        </ScrollViewer>
       </TabItem>
       <TabItem
         Header="约束文件">
-        <StackPanel
-          Margin="16">
-          <TextBlock
-            Text="保存后可查看生成的约束"
-            TextWrapping="Wrap"
-            Foreground="{DynamicResource Muted}"
-            Margin="0,0,0,12" />
-          <TextBox
-            x:Name="ConstraintDetails"
-            IsReadOnly="True"
-            TextWrapping="Wrap"
-            Background="Transparent"
-            BorderThickness="0"
-            MinHeight="80" />
-          <WrapPanel>
-            <Button
-              x:Name="VexButton"
-              Content="打开引脚约束数据"
-              IsEnabled="False"
-              Click="Vex_Click"
-              Margin="0,8,8,8" />
-            <Button
-              x:Name="SdcButton"
-              Content="打开时序约束 SDC"
-              IsEnabled="False"
-              Click="Sdc_Click"
-              Margin="0,8,0,8" />
-          </WrapPanel>
-        </StackPanel>
+        <ScrollViewer
+          VerticalScrollBarVisibility="Auto">
+          <StackPanel
+            Margin="16">
+            <TextBlock
+              Text="保存后可查看生成的约束"
+              TextWrapping="Wrap"
+              Foreground="{DynamicResource Muted}"
+              Margin="0,0,0,12" />
+            <TextBox
+              x:Name="ConstraintDetails"
+              IsReadOnly="True"
+              TextWrapping="Wrap"
+              Background="Transparent"
+              BorderThickness="0"
+              MinHeight="80" />
+            <WrapPanel>
+              <Button
+                x:Name="VexButton"
+                Content="打开引脚约束数据"
+                IsEnabled="False"
+                Click="Vex_Click"
+                Margin="0,8,8,8" />
+              <Button
+                x:Name="SdcButton"
+                Content="打开时序约束 SDC"
+                IsEnabled="False"
+                Click="Sdc_Click"
+                Margin="0,8,0,8" />
+            </WrapPanel>
+          </StackPanel>
+        </ScrollViewer>
       </TabItem>
     </TabControl>
-    <TextBlock
-      x:Name="PlannerStatus"
-      TextWrapping="Wrap"
-      Foreground="{DynamicResource Muted}"
-      Margin="0,12,0,8" />
-  </StackPanel>
+  </DockPanel>
 </UserControl>

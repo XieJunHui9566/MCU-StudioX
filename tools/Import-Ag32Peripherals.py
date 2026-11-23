@@ -65,6 +65,21 @@ with zipfile.ZipFile(a.pinout) as z:
         if not values:
             raise RuntimeError(f'No analog pins for {count}')
         pins[str(count)] = values
+# AG32VH 系列应用指南，第 5–6 页。HyperRAM 占用的焊盘不引出相应模拟通道。
+vh_channels = {
+    'AGRV2KL64H': {9: 11, 10: 12, 11: 13, 14: 0, 15: 1, 16: 2, 17: 3, 20: 5, 21: 7, 23: 15, 24: 9},
+    'AGRV2KL100H': {16: 11, 17: 12, 18: 13, 23: 0, 24: 1, 25: 2, 26: 3, 30: 5, 32: 7, 34: 15, 36: 9},
+}
+for target, channels in vh_channels.items():
+    pins[target] = []
+    for pin, channel in channels.items():
+        function = ('IO_WKUP_' if channel == 0 else 'IO_') + f'ADC_IN{channel}'
+        if channel in (0, 1, 2, 3, 5):
+            function += f'_CMP_PA{channel}'
+        if channel == 5:
+            function += '_DAC1'
+        pins[target].append({'pin': pin, 'functions': function})
+metadata['vhPinoutSource'] = 'https://www.ag32mcu.com/wp-content/uploads/2025/06/MANUAL_AG32VH_HyperRAM.pdf'
 (dest / 'analog-pins.json').write_text(
     json.dumps(pins, ensure_ascii=False, indent=2) + '\n', encoding='utf-8'
 )

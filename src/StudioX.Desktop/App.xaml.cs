@@ -60,6 +60,7 @@ public partial class App : System.Windows.Application
         var documentsPreview = e.Args is ["--preview-documents", _, _];
         var vePreview = e.Args is ["--preview-ve", _, _, _];
         var ag32MappingPreview = e.Args is ["--preview-ag32-mapping", _, _];
+        var ag32UartPreview = e.Args is ["--preview-ag32-uart" or "--preview-ag32-uart-layout", _, _, _];
         var hdlPreview = e.Args is ["--preview-hdl", _, _];
         var hdlWorkflowPreview = e.Args is ["--preview-hdl-workflow", _, _];
         var navigationPreview = e.Args is ["--preview-navigation", _, _];
@@ -117,7 +118,7 @@ public partial class App : System.Windows.Application
         anyPreview |= codeTemplatesPreview;
         anyPreview |= mcuConfigurationPreview;
         anyPreview |= mx251DownloadPreview || mx251SettingsPreview || mx251MemoryPreview;
-        anyPreview |= peripheralDevelopmentPreview;
+        anyPreview |= peripheralDevelopmentPreview || ag32UartPreview;
         anyPreview |= developmentComponentsPreview;
         anyPreview |= idfVersionsPreview;
         anyPreview |= applicationPluginsPreview;
@@ -145,7 +146,7 @@ public partial class App : System.Windows.Application
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MCUStudioX");
         var services = new WorkbenchService(acceptanceWorkbench ? Path.GetFullPath(e.Args[1])
             : cCompletionPreview ? Path.GetFullPath(e.Args[2])
-            : assemblyPreview ? Path.GetFullPath(e.Args[2])
+            : assemblyPreview || ag32UartPreview ? Path.GetFullPath(e.Args[2])
             : mx251DownloadPreview || mx251MemoryPreview ? Path.GetFullPath(e.Args[3])
             : zephyrTemplatesPreview ? Path.GetFullPath(e.Args[2])
             : arduinoPreview ? Path.GetFullPath(e.Args[3])
@@ -388,6 +389,10 @@ public partial class App : System.Windows.Application
                 else if (ag32MappingPreview)
                 {
                     await window.RenderAg32MappingPreviewAsync(directory, Path.GetFullPath(e.Args[2]));
+                }
+                else if (ag32UartPreview)
+                {
+                    await window.RenderAg32UartPreviewAsync(directory, Path.GetFullPath(e.Args[3]), e.Args[0].EndsWith("-layout", StringComparison.Ordinal));
                 }
                 else if (applicationPluginsPreview)
                 {

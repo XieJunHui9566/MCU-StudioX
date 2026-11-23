@@ -7,7 +7,9 @@ using StudioX.Foundation;
 
 public static class StcDebugArtifacts
 {
-    public static async Task<StcDebugArtifact> ReadAsync(string project, CancellationToken token = default)
+    public static Task<StcDebugArtifact> ReadAsync(string project, CancellationToken token = default) => ReadCoreAsync(project, false, token);
+    public static Task<StcDebugArtifact> ReadTeachingAsync(string project, CancellationToken token = default) => ReadCoreAsync(project, true, token);
+    private static async Task<StcDebugArtifact> ReadCoreAsync(string project, bool teaching, CancellationToken token)
     {
         var root = Path.GetFullPath(project);
         var receiptPath = PathBoundary.Resolve(root, BuildReceipt.RelativePath);
@@ -17,7 +19,7 @@ public static class StcDebugArtifacts
         }
         var receipt = await JsonStore.ReadAsync<BuildReceipt>(receiptPath, token);
         var current = await ProjectService.ReadAsync(root, token);
-        if (!StcMon51Targets.Supports(current.DeviceId) || receipt.Project.DeviceId != current.DeviceId || receipt.Project.ToolsetId != current.ToolsetId || receipt.Project.ToolsetVersion != current.ToolsetVersion || receipt.Project.CompilerId != current.CompilerId || receipt.Project.PackId != current.PackId || receipt.Project.PackVersion != current.PackVersion || receipt.Project.PackContentHash != current.PackContentHash || receipt.Project.TemplateId != current.TemplateId)
+        if (!(teaching ? TeachingSimulatorTarget.Supports(current) : StcMon51Targets.Supports(current.DeviceId)) || receipt.Project.DeviceId != current.DeviceId || receipt.Project.ToolsetId != current.ToolsetId || receipt.Project.ToolsetVersion != current.ToolsetVersion || receipt.Project.CompilerId != current.CompilerId || receipt.Project.PackId != current.PackId || receipt.Project.PackVersion != current.PackVersion || receipt.Project.PackContentHash != current.PackContentHash || receipt.Project.TemplateId != current.TemplateId)
         {
             throw new StudioXException("MON51_SYMBOLS", "当前器件、开发环境组件或包身份与已构建的 Mon51 调试目标不一致。");
         }
@@ -39,7 +41,7 @@ public static class StcDebugArtifacts
         {
             throw new StudioXException("MON51_ARTIFACT_CHANGED", "HEX 或 CDB 已在构建后改变；请重新编译。");
         }
-        var (code, present) = ParseImage(bytes);
+        var (code, present) = ParseImage(bytes, teaching ? TeachingSimulatorTarget.CodeSize : 0xdbfd);
         if (receipt.CompiledSources is not { Length: > 0 })
         {
             throw new StudioXException("MON51_SYMBOLS", "旧构建回执缺少 SDCC 来源映射，请重新编译。");
@@ -77,10 +79,10 @@ public static class StcDebugArtifacts
         return sources.Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
     }
 
-    public static (byte[] Code, bool[] Present) ParseImage(byte[] bytes)
+    public static (byte[] Code, bool[] Present) ParseImage(byte[] bytes, int codeSize = 0xdbfd)
     {
-        StcIntelHex.Validate(bytes, 0xdbfd);
-        var code = new byte[0xdbfd];
+        StcIntelHex.Validate(bytes, checked((uint)codeSize));
+        var code = new byte[codeSize];
         var present = new bool[code.Length];
         foreach (var raw in System.Text.Encoding.ASCII.GetString(bytes).Split('\n'))
         {

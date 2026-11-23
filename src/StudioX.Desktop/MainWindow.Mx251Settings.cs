@@ -15,10 +15,17 @@ public partial class MainWindow
         applyingBuildSettings = true;
         loadedMx251Settings = settings;
         Mx251ModelPicker.SelectedValue = settings.Model;
+        Mx251OptimizationPicker.SelectedValue = settings.Optimization;
+        Mx251StandardPicker.SelectedValue = settings.Standard;
         applyingBuildSettings = false;
         UpdateMx251SettingsControls();
         BuildSettingsStatus.Text = "修改后点击保存，下次编译生效。";
     }
+
+    private bool Mx251SettingsChanged => loadedMx251Settings is { } saved &&
+        (Mx251ModelPicker.SelectedValue as string != saved.Model ||
+         Mx251OptimizationPicker.SelectedValue as string != saved.Optimization ||
+         Mx251StandardPicker.SelectedValue as string != saved.Standard);
 
     private void UpdateMx251SettingsControls()
     {
@@ -26,8 +33,12 @@ public partial class MainWindow
         BuildSettingsEditor.IsEnabled = enabled;
         StcBuildExtrasHost.IsEnabled = enabled;
         var model = Mx251ModelPicker.SelectedValue as string;
-        SaveBuildSettingsButton.IsEnabled = enabled && model is "small" or "large" && model != loadedMx251Settings?.Model;
-        BuildSettingsSummary.Text = model is null ? "正在读取内存模型…" : "MX251 · 32 位模式 · " + model;
+        var optimization = Mx251OptimizationPicker.SelectedValue as string;
+        var standard = Mx251StandardPicker.SelectedValue as string;
+        SaveBuildSettingsButton.IsEnabled = enabled && model is "small" or "large" &&
+            optimization is "size" or "speed" && standard is not null && Mx251SettingsChanged;
+        BuildSettingsSummary.Text = model is null ? "正在读取编译参数…" :
+            $"MX251 · {model} · {(optimization == "size" ? "体积优先" : "速度优先")} · {standard}";
     }
 
     private async Task SaveMx251SettingsAsync(string directory, CancellationToken token)
@@ -38,7 +49,9 @@ public partial class MainWindow
         }
         var expected = loadedMx251Settings ?? throw new StudioXException("MX251_SETTINGS", "请先重新打开工程详情。");
         var model = Mx251ModelPicker.SelectedValue as string ?? throw new StudioXException("MX251_MODEL", "请选择内存模型。");
-        var saved = await services.Mx251Settings.SaveModelAsync(directory, expected, model, token);
+        var optimization = Mx251OptimizationPicker.SelectedValue as string ?? throw new StudioXException("MX251_OPTIMIZATION", "请选择优化方式。");
+        var standard = Mx251StandardPicker.SelectedValue as string ?? throw new StudioXException("MX251_STANDARD", "请选择 C 语言标准。");
+        var saved = await services.Mx251Settings.SaveAsync(directory, expected, model, optimization, standard, token);
         if (directory != projectDirectory || closing)
         {
             return;
@@ -48,7 +61,7 @@ public partial class MainWindow
             EditorSynchronizer.Apply(editor, saved.Configuration);
         }
         ApplyMx251Settings(saved);
-        BuildMemory.SetMessage("内存模型已修改，重新编译后更新占用。");
-        BuildSettingsStatus.Text = Status.Text = "内存模型已保存，下次编译生效。";
+        BuildMemory.SetMessage("编译参数已修改，重新编译后更新占用。");
+        BuildSettingsStatus.Text = Status.Text = "编译参数已保存，下次编译生效。";
     }
 }

@@ -4,6 +4,7 @@ using System.Windows;
 using Microsoft.Win32;
 using StudioX.Application;
 using StudioX.Engine;
+using StudioX.Foundation;
 
 public partial class MainWindow
 {
@@ -29,7 +30,7 @@ public partial class MainWindow
         BuildLogicButton.Header = custom ? "编译 AG32 固件与自定义逻辑" : "编译 AG32 引脚映射";
         DownloadLogicButton.Header = custom ? "下载 AG32 固件与自定义逻辑" : "下载 AG32 固件与映射";
         var details = !supported ? "打开已适配的 AG32 工程后配置。"
-            : custom ? "已启用自定义 Verilog。顶部编译会运行内置原生综合与布局布线；构建配置与波形仿真可从下方打开。"
+            : custom ? "已启用自定义 Verilog。编译将运行原生综合与布局布线。"
             : mapped ? "已启用基础映射。修改 .ve 后须重新编译并下载，映射才会写入芯片。"
             : "现有工程尚未启用基础映射。启用时保留已有 logic/pins.ve；不存在时建立模板。";
         Ag32PinMapping.SetState(mapped, custom, busy,
@@ -46,10 +47,6 @@ public partial class MainWindow
     private async void Ag32PinMappingRail_Click(object sender, RoutedEventArgs e) => await RunAsync(async token =>
     {
         await ShowAg32PinMappingAsync(token);
-        if (currentProjectManifest?.Logic is not null)
-        {
-            await OpenHdlWorkflowAsync(token);
-        }
     });
 
     private async Task ShowAg32PinMappingAsync(CancellationToken token)
@@ -96,8 +93,18 @@ public partial class MainWindow
         }
         currentProjectManifest = project;
         RefreshAg32LogicUi(project, projectActionsBusy);
-        if (project.Logic is not null)
+        if (project.Logic is { } logic)
         {
+            if (File.Exists(PathBoundary.Resolve(root, logic.PinMapFile)))
+
+            {
+                await RefreshAg32PinPlanAsync(root, token);
+            }
+            else
+            {
+                ClearAg32PinPlan();
+                Ag32PinMapping.SetState(true, true, projectActionsBusy, $"缺少 {logic.PinMapFile}。", missingSource: true);
+            }
             return;
         }
         var status = await services.Ag32PinMapping.InspectAsync(root, token);

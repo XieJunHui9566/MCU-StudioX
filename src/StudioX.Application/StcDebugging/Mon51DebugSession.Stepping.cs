@@ -116,7 +116,11 @@ public sealed partial class Mon51DebugSession
         {
             RequireStopped();
             var start = address ?? Pc;
-            if (start >= 0xdc00 || count is < 1 or > 512 || start + count > 0xdc00)
+            if (IsTeachingPlatform && start < CodeLimit)
+            {
+                count = Math.Min(count, CodeLimit - (int)start);
+            }
+            if (start >= CodeLimit || count is < 1 or > 512 || start + count > CodeLimit)
             {
                 throw new StudioXException("MON51_RANGE", "反汇编须位于用户 CODE 0000–DBFF，单次 1–512 字节。");
             }

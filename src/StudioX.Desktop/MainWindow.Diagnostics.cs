@@ -87,6 +87,12 @@ public partial class MainWindow
                 !batches.Any(batch => batch.Path.Equals(currentEditor.Source.RelativePath, StringComparison.OrdinalIgnoreCase) && batch.Text == currentEditor.Buffer.Text)
                 ? " · 正在分析" : ""
             : "";
+        if (IsVerilogDocument && !services.Debugger.IsActive && !diagnosticsPausedForDebug)
+        {
+            state = diagnosticDebounce.IsEnabled ? " · 等待停笔"
+                : liveDiagnosticCancellation is not null ? " · Verilog 分析中"
+                : verilogDiagnosticStatus.Length > 0 ? " · " + verilogDiagnosticStatus : "";
+        }
         ProblemsTab.Header = $"问题 ({current.Length})" + state;
         diagnosticRenderer?.Set(!services.Debugger.IsActive && !diagnosticsPausedForDebug && activeEditor is { } editor ? current.Where(r => r.File.Equals(editor.Source.RelativePath, StringComparison.OrdinalIgnoreCase))
             .Select(r => r.Offset is { } offset ? new EditorDiagnostic(r.Diagnostic, offset, Math.Min(r.Length, Math.Max(0, editor.Buffer.TextLength - offset))) : EditorDiagnosticRenderer.Locate(editor.Buffer, r.Diagnostic))

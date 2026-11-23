@@ -8,6 +8,10 @@ public static class PicProgrammerSelection
     public static PicProgrammer? Automatic(IReadOnlyList<PicProgrammer> programmers)
     {
         var unique = programmers.DistinctBy(p => p.Serial, StringComparer.Ordinal).ToArray();
+        if (unique.Length != programmers.Count)
+        {
+            throw new StudioXException("PIC_PROGRAMMER_ID", "多个 PICkit3 的显示序列号相同，请只连接本次使用的烧录器。");
+        }
         return unique.Length switch
         {
             0 => throw new StudioXException("PIC_PROGRAMMER_MISSING", "没有检测到 PICkit3，请检查 USB 连接。"),

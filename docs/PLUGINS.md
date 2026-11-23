@@ -6,7 +6,9 @@ StudioX 插件提供命令、声明式面板和 Agent 工具。应用核心与�
 
 图形化 MCU 配置的可选插件扩展处于契约设计阶段，见 [MCU 配置插件契约 v1](GRAPHICAL_CONFIGURATION_PLUGIN.md)和[配置文件标准](GRAPHICAL_CONFIGURATION.md)。拟用能力 `mcuConfigurationV1` 及配置提供者调用尚未实现，不能按本文现有 API 2/3 的支持能力发布或启用。
 
-[STC 配置试行版](../plugins/StudioX.StcConfigurator/README.md)使用另行声明的 `mcuConfigurationPreview` 与单独 `mcuConfiguration` 控件，数据类型为 `PluginMcuConfigurationState`。宿主校验有界封装、引脚/功能、时钟、表单和文本，仅转发声明的命令；首次启用仍核对宿主能力。它支持单配置文件保存和代码预览，完整 `mcuConfigurationV1` 的贡献、生成计划及多文件事务没有开放。旧宿主拒绝该新能力，现有插件行为保持不变。
+[STC 配置试行版](../plugins/StudioX.StcConfigurator/README.md)使用另行声明的 `mcuConfigurationPreview` 与单独 `mcuConfiguration` 控件，数据类型为 `PluginMcuConfigurationState`。宿主校验有界封装、引脚/功能、时钟、表单和文本，仅转发声明的命令；首次启用仍核对宿主能力。
+
+当前 API 3 已另行开放 `mcuConfigurationSaveV1` 与 `mcuCodeGenerationV1`：插件返回保存或生成计划，用户在图形界面操作后由应用服务检查工程范围、内容摘要、文件所有权及脏缓冲区，并提交配置或带恢复记录的多文件生成事务。STC 试行界面直接保存、生成，不再提供代码预览页；准确模板及输出范围见 [有限代码生成契约](GRAPHICAL_CONFIGURATION_GENERATION.md)。这些独立能力不等于设计草案中的完整 `mcuConfigurationV1` 提供者协议。旧宿主缺少声明能力时拒绝启用，现有插件行为保持不变。
 
 ## 已实现的边界
 

@@ -1,0 +1,213 @@
+<UserControl
+  x:Class="StudioX.Desktop.HdlWaveformView"
+  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:local="clr-namespace:StudioX.Desktop">
+  <Grid
+    Margin="8">
+    <Grid.RowDefinitions>
+      <RowDefinition
+        Height="Auto" />
+      <RowDefinition
+        Height="*" />
+      <RowDefinition
+        Height="Auto" />
+      <RowDefinition
+        Height="Auto" />
+    </Grid.RowDefinitions>
+    <WrapPanel>
+      <StackPanel
+        Orientation="Horizontal"
+        Margin="0,0,12,6">
+        <Label
+          Content="筛选信号"
+          Foreground="{DynamicResource Text}"
+          Target="{Binding ElementName=SignalFilter}"
+          VerticalAlignment="Center" />
+        <TextBox
+          x:Name="SignalFilter"
+          Width="150"
+          TextChanged="FilterChanged" />
+      </StackPanel>
+      <StackPanel
+        Orientation="Horizontal"
+        Margin="0,0,8,6">
+        <Label
+          Content="时基"
+          Foreground="{DynamicResource Text}"
+          Target="{Binding ElementName=Timebase}"
+          VerticalAlignment="Center" />
+        <ComboBox
+          x:Name="Timebase"
+          MinWidth="116"
+          SelectionChanged="TimebaseChanged"
+          ToolTip="每个水平网格的时间" />
+      </StackPanel>
+      <WrapPanel
+        Margin="0,0,0,6">
+        <Button
+          x:Name="ZoomInButton"
+          Content="放大"
+          Click="ZoomIn_Click"
+          ToolTip="围绕光标放大，也可在波形上按 Ctrl 并滚动滚轮" />
+        <Button
+          x:Name="ZoomOutButton"
+          Content="缩小"
+          Click="ZoomOut_Click"
+          Margin="4,0" />
+        <Button
+          x:Name="FitButton"
+          Content="显示全程"
+          Click="Fit_Click" />
+      </WrapPanel>
+    </WrapPanel>
+    <ScrollViewer
+      x:Name="SignalScroll"
+      Grid.Row="1"
+      VerticalScrollBarVisibility="Auto"
+      HorizontalScrollBarVisibility="Disabled"
+      HorizontalContentAlignment="Stretch"
+      VerticalContentAlignment="Stretch"
+      ScrollChanged="SignalsScrolled">
+      <local:HdlWaveformSurface
+        x:Name="Surface"
+        ClipToBounds="True" />
+    </ScrollViewer>
+    <Border
+      Grid.Row="2"
+      Margin="0,4,0,0"
+      Background="{DynamicResource Surface}"
+      BorderBrush="{DynamicResource Border}"
+      BorderThickness="1"
+      CornerRadius="4"
+      Padding="6,2">
+      <Grid>
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition
+            Width="Auto" />
+          <ColumnDefinition
+            Width="Auto" />
+          <ColumnDefinition
+            Width="*" />
+          <ColumnDefinition
+            Width="Auto" />
+        </Grid.ColumnDefinitions>
+        <TextBlock
+          Text="时间平移"
+          VerticalAlignment="Center"
+          Margin="2,0,10,0" />
+        <Button
+          x:Name="EarlierButton"
+          Grid.Column="1"
+          Content="上一格"
+          Padding="8,2"
+          Click="Earlier_Click"
+          ToolTip="向前移动一个时间网格" />
+        <Grid
+          Grid.Column="2"
+          Margin="8,0">
+          <Slider
+            x:Name="TimeScroll"
+            Orientation="Horizontal"
+            VerticalAlignment="Center"
+            IsMoveToPointEnabled="True"
+            AutomationProperties.Name="时间平移"
+            ValueChanged="TimeScrolled"
+            ToolTip="拖动滑块或点击轨道定位时间窗口">
+            <Slider.Template>
+              <ControlTemplate
+                TargetType="Slider">
+                <Grid
+                  Height="26"
+                  Background="Transparent">
+                  <Border
+                    Height="5"
+                    CornerRadius="2"
+                    Background="{DynamicResource Border}"
+                    VerticalAlignment="Center" />
+                  <Track
+                    x:Name="PART_Track"
+                    Orientation="Horizontal">
+                    <Track.DecreaseRepeatButton>
+                      <RepeatButton
+                        Style="{StaticResource ScrollRepeat}"
+                        Command="Slider.DecreaseLarge" />
+                    </Track.DecreaseRepeatButton>
+                    <Track.Thumb>
+                      <Thumb
+                        Width="34"
+                        Height="18"
+                        Cursor="SizeWE">
+                        <Thumb.Template>
+                          <ControlTemplate
+                            TargetType="Thumb">
+                            <Border
+                              Background="{DynamicResource Accent}"
+                              CornerRadius="4">
+                              <Border
+                                Width="8"
+                                Height="8"
+                                BorderThickness="1,0"
+                                BorderBrush="{DynamicResource OnAccent}" />
+                            </Border>
+                          </ControlTemplate>
+                        </Thumb.Template>
+                      </Thumb>
+                    </Track.Thumb>
+                    <Track.IncreaseRepeatButton>
+                      <RepeatButton
+                        Style="{StaticResource ScrollRepeat}"
+                        Command="Slider.IncreaseLarge" />
+                    </Track.IncreaseRepeatButton>
+                  </Track>
+                </Grid>
+                <ControlTemplate.Triggers>
+                  <Trigger
+                    Property="IsEnabled"
+                    Value="False">
+                    <Setter
+                      TargetName="PART_Track"
+                      Property="Opacity"
+                      Value="0.4" />
+                  </Trigger>
+                </ControlTemplate.Triggers>
+              </ControlTemplate>
+            </Slider.Template>
+          </Slider>
+          <TextBlock
+            x:Name="FullRangeHint"
+            Text="已显示全程"
+            VerticalAlignment="Center"
+            HorizontalAlignment="Center"
+            Background="{DynamicResource Surface}"
+            Foreground="{DynamicResource Muted}"
+            Padding="6,0"
+            IsHitTestVisible="False" />
+        </Grid>
+        <Button
+          x:Name="LaterButton"
+          Grid.Column="3"
+          Content="下一格"
+          Padding="8,2"
+          Click="Later_Click"
+          ToolTip="向后移动一个时间网格" />
+      </Grid>
+    </Border>
+    <DockPanel
+      Grid.Row="3"
+      Margin="2,4,2,0">
+      <TextBlock
+        x:Name="StaleText"
+        DockPanel.Dock="Left"
+        Margin="0,0,10,0"
+        Foreground="{DynamicResource DiagnosticWarning}"
+        Visibility="Collapsed"
+        Text="历史波形 · 源码或配置已变化" />
+      <TextBlock
+        x:Name="CursorText"
+        Text="尚未选择时间点"
+        TextTrimming="CharacterEllipsis"
+        ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}" />
+    </DockPanel>
+  </Grid>
+</UserControl>

@@ -7,8 +7,14 @@ using System.Text.RegularExpressions;
 using StudioX.Foundation;
 
 /// <summary>直接写入选定固件；只预检器件与保护配置，不回读、备份或恢复原程序。</summary>
-public sealed class PicDownloadService(ToolsetCatalog catalog, PicBuildService builds, string dataDirectory)
+public sealed class PicDownloadService(ToolsetCatalog catalog, PicBuildService builds, string dataDirectory,
+    Func<string, string>? resolveProgrammerSerial)
 {
+    public PicDownloadService(ToolsetCatalog catalog, PicBuildService builds, string dataDirectory)
+        : this(catalog, builds, dataDirectory, null)
+    {
+    }
+
     public async Task<PicDownloadSettings> LoadSettingsAsync(string root, CancellationToken token = default)
     {
         await RequireProjectAsync(root, token);
@@ -39,7 +45,7 @@ public sealed class PicDownloadService(ToolsetCatalog catalog, PicBuildService b
 
     public static PicProgrammer[] ParseProgrammers(string text) => Regex.Matches(text,
         @"(?im)^\s*(?:\d+\s*[)\.]?\s*)?PICkit\s*3\s+S\.No\s*:\s*([A-Za-z0-9_-]{1,64})\s*$")
-        .Select(match => new PicProgrammer(match.Groups[1].Value)).Distinct().ToArray();
+        .Select(match => new PicProgrammer(match.Groups[1].Value)).ToArray();
 
     public async Task<PicDownloadPreview> PreviewAsync(string root, CancellationToken token = default)
     {
@@ -235,9 +241,12 @@ public sealed class PicDownloadService(ToolsetCatalog catalog, PicBuildService b
 
     private async Task<ProcessResult> RunAsync(ResolvedToolset tools, IReadOnlyList<string> arguments, IProgress<string>? output, CancellationToken token)
     {
+        token.ThrowIfCancellationRequested();
+        var resolvedArguments = arguments.Select(argument => argument.StartsWith("-TS", StringComparison.Ordinal)
+            ? "-TS" + (resolveProgrammerSerial ?? PicProgrammerIdentity.Resolve)(argument[3..]) : argument).ToArray();
         var home = PathBoundary.Resolve(dataDirectory, "pic/ipe-user");
         Directory.CreateDirectory(home);
-        return await new ProcessRunner().RunAsync(new(tools.Tool("java"), [.. PicJavaRuntime.Options(home), "-jar", tools.Tool("ipecmd"), .. arguments],
+        return await new ProcessRunner().RunAsync(new(tools.Tool("java"), [.. PicJavaRuntime.Options(home), "-jar", tools.Tool("ipecmd"), .. resolvedArguments],
             home, TimeSpan.FromMinutes(10), ToolsetEnvironment.Create(tools), RemoveEnvironment: PicJavaRuntime.AmbientVariables,
             Output: output, StreamCompleteOutput: true, ContainProcessTree: true), token);
     }

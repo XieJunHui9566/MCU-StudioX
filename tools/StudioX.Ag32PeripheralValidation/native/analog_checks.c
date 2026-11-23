@@ -87,9 +87,11 @@ int main(void)
     reset();
     ADC0->STAT = ADC_STAT_EOC;
     ADC0->DATA = 7;
+    ADC0->CHNL = ADC_SEQ_LENGTH3;
+    ADC0->SEQ[0] = ADC_CHANNEL1;
     check(StudioX_ADC_Read(ADC0, ADC_CHANNEL0, 100, &value) == STUDIOX_ANALOG_OK && value == 0xabc,
           "old completion is cleared; newly converted 12-bit result returned");
-    check(ADC0->CHNL == ADC_SEQ_LENGTH1 && ADC0->SEQ[0] == ADC_CHANNEL0 &&
+    check(ADC0->CHNL == ADC_SEQ_LENGTH3 && ADC0->SEQ[0] == ADC_CHANNEL1 &&
               (ADC0->CTRL >> 16) == (STUDIOX_ANALOG_SEPARATE_BUS ? 2 : 4),
           "actual analog bus produces safe SCLK divider and one sample sequence");
     reset();
@@ -103,9 +105,11 @@ int main(void)
           "internal temperature uses ADC1 without external pin");
     reset();
     convert = false;
+    ADC0->CHNL = ADC_SEQ_LENGTH3;
+    ADC0->SEQ[0] = ADC_CHANNEL1;
     value = 123;
     check(StudioX_ADC_Read(ADC0, ADC_CHANNEL0, 1, &value) == STUDIOX_ANALOG_TIMEOUT &&
-              value == 123 && (ADC0->CTRL & ADC_CTRL_STOP) && cycles < 200,
+              value == 123 && ADC0->CHNL == ADC_SEQ_LENGTH3 && ADC0->SEQ[0] == ADC_CHANNEL1 && (ADC0->CTRL & ADC_CTRL_STOP) && cycles < 200,
           "timeout stops conversion and preserves caller output");
     reset();
     convert = false;

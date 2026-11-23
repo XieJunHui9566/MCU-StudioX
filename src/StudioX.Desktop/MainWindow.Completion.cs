@@ -54,13 +54,14 @@ public partial class MainWindow
     }
     private bool IsCMakeDocument => activeDocument is not null && CMakeAssistanceService.Supports(activeDocument.RelativePath);
     private bool IsPythonDocument => activeDocument is not null && PythonAssistanceService.Supports(activeDocument.RelativePath);
+    private bool IsVerilogDocument => activeDocument is not null && VerilogAssistanceService.Supports(activeDocument.RelativePath);
     private bool IsPluginLanguage => activeDocument is not null && pluginWorkspace?.SupportsLanguage(activeDocument.RelativePath) == true;
     private bool CanAssist => !closing && !SourceEditor.IsReadOnly && activeDocument is not null &&
-        (IsCMakeDocument || IsPythonDocument || IsPluginLanguage || CodeIntelligenceService.Supports(activeDocument.RelativePath)) && IsActiveSourceTab;
+        (IsCMakeDocument || IsPythonDocument || IsVerilogDocument || IsPluginLanguage || CodeIntelligenceService.Supports(activeDocument.RelativePath)) && IsActiveSourceTab;
     private bool IsCodeContext()
     {
         // 离线语言服务根据完整缓冲区判断上下文，包含 CMake 引号和 Python 三引号。
-        if (IsCMakeDocument || IsPythonDocument)
+        if (IsCMakeDocument || IsPythonDocument || IsVerilogDocument)
         {
             return true;
         }
@@ -88,6 +89,15 @@ public partial class MainWindow
             return;
         }
         var character = e.Text[0];
+        if (IsVerilogDocument)
+        {
+            if (char.IsAsciiLetterOrDigit(character) || character is '_' or '.' or '$' or '`')
+
+            {
+                QueueAssistance(signature: false);
+            }
+            return;
+        }
         if (IsPythonDocument)
         {
             if (character is '(' or ',' or ')' or '=')
@@ -183,10 +193,11 @@ public partial class MainWindow
         {
             return;
         }
-        var pluginLanguage = IsPluginLanguage && !IsPythonDocument && !IsCMakeDocument && !CodeIntelligenceService.Supports(activeDocument!.RelativePath);
+        var verilog = IsVerilogDocument;
+        var pluginLanguage = IsPluginLanguage && !verilog && !IsPythonDocument && !IsCMakeDocument && !CodeIntelligenceService.Supports(activeDocument!.RelativePath);
         var cmake = IsCMakeDocument;
         var python = IsPythonDocument;
-        var languageReady = CanAssist && IsCodeContext() && (cmake || python || pluginLanguage || services.Intelligence.IsReady);
+        var languageReady = CanAssist && IsCodeContext() && (cmake || python || verilog || pluginLanguage || services.Intelligence.IsReady);
         if (!languageReady && !templateRequest)
         {
             if (manual)
@@ -249,6 +260,27 @@ public partial class MainWindow
                         ShowCompletions([], text, offset, templates: templates);
                         return;
                     }
+                }
+                if (verilog)
+                {
+                    if (signature)
+                    {
+                        if (manual)
+                        {
+                            Status.Text = "Verilog 模块实例的端口和参数可输入点号或按 Ctrl+Space 补全。";
+                        }
+                        return;
+                    }
+                    var results = await services.Verilog.CompleteAsync(projectDirectory, path, text, offset, CaptureCodeDocuments(), cancellation.Token);
+                    if (Current())
+                    {
+                        ShowCompletions(results, text, offset, templates: VerilogAssistanceService.IsCodeContext(text, offset) ? templates : []);
+                        if (manual && completionWindow is null)
+                        {
+                            Status.Text = "当前位置没有匹配的 Verilog 提示。";
+                        }
+                    }
+                    return;
                 }
                 if (pluginLanguage && pluginWorkspace is { } workspace)
                 {

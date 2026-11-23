@@ -31,7 +31,8 @@ internal static class DirectDownloadChecks
             Environment.ExitCode = 91;
             return;
         }
-        if (!arguments.Contains("-P16F877A") || !arguments.Contains("-TPPK3") || !arguments.Contains("-TSFIXTURE123"))
+        var expectedSerial = mode == "padded-serial" ? "FIXTURE123 " : "FIXTURE123";
+        if (!arguments.Contains("-P16F877A") || !arguments.Contains("-TPPK3") || !arguments.Contains("-TS" + expectedSerial))
         {
             Console.Error.WriteLine("Selected programmer not found or target selection differs.");
             Environment.ExitCode = 3;
@@ -157,6 +158,8 @@ internal static class DirectDownloadChecks
         var build = await services.Builds.BuildAsync(root);
         await File.WriteAllTextAsync(Path.Combine(evidence, "build.log"), build.Log);
         Check(build.Success, "real offline CMake / Ninja / XC8 image builds without target access");
+        Check(!build.Log.Contains("unrecognized option", StringComparison.OrdinalIgnoreCase) &&
+            build.Log.Contains("-gdwarf-3", StringComparison.Ordinal), "XC8 uses its supported ELF/DWARF option without an unknown-option warning");
         var firmware = await services.Builds.Pic.PreviewAsync(root);
         var originalHex = await File.ReadAllBytesAsync(firmware.HexPath);
         var image = PicHexImage.Validate(originalHex);
@@ -202,7 +205,9 @@ internal static class DirectDownloadChecks
         Directory.CreateDirectory(home);
         var callsPath = Path.Combine(home, "calls.jsonl");
         var modePath = Path.Combine(home, "mode.txt");
-        var service = new PicDownloadService(new ToolsetCatalog(Path.Combine(evidence, "fixture-tools")), services.Builds.Pic, fixtureData);
+        string[] usbSerials = ["FIXTURE123"];
+        var service = new PicDownloadService(new ToolsetCatalog(Path.Combine(evidence, "fixture-tools")), services.Builds.Pic, fixtureData,
+            serial => PicProgrammerIdentity.Resolve(serial, usbSerials));
         var listed = await service.ListAsync();
         Check(listed is [{ Serial: "FIXTURE123" }], "explicit standalone enumeration excludes other PICkit types");
         await service.SaveSettingsAsync(root, "FIXTURE123", true);
@@ -263,6 +268,30 @@ internal static class DirectDownloadChecks
                 "download result records both real child stages and total duration without a backup path");
         }
         await Record("success", watch.ElapsedMilliseconds, 1);
+
+        await Begin("padded-serial");
+        usbSerials = ["FIXTURE123 "];
+        Check((await service.DownloadApprovedAsync(root, preview.ApprovalId)).Success,
+            "USB descriptor padding survives the real child-process argument boundary and trimmed success output");
+        Check((await Calls()) is { Length: 2 } paddedCalls && paddedCalls.All(arguments => arguments.Contains("-TSFIXTURE123 ")),
+            "both preflight and programming receive the exact padded USB serial as one argument");
+        await Record("padded-serial", 0, 1);
+        foreach (var values in new string[][] { [], ["OTHER123"], ["FIXTURE123", "FIXTURE123"], ["FIXTURE123", "FIXTURE123 "] })
+        {
+            await Begin("success");
+            usbSerials = values;
+            await Reject("missing or ambiguous USB identity", ["PIC_PROGRAMMER_ID"],
+                () => service.DownloadApprovedAsync(root, preview.ApprovalId));
+            Check((await Calls()).Length == 0, "unresolved USB identity never starts IPECMD");
+        }
+        var duplicateList = PicDownloadService.ParseProgrammers("1  PICkit3 S.No : SAME\n2  PICkit3 S.No : SAME\n");
+        Check(duplicateList.Length == 2, "enumeration preserves duplicated serials for ambiguity detection");
+        await Reject("duplicated serial cannot be selected automatically", ["PIC_PROGRAMMER_ID"],
+            () => Task.Run(() => PicProgrammerSelection.Automatic(duplicateList)));
+        Check(PicProgrammerIdentity.Resolve("DEFAULT_PK3", ["DEFAULT_PK3 "]) == "DEFAULT_PK3 " &&
+            PicProgrammerIdentity.Resolve("BUR195068601", ["BUR195068601"]) == "BUR195068601",
+            "observed padded serial and ordinary serial retain their exact USB identity");
+        usbSerials = ["FIXTURE123"];
         await service.SaveSettingsAsync(root, "FIXTURE123", false);
         var heldPreview = await service.PreviewAsync(root);
         await Begin("success");
@@ -306,7 +335,7 @@ internal static class DirectDownloadChecks
             () => service.DownloadApprovedAsync(root, preview.ApprovalId));
         Check((await Calls()).Length == 0, "changed serial cannot invoke the previously approved programmer");
         var missingProgrammer = await service.PreviewAsync(root);
-        await Reject("missing selected programmer", ["PIC_IDENTIFY"],
+        await Reject("missing selected programmer", ["PIC_PROGRAMMER_ID"],
             () => service.DownloadApprovedAsync(root, missingProgrammer.ApprovalId));
         await Record("missing-programmer", 0, 0);
         await File.WriteAllBytesAsync(settingsPath, originalSettings);

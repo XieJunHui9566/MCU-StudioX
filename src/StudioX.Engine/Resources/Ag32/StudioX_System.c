@@ -95,6 +95,8 @@ StudioX_AnalogResult StudioX_ADC_Read(ADC_TypeDef *adc, ADC_ChannelNumTypeDef ch
     if (divider == 0u || divider > 65536u) return STUDIOX_ANALOG_INVALID_ARGUMENT;
     const uint64_t start = StudioX_Cycles();
     const uint64_t timeout = ((uint64_t)StudioX_SystemClockHz() * timeout_us + 999999u) / 1000000u;
+    /* 临时单次读取结束后恢复应用设置的扫描序列。 */
+    const uint32_t length = adc->CHNL, first = adc->SEQ[0];
     ADC_SetSeqLength(adc, ADC_SEQ_LENGTH1);
     ADC_SetChannel(adc, channel);
     /* 原厂 IP 的 EOC 在读 DATA 或向 STAT 写 0 时清除；START 本身不会清除旧结果。 */
@@ -105,10 +107,14 @@ StudioX_AnalogResult StudioX_ADC_Read(ADC_TypeDef *adc, ADC_ChannelNumTypeDef ch
         if ((uint64_t)(StudioX_Cycles() - start) >= timeout)
         {
             ADC_Stop(adc);
+            adc->SEQ[0] = first;
+            adc->CHNL = length;
             return STUDIOX_ANALOG_TIMEOUT;
         }
     }
     *value = (uint16_t)(ADC_GetData(adc) & ADC_MAX_VALUE);
+    adc->SEQ[0] = first;
+    adc->CHNL = length;
     return STUDIOX_ANALOG_OK;
 }
 
@@ -138,6 +144,7 @@ static bool StudioX_WaitReady(uint32_t flag)
 }
 #endif
 
+/* 建立系统和外设总线时钟。外部晶振或 PLL 启动超时时，系统继续使用内部 HSI。 */
 void StudioX_SystemInit(void)
 {
 #ifdef STUDIOX_FREERTOS
@@ -267,7 +274,7 @@ void StudioX_FreeRtosInterruptHandler(uintptr_t cause, uintptr_t pc)
 }
 #endif
 
-/* 已锁定的 AGM 启动代码在 main 前遍历 .init_array，不在主函数堆放初始化。 */
+/* AGM 启动代码在 main 前通过 .init_array 建立系统时钟，图形外设由 main 显式初始化。 */
 __attribute__((constructor(101))) static void StudioX_BeforeMain(void)
 {
     StudioX_SystemInit();

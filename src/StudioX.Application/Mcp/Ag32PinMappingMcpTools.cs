@@ -107,7 +107,7 @@ internal sealed class Ag32PinMappingMcpTools(McpSessionContext context) : Studio
             + $"\nHSECLK={hse_mhz?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "未显式配置"} MHz，"
             + $"SYSCLK={sys_mhz?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "未显式配置"} MHz，"
             + $"BUSCLK={bus_mhz?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "未显式配置"} MHz。"
-            + "\n先校验厂商转换，再同步保存 VE 命名注释、StudioX_System.h/.c 与约束；不会连接或写入芯片。";
+            + "\n先校验厂商转换，再同步保存 VE、系统文件、src 外设模块、main 内初始化调用与约束；不会连接或写入芯片。";
         await RequireApprovalAsync("ag32_pin_plan_apply", summary, StudioXMcpPermission.FileWrite, cancellationToken)
             .ConfigureAwait(false);
         await RequireSavedDocumentsAsync().ConfigureAwait(false);
@@ -125,7 +125,11 @@ internal sealed class Ag32PinMappingMcpTools(McpSessionContext context) : Studio
             result.Snapshot,
             result.VexPath,
             result.SdcPath,
-            generatedFiles = new[] { Ag32SystemSupport.HeaderPath, Ag32SystemSupport.SourcePath },
+            generatedFiles = new[] { Ag32SystemSupport.HeaderPath, Ag32SystemSupport.SourcePath }
+                .Concat(result.UpdatedFiles.Where(path => path.StartsWith("src/", StringComparison.Ordinal) ||
+                    path.StartsWith("include/", StringComparison.Ordinal))).ToArray(),
+            updatedFiles = result.UpdatedFiles,
+            movedFiles = result.MovedFiles,
             converterDiagnostics = LimitOutput(result.ConverterDiagnostics),
             hardwareConnected = false
         }, JsonStore.Options);

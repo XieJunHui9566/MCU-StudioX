@@ -24,8 +24,8 @@ public sealed class ProcessRunner
             RedirectStandardError = true,
             // 工具不能继承宿主的 MCP/终端输入管道；未提供输入时主动发送 EOF，禁止隐藏交互等待。
             RedirectStandardInput = true,
-            StandardOutputEncoding = Encoding.UTF8,
-            StandardErrorEncoding = Encoding.UTF8
+            StandardOutputEncoding = request.OutputEncoding ?? Encoding.UTF8,
+            StandardErrorEncoding = request.OutputEncoding ?? Encoding.UTF8
         };
         foreach (var argument in request.Arguments)
         {

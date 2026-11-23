@@ -70,21 +70,22 @@ public partial class MainWindow
         OutlineFileName.Text = activeDocument is { } source ? Path.GetFileName(source.RelativePath) : "";
         OutlineFileName.ToolTip = activeDocument?.RelativePath;
         var devicetree = CodeLanguage.ForFile(activeDocument?.RelativePath ?? "") == "Devicetree";
-        OutlineSearchHint.Text = devicetree ? "搜索节点 / 属性…" : "搜索函数 / 全局变量…";
-        OutlineSearch.ToolTip = devicetree ? "筛选当前设备树源文件中的节点和属性" : "筛选函数、全局变量和类型；展开函数查看局部变量";
-        AutomationProperties.SetName(OutlineSearch, devicetree ? "搜索设备树节点或属性" : "搜索函数或全局变量");
-        AutomationProperties.SetName(OutlineTree, devicetree ? "当前设备树源文件节点与属性" : "当前文件函数与变量");
+        var verilog = IsVerilogDocument;
+        OutlineSearchHint.Text = verilog ? "搜索模块 / 信号…" : devicetree ? "搜索节点 / 属性…" : "搜索函数 / 全局变量…";
+        OutlineSearch.ToolTip = verilog ? "筛选模块、端口、信号、参数或宏" : devicetree ? "筛选当前设备树源文件中的节点和属性" : "筛选函数、全局变量和类型；展开函数查看局部变量";
+        AutomationProperties.SetName(OutlineSearch, verilog ? "搜索模块或信号" : devicetree ? "搜索设备树节点或属性" : "搜索函数或全局变量");
+        AutomationProperties.SetName(OutlineTree, verilog ? "当前文件的 Verilog 模块和信号" : devicetree ? "当前设备树源文件节点与属性" : "当前文件函数与变量");
         if (closing || activeDocument is null || !IsActiveSourceTab || OutlinePanel.Visibility != Visibility.Visible)
         {
             OutlineStatus.Text = "打开源码文件查看结构";
             return;
         }
-        if (!devicetree && !CodeIntelligenceService.Supports(activeDocument.RelativePath))
+        if (!devicetree && !verilog && !CodeIntelligenceService.Supports(activeDocument.RelativePath))
         {
             OutlineStatus.Text = "当前文件类型暂不提供函数与变量列表";
             return;
         }
-        if (!devicetree && !services.Intelligence.IsReady)
+        if (!devicetree && !verilog && !services.Intelligence.IsReady)
         {
             OutlineStatus.Text = "语言服务尚未就绪";
             return;
@@ -96,7 +97,7 @@ public partial class MainWindow
     private async Task RefreshOutlineAsync()
     {
         if (closing || activeEditor is not { } session || DocumentTabs(session).SelectedItem != session.Tab ||
-            (CodeLanguage.ForFile(session.Source.RelativePath) != "Devicetree" && !services.Intelligence.IsReady))
+            (CodeLanguage.ForFile(session.Source.RelativePath) != "Devicetree" && !IsVerilogDocument && !services.Intelligence.IsReady))
         {
             return;
         }
@@ -105,7 +106,8 @@ public partial class MainWindow
         var text = document.Text;
         var path = session.Source.RelativePath;
         var devicetree = CodeLanguage.ForFile(path) == "Devicetree";
-        CodeDocumentSnapshot[] snapshots = devicetree ? [] : CaptureCodeDocuments();
+        var verilog = VerilogAssistanceService.Supports(path);
+        CodeDocumentSnapshot[] snapshots = devicetree || verilog ? [] : CaptureCodeDocuments();
         var cancellation = new CancellationTokenSource();
         outlineCancellation = cancellation;
         bool Current() => !closing && !cancellation.IsCancellationRequested && revision == outlineRevision &&
@@ -115,6 +117,7 @@ public partial class MainWindow
             // 解析和语言请求都在后台；过期返回不能覆盖已切换文件或更新后的缓冲区。
             var symbols = devicetree
                 ? await Task.Run(() => DevicetreeOutlineParser.Parse(text, cancellation.Token), cancellation.Token)
+                : verilog ? await Task.Run(() => VerilogAssistanceService.Outline(text, cancellation.Token), cancellation.Token)
                 : await Task.Run(() => services.Intelligence.DocumentSymbolsAsync(path, text, cancellation.Token, snapshots), cancellation.Token);
             if (!Current())
             {
@@ -176,7 +179,7 @@ public partial class MainWindow
         OutlineTree.Items.Clear();
         var displayed = 0;
         var truncated = false;
-        var groups = devicetree ? new[] { ("节点", 2), ("属性", 1) } : new[] { ("函数", 0), ("变量", 1), ("类型与其他", 2) };
+        var groups = IsVerilogDocument ? new[] { ("模块 / 宏", 2), ("信号", 1), ("函数 / 任务", 0) } : devicetree ? new[] { ("节点", 2), ("属性", 1) } : new[] { ("函数", 0), ("变量", 1), ("类型与其他", 2) };
         foreach (var (label, group) in groups)
         {
             var root = new TreeViewItem { IsExpanded = true, Focusable = false };
@@ -222,7 +225,7 @@ public partial class MainWindow
             {
                 return null;
             }
-            if (symbol.Kind is 6 or 9 or 12 && symbol.Children.Count == 0)
+            if (!IsVerilogDocument && symbol.Kind is 6 or 9 or 12 && symbol.Children.Count == 0)
             {
                 item.Items.Add(new TreeViewItem { Header = "展开查看参数与局部变量", IsEnabled = false });
                 item.Expanded += OutlineFunction_Expanded;
@@ -238,7 +241,7 @@ public partial class MainWindow
             item.Header = row;
             item.ToolTip = $"{kind}  {symbol.Name}" + (symbol.Detail.Length > 0 ? "\n" + symbol.Detail : "") + $"\n第 {symbol.SelectionRange.Start.Line + 1} 行";
             AutomationProperties.SetName(item, $"{kind} {symbol.Name}，第 {symbol.SelectionRange.Start.Line + 1} 行");
-            item.IsExpanded = (devicetree && parentKey.Length == 0) ||
+            item.IsExpanded = ((devicetree || IsVerilogDocument) && parentKey.Length == 0) ||
                 (symbol.Kind is not (6 or 9 or 12) && query.Length > 0) || expanded.Contains(key);
             return item;
         }

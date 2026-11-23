@@ -28,3 +28,9 @@ tmp/
 .studiox/
 .codex/
 runtime/toolsets/
+
+# 本机 AGM HyperRAM 参考设计和由其生成的控制器资源。
+/src/StudioX.Engine/Resources/Ag32/Peripherals/hram_ip.vx
+/src/StudioX.Engine/Resources/Ag32/Peripherals/hram_ip.sdc
+/tools/StudioX.Ag32PeripheralValidation/hyperram/ahb2hbus.v
+/tools/StudioX.Ag32PeripheralValidation/hyperram/hram_ip.v

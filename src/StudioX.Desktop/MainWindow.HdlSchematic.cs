@@ -40,9 +40,9 @@ public partial class MainWindow
             }
         };
         Activated += async (_, _) => await CheckHdlSchematicFreshnessAsync();
-        WorkspaceTabs.SelectionChanged += async (_, _) =>
+        WorkspaceTabs.SelectionChanged += async (_, e) =>
         {
-            if (HdlSchematicTab.IsSelected)
+            if (e.OriginalSource == WorkspaceTabs && HdlSchematicTab.IsSelected)
             {
                 await CheckHdlSchematicFreshnessAsync();
             }
@@ -52,7 +52,8 @@ public partial class MainWindow
     private void ClearHdlSchematic()
     {
         hdlWorkflowProject = null;
-        HdlWorkflow.ClearResult("工程已切换，请重新运行仿真。");
+        ClearHdlResult("工程已切换，请重新运行仿真。");
+        HdlWaveformPage.SignalFilter.Clear();
         HdlWorkflowTab.Visibility = Visibility.Collapsed;
         hdlSchematicProject = null;
         HdlSchematic.Clear();
@@ -135,7 +136,7 @@ public partial class MainWindow
         // 展平后的属性可能包含多处来源；定位第一处确实属于当前工程的源文件。
         foreach (var location in source.Split('|'))
         {
-            var match = Regex.Match(location, @"^(?<path>.+):(?<line>\d+)\.\d+");
+            var match = Regex.Match(location, @"^(?<path>.+):(?<line>\d+)\.(?<column>\d+)");
             if (!match.Success)
             {
                 continue;
@@ -150,6 +151,8 @@ public partial class MainWindow
             var line = Math.Clamp(int.Parse(match.Groups["line"].Value), 1, SourceEditor.Document.LineCount);
             SourceEditor.ScrollToLine(line);
             SourceEditor.TextArea.Caret.Line = line;
+            SourceEditor.TextArea.Caret.Column = Math.Clamp(int.Parse(match.Groups["column"].Value),
+                1, SourceEditor.Document.GetLineByNumber(line).Length + 1);
             return;
         }
         throw new StudioXException("HDL_SOURCE_LOCATION", "该综合元件没有可定位的工程源码：" + source);

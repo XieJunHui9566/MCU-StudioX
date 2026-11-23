@@ -25,6 +25,15 @@ internal static class IcarusToolPath
         return native;
     }
 
+    // Windows 版 Icarus 以本机 ANSI 编码处理文件参数和诊断路径。
+    internal static Encoding DiagnosticEncoding() => OperatingSystem.IsWindows()
+        ? CodePagesEncodingProvider.Instance.GetEncoding((int)GetACP()) ?? Encoding.UTF8
+        : Encoding.UTF8;
+
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    [DllImport("kernel32.dll")]
+    private static extern uint GetACP();
+
     [System.Runtime.InteropServices.DefaultDllImportSearchPaths(System.Runtime.InteropServices.DllImportSearchPath.System32)]
     [DllImport("kernel32.dll", EntryPoint = "GetShortPathNameW", CharSet = CharSet.Unicode, SetLastError = true)]
     private static extern uint GetShortPathName(string path, StringBuilder shortPath, uint length);

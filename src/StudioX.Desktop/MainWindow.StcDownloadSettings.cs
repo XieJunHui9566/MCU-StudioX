@@ -20,9 +20,9 @@ public partial class MainWindow
         StcDownloadTarget.Text = currentProjectManifest?.DeviceId ?? "";
         StcDownloadPageStatus.Text = "";
         MoveSettingsSection(BuildExtendedSettings, IsStcProject ? StcBuildExtrasHost : BuildExtendedSettingsHost);
-        MoveSettingsSection(Mx251ModelPanel, IsMx251Project && ProjectCapabilities.For(currentProjectManifest).Download ? StcBuildExtrasHost : BuildSettingsEditor);
+        MoveSettingsSection(Mx251ModelPanel, BuildSettingsEditor);
         StcBuildExtrasHelp.Text = IsMx251Project
-            ? "内存模型仍由 mx251.json 管理。当前 MX251 使用组件内置优化策略；这里不生成不存在的优化开关。"
+            ? "内存模型、优化方式和 C 语言标准在“编译参数”中设置。"
             : "调试信息、Mon51 资源预留与 Flash 上限仍属于编译参数，保存后需重新编译。编译器优化、内存模型与 RAM 大小在“器件与模板”中设置。";
     }
 

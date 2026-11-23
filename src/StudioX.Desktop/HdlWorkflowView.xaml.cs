@@ -22,12 +22,12 @@ public partial class HdlWorkflowView : UserControl
     public event EventHandler? EditBenchRequested;
     public event EventHandler? CreateBenchRequested;
     public event EventHandler? LogRequested;
+    public event EventHandler? WaveformRequested;
+    public event EventHandler? ResultMarkedStale;
     public event EventHandler? TimingReportRequested;
     public HdlWorkflowView()
     {
         InitializeComponent();
-        Surface.SetWaveform(null);
-        Surface.CursorChanged += text => CursorText.Text = text;
     }
     public void Load(Ag32NativeBuildSettings build, HdlSimulationSettings simulation)
     {
@@ -57,20 +57,15 @@ public partial class HdlWorkflowView : UserControl
     public void ClearResult(string message)
     {
         Result = null;
-        Surface.SetWaveform(null);
         Summary.Text = message;
-        LogButton.IsEnabled = false;
-        CursorText.Text = "尚未选择时间点";
+        WaveformButton.IsEnabled = LogButton.IsEnabled = false;
     }
     public void ShowResult(HdlSimulationResult result)
     {
         Result = result;
-        Surface.SetWaveform(result.Waveform);
-        Surface.Filter(SignalFilter.Text);
         Summary.Text = $"RTL 仿真完成 · {result.Waveform.Signals.Length} 条数字信号 · {result.Waveform.EndTick * result.Waveform.NanosecondsPerTick:0.###} ns · {result.Warnings.Length} 条警告\nVCD：{result.VcdPath}" +
             (result.Warnings.Length == 0 ? "" : "\n" + string.Join("\n", result.Warnings.Take(3)));
-        LogButton.IsEnabled = true;
-        ConfigurationPanel.IsExpanded = false;
+        WaveformButton.IsEnabled = LogButton.IsEnabled = true;
     }
     private static string[] Lines(TextBox box) => box.Text.Split(['\r', '\n'], StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
     private void BuildChanged(object sender, TextChangedEventArgs e)
@@ -85,6 +80,7 @@ public partial class HdlWorkflowView : UserControl
         if (Result is not null)
         {
             Summary.Text = "上次仿真快照：源码或配置已变化，请重新运行。\nVCD：" + Result.VcdPath;
+            ResultMarkedStale?.Invoke(this, EventArgs.Empty);
         }
     }
     private void SimulationChanged(object sender, TextChangedEventArgs e)
@@ -94,16 +90,11 @@ public partial class HdlWorkflowView : UserControl
             MarkStale();
         }
     }
-    private void FilterChanged(object sender, TextChangedEventArgs e)
-    {
-        Surface?.Filter(SignalFilter.Text);
-    }
+    private void Waveform_Click(object sender, RoutedEventArgs e) => WaveformRequested?.Invoke(this, EventArgs.Empty);
     private void SaveBuild_Click(object sender, RoutedEventArgs e) => SaveBuildRequested?.Invoke(this, EventArgs.Empty);
     private void Run_Click(object sender, RoutedEventArgs e) => RunRequested?.Invoke(this, EventArgs.Empty);
     private void EditBench_Click(object sender, RoutedEventArgs e) => EditBenchRequested?.Invoke(this, EventArgs.Empty);
     private void CreateBench_Click(object sender, RoutedEventArgs e) => CreateBenchRequested?.Invoke(this, EventArgs.Empty);
     private void Log_Click(object sender, RoutedEventArgs e) => LogRequested?.Invoke(this, EventArgs.Empty);
     private void TimingReport_Click(object sender, RoutedEventArgs e) => TimingReportRequested?.Invoke(this, EventArgs.Empty);
-    private void ZoomIn_Click(object sender, RoutedEventArgs e) => Surface.Zoom(1.5);
-    private void ZoomOut_Click(object sender, RoutedEventArgs e) => Surface.Zoom(1 / 1.5);
 }

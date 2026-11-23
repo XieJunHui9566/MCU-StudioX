@@ -219,7 +219,7 @@ public partial class MainWindow
         {
             return;
         }
-        if (loadedMx251Settings is not null && Mx251ModelPicker.SelectedValue as string != loadedMx251Settings.Model)
+        if (Mx251SettingsChanged)
         {
             await SaveMx251SettingsAsync(root, token);
         }

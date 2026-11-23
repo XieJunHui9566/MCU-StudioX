@@ -96,22 +96,24 @@ public partial class MainWindow
             var planner = Ag32PinMapping.Planner;
             Check(planner.Visibility == Visibility.Visible && planner.Snapshot is { CanEdit: true, Pins.Length: 48 },
                 "AG32 映射页加载真实 48 脚图形与厂商功能目录");
-            planner.PlannerTabs.SelectedIndex = 0;
+            planner.PinTab.IsSelected = true;
+            planner.UartPort.SelectedItem = "ADC / DAC / 比较器";
+            Check(planner.AnalogInspector.IsVisible && planner.PackageDiagram.IsVisible, "模拟配置与封装图同屏");
+            CheckBox Channel(int number) => planner.AnalogChannels.Children.OfType<CheckBox>().Single(c => Equals(c.Tag, number));
             planner.AnalogEnabled.IsChecked = true;
-            planner.AnalogChannels.Text = "0,4";
+            Channel(0).IsChecked = true;
+            Channel(4).IsChecked = true;
             planner.AnalogDac0.IsChecked = true;
             Check(planner.HasChanges && planner.GetAnalog() == new Ag32AnalogSettings(true, 17, true),
                 "模拟配置控件生成 ADC 通道与 DAC 选项");
-            planner.AnalogChannels.Text = "16";
-            Check(!planner.SavePlanButton.IsEnabled, "非法 ADC 通道立即禁止保存");
-            planner.AnalogChannels.Text = "0,4";
+            Check(!planner.AnalogChannels.Children.OfType<CheckBox>().Any(c => Equals(c.Tag, 16)), "内部 ADC 通道不会占用封装脚");
             planner.SavePlanButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             await pendingOperation;
             Check(!planner.HasChanges && planner.Snapshot?.Analog == new Ag32AnalogSettings(true, 17, true) &&
                 File.ReadAllText(PathBoundary.Resolve(fixture, "logic/pins.ve")).Contains("#@StudioX:ANALOG adc=0x0011 dac=1 cmp=0", StringComparison.Ordinal),
                 "模拟配置通过实际保存入口写入 VE 并回读");
             Check(File.ReadAllText(PathBoundary.Resolve(fixture, Ag32SystemSupport.HeaderPath)).Contains("STUDIOX_ANALOG_ENABLED 1", StringComparison.Ordinal) &&
-                planner.AnalogPinDetails.Text.Contains("PIN_14", StringComparison.Ordinal), "统一头文件启用模拟 API，页面显示当前封装固定引脚");
+                planner.AnalogDac0.Tag is 14, "统一头文件启用模拟 API，页面显示当前封装固定引脚");
             await LayoutAsync();
             Width = 1380;
             Height = 1080;
@@ -119,10 +121,10 @@ public partial class MainWindow
             await LayoutAsync();
             Render(this, Path.Combine(directory, "analog-configuration.png"));
             await ExerciseAg32TimingControlsAsync(directory, fixture, planner, Check, LayoutAsync);
-            planner.PlannerTabs.SelectedIndex = 1;
+            planner.PinTab.IsSelected = true;
             planner.PackageDiagram.Children.OfType<Button>().Single(button => Equals(button.Tag, 10))
                 .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-            Check(planner.ActivePinMenu is null && planner.PinDetails.Text.Contains("模拟外设已预留", StringComparison.Ordinal),
+            Check(planner.ActivePinMenu is null && planner.AnalogInspector.IsVisible,
                 "预留的模拟引脚不能再被菜单分配为数字功能");
             planner.AnalogEnabled.IsChecked = false;
             planner.SavePlanButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
@@ -185,9 +187,9 @@ public partial class MainWindow
             foreach (var number in new[] { 2, 21 })
             {
                 var button = planner.PackageDiagram.Children.OfType<Button>().Single(button => Equals(button.Tag, number));
-                var lead = ((Canvas)button.Content).Children.OfType<Border>().Single(border => border.Child is TextBlock);
-                Check(lead.Background.ToString() == FindResource("ErrorColor").ToString() &&
-                    ((TextBlock)lead.Child).Text == "GPIO4_4", $"PIN_{number} 整条标红且直接显示功能名");
+                var caption = planner.PackageDiagram.Children.OfType<TextBlock>().Single(label => Equals(label.Tag, number));
+                Check(button.Background.ToString() == FindResource("ErrorColor").ToString() &&
+                    caption.Text == "GPIO4_4", $"PIN_{number} 标红并在引脚外侧显示功能名");
             }
             await LayoutAsync();
             Render(planner.PackageDiagram, Path.Combine(directory, "pin-conflict.png"));
@@ -315,9 +317,9 @@ public partial class MainWindow
             planner.SetSnapshot(originalSnapshot);
             planner.AssignmentsGrid.SelectedItem = planner.GetAssignments().Single();
             var initialDiagramZoom = planner.DiagramZoom.Value;
-            planner.DiagramZoom.Value = 1200;
+            planner.DiagramZoom.Value = planner.DiagramZoom.Maximum;
             await LayoutAsync();
-            var diagramViewport = (ScrollViewer)((Viewbox)planner.PackageDiagram.Parent).Parent;
+            var diagramViewport = planner.DiagramViewport;
             Check(diagramViewport.ScrollableHeight > 0 && diagramViewport.ScrollableWidth > 0,
                 "高脚数封装可放大并在两轴滚动查看");
             planner.DiagramZoom.Value = initialDiagramZoom;
@@ -326,7 +328,7 @@ public partial class MainWindow
                 ToggleBottom_Click(this, new RoutedEventArgs());
             }
             // 将图形区滚动到可视区域，截图检查完整封装与操作表格。
-            ((ScrollViewer)Ag32PinMapping.Content).ScrollToVerticalOffset(250);
+            planner.PinTab.IsSelected = true;
             await LayoutAsync();
             Render(this, Path.Combine(directory, "graphical-pin-planning.png"));
             ClearEditorDocuments();

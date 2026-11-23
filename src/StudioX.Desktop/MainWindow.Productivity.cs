@@ -9,7 +9,7 @@ using StudioX.Application.Editing;
 public partial class MainWindow
 {
     private readonly List<WorkbenchCommand> workbenchCommands = [];
-    private bool CanUseLanguageEditing => CanEditSource && CanNavigateCode && !IsPythonDocument && services.Intelligence.IsReady && !projectActionsBusy;
+    private bool CanUseLanguageEditing => CanEditSource && CanNavigateCode && !IsPythonDocument && !IsVerilogDocument && services.Intelligence.IsReady && !projectActionsBusy;
     private void InitializeProductivity()
     {
         void Add(MenuItem menu, string title, string shortcut, Func<bool> enabled, Func<Task> run)

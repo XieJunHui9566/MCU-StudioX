@@ -184,6 +184,14 @@ F7 保存修改并调用内置工具编译。带 `openOcd` 配置的器件包会
 
 编辑器预览：`dotnet "src/StudioX.Desktop/bin/Debug/net10.0-windows/MCU StudioX.dll" --preview-editor <output-directory> <project-directory>`。只读取指定工程，不修改源码、不触发构建；输出截图和隔离用户数据。正常启动可使用 `--open <project-directory>` 直接进入工程。
 
+「AG32 引脚映射」页顶部提供 Verilog 电路图、构建配置与波形仿真、编辑 pins.ve 和配置 Supra 许可。通过「构建状态」展开构建信息及厂商许可说明。
+
+AG32 自定义逻辑在「引脚分配」页显示 `user_logic` 的外部端口。选择端口和总线位后可查看封装脚以及当前占用，保存时同步到 `logic/pins.ve` 并生成约束。MCU 与 Verilog 分配共用封装和冲突检查。稀疏或升序总线的约束中使用 `studiox_io_<端口>_<位号>` 作为对应的物理 IO 名称，未接的输入位接低。修改了 RTL 接口后先保存源码，再在图形页重新读取。
+
+Verilog 电路图使用端口、门电路、选择器和触发器的电路符号，层级模块可双击进入。粗线表示总线，实心点表示同一信号的分支。点击连线可高亮同组连接并查看逐位映射，导出的 SVG 保留相同符号和连线。
+
+Verilog 编辑支持 `.v`、`.vh`、`.sv` 和 `.svh`。停笔后在「问题」和编辑器中显示 Icarus 对当前缓冲区的诊断。输入端口或参数前的点号可补全命名连接，`Ctrl+Space` 可手动打开补全。用 `F12` 跳到模块或信号定义，「文件结构」列出当前文件的模块和成员。
+
 提示检查：`dotnet "src/StudioX.Desktop/bin/Debug/net10.0-windows/MCU StudioX.dll" --preview-completion <output-directory> <AG32-project-directory>`。在内存副本中检查 AG32 成员/函数/变量/关键字/头文件、自动输入、Tab/Esc、撤销、词中替换、参数、注释抑制及过期请求，输出深浅主题弹窗截图，不保存项目文件、不运行固件工具。
 
 设计参考：[CLion New UI](https://www.jetbrains.com/help/clion/new-ui.html)、[CLion 背景设置](https://www.jetbrains.com/help/clion/setting-background-image.html)；媒体控制参考 [Microsoft WPF MediaElement](https://learn.microsoft.com/en-us/dotnet/desktop/wpf/graphics-multimedia/how-to-control-a-mediaelement-play-pause-stop-volume-and-speed)。

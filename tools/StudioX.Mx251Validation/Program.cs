@@ -5,6 +5,11 @@ using StudioX.Engine;
 using StudioX.Foundation;
 using StudioX.Packages;
 
+if (args is ["--usability", var usabilityTools, var usabilityProject, var usabilityOutput])
+{
+    await UsabilityChecks.RunAsync(usabilityTools, usabilityProject, usabilityOutput);
+    return;
+}
 if (args is ["--build-performance", var performanceTools, var performanceProject, var performanceOutput])
 {
     await BuildPerformanceChecks.RunAsync(performanceTools, performanceProject, performanceOutput);

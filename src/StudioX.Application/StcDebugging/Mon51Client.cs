@@ -14,6 +14,10 @@ public sealed class Mon51Client : IAsyncDisposable
     private long receivedBytes;
     private bool synchronized;
     private bool disposed;
+    public bool IsTeachingPlatform
+    {
+        get; init;
+    }
 
     public Mon51Client(DeviceSession session, string logPath)
         : this(session, logPath, "parameters not supplied")
@@ -95,6 +99,7 @@ public sealed class Mon51Client : IAsyncDisposable
     public async Task<byte[]> ReadAsync(Mon51MemorySpace space, ushort address, int count, CancellationToken token)
     {
         ValidateRange(space, address, count);
+        ValidateTeachingRange(space, address, count);
         await SettleAsync(token);
         await SendAsync([4, (byte)space, (byte)(address >> 8), (byte)address, (byte)count], token);
         return await ResponseAsync(count, token);
@@ -118,6 +123,7 @@ public sealed class Mon51Client : IAsyncDisposable
     // CODE 只暴露单字节断点写入；擦除和固件下载继续由独立下载服务负责。
     public async Task WriteBreakpointByteAsync(ushort address, byte value, CancellationToken token)
     {
+        ValidateTeachingRange(Mon51MemorySpace.Code, address, 1);
         if (address is < 3 or >= 0xdbfd)
         {
             throw new StudioXException("MON51_BREAKPOINT_RANGE", "断点须位于用户 CODE 0x0003–0xDBFC，避开复位向量和监控跳板。");
@@ -146,6 +152,7 @@ public sealed class Mon51Client : IAsyncDisposable
 
     internal Task WriteUserProgramBlockAsync(ushort address, byte[] bytes, CancellationToken token)
     {
+        ValidateTeachingRange(Mon51MemorySpace.Code, address, bytes.Length);
         if (bytes.Length is < 1 or > 40 || address == 0 && bytes.Length != 3 || address is 1 or 2 || address + bytes.Length > 0xdbfd)
         {
             throw new StudioXException("MON51_DOWNLOAD_RANGE", "用户程序块须避开监控及 DBFD 跳板；复位向量仅单独写入三字节。");
@@ -156,6 +163,7 @@ public sealed class Mon51Client : IAsyncDisposable
     public Task<byte[]> RunAsync(CancellationToken token) => BootAsync([8, 0], token);
     public Task<byte[]> SetPcAsync(ushort address, CancellationToken token)
     {
+        ValidateTeachingRange(Mon51MemorySpace.Code, address, 1);
         if (address >= 0xdbfd)
         {
             throw new StudioXException("MON51_PC_RANGE", "PC 必须位于用户 CODE 区；0x0000 表示逻辑复位入口。");
@@ -166,6 +174,7 @@ public sealed class Mon51Client : IAsyncDisposable
     public async Task WriteRamAsync(Mon51MemorySpace space, ushort address, byte[] bytes, CancellationToken token)
     {
         ValidateRange(space, address, bytes.Length);
+        ValidateTeachingRange(space, address, bytes.Length);
         if (space == Mon51MemorySpace.Code || space is Mon51MemorySpace.Idata or Mon51MemorySpace.DataSfr && address + bytes.Length > 128)
         {
             throw new StudioXException("MON51_WRITE_RANGE", "内存编辑仅开放下 128 字节 RAM 和用户 XDATA；SFR/上半 IDATA 的写上下文映射尚未完整验证。");
@@ -179,6 +188,19 @@ public sealed class Mon51Client : IAsyncDisposable
 
     // 官方 res10.dll 的 SetRegs 使用存储类型 4 写入保存的 SFR 上下文；不能替换为物理 SFR 写入。
     public Task WriteContextAsync(ushort address, byte value, CancellationToken token) => WriteCoreAsync(4, address, [value], token);
+
+    private void ValidateTeachingRange(Mon51MemorySpace space, int address, int count)
+    {
+        if (!IsTeachingPlatform)
+        {
+            return;
+        }
+        int limit = space == Mon51MemorySpace.Code ? 8192 : 256;
+        if (address + count > limit)
+        {
+            throw new StudioXException("TEACHING_RANGE", $"STC89C52RC 模型的 {space} 范围为 0000–{limit - 1:X4}。");
+        }
+    }
 
     private async Task WriteCoreAsync(byte space, ushort address, byte[] bytes, CancellationToken token)
     {

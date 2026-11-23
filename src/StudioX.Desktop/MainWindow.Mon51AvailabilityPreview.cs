@@ -58,7 +58,7 @@ public partial class MainWindow
                     {
                     }, DispatcherPriority.ContextIdle);
                     UpdateLayout();
-                    var supported = device is "IAP15F2K61S2" or "IAP15L2K61S2";
+                    var supported = device is "IAP15F2K61S2" or "IAP15L2K61S2" or "STC89C52RC";
                     var label = theme.Id + " / " + device;
                     Check(ProjectCapabilities.For(currentProjectManifest).Debug == supported &&
                         DebugStartButton.Visibility == Visibility.Visible && DebugStartButton.IsEnabled == supported &&
@@ -71,6 +71,11 @@ public partial class MainWindow
                         label + ": source breakpoint gutter and actions follow the same capability");
                     if (supported)
                     {
+                        if (device == "STC89C52RC")
+                        {
+                            Check(DebugStartLabel.Text == "示教平台调试" && DebugStartButton.ToolTip is string tip && tip.Contains("本电脑运行"), label + ": software simulator entry is distinct from real-chip debug");
+                            Render(this, Path.Combine(directory, "teaching-entry-" + theme.Id + ".png"));
+                        }
                         UpdateProjectActions(busy: true);
                         Check(!DebugStartButton.IsEnabled && !DebugStartMenu.IsEnabled, label + ": supported entry still obeys busy state");
                         var busyKey = new KeyEventArgs(Keyboard.PrimaryDevice, PresentationSource.FromVisual(this)!, Environment.TickCount, Key.F5)

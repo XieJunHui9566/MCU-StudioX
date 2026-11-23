@@ -7,6 +7,8 @@ public partial class MainWindow
     private string? hdlWorkflowProject;
     private void InitializeHdlWorkflow()
     {
+        HdlWorkflow.WaveformRequested += (_, _) => ShowDocument(HdlWaveformTab);
+        HdlWorkflow.ResultMarkedStale += (_, _) => HdlWaveformPage.MarkStale();
         HdlWorkflow.SaveBuildRequested += async (_, _) => await RunAsync(SaveHdlBuildSettingsAsync);
         HdlWorkflow.RunRequested += async (_, _) => await RunAsync(async token =>
         {
@@ -14,7 +16,7 @@ public partial class MainWindow
             await SaveAllSourcesAsync(root, token);
             var settings = HdlWorkflow.ReadSimulation();
             await services.HdlWorkflow.SaveSimulationAsync(root, settings, token);
-            HdlWorkflow.ClearResult("正在运行 RTL testbench，可使用顶部停止按钮取消…");
+            ClearHdlResult("正在运行 RTL testbench，可使用顶部停止按钮取消…");
             try
             {
                 var result = await RunBuildOutputOperationAsync("RTL 仿真",
@@ -23,13 +25,18 @@ public partial class MainWindow
                 if (projectDirectory == root)
                 {
                     HdlWorkflow.ShowResult(result);
+                    HdlWaveformPage.SetWaveform(result.Waveform);
+                    ShowDocument(HdlWaveformTab);
                 }
                 Log("RTL 仿真日志：" + result.LogPath);
                 Status.Text = "RTL 仿真完成，波形已显示。";
             }
             catch (Exception error)
             {
-                HdlWorkflow.ClearResult("仿真失败或取消，未显示旧结果。" + error.Message);
+                if (projectDirectory == root)
+                {
+                    ClearHdlResult("仿真失败或取消，未显示旧结果。" + error.Message);
+                }
                 throw;
             }
         });
@@ -55,13 +62,20 @@ public partial class MainWindow
             }
         });
         Activated += async (_, _) => await CheckHdlWorkflowFreshnessAsync();
-        WorkspaceTabs.SelectionChanged += async (_, _) =>
+        WorkspaceTabs.SelectionChanged += async (_, e) =>
         {
-            if (HdlWorkflowTab.IsSelected)
+            if (e.OriginalSource == WorkspaceTabs && (HdlWorkflowTab.IsSelected || HdlWaveformTab.IsSelected))
             {
                 await CheckHdlWorkflowFreshnessAsync();
             }
         };
+    }
+
+    private void ClearHdlResult(string message)
+    {
+        HdlWorkflow.ClearResult(message);
+        HdlWaveformTab.Visibility = Visibility.Collapsed;
+        HdlWaveformPage.SetWaveform(null);
     }
 
     private async Task CheckHdlWorkflowFreshnessAsync()
@@ -81,7 +95,10 @@ public partial class MainWindow
         catch (Exception error)
         {
             Log("仿真快照检查失败：" + error);
-            HdlWorkflow.MarkStale();
+            if (ReferenceEquals(result, HdlWorkflow.Result))
+            {
+                HdlWorkflow.MarkStale();
+            }
         }
     }
 
@@ -104,7 +121,7 @@ public partial class MainWindow
         if (hdlWorkflowProject != root)
         {
             HdlWorkflow.Load(await services.HdlWorkflow.ReadBuildAsync(root, token), await services.HdlWorkflow.ReadSimulationAsync(root, token));
-            HdlWorkflow.ClearResult("尚未运行 RTL 仿真，请提供 testbench。");
+            ClearHdlResult("尚未运行 RTL 仿真，请提供 testbench。");
             hdlWorkflowProject = root;
         }
         HdlWorkflowTab.Visibility = Visibility.Visible;

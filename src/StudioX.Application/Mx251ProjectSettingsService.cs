@@ -25,11 +25,16 @@ public sealed class Mx251ProjectSettingsService(BuildService builds, ProjectFile
         var template = pack.Devices.Single(d => d.Id == project.DeviceId).Templates.Single(t => t.Id == project.TemplateId);
         var path = PathBoundary.Resolve(Path.Combine(directory, "device"), template.Mx251Configuration
             ?? throw new StudioXException("MX251_CONFIGURATION", "创建模板缺少 MX251 配置。"));
-        var defaultModel = Model(Parse(await File.ReadAllTextAsync(path, token), target));
-        return new(document, model, defaultModel);
+        var defaults = Parse(await File.ReadAllTextAsync(path, token), target);
+        return new(document, model, Model(defaults), Optimization(config), Standard(config),
+            Optimization(defaults), Standard(defaults));
     }
 
-    public async Task<Mx251ProjectSettings> SaveModelAsync(string directory, Mx251ProjectSettings expected, string model, CancellationToken token = default)
+    public Task<Mx251ProjectSettings> SaveModelAsync(string directory, Mx251ProjectSettings expected, string model, CancellationToken token = default)
+        => SaveAsync(directory, expected, model, expected.Optimization, expected.Standard, token);
+
+    public async Task<Mx251ProjectSettings> SaveAsync(string directory, Mx251ProjectSettings expected,
+        string model, string optimization, string standard, CancellationToken token = default)
     {
         using var maintenance = builds.AcquireMaintenance(token);
         var current = await ReadAsync(directory, token);
@@ -40,6 +45,10 @@ public sealed class Mx251ProjectSettingsService(BuildService builds, ProjectFile
         var config = Parse(current.Configuration.Text);
         config["model"] = model;
         Model(config);
+        config["optimization"] = optimization;
+        config["standard"] = standard;
+        Optimization(config);
+        Standard(config);
         var runtime = config["schema"]?.GetValue<int>() == 1
             ? (config["nativeMath"]?.GetValue<bool>() == true ? "native-math" : "standard")
             : config["runtime"]?.GetValue<string>();
@@ -47,7 +56,7 @@ public sealed class Mx251ProjectSettingsService(BuildService builds, ProjectFile
         {
             throw new StudioXException("MX251_MODEL_RUNTIME", "当前运行库仅支持 small，不能切换到 large。请先在 mx251.json 中明确选择兼容的 standard 运行库及 ABI 组合。");
         }
-        if (model == current.Model)
+        if (model == current.Model && optimization == current.Optimization && standard == current.Standard)
         {
             return current;
         }
@@ -64,7 +73,9 @@ public sealed class Mx251ProjectSettingsService(BuildService builds, ProjectFile
         return current with
         {
             Configuration = saved,
-            Model = model
+            Model = model,
+            Optimization = optimization,
+            Standard = standard
         };
     }
 
@@ -79,6 +90,26 @@ public sealed class Mx251ProjectSettingsService(BuildService builds, ProjectFile
         }
         return config;
     }
+
+    private static string Optimization(JsonObject config) => config["optimization"]?.GetValue<string>() switch
+    {
+        "size" => "size",
+        "speed" => "speed",
+        _ => throw new StudioXException("MX251_OPTIMIZATION", "请选择体积优先或速度优先。")
+    };
+
+    private static string Standard(JsonObject config) => config["standard"]?.GetValue<string>() switch
+    {
+        "default" => "default",
+        "c89" => "c89",
+        "c99" => "c99",
+        "c11" => "c11",
+        "c17" => "c17",
+        "sdcc89" => "sdcc89",
+        "sdcc99" => "sdcc99",
+        "sdcc11" => "sdcc11",
+        _ => throw new StudioXException("MX251_STANDARD", "请选择支持的 C 语言标准。")
+    };
 
     private static string Model(JsonObject config) => config["model"]?.GetValue<string>() switch
     {
