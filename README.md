@@ -8,6 +8,16 @@ MCU StudioX 是面向多系列微控制器的 Windows x64 嵌入式 IDE。它把
 - **轻量版**是单个 `Light-Setup.exe`，开发组件可按工程需要准备。**完整版**预装该发行列出的工具，下载同版的安装 EXE 和全部配套 `.bin` 分卷，放在同一目录后运行 EXE。[安装与升级](docs/INSTALLER.md)
 - 打开 IDE 后选择 **新建工程**，搜索具体芯片并选择模板。已有 STM32CubeMX CMake 工程可以通过 **导入 CubeMX CMake 工程** 打开。[第一个工程](docs/FIRST_PROJECT_GUIDE.md) · [CubeMX 导入](docs/CUBEMX_IMPORT.md)
 
+## 实际界面
+
+以下截图来自 MCU StudioX 本机开发预览版的 AG32VF303CCT6「LED灯闪烁」工程。分频逻辑以 200 MHz 时钟为输入，RTL 波形中测得 LED 高电平宽度为 **500 ms**。
+
+![RTL 仿真波形，A、B 光标测得 LED 高电平宽度为 500 ms](docs/screenshots/ag32-led-rtl-waveform.png)
+
+| 引脚分配 | Verilog 电路图 |
+| --- | --- |
+| [![将 Verilog 输出 led 分配到封装脚 PIN_2](docs/screenshots/ag32-led-pin-mapping.png)](docs/screenshots/ag32-led-pin-mapping.png) | [![LED 分频模块 led_twinkle 的 RTL 综合电路图](docs/screenshots/ag32-led-verilog-logic.png)](docs/screenshots/ag32-led-verilog-logic.png) |
+
 ## 主要功能
 
 - **编辑与构建**。C/C++ 代码补全、实时诊断和源码导航，提供 CMake 与 Verilog 编辑辅助。按工程锁定器件包、SDK 和工具版本，通过构建输出和内存分析查看实际结果。[工程工作流](docs/PRODUCT_WORKFLOWS.md) · [开发环境组件](docs/DEVELOPMENT_COMPONENTS.md)
