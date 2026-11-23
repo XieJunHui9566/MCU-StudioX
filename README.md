@@ -1,6 +1,6 @@
 # MCU StudioX
 
-MCU StudioX 是面向嵌入式开发的 Windows x64 IDE。当前源码版本为 **0.2.6.15**，采用 C#、.NET 10 和 WPF，面向 AG32、STM32、CH32、RP、STC、PIC 和 Espressif 等系列。
+MCU StudioX 是面向嵌入式开发的 Windows x64 IDE，采用 C#、.NET 10 和 WPF，支持 AG32、STM32、CH32、RP、STC、PIC 和 Espressif 等系列。当前源码版本 **0.2.6.15**。
 
 - **编辑与构建**。提供代码补全、实时诊断、源码导航和 Git 集成。新建工程时选择器件包和模板，编译器及 SDK 版本按工程锁定。轻量版按需获取开发组件。[工程工作流](docs/PRODUCT_WORKFLOWS.md)
 - **下载与调试**。按器件和工具链提供烧录、源码及反汇编调试、FreeRTOS 状态、串口终端和绘图。PIC16 使用 CMake、Ninja 与 XC8，PICkit3 和 MDB 按准确型号开放。[调试说明](docs/DEBUGGING.md) · [PIC 支持](docs/PIC.md)
