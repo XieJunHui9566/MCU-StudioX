@@ -8,13 +8,13 @@
 
 AG32 工程在左侧功能栏显示专用入口。支持七款精确型号及对应封装，左键点击引脚即可搜索并选择内部 GPIO 或外设功能。已分配引脚整条变绿并显示功能名；同一功能重复分配等冲突会将相关引脚标红，解决冲突后才能保存。时钟与引脚配置通过厂商转换器生成实际约束。
 
-![AG32 引脚分配与功能菜单](screenshots/ag32-pins-0.2.5.1.png)
+[AG32 引脚分配与功能菜单（历史截图）](https://github.com/XieJunHui9566/MCU-StudioX/blob/346d45727ea3f9809f2439bc62426c31cfc5827a/docs/screenshots/ag32-pins-0.2.5.1.png)
 
 左键菜单与重复功能冲突示例：
 
-![引脚功能菜单](screenshots/ag32-pin-menu-0.2.5.1.png)
+[引脚功能菜单（历史截图）](https://github.com/XieJunHui9566/MCU-StudioX/blob/346d45727ea3f9809f2439bc62426c31cfc5827a/docs/screenshots/ag32-pin-menu-0.2.5.1.png)
 
-![PIN 2 与 PIN 21 的重复功能冲突](screenshots/ag32-pin-conflict-0.2.5.1.png)
+[PIN 2 与 PIN 21 的重复功能冲突（历史截图）](https://github.com/XieJunHui9566/MCU-StudioX/blob/346d45727ea3f9809f2439bc62426c31cfc5827a/docs/screenshots/ag32-pin-conflict-0.2.5.1.png)
 
 ### MCU 与 FPGA 一键联合构建
 
@@ -24,13 +24,13 @@ AG32 工程在左侧功能栏显示专用入口。支持七款精确型号及对
 
 使用内置 Yosys 从实际 Verilog 生成电路连接图，支持层级查看、缩放和定位。无需外部 Quartus 或 VS Code 插件。
 
-![Verilog 电路图预览](screenshots/ag32-schematic-0.2.5.1.png)
+[Verilog 电路图预览（历史截图）](https://github.com/XieJunHui9566/MCU-StudioX/blob/346d45727ea3f9809f2439bc62426c31cfc5827a/docs/screenshots/ag32-schematic-0.2.5.1.png)
 
 ### RTL 仿真与波形
 
 内置 Icarus Verilog，可配置 testbench、顶层、时长与超时。展示实际 VCD 的层级信号、总线、未知态和高阻态，支持筛选、时间轴缩放，以及左键拖动蓝色时间光标，实时查看该时刻的信号值。修改源码或仿真设置后，会标记旧波形。
 
-![实际 RTL 仿真波形](screenshots/ag32-waveform-0.2.5.1.png)
+[实际 RTL 仿真波形（历史截图）](https://github.com/XieJunHui9566/MCU-StudioX/blob/346d45727ea3f9809f2439bc62426c31cfc5827a/docs/screenshots/ag32-waveform-0.2.5.1.png)
 
 ### Agent 与插件扩展
 

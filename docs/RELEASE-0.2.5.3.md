@@ -8,13 +8,13 @@
 
 界面显示主机读回时间、暂停/运行状态、错过的采样周期、无效数值和缓存淘汰计数。结束调试或更换会话后，旧变量地址失效；读取失败会停止采集并保留原始错误，不通过循环暂停/运行模拟实时采样。运行中读取能力依赖具体芯片和探针，本版完成离线协议和界面验证，尚未完成实板采样验收。多通道和多字节读取不保证同步快照，适合趋势监控。
 
-![OpenOCD 变量绘图，离线模拟数据](screenshots/openocd-plot-0.2.5.3.png)
+[OpenOCD 变量绘图，离线模拟数据（历史截图）](https://github.com/XieJunHui9566/MCU-StudioX/blob/346d45727ea3f9809f2439bc62426c31cfc5827a/docs/screenshots/openocd-plot-0.2.5.3.png)
 
 ## 中英双语诊断
 
 问题列表和编辑器悬停同时显示中文释义及工具原文。常见 clangd/GCC 诊断使用离线规则；未知诊断明确提示尚未收录中文释义。错误显示红色，警告显示琥珀色，选中行及深浅主题均保留级别颜色，复制说明包含中英两种文本。
 
-![双语错误与警告](screenshots/diagnostics-0.2.5.3.png)
+[双语错误与警告（历史截图）](https://github.com/XieJunHui9566/MCU-StudioX/blob/346d45727ea3f9809f2439bc62426c31cfc5827a/docs/screenshots/diagnostics-0.2.5.3.png)
 
 ## 编辑工作区
 
@@ -40,7 +40,7 @@ Agent 可读取编辑器的未保存内容和实时诊断，生成跨文件修�
 
 模式不会绕过文件冲突、目标身份、固件哈希和设备会话校验，也不额外提供任意终端命令。外部 MCP 客户端继续采用原有授权流程。
 
-![Agent 修改预览与授权模式，离线界面验证](screenshots/agent-workspace-0.2.5.3.png)
+[Agent 修改预览与授权模式，离线界面验证（历史截图）](https://github.com/XieJunHui9566/MCU-StudioX/blob/346d45727ea3f9809f2439bc62426c31cfc5827a/docs/screenshots/agent-workspace-0.2.5.3.png)
 
 ## 安装、源码与器件包
 

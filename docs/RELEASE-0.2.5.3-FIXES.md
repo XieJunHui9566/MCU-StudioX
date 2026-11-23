@@ -25,6 +25,6 @@
 
 本轮未连接或烧录硬件。截图为离线调试示例。
 
-![请求断点行与实际绑定行](screenshots/breakpoint-fixes-0.2.5.3.png)
+[请求断点行与实际绑定行（历史截图）](https://github.com/XieJunHui9566/MCU-StudioX/blob/346d45727ea3f9809f2439bc62426c31cfc5827a/docs/screenshots/breakpoint-fixes-0.2.5.3.png)
 
-![调试中的代码与寄存器窗口](screenshots/debug-fixes-0.2.5.3.png)
+[调试中的代码与寄存器窗口（历史截图）](https://github.com/XieJunHui9566/MCU-StudioX/blob/346d45727ea3f9809f2439bc62426c31cfc5827a/docs/screenshots/debug-fixes-0.2.5.3.png)

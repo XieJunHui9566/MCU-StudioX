@@ -11,7 +11,7 @@
 - 区分独立逻辑总线时钟与 MCU APB 分频；PLL 未就绪时便捷接口返回时钟错误。已分配的数字外设自动开启模块时钟和选定引脚的硬件复用。
 - 保留原厂底层、DMA、比较器接口，记录原始资源版本和 SHA-256；不覆盖用户主函数或手动修改过的系统文件。
 
-![AG32 模拟外设配置，隔离工程界面验证](screenshots/ag32-analog-0.2.5.3.png)
+[AG32 模拟外设配置，隔离工程界面验证（历史截图）](https://github.com/XieJunHui9566/MCU-StudioX/blob/346d45727ea3f9809f2439bc62426c31cfc5827a/docs/screenshots/ag32-analog-0.2.5.3.png)
 
 ## 离线验证
 

@@ -18,11 +18,11 @@
 
 **串口终端：** 测试固件经 CH340 回传 `SYSCLK=168000000`、`BAUD=115200` 和收发/错误计数。
 
-![STM32F407 实板串口终端回传数据](screenshots/f407-serial-terminal-hardware.png)
+[STM32F407 实板串口终端回传数据（历史截图）](https://github.com/XieJunHui9566/MCU-StudioX/blob/346d45727ea3f9809f2439bc62426c31cfc5827a/docs/screenshots/f407-serial-terminal-hardware.png)
 
 **串口绘图：** IDE 从 CH340 COM17 接收实板产生的四通道测试信号并实时绘图；截图中 CH4 曲线已隐藏，因此可见三条曲线。曲线不是 ADC 测量结果。
 
-![STM32F407 实板四通道串口绘图](screenshots/f407-serial-plot-hardware.jpg)
+[STM32F407 实板四通道串口绘图（历史截图）](https://github.com/XieJunHui9566/MCU-StudioX/blob/346d45727ea3f9809f2439bc62426c31cfc5827a/docs/screenshots/f407-serial-plot-hardware.jpg)
 
 ## 验证与边界
 

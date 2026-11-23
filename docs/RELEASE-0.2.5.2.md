@@ -31,16 +31,16 @@ Release 构建与自包含发布通过（0 警告、0 错误）。本次离线�
 
 ### AG32 命名引脚、上下拉和开漏配置
 
-![AG32 命名引脚、上下拉和开漏配置](screenshots/ag32-system-gpio-0.2.5.2.png)
+[AG32 命名引脚、上下拉和开漏配置（历史截图）](https://github.com/XieJunHui9566/MCU-StudioX/blob/346d45727ea3f9809f2439bc62426c31cfc5827a/docs/screenshots/ag32-system-gpio-0.2.5.2.png)
 
 ### FreeRTOS 模板通过复选框启用 AG32 特殊模式
 
-![FreeRTOS 模板通过复选框启用 AG32 特殊模式](screenshots/ag32-freertos-0.2.5.2.png)
+[FreeRTOS 模板通过复选框启用 AG32 特殊模式（历史截图）](https://github.com/XieJunHui9566/MCU-StudioX/blob/346d45727ea3f9809f2439bc62426c31cfc5827a/docs/screenshots/ag32-freertos-0.2.5.2.png)
 
 ### MicroPython 下载、串口选择、开始运行与 REPL
 
-![MicroPython 下载、串口选择、开始运行与 REPL](screenshots/micropython-run-0.2.5.2.png)
+[MicroPython 下载、串口选择、开始运行与 REPL（历史截图）](https://github.com/XieJunHui9566/MCU-StudioX/blob/346d45727ea3f9809f2439bc62426c31cfc5827a/docs/screenshots/micropython-run-0.2.5.2.png)
 
 ### Python 编辑器查找、替换与全部替换
 
-![Python 编辑器查找、替换与全部替换](screenshots/python-find-replace-0.2.5.2.png)
+[Python 编辑器查找、替换与全部替换（历史截图）](https://github.com/XieJunHui9566/MCU-StudioX/blob/346d45727ea3f9809f2439bc62426c31cfc5827a/docs/screenshots/python-find-replace-0.2.5.2.png)
